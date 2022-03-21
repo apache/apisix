@@ -190,6 +190,9 @@ http {
     lua_shared_dict balancer-ewma-last-touched-at {* http.lua_shared_dict["balancer-ewma-last-touched-at"] *};
     lua_shared_dict etcd-cluster-health-check {* http.lua_shared_dict["etcd-cluster-health-check"] *}; # etcd health check
 
+    {% if enabled_discoveries["kubernetes"] then %}
+    lua_shared_dict kubernetes {* http.lua_shared_dict["kubernetes"] *};
+
     {% if enabled_discoveries["tars"] then %}
     lua_shared_dict tars {* http.lua_shared_dict["tars"] *};
     {% end %}
@@ -613,7 +616,7 @@ http {
         {% end %}
 
         location / {
-            set $upstream_mirror_host        '';
+            set $upstream_mirror_uri         '';
             set $upstream_upgrade            '';
             set $upstream_connection         '';
 
@@ -625,6 +628,7 @@ http {
 
             {% if wasm then %}
             set $wasm_process_req_body       '';
+            set $wasm_process_resp_body      '';
             {% end %}
 
             # http server location configuration snippet starts
@@ -763,14 +767,26 @@ http {
             internal;
 
             {% if not use_apisix_openresty then %}
-            if ($upstream_mirror_host = "") {
+            if ($upstream_mirror_uri = "") {
                 return 200;
             }
             {% end %}
 
+
+            {% if proxy_mirror_timeouts then %}
+                {% if proxy_mirror_timeouts.connect then %}
+            proxy_connect_timeout {* proxy_mirror_timeouts.connect *};
+                {% end %}
+                {% if proxy_mirror_timeouts.read then %}
+            proxy_read_timeout {* proxy_mirror_timeouts.read *};
+                {% end %}
+                {% if proxy_mirror_timeouts.send then %}
+            proxy_send_timeout {* proxy_mirror_timeouts.send *};
+                {% end %}
+            {% end %}
             proxy_http_version 1.1;
             proxy_set_header Host $upstream_host;
-            proxy_pass $upstream_mirror_host$request_uri;
+            proxy_pass $upstream_mirror_uri;
         }
         {% end %}
 

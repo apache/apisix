@@ -142,17 +142,6 @@ location /t {
                     "type": "roundrobin"
                 },
                 "uri": "/hello"
-            }]],
-            [[{
-                "node": {
-                    "value": {
-                        "plugins": {
-                            "uri-blocker": {
-                                "block_rules": ["aa"]
-                            }
-                        }
-                    }
-                }
             }]]
             )
 

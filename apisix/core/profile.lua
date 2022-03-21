@@ -15,13 +15,29 @@
 -- limitations under the License.
 --
 
+--- Profile module.
+--
+-- @module core.profile
+
 local _M = {
     version = 0.1,
     profile = os.getenv("APISIX_PROFILE"),
     apisix_home = (ngx and ngx.config.prefix()) or ""
 }
 
-
+---
+--  Get yaml file path by filename under the `conf/`.
+--
+-- @function core.profile.yaml_path
+-- @tparam self self The profile module itself.
+-- @tparam string file_name Name of the yaml file to search.
+-- @treturn string The path of yaml file searched.
+-- @usage
+-- local profile = require("apisix.core.profile")
+-- ......
+-- -- set the working directory of APISIX
+-- profile.apisix_home = env.apisix_home .. "/"
+-- local local_conf_path = profile:yaml_path("config")
 function _M.yaml_path(self, file_name)
     local file_path = self.apisix_home  .. "conf/" .. file_name
     if self.profile and file_name ~= "config-default" then

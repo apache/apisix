@@ -21,13 +21,6 @@ title: forward-auth
 #
 -->
 
-## Summary
-
-- [**Description**](#description)
-- [**Attributes**](#attributes)
-- [**Data Definition**](#data-definition)
-- [**Example**](#example)
-
 ## Description
 
 The `forward-auth` plugin implements a classic external authentication model. We can implement a custom error return or user redirection to the authentication page if the authentication fails.
@@ -61,7 +54,7 @@ The request headers in the following list will have APISIX generated and sent to
 First, you need to setup an external authorization service. Here is an example of using Apache APISIX's serverless plugin to mock.
 
 ```shell
-$ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
+curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
     -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -91,8 +84,8 @@ $ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
 Next, we create a route for testing.
 
 ```shell
-$ curl -X PUT http://127.0.0.1:9080/apisix/admin/routes/1
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/1' \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
     -d '{
     "uri": "/headers",
     "plugins": {
@@ -117,7 +110,10 @@ We can perform the following three tests.
 1. **request_headers** Send Authorization header from `client` to `authorization` service
 
 ```shell
-$ curl http://127.0.0.1:9080/headers -H 'Authorization: 123'
+curl http://127.0.0.1:9080/headers -H 'Authorization: 123'
+```
+
+```
 {
     "headers": {
         "Authorization": "123",
@@ -129,7 +125,10 @@ $ curl http://127.0.0.1:9080/headers -H 'Authorization: 123'
 2. **upstream_headers** Send `authorization` service response header to the `upstream`
 
 ```shell
-$ curl http://127.0.0.1:9080/headers -H 'Authorization: 321'
+curl http://127.0.0.1:9080/headers -H 'Authorization: 321'
+```
+
+```
 {
     "headers": {
         "Authorization": "321",
@@ -142,7 +141,10 @@ $ curl http://127.0.0.1:9080/headers -H 'Authorization: 321'
 3. **client_headers** Send `authorization` service response header to `client` when authorizing failed
 
 ```shell
-$ curl -i http://127.0.0.1:9080/headers
+curl -i http://127.0.0.1:9080/headers
+```
+
+```
 HTTP/1.1 403 Forbidden
 Location: http://example.com/auth
 ```

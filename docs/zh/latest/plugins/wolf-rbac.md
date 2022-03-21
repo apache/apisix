@@ -21,16 +21,7 @@ title: wolf-rbac
 #
 -->
 
-## 目录
-
-- [**名字**](#名字)
-- [**属性**](#属性)
-- [**依赖项**](#依赖项)
-- [**如何启用**](#如何启用)
-- [**测试插件**](#测试插件)
-- [**禁用插件**](#禁用插件)
-
-## 名字
+## 描述
 
 `wolf-rbac` 是一个认证及授权(rbac)插件，它需要与 `consumer` 一起配合才能工作。同时需要添加 `wolf-rbac` 到一个 `service` 或 `route` 中。
 rbac 功能由 [wolf](https://github.com/iGeeky/wolf) 提供, 有关 `wolf` 的更多信息, 请参考 [wolf 文档](https://github.com/iGeeky/wolf)。

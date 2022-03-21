@@ -242,11 +242,6 @@ routes:
     "missing consul_kv services\n",
     "missing consul_kv services\n"
 ]
---- grep_error_log_out eval
-[
-    "fetch nodes failed by http://127.0.0.1:8600/v1/kv/upstreams/deleted_keys/, return default service",
-    "fetch nodes failed by http://127.0.0.1:8600/v1/kv/upstreams/deleted_keys/, return default service"
-]
 
 
 

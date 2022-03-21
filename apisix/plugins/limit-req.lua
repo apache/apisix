@@ -88,7 +88,7 @@ function _M.access(conf, ctx)
     local key
     if conf.key_type == "var_combination" then
         local err, n_resolved
-        key, err, n_resolved = core.utils.resolve_var(conf_key, ctx.var);
+        key, err, n_resolved = core.utils.resolve_var(conf_key, ctx.var)
         if err then
             core.log.error("could not resolve vars in ", conf_key, " error: ", err)
         end

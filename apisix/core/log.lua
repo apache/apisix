@@ -15,6 +15,10 @@
 -- limitations under the License.
 --
 
+--- Wrapped `ngx.log`.
+--
+-- @module core.log
+
 local ngx = ngx
 local ngx_log  = ngx.log
 local require  = require
@@ -139,8 +143,20 @@ local delay_tab = setmetatable({
 })
 
 
+---
+-- Delayed execute log printing.
 -- It works well with log.$level, eg: log.info(..., log.delay_exec(func, ...))
 -- Should not use it elsewhere.
+--
+-- @function core.log.delay_exec
+-- @tparam function func Functions that need to be delayed during log printing.
+-- @treturn table The table with the res attribute overridden.
+-- @usage
+-- local function delay_func(param1, param2)
+--     return param1 .. " " .. param2
+-- end
+-- core.log.info("delay log print: ", core.log.delay_exec(delay_func, "hello", "world))
+-- -- then the log will be: "delay log print: hello world"
 function _M.delay_exec(func, ...)
     delay_tab.func = func
 

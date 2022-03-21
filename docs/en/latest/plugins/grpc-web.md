@@ -21,14 +21,7 @@ title: grpc-web
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
-## Name
+## Description
 
 The `grpc-web` plugin is a proxy plugin used to process [gRPC Web](https://github.com/grpc/grpc-web) client requests to `gRPC Server`.
 

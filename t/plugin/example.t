@@ -311,3 +311,52 @@ GET /t
 done
 --- no_error_log
 [error]
+
+
+
+=== TEST 12: body filter
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "example-plugin": {
+                                "i": 11,
+                                "ip": "127.0.0.1",
+                                "port": 1981
+                            }
+                        },
+                        "uri": "/server_port"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: hit route
+--- request
+GET /server_port
+--- grep_error_log eval
+qr/plugin (body_filter|delayed_body_filter) phase, eof: (false|true)/
+--- grep_error_log_out
+plugin body_filter phase, eof: false
+plugin delayed_body_filter phase, eof: false
+plugin body_filter phase, eof: true
+plugin delayed_body_filter phase, eof: true
+--- no_error_log
+[error]

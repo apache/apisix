@@ -21,13 +21,12 @@ title: Control API
 #
 -->
 
-The control API can be used to
+In Apache APISIX, the control API is used to:
 
-* expose APISIX internal state
-* control the behavior of a single isolate APISIX data plane
+* Expose the internal state of APISIX.
+* Control the behavior of a single, isolated APISIX data plane.
 
-By default, the control API server is enabled and listens to `127.0.0.1:9090`. You can change it via
-the `control` section under `apisix` in `conf/config.yaml`:
+To change the default endpoint (`127.0.0.1:9090`) of the Control API server, change the `ip` and `port` in the `control` section in your configuration file (`conf/config.yaml`):
 
 ```yaml
 apisix:
@@ -38,26 +37,25 @@ apisix:
     port: 9090
 ```
 
-The control API server does not support parameter matching by default, if you want to enable parameter matching in plugin's control API
-you can add `router: 'radixtree_uri_with_parameter'` to the `control` section.
+To enable parameter matching in plugin's control API, add `router: 'radixtree_uri_with_parameter'` to the control section.
 
-Note that the control API server should not be configured to listen to the public traffic!
+**Note**: Never configure the control API server to listen to public traffic.
 
-## Control API Added via plugin
+## Control API Added via Plugins
 
-Plugin can add its control API when it is enabled.
-Some plugins in APISIX have added their own control APIs. If you are interested in these APIs,
-please refer to their documentation.
+[Plugins](./architecture-design/plugin.md) can be enabled to add its control API.
 
-## Plugin independent Control API
+Some Plugins have their own control APIs. See the documentation of the specific Plugin to learn more.
 
-Here is the supported API:
+## Plugin Independent Control API
+
+The supported APIs are listed below.
 
 ### GET /v1/schema
 
-Introduced since `v2.2`.
+Introduced in [v2.2](https://github.com/apache/apisix/releases/tag/2.2).
 
-Return the jsonschema used by this APISIX instance in the format below:
+Returns the JSON schema used by the APISIX instance:
 
 ```json
 {
@@ -90,15 +88,13 @@ Return the jsonschema used by this APISIX instance in the format below:
 }
 ```
 
-For `plugins` part, only enabled plugins will be returned. Some plugins may lack
-of fields like `consumer_schema` or `type`, it is depended on by the plugin's
-definition.
+**Note**: Only the enabled `plugins` are returned and they may lack fields like `consumer_schema` or `type` depending on how they were defined.
 
 ### GET /v1/healthcheck
 
-Introduced since `v2.3`.
+Introduced in [v2.3](https://github.com/apache/apisix/releases/tag/2.3).
 
-Return current [health check](health-check.md) status in the format below:
+Returns a [health check](health-check.md) of the APISIX instance.
 
 ```json
 [
@@ -159,16 +155,16 @@ Return current [health check](health-check.md) status in the format below:
 ]
 ```
 
-Each entry contains fields below:
+Each of the returned objects contain the following fields:
 
-* src_type: where the health checker comes from. The value is one of `["routes", "services", "upstreams"]`.
-* src_id: the id of object which creates the health checker. For example, if Upstream
-object with id 1 creates a health checker, the `src_type` is `upstreams` and the `src_id` is `1`.
-* name: the name of the health checker.
-* nodes: the target nodes of the health checker.
-* healthy_nodes: the healthy node known by the health checker.
+* src_type: where the health checker is reporting from. Value is one of  `["routes", "services", "upstreams"]`.
+* src_id: id of the object creating the health checker. For example, if an Upstream
+object with id `1` creates a health checker, the `src_type` is `upstreams` and the `src_id` is `1`.
+* name: name of the health checker.
+* nodes: target nodes of the health checker.
+* healthy_nodes: healthy nodes discovered by the health checker.
 
-User can also use `/v1/healthcheck/$src_type/$src_id` can get the status of a health checker.
+You can also use `/v1/healthcheck/$src_type/$src_id` to get the health status of specific nodes.
 
 For example, `GET /v1/healthcheck/upstreams/1` returns:
 
@@ -204,16 +200,17 @@ For example, `GET /v1/healthcheck/upstreams/1` returns:
 
 ### POST /v1/gc
 
-Introduced since `v2.8`.
+Introduced in [v2.8](https://github.com/apache/apisix/releases/tag/2.8).
 
-Trigger a full GC in the http subsystem.
-Note that when you enable stream proxy, APISIX will run another Lua VM for the stream subsystem. It won't trigger a full GC in this Lua VM .
+Triggers a full garbage collection in the HTTP subsystem.
 
-### Get /v1/routes
+**Note**: When stream proxy is enabled, APISIX runs another Lua VM for the stream subsystem. Full garbage collection is not triggered in this VM.
 
-Introduced since `v3.0`.
+### GET /v1/routes
 
-Return all routes info in the format below:
+Introduced in [v3.0](https://github.com/apache/apisix/releases/tag/3.0).
+
+Returns all configured [Routes](./architecture-design/route.md):
 
 ```json
 [
@@ -249,11 +246,11 @@ Return all routes info in the format below:
 ]
 ```
 
-### Get /v1/route/{route_id}
+### GET /v1/route/{route_id}
 
-Introduced since `v3.0`.
+Introduced in [v3.0](https://github.com/apache/apisix/releases/tag/3.0).
 
-Return specific route info with **route_id** in the format below:
+Returns the Route with the specified `route_id`:
 
 ```json
 {
@@ -287,11 +284,11 @@ Return specific route info with **route_id** in the format below:
 }
 ```
 
-### Get /v1/services
+### GET /v1/services
 
-Introduced since `v2.11`.
+Introduced in [v2.11](https://github.com/apache/apisix/releases/tag/2.11).
 
-Return all services info in the format below:
+Returns all the Services:
 
 ```json
 [
@@ -335,11 +332,11 @@ Return all services info in the format below:
 ]
 ```
 
-### Get /v1/service/{service_id}
+### GET /v1/service/{service_id}
 
-Introduced since `v2.11`.
+Introduced in [v2.11](https://github.com/apache/apisix/releases/tag/2.11).
 
-Return specific service info with **service_id** in the format below:
+Returns the Service with the specified `service_id`:
 
 ```json
 {
@@ -369,11 +366,11 @@ Return specific service info with **service_id** in the format below:
 }
 ```
 
-### Get /v1/upstreams
+### GET /v1/upstreams
 
-Introduced since `v2.11.0`.
+Introduced in [v2.11](https://github.com/apache/apisix/releases/tag/2.11).
 
-Dump all upstreams in the format below:
+Dumps all Upstreams:
 
 ```json
 [
@@ -410,11 +407,11 @@ Dump all upstreams in the format below:
 ]
 ```
 
-### Get /v1/upstream/{upstream_id}
+### GET /v1/upstream/{upstream_id}
 
-Introduced since `v2.11.0`.
+Introduced in [v2.11](https://github.com/apache/apisix/releases/tag/2.11).
 
-Dump specific upstream info with **upstream_id** in the format below:
+Dumps the Upstream with the specified `upstream_id`:
 
 ```json
 {

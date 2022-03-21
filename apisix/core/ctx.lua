@@ -14,6 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+--- Define the request context.
+--
+-- @module core.ctx
+
 local core_str     = require("apisix.core.string")
 local core_tab     = require("apisix.core.table")
 local request      = require("apisix.core.request")
@@ -185,7 +190,7 @@ do
         upstream_connection        = true,
         upstream_uri               = true,
 
-        upstream_mirror_host       = true,
+        upstream_mirror_uri        = true,
 
         upstream_cache_zone        = true,
         upstream_cache_zone_info   = true,
@@ -301,6 +306,25 @@ do
         end,
     }
 
+---
+-- Register custom variables.
+-- Register variables globally, and use them as normal builtin variables.
+-- Note that the custom variables can't be used in features that depend
+-- on the Nginx directive, like `access_log_format`.
+--
+-- @function core.ctx.register_var
+-- @tparam string name custom variable name
+-- @tparam function getter The fetch function for custom variables.
+-- @usage
+-- local core = require "apisix.core"
+--
+-- core.ctx.register_var("a6_labels_zone", function(ctx)
+--     local route = ctx.matched_route and ctx.matched_route.value
+--     if route and route.labels then
+--         return route.labels.zone
+--     end
+--     return nil
+-- end)
 function _M.register_var(name, getter)
     if type(getter) ~= "function" then
         error("the getter of registered var should be a function")

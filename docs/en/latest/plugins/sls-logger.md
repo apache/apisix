@@ -21,15 +21,7 @@ title: sls-logger
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
-## Name
+## Description
 
 `sls-logger` is a plugin which push Log data requests to ali cloud [Log Server](https://help.aliyun.com/document_detail/112903.html?spm=a2c4g.11186623.6.763.21321b47wcwt1u) with  [RF5424](https://tools.ietf.org/html/rfc5424).
 
@@ -51,11 +43,8 @@ For more info on Batch-Processor in Apache APISIX please refer
 | access_key_secret | required |Ali cloud AccessKey Secret, reference [Authorization](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry).|
 | include_req_body | required| Boolean value. |
 |name           |optional       |A unique identifier to identity the batch processor.|
-|batch_max_size |optional       |Max size of each batch.|
-|inactive_timeout|optional      |maximum age in seconds when the buffer will be flushed if inactive.|
-|buffer_duration|optional       |Maximum age in seconds of the oldest entry in a batch before the batch must be processed.|
-|max_retry_count|optional       |Maximum number of retries before removing from the processing pipe line; default is zero.|
-|retry_delay    |optional       |Number of seconds the process execution should be delayed if the execution fails; default is 1.|
+
+The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 ## How To Enable
 

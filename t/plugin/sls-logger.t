@@ -122,32 +122,6 @@ done
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "sls-logger": {
-                                    "host": "100.100.99.135",
-                                    "port": 10009,
-                                    "project": "your_project",
-                                    "logstore": "your_logstore",
-                                    "access_key_id": "your_access_key_id",
-                                    "access_key_secret": "your_access_key_secret",
-                                    "timeout": 30000
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 

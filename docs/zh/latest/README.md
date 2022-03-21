@@ -146,10 +146,10 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
   - 自定义路由: 支持用户自己实现路由算法。
 
 - **多语言支持**
-- Apache APISIX 是一个通过 `RPC` 和 `WASM` 支持不同语言来进行插件开发的网关.
+- Apache APISIX 是一个通过 `RPC` 和 `Wasm` 支持不同语言来进行插件开发的网关.
   ![Multi Language Support into Apache APISIX](../../../docs/assets/images/apisix-multi-lang-support.png)
   - RPC 是当前采用的开发方式。开发者可以使用他们需要的语言来进行 RPC 服务的开发，该 RPC 通过本地通讯来跟 APISIX 进行数据交换。到目前为止，APISIX 已支持[Java](https://github.com/apache/apisix-java-plugin-runner), [Golang](https://github.com/apache/apisix-go-plugin-runner), [Python](https://github.com/apache/apisix-python-plugin-runner) 和 Node.js。
-  - WASM 或 WebAssembly 是实验性的开发方式。 APISIX 能加载运行使用[Proxy WASM SDK](https://github.com/proxy-wasm/spec#sdks)编译的 WASM 字节码。开发者仅需要使用该 SDK 编写代码，然后编译成 WASM 字节码，即可运行在 APISIX 中的 WASM 虚拟机中。
+  - Wasm 或 WebAssembly 是实验性的开发方式。 APISIX 能加载运行使用[Proxy Wasm SDK](https://github.com/proxy-wasm/spec#sdks)编译的 Wasm 字节码。开发者仅需要使用该 SDK 编写代码，然后编译成 Wasm 字节码，即可运行在 APISIX 中的 Wasm 虚拟机中。
 
 - **Serverless**
   - [Lua functions](plugins/serverless.md): 能在 APISIX 每个阶段调用 lua 函数.
@@ -187,50 +187,9 @@ A/B 测试、金丝雀发布(灰度发布)、蓝绿部署、限流限速、抵�
 
 使用 AWS 的 8 核心服务器来压测 APISIX，QPS 可以达到 140000，同时延时只有 0.2 毫秒。
 
-[性能测试脚本](https://github.com/apache/apisix/blob/master/benchmark/run.sh)，以及[测试方法和过程](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)已经开源，欢迎补充。
+[性能测试脚本](https://github.com/apache/apisix/blob/master/benchmark/run.sh) 已经开源，欢迎补充。
 
-## Apache APISIX 和 Kong 的比较
-
-#### API 网关核心功能点，两者均已覆盖
-
-| **功能**             | **Apache APISIX** | **KONG** |
-| :------------------- | :---------------- | :------- |
-| **动态上游**         | 支持              | 支持     |
-| **动态路由**         | 支持              | 支持     |
-| **健康检查和熔断器** | 支持              | 支持     |
-| **动态 SSL 证书**    | 支持              | 支持     |
-| **七层和四层代理**   | 支持              | 支持     |
-| **分布式追踪**       | 支持              | 支持     |
-| **自定义插件**       | 支持              | 支持     |
-| **REST API**         | 支持              | 支持     |
-| **CLI**              | 支持              | 支持     |
-
-#### Apache APISIX 的优势
-
-| **功能**                               | **Apache APISIX**                       | **KONG**               |
-| :------------------------------------ | :-------------------------------------- | :--------------------- |
-| 项目归属                               | Apache 软件基金会                         | Kong Inc.              |
-| 技术架构                               | Nginx + etcd                            | Nginx + postgres       |
-| 交流渠道                               | 微信群、QQ 群、邮件列表、[GitHub](https://github.com/apache/apisix/issues)、[Slack](https://join.slack.com/t/the-asf/shared_invite/zt-nggtva4i-hDCsW1S35MuZ2g_2DgVDGg)、meetup | GitHub、论坛、freenode |
-| 单核 QPS (开启限流和 prometheus 插件)    | 18000                                   | 1700                   |
-| 平均延迟                               | 0.2 毫秒                                 | 2 毫秒                 |
-| 支持 Dubbo 代理                        | 是                                      | 否                     |
-| 配置回滚                               | 是                                      | 否                     |
-| 支持生命周期的路由                       | 是                                      | 否                     |
-| 插件热更新                             | 是                                      | 否                     |
-| 用户自定义：负载均衡算法、路由             | 是                                      | 否                     |
-| resty <--> gRPC 转码                  | 是                                      | 否                     |
-| MQTT 协议支持                          | 是                                      | 否                     |
-| 配置生效时间                            | 事件通知，低于 1 毫秒更新                  | 定期轮询，5 秒           |
-| 自带控制台                             | 是                                      | 否                     |
-| 对接外部身份认证服务                     | 是                                      | 否                     |
-| 配置中心高可用(HA)                      | 是                                      | 否                     |
-| 指定时间窗口的限速                      | 是                                      | 否                     |
-| 支持任何 Nginx 变量做路由条件            | 是                                      | 否                     |
-
-性能对比测试[详细内容如下](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)。
-
-### 贡献者变化
+## 贡献者变化
 
 > [访问此处](https://www.apiseven.com/contributor-graph) 使用贡献者数据服务。
 

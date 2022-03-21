@@ -21,14 +21,6 @@ title: cors
 #
 -->
 
-## Summary
-
-- [**Description**](#description)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
 ## Description
 
 `cors` plugin can help you enable [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) easily.
@@ -44,11 +36,18 @@ title: cors
 | max_age          | integer | optional    | 5       |       | Maximum number of seconds the results can be cached. Within this time range, the browser will reuse the last check result. `-1` means no cache. Please note that the maximum value is depended on browser, please refer to [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#Directives) for details. |
 | allow_credential | boolean | optional    | false   |       | Enable request include credential (such as Cookie etc.). According to CORS specification, if you set this option to `true`, you can not use '*' for other options. |
 | allow_origins_by_regex | array | optional    | nil   |       | Use regex expressions to match which origin is allowed to enable CORS, for example, [".*\.test.com"] can use to match all subdomain of test.com  |
+| allow_origins_by_metadata | array | optional    | nil   |       | Match which origin is allowed to enable CORS by referencing `allow_origins` set in plugin metadata. For example, if `"allow_origins": {"EXAMPLE": "https://example.com"}` is set in metadata, then `["EXAMPLE"]` can be used to match the origin `https://example.com`  |
 
 > **Tips**
 >
 > Please note that `allow_credential` is a very sensitive option, so choose to enable it carefully. After set it be `true`, the default `*` of other parameters will be invalid, you must specify their values explicitly.
 > When using `**`, you must fully understand that it introduces some security risks, such as CSRF, so make sure that this security level meets your expectations before using it。
+
+## Metadata
+
+| Name          | Type    | Requirement | Default | Valid | Description                                                            |
+| -----------   | ------  | ----------- | ------- | ----- | ---------------------------------------------------------------------- |
+| allow_origins | object  | optional    |         |       | A map from origin reference to allowed origins; its key is the reference used by `allow_origins_by_metadata` and its value is a string equivalent to `allow_origins` in plugin attributes  |
 
 ## How To Enable
 

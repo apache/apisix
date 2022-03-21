@@ -132,28 +132,6 @@ property "authorization" validation failed: property "iam" validation failed: pr
                             }
                         },
                         "uri": "/aws"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "aws-lambda": {
-                                    "keepalive": true,
-                                    "timeout": 3000,
-                                    "ssl_verify": true,
-                                    "keepalive_timeout": 60000,
-                                    "keepalive_pool": 5,
-                                    "function_uri": "http://localhost:8765/httptrigger",
-                                    "authorization": {
-                                        "apikey": "testkey"
-                                    }
-                                }
-                            },
-                            "uri": "/aws"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 

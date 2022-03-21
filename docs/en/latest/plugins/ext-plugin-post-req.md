@@ -21,6 +21,8 @@ title: ext-plugin-post-req
 #
 -->
 
+## Description
+
 `ext-plugin-post-req` is almost the same as `ext-plugin-pre-req`.
 
 The only difference is that it runs after executing builtin Lua plugins and

@@ -21,20 +21,11 @@ title: openid-connect
 #
 -->
 
-## 目录
-
-- [目录](#目录)
-- [定义](#定义)
-- [属性列表](#属性列表)
-  - [令牌自省](#令牌自省)
-  - [公钥自省](#公钥自省)
-- [故障排除](#故障排除)
-
-## 定义
+## 描述
 
 OAuth 2 / Open ID Connect（OIDC）插件为 APISIX 提供身份验证和自省功能。
 
-## 属性列表
+## 属性
 
 | 名称                               | 类型    | 必选项 | 默认值                | 有效值  | 描述                                           |
 | ---------------------------------- | ------- | ------ | --------------------- | ------- | ---------------------------------------------- |
@@ -45,6 +36,7 @@ OAuth 2 / Open ID Connect（OIDC）插件为 APISIX 提供身份验证和自省�
 | realm                              | string  | 可选   | "apisix"              |         | 用于认证                                       |
 | bearer_only                        | boolean | 可选   | false                 |         | 设置为 `true` 将检查请求中带有承载令牌的授权标头 |
 | logout_path                        | string  | 可选   | "/logout"             |         |                                                |
+| post_logout_redirect_uri           | string  | 可选   |                       |         | 调用登出接口后想要跳转的地址                        |
 | redirect_uri                       | string  | 可选   | "ngx.var.request_uri" |         |                                                |
 | timeout                            | integer | 可选   | 3                     | [1,...] | 超时时间，单位为秒                             |
 | ssl_verify                         | boolean | 可选   | false                 |         |                                                |

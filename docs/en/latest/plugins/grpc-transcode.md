@@ -21,7 +21,7 @@ title: grpc-transcode
 #
 -->
 
-## Name
+## Description
 
 HTTP(s) -> APISIX -> gRPC server
 

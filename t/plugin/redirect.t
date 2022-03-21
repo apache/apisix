@@ -582,19 +582,12 @@ location /t {
 
         local code, body = t.test('/apisix/admin/ssl/1',
             ngx.HTTP_PUT,
-            core.json.encode(data),
-            [[{
-                "node": {
-                    "value": {
-                        "sni": "test.com"
-                    },
-                    "key": "/apisix/ssl/1"
-                },
-                "action": "set"
-            }]]
+            core.json.encode(data)
             )
 
-        ngx.status = code
+        if code >= 300 then
+            ngx.status = code
+        end
         ngx.say(body)
     }
 }

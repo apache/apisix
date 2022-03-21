@@ -191,19 +191,8 @@ passed
                  [[{
                         "host":"127.0.0.1",
                         "port": 8126
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "host": "127.0.0.1",
-                            "protocol": "syslog",
-                            "timeout": 5000,
-                            "port": 8126
-                        },
-                        "key": "/apisix/plugin_metadata/loggly"
-                    },
-                    "action": "set"
-                }]])
+                }]]
+                )
 
             if code >= 300 then
                 ngx.status = code

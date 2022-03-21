@@ -14,6 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+--- OS module.
+--
+-- @module core.os
+
 local ffi = require("ffi")
 local ffi_str = ffi.string
 local ffi_errno = ffi.errno
@@ -42,8 +47,15 @@ local function err()
     return ffi_str(C.strerror(ffi_errno()))
 end
 
-
--- setenv sets the value of the environment variable
+---
+--  Sets the value of the environment variable.
+--
+-- @function core.os.setenv
+-- @tparam string name The name of environment variable.
+-- @tparam string value The value of environment variable.
+-- @treturn boolean Results of setting environment variables, true on success.
+-- @usage
+-- local ok, err = core.os.setenv("foo", "bar")
 function _M.setenv(name, value)
     local tv = type(value)
     if type(name) ~= "string" or (tv ~= "string" and tv ~= "number") then

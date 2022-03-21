@@ -14,6 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+--- Etcd API.
+--
+-- @module core.etcd
+
 local fetch_local_conf = require("apisix.core.config_local").local_conf
 local array_mt         = require("apisix.core.json").array_mt
 local etcd             = require("resty.etcd")
@@ -364,7 +369,18 @@ function _M.delete(key)
     return res, nil
 end
 
-
+---
+-- Get etcd cluster and server version.
+--
+-- @function core.etcd.server_version
+-- @treturn table The response of query etcd server version.
+-- @usage
+-- local res, err = core.etcd.server_version()
+-- -- the res.body is as follows:
+-- -- {
+-- --   etcdcluster = "3.5.0",
+-- --   etcdserver = "3.5.0"
+-- -- }
 function _M.server_version()
     local etcd_cli, err = new()
     if not etcd_cli then

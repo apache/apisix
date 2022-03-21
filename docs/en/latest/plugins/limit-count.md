@@ -21,15 +21,7 @@ title: limit-count
 #
 -->
 
-## Summary
-
-- [Name](#name)
-- [Attributes](#attributes)
-- [How To Enable](#how-to-enable)
-- [Test Plugin](#test-plugin)
-- [Disable Plugin](#disable-plugin)
-
-## Name
+## Description
 
 Limit request rate by a fixed number of requests in a given time window.
 

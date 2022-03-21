@@ -21,12 +21,6 @@ title: openwhisk
 #
 -->
 
-## Summary
-
-- [**Description**](#description)
-- [**Attributes**](#attributes)
-- [**Example**](#example)
-
 ## Description
 
 The `openwhisk` plugin is used to support integration with the [Apache OpenWhisk](https://openwhisk.apache.org) serverless platform and can be set up on a route in place of Upstream, which will take over the request and send it to the OpenWhisk API endpoint.

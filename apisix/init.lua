@@ -257,11 +257,8 @@ local function set_upstream_host(api_ctx, picked_server)
     end
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
-    if nodes_count == 1 then
-        local node = up_conf.nodes[1]
-        api_ctx.var.upstream_host = node.domain or node.host
-    elseif picked_server.domain and ngx_balancer.recreate_request then
-        api_ctx.var.upstream_host = picked_server.domain
+    if nodes_count == 1 or ngx_balancer.recreate_request then
+        api_ctx.var.upstream_host = picked_server.upstream_host
     end
 end
 
@@ -456,6 +453,8 @@ function _M.http_access_phase()
                 api_ctx.matched_route = route
                 core.table.clear(api_ctx.plugins)
                 api_ctx.plugins = plugin.filter(api_ctx, route, api_ctx.plugins)
+                -- rerun rewrite phase for newly added plugins in consumer
+                plugin.run_plugin("rewrite_in_consumer", api_ctx.plugins, api_ctx)
             end
         end
         plugin.run_plugin("access", plugins, api_ctx)
@@ -632,6 +631,7 @@ end
 
 function _M.http_body_filter_phase()
     common_phase("body_filter")
+    common_phase("delayed_body_filter")
 end
 
 

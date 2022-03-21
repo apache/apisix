@@ -21,15 +21,7 @@ title: udp-logger
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
-## Name
+## Description
 
 `udp-logger` is a plugin which push Log data requests to UDP servers.
 
@@ -48,10 +40,9 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | port             | integer | required    |              | [0,...] | Target upstream port.                                                                    |
 | timeout          | integer | optional    | 3            | [1,...] | Timeout for the upstream to send data.                                                   |
 | name             | string  | optional    | "udp logger" |         | A unique identifier to identity the batch processor                                      |
-| batch_max_size   | integer | optional    | 1000         | [1,...] | Max size of each batch                                                                   |
-| inactive_timeout | integer | optional    | 5            | [1,...] | Maximum age in seconds when the buffer will be flushed if inactive                       |
-| buffer_duration  | integer | optional    | 60           | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed |
 | include_req_body | boolean | optional    | false        |         | Whether to include the request body                                                      |
+
+The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 ## How To Enable
 

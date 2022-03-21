@@ -14,6 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+--- IP match and verify module.
+--
+-- @module core.ip
+
 local json = require("apisix.core.json")
 local log = require("apisix.core.log")
 local ipmatcher = require("resty.ipmatcher")
@@ -36,7 +41,16 @@ function _M.create_ip_matcher(ip_list)
     return ip
 end
 
-
+---
+-- Verify that the given ip is a valid ip or cidr.
+--
+-- @function core.ip.validate_cidr_or_ip
+-- @tparam string ip IP or cidr.
+-- @treturn boolean True if the given ip is a valid ip or cidr, false otherwise.
+-- @usage
+-- local ip1 = core.ip.validate_cidr_or_ip("127.0.0.1") -- true
+-- local cidr = core.ip.validate_cidr_or_ip("113.74.26.106/24") -- true
+-- local ip2 = core.ip.validate_cidr_or_ip("113.74.26.666") -- false
 function _M.validate_cidr_or_ip(ip)
     local mask = 0
     local sep_pos = str_find(ip, "/")

@@ -31,6 +31,7 @@ master_on();
 my $apisix_home = $ENV{APISIX_HOME} || cwd();
 my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
 $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
+$ENV{TEST_NGINX_FAST_SHUTDOWN} ||= 1;
 
 sub read_file($) {
     my $infile = shift;
@@ -221,6 +222,7 @@ my $a6_ngx_vars = "";
 if ($version =~ m/\/apisix-nginx-module/) {
     $a6_ngx_vars = <<_EOC_;
     set \$wasm_process_req_body       '';
+    set \$wasm_process_resp_body      '';
 _EOC_
 }
 
@@ -505,6 +507,7 @@ _EOC_
     lua_capture_error_log 1m;    # plugin error-log-logger
     lua_shared_dict etcd-cluster-health-check 10m; # etcd health check
     lua_shared_dict ext-plugin 1m;
+    lua_shared_dict kubernetes 1m;
     lua_shared_dict tars 1m;
 
     proxy_ssl_name \$upstream_host;
@@ -708,7 +711,7 @@ _EOC_
         }
 
         location / {
-            set \$upstream_mirror_host        '';
+            set \$upstream_mirror_uri         '';
             set \$upstream_upgrade            '';
             set \$upstream_connection         '';
 
@@ -794,7 +797,7 @@ _EOC_
 
     if ($version !~ m/\/apisix-nginx-module/) {
         $config .= <<_EOC_;
-            if (\$upstream_mirror_host = "") {
+            if (\$upstream_mirror_uri = "") {
                 return 200;
             }
 _EOC_
@@ -803,7 +806,7 @@ _EOC_
     $config .= <<_EOC_;
             proxy_http_version 1.1;
             proxy_set_header Host \$upstream_host;
-            proxy_pass \$upstream_mirror_host\$request_uri;
+            proxy_pass \$upstream_mirror_uri;
         }
 _EOC_
 

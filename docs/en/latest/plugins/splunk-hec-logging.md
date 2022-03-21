@@ -21,15 +21,7 @@ title: splunk-hec-logging
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
-## Name
+## Description
 
 The `splunk-hec-logging` plugin is used to forward the request log of `Apache APISIX` to `Splunk HTTP Event Collector (HEC)` for analysis and storage. After the plugin is enabled, `Apache APISIX` will obtain request context information in `Log Phase` serialize it into [Splunk Event Data format](https://docs.splunk.com/Documentation/Splunk/latest/Data/FormateventsforHTTPEventCollector#Event_metadata) and submit it to the batch queue. When the maximum processing capacity of each batch of the batch processing queue or the maximum time to refresh the buffer is triggered, the data in the queue will be submitted to `Splunk HEC`.
 
@@ -38,19 +30,16 @@ For more info on Batch-Processor in Apache APISIX please refer to:
 
 ## Attributes
 
-| Name                    | Requirement   | Default                                                                                                                                                                                           | Description                                                                                                                                                                      |
-| ----------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| endpoint                | required      |                                                                                                                                                                                                   | Splunk HEC endpoint configuration info                                                                                                                                           |
-| endpoint.uri            | required      |                                                                                                                                                                                                   | Splunk HEC event collector API                                                                                                                                                   |
-| endpoint.token          | required      |                                                                                                                                                                                                   | Splunk HEC authentication token                                                                                                                                                  |
-| endpoint.channel        | optional      |                                                                                                                                                                                                   | Splunk HEC send data channel identifier, refer to: [About HTTP Event Collector Indexer Acknowledgment](https://docs.splunk.com/Documentation/Splunk/8.2.3/Data/AboutHECIDXAck)   |
-| endpoint.timeout        | optional      | 10                                                                                                                                                                                                | Splunk HEC send data timeout, time unit: (seconds)                                                                                                                               |
-| ssl_verify              | optional      | true                                                                                                                                                                                              | enable `SSL` verification, option as per [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake)                                                     |
-| max_retry_count         | optional      | 0                                                                                                                                                                                                 | max number of retries before removing from the processing pipe line                                                                                                              |
-| retry_delay             | optional      | 1                                                                                                                                                                                                 | number of seconds the process execution should be delayed if the execution fails                                                                                                 |
-| buffer_duration         | optional      | 60                                                                                                                                                                                                | max age in seconds of the oldest entry in a batch before the batch must be processed                                                                                             |
-| inactive_timeout        | optional      | 5                                                                                                                                                                                                 | max age in seconds when the buffer will be flushed if inactive                                                                                                                   |
-| batch_max_size          | optional      | 1000                                                                                                                                                                                              | max size of each batch                                                                                                                                                           |
+| Name             | Requirement | Default | Description                                                  |
+| ---------------- | ----------- | ------- | ------------------------------------------------------------ |
+| endpoint         | required    |         | Splunk HEC endpoint configuration info                       |
+| endpoint.uri     | required    |         | Splunk HEC event collector API                               |
+| endpoint.token   | required    |         | Splunk HEC authentication token                              |
+| endpoint.channel | optional    |         | Splunk HEC send data channel identifier, refer to: [About HTTP Event Collector Indexer Acknowledgment](https://docs.splunk.com/Documentation/Splunk/8.2.3/Data/AboutHECIDXAck) |
+| endpoint.timeout | optional    | 10      | Splunk HEC send data timeout, time unit: (seconds)           |
+| ssl_verify       | optional    | true    | enable `SSL` verification, option as per [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake) |
+
+The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 ## How To Enable
 

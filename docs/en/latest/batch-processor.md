@@ -30,14 +30,14 @@ than 1 will start aggregating the entries until it reaches the max size or the t
 The only mandatory parameter to create a batch processor is a function. The function will be executed when the batch reaches the max size
 or when the buffer duration exceeds.
 
-|Name           |Requirement    |Description|
-|-------        |-----          |------|
-|name           |optional       |A unique identifier to identity the batch processor|
-|batch_max_size |optional       |Max size of each batch, default is 1000|
-|inactive_timeout|optional      |maximum age in seconds when the buffer will be flushed if inactive, default is 5s|
-|buffer_duration|optional       |Maximum age in seconds of the oldest entry in a batch before the batch must be processed, default is 5|
-|max_retry_count|optional       |Maximum number of retries before removing from the processing pipe line; default is zero|
-|retry_delay    |optional       |Number of seconds the process execution should be delayed if the execution fails; default is 1|
+| Name             | Type    | Requirement | Default | Valid   | Description                                                  |
+| ---------------- | ------- | ----------- | ------- | ------- | ------------------------------------------------------------ |
+| name             | string  | optional    | logger's name | ["http logger",...] | A unique identifier used to identify the batch processor, which defaults to the name of the logger plug-in that calls the batch processor, such as plug-in "http logger" 's `name` is "http logger. |
+| batch_max_size   | integer | optional    | 1000    | [1,...] | Sets the maximum number of logs sent in each batch. When the number of logs reaches the set maximum, all logs will be automatically pushed to the HTTP/HTTPS service. |
+| inactive_timeout | integer | optional    | 5       | [1,...] | The maximum time to refresh the buffer (in seconds). When the maximum refresh time is reached, all logs will be automatically pushed to the HTTP/HTTPS service regardless of whether the number of logs in the buffer reaches the maximum number set. |
+| buffer_duration  | integer | optional    | 60      | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed. |
+| max_retry_count  | integer | optional    | 0       | [0,...] | Maximum number of retries before removing the entry from the processing pipeline when an error occurs. |
+| retry_delay      | integer | optional    | 1       | [0,...] | Number of seconds the process execution should be delayed if the execution fails. |
 
 The following code shows an example of how to use batch processor in your plugin:
 

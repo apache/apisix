@@ -139,30 +139,6 @@ done
                             "type": "roundrobin"
                         },
                         "uri": "/limit_conn"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-conn": {
-                                    "conn": 100,
-                                    "burst": 50,
-                                    "default_conn_delay": 0.1,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/limit_conn"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -225,30 +201,6 @@ GET /test_concurrency
                             "type": "roundrobin"
                         },
                         "uri": "/limit_conn"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-conn": {
-                                    "conn": 2,
-                                    "burst": 1,
-                                    "default_conn_delay": 0.1,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/limit_conn"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -823,26 +775,6 @@ limit key: 10.10.10.2route
                             "type": "roundrobin"
                         },
                         "uri": "/limit_conn"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-conn": {
-                                    "rejected_code": 503
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/limit_conn"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
             )
 

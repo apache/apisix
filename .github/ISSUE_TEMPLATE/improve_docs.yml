@@ -1,28 +1,33 @@
-name: "Improve Docs"
-description: Improve docs for Apache APISIX.
+name: "Documentation Issue"
+description: Issues related to documentation.
 title: "docs: "
 labels: [doc]
 body:
   - type: markdown
     attributes:
       value: |
-        The more information you fill in, the better we can help you.
+        _The more information you share, the faster we can help you._
 
-        - Please use English on public channel.
-        - Encourage using words rather than pictures to describe errors.
-        - Encourage pre-searching with keywords in the issue.
+        Prior to opening the issue, please make sure that you:
+
+        - Use English to communicate.
+        - Search the [open issues](https://github.com/apache/apisix/issues) and [discussion forum](https://github.com/apache/apisix/discussions) to avoid duplicating the issue.
 
   - type: textarea
-    id: description
+    id: current-state
     attributes:
-      label: Improved or typo fixed.
-      description: Please describe which part of docs should be improved or typo fixed.
+      label: Current State
+      description: Describe the current state of the documentation.
+      placeholder: |
+        The documentation for the API in this page (url) is missing ...
     validations:
       required: true
   - type: textarea
-    id: solution
+    id: desired-state
     attributes:
-      label: Solution
-      description: Describe the solution you'd like.
+      label: Desired State
+      description: Describe the desired state the documentation should be in.
+      placeholder: |
+        There should be line mentioning how the API behaves when ...
     validations:
       required: true

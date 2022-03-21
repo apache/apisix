@@ -105,30 +105,6 @@ done
                         },
                         "desc": "upstream_node",
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-req": {
-                                    "rate": 4,
-                                    "burst": 2,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "desc": "upstream_node",
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -180,29 +156,6 @@ passed
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-req": {
-                                    "rate": 0.1,
-                                    "burst": 0.1,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -254,29 +207,6 @@ passed
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-req": {
-                                    "rate": -1,
-                                    "burst": 0.1,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -406,18 +336,6 @@ passed
                         },
                         "desc": "upstream_node",
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-req": {
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
-                            }
-                        }
-                    }
                 }]]
                 )
 
@@ -456,29 +374,12 @@ passed
                             "key": "consumer_name"
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "new_consumer",
-                            "plugins": {
-                               "key-auth": {
-                                    "key": "auth-jack"
-                                },
-                                "limit-req": {
-                                    "rate": 3,
-                                    "burst": 2,
-                                    "rejected_code": 403,
-                                    "key": "consumer_name"
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -510,25 +411,6 @@ passed
                         },
                         "desc": "upstream_node",
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "key-auth": {}
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "desc": "upstream_node",
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -579,25 +461,6 @@ apikey: auth-jack
                             "key": "consumer_name"
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "new_consumer",
-                            "plugins": {
-                               "key-auth": {
-                                    "key": "auth-jack"
-                                },
-                                "limit-req": {
-                                    "rate": 0.1,
-                                    "burst": 0.1,
-                                    "rejected_code": 403,
-                                    "key": "consumer_name"
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -649,29 +512,6 @@ apikey: auth-jack
                         },
                         "desc": "upstream_node",
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-req": {
-                                    "rate": 2,
-                                    "burst": 1,
-                                    "key": "consumer_name"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "desc": "upstream_node",
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 

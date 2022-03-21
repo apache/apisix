@@ -21,16 +21,7 @@ title: request-validation
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-- [**Examples**](#examples)
-
-## Name
+## Description
 
 `request-validation` plugin validates the requests before forwarding to an upstream service. The validation plugin uses
 json-schema to validate the schema. The plugin can be used to validate the headers and body data.

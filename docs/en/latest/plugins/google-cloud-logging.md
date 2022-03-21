@@ -21,15 +21,7 @@ title: google-cloud-logging
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
-## Name
+## Description
 
 `google-cloud-logging` plugin is used to send the access log of `Apache APISIX` to the [Google Cloud Logging Service](https://cloud.google.com/logging/).
 
@@ -52,11 +44,8 @@ For more info on Batch-Processor in Apache APISIX please refer:
 | ssl_verify              | optional      | true                                                                                                                                                                                              | enable `SSL` verification, option as per [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake)                                                    |
 | resource                | optional      | {"type": "global"}                                                                                                                                                                                | the Google monitor resource, refer to: [MonitoredResource](https://cloud.google.com/logging/docs/reference/v2/rest/v2/MonitoredResource)                                         |
 | log_id                  | optional      | apisix.apache.org%2Flogs                                                                                                                                                                          | google cloud logging id, refer to: [LogEntry](https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry)                                                                     |
-| max_retry_count         | optional      | 0                                                                                                                                                                                                 | max number of retries before removing from the processing pipe line                                                                                                              |
-| retry_delay             | optional      | 1                                                                                                                                                                                                 | number of seconds the process execution should be delayed if the execution fails                                                                                                 |
-| buffer_duration         | optional      | 60                                                                                                                                                                                                | max age in seconds of the oldest entry in a batch before the batch must be processed                                                                                             |
-| inactive_timeout        | optional      | 5                                                                                                                                                                                                 | max age in seconds when the buffer will be flushed if inactive                                                                                                                   |
-| batch_max_size          | optional      | 1000                                                                                                                                                                                              | max size of each batch                                                                                                                                                           |
+
+The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 ## How To Enable
 

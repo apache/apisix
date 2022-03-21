@@ -94,25 +94,6 @@ done
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                            "request-id": {
-                            }
-                        },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -224,27 +205,6 @@ true
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                            "request-id": {
-                                "header_name": "Custom-Header-Name",
-                                "include_in_response": true
-                            }
-                        },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -306,26 +266,6 @@ request header present
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                            "request-id": {
-                                "include_in_response": false
-                            }
-                        },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -516,26 +456,6 @@ done
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                            "request-id": {
-                                "algorithm": "snowflake"
-                            }
-                        },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
             if code >= 300 then

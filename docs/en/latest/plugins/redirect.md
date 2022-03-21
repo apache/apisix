@@ -21,15 +21,7 @@ title: redirect
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
-## Name
+## Description
 
 URI redirect.
 
@@ -122,6 +114,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
         }
     }
 }'
+```
+
+Testing based on the above examples :
+
+```shell
+$ curl http://127.0.0.1:9080/hello -i
+HTTP/1.1 301 Moved Permanently
+...
+Location: https://127.0.0.1:9443/hello
+
+...
 ```
 
 ## Disable Plugin

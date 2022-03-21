@@ -21,15 +21,7 @@ title: tcp-logger
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
-## Name
+## Description
 
 `tcp-logger` is a plugin which push Log data requests to TCP servers.
 
@@ -49,12 +41,9 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | timeout          | integer | optional    | 1000    | [1,...] | Timeout for the upstream to send data.                                                   |
 | tls              | boolean | optional    | false   |         | Control whether to perform SSL verification                                              |
 | tls_options      | string  | optional    |         |         | tls options                                                                              |
-| batch_max_size   | integer | optional    | 1000    | [1,...] | Max size of each batch                                                                   |
-| inactive_timeout | integer | optional    | 5       | [1,...] | Maximum age in seconds when the buffer will be flushed if inactive                       |
-| buffer_duration  | integer | optional    | 60      | [1,...] | Maximum age in seconds of the oldest entry in a batch before the batch must be processed |
-| max_retry_count  | integer | optional    | 0       | [0,...] | Maximum number of retries before removing from the processing pipe line                  |
-| retry_delay      | integer | optional    | 1       | [0,...] | Number of seconds the process execution should be delayed if the execution fails         |
 | include_req_body | boolean | optional    | false   |         | Whether to include the request body                                                      |
+
+The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 ## How To Enable
 

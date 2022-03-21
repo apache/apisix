@@ -116,27 +116,6 @@ done
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                              "syslog": {
-                                 "host" : "127.0.0.1",
-                                 "port" : 5044
-                              }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
             if code >= 300 then
@@ -211,13 +190,14 @@ done
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
+                -- before 2.13.0, timeout is incorrectly treated as inactive_timeout
                 [[{
                     "plugins": {
                         "syslog": {
                                 "host" : "127.0.0.1",
                                 "port" : 5044,
                                 "flush_limit" : 1,
-                                "timeout": 1
+                                "inactive_timeout": 1
                             }
                     },
                     "upstream": {
@@ -292,28 +272,6 @@ unlock with key route#1
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "syslog": {
-                                    "host": "127.0.0.1",
-                                    "port": 5044,
-                                    "batch_max_size": 1
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -347,28 +305,6 @@ unlock with key route#1
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "syslog": {
-                                    "host": "127.0.0.1",
-                                    "port": 5045,
-                                    "batch_max_size": 1
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
