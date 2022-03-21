@@ -711,7 +711,7 @@ passed
 --- request
 GET /hello1
 --- error_log
-certificate host mismatch
+self signed certificate in certificate chain
 
 
 
