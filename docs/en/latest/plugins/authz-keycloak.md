@@ -146,7 +146,7 @@ curl --location --request POST 'http://127.0.0.1:9080/api/token' \
 
 ## How To Enable
 
-Create a `route` and enable the `authz-keycloak` plugin on the route:
+Create a `route` and enable the `authz-keycloak` plugin on the route,${realm} is the realm name in keyloak:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -154,7 +154,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     "uri": "/get",
     "plugins": {
         "authz-keycloak": {
-            "token_endpoint": "http://127.0.0.1:8090/auth/realms/{client_id}/protocol/openid-connect/token",
+            "token_endpoint": "http://127.0.0.1:8090/auth/realms/${realm}/protocol/openid-connect/token",
             "permissions": ["resource name#scope name"],
             "audience": "Client ID"
         }
