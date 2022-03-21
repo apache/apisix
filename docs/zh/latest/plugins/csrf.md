@@ -29,7 +29,7 @@ title: csrf
 
 ## 属性
 
-| Name             | Type    | Requirement | Default | Valid | Description                                                  |
+| 名称             | 类型    | 必选 | 默认值 | 有效值 | 描述                                                 |
 | ---------------- | ------- | ----------- | ------- | ----- | ------------------------------------------------------------ |
 |   name   |  string |    optional    | `apisix-csrf-token`  |    | 生成的 Cookie 中的 token 的名字，需要使用这个名字在请求头携带 Cookie 中的内容 |
 | expires |  number | optional | `7200` | | CSRF Cookie 的过期时间(秒) |

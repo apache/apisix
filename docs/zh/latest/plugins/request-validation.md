@@ -31,7 +31,7 @@ title: request-validation
 
 > 注意, `header_schema` 与 `body_schema` 至少填写其中一个
 
-| Name             | Type   | Requirement | Default | Valid | Description                       |
+| 名称             | 类型   | 必选项 | 默认值 | 有效值 | 描述                       |
 | ---------------- | ------ | ----------- | ------- | ----- | --------------------------------- |
 | header_schema    | object | 可选        |         |       | `header` 数据的 `schema` 数据结构 |
 | body_schema      | object | 可选        |         |       | `body` 数据的 `schema` 数据结构   |
