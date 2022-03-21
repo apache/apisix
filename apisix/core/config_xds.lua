@@ -31,7 +31,7 @@ local package           = package
 local new_tab           = base.new_tab
 local ffi               = require ("ffi")
 local C                 = ffi.C
-local router_config     = ngx.shared["xds-route-config"]
+local route_config     = ngx.shared["xds-route-config"]
 local ngx_re_match      = ngx.re.match
 local ngx_re_gmatch     = ngx.re.gmatch
 
@@ -45,7 +45,7 @@ end
 
 
 ffi.cdef[[
-extern void initial(void* router_zone_ptr);
+extern void initial(void* route_zone_ptr);
 ]]
 
 
@@ -101,9 +101,9 @@ local function load_libxds(lib_name)
               table.concat(tried_paths, '\r\n', 1, #tried_paths))
     end
 
-    local router_zone = C.ngx_http_lua_ffi_shdict_udata_to_zone(router_config[1])
-    local router_shd_cdata = ffi.cast("void*", router_zone)
-    xdsagent.initial(router_shd_cdata)
+    local route_zone = C.ngx_http_lua_ffi_shdict_udata_to_zone(route_config[1])
+    local route_shd_cdata = ffi.cast("void*", route_zone)
+    xdsagent.initial(route_shd_cdata)
 end
 
 
