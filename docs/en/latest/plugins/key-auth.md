@@ -41,6 +41,7 @@ For route side:
 | ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
 | header  | string | optional    | apikey        |       | the header we get the key from |
 | query   | string | optional    | apikey        |       | the query string we get the key from, which priority is lower than `header` |
+| hide_credentials   | bool | optional    | false        |       | Whether to pass the apikey request headers to the upstream. |
 
 ## How To Enable
 

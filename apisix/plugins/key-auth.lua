@@ -115,7 +115,7 @@ function _M.rewrite(conf, ctx)
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     if conf.hide_credentials then
-        core.request.set_header(ctx, "apikey", nil)
+        core.request.set_header(ctx, conf.header, nil)
     end
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
