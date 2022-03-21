@@ -566,3 +566,68 @@ The difference between `plugin-metadata` and `plugin-configs`:
 
 - Plugin configuration instance scope: `plugin-metadata` works on all configuration instances of this plugin. `plugin-configs` works on the plugin configuration instances under configured it.
 - Binding entities: `plugin-metadata` take effect on the entities bound to all configuration instances of this plugin. `plugin-configs` take effect on the routes bound to this `plugin-configs`.
+
+
+## Debugging APISIX with GDB
+
+When the `worker` process exits unexpectedly, for example:
+
+```bash
+$ tail -f  logs/error.log
+[alert] 29768#0: worker process 29770 exited on signal 11 (core dumped)
+````
+
+You can enable `Core Dumps` to use `GDB` to locate the specific cause of the problem.
+
+Proceed as follows:
+
+### Enable APISIX CoreDumps option
+APISIX enables CoreDumps related options by default, no additional configuration is required.
+
+### Check System CoreDumps Limit
+```bash
+$ ulimit -c
+unlimited
+# If 0, use the following commands to lift the limit or set a custom size.
+$ ulimit -c unlimited
+```
+
+### Setting CoreDumps save path and filename (optional)
+```bash
+$ sysctl -w kernel.core_pattern=/tmp/core-%e.%p.%t
+$ sysctl -p /etc/syslog.conf
+```
+
+### Generates CoreDumps files to the set directory when a worker process exits unexpectedly.
+```bash
+$ ll /tmp
+ rw------- 1  root  root  280 MiB  Mon Mar 21 14:11:22 2022  core-openresty.29770.1647843081
+```
+
+### Debug and view the call stack with GDB, For example:
+```bash
+$ gdb /usr/local/openresty/bin/openresty /tmp/core-openresty.29770.1647843081
+(gdb) bt
+#0  0x00007f790e1a540b in kill () at ../sysdeps/unix/syscall-template.S:78
+#1  0x00007f790e700f1e in lj_vm_ffi_call () from /usr/local/openresty/luajit/lib/libluajit-5.1.so.2
+#2  0x00007f790e745057 in lj_ccall_func (L=L@entry=0x7f78fe846150, cd=<optimized out>) at lj_ccall.c:1382
+#3  0x00007f790e75a970 in lj_cf_ffi_meta___call (L=0x7f78fe846150) at lib_ffi.c:230
+#4  0x00007f790e6feaba in lj_BC_FUNCC () from /usr/local/openresty/luajit/lib/libluajit-5.1.so.2
+#5  0x0000562957f77ed2 in ngx_http_lua_run_thread (L=L@entry=0x7f790dfbf380, r=r@entry=0x5629596a9370, ctx=ctx@entry=0x5629596aa7b0, nrets=<optimized out>, nrets@entry=0)
+#6  0x0000562957f7c41c in ngx_http_lua_access_by_chunk (L=0x7f790dfbf380, r=0x5629596a9370) at ../ngx_lua-0.10.19/src/ngx_http_lua_accessby.c:337
+#7  0x0000562957f7c6ab in ngx_http_lua_access_handler (r=0x5629596a9370) at ../ngx_lua-0.10.19/src/ngx_http_lua_accessby.c:158
+#8  0x0000562957ee1890 in ngx_http_core_access_phase (r=0x5629596a9370, ph=0x562959636850) at src/http/ngx_http_core_module.c:1103
+#9  0x0000562957edd07d in ngx_http_core_run_phases (r=r@entry=0x5629596a9370) at src/http/ngx_http_core_module.c:878
+#10 0x0000562957edd154 in ngx_http_handler (r=r@entry=0x5629596a9370) at src/http/ngx_http_core_module.c:861
+#11 0x0000562957ee7cd9 in ngx_http_process_request (r=r@entry=0x5629596a9370) at src/http/ngx_http_request.c:2081
+#12 0x0000562957ee824f in ngx_http_process_request_headers (rev=rev@entry=0x7f78fcf3ba90) at src/http/ngx_http_request.c:1483
+#13 0x0000562957ee8634 in ngx_http_process_request_line (rev=0x7f78fcf3ba90) at src/http/ngx_http_request.c:1154
+#14 0x0000562957ed0026 in ngx_epoll_process_events (cycle=<optimized out>, timer=<optimized out>, flags=<optimized out>) at src/event/modules/ngx_epoll_module.c:901
+#15 0x0000562957ec68da in ngx_process_events_and_timers (cycle=cycle@entry=0x5629595b78f0) at src/event/ngx_event.c:257
+#16 0x0000562957ece370 in ngx_worker_process_cycle (cycle=cycle@entry=0x5629595b78f0, data=data@entry=0x1) at src/os/unix/ngx_process_cycle.c:811
+#17 0x0000562957ecc85d in ngx_spawn_process (cycle=cycle@entry=0x5629595b78f0, proc=proc@entry=0x562957ece2f0 <ngx_worker_process_cycle>, data=data@entry=0x1,
+    name=name@entry=0x562958023839 "worker process", respawn=respawn@entry=-3) at src/os/unix/ngx_process.c:199
+#18 0x0000562957ecda2c in ngx_start_worker_processes (cycle=cycle@entry=0x5629595b78f0, n=2, type=type@entry=-3) at src/os/unix/ngx_process_cycle.c:387
+#19 0x0000562957eceea2 in ngx_master_process_cycle (cycle=0x5629595b78f0) at src/os/unix/ngx_process_cycle.c:135
+#20 0x0000562957ea56c0 in main (argc=<optimized out>, argv=<optimized out>) at src/core/nginx.c:385
+```
