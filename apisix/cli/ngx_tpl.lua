@@ -240,7 +240,7 @@ http {
     {% end %}
 
     {% if config_center == "xds" then %}
-    lua_shared_dict router-config  10m;
+    lua_shared_dict xds-route-config  10m;
     {% end %}
 
     # for custom shared dict

@@ -92,10 +92,10 @@ qr/can not load xDS library/
 --- config
     location /t {
         content_by_lua_block {
-            -- wait for Amesh library sync data
+            -- wait for xds library sync data
             ngx.sleep(1.5)
             local core = require("apisix.core")
-            local value = ngx.shared["router-config"]:get("/apisix/routes/1")
+            local value = ngx.shared["xds-route-config"]:get("/apisix/routes/1")
             local route_conf, err = core.json.decode(value)
             local json_encode = require("toolkit.json").encode
             ngx.say(json_encode(route_conf))

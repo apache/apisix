@@ -31,7 +31,7 @@ local package           = package
 local new_tab           = base.new_tab
 local ffi               = require ("ffi")
 local C                 = ffi.C
-local router_config     = ngx.shared["router-config"]
+local router_config     = ngx.shared["xds-route-config"]
 local ngx_re_match      = ngx.re.match
 local ngx_re_gmatch     = ngx.re.gmatch
 
@@ -97,7 +97,7 @@ local function load_libxds(lib_name)
 
     if not xdsagent then
         tried_paths[#tried_paths + 1] = 'tried above paths but can not load ' .. lib_name
-        error("can not load Amesh library, tried paths: " ..
+        error("can not load xds library, tried paths: " ..
               table.concat(tried_paths, '\r\n', 1, #tried_paths))
     end
 
