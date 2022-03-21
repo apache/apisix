@@ -121,8 +121,6 @@ sudo yum install ./apisix/*.rpm
   cd apisix-${APISIX_VERSION}
   # 安装依赖
   LUAROCKS_SERVER=https://luarocks.cn make deps
-  # 安装 apisix 命令(开发者不需要遵循这个步骤)
-  make install
   ```
 
    **注意**：使用 `make deps` 安装 `lualdap`、`PCRE`、`openssl` 等依赖包失败，错误信息如： `Could not find header file for LDAP/PCRE/openssl`，可使用本方法解决。

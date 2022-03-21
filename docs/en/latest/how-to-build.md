@@ -125,8 +125,6 @@ Follow the steps below to install Apache APISIX via the source release package.
   cd apisix-${APISIX_VERSION}
   # Create dependencies
   make deps
-  # Install apisix command (developer do not need to follow this step)
-  make install
   ```
 
   **Note**: If you fail to install dependency packages using `make deps` and get an error message like `Could not find header file for LDAP/PCRE/openssl`, you can use this general method to solve problems.
