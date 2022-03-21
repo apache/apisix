@@ -45,3 +45,8 @@ indent_style = tab
 
 [t/coredns/db.test.local]
 indent_style = unset
+
+[*.pb]
+indent_style = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset

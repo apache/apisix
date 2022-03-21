@@ -194,6 +194,10 @@ http {
     lua_shared_dict kubernetes {* http.lua_shared_dict["kubernetes"] *};
     {% end %}
 
+    {% if enabled_discoveries["tars"] then %}
+    lua_shared_dict tars {* http.lua_shared_dict["tars"] *};
+    {% end %}
+
     {% if enabled_plugins["limit-conn"] then %}
     lua_shared_dict plugin-limit-conn {* http.lua_shared_dict["plugin-limit-conn"] *};
     {% end %}
