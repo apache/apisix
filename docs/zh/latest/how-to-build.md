@@ -21,7 +21,7 @@ title: 如何构建 Apache APISIX
 #
 -->
 
-## 步骤 1：安装 Apache APISIX
+## 步骤 1 安装 Apache APISIX
 
 你可以通过 RPM 仓库、Docker、Helm Chart、源码包、源码包（LTS 版本）等多种方式来安装 Apache APISIX。请在以下选项中选择其中一种执行。
 
@@ -160,7 +160,7 @@ sudo yum install ./apisix/*.rpm
 
 目前 Apache APISIX 的 LTS 版本为 `2.10.4`，将“[通过源码包安装](#通过源码包安装)”中的 `APISIX_VERSION` 设置成 `2.10.4` ，其他步骤按顺序进行即可。
 
-## 步骤 2：安装 etcd
+## 步骤 2 安装 etcd
 
 如果你只通过 RPM、Docker 或源代码安装了 Apache APISIX，而没有安装 etcd，则需要这一步。
 
@@ -183,7 +183,7 @@ brew install etcd
 brew services start etcd
 ```
 
-## 步骤 3：管理 Apache APISIX 服务
+## 步骤 3 管理 Apache APISIX 服务
 
 我们可以在 Apache APISIX 的目录下使用命令初始化依赖、启动服务和停止服务，也可以通过 `apisix help` 命令查看所有命令和对应的功能。
 
@@ -241,7 +241,7 @@ apisix stop
 apisix help
 ```
 
-## 步骤 4：运行测试案例
+## 步骤 4 运行测试案例
 
 1. 安装 `perl` 的包管理器 `cpanminus`。
 
@@ -303,7 +303,7 @@ prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 
 关于测试用例的更多细节，参见 [测试框架](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)
 
-## 步骤 5：修改 Admin API key
+## 步骤 5 修改 Admin API key
 
 您需要修改 Admin API 的 key，以保护 Apache APISIX。
 
@@ -351,13 +351,13 @@ Content-Type: text/html
 {"node":{...},"action":"get"}
 ```
 
-## 步骤 6：为 Apache APISIX 构建 OpenResty
+## 步骤 6 为 Apache APISIX 构建 OpenResty
 
 有些功能需要引入额外的 NGINX 模块到 OpenResty 当中。
 如果您需要这些功能，您可以构建 APISIX OpenResty。
 您可以根据 [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) 里面的代码，配置自己的构建环境，并完成 APISIX OpenResty 的构建。
 
-## 步骤 7：为 Apache APISIX 添加 systemd 配置文件
+## 步骤 7 为 Apache APISIX 添加 systemd 配置文件
 
 如果您使用的操作系统是 CentOS 7，且在步骤 2 中通过 RPM 包安装 Apache APISIX，配置文件已经自动安装到位，你可以直接运行以下命令：
 
