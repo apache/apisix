@@ -51,7 +51,6 @@ function _M.check_schema(conf)
 end
 
 
-
 local function retrieve_captcha(ctx, conf)
     if conf.parameter_source == "header" then
         return core.request.header(ctx, conf.parameter_name)
@@ -62,6 +61,7 @@ local function retrieve_captcha(ctx, conf)
         return uri_args[conf.parameter_name]
     end
 end
+
 
 function _M.access(conf, ctx)
     local invalid_captcha = true
@@ -85,7 +85,7 @@ function _M.access(conf, ctx)
         core.log.debug("recaptcha verify result: ", res.body)
         local recaptcha_result, err = core.json.decode(res.body)
         if err then
-            core.log.error("faield to decode the recaptcha response json: ", err)
+            core.log.error("failed to decode the recaptcha response json: ", err)
         end
         if recaptcha_result and recaptcha_result.success == true then
             invalid_captcha = false
