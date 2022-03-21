@@ -23,8 +23,6 @@ local type = type
 local core = require("apisix.core")
 local http = require("resty.http")
 
-local empty_table = {}
-
 local function list_query(informer)
     local arguments = {
         limit = informer.limit,
@@ -81,7 +79,7 @@ local function list(httpc, apiserver, informer)
     informer.version = data.metadata.resourceVersion
 
     if informer.on_added then
-        for _, item in ipairs(data.items or empty_table) do
+        for _, item in ipairs(data.items or {}) do
             informer:on_added(item, "list")
         end
     end

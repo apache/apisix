@@ -21,15 +21,15 @@ title: Kubernetes
 #
 -->
 
-## 基于 Kubernetes 的服务发现
+## Summary
 
-Kubernetes 服务发现模块以 [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts) 方式监听 [_Kubernetes_](https://kubernetes.io) 集群 [_Endpoints_](https://kubernetes.io/docs/concepts/services-networking/service) 资源的实时变化,
-并将其值存储到 ngx.shared.kubernetes 中 \
-模块同时遵循 [_APISIX Discovery 规范_](https://github.com/apache/apisix/blob/master/docs/zh/latest/discovery.md) 提供了节点查询接口
+The [_Kubernetes_](https://kubernetes.io/) service discovery [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) real-time changes of [_Endpoints_](https://kubernetes.io/docs/concepts/services-networking/service/) resources,
+then store theirs value into ngx.shared.kubernetes \
+Discovery also provides a query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md)
 
-## Kubernetes 服务发现模块的配置
+## Configuration
 
-Kubernetes 服务发现模块的完整配置如下:
+A detailed configuration for the kubernetes service discovery is as follows:
 
 ```yaml
 discovery:
@@ -66,7 +66,7 @@ discovery:
        #- default
        #- ^my-[a-z]+$
 
-      # only save endpoints with namespace not match one of [default, ^my-[a-z]+$]
+      # only save endpoints with namespace not match one of [default, ^my-[a-z]+$ ]
       #not_match:
        #- default
        #- ^my-[a-z]+$
@@ -77,14 +77,15 @@ discovery:
       first="a",second="b"
 ```
 
-如果 Kubernetes 服务发现模块运行在 Pod 内, 你可以使用最简配置:
+If the kubernetes service discovery runs inside a pod, you can use minimal configuration:
 
 ```yaml
 discovery:
   kubernetes: { }
 ```
 
-如果 Kubernetes 服务发现模块运行在 Pod 外, 你需要新建或选取指定的 [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/), 获取其 Token 值, 然后使用如下配置:
+If the kubernetes service discovery runs outside a pod, you need to create or select a specified [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/),
+then get its token value, and use following configuration:
 
 ```yaml
 discovery:
@@ -92,30 +93,31 @@ discovery:
     service:
       schema: https
       host: # enter apiserver host value here
-      port: # enter apiServer port value here
+      port: # enter apiserver port value here
     client:
       token: # enter serviceaccount token value here
       #token_file: # enter file path here
 ```
 
-## Kubernetes 服务发现模块的查询接口
+## Interface
 
-Kubernetes 服务发现模块遵循 [_APISIX Discovery 规范_](https://github.com/apache/apisix/blob/master/docs/zh/latest/discovery.md) 提供查询接口
+the kubernetes service discovery provides a query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md)
 
-**函数:**
+**function:** \
  nodes(service_name)
 
-**说明:**
-  service_name 必须满足格式: [namespace]/[name]:[portName]
+**description:** \
+  nodes() function attempts to look up the ngx.shared.kubernetes for nodes corresponding to service_name, \
+  service_name should match pattern: _[namespace]/[name]:[portName]_
 
-  + namespace: Endpoints 所在的命名空间
+  + namespace: The namespace where the kubernetes endpoints is located
 
-  + name: Endpoints 的资源名
+  + name: The name of the kubernetes endpoints
 
-  + portName: Endpoints 定义包含的 portName, 如果 Endpoints 没有定义 portName, 请使用 targetPort,Port 代替
+  + portName: The portName of the kubernetes endpoints, if there is no portName, use targetPort, port instead
 
-**返回值:**
-  以如下 Endpoints 为例:
+**return value:** \
+  if the kubernetes endpoints value is as follows:
 
   ```yaml
   apiVersion: v1
@@ -131,7 +133,7 @@ Kubernetes 服务发现模块遵循 [_APISIX Discovery 规范_](https://github.c
         - port: 3306
   ```
 
-  nodes("default/plat-dev:3306") 调用会得到如下的返回值:
+  a nodes("default/plat-dev:3306") call will get follow result:
 
   ```
    {
@@ -150,36 +152,36 @@ Kubernetes 服务发现模块遵循 [_APISIX Discovery 规范_](https://github.c
 
 ## Q&A
 
-> Q: 为什么只支持配置 token 来访问 Kubernetes APIServer \
-> A: 一般情况下,我们有三种方式可以完成与 Kubernetes APIServer 的认证:
+> Q: Why only support configuration token to access _Kubernetes APIServer_ \
+> A: Usually, we will use three ways to complete the authentication of _Kubernetes APIServer_:
 >
 >+ mTLS
 >+ token
 >+ basic authentication
 >
-> 因为 lua-resty-http 目前不支持 mTLS, basic authentication 不被推荐使用,\
-> 所以当前只实现了 token 认证方式
+> Because lua-resty-http does not currently support mTLS, and basic authentication is not recommended,\
+> So currently only the token authentication method is implemented
 
 ---
 
-> Q: APISIX 继承了 Nginx 的多进程模型, 是否意味着每个 APISIX 工作进程都会监听 Kubernetes Endpoints \
-> A: Kubernetes 服务发现模块只使用特权进程监听 Kubernetes Endpoints, 然后将其值存储\
-> 到 ngx.shared.kubernetes, 工作进程通过查询 ngx.shared.kubernetes 来获取结果
+> Q: APISIX inherits Nginx's multiple process model, does it mean that each nginx worker process will [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) kubernetes endpoints resources \
+> A: The kubernetes service discovery only uses privileged processes to [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) kubernetes endpoints resources, then store theirs value \
+> into ngx.shared.kubernetes, worker processes get results by querying ngx.shared.kubernetes
 
 ---
 
-> Q: 怎样获取指定 ServiceAccount 的 Token 值 \
-> A: 假定你指定的 ServiceAccount 资源名为 “kubernetes-discovery“, 命名空间为 “apisix”, 请按如下步骤获取其 Token 值
+> Q: How to get [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) token value \
+> A: Assume your [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) located in namespace apisix and name is kubernetes-discovery, you can use the following steps to get token value
 >
-> 1. 获取 _Secret_ 资源名: \
-> 执行以下命令, 输出的第一列内容就是目标 _Secret_ 资源名
+> 1. Get secret name: \
+> you can execute the following command, the output of the first column is the secret name we want
 >
 > ```shell
 > kubectl -n apisix get secrets | grep kubernetes-discovery
 > ```
 >
-> 2. 获取 Token 值: \
-> 假定你获取到的 _Secret_ 资源名为 "kubernetes-discovery-token-c64cv", 执行以下命令, 输出内容就是目标 Token 值
+> 2. Get token value: \
+> assume secret resources name is kubernetes-discovery-token-c64cv, you can execute the following command, the output is the service account token value we want
 >
 > ```shell
 > kubectl -n apisix get secret kubernetes-discovery-token-c64cv -o jsonpath={.data.token} | base64 -d
