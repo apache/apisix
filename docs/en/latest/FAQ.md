@@ -567,7 +567,6 @@ The difference between `plugin-metadata` and `plugin-configs`:
 - Plugin configuration instance scope: `plugin-metadata` works on all configuration instances of this plugin. `plugin-configs` works on the plugin configuration instances under configured it.
 - Binding entities: `plugin-metadata` take effect on the entities bound to all configuration instances of this plugin. `plugin-configs` take effect on the routes bound to this `plugin-configs`.
 
-
 ## Debugging APISIX with GDB
 
 When the `worker` process exits unexpectedly, for example:
@@ -582,9 +581,11 @@ You can enable `Core Dumps` to use `GDB` to locate the specific cause of the pro
 Proceed as follows:
 
 ### Enable APISIX CoreDumps option
+
 APISIX enables CoreDumps related options by default, no additional configuration is required.
 
 ### Check System CoreDumps Limit
+
 ```bash
 $ ulimit -c
 unlimited
@@ -593,18 +594,21 @@ $ ulimit -c unlimited
 ```
 
 ### Setting CoreDumps save path and filename (optional)
+
 ```bash
 $ sysctl -w kernel.core_pattern=/tmp/core-%e.%p.%t
 $ sysctl -p /etc/syslog.conf
 ```
 
 ### Generates CoreDumps files to the set directory when a worker process exits unexpectedly.
+
 ```bash
 $ ll /tmp
  rw------- 1  root  root  280 MiB  Mon Mar 21 14:11:22 2022  core-openresty.29770.1647843081
 ```
 
 ### Debug and view the call stack with GDB, For example:
+
 ```bash
 $ gdb /usr/local/openresty/bin/openresty /tmp/core-openresty.29770.1647843081
 (gdb) bt
