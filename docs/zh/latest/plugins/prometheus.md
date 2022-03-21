@@ -21,6 +21,8 @@ title: prometheus
 #
 -->
 
+## 描述
+
 此插件是提供符合 prometheus 数据格式的监控指标数据。
 
 ## 属性

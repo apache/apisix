@@ -146,31 +146,6 @@ done
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "skywalking-logger": {
-                                    "endpoint_addr": "http://127.0.0.1:1986",
-                                    "batch_max_size": 1,
-                                    "max_retry_count": 1,
-                                    "retry_delay": 2,
-                                    "buffer_duration": 2,
-                                    "inactive_timeout": 2
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -235,22 +210,12 @@ qr/failed to parse trace_context header:/
                         "@timestamp": "$time_iso8601",
                         "client_ip": "$remote_addr"
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "log_format": {
-                                "host": "$host",
-                                "@timestamp": "$time_iso8601",
-                                "client_ip": "$remote_addr"
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }

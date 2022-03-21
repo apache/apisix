@@ -21,14 +21,6 @@ title: csrf
 #
 -->
 
-## Summary
-
-- [**Description**](#description)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
 ## Description
 
 The `CSRF` plugin based on the [`Double Submit Cookie`](https://en.wikipedia.org/wiki/Cross-site_request_forgery#Double_Submit_Cookie) way, protect your API from CSRF attacks. This plugin considers the `GET`, `HEAD` and `OPTIONS` methods to be safe operations. Therefore calls to the `GET`, `HEAD` and `OPTIONS` methods are not checked for interception.
@@ -42,6 +34,8 @@ In the following we define `GET`, `HEAD` and `OPTIONS` as the `safe-methods` and
 |   name   |  string |    optional    | `apisix-csrf-token`  |    | The name of the token in the generated cookie. |
 | expires |  number | optional | `7200` | | Expiration time(s) of csrf cookie. |
 | key | string | required |  |  | The secret key used to encrypt the cookie. |
+
+**Note: When expires is set to 0 the plugin will ignore checking if the token is expired or not.**
 
 ## How To Enable
 

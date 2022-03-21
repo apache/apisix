@@ -25,14 +25,13 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    my $user_yaml_config = <<_EOC_;
+    if (!defined $block->yaml_config) {
+        my $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
-  admin_key: null
-
-plugins:                          # plugin list
+  admin_key: ~
+plugins:
   - log-rotate
-
 plugin_attr:
   log-rotate:
     interval: 1
@@ -40,7 +39,8 @@ plugin_attr:
     enable_compression: true
 _EOC_
 
-    $block->set_value("yaml_config", $user_yaml_config);
+        $block->set_value("yaml_config", $yaml_config);
+    }
 
     if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
         $block->set_value("no_error_log", "[error]");
@@ -132,6 +132,46 @@ start xxxxxx
             end
 
             if passed then
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: test rotate time align
+--- yaml_config
+apisix:
+  node_listen: 1984
+  admin_key: ~
+plugins:
+  - log-rotate
+plugin_attr:
+  log-rotate:
+    interval: 3600
+    max_kept: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.1)
+            local log_file = ngx.config.prefix() .. "logs/error.log"
+            local file = io.open(log_file, "r")
+            local log = file:read("*a")
+
+            local m, err = ngx.re.match(log, [[first init rotate time is: (\d+)]], "jom")
+            if not m then
+                ngx.log(ngx.ERR, "failed to gmatch: ", err)
+                return
+            end
+
+            ngx.sleep(2)
+
+            local now_time = ngx.time()
+            local interval = 3600
+            local rotate_time = now_time + interval - (now_time % interval)
+            if tonumber(m[1]) == tonumber(rotate_time) then
                 ngx.say("passed")
             end
         }

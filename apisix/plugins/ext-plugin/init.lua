@@ -65,6 +65,18 @@ local type = type
 
 
 local events_list
+local exclude_resp_header = {
+    ["connection"] = true,
+    ["content-length"] = true,
+    ["transfer-encoding"] = true,
+    ["location"] = true,
+    ["server"] = true,
+    ["www-authenticate"] = true,
+    ["content-encoding"] = true,
+    ["content-type"] = true,
+    ["content-location"] = true,
+    ["content-language"] = true,
+}
 
 local function new_lrucache()
     return core.lrucache.new({
@@ -607,6 +619,17 @@ local rpc_handlers = {
 
                     if str_lower(name) == "host" then
                         var.upstream_host = entry:Value()
+                    end
+                end
+            end
+
+            local len = rewrite:RespHeadersLength()
+            if len > 0 then
+                for i = 1, len do
+                    local entry = rewrite:RespHeaders(i)
+                    local name = entry:Name()
+                    if exclude_resp_header[str_lower(name)] == nil then
+                        core.response.set_header(name, entry:Value())
                     end
                 end
             end

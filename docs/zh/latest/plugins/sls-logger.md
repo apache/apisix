@@ -21,16 +21,7 @@ title: sls-logger
 #
 -->
 
-## 摘要
-
-- [摘要](#摘要)
-- [定义](#定义)
-- [属性列表](#属性列表)
-- [如何开启](#如何开启)
-- [测试插件](#测试插件)
-- [禁用插件](#禁用插件)
-
-## 定义
+## 描述
 
 `sls-logger` 是使用 [RF5424](https://tools.ietf.org/html/rfc5424) 标准将日志数据以JSON格式发送到 [阿里云日志服务](https://help.aliyun.com/document_detail/112903.html?spm=a2c4g.11186623.6.763.21321b47wcwt1u)。
 
@@ -39,7 +30,7 @@ title: sls-logger
 有关 Apache APISIX 中 Batch-Processor 的更多信息，请参考：
 [Batch-Processor](../batch-processor.md)
 
-## 属性列表
+## 属性
 
 |属性名称          |必选项  |描述|
 |---------     |--------|-----------|

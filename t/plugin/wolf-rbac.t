@@ -139,24 +139,12 @@ done
                             "server": "http://127.0.0.1:1982"
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "wolf_rbac_unit_test",
-                            "plugins": {
-                                "wolf-rbac": {
-                                    "appid": "wolf-rbac-app",
-                                    "server": "http://127.0.0.1:1982"
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }

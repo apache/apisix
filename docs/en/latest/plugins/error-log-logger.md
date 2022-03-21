@@ -21,18 +21,7 @@ title: error-log-logger
 #
 -->
 
-## Summary
-
-- [Summary](#summary)
-- [Name](#name)
-- [Attributes](#attributes)
-- [How To Enable And Disable](#how-to-enable-and-disable)
-  - [Enable plugin](#enable-plugin)
-  - [Disable plugin](#disable-plugin)
-- [How to set the TCP server address](#how-to-set-the-tcp-server-address)
-- [How to set the SkyWalking OAP server address](#how-to-set-the-skywalking-oap-server-address)
-
-## Name
+## Description
 
 `error-log-logger` is a plugin which pushes the log data of APISIX's `error.log` to TCP servers or [Apache SkyWalking](https://skywalking.apache.org/).
 

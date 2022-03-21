@@ -21,17 +21,7 @@ title: dubbo-proxy
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Requirement**](#requirement)
-- [**Runtime Attributes**](#runtime-attributes)
-- [**Static Attributes**](#static-attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
-## Name
+## Description
 
 dubbo-proxy plugin allows you proxy HTTP request to [**dubbo**](http://dubbo.apache.org).
 

@@ -119,32 +119,6 @@ done
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "openid-connect": {
-                                    "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
-                                    "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
-                                    "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
-                                    "redirect_uri": "https://iresty.com",
-                                    "ssl_verify": false,
-                                    "timeout": 10,
-                                    "scope": "apisix"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -225,38 +199,6 @@ true
                             "type": "roundrobin"
                         },
                         "uri": "/*"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "openid-connect": {
-                                    "client_id": "course_management",
-                                    "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
-                                    "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
-                                    "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
-                                    "ssl_verify": false,
-                                    "timeout": 10,
-                                    "realm": "University",
-                                    "introspection_endpoint_auth_method": "client_secret_post",
-                                    "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect",
-                                    "set_access_token_header": true,
-                                    "access_token_in_authorization_header": false,
-                                    "set_id_token_header": true,
-                                    "set_userinfo_header": true
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/*"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -368,38 +310,6 @@ x-userinfo: ey.*
                             "type": "roundrobin"
                         },
                         "uri": "/*"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "openid-connect": {
-                                    "client_id": "course_management",
-                                    "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
-                                    "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
-                                    "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
-                                    "ssl_verify": false,
-                                    "timeout": 10,
-                                    "realm": "University",
-                                    "introspection_endpoint_auth_method": "client_secret_post",
-                                    "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect",
-                                    "set_access_token_header": true,
-                                    "access_token_in_authorization_header": true,
-                                    "set_id_token_header": false,
-                                    "set_userinfo_header": false
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/*"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -504,33 +414,6 @@ x-real-ip: 127.0.0.1
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "openid-connect": {
-                                    "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
-                                    "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
-                                    "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
-                                    "redirect_uri": "https://iresty.com",
-                                    "ssl_verify": false,
-                                    "timeout": 10,
-                                    "bearer_only": true,
-                                    "scope": "apisix"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -604,37 +487,6 @@ OIDC introspection failed: Invalid Authorization header format.
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{ "node": {
-                        "value": {
-                            "plugins": {
-                                "openid-connect": {
-                                    "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
-                                    "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
-                                    "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
-                                    "redirect_uri": "https://iresty.com",
-                                    "ssl_verify": false,
-                                    "timeout": 10,
-                                    "bearer_only": true,
-                                    "scope": "apisix",
-                                    "public_key": "-----BEGIN PUBLIC KEY-----\n]] ..
-                                        [[MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ\n]] ..
-                                        [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
-                                        [[-----END PUBLIC KEY-----",
-                                    "token_signing_alg_values_expected": "RS256"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -716,37 +568,6 @@ true
                             "type": "roundrobin"
                         },
                         "uri": "/uri"
-                }]],
-                [[{ "node": {
-                        "value": {
-                            "plugins": {
-                                "openid-connect": {
-                                    "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
-                                    "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
-                                    "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
-                                    "redirect_uri": "https://iresty.com",
-                                    "ssl_verify": false,
-                                    "timeout": 10,
-                                    "bearer_only": true,
-                                    "scope": "apisix",
-                                    "public_key": "-----BEGIN PUBLIC KEY-----\n]] ..
-                                        [[MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ\n]] ..
-                                        [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
-                                        [[-----END PUBLIC KEY-----",
-                                    "token_signing_alg_values_expected": "RS256"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/uri"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -817,40 +638,6 @@ x-real-ip: 127.0.0.1
                             "type": "roundrobin"
                         },
                         "uri": "/uri"
-                }]],
-                [[{ "node": {
-                        "value": {
-                            "plugins": {
-                                "openid-connect": {
-                                    "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
-                                    "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
-                                    "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
-                                    "redirect_uri": "https://iresty.com",
-                                    "ssl_verify": false,
-                                    "timeout": 10,
-                                    "bearer_only": true,
-                                    "scope": "apisix",
-                                    "public_key": "-----BEGIN PUBLIC KEY-----\n]] ..
-                                        [[MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ\n]] ..
-                                        [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
-                                        [[-----END PUBLIC KEY-----",
-                                    "token_signing_alg_values_expected": "RS256",
-                                    "access_token_in_authorization_header": true,
-                                    "set_id_token_header": false,
-                                    "set_userinfo_header": false
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/uri"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -916,37 +703,6 @@ x-real-ip: 127.0.0.1
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{ "node": {
-                        "value": {
-                            "plugins": {
-                                "openid-connect": {
-                                    "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
-                                    "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
-                                    "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
-                                    "redirect_uri": "https://iresty.com",
-                                    "ssl_verify": false,
-                                    "timeout": 10,
-                                    "bearer_only": true,
-                                    "scope": "apisix",
-                                    "public_key": "-----BEGIN PUBLIC KEY-----\n]] ..
-                                        [[MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ\n]] ..
-                                        [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
-                                        [[-----END PUBLIC KEY-----",
-                                    "token_signing_alg_values_expected": "RS256"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -1025,35 +781,6 @@ jwt signature verification failed
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "openid-connect": {
-                                    "client_id": "course_management",
-                                    "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
-                                    "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
-                                    "redirect_uri": "http://localhost:3000",
-                                    "ssl_verify": false,
-                                    "timeout": 10,
-                                    "bearer_only": true,
-                                    "realm": "University",
-                                    "introspection_endpoint_auth_method": "client_secret_post",
-                                    "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -1225,36 +952,6 @@ GET /t
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "openid-connect": {
-                                    "client_id": "course_management",
-                                    "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
-                                    "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
-                                    "redirect_uri": "http://localhost:3000",
-                                    "ssl_verify": false,
-                                    "timeout": 10,
-                                    "bearer_only": true,
-                                    "use_jwks": true,
-                                    "realm": "University",
-                                    "introspection_endpoint_auth_method": "client_secret_post",
-                                    "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect"
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 

@@ -112,6 +112,9 @@ local function resolve_conf_var(conf)
 end
 
 
+_M.resolve_conf_var = resolve_conf_var
+
+
 local function tinyyaml_type(t)
     local mt = getmetatable(t)
     if mt then
@@ -231,6 +234,20 @@ function _M.read_yaml_conf(apisix_home)
         ok, err = merge_conf(default_conf, user_conf)
         if not ok then
             return nil, err
+        end
+    end
+
+    if default_conf.apisix.config_center == "yaml" then
+        local apisix_conf_path = profile:yaml_path("apisix")
+        local apisix_conf_yaml, _ = util.read_file(apisix_conf_path)
+        if apisix_conf_yaml then
+            local apisix_conf = yaml.parse(apisix_conf_yaml)
+            if apisix_conf then
+                local ok, err = resolve_conf_var(apisix_conf)
+                if not ok then
+                    return nil, err
+                end
+            end
         end
     end
 

@@ -87,32 +87,6 @@ __DATA__
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                   }]],
-                   [[{
-                       "node": {
-                        "value": {
-                            "uri": "/hello",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "plugins": {
-                                "proxy-cache":{
-                                    "cache_zone":"disk_cache_one",
-                                    "hide_cache_headers":true,
-                                    "cache_bypass":["$arg_bypass"],
-                                    "cache_key":["$host","$request_uri"],
-                                    "no_cache":["$arg_no_cache"],
-                                    "cache_http_status":[200],
-                                    "cache_method":["GET"]
-                                }
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                        },
-                        "action": "set"
                    }]]
                    )
 

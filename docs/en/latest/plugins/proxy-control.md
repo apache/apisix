@@ -21,15 +21,7 @@ title: proxy-control
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
-## Name
+## Description
 
 The `proxy-control` plugin dynamically controls the behavior of Nginx to proxy.
 

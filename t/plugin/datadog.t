@@ -80,21 +80,8 @@ done
                  [[{
                         "host":"127.0.0.1",
                         "port": 8125
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "namespace": "apisix",
-                            "host": "127.0.0.1",
-                            "constant_tags": [
-                                "source:apisix"
-                            ],
-                            "port": 8125
-                        },
-                        "key": "/apisix/plugin_metadata/datadog"
-                    },
-                    "action": "set"
-                }]])
+                }]]
+                )
 
             if code >= 300 then
                 ngx.status = code
@@ -119,28 +106,6 @@ done
                         },
                         "name": "datadog",
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "datadog": {
-                                    "batch_max_size": 1,
-                                    "max_retry_count": 0
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing",
-                            "name": "datadog"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 

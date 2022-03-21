@@ -48,7 +48,7 @@ script() {
     sudo PATH=$PATH apisix start
     sudo PATH=$PATH apisix stop
 
-    cat /usr/local/apisix/logs/error.log | grep '\[error\]' > /tmp/error.log | true
+    grep '\[error\]' /usr/local/apisix/logs/error.log > /tmp/error.log | true
     if [ -s /tmp/error.log ]; then
         echo "=====found error log====="
         cat /usr/local/apisix/logs/error.log

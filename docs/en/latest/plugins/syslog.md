@@ -21,15 +21,7 @@ title: syslog
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
-## Name
+## Description
 
 `sys` is a plugin which push Log data requests to Syslog.
 
@@ -47,12 +39,12 @@ This will provide the ability to send Log data requests as JSON objects.
 | flush_limit      | integer | optional    | 4096         | [1, ...]      | If the buffered messages' size plus the current message size reaches (>=) this limit (in bytes), the buffered log messages will be written to log server. Default to 4096 (4KB).                     |
 | drop_limit       | integer | optional    | 1048576      |               | If the buffered messages' size plus the current message size is larger than this limit (in bytes), the current log message will be dropped because of limited buffer size. Default to 1048576 (1MB). |
 | sock_type        | string  | optional    | "tcp"        | ["tcp", "udp] | IP protocol type to use for transport layer.                                                                                                                                                         |
-| max_retry_times  | integer | optional    | 1            | [1, ...]      | Max number of retry times after a connect to a log server failed or send log messages to a log server failed.                                                                                        |
-| retry_interval   | integer | optional    | 1            | [0, ...]      | The time delay (in ms) before retry to connect to a log server or retry to send log messages to a log server                                                                                         |
+| max_retry_times  | integer | optional    |              | [1, ...]      | Deprecated. Use max_retry_count instead. Max number of retry times after a connect to a log server failed or send log messages to a log server failed.                                                                                        |
+| retry_interval   | integer | optional    |              | [0, ...]      | Deprecated. Use retry_delay instead. The time delay (in ms) before retry to connect to a log server or retry to send log messages to a log server                                                                                         |
 | pool_size        | integer | optional    | 5            | [5, ...]      | Keepalive pool size used by sock:keepalive.                                                                                                                                                          |
-| batch_max_size   | integer | optional    | 1000         | [1, ...]      | Max size of each batch                                                                                                                                                                               |
-| buffer_duration  | integer | optional    | 60           | [1, ...]      | Maximum age in seconds of the oldest entry in a batch before the batch must be processed                                                                                                             |
 | include_req_body | boolean | optional    | false        |               | Whether to include the request body                                                                                                                                                                  |
+
+The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
 ## How To Enable
 

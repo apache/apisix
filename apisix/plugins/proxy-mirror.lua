@@ -25,8 +25,11 @@ local schema = {
     properties = {
         host = {
             type = "string",
-            pattern = [[^http(s)?:\/\/[a-zA-Z0-9][-a-zA-Z0-9]{0,62}]]
-                      .. [[(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+(:[0-9]{1,5})?$]],
+            pattern = [=[^http(s)?:\/\/([\da-zA-Z.-]+|\[[\da-fA-F:]+\])(:\d+)?$]=],
+        },
+        path = {
+            type = "string",
+            pattern = [[^/[^?&]+$]],
         },
         sample_ratio = {
             type = "number",
@@ -56,8 +59,9 @@ function _M.check_schema(conf)
 end
 
 
-local function enable_mirror(ctx, host)
-    ctx.var.upstream_mirror_host = host
+local function enable_mirror(ctx, conf)
+    ctx.var.upstream_mirror_uri =
+        conf.host .. (conf.path or ctx.var.uri) .. ctx.var.is_args .. (ctx.var.args or '')
 
     if has_mod then
         apisix_ngx_client.enable_mirror()
@@ -69,13 +73,13 @@ function _M.rewrite(conf, ctx)
     core.log.info("proxy mirror plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
     if conf.sample_ratio == 1 then
-        enable_mirror(ctx, conf.host)
+        enable_mirror(ctx, conf)
     else
         local val = math_random()
         core.log.info("mirror request sample_ratio conf: ", conf.sample_ratio,
                                 ", random value: ", val)
         if val < conf.sample_ratio then
-            enable_mirror(ctx, conf.host)
+            enable_mirror(ctx, conf)
         end
     end
 

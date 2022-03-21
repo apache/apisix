@@ -21,15 +21,7 @@ title: uri-blocker
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
-## Name
+## Description
 
 The plugin helps we intercept user requests, we only need to indicate the `block_rules`.
 

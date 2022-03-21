@@ -21,15 +21,7 @@ title: mocking
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-
-## Name
+## Description
 
 Mock API plugin, When the plugin is bound, it returns random mock data in the specified format and is no longer forwarded to the upstreams.
 

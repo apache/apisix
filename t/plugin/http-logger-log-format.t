@@ -38,22 +38,11 @@ __DATA__
                         "@timestamp": "$time_iso8601",
                         "client_ip": "$remote_addr"
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "log_format": {
-                                "host": "$host",
-                                "@timestamp": "$time_iso8601",
-                                "client_ip": "$remote_addr"
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
-
-            ngx.status = code
+            if code >=300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }

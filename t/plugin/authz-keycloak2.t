@@ -48,30 +48,6 @@ __DATA__
                             "type": "roundrobin"
                         },
                         "uri": "/hello1"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "authz-keycloak": {
-                                    "token_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token",
-                                    "permissions": ["course_resource#view"],
-                                    "client_id": "course_management",
-                                    "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
-                                    "timeout": 3000
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello1"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -189,30 +165,6 @@ Invalid bearer token
                             "type": "roundrobin"
                         },
                         "uri": "/hello1"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "authz-keycloak": {
-                                    "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/uma2-configuration",
-                                    "permissions": ["course_resource#view"],
-                                    "client_id": "course_management",
-                                    "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
-                                    "timeout": 3000
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello1"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -330,30 +282,6 @@ Invalid bearer token
                             "type": "roundrobin"
                         },
                         "uri": "/hello1"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "authz-keycloak": {
-                                    "token_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token",
-                                    "permissions": ["course_resource#delete"],
-                                    "client_id": "course_management",
-                                    "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
-                                    "timeout": 3000
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello1"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -444,30 +372,6 @@ true
                             "type": "roundrobin"
                         },
                         "uri": "/course/foo"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "authz-keycloak": {
-                                    "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/uma2-configuration",
-                                    "client_id": "course_management",
-                                    "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
-                                    "lazy_load_paths": true,
-                                    "http_method_as_scope": true
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/course/foo"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -702,30 +606,6 @@ true
                             "type": "roundrobin"
                         },
                         "uri": "/course/foo"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "authz-keycloak": {
-                                    "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/uma2-configuration",
-                                    "audience": "course_management",
-                                    "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
-                                    "lazy_load_paths": true,
-                                    "http_method_as_scope": true
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/course/foo"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 

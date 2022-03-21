@@ -1,3 +1,7 @@
+---
+title: Kubernetes
+---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,14 +21,15 @@
 #
 -->
 
-# 基于 Kubernetes 的服务发现
+## 基于 Kubernetes 的服务发现
 
-Kubernetes 服务发现插件以 ListWatch 方式监听 Kubernetes 集群 v1.endpoints 的实时变化,
-并将其值存储在 ngx.shared.dict 中, 同时遵循 APISIX Discovery 规范提供查询接口
+Kubernetes 服务发现模块以 [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts) 方式监听 [_Kubernetes_](https://kubernetes.io) 集群 [_Endpoints_](https://kubernetes.io/docs/concepts/services-networking/service) 资源的实时变化,
+并将其值存储到 ngx.shared.kubernetes 中 \
+模块同时遵循 [_APISIX Discovery 规范_](https://github.com/apache/apisix/blob/master/docs/zh/latest/discovery.md) 提供了节点查询接口
 
-# Kubernetes 服务发现插件的配置
+## Kubernetes 服务发现模块的配置
 
-Kubernetes 服务发现插件的样例配置如下:
+Kubernetes 服务发现模块的完整配置如下:
 
 ```yaml
 discovery:
@@ -72,14 +77,14 @@ discovery:
       first="a",second="b"
 ```
 
-如果 Kubernetes 服务插件运行在 Pod 内, 你可以使用最简配置:
+如果 Kubernetes 服务发现模块运行在 Pod 内, 你可以使用最简配置:
 
 ```yaml
 discovery:
   kubernetes: { }
 ```
 
-如果 Kubernetes 服务插件运行在 Pod 外, 你需要新建或选取指定的 ServiceAccount, 获取其 Token 值, 并使用如下配置:
+如果 Kubernetes 服务发现模块运行在 Pod 外, 你需要新建或选取指定的 [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/), 获取其 Token 值, 然后使用如下配置:
 
 ```yaml
 discovery:
@@ -93,28 +98,89 @@ discovery:
       #token_file: # enter file path here
 ```
 
-# Kubernetes 服务发现插件的使用
+## Kubernetes 服务发现模块的查询接口
 
-Kubernetes 服务发现插件提供与其他服务发现插件相同的查询接口 -> nodes(service_name) \
-service_name 的 pattern 如下:
-> _[namespace]/[name]:[portName]_
+Kubernetes 服务发现模块遵循 [_APISIX Discovery 规范_](https://github.com/apache/apisix/blob/master/docs/zh/latest/discovery.md) 提供查询接口
 
-如果 kubernetes Endpoint 没有定义 portName, Kubernetes 服务发现插件会依次使用 targetPort, port 代替
+**函数:**
+ nodes(service_name)
 
-# Q&A
+**说明:**
+  service_name 必须满足格式: [namespace]/[name]:[portName]
 
-> Q: 为什么只支持配置 token 来访问 Kubernetes ApiServer \
-> A: 通常情况下,我们会使用三种方式与 Kubernetes ApiServer 通信 :
+  + namespace: Endpoints 所在的命名空间
+
+  + name: Endpoints 的资源名
+
+  + portName: Endpoints 定义包含的 portName, 如果 Endpoints 没有定义 portName, 请使用 targetPort,Port 代替
+
+**返回值:**
+  以如下 Endpoints 为例:
+
+  ```yaml
+  apiVersion: v1
+  kind: Endpoints
+  metadata:
+    name: plat-dev
+    namespace: default
+  subsets:
+    - addresses:
+        - ip: "10.5.10.109"
+        - ip: "10.5.10.110"
+      ports:
+        - port: 3306
+  ```
+
+  nodes("default/plat-dev:3306") 调用会得到如下的返回值:
+
+  ```
+   {
+       {
+           host="10.5.10.109",
+           port= 3306,
+           weight= 50,
+       },
+       {
+           host="10.5.10.110",
+           port= 3306,
+           weight= 50,
+       },
+   }
+  ```
+
+## Q&A
+
+> Q: 为什么只支持配置 token 来访问 Kubernetes APIServer \
+> A: 一般情况下,我们有三种方式可以完成与 Kubernetes APIServer 的认证:
 >
 >+ mTLS
 >+ token
 >+ basic authentication
 >
-> 因为 lua-resty-http 目前不支持 mTLS, 以及 basic authentication 不被推荐使用,\
+> 因为 lua-resty-http 目前不支持 mTLS, basic authentication 不被推荐使用,\
 > 所以当前只实现了 token 认证方式
 
--------
+---
 
-> Q: APISIX 是多进程模型, 是否意味着每个 APISIX 工作进程都会监听 Kubernetes v1.endpoints \
-> A: Kubernetes 服务发现插件只使用特权进程监听 Kubernetes v1.endpoints, 然后将结果存储\
-> 在 ngx.shared.dict 中, 业务进程是通过查询 ngx.shared.dict 来获取结果的
+> Q: APISIX 继承了 Nginx 的多进程模型, 是否意味着每个 APISIX 工作进程都会监听 Kubernetes Endpoints \
+> A: Kubernetes 服务发现模块只使用特权进程监听 Kubernetes Endpoints, 然后将其值存储\
+> 到 ngx.shared.kubernetes, 工作进程通过查询 ngx.shared.kubernetes 来获取结果
+
+---
+
+> Q: 怎样获取指定 ServiceAccount 的 Token 值 \
+> A: 假定你指定的 ServiceAccount 资源名为 “kubernetes-discovery“, 命名空间为 “apisix”, 请按如下步骤获取其 Token 值
+>
+> 1. 获取 _Secret_ 资源名: \
+> 执行以下命令, 输出的第一列内容就是目标 _Secret_ 资源名
+>
+> ```shell
+> kubectl -n apisix get secrets | grep kubernetes-discovery
+> ```
+>
+> 2. 获取 Token 值: \
+> 假定你获取到的 _Secret_ 资源名为 "kubernetes-discovery-token-c64cv", 执行以下命令, 输出内容就是目标 Token 值
+>
+> ```shell
+> kubectl -n apisix get secret kubernetes-discovery-token-c64cv -o jsonpath={.data.token} | base64 -d
+> ```

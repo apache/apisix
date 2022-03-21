@@ -54,6 +54,9 @@ sudo yum --showduplicates list apisix
 
 # Will install the latest apisix package
 sudo yum install apisix
+
+# Will install a specified version (2.10.3 in this example) apisix package
+sudo yum install apisix-2.10.3-0.el7
 ```
 
 ### Installation via RPM Offline Package (CentOS 7)
@@ -83,16 +86,25 @@ Please refer to [Installing Apache APISIX with Helm Chart](https://github.com/ap
 
 ### Installation via Source Release Package
 
+Note: if you want to package Apache APISIX for a specific platform, please refer to https://github.com/api7/apisix-build-tools and add the support there.
+The instruction here is only for people who want to setup their Apache APISIX development environment.
+
 Follow the steps below to install Apache APISIX via the source release package.
 
-1. Create a directory named `apisix-2.12.0`.
+1. Install dependencies
+
+  ```shell
+  curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-dependencies.sh -sL | bash -
+  ```
+
+2. Create a directory named `apisix-2.12.0`.
 
   ```shell
   APISIX_VERSION='2.12.0'
   mkdir apisix-${APISIX_VERSION}
   ```
 
-2. Download the Apache APISIX source release package.
+3. Download the Apache APISIX source release package.
 
   ```shell
   wget https://downloads.apache.org/apisix/${APISIX_VERSION}/apache-apisix-${APISIX_VERSION}-src.tgz
@@ -100,13 +112,13 @@ Follow the steps below to install Apache APISIX via the source release package.
 
   You can also download the Apache APISIX source release package from the [Apache APISIX website](https://apisix.apache.org/downloads/). The website also provides source packages for Apache APISIX, APISIX Dashboard, and APISIX Ingress Controller.
 
-3. Unzip the Apache APISIX source release package.
+4. Uncompress the Apache APISIX source release package.
 
   ```shell
   tar zxvf apache-apisix-${APISIX_VERSION}-src.tgz -C apisix-${APISIX_VERSION}
   ```
 
-4. Install the runtime dependent Lua libraries.
+5. Install the runtime dependent Lua libraries.
 
   ```shell
   # Switch to the apisix-${APISIX_VERSION} directory
@@ -117,9 +129,25 @@ Follow the steps below to install Apache APISIX via the source release package.
   make install
   ```
 
-  **Note**: If `make deps` fails with "install `lualdap` failed" with an error like `Could not find header file for LDAP` try the solution below.
+  **Note**: If you fail to install dependency packages using `make deps` and get an error message like `Could not find header file for LDAP/PCRE/openssl`, you can use this general method to solve problems.
 
-  Solution: Set `LDAP_DIR` with `luarocks config` manually. For example `luarocks config variables.LDAP_DIR /usr/local/opt/openldap/`.
+  The general solution: `luarocks` supports custom compile-time dependency directories(from this [link](https://github.com/luarocks/luarocks/wiki/Config-file-format)). Use a third-party tool to install the missing package and add its installation directory to the `luarocks`'s variables table. This a general method which can be applied to macOS, Ubuntu, CentOS or other usual operating systems, and the specific solution for macOS are given here for reference only.
+
+  The following is the solution of macOS, which is similar to that of other operating systems:
+
+    1. Install `openldap` with `brew install openldap`;
+    2. Locate installation directory with `brew --prefix openldap`;
+    3. Add the path to the project configuration file(choose one of the following two methods):
+       1. Solution A: You can set `LDAP_DIR` with `luarocks config` manually, for example `luarocks config variables.LDAP_DIR /opt/homebrew/cellar/openldap/2.6.1`;
+       2. Solution B: Of course, you can also choose to change the default configuration file of luarocks directly, execute the 'cat ~/.luarocks/config-5.1.lua' command, and then add the installation directory of 'openldap' to the file;
+       3. Example as follows:
+          variables = {
+              LDAP_DIR = "/opt/homebrew/cellar/openldap/2.6.1",
+              LDAP_INCDIR = "/opt/homebrew/cellar/openldap/2.6.1/include",
+          }
+
+     `/opt/homebrew/cellar/openldap/` is default path to install openldap on macOS(Apple Silicon) using brew.
+     `/usr/local/opt/openldap/` is default path to install openldap on macOS(Intel) using brew.
 
 5. To uninstall the Apache APISIX runtime, run:
 
@@ -132,19 +160,17 @@ Follow the steps below to install Apache APISIX via the source release package.
 
    **Note**: This operation will remove the files completely.
 
-### LTS version installation via Source Release Package
+#### LTS version installation via Source Release Package
 
 The [current LTS version](https://apisix.apache.org/downloads/) of Apache APISIX is `2.10.4`.
 
-To install this version, set `APISIX_VERSION`
-
-Set `APISIX_VERSION` in [Installation via Source Release Package](#installation-via-source-release-package) to `2.10.4` and continue with the other steps.
+To install this version, set `APISIX_VERSION` in [Installation via Source Release Package](#installation-via-source-release-package) to `2.10.4` and continue with the other steps.
 
 ## Step 2: Install etcd
 
 This step is required only if you haven't installed [etcd](https://github.com/etcd-io/etcd).
 
-Run the command below to install etcd via the binary.
+Run the command below to install etcd via the binary in Linux:
 
 ```shell
 ETCD_VERSION='3.4.13'
@@ -153,6 +179,14 @@ tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
   cd etcd-v${ETCD_VERSION}-linux-amd64 && \
   sudo cp -a etcd etcdctl /usr/bin/
 nohup etcd >/tmp/etcd.log 2>&1 &
+```
+
+Run the command below to install etcd in Mac:
+
+```shell
+brew install etcd
+# start etcd server
+brew services start etcd
 ```
 
 ## Step 3: Manage Apache APISIX Server

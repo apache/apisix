@@ -251,6 +251,11 @@ Please modify "admin_key" in conf/config.yaml .
         use_apisix_openresty = false
     end
 
+    local enabled_discoveries = {}
+    for name in pairs(yaml_conf.discovery or {}) do
+        enabled_discoveries[name] = true
+    end
+
     local enabled_plugins = {}
     for i, name in ipairs(yaml_conf.plugins or {}) do
         enabled_plugins[name] = true
@@ -513,6 +518,11 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
+    local proxy_mirror_timeouts
+    if yaml_conf.plugin_attr["proxy-mirror"] then
+        proxy_mirror_timeouts = yaml_conf.plugin_attr["proxy-mirror"].timeout
+    end
+
     -- Using template.render
     local sys_conf = {
         use_openresty_1_17 = use_openresty_1_17,
@@ -523,6 +533,7 @@ Please modify "admin_key" in conf/config.yaml .
         with_module_status = with_module_status,
         use_apisix_openresty = use_apisix_openresty,
         error_log = {level = "warn"},
+        enabled_discoveries = enabled_discoveries,
         enabled_plugins = enabled_plugins,
         enabled_stream_plugins = enabled_stream_plugins,
         dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
@@ -530,6 +541,7 @@ Please modify "admin_key" in conf/config.yaml .
         admin_server_addr = admin_server_addr,
         control_server_addr = control_server_addr,
         prometheus_server_addr = prometheus_server_addr,
+        proxy_mirror_timeouts = proxy_mirror_timeouts,
     }
 
     if not yaml_conf.apisix then

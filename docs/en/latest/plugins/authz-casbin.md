@@ -21,17 +21,7 @@ title: authz-casbin
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**Metadata**](#metadata)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Disable Plugin**](#disable-plugin)
-- [**Examples**](#examples)
-
-## Name
+## Description
 
 `authz-casbin` is an authorization plugin based on [Lua Casbin](https://github.com/casbin/lua-casbin/). This plugin supports powerful authorization scenarios based on various access control models.
 

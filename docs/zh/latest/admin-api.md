@@ -21,21 +21,7 @@ title: Admin API
 #
 -->
 
-## 目录
-
-- [Description](#description)
-- [Route](#route)
-- [Service](#service)
-- [Consumer](#consumer)
-- [Upstream](#upstream)
-- [SSL](#ssl)
-- [Global Rule](#global-rule)
-- [Plugin Config](#plugin-config)
-- [Plugin Metadata](#plugin-metadata)
-- [Plugin](#plugin)
-- [Stream Route](#stream-route)
-
-## Description
+## 描述
 
 Admin API 是为 Apache APISIX 服务的一组 API，我们可以将参数传递给 Admin API 以控制 APISIX 节点。更好地了解其工作原理，请参阅 [architecture-design](./architecture-design/apisix.md) 中的文档。
 

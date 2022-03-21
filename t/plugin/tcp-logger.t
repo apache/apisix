@@ -114,28 +114,6 @@ done
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "tcp-logger": {
-                                    "host": "127.0.0.1",
-                                    "port": 5044,
-                                    "tls": false
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -189,30 +167,6 @@ hello world
                             "type": "roundrobin"
                         },
                         "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "tcp-logger": {
-                                    "host": "312.0.0.1",
-                                    "port": 2000,
-                                    "batch_max_size": 1,
-                                    "max_retry_count": 2,
-                                    "retry_delay": 0
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -260,29 +214,6 @@ failed to connect to TCP server: host[312.0.0.1] port[2000]
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "tcp-logger": {
-                                    "host": "127.0.0.1",
-                                    "port": 5044,
-                                    "tls": false,
-                                    "batch_max_size": 1
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -317,29 +248,6 @@ failed to connect to TCP server: host[312.0.0.1] port[2000]
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "tcp-logger": {
-                                    "host": "127.0.0.1",
-                                    "port": 5045,
-                                    "tls": false,
-                                    "batch_max_size": 1
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 

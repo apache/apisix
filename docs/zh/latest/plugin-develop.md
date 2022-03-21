@@ -21,23 +21,6 @@ title: 插件开发
 #
 -->
 
-## 目录
-
-- [目录](#目录)
-- [插件放置路径](#插件放置路径)
-- [检查外部依赖](#检查外部依赖)
-- [插件命名，优先级和其他](#插件命名优先级和其他)
-- [配置描述与校验](#配置描述与校验)
-- [确定执行阶段](#确定执行阶段)
-- [编写执行逻辑](#编写执行逻辑)
-  - [conf 参数](#conf-参数)
-  - [ctx 参数](#ctx-参数)
-- [注册公共接口](#注册公共接口)
-- [注册控制接口](#注册控制接口)
-- [注册自定义变量](#注册自定义变量)
-- [编写测试用例](#编写测试用例)
-  - [附上 test-nginx 执行流程](#附上-test-nginx-执行流程)
-
 此文档是关于 lua 语言的插件开发，其他语言请看：[external plugin](./external-plugin.md)。
 
 ## 插件放置路径
@@ -289,6 +272,19 @@ end
 根据业务功能，确定你的插件需要在哪个阶段执行。 key-auth 是一个认证插件，所以需要在 rewrite 阶段执行。在 APISIX，只有认证逻辑可以在 rewrite 阶段里面完成，其他需要在代理到上游之前执行的逻辑都是在 access 阶段完成的。
 
 **注意：我们不能在 rewrite 和 access 阶段调用 `ngx.exit` 或者 `core.respond.exit`。如果确实需要退出，只需要 return 状态码和正文，插件引擎将使用返回的状态码和正文进行退出。[例子](https://github.com/apache/apisix/blob/35269581e21473e1a27b11cceca6f773cad0192a/apisix/plugins/limit-count.lua#L177)**
+
+### APISIX 的自定义阶段
+
+除了 OpenResty 的阶段，我们还提供额外的阶段来满足特定的目的：
+
+* `delayed_body_filter`
+
+```lua
+function _M.delayed_body_filter(conf, ctx)
+    -- delayed_body_filter 在 body_filter 之后被调用。
+    -- 它被 tracing 类型插件用来在 body_filter 之后立即结束 span。
+end
+```
 
 ## 编写执行逻辑
 

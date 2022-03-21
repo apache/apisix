@@ -103,7 +103,7 @@ import sys
 # sudo pip install requests
 import requests
 
-if len(sys.argv) <= 4:
+if len(sys.argv) < 4:
     print("bad argument")
     sys.exit(1)
 with open(sys.argv[1]) as f:
@@ -166,7 +166,7 @@ import sys
 # sudo pip install requests
 import requests
 
-if len(sys.argv) <= 4:
+if len(sys.argv) < 4:
     print("bad argument")
     sys.exit(1)
 with open(sys.argv[2]) as f:

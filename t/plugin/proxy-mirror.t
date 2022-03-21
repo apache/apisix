@@ -56,6 +56,14 @@ add_block_preprocessor(sub {
 _EOC_
 
     $block->set_value("http_config", $http_config);
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
 });
 
 run_tests;
@@ -91,13 +99,9 @@ __DATA__
                ngx.say(body)
            }
        }
---- request
-GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to check the configuration of plugin proxy-mirror/
---- no_error_log
-[error]
 
 
 
@@ -130,13 +134,9 @@ qr/failed to check the configuration of plugin proxy-mirror/
                ngx.say(body)
            }
        }
---- request
-GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to check the configuration of plugin proxy-mirror/
---- no_error_log
-[error]
 
 
 
@@ -169,13 +169,9 @@ qr/failed to check the configuration of plugin proxy-mirror/
                ngx.say(body)
            }
        }
---- request
-GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to check the configuration of plugin proxy-mirror/
---- no_error_log
-[error]
 
 
 
@@ -208,13 +204,9 @@ qr/failed to check the configuration of plugin proxy-mirror/
                ngx.say(body)
            }
        }
---- request
-GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -247,13 +239,9 @@ passed
                ngx.say(body)
            }
        }
---- request
-GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to check the configuration of plugin proxy-mirror/
---- no_error_log
-[error]
 
 
 
@@ -286,13 +274,9 @@ qr/failed to check the configuration of plugin proxy-mirror/
                ngx.say(body)
            }
        }
---- request
-GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -336,13 +320,9 @@ uri: /hello
                ngx.say(body)
            }
         }
---- request
-GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -399,13 +379,9 @@ name: jake
                ngx.say(body)
            }
         }
---- request
-GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -438,13 +414,9 @@ host: 127.0.0.2
                ngx.say(body)
            }
         }
---- request
-GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -478,13 +450,9 @@ passed
                ngx.print(body)
            }
        }
---- request
-GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin proxy-mirror err: property \"sample_ratio\" validation failed: expected 10 to be at most 1"}
---- no_error_log
-[error]
 
 
 
@@ -518,13 +486,9 @@ GET /t
                ngx.say(body)
            }
        }
---- request
-GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -569,8 +533,6 @@ qr/uri: \/hello\?sample_ratio=1/
                ngx.say(body)
            }
        }
---- request
-GET /t
 --- error_code: 200
 --- response_body
 passed
@@ -596,9 +558,141 @@ passed
                 end
            }
        }
---- request
-GET /t
---- no_error_log
-[error]
 --- error_log_like eval
 qr/(uri: \/hello\?sample_ratio=0\.5){75,125}/
+
+
+
+=== TEST 18: custom path
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-mirror": {
+                               "host": "http://127.0.0.1:1986",
+                               "path": "/a"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- response_body
+passed
+
+
+
+=== TEST 19: hit route
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log
+uri: /a,
+
+
+
+=== TEST 20: hit route with args
+--- request
+GET /hello?a=1
+--- response_body
+hello world
+--- error_log
+uri: /a?a=1
+
+
+
+=== TEST 21: sanity check (path)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               for _, p in ipairs({
+                    "a",
+                    "/a?a=c",
+               }) do
+                    local code, body = t('/apisix/admin/routes/1',
+                        ngx.HTTP_PUT,
+                        [[{
+                            "plugins": {
+                                "proxy-mirror": {
+                                    "host": "http://127.0.0.1:1999",
+                                    "path": "]] .. p .. [["
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello"
+                        }]]
+                        )
+                    ngx.log(ngx.WARN, body)
+                end
+            }
+       }
+--- grep_error_log eval
+qr/property \\"path\\" validation failed: failed to match pattern/
+--- grep_error_log_out
+property \"path\" validation failed: failed to match pattern
+property \"path\" validation failed: failed to match pattern
+
+
+
+=== TEST 22: sanity check (host)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               for _, p in ipairs({
+                    "http://a",
+                    "http://ab.com",
+                    "http://[::1]",
+                    "http://[::1]:202",
+               }) do
+                    local code, body = t('/apisix/admin/routes/1',
+                        ngx.HTTP_PUT,
+                        [[{
+                            "plugins": {
+                                "proxy-mirror": {
+                                    "host": "]] .. p .. [["
+                                }
+                            },
+                            "upstream": {
+                                "nodes": {
+                                    "127.0.0.1:1980": 1
+                                },
+                                "type": "roundrobin"
+                            },
+                            "uri": "/hello"
+                        }]]
+                        )
+                    ngx.log(ngx.WARN, body)
+                end
+           }
+       }
+--- grep_error_log eval
+qr/(passed|property \\"host\\" validation failed: failed to match pattern)/
+--- grep_error_log_out
+passed
+passed
+passed
+passed

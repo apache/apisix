@@ -62,8 +62,8 @@ jobs:
         run: |
           bash ./t/chaos/utils/setup_chaos_utils.sh modify_config
           kubectl create configmap apisix-gw-config.yaml --from-file=./conf/config.yaml
-          kubectl apply -f ./kubernetes/deployment.yaml
-          kubectl apply -f ./kubernetes/service.yaml
+          kubectl apply -f ./t/chaos/kubernetes/deployment.yaml
+          kubectl apply -f ./t/chaos/kubernetes/service.yaml
           kubectl wait pods -l app=apisix-gw --for=condition=Ready --timeout=300s \
             || (kubectl logs -l app=apisix-gw && exit 1)
           kubectl apply -f https://raw.githubusercontent.com/istio/istio/master/samples/httpbin/httpbin.yaml

@@ -21,16 +21,7 @@ title: file-logger
 #
 -->
 
-## Summary
-
-- [**Name**](#name)
-- [**Attributes**](#attributes)
-- [**How To Enable**](#how-to-enable)
-- [**Test Plugin**](#test-plugin)
-- [**Metadata**](#metadata)
-- [**Disable Plugin**](#disable-plugin)
-
-## Name
+## Description
 
 `file-logger` is a plugin that pushes a stream of log data to a specified location. For example, the output path can be customized: `logs/file.log`.
 
