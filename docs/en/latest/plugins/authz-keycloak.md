@@ -55,6 +55,7 @@ For more information on Keycloak, refer to [Keycloak Authorization Docs](https:/
 | keepalive_timeout              | integer       | optional    | 60000                                         | positive integer >= 1000                                           | Idle timeout after which established HTTP connections will be closed.                                                                                       |
 | keepalive_pool                 | integer       | optional    | 5                                             | positive integer >= 1                                              | Maximum number of connections in the connection pool.                                                                                                       |
 | access_denied_redirect_uri     | string        | optional    |                                               | [1, 2048]                                          | Redirect unauthorized user with the given uri like "http://127.0.0.1/test", instead of returning `"error_description":"not_authorized"`.                                             |
+| password_grant_token_generation_incoming_uri      | string        | optional    |                            | /api/token                                         | You can set this uri value to generate token using password grant type. Plugin will compare incoming request uri with this value.                                           |
 
 ### Discovery and Endpoints
 
@@ -121,6 +122,27 @@ of the same name. The scope is then added to every permission to check.
 
 If `lazy_load_paths` is `false`, the plugin adds the mapped scope to any of the static permissions configured
 in the `permissions` attribute, even if they contain one or more scopes already.
+
+### Password Grant Token Generation Incoming URI
+
+If you want to generate a token using `password` grant, you can set the value of `password_grant_token_generation_incoming_uri`.
+
+Incoming request URI will be matched with this value and if matched, it will generate a token using `Token Endpoint`.
+It will also check if the request method is `POST`.
+
+You need to pass `application/x-www-form-urlencoded` as `Content-Type` header and `username`, `password` as parameters.
+
+**Sample request**
+
+If value of `password_grant_token_generation_incoming_uri` is `/api/token`, you can use following curl request.
+
+```shell
+curl --location --request POST 'http://127.0.0.1:9080/api/token' \
+--header 'Accept: application/json, text/plain, */*' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode 'username=<User_Name>' \
+--data-urlencode 'password=<Password>'
+```
 
 ## How To Enable
 
