@@ -711,7 +711,8 @@ passed
 --- request
 GET /hello1
 --- error_log
-self signed certificate in certificate chain
+certificate host mismatch
+--- wait: 3
 
 
 
