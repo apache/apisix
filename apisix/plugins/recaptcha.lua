@@ -51,6 +51,7 @@ function _M.check_schema(conf)
 end
 
 
+
 local function retrieve_captcha(ctx, conf)
     if conf.parameter_source == "header" then
         return core.request.header(ctx, conf.parameter_name)
