@@ -122,7 +122,6 @@ function main() {
         if [[ "${OS_NAME}" == "linux" ]]; then
             multi_distro_installation
             install_luarocks
-            install_etcd
         elif [[ "${OS_NAME}" == "darwin" ]]; then
             install_dependencies_on_mac_osx
         else

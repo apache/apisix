@@ -41,7 +41,7 @@ plugin_attr:
   prometheus:
     enable_export_server: false
   " > ./conf/config.yaml
-    sed -i -e 's/apisix:latest/apisix:alpine-local/g' kubernetes/deployment.yaml
+    sed -i -e 's/apisix:latest/apisix:alpine-local/g' t/chaos/kubernetes/deployment.yaml
 }
 
 port_forward() {
