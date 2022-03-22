@@ -20,6 +20,20 @@ log_level('debug');
 repeat_each(1);
 no_long_string();
 no_root_location();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+});
+
 run_tests;
 
 __DATA__
@@ -37,12 +51,8 @@ __DATA__
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -69,12 +79,8 @@ done
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -99,13 +105,9 @@ done
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 property "uri" is required
 done
---- no_error_log
-[error]
 
 
 
@@ -143,12 +145,8 @@ done
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -173,7 +171,7 @@ Batch Processor[http logger] successfully processed the entries
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "http://127.0.0.1:8888/hello-world-http",
+                                "uri": "http://127.0.0.1:1982/echo",
                                 "batch_max_size": 1,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
@@ -197,12 +195,8 @@ Batch Processor[http logger] successfully processed the entries
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -227,7 +221,7 @@ Batch Processor[http logger] successfully processed the entries
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "https://127.0.0.1:8888/hello-world-http",
+                                "uri": "https://127.0.0.1:1982/echo",
                                 "batch_max_size": 1,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
@@ -252,12 +246,8 @@ Batch Processor[http logger] successfully processed the entries
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -267,7 +257,7 @@ GET /hello1
 --- response_body
 hello1 world
 --- error_log
-failed to perform SSL with host[127.0.0.1] port[8888] handshake failed
+failed to perform SSL with host[127.0.0.1] port[1982] handshake failed
 --- wait: 1.5
 
 
@@ -282,7 +272,7 @@ failed to perform SSL with host[127.0.0.1] port[8888] handshake failed
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "https://127.0.0.1:9999/hello-world-http",
+                                "uri": "https://127.0.0.1:1983/echo",
                                 "batch_max_size": 1,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
@@ -307,12 +297,8 @@ failed to perform SSL with host[127.0.0.1] port[8888] handshake failed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -337,7 +323,7 @@ Batch Processor[http logger] successfully processed the entries
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "https://127.0.0.1:9999/hello-world-http",
+                                "uri": "https://127.0.0.1:1983/echo",
                                 "batch_max_size": 2,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
@@ -361,12 +347,8 @@ Batch Processor[http logger] successfully processed the entries
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -407,7 +389,7 @@ Batch Processor[http logger] successfully processed the entries
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "http://127.0.0.1:9991/hello-world-http",
+                                "uri": "http://127.0.0.1:9991/echo",
                                 "batch_max_size": 1,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
@@ -431,12 +413,8 @@ Batch Processor[http logger] successfully processed the entries
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -484,12 +462,8 @@ Batch Processor[http logger] failed to process entries: failed to connect to hos
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -576,8 +550,6 @@ done
             ngx.print(body4)
         }
     }
---- request
-GET /t
 --- wait: 0.5
 --- response_body
 passedopentracing
@@ -616,13 +588,9 @@ sending a batch logs to http://127.0.0.1:1982/hello1
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 failed to validate the 'include_resp_body_expr' expression: invalid operator '<>'
 done
---- no_error_log
-[error]
 
 
 
@@ -655,12 +623,8 @@ done
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -674,7 +638,7 @@ passed
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "https://127.0.0.1:9999/hello-world-http",
+                                "uri": "https://127.0.0.1:1983/echo",
                                 "batch_max_size": 1,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
@@ -698,12 +662,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -711,5 +671,51 @@ passed
 --- request
 GET /hello1
 --- error_log
-self signed certificate in certificate chain
+certificate host mismatch
+--- wait: 3
+
+
+
+=== TEST 22: set correct https endpoint and ssl verify false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "https://127.0.0.1:1983/echo",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "ssl_verify": false
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello1"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 23: access correct https endpoint but ssl verify ok
+--- request
+GET /hello1
 --- wait: 3

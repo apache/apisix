@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -14,35 +15,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-header:
-  license:
-    spdx-id: Apache-2.0
-    copyright-owner: Apache Software Foundation
 
-  paths-ignore:
-    - '.gitignore'
-    - 'LICENSE'
-    - 'NOTICE'
-    - '**/*.json'
-    - '**/*.key'
-    - '**/*.crt'
-    - '**/*.pem'
-    - '**/*.pb.go'
-    - '.github/'
-    - 'conf/mime.types'
-    # Exclude CI env_file
-    - 'ci/pod/**/*.env'
-    # eyes has some limitation to handle git pattern
-    - '**/*.log'
-    # Exclude test toolkit files
-    - 't/toolkit'
-    - 'go.mod'
-    - 'go.sum'
-    # Exclude non-Apache licensed files
-    - 'apisix/balancer/ewma.lua'
-    # Exclude plugin-specific configuration files
-    - 't/plugin/authz-casbin'
-    - 't/coredns'
-    - 'autodocs/'
+. ./ci/common.sh
 
-  comment: on-failure
+run_case() {
+    export_or_prefix
+    export PERL5LIB=.:$PERL5LIB
+    prove -Itest-nginx/lib -I./ -r t/tars | tee test-result
+    rerun_flaky_tests test-result
+}
+
+case_opt=$1
+case $case_opt in
+    (run_case)
+        run_case
+        ;;
+esac

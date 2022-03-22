@@ -29,7 +29,7 @@ title: authz-keycloak
 
 | 名称                        | 类型          | 必选项 | 默认值      | 有效值                      | 描述                   |
 | -----------------------     | ------------- | ------ | ----------- | --------------------------- |----------------------|
-| token_endpoint              | string        | 必须   |             | [1, 4096]                   | 接受 OAuth2 兼容 token 的接口，需要支持 `urn:ietf:params:oauth:grant-type:uma-ticket` 授权类型 |
+| token_endpoint              | string        | 必须   |             |                              | 接受 OAuth2 兼容 token 的接口，需要支持 `urn:ietf:params:oauth:grant-type:uma-ticket` 授权类型 |
 | grant_type                  | string        | 可选   | "urn:ietf:params:oauth:grant-type:uma-ticket" | ["urn:ietf:params:oauth:grant-type:uma-ticket"] |                      |
 | audience                    | string        | 可选   |             |                             | 客户端应用访问相应的资源服务器时所需提供的身份信息。当 permissions 参数有值时这个参数是必填的。 |
 | permissions                 | array[string] | 可选   |             |                             | 描述客户端应用所需访问的资源和权限范围的字符串。格式必须为：`RESOURCE_ID#SCOPE_ID` |
@@ -48,7 +48,7 @@ title: authz-keycloak
 
 **Enforcing**
 
--（默认）如果资源没有绑定任何访问策略，请求默认会被拒绝。
+- 默认模式，如果资源没有绑定任何访问策略，请求默认会被拒绝。
 
 **Permissive**
 
@@ -56,7 +56,7 @@ title: authz-keycloak
 
 ## 如何启用
 
-创建一个 `route` 对象，并在该 `route` 对象上启用 `authz-keycloak` 插件：
+创建一个 `route` 对象，并在该 `route` 对象上启用 `authz-keycloak` 插件，`${realm}` 是 `Keycloak` 中的 `realm` 名称：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -64,7 +64,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     "uri": "/get",
     "plugins": {
         "authz-keycloak": {
-            "token_endpoint": "http://127.0.0.1:8090/auth/realms/{client_id}/protocol/openid-connect/token",
+            "token_endpoint": "http://127.0.0.1:8090/auth/realms/${realm}/protocol/openid-connect/token",
             "permissions": ["resource name#scope name"],
             "audience": "Client ID"
         }
@@ -79,6 +79,19 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 ## 测试插件
+
+获取 `{JWT Token}`
+
+```shell
+curl \
+  -d "client_id=<YOUR_CLIENT_ID>" \
+  -d "username=<YOUR_USERNAMED>" \
+  -d "password=<YOUR_PASSWORD>" \
+  -d "grant_type=password" \
+  "http://<YOUR_KEYCLOAK_HOST>/auth/realms/${realm}/protocol/openid-connect/token"
+```
+
+验证
 
 ```shell
 curl http://127.0.0.1:9080/get -H 'Authorization: Bearer {JWT Token}'
