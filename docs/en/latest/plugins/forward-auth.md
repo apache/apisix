@@ -33,6 +33,7 @@ Forward Auth cleverly moves the authentication and authorization logic to a dedi
 | -- | -- | -- | -- | -- | -- |
 | uri | string | required |  |  | Authorization service uri (eg. https://localhost/auth) |
 | ssl_verify | boolean | optional | true |   | Whether to verify the certificate |
+| request_method | string | optional | GET | ["GET","POST"] | The method for `client` to request the `authorization` service. When it is `POST`, the request body will be send to the `authorization` service. |
 | request_headers | array[string] | optional |  |  | `client` request header that will be sent to the `authorization` service. When it is not set, no `client` request headers are sent to the `authorization` service, except for those provided by APISIX (X-Forwarded-XXX). |
 | upstream_headers | array[string] | optional |  |  | `authorization` service response header that will be sent to the `upstream`. When it is not set, will not forward the `authorization` service response header to the `upstream`. |
 | client_headers | array[string] | optional |  |  | `authorization` response header that will be sent to the `client` when authorize failure. When it is not set, will not forward the `authorization` service response header to the `client`. |
