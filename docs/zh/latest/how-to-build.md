@@ -143,11 +143,9 @@ sudo yum install ./apisix/*.rpm
      `/opt/homebrew/cellar/openldap/` 是 `brew` 在 macOS(Apple Silicon) 上安装 `openldap` 的默认位置。
      `/usr/local/opt/openldap/` 是 `brew` 在 macOS(Intel) 上安装 `openldap` 的默认位置。
 
-5. 如果您不再需要 Apache APISIX 运行时，您可以执行卸载，如：
+6. 如果您不再需要 Apache APISIX 运行时，您可以执行卸载，如：
 
 ```shell
-  # 卸载 apisix 命令
-  make uninstall
   # 卸载依赖
   make undeps
 ```

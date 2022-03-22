@@ -147,11 +147,9 @@ Follow the steps below to install Apache APISIX via the source release package.
      `/opt/homebrew/cellar/openldap/` is default path to install openldap on macOS(Apple Silicon) using brew.
      `/usr/local/opt/openldap/` is default path to install openldap on macOS(Intel) using brew.
 
-5. To uninstall the Apache APISIX runtime, run:
+6. To uninstall the Apache APISIX runtime, run:
 
    ```shell
-   # Uninstall apisix command
-   make uninstall
    # Purge dependencies
    make undeps
    ```
