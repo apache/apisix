@@ -348,7 +348,7 @@ hello world
                     "plugins": {
                         "key-auth": {
                             "hide_credentials": false
-                        } 
+                        }
                     },
                     "upstream": {
                         "nodes": {
@@ -398,7 +398,7 @@ apikey: auth-one
                     "plugins": {
                         "key-auth": {
                             "hide_credentials": true
-                        } 
+                        }
                     },
                     "upstream": {
                         "nodes": {
