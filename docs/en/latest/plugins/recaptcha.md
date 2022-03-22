@@ -30,13 +30,13 @@ Restrict access to an upstream service by verifying request captcha token to the
 
 ## Attributes
 
-| Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
-| --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| secret_key | string        | required    |            |  | The secret key of the Google reCAPTCHA v2 service. |
-| parameter_source | string | optional | header | | The enum of captcha parameter source. Only `header`, `query` are supported. |
-| parameter_name | string | optional | captcha | | The name of captcha parameter. |
-| response | object | optional    | content_type  = `application/json; charset=utf-8`<br />status_code = `400`<br />body = `{"message":"invalid captcha"}` |  | The response for invalid recaptcha token. |
-| ssl_verify | boolean | optional | true | | verify if SSL cert matches hostname. |
+| Name      | Type          | Requirement | Default                                                                                                        | Valid                                                                    | Description                                                                                                                                         |
+| --------- | ------------- | ----------- |----------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| secret_key | string        | required    |                                                                                                                |  | The secret key of the Google reCAPTCHA v2 service. |
+| parameter_source | string | optional | header                                                                                                         | | The enum of captcha parameter source. Only `header`, `query` are supported. |
+| parameter_name | string | optional | captcha                                                                                                        | | The name of captcha parameter. |
+| response | object | optional    | content_type  = `application/json; charset=utf-8`; status_code = `400`; body = `{"message":"invalid captcha"}` |  | The response for invalid recaptcha token. |
+| ssl_verify | boolean | optional | true                                                                                                           | | verify if SSL cert matches hostname. |
 
 The example configuration of plugin is
 

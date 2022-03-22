@@ -30,13 +30,13 @@ title: recaptcha
 
 ## 属性
 
-| Name      | Type          | Requirement | Default    | Valid                                                                    | Description                         |
-| --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ |-------------------------------------|
-| secret_key | string        | 必须    |            |  | Google reCAPTCHA v2 的 secret key    |
-| parameter_source | string | 可选 | header | | 验证码参数的来源枚举值。当前仅支持 `header`, `query` |
-| parameter_name | string | 可选 | captcha | | 验证码参数的名称                            |
-| response | object | 可选    | content_type  = `application/json; charset=utf-8`<br />status_code = `400`<br />body = `{"message":"invalid captcha"}` |  | 无效验证码的 HTTP 响应体                     |
-| ssl_verify | boolean | 可选 | true | | 验证 SSL 证书与主机名是否匹配 |
+| Name      | Type          | Requirement | Default                                                                                                        | Valid                                                                    | Description                         |
+| --------- | ------------- | ----------- |----------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------ |-------------------------------------|
+| secret_key | string        | 必须    |                                                                                                                |  | Google reCAPTCHA v2 的 secret key    |
+| parameter_source | string | 可选 | header                                                                                                         | | 验证码参数的来源枚举值。当前仅支持 `header`, `query` |
+| parameter_name | string | 可选 | captcha                                                                                                        | | 验证码参数的名称                            |
+| response | object | 可选    | content_type  = `application/json; charset=utf-8`; status_code = `400`; body = `{"message":"invalid captcha"}` |  | 无效验证码的 HTTP 响应体                     |
+| ssl_verify | boolean | 可选 | true                                                                                                           | | 验证 SSL 证书与主机名是否匹配 |
 
 插件的配置如下:
 
