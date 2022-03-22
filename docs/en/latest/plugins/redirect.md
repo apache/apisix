@@ -33,6 +33,7 @@ URI redirect.
 | uri           | string  | optional    |         |       | New URL which can contain Nginx variable, eg: `/test/index.html`, `$uri/index.html`. You can refer to variables in a way similar to `${xxx}` to avoid ambiguity, eg: `${uri}foo/index.html`. If you just need the original `$` character, add `\` in front of it, like this one: `/\$foo/index.html`. If you refer to a variable name that does not exist, this will not produce an error, and it will be used as an empty string. |
 | regex_uri | array[string] | optional    |         |                   | Use regular expression to match URL from client, when the match is successful, the URL template will be redirected to. If the match is not successful, the URL from the client will be forwarded to the upstream. Only one of `uri` and `regex_uri` can be exist. For example: [" ^/iresty/(.*)/(.*)/(.*)", "/$1-$2-$3"], the first element represents the matching regular expression and the second element represents the URL template that is redirected to. |
 | ret_code      | integer | optional    | 302     |  [200, ...]     | Response code                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ret_port      | integer | optional    | 443     |  [1, 65535]     | Redirect server port, only work when enable `http_to_https`. |
 | encode_uri    | boolean | optional    | false   |       | When set to `true` the uri in `Location` header will be encoded  as per [RFC3986](https://datatracker.ietf.org/doc/html/rfc3986) |
 | append_query_string    | boolean | optional    | false   |       | When set to `true`, add the query string from the original request to the location header. If the configured `uri` / `regex_uri` already contains a query string, the query string from request will be appended to that after an `&`. Caution: don't use this if you've already handled the query string, e.g. with nginx variable $request_uri, to avoid duplicates. |
 
@@ -110,7 +111,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     "uri": "/hello",
     "plugins": {
         "redirect": {
-            "http_to_https": true
+            "http_to_https": true,
+            "ret_port": 9443
         }
     }
 }'
