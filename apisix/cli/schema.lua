@@ -28,7 +28,7 @@ local config_schema = {
         apisix = {
             properties = {
                 config_center = {
-                    enum = {"etcd", "yaml"},
+                    enum = {"etcd", "yaml", "xds"},
                 },
                 lua_module_hook = {
                     pattern = "^[a-zA-Z._-]+$",
