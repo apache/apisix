@@ -20,6 +20,19 @@ log_level('info');
 repeat_each(1);
 no_long_string();
 no_root_location();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (! $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if (! $block->no_error_log && ! $block->error_log) {
+        $block->set_value("no_error_log", "[error]\n[alert]");
+    }
+});
+
 run_tests;
 
 
@@ -49,12 +62,8 @@ __DATA__
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -73,13 +82,9 @@ done
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 property "secret_key" is required
 done
---- no_error_log
-[error]
 
 
 
@@ -120,12 +125,8 @@ done
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -196,12 +197,8 @@ passed
                ngx.say(body)
            }
        }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -213,8 +210,6 @@ POST /login
 Content-Type: application/json; charset=utf-8
 --- response_body
 {"message":"invalid captcha"}
---- no_error_log
-[error]
 
 
 
@@ -226,8 +221,6 @@ POST /active
 Content-Type: application/json; charset=utf-8
 --- response_body
 {"message":"invalid captcha"}
---- no_error_log
-[error]
 
 
 
@@ -237,8 +230,6 @@ POST /login
 --- more_headers
 captcha: test
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
