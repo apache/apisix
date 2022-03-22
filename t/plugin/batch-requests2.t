@@ -426,3 +426,21 @@ passed
 GET /aggregate
 --- response_body
 passed
+
+
+
+=== TEST 10: ensure the content-type is correct
+--- request
+POST /apisix/batch-requests
+{
+    "headers": {
+    },
+    "pipeline":[
+        {
+            "path": "/c",
+            "method": "PUT"
+        }
+    ]
+}
+--- response_headers
+Content-Type: application/json
