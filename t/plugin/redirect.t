@@ -1045,3 +1045,94 @@ X-Forwarded-Proto: http
 --- error_code: 301
 --- response_headers
 Location: https://foo.com/hello
+
+
+
+=== TEST 43: enable http_to_https with ret_port
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "host": "foo.com",
+                    "plugins": {
+                        "redirect": {
+                            "http_to_https": true,
+                            "ret_port": 9443
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 44: redirect
+--- request
+GET /hello
+--- more_headers
+Host: foo.com
+--- error_code: 301
+--- response_headers
+Location: https://foo.com:9443/hello
+
+
+
+=== TEST 45: enable http_to_https with ret_port(not take effect)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "host": "foo.com",
+                    "plugins": {
+                        "redirect": {
+                            "http_to_https": true,
+                            "ret_port": 443
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 46: redirect
+--- request
+GET /hello
+--- more_headers
+Host: foo.com
+--- error_code: 301
+--- response_headers
+Location: https://foo.com/hello
+

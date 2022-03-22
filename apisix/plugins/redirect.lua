@@ -38,6 +38,7 @@ local schema = {
     type = "object",
     properties = {
         ret_code = {type = "integer", minimum = 200, default = 302},
+        ret_port = {type = "integer", minimum = 1, maxmum = 65535, default = 443},
         uri = {type = "string", minLength = 2, pattern = reg},
         regex_uri = {
             description = "params for generating new uri that substitute from client uri, " ..
@@ -147,6 +148,7 @@ function _M.rewrite(conf, ctx)
     core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
     local ret_code = conf.ret_code
+    local ret_port = conf.ret_port
     local uri = conf.uri
     local regex_uri = conf.regex_uri
 
@@ -155,7 +157,12 @@ function _M.rewrite(conf, ctx)
     if conf.http_to_https and _scheme == "http" then
         -- TODO： add test case
         -- PR: https://github.com/apache/apisix/pull/1958
-        uri = "https://$host$request_uri"
+        if ret_port == 80 or ret_port == 443 then
+            uri = "https://$host$request_uri"
+        else
+            uri = "https://$host:" .. ret_port .. "$request_uri"
+        end
+
         local method_name = ngx.req.get_method()
         if method_name == "GET" or method_name == "HEAD" then
             ret_code = 301
