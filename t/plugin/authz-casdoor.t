@@ -162,8 +162,6 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-casdoor")
-            local core = require("apisix.core")
-            local log = core.log
             local t = require("lib.test_admin").test
 
             local code, body = t('/anything/d?param1=foo&param2=bar', ngx.HTTP_GET, [[]])
@@ -215,8 +213,6 @@ passed
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-casdoor")
-            local core = require("apisix.core")
-            local log = core.log
             local t = require("lib.test_admin").test
             local httpc = require("resty.http").new()
             local cjson = require("cjson")
@@ -308,8 +304,6 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-casdoor")
-            local core = require("apisix.core")
-            local log = core.log
             local t = require("lib.test_admin").test
             local cjson = require("cjson")
 

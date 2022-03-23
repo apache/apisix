@@ -46,12 +46,6 @@ local _M = {
 
 local function fetch_access_token(ctx, conf, state_in_session)
     local args = core.request.get_uri_args(ctx)
-    if not args or not args.code or not args.state then
-        return nil, nil, "failed when accessing token. Invalid code or state"
-    end
-    if args.state ~= tostring(state_in_session) then
-        return nil, nil, "invalid state"
-    end
     local client = http.new()
     local url = conf.endpoint_addr .. "/api/login/oauth/access_token"
 
@@ -69,7 +63,7 @@ local function fetch_access_token(ctx, conf, state_in_session)
     })
 
     if not res then
-        return nil, err
+        return nil, nil, err
     end
     local data, err = core.json.decode(res.body)
 
@@ -82,6 +76,7 @@ local function fetch_access_token(ctx, conf, state_in_session)
         return nil, nil,
                "failed when accessing token: no access_token contained"
     end
+    -- In the reply of casdoor, setting expires_in to 0 indicates that the access_token is invalid.
     if not data.expires_in or data.expires_in == 0 then
         return nil, nil, "failed when accessing token: invalid access_token"
     end
@@ -89,9 +84,11 @@ local function fetch_access_token(ctx, conf, state_in_session)
     return data.access_token, data.expires_in, nil
 end
 
+
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
+
 
 function _M.access(conf, ctx)
     local current_uri = ctx.var.uri
@@ -100,33 +97,44 @@ function _M.access(conf, ctx)
     local m, err = ngx.re.match(conf.callback_url, ".+//[^/]+(/.*)", "jo")
     if err or not m then
         core.log.error(err)
-        return 503, err
+        return 503
     end
     local real_callback_url = m[1]
     if current_uri == real_callback_url then
         if not session_present then
             err = "no session found"
             core.log.error(err)
-            return 503, err
+            return 503
         end
         local state_in_session = session_obj_read.data.state
         if not state_in_session then
             err = "no state found in session"
             core.log.error(err)
-            return 503, err
+            return 503
+        end
+        local args = core.request.get_uri_args(ctx)
+        if not args or not args.code or not args.state then
+            err = "failed when accessing token. Invalid code or state"
+            core.log.error(err)
+            return 400, err
+        end
+        if args.state ~= tostring(state_in_session) then
+            err = "invalid state"
+            core.log.error(err)
+            return 400, err
         end
         local access_token, lifetime, err =
             fetch_access_token(ctx, conf, state_in_session)
         if err then
             core.log.error(err)
-            return 503, err
+            return 503
         end
         if access_token then
             local original_url = session_obj_read.data.original_uri
             if not original_url then
                 err = "no original_url found in session"
                 core.log.error(err)
-                return 503, err
+                return 503
             end
             local session_obj_write = session.new {
                 cookie = {lifetime = lifetime}
@@ -136,9 +144,6 @@ function _M.access(conf, ctx)
             session_obj_write:save()
             core.response.set_header("Location", original_url)
             return 302
-        else
-            err = "failed to retrieve access_token"
-            return 503, err
         end
     end
 
@@ -150,11 +155,14 @@ function _M.access(conf, ctx)
         session_obj_write.data.original_uri = current_uri
         session_obj_write.data.state = state
         session_obj_write:save()
-        local redirect_url = conf.endpoint_addr ..
-                                 "/login/oauth/authorize?response_type=code&scope=read" ..
-                                 "&state=" .. state .. "&client_id=" ..
-                                 conf.client_id .. "&redirect_uri=" ..
-                                 conf.callback_url
+
+        local redirect_url=conf.endpoint_addr .. "/login/oauth/authorize?" .. ngx.encode_args({
+            response_type = "code",
+            scope = "read",
+            state = state,
+            client_id = conf.client_id,
+            redirect_uri = conf.callback_url
+        })
         core.response.set_header("Location", redirect_url)
         return 302
     end
