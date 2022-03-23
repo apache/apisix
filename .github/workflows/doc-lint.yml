@@ -43,7 +43,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: check Chinese copywriting
         run: |
-          version=`curl -isS https://github.com/huacnlee/autocorrect/releases/latest | grep Location | awk -F / '{print $NF}'`
+          version=v1.5.6
           wget -O- "https://github.com/huacnlee/autocorrect/releases/download/$version/autocorrect-linux-amd64.tar.gz" | tar -xzv
           mv -v autocorrect /usr/local/bin/
           autocorrect --version
