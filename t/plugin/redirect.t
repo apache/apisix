@@ -1135,4 +1135,3 @@ Host: foo.com
 --- error_code: 301
 --- response_headers
 Location: https://foo.com/hello
-
