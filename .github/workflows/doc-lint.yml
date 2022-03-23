@@ -43,6 +43,13 @@ jobs:
       - uses: actions/checkout@v3
       - name: check Chinese copywriting
         run: |
-          curl -sSL https://git.io/JcGER | bash
+          get_latest_release() {
+            curl --silent "https://api.github.com/repos/huacnlee/autocorrect/releases/latest" | # Get latest release from GitHub api
+            grep '"tag_name":' |                                            # Get tag line
+            sed -E 's/.*"([^"]+)".*/\1/'                                    # Pluck JSON value
+          }
+          version=`get_latest_release`
+          wget -O- "https://github.com/huacnlee/autocorrect/releases/download/$version/autocorrect-linux-amd64.tar.gz" | tar -xzv
+          mv -v autocorrect /usr/local/bin/
           autocorrect --version
           git ls-files | grep "^docs/zh/latest/.*.md$" | xargs -t autocorrect --lint
