@@ -125,8 +125,6 @@ Follow the steps below to install Apache APISIX via the source release package.
   cd apisix-${APISIX_VERSION}
   # Create dependencies
   make deps
-  # Install apisix command
-  make install
   ```
 
   **Note**: If you fail to install dependency packages using `make deps` and get an error message like `Could not find header file for LDAP/PCRE/openssl`, you can use this general method to solve problems.
@@ -149,11 +147,9 @@ Follow the steps below to install Apache APISIX via the source release package.
      `/opt/homebrew/cellar/openldap/` is default path to install openldap on macOS(Apple Silicon) using brew.
      `/usr/local/opt/openldap/` is default path to install openldap on macOS(Intel) using brew.
 
-5. To uninstall the Apache APISIX runtime, run:
+6. To uninstall the Apache APISIX runtime, run:
 
    ```shell
-   # Uninstall apisix command
-   make uninstall
    # Purge dependencies
    make undeps
    ```
