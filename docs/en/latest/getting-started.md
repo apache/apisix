@@ -26,7 +26,7 @@ An [API gateway](https://microservices.io/patterns/apigateway.html) is an API ma
 
 ## What is Apache APISIX?
 
-An API gateway is an API management tool that acts as a mid-layer service between a client and a number of backend services. Typically, the API gateway receives the client's requests and processes them by summoning multiple microservices, aggregating the services, and returning the appropriate results.
+An [API gateway](https://microservices.io/patterns/apigateway.html) is an API management tool that acts as a mid-layer service between a client and a number of backend services. Typically, the API gateway receives the client's requests and processes them by summoning multiple microservices, aggregating the services, and returning the appropriate results.
 
 ## What is Apache APISIX
 
@@ -44,7 +44,7 @@ Apache APISIX facilitates interface traffic handling for Websites, Mobile and Io
 
 ## Features
 
-Apache APISIX not only covers the traditional functions of NGINX, but also deeply cooperates with different observability platforms, which greatly improves service governance capabilities. Some of the characteristics of the Apache APISIX gateway include:
+Apache APISIX not only covers the traditional functions of NGINX, but also deeply cooperates with different observability platforms, which greatly improves service governance capabilities. Other characteristics of the Apache APISIX gateway includes:
 
   - All platforms:
    APISIX is a cloud native, open source API gateway. You can run APISIX from bare-metal to Kubernetes. Since APISIX supports ARM64, it avoids the lock-in challenge of the infrastructure technology. It also provides integration to cloud providers like AWS Lambda, Azure Functions, Lua functions and Apache OpenWhisk.
