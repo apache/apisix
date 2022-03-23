@@ -389,6 +389,8 @@ end
 function _M.init_worker()
     -- sync data in each non-master process
     ngx.timer.every(1, read_apisix_yaml)
+
+    return true
 end
 
 

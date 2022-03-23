@@ -121,8 +121,6 @@ sudo yum install ./apisix/*.rpm
   cd apisix-${APISIX_VERSION}
   # 安装依赖
   LUAROCKS_SERVER=https://luarocks.cn make deps
-  # 安装 apisix 命令
-  make install
   ```
 
    **注意**：使用 `make deps` 安装 `lualdap`、`PCRE`、`openssl` 等依赖包失败，错误信息如： `Could not find header file for LDAP/PCRE/openssl`，可使用本方法解决。
@@ -145,11 +143,9 @@ sudo yum install ./apisix/*.rpm
      `/opt/homebrew/cellar/openldap/` 是 `brew` 在 macOS(Apple Silicon) 上安装 `openldap` 的默认位置。
      `/usr/local/opt/openldap/` 是 `brew` 在 macOS(Intel) 上安装 `openldap` 的默认位置。
 
-5. 如果您不再需要 Apache APISIX 运行时，您可以执行卸载，如：
+6. 如果您不再需要 Apache APISIX 运行时，您可以执行卸载，如：
 
 ```shell
-  # 卸载 apisix 命令
-  make uninstall
   # 卸载依赖
   make undeps
 ```
