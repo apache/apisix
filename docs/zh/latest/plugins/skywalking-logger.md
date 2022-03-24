@@ -87,7 +87,7 @@ hello, world
 
 ## 禁用插件
 
-在插件配置中删除相应的 JSON 配置就可以禁用 `skywalking-logger` 插件。由于APISIX 插件支持热加载的，因此无需重新启动 APISIX：
+在插件配置中删除相应的 JSON 配置就可以禁用 `skywalking-logger` 插件。由于APISIX 插件支持热加载，因此无需重新启动 APISIX：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
