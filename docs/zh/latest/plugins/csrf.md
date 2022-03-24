@@ -29,11 +29,11 @@ title: csrf
 
 ## 属性
 
-| 名称             | 类型    | 必选 | 默认值 | 有效值 | 描述                                                 |
+| 名称             | 类型    | 必选项 | 默认值 | 有效值 | 描述                                                 |
 | ---------------- | ------- | ----------- | ------- | ----- | ------------------------------------------------------------ |
-|   name   |  string |    optional    | `apisix-csrf-token`  |    | 生成的 Cookie 中的 token 的名字，需要使用这个名字在请求头携带 Cookie 中的内容 |
-| expires |  number | optional | `7200` | | CSRF Cookie 的过期时间(秒) |
-| key | string | required |  |  | 加密 token 的秘钥 |
+|   name   |  string |    可选    | `apisix-csrf-token`  |    | 生成的 Cookie 中的 token 的名字，需要使用这个名字在请求头携带 Cookie 中的内容 |
+| expires |  number | 可选 | `7200` | | CSRF Cookie 的过期时间(秒) |
+| key | string | 必选 |  |  | 加密 token 的秘钥 |
 
 **注意：当 expires 设置为 0 时插件将忽略检查 Token 是否过期**
 
