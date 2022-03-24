@@ -189,7 +189,7 @@ GET /hello
 Authorization: Basic Zm9vOmZvbwo=
 --- error_code: 401
 --- response_body
-{"message":"Invalid user authorization"}
+{"message":"Invalid password or username"}
 
 
 
