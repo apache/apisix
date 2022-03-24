@@ -143,7 +143,7 @@ done
                     }
                 }]]
             )
-            if not code == 200 then
+            if code ~= 200 then
                 ngx.say("failed to set up routing rule")
             end
             ngx.say("done")
