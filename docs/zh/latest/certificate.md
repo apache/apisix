@@ -23,17 +23,17 @@ title: 证书
 
 `APISIX` 支持通过 TLS 扩展 SNI 实现加载特定的 SSL 证书以实现对 https 的支持。
 
-SNI(Server Name Indication)是用来改善 SSL 和 TLS 的一项特性，它允许客户端在服务器端向其发送证书之前向服务器端发送请求的域名，服务器端根据客户端请求的域名选择合适的 SSL 证书发送给客户端。
+SNI（Server Name Indication）是用来改善 SSL 和 TLS 的一项特性，它允许客户端在服务器端向其发送证书之前向服务器端发送请求的域名，服务器端根据客户端请求的域名选择合适的 SSL 证书发送给客户端。
 
 ### 单一域名指定
 
 通常情况下一个 SSL 证书只包含一个静态域名，配置一个 `ssl` 参数对象，它包括 `cert`、`key`和`sni`三个属性，详细如下：
 
-* `cert`: SSL 密钥对的公钥，pem 格式
-* `key`: SSL 密钥对的私钥，pem 格式
-* `snis`: SSL 证书所指定的一个或多个域名，注意在设置这个参数之前，你需要确保这个证书对应的私钥是有效的。
+* `cert`：SSL 密钥对的公钥，pem 格式
+* `key`：SSL 密钥对的私钥，pem 格式
+* `snis`：SSL 证书所指定的一个或多个域名，注意在设置这个参数之前，你需要确保这个证书对应的私钥是有效的。
 
-为了简化示例，我们会使用下面的 Python 脚本:
+为了简化示例，我们会使用下面的 Python 脚本：
 
 ```python
 #!/usr/bin/env python
@@ -108,7 +108,7 @@ curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/hello  -vvv
 一个 SSL 证书的域名也可能包含泛域名，如 `*.test.com`，它代表所有以 `test.com` 结尾的域名都可以使用该证书。
 比如 `*.test.com`，可以匹配 `www.test.com`、`mail.test.com`。
 
-看下面这个例子，请注意我们把 `*.test.com` 作为 sni 传递进来:
+看下面这个例子，请注意我们把 `*.test.com` 作为 sni 传递进来：
 
 ```shell
 ./ssl.py t.crt t.key '*.test.com'

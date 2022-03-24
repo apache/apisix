@@ -23,9 +23,9 @@ title: TCP/UDP 动态代理
 
 众多的闻名的应用和服务，像 LDAP、 MYSQL 和 RTMP ，选择 TCP 作为通信协议。 但是像 DNS、 syslog 和 RADIUS 这类非事务性的应用，他们选择了 UDP 协议。
 
-APISIX 可以对 TCP/UDP 协议进行代理并实现动态负载均衡。 在 nginx 世界，称 TCP/UDP 代理为 stream 代理，在 APISIX 这里我们也遵循了这个声明.
+APISIX 可以对 TCP/UDP 协议进行代理并实现动态负载均衡。 在 nginx 世界，称 TCP/UDP 代理为 stream 代理，在 APISIX 这里我们也遵循了这个声明。
 
-## 如何开启 Stream 代理?
+## 如何开启 Stream 代理
 
 在 `conf/config.yaml` 配置文件设置 `stream_proxy` 选项， 指定一组需要进行动态代理的 IP 地址。默认情况不开启 stream 代理。
 
@@ -53,9 +53,9 @@ apisix:
       - 9100
 ```
 
-## 如何设置 route ?
+## 如何设置 route
 
-简例如下:
+简例如下：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
