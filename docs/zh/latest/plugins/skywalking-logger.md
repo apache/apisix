@@ -23,7 +23,7 @@ title: skywalking-logger
 
 ## 描述
 
-`skywalking-logger` 是一个可将 Access Log 数据通过 `HTTP` 推送到 `SkyWalking OAP` 服务器的插件。如果上下文中存在 `tracing context`，插件会自动建立 `trace` 与日志的关联，这有赖于 [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/latest/en/protocols/skywalking-cross-process-propagation-headers-protocol-v3/)的支持 。
+`skywalking-logger` 是一个可将 Access Log 数据通过 `HTTP` 推送到 `SkyWalking OAP` 服务器的插件。如果上下文中存在 `tracing context`，插件会自动建立 `trace` 与日志的关联，这依赖于 [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/latest/en/protocols/skywalking-cross-process-propagation-headers-protocol-v3/)的支持 。
 
 本插件提供将 Access Log 数据作为JSON对象发送到 `SkyWalking OAP` 服务器的功能。
 
