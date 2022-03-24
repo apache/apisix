@@ -277,6 +277,9 @@ local function batch_requests(ctx)
         if resp.has_body then
             sub_resp.body = resp:read_body()
         end
+        if resp.trailer_reader then
+            sub_resp.trailers = resp:read_trailers()
+        end
         core.table.insert(aggregated_resp, sub_resp)
     end
     return 200, aggregated_resp
