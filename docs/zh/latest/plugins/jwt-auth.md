@@ -52,9 +52,9 @@ router 端配置：
 
 | 名称 | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                          |
 | ---- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------------- |
-| header  | string | 可选| authorization |        | 设置我们从哪个 header 获取 token。 |
-| query  | string | 可选 | jwt |        | 设置我们从哪个 query string 获取 token，优先级低于header |
-| cookie  | string | 可选 | jwt |        | 设置我们从哪个 cookie 获取 token，优先级低于query |
+| header  | string | 可选 | authorization |        | 设置我们从哪个 header 获取 token。 |
+| query  | string | 可选 | jwt |        | 设置我们从哪个 query string 获取 token，优先级低于 header |
+| cookie  | string | 可选 | jwt |        | 设置我们从哪个 cookie 获取 token，优先级低于 query |
 
 ## 接口
 
@@ -138,7 +138,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 
 在这里，插件在 Consumer 配置中提到的 Consumer 用户 `jack` 的 Vault 路径（`<vault.prefix from conf.yaml>/consumer/jack/jwt-auth`）中查找密钥 `secret`，并使用它进行后续的签名和 JWT 验证。如果在该路径中没有找到密钥，该插件将记录一个错误，并且无法执行 JWT 验证。
 
-2. RS256 RSA 密钥对, 包括公钥和私钥都存粗在 Vault 中。
+2. RS256 RSA 密钥对，包括公钥和私钥都存粗在 Vault 中。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
