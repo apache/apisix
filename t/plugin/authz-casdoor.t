@@ -275,7 +275,7 @@ done
                 log.error(res2.status)
             end
 
-            local cookie2 = res1.headers["Set-Cookie"]
+            local cookie2 = res2.headers["Set-Cookie"]
             local res3, err3 = httpc:request_uri(fake_uri, {
                 method = "GET",
                 headers = {Cookie = cookie2}
@@ -284,8 +284,8 @@ done
             if not res3 then
                 ngx.say(err3)
             end
-            if not res3.status == 200 then
-                log.error(res3.status)
+            if res3.status ~= 200 then
+                log.error(res3.status,res3.headers["Location"])
             end
             ngx.say("done")
 
@@ -361,7 +361,7 @@ no session found
                 log.error(res2.status)
             end
 
-            local cookie2 = res1.headers["Set-Cookie"]
+            local cookie2 = res2.headers["Set-Cookie"]
             local res3, err3 = httpc:request_uri(fake_uri, {
                 method = "GET",
                 headers = {Cookie = cookie2}
@@ -417,13 +417,13 @@ invalid state
                 headers = {Cookie = cookie}
             })
             if not res2 then
-                ngx.say(err)
+                ngx.say(err2)
             end
             if res2.status ~= 302 then
                 log.error(res2.status)
             end
 
-            local cookie2 = res1.headers["Set-Cookie"]
+            local cookie2 = res2.headers["Set-Cookie"]
             local res3, err3 = httpc:request_uri(fake_uri, {
                 method = "GET",
                 headers = {Cookie = cookie2}
