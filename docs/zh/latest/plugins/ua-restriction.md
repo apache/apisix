@@ -38,7 +38,7 @@ title: ua-restriction
 
 ## 如何启用
 
-下面是一个示例，在指定的 route 上开启了 `ua-restriction` 插件:
+下面是一个示例，在指定的 route 上开启了 `ua-restriction` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -66,7 +66,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-当未允许的 User-Agent 访问时，默认返回 `{"message":"Not allowed"}`。如果你想使用自定义的 `message`，可以在插件部分进行配置:
+当未允许的 User-Agent 访问时，默认返回 `{"message":"Not allowed"}`。如果你想使用自定义的 `message`，可以在插件部分进行配置：
 
 ```json
 "plugins": {

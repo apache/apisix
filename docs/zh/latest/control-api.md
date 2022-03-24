@@ -86,7 +86,7 @@ APISIX 中一些插件添加了自己的 control API。如果你对他们感兴�
 }
 ```
 
-只有启用了的插件才会被包含在返回结果中 `plugins` 部分。(返回结果中的)一些插件可能会缺失如 `consumer_schema` 或者 `type` 字段，这取决于插件的定义。
+只有启用了的插件才会被包含在返回结果中 `plugins` 部分。（返回结果中的）一些插件可能会缺失如 `consumer_schema` 或者 `type` 字段，这取决于插件的定义。
 
 ### GET /v1/healthcheck
 
