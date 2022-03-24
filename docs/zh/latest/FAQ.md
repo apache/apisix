@@ -566,3 +566,23 @@ apisix:
 
  - 插件实例作用范围：`plugin-metadata` 作用于该插件的所有配置实例。`plugin-configs` 作用于其下配置的插件配置实例。
  - 绑定主体作用范围：`plugin-metadata` 作用于该插件的所有配置实例绑定的主体。`plugin-configs` 作用于绑定了该 `plugin-configs` 的路由。
+
+## 如何修改APISIX的时区
+
+你可能需要将APISIX的时区设置为与你本地时区一致，否则在检索APISIX日志的时候会得到不一致的时区的日志数据，特别在你使用apisix日志插件的时候。
+
+如若你是通过 RPM 仓库或者源码方式安装部署，你需要在服务器上执行如下的命令再启动 APISIX 。
+```shell
+export TZ='Asia/Shanghai'
+apisix start
+```
+
+如若你是通过 Docker 安装部署，你需要通过 `-e` 添加时区的环境变量 ，参考[quick-test-with-all-dependencies-in-one-docker-container](https://github.com/apache/apisix-docker#quick-test-with-all-dependencies-in-one-docker-container)
+
+```shell
+# launch APISIX container
+docker run -d -e "TZ=Asia/Shanghai" \
+-p 9080:9080 -p 9091:9091 -p 2379:2379 \
+-v `pwd`/all-in-one/apisix/config.yaml:/usr/local/apisix/conf/config.yaml \
+apache/apisix:whole
+```
