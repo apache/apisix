@@ -73,7 +73,7 @@ HTTP/1.1 200 OK
 hello, world
 ```
 
-完成上述步骤后，可以在`SkyWalking UI` 查看到相关日志。
+完成上述步骤后，可以在 `SkyWalking UI` 查看到相关日志。
 
 ## 插件元数据设置
 
