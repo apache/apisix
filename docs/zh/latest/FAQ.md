@@ -567,11 +567,11 @@ apisix:
  - 插件实例作用范围：`plugin-metadata` 作用于该插件的所有配置实例。`plugin-configs` 作用于其下配置的插件配置实例。
  - 绑定主体作用范围：`plugin-metadata` 作用于该插件的所有配置实例绑定的主体。`plugin-configs` 作用于绑定了该 `plugin-configs` 的路由。
 
-## 如何修改APISIX的时区
+## 如何修改 Apache APISIX 的时区
 
-你可能需要将 APISIX 的时区设置为与你本地时区一致，否则在检索 APISIX 日志的时候会得到不一致的时区的日志数据，特别在你使用 APISIX 日志插件的时候。
+你可能需要将 Apache APISIX 的时区设置为与你本地时区一致，否则在检索 Apache APISIX 日志的时候会得到不一致的时区的日志数据，特别在你使用 Apache APISIX 日志插件的时候。
 
-如若你是通过 RPM 仓库或者源码方式安装部署，你需要在服务器上执行如下的命令再启动 APISIX 。
+如若你是通过 RPM 仓库或者源码方式安装部署，你需要在服务器上执行如下的命令再启动 Apache APISIX 。
 
 ```shell
 export TZ='Asia/Shanghai'

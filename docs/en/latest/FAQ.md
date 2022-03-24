@@ -567,11 +567,11 @@ The difference between `plugin-metadata` and `plugin-configs`:
 - Plugin configuration instance scope: `plugin-metadata` works on all configuration instances of this plugin. `plugin-configs` works on the plugin configuration instances under configured it.
 - Binding entities: `plugin-metadata` take effect on the entities bound to all configuration instances of this plugin. `plugin-configs` take effect on the routes bound to this `plugin-configs`.
 
-## How to change APISIX timezone
+## How to change Apache APISIX timezone
 
-You may need to set the APISIX timezone to be consistent with your local timezone, otherwise you will get inconsistent timezone log data when retrieving APISIX logs, especially if you use the APISIX logging plugin.
+You may need to set the Apache APISIX timezone to be consistent with your local timezone, otherwise you will get inconsistent timezone log data when retrieving Apache APISIX logs, especially if you use the Apache APISIX logging plugin.
 
-If you are using an RPM repository or source installation, you will need to run the following command on the server to start APISIX.
+If you are using an RPM repository or source installation, you will need to run the following command on the server to start Apache APISIX.
 
 ```shell
 export TZ='Asia/Shanghai'
