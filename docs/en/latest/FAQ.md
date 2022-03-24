@@ -572,6 +572,7 @@ The difference between `plugin-metadata` and `plugin-configs`:
 You may need to set the APISIX timezone to be consistent with your local timezone, otherwise you will get inconsistent timezone log data when retrieving APISIX logs, especially if you use the APISIX logging plugin.
 
 If you are using an RPM repository or source installation, you will need to run the following command on the server to start APISIX.
+
 ```shell
 export TZ='Asia/Shanghai'
 apisix start

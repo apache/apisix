@@ -569,9 +569,10 @@ apisix:
 
 ## 如何修改APISIX的时区
 
-你可能需要将APISIX的时区设置为与你本地时区一致，否则在检索APISIX日志的时候会得到不一致的时区的日志数据，特别在你使用apisix日志插件的时候。
+你可能需要将 APISIX 的时区设置为与你本地时区一致，否则在检索 APISIX 日志的时候会得到不一致的时区的日志数据，特别在你使用 APISIX 日志插件的时候。
 
 如若你是通过 RPM 仓库或者源码方式安装部署，你需要在服务器上执行如下的命令再启动 APISIX 。
+
 ```shell
 export TZ='Asia/Shanghai'
 apisix start
