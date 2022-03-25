@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.13.0](#2130)
 - [2.12.1](#2121)
 - [2.12.0](#2120)
 - [2.11.0](#2110)
@@ -52,6 +53,54 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.13.0
+
+### Change
+
+- 更正 syslog 插件的配置 [#6551](https://github.com/apache/apisix/pull/6551)
+- server-info 插件使用新方法来上报 DP 面信息 [#6202](https://github.com/apache/apisix/pull/6202)
+- Admin API 返回的空 nodes 应当被编码为数组 [#6384](https://github.com/apache/apisix/pull/6384)
+- 更正 prometheus 统计指标 apisix_nginx_http_current_connections{state="total"} [#6327](https://github.com/apache/apisix/pull/6327)
+- 不再默认暴露 public API 并移除 plugin interceptor [#6196](https://github.com/apache/apisix/pull/6196)
+
+### Core
+
+- :sunrise: 新增 delayed_body_filter 阶段 [#6605](https://github.com/apache/apisix/pull/6605)
+- :sunrise: standalone 模式的配置支持环境变量 [#6505](https://github.com/apache/apisix/pull/6505)
+- :sunrise: consumer 新增的插件都能被执行 [#6502](https://github.com/apache/apisix/pull/6502)
+- :sunrise: 添加配置项来控制是否在 x-upsream-apisix-status 中记录所有状态码 [#6392](https://github.com/apache/apisix/pull/6392)
+- :sunrise: 新增 kubernetes 服务发现 [#4880](https://github.com/apache/apisix/pull/4880)
+- :sunrise: graphql 路由支持 JSON 类型和 GET 方法 [#6343](https://github.com/apache/apisix/pull/6343)
+
+### Plugin
+
+- :sunrise: jwt-auth 支持自定义参数名 [#6561](https://github.com/apache/apisix/pull/6561)
+- :sunrise: cors 参数支持通过 plugin metadata 配置 [#6546](https://github.com/apache/apisix/pull/6546)
+- :sunrise: openid-connect 支持 post_logout_redirect_uri [#6455](https://github.com/apache/apisix/pull/6455)
+- :sunrise: mocking 插件 [#5940](https://github.com/apache/apisix/pull/5940)
+- :sunrise: error-log-logger 新增 clickhouse 支持 [#6256](https://github.com/apache/apisix/pull/6256)
+- :sunrise: clickhouse 日志插件 [#6215](https://github.com/apache/apisix/pull/6215)
+- :sunrise: grpc-transcode 支持处理 .pb 文件 [#6264](https://github.com/apache/apisix/pull/6264)
+- :sunrise: loggly 日志插件 [#6113](https://github.com/apache/apisix/pull/6113)
+- :sunrise: opentelemetry 日志插件 [#6119](https://github.com/apache/apisix/pull/6119)
+- :sunrise: public api 插件 [#6145](https://github.com/apache/apisix/pull/6145)
+- :sunrise: CSRF 插件 [#5727](https://github.com/apache/apisix/pull/5727)
+
+### Bugfix
+
+- 修复 skywalking,opentelemetry 没有追踪认证失败的问题 [#6617](https://github.com/apache/apisix/pull/6617)
+- log-rotate 切割日志时按整点完成 [#6521](https://github.com/apache/apisix/pull/6521)
+- deepcopy 没有复制 metatable [#6623](https://github.com/apache/apisix/pull/6623)
+- request-validate 修复对 JSON 里面重复键的处理 [#6625](https://github.com/apache/apisix/pull/6625)
+- prometheus 避免重复计算指标 [#6579](https://github.com/apache/apisix/pull/6579)
+- 修复 proxy-rewrite 中，当 conf.headers 缺失时，conf.method 不生效的问题 [#6300](https://github.com/apache/apisix/pull/6300)
+- 修复 traffic-split 首条规则失败时无法匹配的问题 [#6292](https://github.com/apache/apisix/pull/6292)
+- etcd 超时不应触发 resync_delay [#6259](https://github.com/apache/apisix/pull/6259)
+- 解决 proto 定义冲突 [#6199](https://github.com/apache/apisix/pull/6199)
+- limit-count 配置不变，不应重置计数器 [#6151](https://github.com/apache/apisix/pull/6151)
+- Admin API 的 plugin-metadata 和 global-rule 计数有误 [#6155](https://github.com/apache/apisix/pull/6155)
+- 解决合并 route 和 service 时 labels 丢失问题 [#6177](https://github.com/apache/apisix/pull/6177)
 
 ## 2.12.1
 
