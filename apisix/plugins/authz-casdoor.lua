@@ -44,15 +44,13 @@ local _M = {
     schema = schema
 }
 
-local function fetch_access_token(ctx, conf, state_in_session)
-    local args = core.request.get_uri_args(ctx)
+local function fetch_access_token(code, conf)
     local client = http.new()
     local url = conf.endpoint_addr .. "/api/login/oauth/access_token"
-
     local res, err = client:request_uri(url, {
         method = "POST",
         body =  ngx.encode_args({
-            code = args.code,
+            code = code,
             grant_type = "authorization_code",
             client_id = conf.client_id,
             client_secret = conf.client_secret
@@ -123,8 +121,13 @@ function _M.access(conf, ctx)
             core.log.error(err)
             return 400, err
         end
+        if not args.code then
+            err = "invalid code"
+            core.log.error(err)
+            return 400, err
+        end
         local access_token, lifetime, err =
-            fetch_access_token(ctx, conf, state_in_session)
+            fetch_access_token(args.code, conf)
         if err then
             core.log.error(err)
             return 503

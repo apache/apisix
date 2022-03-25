@@ -143,7 +143,7 @@ done
                     }
                 }]]
             )
-            if code ~= 200 then
+            if code >= 300 then
                 ngx.say("failed to set up routing rule")
             end
             ngx.say("done")
@@ -194,7 +194,7 @@ done
                 }]]
                 )
 
-            if code ~= 200 then
+            if code >= 300 then
                 ngx.status = code
             end
             ngx.say(body)
@@ -284,7 +284,7 @@ done
             if not res3 then
                 ngx.say(err3)
             end
-            if res3.status ~= 200 then
+            if res3.status >= 300 then
                 log.error(res3.status,res3.headers["Location"])
             end
             ngx.say("done")
