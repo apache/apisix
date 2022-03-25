@@ -37,7 +37,7 @@ title: datadog
 
 | 名称             | 类型   | 必选项  | 默认值      | 有效值       | 描述                                                                                |
 | -----------      | ------ | -----------  | -------      | -----       | ------------------------------------------------------------                               |
-| prefer_name      | boolean | optional    | true         | true/false  | 如果设置为 `false`，将使用路由/服务的 id 值作为插件的 `route_name`，而不是带有度量标签的名称（默认）。   |
+| prefer_name      | boolean | optional    | true         | true/false  | 如果设置为 `false`，将使用路由/服务的 id 值作为插件的 `route_name`，而不是带有参数的标签名称（默认）。   |
 
 该插件支持使用批处理程序来聚集和处理条目（日志/数据）的批次。这就避免了插件频繁地提交数据，默认情况下，批处理程序每 `5` 秒或当队列中的数据达到 `1000` 时提交数据。有关信息或自定义批处理程序的参数设置，请参阅[批处理程序](../batch-processor.md#configuration) 配置部分。
 
@@ -47,8 +47,8 @@ title: datadog
 | ----------- | ------  | ----------- |      -------       | -----         | ---------------------------------------------------------------------- |
 | host        | string  | optional    |  "127.0.0.1"       |               | DogStatsD 服务器的主机地址                                      |
 | port        | integer | optional    |    8125            |               | DogStatsD 服务器的主机端口                                         |
-| namespace   | string  | optional    |    "apisix"        |               | 由 APISIX 代理发送的所有自定义度量的前缀。对寻找指标图的实体很有帮助，例如：(apisix.request.counter)。                                        |
-| constant_tags | array | optional    | [ "source:apisix" ] |              | 嵌入到生成指标中的静态标签。这对某些信号度量进行分组很有用。 |
+| namespace   | string  | optional    |    "apisix"        |               | 由 APISIX 代理发送的所有自定义参数的前缀。对寻找指标图的实体很有帮助，例如：(apisix.request.counter)。                                        |
+| constant_tags | array | optional    | [ "source:apisix" ] |              | 静态标签嵌入到生成的指标中。这对某些信号的度量进行分组很有用。 |
 
 要了解更多关于如何有效地编写标签，请访问[这里](https://docs.datadoghq.com/getting_started/tagging/#defining-tags)
 
@@ -69,12 +69,12 @@ Apache APISIX 代理，对于每个请求响应周期，如果启用了 datadog 
 
 > 如果一个标签没有合适的值，该标签将被直接省略。
 
-- **route_name**：在路由模式定义中指定的名称，如果不存在或插件属性 `prefer_name` 被设置为 `false`，它将回退成路由 id 值。
+- **route_name**：在路由模式定义中指定的名称，如果不存在或插件属性 `prefer_name` 被设置为 `false`，它将默认使用路由/服务的 id 值。
 - **service_name**：如果一个路由是用服务的抽象概念创建的，特定的服务 name/id（基于插件的 `prefer_name` 属性）将被使用。
 - **consumer**：如果路由有一个链接的消费者，消费者的用户名将被添加为一个标签。
-- **balancer_ip**：处理了当前请求的 Upstream 平衡器的IP。
+- **balancer_ip**：处理了当前请求的上游复制均衡器的的IP。
 - **response_status**：HTTP 响应状态代码。
-- **scheme**：用于提出如 HTTP、gRPC、gRPCs 等请求的 Scheme。
+- **scheme**：已用于提出请求的协议，如HTTP、gRPC、gRPCs等。
 
 ## 如何启用
 
@@ -96,7 +96,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-现在，任何对 uri `/hello` 的请求都会生成上述指标并推送到 Datadog Agent 的DogStatsD 服务器。
+现在，任何对 uri `/hello` 的请求都会生成上述指标，并推送到 Datadog Agent 的 DogStatsD 服务器。
 
 ## 禁用插件
 
@@ -122,7 +122,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 在默认配置中，该插件希望 dogstatsd 服务在 `127.0.0.1:8125` 可用。如果你想更新配置，请更新插件的元数据。要了解更多关于 datadog 元数据的字段，请参阅[这里](#元数据)。
 
-向 _/apisix/admin/plugin_metadata_ 端点发出请求，更新后的元数据如下。
+向 _/apisix/admin/plugin_metadata_ 发出请求，更新后的元数据如下。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -137,9 +137,9 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY: e
 }'
 ```
 
-这个 HTTP PUT 请求将更新元数据，后续指标将通过 UDP StatsD 推送到 `172.168.45.29:8126` 端点。一切都将被热加载，不需要重新启动Apache APISIX实例。
+这个 HTTP PUT 请求将更新元数据，后续指标将通过 UDP StatsD 推送到 `172.168.45.29:8126` 上对应的服务。然后配置将被热加载，不需要重新启动 Apache APISIX 实例，就能生效。
 
-在这种情况下，如果你想把 datadog 元数据 schema 恢复到默认值，只需向同一个端点再发出一个 body 为空的 PUT 请求。举例如下：
+在这种情况下，如果你想把 datadog 元数据 schema 恢复到默认值，只需向同一个服务地址再发出一个 body 为空的 PUT 请求。举例如下：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/datadog \
