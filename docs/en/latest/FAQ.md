@@ -25,27 +25,44 @@ title: FAQ
 
 As organizations move towards cloud native microservices, there is a need for an API gateway that is performant, flexible, secure and scalable.
 
-APISIX outperforms other API gateways in these metrics while delivering functions like dynamic routing, a plugin mechanism, a low code dashboard and more.
+APISIX outperforms other API gateways in these metrics while being platform agnostic and fully dynamic delivering features like supporting multiple protocols, fine-grained routing and multi-language support.
 
 ## How does Apache APISIX differ from other API gateways?
 
 Apache APISIX differs in the following ways:
 
-- It uses etcd to save and synchronize configurations rather than relational databases like PostgreSQL or MySQL. This eliminates the need for polling, synchronizes the configuration in real-time, makes the code concise and avoids a single point of failure.
-- Supports dynamic routing.
+- It uses etcd to save and synchronize configurations rather than relational databases like PostgreSQL or MySQL. The real-time event notification system in etcd is easier to scale than in these alternatives. This allows APISIX to synchronize the configuration in real-time, makes the code concise and avoids a single point of failure.
+- Fully dynamic.
 - Supports [hot loading of Plugins](/docs/apisix/plugins/#hot-reload).
 
 ## What is the performance impact of using Apache APISIX?
 
-Apache APISIX delivers the best performance among other API gateways with a single-core QPS of 23,000 with an average delay of 0.6 ms.
+Apache APISIX delivers the best performance among other API gateways with a single-core QPS of 18,000 with an average delay of 0.2 ms.
 
 Specific results of the performance benchmarks can be found [here](benchmark.md).
+
+## Which platforms does Apache APISIX support?
+
+Apache APISIX is platform agnostic and avoids vendor lock-in. It is built for cloud native environments and can run on bare-metal machines to Kubernetes. It even support Apple Silicon chips.
+
+## What does it mean by "Apache APISIX is fully dynamic"?
+
+Apache APISIX is fully dynamic in the sense that it doesn't require restarts to change its behavior.
+
+It does the following dynamically:
+
+- Reloading Plugins
+- Proxy rewrites
+- Proxy mirror
+- Response rewrites
+- Health checks
+- Traffic split
 
 ## Does Apache APISIX have a user interface？
 
 Yes. Apache APISIX has an experimental feature called [Apache APISIX Dashboard](https://github.com/apache/apisix-dashboard), which is independent from Apache APISIX. To work with Apache APISIX through a user interface, you can deploy the Apache APISIX Dashboard.
 
-## Can I write my on Plugins for Apache APISIX?
+## Can I write my own Plugins for Apache APISIX?
 
 Yes. Apache APISIX is flexible and extensible through the use of custom Plugins that can be specific to user needs.
 
@@ -468,7 +485,7 @@ HTTP/1.1 200 OK
 ......
 ```
 
-**Note**: By using the default token, you could be exposed to security risks. It is recommended to update it when deploying to a production environment.
+**Note**: By using the default token, you could be exposed to security risks. It is required to update it when deploying to a production environment.
 
 ## How do I allow all IPs to access Apache APISIX's Admin API?
 
