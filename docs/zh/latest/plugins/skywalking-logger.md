@@ -23,9 +23,9 @@ title: skywalking-logger
 
 ## 描述
 
-`skywalking-logger` 是一个插件，可将 Access Log 数据通过 `HTTP` 推送到 SkyWalking OAP 服务器。如果上下文中存在 `tracing context`，插件会自动建立 `trace` 与日志的关联，并依赖于 [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/latest/en/protocols/skywalking-cross-process-propagation-headers-protocol-v3/) 。
+`skywalking-logger` 是一个可将 Access Log 数据通过 `HTTP` 推送到 `SkyWalking OAP` 服务器的插件。如果上下文中存在 `tracing context`，插件会自动建立 `trace` 与日志的关联，这依赖于 [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/latest/en/protocols/skywalking-cross-process-propagation-headers-protocol-v3/)的支持。
 
-这将提供将 Access Log 数据作为 JSON 对象发送到 SkyWalking OAP 服务器的功能。
+本插件提供将 Access Log 数据作为 JSON 对象发送到 `SkyWalking OAP` 服务器的功能。
 
 ## 属性
 
@@ -73,11 +73,11 @@ HTTP/1.1 200 OK
 hello, world
 ```
 
-完成上述步骤后，在可以 SkyWalking UI 查看到相关日志。
+完成上述步骤后，可以在 `SkyWalking UI` 查看到相关日志。
 
 ## 插件元数据设置
 
-`skywalking-logger` 也是制定日志格式，与 [http-logger](./http-logger.md) 插件类似。
+`skywalking-logger` 也支持自定义日志格式，与 [http-logger](./http-logger.md) 插件类似。
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
@@ -87,7 +87,7 @@ hello, world
 
 ## 禁用插件
 
-在插件配置中删除相应的 json 配置以禁用 skywalking-logger。APISIX 插件是热重载的，因此无需重新启动 APISIX ：
+在插件配置中删除相应的 JSON 配置就可以禁用 `skywalking-logger` 插件。由于 Apache APISIX 插件支持热加载，因此无需重新启动 Apache APISIX：
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
