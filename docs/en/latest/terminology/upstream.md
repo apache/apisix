@@ -21,6 +21,8 @@ title: Upstream
 #
 -->
 
+## Description
+
 Upstream is a virtual host abstraction that performs load balancing on a given set of service nodes according to the configured rules.
 
 Although Upstream can be directly configured to the [Route](./route.md) or [Service](./route.md), using an Upstream object is recommended when there is duplication as shown below.
@@ -31,7 +33,7 @@ By creating an Upstream object and referencing it by `upstream_id` in the Route,
 
 An Upstream configuration can be directly bound to a Route or a Service, but the configuration in Route has a higher priority. This behavior is consistent with priority followed by the [Plugin](./plugin.md) object.
 
-### Configuration
+## Configuration
 
 In addition to the equalization algorithm selections, Upstream also supports passive health check and retry for the upstream. You can learn more about this [here](../admin-api.md#upstream).
 
@@ -82,6 +84,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
+## Example
+
 The example below shows how you can configure a health check:
 
 ```shell
@@ -122,7 +126,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 You can learn more about health checks [here](../health-check.md).
 
-The examples below shows configurations which uses different `hash_on` types.
+The examples below show configurations that use different `hash_on` types.
 
 #### Consumer
 

@@ -55,6 +55,7 @@ For more information on Keycloak, refer to [Keycloak Authorization Docs](https:/
 | keepalive_timeout              | integer       | optional    | 60000                                         | positive integer >= 1000                                           | Idle timeout after which established HTTP connections will be closed.                                                                                       |
 | keepalive_pool                 | integer       | optional    | 5                                             | positive integer >= 1                                              | Maximum number of connections in the connection pool.                                                                                                       |
 | access_denied_redirect_uri     | string        | optional    |                                               | [1, 2048]                                          | Redirect unauthorized user with the given uri like "http://127.0.0.1/test", instead of returning `"error_description":"not_authorized"`.                                             |
+| password_grant_token_generation_incoming_uri      | string        | optional    |                            | /api/token                                         | You can set this uri value to generate token using password grant type. Plugin will compare incoming request uri with this value.                                           |
 
 ### Discovery and Endpoints
 
@@ -122,9 +123,30 @@ of the same name. The scope is then added to every permission to check.
 If `lazy_load_paths` is `false`, the plugin adds the mapped scope to any of the static permissions configured
 in the `permissions` attribute, even if they contain one or more scopes already.
 
+### Password Grant Token Generation Incoming URI
+
+If you want to generate a token using `password` grant, you can set the value of `password_grant_token_generation_incoming_uri`.
+
+Incoming request URI will be matched with this value and if matched, it will generate a token using `Token Endpoint`.
+It will also check if the request method is `POST`.
+
+You need to pass `application/x-www-form-urlencoded` as `Content-Type` header and `username`, `password` as parameters.
+
+**Sample request**
+
+If value of `password_grant_token_generation_incoming_uri` is `/api/token`, you can use following curl request.
+
+```shell
+curl --location --request POST 'http://127.0.0.1:9080/api/token' \
+--header 'Accept: application/json, text/plain, */*' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode 'username=<User_Name>' \
+--data-urlencode 'password=<Password>'
+```
+
 ## How To Enable
 
-Create a `route` and enable the `authz-keycloak` plugin on the route:
+Create a `route` and enable the `authz-keycloak` plugin on the route,`${realm}` is the realm name in `keyloak`:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -132,7 +154,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     "uri": "/get",
     "plugins": {
         "authz-keycloak": {
-            "token_endpoint": "http://127.0.0.1:8090/auth/realms/{client_id}/protocol/openid-connect/token",
+            "token_endpoint": "http://127.0.0.1:8090/auth/realms/${realm}/protocol/openid-connect/token",
             "permissions": ["resource name#scope name"],
             "audience": "Client ID"
         }
@@ -147,6 +169,19 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 ## Test Plugin
+
+Get `{JWT Token}`
+
+```shell
+curl \
+  -d "client_id=<YOUR_CLIENT_ID>" \
+  -d "username=<YOUR_USERNAMED>" \
+  -d "password=<YOUR_PASSWORD>" \
+  -d "grant_type=password" \
+  "http://<YOUR_KEYCLOAK_HOST>/auth/realms/${realm}/protocol/openid-connect/token"
+```
+
+Request with token
 
 ```shell
 curl http://127.0.0.1:9080/get -H 'Authorization: Bearer {JWT Token}'

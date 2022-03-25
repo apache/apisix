@@ -355,23 +355,6 @@ services:
     networks:
       nacos_net:
 
-
-  ## http_echo
-  apisix_http_echo:
-    image: mendhak/http-https-echo
-    environment:
-      HTTP_PORT: 8888
-      HTTPS_PORT: 9999
-    restart: unless-stopped
-    ports:
-      - "8888:8888"
-      - "9999:9999"
-    depends_on:
-      nacos_service_health_check:
-        condition: service_healthy
-    networks:
-      apisix_net:
-
   rocketmq_namesrv:
     image: apacherocketmq/rocketmq:4.6.0
     container_name: rmqnamesrv

@@ -122,8 +122,12 @@ function _M.http_init_worker()
     plugin_config.init_worker()
     require("apisix.consumer").init_worker()
 
-    if core.config == require("apisix.core.config_yaml") then
-        core.config.init_worker()
+    if core.config.init_worker then
+        local ok, err = core.config.init_worker()
+        if not ok then
+            core.log.error("failed to init worker process of ", core.config.type,
+                           " config center, err: ", err)
+        end
     end
 
     apisix_upstream.init_worker()
@@ -257,11 +261,8 @@ local function set_upstream_host(api_ctx, picked_server)
     end
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
-    if nodes_count == 1 then
-        local node = up_conf.nodes[1]
-        api_ctx.var.upstream_host = node.domain or node.host
-    elseif picked_server.domain and ngx_balancer.recreate_request then
-        api_ctx.var.upstream_host = picked_server.domain
+    if nodes_count == 1 or ngx_balancer.recreate_request then
+        api_ctx.var.upstream_host = picked_server.upstream_host
     end
 end
 

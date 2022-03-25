@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,24 +16,18 @@
 # limitations under the License.
 #
 
-# when using prometheus-operator, you can apply this into k8s.
-# Mention: ServiceMonitor should be the same namespace with prometheus-operator.
----
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: apisix-gw
-  labels:
-    app: apisix-gw
-spec:
-  endpoints:
-    - interval: 10s
-      honorLabels: true
-      port: http
-      path: /apisix/prometheus/metrics
-      scheme: http
-  selector:
-    matchLabels:
-      app: apisix-gw
-  namespaceSelector:
-    any: true
+. ./ci/common.sh
+
+run_case() {
+    export_or_prefix
+    export PERL5LIB=.:$PERL5LIB
+    prove -Itest-nginx/lib -I./ -r t/tars | tee test-result
+    rerun_flaky_tests test-result
+}
+
+case_opt=$1
+case $case_opt in
+    (run_case)
+        run_case
+        ;;
+esac

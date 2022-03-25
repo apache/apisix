@@ -19,6 +19,7 @@ local router = require("apisix.utils.router")
 local plugin_mod = require("apisix.plugin")
 local core = require("apisix.core")
 local ipairs = ipairs
+local ngx_header = ngx.header
 local type = type
 
 
@@ -42,6 +43,12 @@ function fetch_api_router()
             core.log.debug("fetched api routes: ",
                            core.json.delay_encode(api_routes, true))
             for _, route in ipairs(api_routes) do
+                if route.uri == nil then
+                    core.log.error("got nil uri in api route: ",
+                                   core.json.delay_encode(route, true))
+                    break
+                end
+
                 local typ_uri = type(route.uri)
                 if not has_route_not_under_apisix then
                     if typ_uri == "string" then
@@ -64,6 +71,10 @@ function fetch_api_router()
                         handler = function (api_ctx)
                             local code, body = route.handler(api_ctx)
                             if code or body then
+                                if type(body) == "table" and ngx_header["Content-Type"] == nil then
+                                    core.response.set_header("Content-Type", "application/json")
+                                end
+
                                 core.response.exit(code, body)
                             end
                         end

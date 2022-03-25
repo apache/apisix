@@ -194,6 +194,10 @@ http {
     lua_shared_dict kubernetes {* http.lua_shared_dict["kubernetes"] *};
     {% end %}
 
+    {% if enabled_discoveries["tars"] then %}
+    lua_shared_dict tars {* http.lua_shared_dict["tars"] *};
+    {% end %}
+
     {% if enabled_plugins["limit-conn"] then %}
     lua_shared_dict plugin-limit-conn {* http.lua_shared_dict["plugin-limit-conn"] *};
     {% end %}
@@ -237,6 +241,10 @@ http {
 
     {% if enabled_plugins["ext-plugin-pre-req"] or enabled_plugins["ext-plugin-post-req"] then %}
     lua_shared_dict ext-plugin {* http.lua_shared_dict["ext-plugin"] *}; # cache for ext-plugin
+    {% end %}
+
+    {% if config_center == "xds" then %}
+    lua_shared_dict xds-route-config  10m;
     {% end %}
 
     # for custom shared dict
