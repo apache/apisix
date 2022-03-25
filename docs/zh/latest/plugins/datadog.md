@@ -29,7 +29,7 @@ title: datadog
 
 `datadog` 插件具有将多个指标参数组成一个批处理统一推送给外部 Datadog Agent 的能力，并且可以重复使用同一个数据包套接字。
 
-这样的功能可以有效解决日志数据不及时发送的问题，因为当生成一个批处理，并对其做了恰当的配置(比如对 `inactive_timeout` 参数进行配置)之后。批处理器便会在配置时间（默认是 5s）内发送日志数据。
+这样的功能可以有效解决日志数据不及时发送的问题，因为当生成一个批处理，并对其做了恰当的配置 (比如对 `inactive_timeout` 参数进行配置) 之后。批处理器便会在配置时间（默认是 5s）内发送日志数据。
 
 关于 Apache APISIX 的批处理程序的更多信息，请参考 [Batch-Processor](../batch-processor.md#配置)
 
@@ -72,9 +72,9 @@ Apache APISIX 代理，对于每个请求响应周期，如果启用了 datadog 
 - **route_name**：在路由模式定义中指定的名称，如果不存在或插件属性 `prefer_name` 被设置为 `false`，它将默认使用路由/服务的 id 值。
 - **service_name**：如果一个路由是用服务的抽象概念创建的，特定的服务 name/id（基于插件的 `prefer_name` 属性）将被使用。
 - **consumer**：如果路由有一个链接的消费者，消费者的用户名将被添加为一个标签。
-- **balancer_ip**：处理了当前请求的上游复制均衡器的的IP。
+- **balancer_ip**：处理了当前请求的上游复制均衡器的的 IP。
 - **response_status**：HTTP 响应状态代码。
-- **scheme**：已用于提出请求的协议，如HTTP、gRPC、gRPCs等。
+- **scheme**：已用于提出请求的协议，如 HTTP、gRPC、gRPCs 等。
 
 ## 如何启用
 
