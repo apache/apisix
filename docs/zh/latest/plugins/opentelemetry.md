@@ -23,9 +23,9 @@ title: opentelemetry
 
 ## 描述
 
-[OpenTelemetry](https://opentelemetry.io/) 提供符合 [opentelemetry specification](https://github.com/open-telemetry/opentelemetry-specification) 协议规范的 Tracing 数据上报。
+[OpenTelemetry](https://opentelemetry.io/) 提供符合 [OpenTelemetry specification](https://opentelemetry.io/docs/reference/specification/) 协议规范的 Tracing 数据上报。
 
-只支持 `HTTP` 协议，且请求类型为 `application/x-protobuf` 的数据上报，相关协议标准：[OTLP/HTTP Request](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md#otlphttp-request)。
+只支持 `HTTP` 协议，且请求类型为 `application/x-protobuf` 的数据上报，相关协议标准：[OTLP/HTTP Request](https://opentelemetry.io/docs/reference/specification/protocol/otlp/#otlphttp-request).
 
 ## 属性
 
@@ -124,7 +124,7 @@ plugin_attr:
 
 当你想禁用一条路由/服务上的 opentelemetry 插件的时候，很简单，在插件的配置中把对应的 JSON 配置删除即可，无须重启服务，即刻生效：
 
-```shell
+```console
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
