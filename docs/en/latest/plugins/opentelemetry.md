@@ -23,9 +23,9 @@ title: opentelemetry
 
 ## Description
 
-[OpenTelemetry](https://opentelemetry.io/) report Tracing data according to [opentelemetry specification](https://github.com/open-telemetry/opentelemetry-specification).
+[OpenTelemetry](https://opentelemetry.io/) report Tracing data according to [OpenTelemetry specification](https://opentelemetry.io/docs/reference/specification/).
 
-Just support reporting in `HTTP` with `Content-Type=application/x-protobuf`, the specification: [OTLP/HTTP Request](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/otlp.md#otlphttp-request)。
+Just support reporting in `HTTP` with `Content-Type=application/x-protobuf`, the specification: [OTLP/HTTP Request](https://opentelemetry.io/docs/reference/specification/protocol/otlp/#otlphttp-request).
 
 ## Attributes
 
@@ -126,7 +126,7 @@ When you want to disable the opentelemetry plugin on a route/service, it is very
 you can delete the corresponding JSON configuration in the plugin configuration,
 no need to restart the service, it will take effect immediately:
 
-```shell
+```console
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
