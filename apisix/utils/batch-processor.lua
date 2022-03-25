@@ -148,7 +148,7 @@ function batch_processor:new(func, config)
         return nil, err
     end
 
-    if not(type(func) == "function") then
+    if type(func) ~= "function" then
         return nil, "Invalid argument, arg #1 must be a function"
     end
 
