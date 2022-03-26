@@ -21,74 +21,97 @@ title: FAQ
 #
 -->
 
-## Why a new API gateway?
+## Why do I need a new API gateway?
 
-There are new requirements for API gateways in the field of microservices: higher flexibility, higher performance requirements, and cloud native.
+As organizations move towards cloud native microservices, there is a need for an API gateway that is performant, flexible, secure and scalable.
 
-## What are the differences between Apache APISIX and other API gateways?
+APISIX outperforms other API gateways in these metrics while being platform agnostic and fully dynamic delivering features like supporting multiple protocols, fine-grained routing and multi-language support.
 
-Apache APISIX is based on etcd to save and synchronize configuration, not relational databases such as Postgres or MySQL.
+## How does Apache APISIX differ from other API gateways?
 
-This not only eliminates polling, makes the code more concise, but also makes configuration synchronization more real-time. At the same time, there will be no single point in the system, which is more usable.
+Apache APISIX differs in the following ways:
 
-In addition, Apache APISIX has dynamic routing and hot loading of plug-ins, which is especially suitable for API management under micro-service system.
+- It uses etcd to save and synchronize configurations rather than relational databases like PostgreSQL or MySQL. The real-time event notification system in etcd is easier to scale than in these alternatives. This allows APISIX to synchronize the configuration in real-time, makes the code concise and avoids a single point of failure.
+- Fully dynamic.
+- Supports [hot loading of Plugins](/docs/apisix/plugins/#hot-reload).
 
-## What's the performance of Apache APISIX?
+## What is the performance impact of using Apache APISIX?
 
-One of the goals of Apache APISIX design and development is the highest performance in the industry. Specific test data can be found here：[benchmark](benchmark.md)
+Apache APISIX delivers the best performance among other API gateways with a single-core QPS of 18,000 with an average delay of 0.2 ms.
 
-Apache APISIX is the highest performance API gateway with a single-core QPS of 23,000, with an average delay of only 0.6 milliseconds.
+Specific results of the performance benchmarks can be found [here](benchmark.md).
+
+## Which platforms does Apache APISIX support?
+
+Apache APISIX is platform agnostic and avoids vendor lock-in. It is built for cloud native environments and can run on bare-metal machines to Kubernetes. It even support Apple Silicon chips.
+
+## What does it mean by "Apache APISIX is fully dynamic"?
+
+Apache APISIX is fully dynamic in the sense that it doesn't require restarts to change its behavior.
+
+It does the following dynamically:
+
+- Reloading Plugins
+- Proxy rewrites
+- Proxy mirror
+- Response rewrites
+- Health checks
+- Traffic split
 
 ## Does Apache APISIX have a user interface？
 
-Yes. Apache APISIX has an experimental feature called [Apache APISIX Dashboard](https://github.com/apache/apisix-dashboard), which is an independent project apart from Apache APISIX. You can deploy Apache APISIX Dashboard to operate Apache APISIX through the user interface.
+Yes. Apache APISIX has an experimental feature called [Apache APISIX Dashboard](https://github.com/apache/apisix-dashboard), which is independent from Apache APISIX. To work with Apache APISIX through a user interface, you can deploy the Apache APISIX Dashboard.
 
-## Can I write my own plugin?
+## Can I write my own Plugins for Apache APISIX?
 
-Of course, Apache APISIX provides flexible custom plugins for developers and businesses to write their own logic.
+Yes. Apache APISIX is flexible and extensible through the use of custom Plugins that can be specific to user needs.
 
-[How to write plugin](plugin-develop.md)
+You can write your own Plugins by referring to [How to write your own Plugins](plugin-develop.md).
 
-## Why we choose etcd as the configuration center?
+## Why does Apache APISIX use etcd for the configuration center?
 
-For the configuration center, configuration storage is only the most basic function, and Apache APISIX also needs the following features:
+In addition to the basic functionality of storing the configurations, Apache APISIX also needs a storage system that supports these features:
 
-1. Cluster
-2. Transactions
-3. Multi-version Concurrency Control
-4. Change Notification
-5. High Performance
+1. Distributed deployments in clusters.
+2. Guarded transactions by comparisons.
+3. Multi-version concurrency control.
+4. Notifications and watch streams.
+5. High performance with minimum read/write latency.
 
-See more [etcd why](https://etcd.io/docs/latest/learning/why/#comparison-chart).
+etcd provides these features and more making it ideal over other databases like PostgreSQL and MySQL.
 
-## Why is it that installing Apache APISIX dependencies with Luarocks causes timeout, slow or unsuccessful installation?
+To learn more on how etcd compares with other alternatives see this [comparison chart](https://etcd.io/docs/latest/learning/why/#comparison-chart).
 
-There are two possibilities when encountering slow luarocks:
+## When installing Apache APISIX dependencies with LuaRocks, why does it cause a timeout or result in a slow or unsuccessful installation?
 
-1. Server used for luarocks installation is blocked
+This is likely because the LuaRocks server used is blocked.
 
-For the first problem, you can use https_proxy or use the `--server` option to specify a luarocks server that you can access or access faster.
-Run the `luarocks config rocks_servers` command(this command is supported after luarocks 3.0) to see which server are available.
-For China mainland users, you can use the `luarocks.cn` as the luarocks server.
+To solve this you can use https_proxy or use the `--server` flag to specify a faster LuaRocks server.
 
-We already provide a wrapper in the Makefile to simplify your job:
+You can run the command below to see the available servers (needs LuaRocks 3.0+):
+
+```shell
+luarocks config rocks_servers
+```
+
+Mainland China users can use `luarocks.cn` as the LuaRocks server. You can use this wrapper with the Makefile to set this up:
 
 ```bash
 make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 ```
 
-If using a proxy doesn't solve this problem, you can add `--verbose` option during installation to see exactly how slow it is.
+If this does not solve your problem, you can try getting a detailed log by using the `--verbose` flag to diagnose the problem.
 
-## How to support gray release via Apache APISIX?
+## How can I make a gray release with Apache APISIX?
 
-An example, `foo.com/product/index.html?id=204&page=2`, gray release based on `id` in the query string in URL as a condition：
+Let's take an example query `foo.com/product/index.html?id=204&page=2` and consider that you need to make a gray release based on the `id` in the query string with this condition:
 
-1. Group A：id <= 1000
-2. Group B：id > 1000
+1. Group A: `id <= 1000`
+2. Group B: `id > 1000`
 
-There are two different ways to do this：
+There are two different ways to achieve this in Apache APISIX:
 
-1. Use the `vars` field of route to do it.
+1. Using the `vars` field in a [Route](architecture-design/route.md):
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -118,20 +141,17 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-Here is the operator list of current `lua-resty-radixtree`：
-https://github.com/api7/lua-resty-radixtree#operator-list
+All the available operators of the current `lua-resty-radixtree` are listed [here](https://github.com/api7/lua-resty-radixtree#operator-list).
 
-2. Use `traffic-split` plugin to do it.
+2. Using the [traffic-split](plugins/traffic-split.md) Plugin.
 
-Please refer to the [traffic-split.md](plugins/traffic-split.md) plugin documentation for usage examples.
+## How do I redirect HTTP traffic to HTTPS with Apache APISIX?
 
-## How to redirect http to https via Apache APISIX?
+For example, you need to redirect traffic from `http://foo.com` to `https://foo.com`.
 
-An example, redirect `http://foo.com` to `https://foo.com`
+Apache APISIX provides several different ways to achieve this:
 
-There are several different ways to do this.
-
-1. Directly use the `http_to_https` in `redirect` plugin：
+1. Setting `http_to_https` to `true` in the [redirect](plugins/redirect.md) Plugin:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -146,7 +166,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-2. Use with advanced routing rule `vars` with `redirect` plugin:
+2. Advanced routing with `vars` in the redirect Plugin:
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -169,7 +189,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 }'
 ```
 
-3. `serverless` plugin：
+3. Using the `serverless` Plugin:
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -184,13 +204,13 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 }'
 ```
 
-Then test it to see if it works：
+To test this serverless Plugin:
 
 ```shell
 curl -i -H 'Host: foo.com' http://127.0.0.1:9080/hello
 ```
 
-The response body should be:
+The response should be:
 
 ```
 HTTP/1.1 301 Moved Permanently
@@ -210,33 +230,30 @@ Server: APISIX web server
 </html>
 ```
 
-## How to change the log level?
+## How do I change Apache APISIX's log level?
 
-The default log level for Apache APISIX is `warn`. However You can change the log level to `info` if you want to trace the messages print by `core.log.info`.
+By default the log level of Apache APISIX is set to `warn`. You can set this to `info` to trace the messages printed by `core.log.info`.
 
-Steps:
-
-1. Modify the parameter `error_log_level: "warn"` to `error_log_level: "info"` in conf/config.yaml.
+For this, you can set the `error_log_level` parameter in your configuration file (conf/config.yaml) as shown below and reload Apache APISIX.
 
 ```yaml
 nginx_config:
   error_log_level: "info"
 ```
 
-2. Reload or restart Apache APISIX
+## How do I reload my custom Plugins for Apache APISIX?
 
-Now you can trace the info level log in logs/error.log.
+All Plugins in Apache APISIX are hot reloaded.
 
-## How to reload your own plugin?
+You can learn more about hot reloading of Plugins [here](https://apisix.apache.org/docs/apisix/next/plugins/#hot-reload).
 
-The Apache APISIX plugin supports hot reloading.
-See the `Hot reload` section in [plugins](./plugins.md) for how to do that.
+## How do I configure Apache APISIX to listen on multiple ports when handling HTTP or HTTPS requests?
 
-## How to make Apache APISIX listen on multiple ports when handling HTTP or HTTPS requests?
+By default, Apache APISIX listens only on port 9080 when handling HTTP requests.
 
-By default, Apache APISIX only listens on port 9080 when handling HTTP requests. If you want Apache APISIX to listen on multiple ports, you need to modify the relevant parameters in the configuration file as follows:
+To configure Apache APISIX to listen on multiple ports, you can:
 
-1. Modify the parameter of HTTP port listen `node_listen` in `conf/config.yaml`, for example:
+1. Modify the parameter `node_listen` in `conf/config.yaml`:
 
    ```
     apisix:
@@ -246,83 +263,83 @@ By default, Apache APISIX only listens on port 9080 when handling HTTP requests.
         - 9082
    ```
 
-   Handling HTTPS requests is similar, modify the parameter of HTTPS port listen `ssl.listen_port` in `conf/config.yaml`, for example:
+   Similarly for HTTPS requests, modify the parameter `ssl.listen_port` in `conf/config.yaml`:
 
-    ```
-    apisix:
-      ssl:
-        listen_port:
-          - 9443
-          - 9444
-          - 9445
-    ```
+   ```
+   apisix:
+     ssl:
+       listen_port:
+         - 9443
+         - 9444
+         - 9445
+   ```
 
-2. Reload or restart Apache APISIX
+2. Reload or restart Apache APISIX.
 
-## How does Apache APISIX use etcd to achieve millisecond-level configuration synchronization
+## How does Apache APISIX achieve millisecond-level configuration synchronization?
 
-etcd provides subscription functions to monitor whether the specified keyword or directory is changed (for example: [watch](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watch), [watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir)).
+Apache APISIX uses etcd for its configuration center. etcd provides subscription functions like [watch](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watch) and [watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir) that can monitor changes to specific keywords or directories.
 
-Apache APISIX uses [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir) to monitor directory content changes:
+In Apache APISIX, we use [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir) to monitor changes in a directory.
 
-* If there is no data update in the monitoring directory: the process will be blocked until timeout or other errors occurred.
-* If the monitoring directory has data updates: etcd will return the new subscribed data immediately (in milliseconds), and Apache APISIX will update it to the memory cache.
+If there is no change in the directory being monitored, the process will be blocked until it times out or run into any errors.
 
-With the help of etcd which incremental notification feature is millisecond-level, Apache APISIX achieve millisecond-level of configuration synchronization.
+If there are changes in the directory being monitored, etcd will return this new data within milliseconds and Apache APISIX will update the cache memory.
 
-## How to customize the Apache APISIX instance id?
+## How do I customize the Apache APISIX instance id?
 
-By default, Apache APISIX will read the instance id from `conf/apisix.uid`. If it is not found, and no id is configured, Apache APISIX will generate a `uuid` as the instance id.
+By default, Apache APISIX reads the instance id from `conf/apisix.uid`. If this is not found and no id is configured, Apache APISIX will generate a `uuid` for the instance id.
 
-If you want to specify a meaningful id to bind Apache APISIX instance to your internal system, you can configure it in `conf/config.yaml`, for example:
+To specify a meaningful id to bind Apache APISIX to your internal system, set the `id` in your `conf/config.yaml` file:
 
-    ```
-    apisix:
-      id: "your-meaningful-id"
-    ```
-
-## Why there are a lot of "failed to fetch data from etcd, failed to read etcd dir, etcd key: xxxxxx" errors in error.log?
-
-First please make sure the network between Apache APISIX and etcd cluster is not partitioned.
-
-If the network is healthy, please check whether your etcd cluster enables the [gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/).  However, The default case for this feature is different when use command line options or configuration file to start etcd server.
-
-1. When command line options is in use, this feature is enabled by default, the related option is `--enable-grpc-gateway`.
-
-```sh
-etcd --enable-grpc-gateway --data-dir=/path/to/data
+```yaml
+apisix:
+  id: "your-id"
 ```
 
-Note this option is not shown in the output of `etcd --help`.
+## Why are there errors saying "failed to fetch data from etcd, failed to read etcd dir, etcd key: xxxxxx" in the error.log?
 
-2. When configuration file is used, this feature is disabled by default, please enable `enable-grpc-gateway` explicitly.
+Please follow the troubleshooting steps described below:
 
-```json
-# etcd.json
-{
-    "enable-grpc-gateway": true,
-    "data-dir": "/path/to/data"
-}
-```
+1. Make sure that there aren't any networking issues between Apache APISIX and your etcd deployment in your cluster.
+2. If your network is healthy, check whether you have enabled the [gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/) for etcd. The default state depends on whether you used command line options or a configuration file to start the etcd server.
 
-```yml
-# etcd.conf.yml
-enable-grpc-gateway: true
-```
+   - If you used command line options, gRPC gateway is enabled by default. You can enable it manually as shown below:
 
-Indeed this distinction was eliminated by etcd in their master branch, but not backport to announced versions, so be care when deploy your etcd cluster.
+   ```sh
+   etcd --enable-grpc-gateway --data-dir=/path/to/data
+   ```
 
-## How to set up high available Apache APISIX clusters?
+   **Note**: This flag is not shown while running `etcd --help`.
 
-The high availability of Apache APISIX can be divided into two parts:
+   - If you used a configuration file, gRPC gateway is disabled by default. You can manually enable it as shown below:
 
-1. The data plane of Apache APISIX is stateless and can be elastically scaled at will. Just add a layer of LB in front.
+   In `etcd.json`:
 
-2. The control plane of Apache APISIX relies on the highly available implementation of `etcd cluster` and does not require any relational database dependency.
+   ```json
+   {
+     "enable-grpc-gateway": true,
+     "data-dir": "/path/to/data"
+   }
+   ```
 
-## Why does the `make deps` command fail in source installation?
+   In `etcd.conf.yml`:
 
-When executing the `make deps` command, an error such as the one shown below occurs. This is caused by the missing openresty's `openssl` development kit, you need to install it first. Please refer to the [install dependencies](install-dependencies.md) document for installation.
+   ```yml
+   enable-grpc-gateway: true
+   ```
+
+**Note**: This distinction was eliminated by etcd in their latest master branch but wasn't backported to previous versions.
+
+## How do I setup high availability Apache APISIX clusters?
+
+Apache APISIX can be made highly available by adding a load balancer in front of it as APISIX's data plane is stateless and can be scaled when needed.
+
+The control plane of Apache APISIX is highly available as it relies only on an etcd cluster.
+
+## Why does the `make deps` command fail when installing Apache APISIX from source?
+
+When executing `make deps` to install Apache APISIX from source, you can get an error as shown below:
 
 ```shell
 $ make deps
@@ -334,20 +351,20 @@ Example: luarocks install luasec OPENSSL_DIR=/usr/local
 make: *** [deps] Error 1
 ```
 
-## How to access Apache APISIX Dashboard through Apache APISIX proxy
+This is caused by the missing OpenResty openssl development kit. To install it, refer [installing dependencies](install-dependencies.md).
 
-1. Keep the Apache APISIX proxy port and Admin API port different(or disable Admin API). For example, do the following configuration in `conf/config.yaml`.
+## How do I access the APISIX Dashboard through Apache APISIX proxy?
 
-The Admin API use a separate port 9180:
+You can follow the steps below to configure this:
+
+1. Configure different ports for Apache APISIX proxy and Admin API. Or, disable the Admin API.
 
 ```yaml
 apisix:
-  port_admin: 9180            # use a separate port
+  port_admin: 9180 # use a separate port
 ```
 
-2. Add proxy route of Apache APISIX Dashboard:
-
-Note: The Apache APISIX Dashboard service here is listening on `127.0.0.1:9000`.
+2. Add a proxy Route for the Apache APISIX dashboard:
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -367,9 +384,11 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 }'
 ```
 
-## How to use route `uri` for regular matching
+**Note**: The Apache APISIX Dashboard is listening on `127.0.0.1:9000`.
 
-The regular matching of uri is achieved through the `vars` field of route.
+## How do I use regular expressions (regex) for matching `uri` in a Route?
+
+You can use the `vars` field in a Route for matching regular expressions:
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -387,25 +406,25 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-Test request:
+And to test this request:
 
 ```shell
-# The uri matched successfully
+# uri matched
 $ curl http://127.0.0.1:9080/hello -i
 HTTP/1.1 200 OK
 ...
 
-# The uri match failed
+# uri didn't match
 $ curl http://127.0.0.1:9080/12ab -i
 HTTP/1.1 404 Not Found
 ...
 ```
 
-In route, we can achieve more condition matching by combining `uri` with `vars` field. For more details of using `vars`, please refer to [lua-resty-expr](https://github.com/api7/lua-resty-expr).
+For more info on using `vars` refer to [lua-resty-expr](https://github.com/api7/lua-resty-expr).
 
-## Does the upstream node support configuring the [FQDN](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) address
+## Does the Upstream node support configuring a [FQDN](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) address?
 
-This is supported. Here is an example where the `FQDN` is `httpbin.default.svc.cluster.local` (a Kubernetes Service):
+Yes. The example below shows configuring the FQDN `httpbin.default.svc.cluster.local` (a Kubernetes service):
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -420,36 +439,33 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
+To test this Route:
+
 ```shell
-# Test request
 $ curl http://127.0.0.1:9080/ip -i
 HTTP/1.1 200 OK
 ...
 ```
 
-## What is the `X-API-KEY` of Admin API? Can it be modified?
+## What is the `X-API-KEY` of the Admin API? Can it be modified?
 
-1. The `X-API-KEY` of Admin API refers to the `apisix.admin_key.key` in the `config.yaml` file, and the default value is `edd1c9f034335f136f87ad84b625c8f1`. It is the access token of the Admin API.
+`X-API-KEY` of the Admin API refers to the `apisix.admin_key.key` in your `conf/config.yaml` file. It is the access token for the Admin API.
 
-Note: There are security risks in using the default API token. It is recommended to update it when deploying to a production environment.
-
-2. `X-API-KEY` can be modified.
-
-For example: make the following changes to the `apisix.admin_key.key` in the `conf/config.yaml` file and reload Apache APISIX.
+By default, it is set to `edd1c9f034335f136f87ad84b625c8f1` and can be modified by changing the parameter in your `conf/config.yaml` file:
 
 ```yaml
 apisix:
   admin_key
     -
       name: "admin"
-      key: abcdefghabcdefgh
+      key: newkey
       role: admin
 ```
 
-Access the Admin API:
+Now, to access the Admin API:
 
 ```shell
-$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: abcdefghabcdefgh' -X PUT -d '
+$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: newkey' -X PUT -d '
 {
     "uris":[ "/*" ],
     "name":"admin-token-test",
@@ -469,11 +485,13 @@ HTTP/1.1 200 OK
 ......
 ```
 
-The route was created successfully. It means that the modification of `X-API-KEY` takes effect.
+**Note**: By using the default token, you could be exposed to security risks. It is required to update it when deploying to a production environment.
 
-## How to allow all IPs to access Admin API
+## How do I allow all IPs to access Apache APISIX's Admin API?
 
-By default, Apache APISIX only allows the IP range of `127.0.0.0/24` to access the `Admin API`. If you want to allow all IP access, then you only need to add the following configuration in the `conf/config.yaml` configuration file.
+By default, Apache APISIX only allows IPs in the range `127.0.0.0/24` to access the Admin API.
+
+To allow IPs in all ranges, you can update your configuration file as show below and restart or reload Apache APISIX.
 
 ```yaml
 apisix:
@@ -481,28 +499,33 @@ apisix:
     - 0.0.0.0/0
 ```
 
-Restart or reload Apache APISIX, all IPs can access the `Admin API`.
+**Note**: This should only be used in non-production environments to allow all clients to access Apache APISIX and is not safe for production environments. Always authorize specific IP addresses or address ranges for production environments.
 
-**Note: You can use this method in a non-production environment to allow all clients from anywhere to access your `Apache APISIX` instances, but it is not safe to use it in a production environment. In production environment, please only authorize specific IP addresses or address ranges to access your instance.**
+## How do I auto renew SSL certificates with acme.sh?
 
-## How to auto renew SSL cert via acme.sh
+You can run the commands below to achieve this:
 
 ```bash
-$ curl --output /root/.acme.sh/renew-hook-update-apisix.sh --silent https://gist.githubusercontent.com/anjia0532/9ebf8011322f43e3f5037bc2af3aeaa6/raw/65b359a4eed0ae990f9188c2afa22bacd8471652/renew-hook-update-apisix.sh
-
-$ chmod +x /root/.acme.sh/renew-hook-update-apisix.sh
-
-$ acme.sh  --issue  --staging  -d demo.domain --renew-hook "/root/.acme.sh/renew-hook-update-apisix.sh  -h http://apisix-admin:port -p /root/.acme.sh/demo.domain/demo.domain.cer -k /root/.acme.sh/demo.domain/demo.domain.key -a xxxxxxxxxxxxx"
-
-$ acme.sh --renew --domain demo.domain
-
+curl --output /root/.acme.sh/renew-hook-update-apisix.sh --silent https://gist.githubusercontent.com/anjia0532/9ebf8011322f43e3f5037bc2af3aeaa6/raw/65b359a4eed0ae990f9188c2afa22bacd8471652/renew-hook-update-apisix.sh
 ```
 
-Blog https://juejin.cn/post/6965778290619449351 has detail setup.
+```bash
+chmod +x /root/.acme.sh/renew-hook-update-apisix.sh
+```
 
-## How to strip route prefix for path matching
+```bash
+acme.sh  --issue  --staging  -d demo.domain --renew-hook "/root/.acme.sh/renew-hook-update-apisix.sh  -h http://apisix-admin:port -p /root/.acme.sh/demo.domain/demo.domain.cer -k /root/.acme.sh/demo.domain/demo.domain.key -a xxxxxxxxxxxxx"
+```
 
-To strip route prefix before forwarding to upstream, for example from `/foo/get` to `/get`, could be achieved through plugin `proxy-rewrite`.
+```bash
+acme.sh --renew --domain demo.domain
+```
+
+You can check [this post](https://juejin.cn/post/6965778290619449351) for a more detailed instruction on setting this up.
+
+## How do I strip a prefix from a path before forwarding to Upstream in Apache APISIX?
+
+To strip a prefix from a path in your route, like to take `/foo/get` and strip it to `/get`, you can use the [proxy-rewrite](plugins/proxy-rewrite.md) Plugin:
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -522,10 +545,10 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-Test request:
+And to test this configuration:
 
 ```shell
-$ curl http://127.0.0.1:9080/foo/get -i
+curl http://127.0.0.1:9080/foo/get -i
 HTTP/1.1 200 OK
 ...
 {
@@ -534,35 +557,40 @@ HTTP/1.1 200 OK
 }
 ```
 
-## How to fix `unable to get local issuer certificate` error
+## How do I fix the error `unable to get local issuer certificate` in Apache APISIX?
 
-`conf/config.yaml`
+You can manually set the path to your certificate by adding it to your `conf/config.yaml` file as shown below:
 
 ```yaml
-# ...
 apisix:
   ssl:
     ssl_trusted_certificate: /path/to/certs/ca-certificates.crt
-# ...
 ```
 
-**Note:**
+**Note**: When you are trying to connect TLS services with cosocket and if APISIX does not trust the peer's TLS certificate, you should set the parameter `apisix.ssl.ssl_trusted_certificate`.
 
-- Whenever trying to connect TLS services with cosocket, if APISIX does not trust the peer's TLS service certificate, you should set `apisix.ssl.ssl_trusted_certificate`
+For example, if you are using Nacos for service discovery in APISIX, and Nacos has TLS enabled (configured host starts with `https://`), you should set `apisix.ssl.ssl_trusted_certificate` and use the same CA certificate as Nacos.
 
-As an example, if using Nacos as a service discovery in APISIX, Nacos has TLS protocol enabled, i.e. Nacos configuration `host` starts with `https://`, so you need to configure `apisix.ssl.ssl_trusted_certificate` and use the same CA certificate as Nacos.
+## How do I fix the error `module 'resty.worker.events' not found` in Apache APISIX?
 
-## How to fix `module 'resty.worker.events' not found` error
+This error is caused by installing Apache APISIX in the `/root` directory. The worker process would by run by the user "nobody" and it would not have enough permissions to access the files in the `/root` directory.
 
-Installing APISIX under the `/root` directory causes this problem. Because the worker process is run by the user `nobody`, it does not have enough permissions to access the files in the `/root` directory. You need to change the APISIX installation directory, and it is recommended to install it in the `/usr/local` directory.
+To fix this, you can change the APISIX installation directory to the recommended directory: `/usr/local`.
 
-## What is the difference between `plugin-metadata` and `plugin-configs`
+## What is the difference between `plugin-metadata` and `plugin-configs` in Apache APISIX?
 
-`plugin-metadata` is the metadata of the plugin, which is shared by all configuration instances of the plugin. When writing a plugin. If there are some property changes that need to take effect for all configuration instances of the plugin, then it is appropriate to put them in `plugin-metadata`.
+The differences between the two are described in the table below:
 
-`plugin-configs` is a collection of configuration instances of multiple different plugins. If you want to reuse a common set of plugin configuration instances, you can extract them into a Plugin Config and bind them to the corresponding routes.
+| `plugin-metadata`                                                                                                | `plugin-config`                                                                                                                                     |
+| ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Metadata of a Plugin shared by all configuration instances of the Plugin.                                        | Collection of configuration instances of multiple different Plugins.                                                                                |
+| Used when there are property changes that needs to be propagated across all configuration instances of a Plugin. | Used when you need to reuse a common set of configuration instances so that it can be extracted to a `plugin-config` and bound to different Routes. |
+| Takes effect on all the entities bound to the configuration instances of the Plugin.                             | Takes effect on Routes bound to the `plugin-config`.                                                                                                |
 
-The difference between `plugin-metadata` and `plugin-configs`:
+## Where can I find more answers?
 
-- Plugin configuration instance scope: `plugin-metadata` works on all configuration instances of this plugin. `plugin-configs` works on the plugin configuration instances under configured it.
-- Binding entities: `plugin-metadata` take effect on the entities bound to all configuration instances of this plugin. `plugin-configs` take effect on the routes bound to this `plugin-configs`.
+You can find more answers on:
+
+- [Apache APISIX Slack Channel](/docs/general/community#joining-the-slack-channel)
+- [Ask questions on APISIX mailing list](/docs/general/community#joining-the-mailing-list)
+- [GitHub Issues](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc) and [GitHub Discussions](https://github.com/apache/apisix/discussions)
