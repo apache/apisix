@@ -15,7 +15,7 @@ jobs:
           git grep --cached -l '' | xargs codespell --ignore-words=.ignore_words
       - name: Merge conflict
         run: |
-          bash ./utils/check-plugins-code.sh
+          bash ./utils/check-merge-conflict.sh
       - name: Plugin Code
         run: |
           bash ./utils/check-plugins-code.sh
