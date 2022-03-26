@@ -167,14 +167,14 @@ function _M.rewrite(conf, ctx)
     -- 3. check user exists
     local cur_consumer = consumers[username]
     if not cur_consumer then
-        return 401, { message = "Invalid password or username" }
+        return 401, { message = "Invalid user authorization" }
     end
     core.log.info("consumer: ", core.json.delay_encode(cur_consumer))
 
 
     -- 4. check the password is correct
     if cur_consumer.auth_conf.password ~= password then
-        return 401, { message = "Invalid password or username" }
+        return 401, { message = "Invalid user authorization" }
     end
 
     -- 5. hide `Authorization` request header if `hide_credentials` is `true`

@@ -196,7 +196,7 @@ GET /hello
 Authorization: Basic YmFyOmJhcgo=
 --- error_code: 401
 --- response_body
-{"message":"Invalid password or username"}
+{"message":"Invalid user authorization"}
 --- no_error_log
 [error]
 
@@ -209,7 +209,7 @@ GET /hello
 Authorization: Basic Zm9vOmZvbwo=
 --- error_code: 401
 --- response_body
-{"message":"Invalid password or username"}
+{"message":"Invalid user authorization"}
 --- no_error_log
 [error]
 

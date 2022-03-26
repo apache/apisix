@@ -140,7 +140,7 @@ function _M.rewrite(conf, ctx)
     local userdn =  uid .. "=" .. user.username .. "," .. conf.base_dn
     local ld = lualdap.open_simple (conf.ldap_uri, userdn, user.password, conf.use_tls)
     if not ld then
-        return 401, { message = "Invalid password or username" }
+        return 401, { message = "Invalid user authorization" }
     end
 
     -- 3. Retrieve consumer for authorization plugin
@@ -152,7 +152,7 @@ function _M.rewrite(conf, ctx)
         create_consumer_cache, consumer_conf)
     local consumer = consumers[userdn]
     if not consumer then
-        return 401, {message = "Invalid password or username"}
+        return 401, {message = "Invalid user authorization"}
     end
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
 
