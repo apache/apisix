@@ -46,7 +46,7 @@ Apache APISIX facilitates interface traffic handling for Websites, Mobile and Io
 
 Apache APISIX not only covers the traditional functions of NGINX, but also deeply cooperates with different observability platforms, which greatly improves service governance capabilities. Other characteristics of the Apache APISIX gateway includes:
 
-  - All platforms:
+  - Multi-Platform Support:
    APISIX is a cloud native, open source API gateway. You can run APISIX from bare-metal to Kubernetes. Since APISIX supports ARM64, it avoids the lock-in challenge of the infrastructure technology. It also provides integration to cloud providers like AWS Lambda, Azure Functions, Lua functions and Apache OpenWhisk.
 
   - Full Dynamic:
