@@ -146,7 +146,6 @@ function _M.access(conf, ctx)
         session_obj_write:save()
         core.response.set_header("Location", original_url)
         return 302
-        
     end
 
     -- step 2: check whether session exists
