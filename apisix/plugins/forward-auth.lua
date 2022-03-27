@@ -27,6 +27,12 @@ local schema = {
             type = "boolean",
             default = true,
         },
+        request_method = {
+            type = "string",
+            default = "GET",
+            enum = {"GET", "POST"},
+            description = "the method for client to request the authorization service"
+        },
         request_headers = {
             type = "array",
             default = {},
@@ -95,8 +101,13 @@ function _M.access(conf, ctx)
     local params = {
         headers = auth_headers,
         keepalive = conf.keepalive,
-        ssl_verify = conf.ssl_verify
+        ssl_verify = conf.ssl_verify,
+        method = conf.request_method
     }
+
+    if params.method == "POST" then
+        params.body = core.request.get_body()
+    end
 
     if conf.keepalive then
         params.keepalive_timeout = conf.keepalive_timeout

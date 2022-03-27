@@ -59,7 +59,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 禁用插件
 
-只需删除插件配置中 `grpc-web` 的JSON配置即可。 APISIX 插件是热加载的，所以不需要重启 APISIX。
+只需删除插件配置中 `grpc-web` 的 JSON 配置即可。 APISIX 插件是热加载的，所以不需要重启 APISIX。
 
 ```bash
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

@@ -97,10 +97,10 @@ Follow the steps below to install Apache APISIX via the source release package.
   curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-dependencies.sh -sL | bash -
   ```
 
-2. Create a directory named `apisix-2.12.0`.
+2. Create a directory named `apisix-2.13.0`.
 
   ```shell
-  APISIX_VERSION='2.12.0'
+  APISIX_VERSION='2.13.0'
   mkdir apisix-${APISIX_VERSION}
   ```
 
@@ -125,8 +125,6 @@ Follow the steps below to install Apache APISIX via the source release package.
   cd apisix-${APISIX_VERSION}
   # Create dependencies
   make deps
-  # Install apisix command
-  make install
   ```
 
   **Note**: If you fail to install dependency packages using `make deps` and get an error message like `Could not find header file for LDAP/PCRE/openssl`, you can use this general method to solve problems.
@@ -149,11 +147,9 @@ Follow the steps below to install Apache APISIX via the source release package.
      `/opt/homebrew/cellar/openldap/` is default path to install openldap on macOS(Apple Silicon) using brew.
      `/usr/local/opt/openldap/` is default path to install openldap on macOS(Intel) using brew.
 
-5. To uninstall the Apache APISIX runtime, run:
+6. To uninstall the Apache APISIX runtime, run:
 
    ```shell
-   # Uninstall apisix command
-   make uninstall
    # Purge dependencies
    make undeps
    ```
@@ -162,9 +158,9 @@ Follow the steps below to install Apache APISIX via the source release package.
 
 #### LTS version installation via Source Release Package
 
-The [current LTS version](https://apisix.apache.org/downloads/) of Apache APISIX is `2.10.4`.
+The [current LTS version](https://apisix.apache.org/downloads/) of Apache APISIX is `2.13.0`.
 
-To install this version, set `APISIX_VERSION` in [Installation via Source Release Package](#installation-via-source-release-package) to `2.10.4` and continue with the other steps.
+To install this version, set `APISIX_VERSION` in [Installation via Source Release Package](#installation-via-source-release-package) to this version and continue with the other steps.
 
 ## Step 2: Install etcd
 

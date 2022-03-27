@@ -265,6 +265,7 @@ nginx_config:                     # config for render the template to generate n
       access-tokens: 1m
       ext-plugin: 1m
       kubernetes: 1m
+      tars: 1m
 
 etcd:
   host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
