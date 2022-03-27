@@ -104,7 +104,7 @@ HTTP/1.1 401 Unauthorized
 $ curl -i -uuser:password1 http://127.0.0.1:9080/hello
 HTTP/1.1 401 Unauthorized
 ...
-{"message":"Invalid user key in authorization"}
+{"message":"Invalid user authorization"}
 ```
 
 - password is invalid:
@@ -113,7 +113,7 @@ HTTP/1.1 401 Unauthorized
 $ curl -i -uuser01:passwordfalse http://127.0.0.1:9080/hello
 HTTP/1.1 401 Unauthorized
 ...
-{"message":"Password is error"}
+{"message":"Invalid user authorization"}
 ```
 
 - success:

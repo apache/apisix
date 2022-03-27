@@ -152,7 +152,7 @@ function _M.rewrite(conf, ctx)
         create_consumer_cache, consumer_conf)
     local consumer = consumers[userdn]
     if not consumer then
-        return 401, {message = "Invalid API key in request"}
+        return 401, {message = "Invalid user authorization"}
     end
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
 
