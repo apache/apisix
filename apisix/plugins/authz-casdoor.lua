@@ -128,26 +128,25 @@ function _M.access(conf, ctx)
         end
         local access_token, lifetime, err =
             fetch_access_token(args.code, conf)
-        if err then
+        if not access_token then
             core.log.error(err)
             return 503
         end
-        if access_token then
-            local original_url = session_obj_read.data.original_uri
-            if not original_url then
-                err = "no original_url found in session"
-                core.log.error(err)
-                return 503
-            end
-            local session_obj_write = session.new {
-                cookie = {lifetime = lifetime}
-            }
-            session_obj_write:start()
-            session_obj_write.data.access_token = access_token
-            session_obj_write:save()
-            core.response.set_header("Location", original_url)
-            return 302
+        local original_url = session_obj_read.data.original_uri
+        if not original_url then
+            err = "no original_url found in session"
+            core.log.error(err)
+            return 503
         end
+        local session_obj_write = session.new {
+            cookie = {lifetime = lifetime}
+        }
+        session_obj_write:start()
+        session_obj_write.data.access_token = access_token
+        session_obj_write:save()
+        core.response.set_header("Location", original_url)
+        return 302
+        
     end
 
     -- step 2: check whether session exists
@@ -159,7 +158,7 @@ function _M.access(conf, ctx)
         session_obj_write.data.state = state
         session_obj_write:save()
 
-        local redirect_url=conf.endpoint_addr .. "/login/oauth/authorize?" .. ngx.encode_args({
+        local redirect_url = conf.endpoint_addr .. "/login/oauth/authorize?" .. ngx.encode_args({
             response_type = "code",
             scope = "read",
             state = state,
