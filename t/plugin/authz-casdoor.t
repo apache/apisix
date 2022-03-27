@@ -100,7 +100,7 @@ __DATA__
             }
             ok, err = plugin.check_schema(conf3)
             if ok then
-                ngx.say("err: shouln't have passed sanity check")
+                ngx.say("err: shouldn't have passed sanity check")
             end
 
             ngx.say("done")
