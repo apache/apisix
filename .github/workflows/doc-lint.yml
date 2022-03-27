@@ -47,4 +47,4 @@ jobs:
           wget -O- "https://github.com/huacnlee/autocorrect/releases/download/$version/autocorrect-linux-amd64.tar.gz" | tar -xzv
           mv -v autocorrect /usr/local/bin/
           autocorrect --version
-          git ls-files | grep "^docs/zh/latest/.*.md$" | xargs -t autocorrect --lint
+          git ls-files -- "docs/zh/latest/**/*.md" | xargs -t autocorrect --lint
