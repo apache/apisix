@@ -21,46 +21,68 @@ title: 常见问题
 #
 -->
 
-## 为什么要做 API 网关？不是已经有其他的开源网关了吗？
+## 为什么我们需要一个新的 API 网关？不是已经有其他的开源网关了吗？
 
-微服务领域对 API 网关有新的需求：更高的灵活性、更高的性能要求，以及云原生的贴合。
+随着企业向云本地微服务的发展，对高性能、灵活、安全、可扩展的API网关的需求越来越大，一些之前的网关已经逐渐无法满足当今企业的需求。
+
+对于上面所述的这些特点来说，APISIX相对于其它网关要做的更好，同时APISIX还具有平台无关性和完全动态交付特性，比如支持多协议、细粒度路由和多语言支持。
 
 ## APISIX 和其他的 API 网关有什么不同之处？
 
-APISIX 基于 etcd 来完成配置的保存和同步，而不是 PostgreSQL 或者 MySQL 这类关系型数据库。
-这样不仅去掉了轮询，让代码更加的简洁，配置同步也更加实时。同时系统也不会存在单点，可用性更高。
+Apache APISIX的不同之处在于:
 
-另外，APISIX 具备动态路由和插件热加载，特别适合微服务体系下的 API 管理。
+— 它使用etcd来保存和同步配置，而不是使用如PostgreSQL或MySQL这类的关系数据库。etcd中的实时事件通知系统比这些替代方案更容易扩展。这允许APISIX实时同步配置，使代码简洁，并避免单点故障。
+- 完全动态
+- 支持[热加载插件](/docs/apisix/plugins/#hot-reload)。
 
-## APISIX 的性能怎么样？
+## APISIX 所展现出的性能如何？
 
-APISIX 设计和开发的目标之一，就是业界最高的性能。具体测试数据见这里：[benchmark](benchmark.md)
+与其它API网关相比较，Apache APISIX提供了最好的性能，其单核QPS高达18,000，平均延迟仅为0.2 ms。
 
-APISIX 是当前性能最好的 API 网关，单核 QPS 达到 2.3 万，平均延时仅有 0.6 毫秒。
+性能基准测试的具体结果可以在[这里](benchmark.md)找到。
+
+## Apache APISIX支持哪些平台?
+
+Apache APISIX是和平台无关的，它是在云本地环境构建的，避免了厂商锁定。它可以在Kubernetes的裸机上运行。它甚至支持苹果硅芯片。
+
+## 如何理解"Apache APISIX是全动态"的这句话？
+
+Apache APISIX是完全动态的，这就意味着它不需要重新启动来改变它的行为。
+
+它可以动态处理以下事情:
+
+- 重新加载插件
+- 代理重写
+- 对请求进⾏镜像复制
+- 对请求进⾏修改
+- 健康状态的检查
+- 动态控制指向不同上游服务的流量⽐
 
 ## APISIX 是否有控制台界面？
 
-是的，APISIX 具有功能强大的 Dashboard。APISIX 与 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 是相互独立的项目，你可以部署 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 通过 web 界面来操作 APISIX。
+是的，APISIX 具有功能强大的 Dashboard。APISIX 与 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 是从Apache独立出来的一个项目，你可以通过 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 这个用户操作界面来部署Apache APISIX Dashboard。
 
-## 我可以自己写插件吗？
+## 我可以自己为 Apache APISIX写插件吗？
 
 当然可以，APISIX 提供了灵活的自定义插件，方便开发者和企业编写自己的逻辑。
 
-具体可参考：[如何开发插件](plugin-develop.md)
+你可以通过这个文档来编写你自己的插件:具体可参考：[如何开发插件](plugin-develop.md)
 
-## 我们为什么选择 etcd 作为配置中心？
+## 为什么 Apache APISIX 选择 etcd 作为配置中心？
 
 对于配置中心，配置存储只是最基本功能，APISIX 还需要下面几个特性：
 
-1. 集群支持
-2. 事务
-3. 历史版本管理
-4. 变化通知
-5. 高性能
+1. 集群中的分布式部署。
+2. 通过比较来监视业务。
+3. 多版本并发控制。
+4. 通知和观看流。
+5. 高性能和最小的读/写延迟。
 
-APISIX 需要一个配置中心，上面提到的很多功能是传统关系型数据库和 KV 数据库是无法提供的。与 etcd 同类软件还有 Consul、ZooKeeper 等，更详细比较可以参考这里：[etcd why](https://etcd.io/docs/latest/learning/why/#comparison-chart)，在将来也许会支持其他配置存储方案。
+etcd提供了这些特性，并且使它比PostgreSQL和MySQL等其他数据库更理想。
 
-## 为什么在用 Luarocks 安装 APISIX 依赖时会遇到超时，很慢或者不成功的情况？
+要了解更多关于etcd与其他替代方案的比较，请参阅[对比图表](https://etcd.io/docs/latest/learning/why/#comparison-chart)。
+
+## 使用LuaRocks安装Apache APISIX依赖项时，为什么会导致超时或安装缓慢或不成功?
 
 遇到 luarocks 慢的问题，有以下两种可能：
 
