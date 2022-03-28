@@ -22,6 +22,7 @@
 local lfs = require("lfs")
 local log = require("apisix.core.log")
 local io = require("apisix.core.io")
+local is_apisix_or, a6_request = pcall(require, "resty.apisix.request")
 local ngx = ngx
 local get_headers = ngx.req.get_headers
 local clear_header = ngx.req.clear_header
@@ -45,6 +46,16 @@ local function _headers(ctx)
     if not ctx then
         ctx = ngx.ctx.api_ctx
     end
+
+    if not is_apisix_or then
+        return get_headers(0)
+    end
+
+    if a6_request.is_request_header_set() then
+        a6_request.clear_request_header()
+        ctx.headers = get_headers(0)
+    end
+
     local headers = ctx.headers
     if not headers then
         headers = get_headers(0)
@@ -110,11 +121,21 @@ function _M.set_header(ctx, header_name, header_value)
         error(err)
     end
 
-    if ctx and ctx.headers then
-        ctx.headers[header_name] = header_value
+    local changed = false
+    if is_apisix_or then
+        changed = a6_request.is_request_header_set()
     end
 
     ngx.req.set_header(header_name, header_value)
+
+    if is_apisix_or and not changed then
+        -- if the headers are not changed before,
+        -- we can only update part of the cache instead of invalidating the whole
+        a6_request.clear_request_header()
+        if ctx and ctx.headers then
+            ctx.headers[header_name] = header_value
+        end
+    end
 end
 
 
