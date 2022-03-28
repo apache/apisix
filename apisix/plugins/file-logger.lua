@@ -19,6 +19,7 @@ local core         =   require("apisix.core")
 local plugin       =   require("apisix.plugin")
 local ngx          =   ngx
 local io_open      =   io.open
+local is_apisix_or, process = pcall(require, "resty.apisix.process")
 
 
 local plugin_name = "file-logger"
@@ -60,9 +61,57 @@ function _M.check_schema(conf, schema_type)
 end
 
 
+local open_file_cache
+if is_apisix_or then
+    -- TODO: switch to a cache which supports inactive time,
+    -- so that unused files would not be cached
+    local path_to_file = core.lrucache.new({
+        type = "plugin",
+    })
+
+    local function open_file_handler(conf, handler)
+        local file, err = io_open(conf.path, 'a+')
+        if not file then
+            return nil, err
+        end
+
+        handler.file = file
+        handler.open_time = ngx.now() * 1000
+        return handler
+    end
+
+    function open_file_cache(conf)
+        local last_reopen_time = process.get_last_reopen_ms()
+
+        local handler, err = path_to_file(conf.path, 0, open_file_handler, conf, {})
+        if not handler then
+            return nil, err
+        end
+
+        if handler.open_time < last_reopen_time then
+            core.log.notice("reopen cached log file: ", conf.path)
+            handler.file:close()
+
+            local ok, err = open_file_handler(conf, handler)
+            if not ok then
+                return nil, err
+            end
+        end
+
+        return handler.file
+    end
+end
+
+
 local function write_file_data(conf, log_message)
     local msg = core.json.encode(log_message)
-    local file, err = io_open(conf.path, 'a+')
+
+    local file, err
+    if open_file_cache then
+        file, err = open_file_cache(conf)
+    else
+        file, err = io_open(conf.path, 'a+')
+    end
 
     if not file then
         core.log.error("failed to open file: ", conf.path, ", error info: ", err)
@@ -73,7 +122,11 @@ local function write_file_data(conf, log_message)
         else
             file:flush()
         end
-        file:close()
+
+        -- file will be closed by gc, if open_file_cache exists
+        if not open_file_cache then
+            file:close()
+        end
     end
 end
 
