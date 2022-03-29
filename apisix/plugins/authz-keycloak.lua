@@ -572,6 +572,7 @@ local function evaluate_permissions(conf, ctx, token)
     -- Ensure discovered data.
     local err = authz_keycloak_ensure_discovered_data(conf)
     if err then
+        log.error(err)
         return 503
     end
 
