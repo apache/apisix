@@ -97,7 +97,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-下面是一个正常通过 `key-auth` 验证的请求:
+下面是一个正常通过 `key-auth` 验证的请求：
 
 ```shell
 $ curl http://127.0.0.2:9080/index.html -H 'apikey: auth-one' -i

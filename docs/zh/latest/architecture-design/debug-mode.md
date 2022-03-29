@@ -23,7 +23,7 @@ title: Debug Mode
 
 ### 基本调试模式
 
-设置 `conf/debug.yaml` 即可开启基本调试模式:
+设置 `conf/debug.yaml` 即可开启基本调试模式：
 
 ```
 basic:

@@ -46,7 +46,7 @@ plugins:
 
 然后重载 APISIX，这样会创建一个后台定时器，向 SkyWalking OAP 服务定期上报数据。
 
-下面是一个示例，在指定的 route 上开启了 SkyWalking 插件:
+下面是一个示例，在指定的 route 上开启了 SkyWalking 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -80,11 +80,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 | 名称         | 类型   | 默认值   | 描述                                                  |
 | ------------ | ------ | -------- | ----------------------------------------------------- |
 | service_name | string |  "APISIX" | SkyWalking 上报的 service 名称                                 |
-| service_instance_name | string | "APISIX Instance Name" | SkyWalking 上报的 service 实例名, 如果期望直接获取本机主机名则设置为 `$hostname` |
+| service_instance_name | string | "APISIX Instance Name" | SkyWalking 上报的 service 实例名，如果期望直接获取本机主机名则设置为 `$hostname` |
 | endpoint_addr | string | "http://127.0.0.1:12800" | SkyWalking 的 HTTP endpoint 地址，例如：http://127.0.0.1:12800 |
-| report_interval | integer | 使用 SkyWalking 客户端内置的值 | 上报时间间隔，单位是秒|
+| report_interval | integer | 使用 SkyWalking 客户端内置的值 | 上报时间间隔，单位是秒 |
 
-配置示例:
+配置示例：
 
 ```yaml
 plugin_attr:
@@ -98,9 +98,9 @@ plugin_attr:
 
 ### 运行 SkyWalking 实例
 
-#### 例子:
+#### 例子：
 
-1. 启动 SkyWalking OAP 服务:
+1. 启动 SkyWalking OAP 服务：
     - SkyWalking 默认使用 H2 存储，可直接启动
 
         ```shell
@@ -114,7 +114,7 @@ plugin_attr:
             sudo docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 --restart always -e "discovery.type=single-node" elasticsearch:6.7.2
             ```
 
-        2. 【可选】安装 ElasticSearch 管理界面 elasticsearch-hq
+        2.【可选】安装 ElasticSearch 管理界面 elasticsearch-hq
 
             ```shell
             sudo docker run -d --name elastic-hq -p 5000:5000 --restart always elastichq/elasticsearch-hq
@@ -138,7 +138,7 @@ plugin_attr:
 
         ![plugin_skywalking](../../../assets/images/plugin/skywalking-3.png)
 
-3. 测试示例:
+3. 测试示例：
     - 通过访问 APISIX，访问上游服务
 
         ```bash

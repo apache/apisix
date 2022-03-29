@@ -39,13 +39,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Extract branch name
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-        id: branch_env
-        shell: bash
-        run: |
-          echo "##[set-output name=version;]$(echo ${GITHUB_REF##*/})"
-
       - name: Setup kubernetes cluster
         run: |
           KIND_VERSION="v0.11.1"

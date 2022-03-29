@@ -25,7 +25,7 @@ title: authz-casbin
 
 `authz-casbin` 是一个基于 [Lua Casbin](https://github.com/casbin/lua-casbin/) 的访问控制插件，该插件支持基于各种访问控制模型的授权场景。
 
-有关如何创建鉴权模型和鉴权策略的详细文档, 请参阅 [Casbin](https://casbin.org/docs/en/supported-models)。
+有关如何创建鉴权模型和鉴权策略的详细文档，请参阅 [Casbin](https://casbin.org/docs/en/supported-models)。
 
 ## 属性
 
@@ -167,7 +167,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-首先定义测试鉴权模型:
+首先定义测试鉴权模型：
 
 ```conf
 [request_definition]
@@ -186,7 +186,7 @@ e = some(where (p.eft == allow))
 m = (g(r.sub, p.sub) || keyMatch(r.sub, p.sub)) && keyMatch(r.obj, p.obj) && keyMatch(r.act, p.act)
 ```
 
-然后添加测试鉴权策略:
+然后添加测试鉴权策略：
 
 ```conf
 p, *, /, GET
@@ -202,7 +202,7 @@ g, alice, admin
 curl -i http://127.0.0.1:9080/ -X GET
 ```
 
-未经授权的用户如 `bob` 访问除 `/` 以外的任何其他页面将得到一个 403 错误:
+未经授权的用户如 `bob` 访问除 `/` 以外的任何其他页面将得到一个 403 错误：
 
 ```shell
 curl -i http://127.0.0.1:9080/res -H 'user: bob' -X GET

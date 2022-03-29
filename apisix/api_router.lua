@@ -19,6 +19,7 @@ local router = require("apisix.utils.router")
 local plugin_mod = require("apisix.plugin")
 local core = require("apisix.core")
 local ipairs = ipairs
+local ngx_header = ngx.header
 local type = type
 
 
@@ -70,6 +71,10 @@ function fetch_api_router()
                         handler = function (api_ctx)
                             local code, body = route.handler(api_ctx)
                             if code or body then
+                                if type(body) == "table" and ngx_header["Content-Type"] == nil then
+                                    core.response.set_header("Content-Type", "application/json")
+                                end
+
                                 core.response.exit(code, body)
                             end
                         end

@@ -56,12 +56,6 @@ install_dependencies() {
     # install and start grpc_server_example
     cd t/grpc_server_example
 
-    # unless pulled recursively, the submodule directory will remain empty. So it's better to initialize and set the submodule to the particular commit.
-    if [ ! "$(ls -A . )" ]; then
-        git submodule init
-        git submodule update
-    fi
-
     CGO_ENABLED=0 go build
     ./grpc_server_example \
         -grpc-address :50051 -grpcs-address :50052 -grpcs-mtls-address :50053 \

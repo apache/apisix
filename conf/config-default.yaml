@@ -265,6 +265,7 @@ nginx_config:                     # config for render the template to generate n
       access-tokens: 1m
       ext-plugin: 1m
       kubernetes: 1m
+      tars: 1m
 
 etcd:
   host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
@@ -343,6 +344,7 @@ plugins:                          # plugin list (sorted by priority)
   - request-validation             # priority: 2800
   - openid-connect                 # priority: 2599
   - authz-casbin                   # priority: 2560
+  - authz-casdoor                  # priority: 2559
   - wolf-rbac                      # priority: 2555
   - ldap-auth                      # priority: 2540
   - hmac-auth                      # priority: 2530
