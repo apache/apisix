@@ -16,9 +16,13 @@
 --
 local core        = require("apisix.core")
 local expr        = require("resty.expr.v1")
+local re_compile  = require("resty.core.regex").re_match_compile
 local plugin_name = "response-rewrite"
 local ngx         = ngx
+local re_sub      = ngx.re.sub
+local re_gsub     = ngx.re.gsub
 local pairs       = pairs
+local ipairs      = ipairs
 local type        = type
 
 
@@ -48,6 +52,39 @@ local schema = {
         vars = {
             type = "array",
         },
+        filters = {
+            description = "a group of filters that modify response body\
+by replacing one specified string by another",
+            type = "array",
+            items = {
+                description = "filter that modifies response body",
+                type = "object",
+                properties = {
+                    regex = {
+                        description = "match pattern on response body",
+                        type = "string",
+                        default = "",
+                    },
+                    scope = {
+                        description = "regex substitution range",
+                        type = "string",
+                        enum = {"once", "global"},
+                        default = "once",
+                    },
+                    replace = {
+                        description = "regex substitution content",
+                        type = "string",
+                        default = "",
+                    },
+                    options = {
+                        description = "regex options",
+                        type = "string",
+                        default = "jo",
+                    }
+                },
+            },
+        },
+        oneOf = {"body", "filters"},
     },
     minProperties = 1,
 }
@@ -115,6 +152,23 @@ function _M.check_schema(conf)
         end
     end
 
+    if conf.filters then
+        for _, filter in ipairs(conf.filters) do
+            for field, value in pairs(filter) do
+                if type(field) ~= 'string' then
+                    return false, 'invalid type as filter field'
+                end
+                if field ~= "replace" and value == "" then
+                    return false, 'invalid value as filter field ' .. field
+                end
+            end
+            local ok, err = re_compile(filter.regex, filter.options)
+            if not ok then
+                return false, err
+            end
+        end
+    end
+
     return true
 end
 
@@ -126,7 +180,24 @@ function _M.body_filter(conf, ctx)
         return
     end
 
-    if conf.body then
+    if conf.filters then
+
+        local body = core.response.hold_body_chunk(ctx)
+        if not body then
+            return
+        end
+
+        for _, filter in ipairs(conf.filters) do
+            if filter.scope == "once" then
+                body = re_sub(body, filter.regex, filter.replace, filter.options)
+            else
+                body = re_gsub(body, filter.regex, filter.replace, filter.options)
+            end
+        end
+
+        ngx.arg[1] = body
+
+    elseif conf.body then
 
         if conf.body_base64 then
             ngx.arg[1] = ngx.decode_base64(conf.body)
@@ -148,7 +219,8 @@ function _M.header_filter(conf, ctx)
         ngx.status = conf.status_code
     end
 
-    if conf.body then
+    -- fixme: if filters have no any match, response body won't be modified.
+    if conf.filters or conf.body then
         core.response.clear_header_as_body_modified()
     end
 
