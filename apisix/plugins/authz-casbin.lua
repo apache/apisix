@@ -20,6 +20,7 @@ local core            = require("apisix.core")
 local plugin          = require("apisix.plugin")
 local ngx             = ngx
 local get_headers     = ngx.req.get_headers
+local log = core.log
 
 local plugin_name = "authz-casbin"
 
@@ -112,6 +113,7 @@ function _M.rewrite(conf, ctx)
     -- creates an enforcer when request sent for the first time
     local ok, err = new_enforcer_if_need(conf)
     if not ok then
+        log.error(err)
         return 503
     end
 

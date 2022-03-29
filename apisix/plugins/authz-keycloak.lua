@@ -585,7 +585,7 @@ local function evaluate_permissions(conf, ctx, token)
         end
 
         -- Resolve URI to resource(s).
-        permission, err = authz_keycloak_resolve_resource(conf, ctx.var.request_uri,
+        permission = authz_keycloak_resolve_resource(conf, ctx.var.request_uri,
                                                           sa_access_token)
 
         -- Check result.
