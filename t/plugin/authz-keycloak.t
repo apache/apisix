@@ -327,6 +327,7 @@ passed
              })
 
             ngx.status = res.status
+
             if res.status == 200 then
                 ngx.say(true)
             else
