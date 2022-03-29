@@ -110,9 +110,9 @@ end
 
 function _M.rewrite(conf, ctx)
     -- creates an enforcer when request sent for the first time
-    local ok, err = new_enforcer_if_need(conf)
+    local ok = new_enforcer_if_need(conf)
     if not ok then
-        return 503, {message = err}
+        return 503
     end
 
     local path = ctx.var.uri
