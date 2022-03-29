@@ -326,8 +326,6 @@ passed
                 }
              })
 
-            ngx.status = res.status
-
             if res.status == 200 then
                 ngx.say(true)
             else
@@ -339,7 +337,8 @@ passed
 GET /t
 --- response_body
 false
---- error_code: 503
+--- error_log
+Error while sending authz request to https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token: 18: self signed certificate
 
 
 
