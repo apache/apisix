@@ -17,6 +17,7 @@
 
 local memory_handler = require("apisix.plugins.proxy-cache.memory_handler")
 local disk_handler = require("apisix.plugins.proxy-cache.disk_handler")
+local redis_handler = require("apisix.plugins.proxy-cache.redis_handler")
 local util = require("apisix.plugins.proxy-cache.util")
 local core = require("apisix.core")
 local ipairs = ipairs
@@ -25,6 +26,31 @@ local plugin_name = "proxy-cache"
 
 local STRATEGY_DISK = "disk"
 local STRATEGY_MEMORY = "memory"
+local STRATEGY_REDIS = "redis"
+
+
+local policy_to_additional_properties = {
+    redis = {
+        properties = {
+            redis_host = {
+                type = "string", minLength = 2
+            },
+            redis_port = {
+                type = "integer", minimum = 1, default = 6379,
+            },
+            redis_password = {
+                type = "string", minLength = 0,
+            },
+            redis_database = {
+                type = "integer", minimum = 0, default = 0,
+            },
+            redis_timeout = {
+                type = "integer", minimum = 1, default = 1000,
+            },
+        },
+       required = {"redis_host"},
+    },
+}
 
 local schema = {
     type = "object",
@@ -37,7 +63,7 @@ local schema = {
         },
         cache_strategy = {
             type = "string",
-            enum = {STRATEGY_DISK, STRATEGY_MEMORY},
+            enum = {STRATEGY_DISK, STRATEGY_MEMORY, STRATEGY_REDIS},
             default = STRATEGY_DISK,
         },
         cache_key = {
@@ -103,6 +129,14 @@ local schema = {
             default = 300,
         },
     },
+    ["if"] = {
+        properties = {
+            cache_strategy = {
+                enum = {"redis"},
+            },
+        },
+    },
+    ["then"] = policy_to_additional_properties.redis,
 }
 
 
@@ -154,8 +188,10 @@ function _M.access(conf, ctx)
     local handler
     if conf.cache_strategy == STRATEGY_MEMORY then
         handler = memory_handler
-    else
+    elseif conf.cache_strategy == STRATEGY_DISK then
         handler = disk_handler
+    else
+        handler = redis_handler
     end
 
     return handler.access(conf, ctx)
@@ -168,8 +204,10 @@ function _M.header_filter(conf, ctx)
     local handler
     if conf.cache_strategy == STRATEGY_MEMORY then
         handler = memory_handler
-    else
+    elseif conf.cache_strategy == STRATEGY_DISK then
         handler = disk_handler
+    else
+        handler = redis_handler
     end
 
     handler.header_filter(conf, ctx)
@@ -181,6 +219,8 @@ function _M.body_filter(conf, ctx)
 
     if conf.cache_strategy == STRATEGY_MEMORY then
         memory_handler.body_filter(conf, ctx)
+    elseif conf.cache_strategy == STRATEGY_REDIS then
+        redis_handler.body_filter(conf, ctx)
     end
 end
 
