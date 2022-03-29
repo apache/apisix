@@ -23,9 +23,11 @@ title: opentelemetry
 
 ## Description
 
-[OpenTelemetry](https://opentelemetry.io/) report Tracing data according to [OpenTelemetry specification](https://opentelemetry.io/docs/reference/specification/).
+[OpenTelemetry](https://opentelemetry.io) report Tracing data according to [OpenTelemetry specification](https://opentelemetry.io/docs/reference/specification/).
 
-Just support reporting in `HTTP` with `Content-Type=application/x-protobuf`, the specification: [OTLP/HTTP Request](https://opentelemetry.io/docs/reference/specification/protocol/otlp/#otlphttp-request).
+The plugin currently only supports binary-encoded OTLP over HTTP. For details, see [OTLP/HTTP].
+
+[OTLP/HTTP]: https://opentelemetry.io/docs/reference/specification/protocol/otlp/#otlphttp
 
 ## Attributes
 
