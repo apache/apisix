@@ -39,15 +39,15 @@ Apache APISIX在以下方面有所不同：
 
 与其它API网关相比较，Apache APISIX 提供了最好的性能，其单核QPS高达18,000，平均延迟仅为0.2 ms。
 
-性能基准测试的具体结果可以在[这里](benchmark.md)找到。
+如果您想获取性能基准测试的具体结果，请查看 [benchmark](benchmark.md)。
 
 ## Apache APISIX支持哪些平台?
 
-Apache APISIX 是和平台无关的，它是在云本地环境构建的，避免了厂商锁定。它可以在Kubernetes的裸机上运行。它甚至支持苹果硅芯片。
+Apache APISIX 是一个开源的云原生 API 网关，它支持在裸金属服务器上运行，也支持在 Kubernetes 的上使用，甚至也可以运行在 Apple Silicon ARM 芯片上。
 
-## 如何理解"Apache APISIX是全动态"的这句话？
+## 如何理解“Apache APISIX 是全动态的”？
 
-Apache APISIX 是完全动态的，这就意味着它不需要重新启动来改变它的行为。
+Apache APISIX 是全动态的 API 网关，意味着当你在更改一个配置后，只需要重新加载配置文件就可以使其生效。
 
 它可以动态处理以下事情:
 
@@ -559,7 +559,7 @@ HTTP/1.1 200 OK
 
 ## 我应该如何解决 `unable to get local issuer certificate` 这个错误?
 
-您可以手动设置证书的路径，将其添加到您的conf/config。Yaml '文件下,具体操作如下所示:
+您可以手动设置证书的路径，将其添加到 `conf/config.yaml` 文件中，具体操作如下所示：
 
 ```yaml
 apisix:
