@@ -42,24 +42,6 @@ _EOC_
 
     $block->set_value("lua_deps_path", $lua_deps_path);
 
-    my $extra_init_by_lua = <<_EOC_;
-    --
-    local config_xds = require("apisix.core.config_xds")
-
-    local inject = function(mod, name)
-        local old_f = mod[name]
-        mod[name] = function (...)
-            ngx.log(ngx.WARN, "config_xds run ", name)
-            return { true }
-        end
-    end
-
-    inject(config_xds, "new")
-
-_EOC_
-
-    $block->set_value("extra_init_by_lua", $extra_init_by_lua);
-
     if (!$block->yaml_config) {
         my $yaml_config = <<_EOC_;
 apisix:
@@ -76,24 +58,12 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: load xDS library successfully
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.say("ok")
-        }
-    }
---- no_error_log eval
-qr/can not load xDS library/
-
-
-
-=== TEST 2: read data form shdict that wirted by xDS library
+=== TEST 1: read data form shdict that wirted by xDS library
 --- config
     location /t {
         content_by_lua_block {
             -- wait for xds library sync data
-            ngx.sleep(1.5)
+            ngx.sleep(3)
             local core = require("apisix.core")
             local value = ngx.shared["xds-config"]:get("/apisix/routes/1")
             local route_conf, err = core.json.decode(value)
@@ -103,19 +73,5 @@ qr/can not load xDS library/
     }
 --- response_body
 {"create_time":1646972532,"id":"1","priority":0,"status":1,"update_time":1647250524,"upstream":{"hash_on":"vars","nodes":[{"host":"127.0.0.1","port":80,"priority":0,"weight":1}],"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/hello"}
-
-
-
-=== TEST 3: read conf version
---- config
-    location /t {
-        content_by_lua_block {
-            -- wait for xds library sync data
-            ngx.sleep(1.5)
-            local core = require("apisix.core")
-            local version = ngx.shared["xds-conf-version"]:get("version")
-            ngx.say(version)
-        }
-    }
---- response_body eval
-qr/^\d{13}$/
+--- wait: 5
+--- timeout: 10

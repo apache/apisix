@@ -108,6 +108,15 @@ function _M.http_init_worker()
     if discovery and discovery.init_worker then
         discovery.init_worker()
     end
+
+    if core.config == require("apisix.core.config_xds") then
+        local ok, err = core.config.init_worker()
+        if not ok then
+            core.log.error("failed to init worker process of ", core.config.type,
+                           " config center, err: ", err)
+        end
+    end
+
     require("apisix.balancer").init_worker()
     load_balancer = require("apisix.balancer")
     require("apisix.admin.init").init_worker()
@@ -122,13 +131,13 @@ function _M.http_init_worker()
     plugin_config.init_worker()
     require("apisix.consumer").init_worker()
 
-    if core.config.init_worker then
+    if core.config == require("apisix.core.config_yaml") then
         local ok, err = core.config.init_worker()
         if not ok then
             core.log.error("failed to init worker process of ", core.config.type,
                            " config center, err: ", err)
         end
-    end
+    end    
 
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()

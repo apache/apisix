@@ -31,7 +31,10 @@ extern void ngx_http_lua_ffi_shdict_store(void *zone, int op,
 import "C"
 
 import (
+	"context"
 	"fmt"
+	"math/rand"
+	"strconv"
 	"time"
 	"unsafe"
 )
@@ -39,10 +42,30 @@ import (
 func main() {
 }
 
-
 //export initial
-func initial(zone unsafe.Pointer) {
-	time.Sleep(time.Second)
+func initial(config_zone unsafe.Pointer, version_zone unsafe.Pointer) {
+	write_config(config_zone)
+	update_conf_version(version_zone)
+}
+
+func update_conf_version(zone unsafe.Pointer) {
+	ctx := context.Background()
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(time.Second * time.Duration(rand.Intn(10))):
+				key := "version"
+				version := strconv.FormatInt(time.Now().UnixNano()/1e6, 10)
+				write_shdict(key, version, zone)
+			}
+		}
+	}()
+}
+
+func write_config(zone unsafe.Pointer) {
+	key := "/apisix/routes/1"
 	value := fmt.Sprintf(`{
 "status": 1,
 "update_time": 1647250524,
@@ -66,10 +89,10 @@ func initial(zone unsafe.Pointer) {
 }
 }`)
 
-	write_route(zone, "/apisix/routes/1", value)
+	write_shdict(key, value, zone)
 }
 
-func write_route(zone unsafe.Pointer, key, value string) {
+func write_shdict(key string, value string, zone unsafe.Pointer) {
 	var keyCStr = C.CString(key)
 	defer C.free(unsafe.Pointer(keyCStr))
 	var keyLen = C.size_t(len(key))
