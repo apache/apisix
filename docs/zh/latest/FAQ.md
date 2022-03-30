@@ -23,31 +23,31 @@ title: 常见问题
 
 ## 为什么我们需要一个新的 API 网关？不是已经有其他的开源网关了吗？
 
-随着企业向云本地微服务的发展，对高性能、灵活、安全、可扩展的API网关的需求越来越大，一些之前的网关已经逐渐无法满足当今企业的需求。
+随着企业向云本地微服务的发展，企业对高性能、灵活、安全、可扩展的 API 网关的需求越来越大。
 
-对于上面所述的这些特点来说，APISIX相对于其它网关要做的更好，同时APISIX还具有平台无关性和完全动态交付特性，比如支持多协议、细粒度路由和多语言支持。
+APISIX 在这些指标上优于其它 API 网关，同时具有平台无关性和完全动态的特性，如支持多种协议、细粒度路由和多语言支持。
 
 ## APISIX 和其他的 API 网关有什么不同之处？
 
-Apache APISIX的不同之处在于:
+Apache APISIX在以下方面有所不同：
 
-— 它使用etcd来保存和同步配置，而不是使用如PostgreSQL或MySQL这类的关系数据库。etcd中的实时事件通知系统比这些替代方案更容易扩展。这允许APISIX实时同步配置，使代码简洁，并避免单点故障。
+— 它使用 etcd 来保存和同步配置，而不是使用如 PostgreSQL 或 MySQL 这类的关系数据库。etcd 中的实时事件通知系统比这些替代方案更容易扩展。这允许 APISIX 实时同步配置，使代码简洁，并避免单点故障。
 - 完全动态
 - 支持[热加载插件](/docs/apisix/plugins/#hot-reload)。
 
 ## APISIX 所展现出的性能如何？
 
-与其它API网关相比较，Apache APISIX提供了最好的性能，其单核QPS高达18,000，平均延迟仅为0.2 ms。
+与其它API网关相比较，Apache APISIX 提供了最好的性能，其单核QPS高达18,000，平均延迟仅为0.2 ms。
 
 性能基准测试的具体结果可以在[这里](benchmark.md)找到。
 
 ## Apache APISIX支持哪些平台?
 
-Apache APISIX是和平台无关的，它是在云本地环境构建的，避免了厂商锁定。它可以在Kubernetes的裸机上运行。它甚至支持苹果硅芯片。
+Apache APISIX 是和平台无关的，它是在云本地环境构建的，避免了厂商锁定。它可以在Kubernetes的裸机上运行。它甚至支持苹果硅芯片。
 
 ## 如何理解"Apache APISIX是全动态"的这句话？
 
-Apache APISIX是完全动态的，这就意味着它不需要重新启动来改变它的行为。
+Apache APISIX 是完全动态的，这就意味着它不需要重新启动来改变它的行为。
 
 它可以动态处理以下事情:
 
@@ -60,7 +60,7 @@ Apache APISIX是完全动态的，这就意味着它不需要重新启动来改�
 
 ## APISIX 是否有控制台界面？
 
-是的，APISIX 具有功能强大的 Dashboard。APISIX 与 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 是从Apache独立出来的一个项目，你可以通过 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 这个用户操作界面来部署Apache APISIX Dashboard。
+是的，APISIX 具有功能强大的 Dashboard。APISIX 与 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 是从 Apache 独立出来的一个项目，你可以通过 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 这个用户操作界面来部署 Apache APISIX Dashboard。
 
 ## 我可以自己为 Apache APISIX写插件吗？
 
@@ -78,13 +78,13 @@ Apache APISIX是完全动态的，这就意味着它不需要重新启动来改�
 4. 通知和观看流。
 5. 高性能和最小的读/写延迟。
 
-etcd提供了这些特性，并且使它比PostgreSQL和MySQL等其他数据库更理想。
+etcd 提供了这些特性，并且使它比 PostgreSQL 和 MySQL 等其他数据库更理想。
 
-要了解更多关于etcd与其他替代方案的比较，请参阅[对比图表](https://etcd.io/docs/latest/learning/why/#comparison-chart)。
+要了解更多关于 etcd 与其他替代方案的比较，请参阅[对比图表](https://etcd.io/docs/latest/learning/why/#comparison-chart)。
 
-## 使用LuaRocks安装Apache APISIX依赖项时，为什么会导致超时或安装缓慢或不成功?
+## 使用 LuaRocks 安装 Apache APISIX 依赖项时，为什么会导致超时或安装缓慢或不成功?
 
-这可能是因为使用的LuaRocks服务器被阻塞了。
+这可能是因为使用的 LuaRocks 服务器被阻塞了。
 
 为了解决这个问题，你可以使用https_proxy或者使用'--server '标志来指定一个更快的LuaRocks服务器。
 
@@ -234,7 +234,7 @@ Server: APISIX web server
 
 默认的 Apache APISIX 日志等级为 `warn`，你需要将日志等级调整为 `info`来查看 `core.log.info` 的打印结果。
 
-你可以通过修改 conf/config.yaml 中的 `nginx_config` 配置参数 `error_log_level: "warn"` 为 `error_log_level: "info"`。然后重新加载Apache APISIX。
+你可以通过修改 conf/config.yaml 中的 `nginx_config` 配置参数 `error_log_level: "warn"` 为 `error_log_level: "info"`。然后重新加载 Apache APISIX。
 
 ```yaml
 nginx_config:
@@ -247,7 +247,7 @@ nginx_config:
 
 你可以通过下面的文档来了解更多关于热加载的内容，具体参考 [插件](./plugins.md) 中关于“热加载”的部分。
 
-## 在处理HTTP或HTTPS请求时，我如何配置Apache APISIX监听多个端口?
+## 在处理 HTTP 或 HTTPS 请求时，我如何配置 Apache APISIX 监听多个端口?
 
 默认情况下，APISIX 在处理 HTTP 请求时只监听 9080 端口。
 
