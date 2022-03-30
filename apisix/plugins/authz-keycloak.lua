@@ -527,7 +527,7 @@ local function authz_keycloak_resolve_resource(conf, uri, sa_access_token)
     if not resource_registration_endpoint then
         local err = "Unable to determine registration endpoint."
         log.error(err)
-        return 500, err
+        return nil, err
     end
 
     log.debug("Resource registration endpoint: ", resource_registration_endpoint)
@@ -586,11 +586,11 @@ local function evaluate_permissions(conf, ctx, token)
         end
 
         -- Resolve URI to resource(s).
-        permission = authz_keycloak_resolve_resource(conf, ctx.var.request_uri,
+        permission, err = authz_keycloak_resolve_resource(conf, ctx.var.request_uri,
                                                           sa_access_token)
 
         -- Check result.
-        if permission == nil then
+        if permission == nil or err then
             -- No result back from resource registration endpoint.
             return 503
         end
