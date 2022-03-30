@@ -353,64 +353,7 @@ t
 
 
 
-=== TEST 11: get_post_args
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local ngx_ctx = ngx.ctx
-            local api_ctx = ngx_ctx.api_ctx
-            if api_ctx == nil then
-                api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-                ngx_ctx.api_ctx = api_ctx
-            end
-
-            core.ctx.set_vars_meta(api_ctx)
-
-            local args = core.request.get_post_args(ngx.ctx.api_ctx)
-            ngx.say(args["c"])
-            ngx.say(args["v"])
-        }
-    }
---- request
-POST /t
-c=z_z&v=x%20x
---- response_body
-z_z
-x x
-
-
-
-=== TEST 12: get_post_args when the body is stored in temp file
---- config
-    location /t {
-        client_body_in_file_only clean;
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local ngx_ctx = ngx.ctx
-            local api_ctx = ngx_ctx.api_ctx
-            if api_ctx == nil then
-                api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-                ngx_ctx.api_ctx = api_ctx
-            end
-
-            core.ctx.set_vars_meta(api_ctx)
-
-            local args = core.request.get_post_args(ngx.ctx.api_ctx)
-            ngx.say(args["c"])
-        }
-    }
---- request
-POST /t
-c=z_z&v=x%20x
---- response_body
-nil
---- error_log
-the post form is too large: request body in temp file not supported
-
-
-
-=== TEST 13: get_method
+=== TEST 11: get_method
 --- config
     location /t {
         content_by_lua_block {
@@ -425,7 +368,7 @@ POST
 
 
 
-=== TEST 14: get header
+=== TEST 12: get header
 --- config
     location /t {
         content_by_lua_block {
