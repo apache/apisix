@@ -14,7 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local json_encode = require("cjson.safe").encode
+local cjson = require("cjson.safe")
+local json_encode = cjson.encode
 local clear_tab = require("table.clear")
 local ngx = ngx
 local tostring = tostring
@@ -25,6 +26,7 @@ local cached_tab = {}
 
 local _M = {
     version = 0.1,
+    array_mt = cjson.array_mt,
     decode = require("cjson.safe").decode,
 }
 
