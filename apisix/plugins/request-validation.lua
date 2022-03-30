@@ -114,7 +114,7 @@ function _M.rewrite(conf, ctx)
         end
 
         if not req_body then
-            core.log.error('failed to decode the req body: ', err)
+            core.log.error('failed to decode the req body: ', error)
             return 400, error
         end
 
