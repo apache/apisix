@@ -141,17 +141,17 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-更多的 lua-resty-radixtree 匹配操作，可查看操作列表：[这里](https://github.com/api7/lua-resty-radixtree#operator-list)。
+更多 `lua-resty-radixtree` 匹配操作，请参考：[lua-resty-radixtree] (https://github.com/api7/lua-resty-radixtree#operator-list)。
 
-2、通过[traffic-split](plugins/traffic-split.md) 插件来实现
+2、通过 [traffic-split](plugins/traffic-split.md) 插件来实现
 
-## 如何使用 Apache APISIX 实现从http 自动跳转到 https？
+## 我如何通过 Apache APISIX 实现从 HTTP 自动跳转到 HTTPS？
 
 比如，将 `http://foo.com` 重定向到 `https://foo.com`
 
 Apache APISIX 提供了几种不同的方法来实现：
 
-1. 在[redirect](plugins/redirect.md)插件中将http_to_https设置为true:
+1. 在 [redirect](plugins/redirect.md) 插件中将 `http_to_https` 设置为 `true`：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
