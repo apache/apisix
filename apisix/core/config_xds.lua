@@ -29,28 +29,27 @@ local new_tab           = require("table.new")
 local table             = table
 local insert_tab        = table.insert
 local error             = error
-local is_http           = ngx.config.subsystem == "http"
 local io                = io
 local io_open           = io.open
 local io_close          = io.close
 local package           = package
+local ipairs            = ipairs
+local type              = type
+local sub_str           = string.sub
+local math_ceil         = math.ceil
 local ffi               = require ("ffi")
 local C                 = ffi.C
 local config            = ngx.shared["xds-config"]
 local conf_ver          = ngx.shared["xds-conf-version"]
+local is_http           = ngx.config.subsystem == "http"
 local ngx_re_match      = ngx.re.match
 local ngx_re_gmatch     = ngx.re.gmatch
 local ngx_timer_every   = ngx.timer.every
 local ngx_timer_at      = ngx.timer.at
 local exiting           = ngx.worker.exiting
 local ngx_time          = ngx.time
-local ipairs            = ipairs
-local type              = type
-local sub_str           = string.sub
 
 local xds_lib_name      = "libxds.so"
-
-local created_obj       = {}
 
 local process
 if is_http then
@@ -64,6 +63,7 @@ ffi.cdef[[
 extern void initial(void* config_zone, void* version_zone);
 ]]
 
+local created_obj  = {}
 
 local _M = {
     version = 0.1,
@@ -145,48 +145,80 @@ local function sync_data(self)
         return true
     end
 
+    if self.values then
+        for _, val in ipairs(self.values) do
+            if val and val.clean_handlers then
+                for _, clean_handler in ipairs(val.clean_handlers) do
+                    clean_handler(val)
+                end
+                val.clean_handlers = nil
+            end
+        end
+        self.values = nil
+        self.values_hash = nil
+    end
+
     local keys = config:get_keys(0)
 
-    self.values = new_tab(8, 0)
+    if not keys or #keys <= 0 then
+        -- xds did not write any data to shdict
+        return true, "no keys"
+    end
 
-    if keys and #keys > 0 then
-        for _, key in ipairs(keys) do
-            if string.has_prefix(key, self.key) then
-                local conf_str = config:get(key, 0)
-                local conf, err = json.decode(conf_str)
-                if not conf then
-                    return false, "decode the conf of [" .. key .. "] failed, err: " .. err
+    -- v1 version we only support route/upstream
+    local capacity = math_ceil(#keys / 2)
+
+    self.values = new_tab(capacity, 0)
+    self.values_hash = new_tab(0, capacity)
+
+    for _, key in ipairs(keys) do
+        if string.has_prefix(key, self.key) then
+            local data_valid = true
+            local conf_str = config:get(key, 0)
+            local conf, err = json.decode(conf_str)
+            if not conf then
+                data_valid = false
+                log.error("decode the conf of [", key, "] failed, err: ", err,
+                          ", conf_str: ", conf_str)
+            end
+
+            if not self.single_item and type(conf) ~= "table" then
+                data_valid = false
+                log.error("invalid conf of [", key, "], conf: ", conf,
+                          ", it should be an object")
+            end
+
+            if data_valid and self.item_schema then
+                local ok, err = check_schema(self.item_schema, conf)
+                if not ok then
+                    data_valid = false
+                    log.error("failed to check the conf of [", key, "] err:", err)
                 end
+            end
 
-                if not self.single_item and type(conf) ~= "table" then
-                    return false, "invalid conf of [".. key .. "], conf: " .. conf
-                                  .. ", it should be an object"
+            if data_valid and self.checker then
+                local ok, err = self.checker(conf)
+                if not ok then
+                    data_valid = false
+                    log.error("failed to check the conf of [", key, "] err:", err)
                 end
+            end
 
-                if conf and self.item_schema then
-                    local ok, err = check_schema(self.item_schema, conf)
-                    if not ok then
-                        return false, "failed to check the conf of ["
-                                      .. key .. "] err:" .. err
-                    end
-
-                    if self.checker then
-                        local ok, err = self.checker(conf)
-                        if not ok then
-                            return false, "failed to check conf of ["
-                                          .. key .. "] err:" .. err
-                        end
-                    end
-                end
-
+            if data_valid then
                 if not conf.id then
                     conf.id = sub_str(key, #self.key + 2, #key + 1)
+                    log.warn("the id of [", key, "] is nil, use the id: ", conf.id)
                 end
 
                 local conf_item = {value = conf, modifiedIndex = latest_version,
                                    key = key}
-
                 insert_tab(self.values, conf_item)
+                self.values_hash[conf.id] = #self.values
+                conf_item.clean_handlers = {}
+
+                if self.filter then
+                    self.filter(conf_item)
+                end
             end
         end
     end
@@ -213,7 +245,7 @@ local function _automatic_fetch(premature, self)
             break
         elseif not ok2 and err then
             -- todo: handler other error
-            if err ~= "wait for more time" and self.last_err ~= err then
+            if err ~= "wait for more time" and err ~= "no keys" and self.last_err ~= err then
                 log.error("failed to fetch data from xds, ", err, ", ", tostring(self))
             end
 
@@ -320,6 +352,10 @@ function _M.new(key, opts)
     return obj
 end
 
+
+function _M.fetch_created_obj(key)
+    return created_obj[key]
+end
 
 
 function _M.init_worker()
