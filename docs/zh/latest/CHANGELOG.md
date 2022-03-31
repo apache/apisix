@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.10.5](#2105)
 - [2.10.4](#2104)
 - [2.10.3](#2103)
 - [2.10.2](#2102)
@@ -49,6 +50,22 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.10.5
+
+### Bugfix
+
+- 支持解析不完整的全限定域名（FQDN） 例如： 以 `.` 结尾 [#5999](https://github.com/apache/apisix/pull/5999)
+- 修正同时启用 error-log-logger 和 prometheus 时报告 labels inconsistent 的问题 [#6055](https://github.com/apache/apisix/pull/6055)
+- 修正 request-id 插件 uuid_val 与 include_in_response 被覆写的问题 [#6160](https://github.com/apache/apisix/pull/6160)
+- 修正 traffic-split 首条规则失败时无法匹配的问题 [#6292](https://github.com/apache/apisix/pull/6292)
+- 修正 proxy-rewrite 中，当 conf.headers 缺失时，conf.method 不生效的问题 [#6300](https://github.com/apache/apisix/pull/6300)
+- 修正 hmac-auth 插件对参数排列的问题 [#6314](https://github.com/apache/apisix/pull/6314)
+- 修正 core.request 未读取请求中所有 header 的问题  [#6379](https://github.com/apache/apisix/pull/6379)
+- 修正 request-validation 未验证所有 urlencoded post 参数问题 [#6396](https://github.com/apache/apisix/pull/6396)
+- 修正 net-url 库未使用固定版本的问题 [#6446](https://github.com/apache/apisix/pull/6446)
+- deepcopy 没有复制 metatable [#6623](https://github.com/apache/apisix/pull/6623)
+- request-validate 修复对 JSON 里面重复键的处理 [#6625](https://github.com/apache/apisix/pull/6625)
 
 ## 2.10.4
 

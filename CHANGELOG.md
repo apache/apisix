@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.10.5](#2105)
 - [2.10.4](#2104)
 - [2.10.3](#2103)
 - [2.10.2](#2102)
@@ -49,6 +50,22 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.10.5
+
+### Bugfix
+
+- fix: resolve unambiguous fully-qualified domain name(FQDN), i.e. ended in a dot [#5999](https://github.com/apache/apisix/pull/5999)
+- fix(batch-processor): the prometheus labels are inconsistent when using the same batch-processor instance on multi plugins [#6055](https://github.com/apache/apisix/pull/6055)
+- fix(request-id): if the header_name is already present in the request uuid_val include_in_response should keep source [#6160](https://github.com/apache/apisix/pull/6160)
+- fix(traffic-split): failed to match rule when the first rule failed [#6292](https://github.com/apache/apisix/pull/6292)
+- fix(proxy-rewrite): when conf.headers are missing,conf.method can make effect [#6300](https://github.com/apache/apisix/pull/6300)
+- fix(hmac-auth): hmac-auth plugin sort array param [#6314](https://github.com/apache/apisix/pull/6314)
+- fix(core.request): should not limit the header number [#6379](https://github.com/apache/apisix/pull/6379)
+- fix(request-validation): should not limit the urlencoded post args number [#6396](https://github.com/apache/apisix/pull/6396)
+- fix(deps): use fixed version of net-url [#6446](https://github.com/apache/apisix/pull/6446)
+- fix(core.table): deepcopy doesn't copy the metatable [#6623](https://github.com/apache/apisix/pull/6623)
+- fix(request-validate): handle duplicate key in JSON [#6625](https://github.com/apache/apisix/pull/6625)
 
 ## 2.10.4
 

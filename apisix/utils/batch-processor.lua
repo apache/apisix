@@ -53,6 +53,15 @@ local function schedule_func_exec(self, delay, batch)
 end
 
 
+local function set_metrics(self, count)
+    -- add batch metric for every route
+    if batch_metrics and self.name and self.route_id and self.server_addr then
+        self.label = {self.name, self.route_id, self.server_addr}
+        batch_metrics:set(count, self.label)
+    end
+end
+
+
 function execute_func(premature, self, batch)
     if premature then
         return
@@ -117,7 +126,7 @@ function batch_processor:new(func, config)
         return nil, err
     end
 
-    if not(type(func) == "function") then
+    if type(func) ~= "function" then
         return nil, "Invalid argument, arg #1 must be a function"
     end
 
@@ -159,11 +168,7 @@ function batch_processor:push(entry)
 
     local entries = self.entry_buffer.entries
     table.insert(entries, entry)
-    -- add batch metric for every route
-    if batch_metrics  then
-        self.label = {self.name, self.route_id, self.server_addr}
-        batch_metrics:set(#entries, self.label)
-    end
+    set_metrics(self, #entries)
 
     if #entries == 1 then
         self.first_entry_t = now()
@@ -189,10 +194,7 @@ function batch_processor:process_buffer()
             "buffercount[", #self.entry_buffer.entries ,"]")
         self.batch_to_process[#self.batch_to_process + 1] = self.entry_buffer
         self.entry_buffer = {entries = {}, retry_count = 0}
-        if batch_metrics then
-            self.label = {self.name, self.route_id, self.server_addr}
-            batch_metrics:set(0, self.label)
-        end
+        set_metrics(self, 0)
     end
 
     for _, batch in ipairs(self.batch_to_process) do
