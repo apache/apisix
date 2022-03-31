@@ -21,35 +21,35 @@ title: nacos
 #
 -->
 
-## Service discovery via Zookeeper
+## Service Discovery Via Zookeeper
 
 `Zookeeper` service discovery needs to rely on the [apisix-seed](https://github.com/api7/apisix-seed) project.
 
-### How apisix-seed works
+### How `apisix-seed` Works
 
 ![APISIX-SEED](../../../assets/images/apisix-seed.png)
 
-### Setting apisix-seed and zookeeper
+### Setting `apisix-seed` and Zookeeper
 
 The configuration steps are as follows:
 
-1. Download and compile the `apisix-seed` project.
+1. Start the Zookeeper service
 
 ```bash
-$ git clone https://github.com/api7/apisix-seed.git
-$ go build
+docker run -itd --rm --name=dev-zookeeper -p 2181:2181 zookeeper:3.7.0
 ```
 
-2. Start the Zookeeper service
+2. Download and compile the `apisix-seed` project.
 
 ```bash
-$ docker run -itd --rm --name=dev-zookeeper -p 2181:2181 zookeeper:3.7.0
+git clone https://github.com/api7/apisix-seed.git
+cd apisix-seed
+go build
 ```
 
-4. Modify the `apisix-seed` configuration file.
+3. Modify the `apisix-seed` configuration file, config path `conf/conf.yaml`.
 
 ```bash
-$ vim conf/conf.yaml
 etcd:                            # APISIX ETCD Configure
   host:
     - "http://127.0.0.1:2379"
@@ -59,25 +59,26 @@ etcd:                            # APISIX ETCD Configure
 discovery:
   zookeeper:                     # Zookeeper Service Discovery
     hosts:
-      - "127.0.0.1:2181"
+      - "127.0.0.1:2181"         # Zookeeper service address
     prefix: /zookeeper
     weight: 100                  # default weight for node
     timeout: 10                  # default 10s
 ```
 
-3. Start `apisix-seed` to monitor service changes
+4. Start `apisix-seed` to monitor service changes
 
 ```bash
-$ ./apisix-seed
+./apisix-seed
 ```
 
-### Setting apisix route and upstream
+### Setting `APISIX` route and upstream
 
-Set a route, the request path is `/zk/*`, the upstream uses zookeeper as service discovery, and the service name
-is `APISIX-ZK`.
+Set a route, the request path is `/zk/*`, the upstream uses zookeeper as service
+discovery, and the service name is `APISIX-ZK`.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/zk/*",
     "upstream": {
@@ -93,7 +94,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 1. Service registration using Zookeeper CLI
 
 ```bash
-$ docker exec -it ${ContainerID} /bin/bash
+docker exec -it ${ContainerID} /bin/bash
 oot@ae2f093337c1:/apache-zookeeper-3.7.0-bin# ./bin/zkCli.sh
 [zk: localhost:2181(CONNECTED) 0] create /zookeeper/APISIX-ZK '{"host":"127.0.0.1:1980","weight":100}'
 Created /zookeeper/APISIX-ZK
