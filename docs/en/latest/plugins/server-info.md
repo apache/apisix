@@ -51,7 +51,7 @@ This Plugin exposes the endpoint `/v1/server_info` to the [Control API](../contr
 
 ## Enabling the Plugin
 
-Just configure `server-info` in the plugin list of the configuration file `conf/config.yaml`.
+Add `server-info` to the Plugin list in your configuration file (`conf/config.yaml`):
 
 ```yaml title="conf/config.yaml"
 plugins:
