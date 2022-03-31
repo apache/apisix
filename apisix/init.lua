@@ -118,7 +118,7 @@ function _M.http_init_worker()
 
     if core.config == require("apisix.core.config_xds") then
         core.config.init_worker()
-    end    
+    end
 
     plugin.init_worker()
     router.http_init_worker()
@@ -128,7 +128,7 @@ function _M.http_init_worker()
 
     if core.config == require("apisix.core.config_yaml") then
         core.config.init_worker()
-    end    
+    end
 
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()

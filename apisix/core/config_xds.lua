@@ -19,7 +19,6 @@
 --
 -- @module core.config_xds
 
-local base              = require("resty.core.base")
 local config_local      = require("apisix.core.config_local")
 local string            = require("apisix.core.string")
 local log               = require("apisix.core.log")
@@ -69,6 +68,14 @@ extern void initial(void* config_zone, void* version_zone);
 local _M = {
     version = 0.1,
     local_conf = config_local.local_conf,
+}
+
+
+local mt = {
+    __index = _M,
+    __tostring = function(self)
+        return " xds key: " .. self.key
+    end
 }
 
 
@@ -158,14 +165,14 @@ local function sync_data(self)
 
                 if conf and self.item_schema then
                     local ok, err = check_schema(self.item_schema, conf)
-                    if not ok then        
+                    if not ok then
                         return false, "failed to check the conf of ["
                                       .. key .. "] err:" .. err
                     end
-        
+
                     if self.checker then
                         local ok, err = self.checker(conf)
-                        if not ok then        
+                        if not ok then
                             return false, "failed to check conf of ["
                                           .. key .. "] err:" .. err
                         end
@@ -180,7 +187,7 @@ local function sync_data(self)
                                    key = key}
 
                 insert_tab(self.values, conf_item)
-            end    
+            end
         end
     end
 
@@ -260,7 +267,7 @@ function _M.new(key, opts)
         local local_conf = config_local.local_conf()
         if local_conf and local_conf.etcd and local_conf.etcd.prefix then
             key = local_conf.etcd.prefix .. key
-        end 
+        end
     end
 
     local obj = setmetatable({
