@@ -296,6 +296,7 @@ function _M.new(key, opts)
     local checker = opts and opts.checker
 
     if key then
+        -- todo: should we support prefix like etcd?
         local local_conf = config_local.local_conf()
         if local_conf and local_conf.etcd and local_conf.etcd.prefix then
             key = local_conf.etcd.prefix .. key
