@@ -116,18 +116,18 @@ function _M.http_init_worker()
 
     require("apisix.debug").init_worker()
 
+    if core.config == require("apisix.core.config_xds") then
+        core.config.init_worker()
+    end    
+
     plugin.init_worker()
     router.http_init_worker()
     require("apisix.http.service").init_worker()
     plugin_config.init_worker()
     require("apisix.consumer").init_worker()
 
-    if core.config.init_worker then
-        local ok, err = core.config.init_worker()
-        if not ok then
-            core.log.error("failed to init worker process of ", core.config.type,
-                           " config center, err: ", err)
-        end
+    if core.config == require("apisix.core.config_yaml") then
+        core.config.init_worker()
     end    
 
     apisix_upstream.init_worker()

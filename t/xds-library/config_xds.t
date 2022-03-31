@@ -98,11 +98,11 @@ qr/can not load xDS library/
             local value = ngx.shared["xds-config"]:get("/apisix/routes/1")
             local route_conf, err = core.json.decode(value)
             local json_encode = require("toolkit.json").encode
-            ngx.say(json_encode(route_conf))
+            ngx.say(json_encode(route_conf.uri))
         }
     }
 --- response_body
-{"create_time":1646972532,"id":"1","priority":0,"status":1,"update_time":1647250524,"upstream":{"hash_on":"vars","nodes":[{"host":"127.0.0.1","port":80,"priority":0,"weight":1}],"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/hello"}
+"/hello"
 
 
 

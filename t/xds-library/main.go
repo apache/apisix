@@ -44,8 +44,37 @@ func main() {
 
 //export initial
 func initial(config_zone unsafe.Pointer, version_zone unsafe.Pointer) {
-	write_config(config_zone)
+	write_config(config_zone, version_zone)
+}
+
+func write_config(config_zone unsafe.Pointer, version_zone unsafe.Pointer) {
+	key := "/apisix/routes/1"
+	value := fmt.Sprintf(`{
+"status": 1,
+"update_time": 1647250524,
+"create_time": 1646972532,
+"uri": "/hello",
+"priority": 0,
+"id": "1",
+"upstream": {
+	"nodes": [
+		{
+			"port": 1980,
+			"priority": 0,
+			"host": "127.0.0.1",
+			"weight": 1
+		}
+	],
+	"type": "roundrobin",
+	"hash_on": "vars",
+	"pass_host": "pass",
+	"scheme": "http"
+}
+}`)
+
+	write_shdict(key, value, config_zone)
 	update_conf_version(version_zone)
+
 }
 
 func update_conf_version(zone unsafe.Pointer) {
@@ -62,34 +91,6 @@ func update_conf_version(zone unsafe.Pointer) {
 			}
 		}
 	}()
-}
-
-func write_config(zone unsafe.Pointer) {
-	key := "/apisix/routes/1"
-	value := fmt.Sprintf(`{
-"status": 1,
-"update_time": 1647250524,
-"create_time": 1646972532,
-"uri": "/hello",
-"priority": 0,
-"id": "1",
-"upstream": {
-	"nodes": [
-		{
-			"port": 80,
-			"priority": 0,
-			"host": "127.0.0.1",
-			"weight": 1
-		}
-	],
-	"type": "roundrobin",
-	"hash_on": "vars",
-	"pass_host": "pass",
-	"scheme": "http"
-}
-}`)
-
-	write_shdict(key, value, zone)
 }
 
 func write_shdict(key string, value string, zone unsafe.Pointer) {

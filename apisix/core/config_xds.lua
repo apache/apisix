@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 
---- Get configuration form ngx.shared.DICT.
+--- Get configuration form ngx.shared.DICT
 --
 -- @module core.config_xds
 
@@ -23,15 +23,18 @@ local base              = require("resty.core.base")
 local config_local      = require("apisix.core.config_local")
 local string            = require("apisix.core.string")
 local log               = require("apisix.core.log")
+local json              = require("apisix.core.json")
 local ngx_sleep         = require("apisix.core.utils").sleep
+local check_schema      = require("apisix.core.schema").check
+local new_tab           = require("table.new")
 local table             = table
+local insert_tab        = table.insert
 local error             = error
 local is_http           = ngx.config.subsystem == "http"
 local io                = io
 local io_open           = io.open
 local io_close          = io.close
 local package           = package
-local new_tab           = base.new_tab
 local ffi               = require ("ffi")
 local C                 = ffi.C
 local config            = ngx.shared["xds-config"]
@@ -41,7 +44,9 @@ local ngx_re_gmatch     = ngx.re.gmatch
 local ngx_timer_every   = ngx.timer.every
 local ngx_timer_at      = ngx.timer.at
 local exiting           = ngx.worker.exiting
+local ngx_time          = ngx.time
 local ipairs            = ipairs
+local type              = type
 local sub_str           = string.sub
 
 local xds_lib_name      = "libxds.so"
@@ -52,12 +57,6 @@ local process
 if is_http then
     process = require("ngx.process")
 end
-
-local prefix = {
-    -- todo: use local_conf.etcd.prefix, not /apisix
-    route = "/apisix/routes/"
-}
-
 
 local latest_version
 
@@ -132,26 +131,55 @@ end
 
 local function sync_data(self)
     if not latest_version then
-        log.info("wait for more time")
-        return nil
+        return false, "wait for more time"
     end
 
-    ngx.log(ngx.WARN, "self.conf_version : ", self.conf_version, ", latest_version : ", latest_version,
-           "self.conf_version == latest_version : ", self.conf_version == latest_version)
-
     if self.conf_version == latest_version then
-        ngx.log(ngx.WARN, "self.conf_version : ", self.conf_version, ", latest_version : ", latest_version)
         return true
     end
 
     local keys = config:get_keys(0)
 
+    self.values = new_tab(8, 0)
 
     if keys and #keys > 0 then
         for _, key in ipairs(keys) do
-            if string.has_prefix(key, prefix.route) then
-                local value = config:get(key, 0)                
-                -- ngx.log(ngx.WARN, "key: ", key, " value: ", value)
+            if string.has_prefix(key, self.key) then
+                local conf_str = config:get(key, 0)
+                local conf, err = json.decode(conf_str)
+                if not conf then
+                    return false, "decode the conf of [" .. key .. "] failed, err: " .. err
+                end
+
+                if not self.single_item and type(conf) ~= "table" then
+                    return false, "invalid conf of [".. key .. "], conf: " .. conf
+                                  .. ", it should be an object"
+                end
+
+                if conf and self.item_schema then
+                    local ok, err = check_schema(self.item_schema, conf)
+                    if not ok then        
+                        return false, "failed to check the conf of ["
+                                      .. key .. "] err:" .. err
+                    end
+        
+                    if self.checker then
+                        local ok, err = self.checker(conf)
+                        if not ok then        
+                            return false, "failed to check conf of ["
+                                          .. key .. "] err:" .. err
+                        end
+                    end
+                end
+
+                if not conf.id then
+                    conf.id = sub_str(key, #self.key + 2, #key + 1)
+                end
+
+                local conf_item = {value = conf, modifiedIndex = latest_version,
+                                   key = key}
+
+                insert_tab(self.values, conf_item)
             end    
         end
     end
@@ -177,19 +205,46 @@ local function _automatic_fetch(premature, self)
             ngx_sleep(3)
             break
         elseif not ok2 and err then
-            ngx.log(ngx.WARN, "err : ", err)
-            -- todo: handle err
-            ngx_sleep(1)
+            -- todo: handler other error
+            if err ~= "wait for more time" and self.last_err ~= err then
+                log.error("failed to fetch data from xds, ", err, ", ", tostring(self))
+            end
+
+            if err ~= self.last_err then
+                self.last_err = err
+                self.last_err_time = ngx_time()
+            else
+                if ngx_time() - self.last_err_time >= 30 then
+                    self.last_err = nil
+                end
+            end
+            ngx_sleep(0.5)
         elseif not ok2 then
-            -- wait for xds write config
-            ngx_sleep(1)
+            ngx_sleep(0.05)
         else
-            ngx_sleep(1)
+            ngx_sleep(0.1)
         end
     end
 
     if not exiting() and self.running then
         ngx_timer_at(0, _automatic_fetch, self)
+    end
+end
+
+
+local function fetch_version(premature)
+    if premature then
+        return
+    end
+
+    local version = conf_ver:get("version")
+
+    if not version then
+        return
+    end
+
+    if version ~= latest_version then
+        latest_version = version
     end
 end
 
@@ -200,6 +255,13 @@ function _M.new(key, opts)
     local filter_fun = opts and opts.filter
     local single_item = opts and opts.single_item
     local checker = opts and opts.checker
+
+    if key then
+        local local_conf = config_local.local_conf()
+        if local_conf and local_conf.etcd and local_conf.etcd.prefix then
+            key = local_conf.etcd.prefix .. key
+        end 
+    end
 
     local obj = setmetatable({
         automatic = automatic,
@@ -223,15 +285,23 @@ function _M.new(key, opts)
             return nil, "missing `key` argument"
         end
 
-        -- local ok, ok2, err = pcall(sync_data, obj)
-        -- if not ok then
-        --     err = ok2
-        -- end
+        -- blocking until xds completes initial configuration
+        while true do
+            fetch_version()
+            if latest_version then
+                break
+            end
+        end
 
-        -- if err then
-        --     log.error("failed to fetch data from local file ", apisix_yaml_path, ": ",
-        --               err, ", ", key)
-        -- end
+        local ok, ok2, err = pcall(sync_data, obj)
+        if not ok then
+            err = ok2
+        end
+
+        if err then
+            log.error("failed to fetch data from xds ",
+                      err, ", ", key)
+        end
 
         ngx_timer_at(0, _automatic_fetch, obj)
     end
@@ -244,34 +314,13 @@ function _M.new(key, opts)
 end
 
 
-local function fetch_version(premature)
-    if premature then
-        return
-    end
-
-    local version = conf_ver:get("version")
-
-    if not version then
-        return
-    end
-
-    if version ~= latest_version then
-        latest_version = version
-    end
-end
-
-
 
 function _M.init_worker()
     if process.type() == "privileged agent" then
         load_libxds(xds_lib_name)
     end
 
-    fetch_version()
-
-    if process.type() == "worker" then
-        ngx_timer_every(1, fetch_version)
-    end
+    ngx_timer_every(1, fetch_version)
 
     return true
 end
