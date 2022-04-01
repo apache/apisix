@@ -193,6 +193,7 @@ function _M.body_filter(conf, ctx)
         end
 
         ngx.arg[1] = body
+        return
 
     elseif conf.body then
 
