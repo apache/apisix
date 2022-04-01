@@ -196,7 +196,7 @@ passed
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET", "POST", "PUT", "DELETE", "PATCH",
-                                    "HEAD", "OPTIONS", "CONNECT", "TRACE", "PURGE],
+                                    "HEAD", "OPTIONS", "CONNECT", "TRACE", "PURGE"],
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:8080": 1
