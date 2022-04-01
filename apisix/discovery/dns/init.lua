@@ -37,10 +37,10 @@ function _M.nodes(service_name)
     local nodes = core.table.new(#records, 0)
     for i, r in ipairs(records) do
         if r.address then
-            local node_port = r.port
-            if not node_port or node_port == 0 then
+            local node_port = port
+            if not node_port and r.port ~= 0 then
                 -- if the port is zero, fallback to use the default
-                node_port = port
+                node_port = r.port
             end
 
             nodes[i] = {host = r.address, weight = r.weight or 1, port = node_port}
