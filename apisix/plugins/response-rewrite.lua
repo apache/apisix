@@ -219,7 +219,7 @@ function _M.header_filter(conf, ctx)
         ngx.status = conf.status_code
     end
 
-    -- fixme: if filters have no any match, response body won't be modified.
+    -- if filters have no any match, response body won't be modified.
     if conf.filters or conf.body then
         core.response.clear_header_as_body_modified()
     end
