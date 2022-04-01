@@ -169,7 +169,7 @@ This step is required only if you haven't installed [etcd](https://github.com/et
 Run the command below to install etcd via the binary in Linux:
 
 ```shell
-ETCD_VERSION='3.4.13'
+ETCD_VERSION='3.4.18'
 wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
 tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
   cd etcd-v${ETCD_VERSION}-linux-amd64 && \
