@@ -155,9 +155,6 @@ function _M.check_schema(conf)
     if conf.filters then
         for _, filter in ipairs(conf.filters) do
             for field, value in pairs(filter) do
-                if type(field) ~= 'string' then
-                    return false, 'invalid type as filter field'
-                end
                 if field ~= "replace" and value == "" then
                     return false, 'invalid value as filter field ' .. field
                 end

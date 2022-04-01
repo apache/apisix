@@ -96,32 +96,6 @@ property "filters" validation failed: failed to validate item 1: property "scope
 
 
 
-=== TEST 27:  add plugin with invalid filter field type
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.response-rewrite")
-            local ok, err = plugin.check_schema({
-                filters = {
-                    {
-                        1 = "Hello"
-                    }
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-        }
-    }
---- request
-GET /t
---- error_code eval
-500
-
-
-
 === TEST 28:  add plugin with invalid filter empty value
 --- config
     location /t {
