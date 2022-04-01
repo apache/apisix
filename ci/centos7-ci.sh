@@ -35,10 +35,10 @@ install_dependencies() {
     ./utils/linux-install-luarocks.sh
 
     # install etcdctl
-    wget https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz
-    tar xf etcd-v3.4.0-linux-amd64.tar.gz
-    cp ./etcd-v3.4.0-linux-amd64/etcdctl /usr/local/bin/
-    rm -rf etcd-v3.4.0-linux-amd64
+    wget https://github.com/etcd-io/etcd/releases/download/v3.4.18/etcd-v3.4.18-linux-amd64.tar.gz
+    tar xf etcd-v3.4.18-linux-amd64.tar.gz
+    cp ./etcd-v3.4.18-linux-amd64/etcdctl /usr/local/bin/
+    rm -rf etcd-v3.4.18-linux-amd64
 
     # install vault cli capabilities
     install_vault_cli
