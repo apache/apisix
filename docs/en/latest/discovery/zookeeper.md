@@ -29,6 +29,18 @@ title: nacos
 
 ![APISIX-SEED](../../../assets/images/apisix-seed.png)
 
+`apisix-seed` completes data exchange by watch the changes of `etcd` and `zookeeper` at the same time.
+
+The process is as follows:
+
+1. `APISIX` registers a route and specifies the service discovery type as `zookeeper` to `etcd`.
+2. `apisix-seed` watch the resource changes of `APISIX` in `etcd` and filters the discovery type and obtains the service name.
+3. `apisix-seed` binds the service to the `etcd` resource and starts watch the service in zookeeper.
+4. The client registers the service with `zookeeper`.
+5. `apisix-seed` gets the service changes in `zookeeper`.
+6. `apisix-seed` queries the bound `etcd` resource information through the service name, and writes the updated service node to `etcd`.
+7. The `APISIX` worker watch etcd changes and refreshes the service node information to the memory.
+
 ### Setting `apisix-seed` and Zookeeper
 
 The configuration steps are as follows:
@@ -71,10 +83,10 @@ discovery:
 ./apisix-seed
 ```
 
-### Setting `APISIX` route and upstream
+### Setting `APISIX` Route and Upstream
 
-Set a route, the request path is `/zk/*`, the upstream uses zookeeper as service
-discovery, and the service name is `APISIX-ZK`.
+Set a route, the request path is `/zk/*`, the upstream uses zookeeper as service discovery, and the service name
+is `APISIX-ZK`.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 \
@@ -89,21 +101,38 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 }'
 ```
 
-### Register service and verify request
+### Register Service and verify Request
 
 1. Service registration using Zookeeper CLI
 
+- Register Service
+
 ```bash
-docker exec -it ${ContainerID} /bin/bash
+# Login Container
+docker exec -it ${CONTAINERID} /bin/bash
+# Login Zookeeper Client
 oot@ae2f093337c1:/apache-zookeeper-3.7.0-bin# ./bin/zkCli.sh
+# Register Service
 [zk: localhost:2181(CONNECTED) 0] create /zookeeper/APISIX-ZK '{"host":"127.0.0.1:1980","weight":100}'
+```
+
+- Successful Response
+
+```bash
 Created /zookeeper/APISIX-ZK
 ```
 
-2. Verify request
+2. Verify Request
+
+- Request
 
 ```bash
 curl -i http://127.0.0.1:9080/zk/hello
+```
+
+- Response
+
+```bash
 HTTP/1.1 200 OK
 Connection: keep-alive
 Content-Type: text/html; charset=utf-8
