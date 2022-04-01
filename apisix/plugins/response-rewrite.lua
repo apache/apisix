@@ -56,6 +56,7 @@ local schema = {
             description = "a group of filters that modify response body\
 by replacing one specified string by another",
             type = "array",
+            minItems = 1,
             items = {
                 description = "filter that modifies response body",
                 type = "object",
