@@ -523,7 +523,7 @@ local method_schema = {
     description = "HTTP method",
     type = "string",
     enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-        "OPTIONS", "CONNECT", "TRACE"},
+        "OPTIONS", "CONNECT", "TRACE", "PURGE"},
 }
 _M.method_schema = method_schema
 
