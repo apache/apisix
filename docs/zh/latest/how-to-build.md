@@ -163,7 +163,7 @@ sudo yum install ./apisix/*.rpm
 你可以通过 Docker 或者二进制等方式安装 etcd。以下命令通过二进制方式在 Linux 上安装 etcd。
 
 ```shell
-ETCD_VERSION='3.4.13'
+ETCD_VERSION='3.4.18'
 wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
 tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
   cd etcd-v${ETCD_VERSION}-linux-amd64 && \
