@@ -34,7 +34,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 25:  add plugin with valid filters
+=== TEST 1:  add plugin with valid filters
 --- config
     location /t {
         content_by_lua_block {
@@ -65,7 +65,7 @@ done
 
 
 
-=== TEST 26:  add plugin with invalid filter scope
+=== TEST 2:  add plugin with invalid filter scope
 --- config
     location /t {
         content_by_lua_block {
@@ -96,7 +96,7 @@ property "filters" validation failed: failed to validate item 1: property "scope
 
 
 
-=== TEST 28:  add plugin with invalid filter empty value
+=== TEST 3:  add plugin with invalid filter empty value
 --- config
     location /t {
         content_by_lua_block {
@@ -125,7 +125,7 @@ invalid value as filter field regex
 
 
 
-=== TEST 29:  add plugin with invalid filter regex options
+=== TEST 4:  add plugin with invalid filter regex options
 --- config
     location /t {
         content_by_lua_block {
@@ -154,7 +154,7 @@ unknown flag "h"
 
 
 
-=== TEST 30: set route with filters and vars expr
+=== TEST 5: set route with filters and vars expr
 --- config
     location /t {
         content_by_lua_block {
@@ -197,7 +197,7 @@ passed
 
 
 
-=== TEST 31: check http body that matches filters
+=== TEST 6: check http body that matches filters
 --- request
 GET /hello
 --- response_body
@@ -205,7 +205,7 @@ test world
 
 
 
-=== TEST 32: filter substitute global
+=== TEST 7: filter substitute global
 --- config
     location /t {
         content_by_lua_block {
@@ -249,7 +249,7 @@ passed
 
 
 
-=== TEST 33: check http body that substitute global
+=== TEST 8: check http body that substitute global
 --- request
 GET /hello
 --- response_body
@@ -257,7 +257,7 @@ hetto wortd
 
 
 
-=== TEST 34: filter replace with empty
+=== TEST 9: filter replace with empty
 --- config
     location /t {
         content_by_lua_block {
@@ -300,7 +300,7 @@ passed
 
 
 
-=== TEST 35: check http body that replace with empty
+=== TEST 10: check http body that replace with empty
 --- request
 GET /hello
 --- response_body
@@ -308,7 +308,7 @@ GET /hello
 
 
 
-=== TEST 36: filter replace with words
+=== TEST 11: filter replace with words
 --- config
     location /t {
         content_by_lua_block {
@@ -351,7 +351,7 @@ passed
 
 
 
-=== TEST 37: check http body that replace with words
+=== TEST 12: check http body that replace with words
 --- request
 GET /hello
 --- response_body
@@ -359,7 +359,7 @@ hello *
 
 
 
-=== TEST 38: set body and filters(body no effect)
+=== TEST 13: set body and filters(body no effect)
 --- config
     location /t {
         content_by_lua_block {
@@ -403,7 +403,7 @@ passed
 
 
 
-=== TEST 39: check http body that set body and filters
+=== TEST 14: check http body that set body and filters
 --- request
 GET /hello
 --- response_body
@@ -411,7 +411,7 @@ HELLO world
 
 
 
-=== TEST 40: set multiple filters
+=== TEST 15: set multiple filters
 --- config
     location /t {
         content_by_lua_block {
@@ -458,7 +458,7 @@ passed
 
 
 
-=== TEST 41: check http body that set multiple filters
+=== TEST 16: check http body that set multiple filters
 --- request
 GET /hello
 --- response_body
@@ -466,7 +466,7 @@ HETLO world
 
 
 
-=== TEST 42: filters no any match
+=== TEST 17: filters no any match
 --- config
     location /t {
         content_by_lua_block {
@@ -509,7 +509,7 @@ passed
 
 
 
-=== TEST 43: check http body that filters no any match
+=== TEST 18: check http body that filters no any match
 --- request
 GET /hello
 --- response_body
