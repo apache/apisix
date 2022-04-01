@@ -49,7 +49,8 @@ The `delay` attribute delays a request and executes of the subsequent Plugins.
 
 :::info IMPORTANT
 
-To use the `fault-injection` Plugin one of `abort` or `delay` must be specified. 
+To use the `fault-injection` Plugin one of `abort` or `delay` must be specified.
+
 :::
 
 :::tip
