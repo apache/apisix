@@ -21,6 +21,10 @@ title: 如何构建 Apache APISIX
 #
 -->
 
+## 步骤 0 安装依赖
+
+Somethings!~
+
 ## 步骤 1 安装 Apache APISIX
 
 你可以通过 RPM 仓库、Docker、Helm Chart、源码包、源码包（LTS 版本）等多种方式来安装 Apache APISIX。请在以下选项中选择其中一种执行。

@@ -23,6 +23,10 @@ title: Installing Apache APISIX
 
 This guide walks you through how you can build and get Apache APISIX running on your environment. Please refer the [Getting Started](./getting-started.md) guide for a quick walkthrough on running Apache APISIX.
 
+## Step 0: Add Dependencies
+
+Somethings!~
+
 ## Step 1: Install Apache APISIX
 
 Apache APISIX can be installed via the [RPM package](#installation-via-rpm-repository-centos-7), [Docker image](#installation-via-docker), [Helm Chart](#installation-via-helm-chart) or the [source release package](#installation-via-source-release-package). You can install via any one of these options.
