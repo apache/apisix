@@ -48,8 +48,8 @@ func initial(config_zone unsafe.Pointer, version_zone unsafe.Pointer) {
 }
 
 func write_config(config_zone unsafe.Pointer, version_zone unsafe.Pointer) {
-	key := "/apisix/routes/1"
-	value := fmt.Sprintf(`{
+	route_key := "/routes/1"
+	route_value := fmt.Sprintf(`{
 "status": 1,
 "update_time": 1647250524,
 "create_time": 1646972532,
@@ -72,7 +72,29 @@ func write_config(config_zone unsafe.Pointer, version_zone unsafe.Pointer) {
 }
 }`)
 
-	write_shdict(key, value, config_zone)
+	upstream_key := "/upstreams/1"
+	upstream_value := fmt.Sprintf(`{
+"id": "1",
+"nodes": {
+	"127.0.0.1:1980": 1
+},
+"type": "roundrobin"
+}`)
+
+	r_u_key := "/routes/2"
+	r_u__value := fmt.Sprintf(`{
+"status": 1,
+"update_time": 1647250524,
+"create_time": 1646972532,
+"uri": "/hello1",
+"priority": 0,
+"id": "1",
+"upstream_id": "1"
+}`)
+
+	write_shdict(route_key, route_value, config_zone)
+	write_shdict(upstream_key, upstream_value, config_zone)
+	write_shdict(r_u_key, r_u__value, config_zone)
 	update_conf_version(version_zone)
 
 }

@@ -58,7 +58,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: proxy request using data written by xds
+=== TEST 1: proxy request using data written by xds(id = 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -76,3 +76,166 @@ __DATA__
     }
 --- response_body
 hello world
+
+
+
+=== TEST 2: proxy request using data written by xds(id = 2, upstream_id = 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1"
+            local res, err = httpc:request_uri(uri, { method = "GET"})
+
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.print(res.body)
+        }
+    }
+--- response_body
+hello1 world
+
+
+
+=== TEST 3: proxy request using data written by xds(id = 3, upstream_id = 2)
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(1.5)
+            local core = require("apisix.core")
+            local value = ngx.shared["xds-config"]:flush_all()
+            ngx.sleep(1.5)
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, { method = "GET"})
+
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.print(res.body)
+        }
+    }
+--- response_body
+hello world
+
+
+
+=== TEST 4: flush all keys in xds config
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.shared["xds-config"]:flush_all()
+            ngx.update_time()
+            ngx.shared["xds-conf-version"]:set("version", ngx.now())
+            ngx.sleep(1.5)
+
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, { method = "GET"})
+
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.status = res.status
+            ngx.print(res.body)
+        }
+    }
+--- error_code: 404
+--- response_body
+{"error_msg":"404 Route Not Found"}
+
+
+
+=== TEST 5: bad format json
+--- config
+    location /t {
+        content_by_lua_block {
+            local data = [[{
+                upstream = {
+                    type = "roundrobin"
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1,
+                    }
+                },
+                uri = "/bad_json"
+            }]]
+            ngx.shared["xds-config"]:set("/routes/3", data)
+            ngx.update_time()
+            ngx.shared["xds-conf-version"]:set("version", ngx.now())
+            ngx.sleep(1.5)
+
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/bad_json"
+            local res, err = httpc:request_uri(uri, { method = "GET"})
+
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.status = res.status
+        }
+    }
+--- error_code: 404
+--- no_error_log
+[alert]
+-- wait: 2
+--- error_log
+decode the conf of [/routes/3] failed, err: Expected object key string but found invalid token
+
+
+
+=== TEST 6: schema check fail
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local data = {
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:65536"] = 1,
+                    }
+                }
+            }
+            local data_str = core.json.encode(data)
+            ngx.log(ngx.WARN, "data_str : ", require("inspect")(data_str))
+
+            ngx.shared["xds-config"]:set("/routes/3", data_str)
+            ngx.update_time()
+            ngx.shared["xds-conf-version"]:set("version", ngx.now())
+            ngx.sleep(1.5)
+        }
+    }
+--- no_error_log
+[alert]
+-- wait: 2
+--- error_log
+failed to check the conf of [/routes/3] err:allOf 1 failed: value should match only one schema, but matches none
+
+
+
+=== TEST 7: not table
+--- config
+    location /t {
+        content_by_lua_block {
+            local data = "/not_table"
+            ngx.shared["xds-config"]:set("/routes/3", data)
+            ngx.update_time()
+            ngx.shared["xds-conf-version"]:set("version", ngx.now())
+            ngx.sleep(1.5)
+        }
+    }
+--- no_error_log
+[alert]
+-- wait: 2
+--- error_log
+invalid conf of [/routes/3], conf: nil, it should be an object
