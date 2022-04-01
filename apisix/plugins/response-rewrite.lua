@@ -159,7 +159,8 @@ function _M.check_schema(conf)
             end
             local ok, err = re_compile(filter.regex, filter.options)
             if not ok then
-                return false, err
+                return false, "failed to validate regex '" .. filter.regex ..
+"' and options '" .. filter.options .. "':"  .. err
             end
         end
     end
