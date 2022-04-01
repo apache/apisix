@@ -646,3 +646,64 @@ GET /hello
 --- error_code: 405
 --- error_log
 tracer attached to stopped request
+
+
+
+=== TEST 23: set header with OpenResty API should invalidate the cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+
+            local code, message, res = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "functions" : ["return function(conf, ctx)
+                                            require('apisix.core').request.headers();
+                                            ngx.req.set_header('X-Req', 'foo');
+                                            require('ngx.req').add_header('X-Req', 'bar');
+                                            ngx.req.set_header('X-Resp', 'cat');
+                                            end"]
+                        },
+                        "ext-plugin-post-req": {
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say(message)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 24: check input
+--- request
+PUT /hello?xx=y&xx=z&&y=&&z
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
+        content_by_lua_block {
+            local ext = require("lib.ext-plugin")
+            ext.go({check_input = true})
+        }
+    }

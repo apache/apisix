@@ -39,7 +39,7 @@ title: referer-restriction
 
 ## 如何启用
 
-下面是一个示例，在指定的 route 上开启了 `referer-restriction` 插件:
+下面是一个示例，在指定的 route 上开启了 `referer-restriction` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -65,7 +65,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-带 `Referer: http://xx.com/x` 请求:
+带 `Referer: http://xx.com/x` 请求：
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html -H 'Referer: http://xx.com/x'
@@ -73,7 +73,7 @@ HTTP/1.1 200 OK
 ...
 ```
 
-带 `Referer: http://yy.com/x` 请求:
+带 `Referer: http://yy.com/x` 请求：
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html -H 'Referer: http://yy.com/x'
@@ -82,7 +82,7 @@ HTTP/1.1 403 Forbidden
 {"message":"Your referer host is not allowed"}
 ```
 
-不带 `Referer` 请求:
+不带 `Referer` 请求：
 
 ```shell
 $ curl http://127.0.0.1:9080/index.html

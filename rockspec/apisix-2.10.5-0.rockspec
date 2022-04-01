@@ -16,12 +16,12 @@
 --
 
 package = "apisix"
-version = "master-0"
+version = "2.10.5-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/apache/apisix",
-    branch = "master",
+    branch = "2.10.5",
 }
 
 description = {
@@ -32,9 +32,9 @@ description = {
 
 dependencies = {
     "lua-resty-ctxdump = 0.1-0",
-    "lua-resty-dns-client = 6.0.2",
+    "lua-resty-dns-client = 5.2.3",
     "lua-resty-template = 2.0",
-    "lua-resty-etcd = 1.6.0",
+    "lua-resty-etcd = 1.5.4",
     "api7-lua-resty-http = 0.2.0",
     "lua-resty-balancer = 0.04",
     "lua-resty-ngxvar = 0.5.2",
@@ -43,22 +43,22 @@ dependencies = {
     "lua-resty-jwt = 0.2.0",
     "lua-resty-hmac-ffi = 0.05",
     "lua-resty-cookie = 0.1.0",
-    "lua-resty-session = 3.10",
+    "lua-resty-session = 2.24",
     "opentracing-openresty = 0.1",
     "lua-resty-radixtree = 2.8.1",
-    "lua-protobuf = 0.3.4",
+    "lua-protobuf = 0.3.3",
     "lua-resty-openidc = 1.7.2-1",
     "luafilesystem = 1.7.0-2",
-    "api7-lua-tinyyaml = 0.4.2",
-    "nginx-lua-prometheus = 0.20220127",
-    "jsonschema = 0.9.8",
+    "api7-lua-tinyyaml = 0.3.0",
+    "nginx-lua-prometheus = 0.20210206",
+    "jsonschema = 0.9.5",
     "lua-resty-ipmatcher = 0.6.1",
     "lua-resty-kafka = 0.07",
     "lua-resty-logger-socket = 2.0-0",
-    "skywalking-nginx-lua = 0.6.0",
+    "skywalking-nginx-lua = 0.4-1",
     "base64 = 1.5-2",
     "binaryheap = 0.4",
-    "api7-dkjson = 0.1.1",
+    "dkjson = 2.5-2",
     "resty-redis-cluster = 1.02-4",
     "lua-resty-expr = 1.3.1",
     "graphql = 0.0.2",
@@ -67,15 +67,11 @@ dependencies = {
     "luasec = 0.9-1",
     "lua-resty-consul = 0.3-2",
     "penlight = 1.9.2-1",
-    "ext-plugin-proto = 0.4.0",
+    "ext-plugin-proto = 0.3.0",
     "casbin = 1.26.0",
     "api7-snowflake = 2.0-1",
     "inspect == 3.1.1",
-    "lualdap = 1.2.6-1",
-    "lua-resty-rocketmq = 0.3.0-0",
-    "opentelemetry-lua = 0.1-3",
     "net-url = 0.9-1",
-    "xml2lua = 1.5-2",
 }
 
 build = {
@@ -91,10 +87,10 @@ build = {
         OPENSSL_LIBDIR="$(OPENSSL_LIBDIR)",
     },
     install_variables = {
-        ENV_INST_PREFIX="$(PREFIX)",
-        ENV_INST_BINDIR="$(BINDIR)",
-        ENV_INST_LIBDIR="$(LIBDIR)",
-        ENV_INST_LUADIR="$(LUADIR)",
-        ENV_INST_CONFDIR="$(CONFDIR)",
+        INST_PREFIX="$(PREFIX)",
+        INST_BINDIR="$(BINDIR)",
+        INST_LIBDIR="$(LIBDIR)",
+        INST_LUADIR="$(LUADIR)",
+        INST_CONFDIR="$(CONFDIR)",
     },
 }

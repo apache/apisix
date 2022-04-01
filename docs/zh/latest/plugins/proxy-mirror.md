@@ -31,7 +31,7 @@ title: proxy-mirror
 
 | 名称 | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                    |
 | ---- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------- |
-| host | string | 必须   |        |        | 指定镜像服务地址，例如：http://127.0.0.1:9797（地址中需要包含 schema ：http或https，不能包含 path 部分） |
+| host | string | 必须   |        |        | 指定镜像服务地址，例如：http://127.0.0.1:9797（地址中需要包含 schema ：http 或 https，不能包含 path 部分）|
 | path | string | 可选   |        |        | 指定镜像请求的路径。如不指定，当前路径将被使用。 |
 | sample_ratio | number | 可选    | 1       |  [0.00001, 1]     | 镜像请求采样率 |
 
@@ -39,7 +39,7 @@ title: proxy-mirror
 
 ### 启用插件
 
-示例1：为特定路由启用 `proxy-mirror` 插件：
+示例 1：为特定路由启用 `proxy-mirror` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -96,7 +96,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 这时该插件已被禁用。
 
-## 指定mirror子请求的超时时间
+## 指定 mirror 子请求的超时时间
 
 我们可以在 `conf/config.yaml` 的 `plugin_attr` 中指定子请求的超时时间。这在连接复用的场景下 mirror 流量到一个非常慢的后端服务时非常有用。
 

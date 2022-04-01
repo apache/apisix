@@ -39,13 +39,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Extract branch name
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-        id: branch_env
-        shell: bash
-        run: |
-          echo "##[set-output name=version;]$(echo ${GITHUB_REF##*/})"
-
       - name: Setup Tars MySql
         run: |
           docker run -d -p 3306:3306 -v $PWD/t/tars/conf/tars.sql:/docker-entrypoint-initdb.d/tars.sql -e MYSQL_ROOT_PASSWORD=tars2022 mysql:5.7

@@ -57,7 +57,7 @@ title: mqtt-proxy
 
 然后把 MQTT 请求发送到 9100 端口即可。
 
-下面是一个示例，在指定的 route 上开启了 `mqtt-proxy` 插件:
+下面是一个示例，在指定的 route 上开启了 `mqtt-proxy` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -81,7 +81,7 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 
 在 Docker 与 MacOS 结合使用的情况下，`host.docker.internal` 是 `host` 的正确参数。
 
-这个插件暴露了一个变量 `mqtt_client_id`，我们可以用它来通过客户端 ID 进行负载均衡。比如说:
+这个插件暴露了一个变量 `mqtt_client_id`，我们可以用它来通过客户端 ID 进行负载均衡。比如说：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

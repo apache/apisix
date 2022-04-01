@@ -16,12 +16,12 @@
 --
 
 package = "apisix"
-version = "master-0"
+version = "2.13.0-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/apache/apisix",
-    branch = "master",
+    branch = "2.13.0",
 }
 
 description = {
@@ -43,7 +43,7 @@ dependencies = {
     "lua-resty-jwt = 0.2.0",
     "lua-resty-hmac-ffi = 0.05",
     "lua-resty-cookie = 0.1.0",
-    "lua-resty-session = 3.10",
+    "lua-resty-session = 2.24",
     "opentracing-openresty = 0.1",
     "lua-resty-radixtree = 2.8.1",
     "lua-protobuf = 0.3.4",

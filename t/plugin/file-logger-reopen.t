@@ -14,7 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-use t::APISIX 'no_plan';
+use t::APISIX;
+
+my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
+my $version = eval { `$nginx_binary -V 2>&1` };
+
+if ($version !~ m/\/apisix-nginx-module/) {
+    plan(skip_all => "apisix-nginx-module not installed");
+} else {
+    plan('no_plan');
+}
 
 no_long_string();
 no_root_location();
@@ -36,40 +45,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: sanity
---- config
-    location /t {
-        content_by_lua_block {
-            local configs = {
-                -- full configuration
-                {
-                    path = "file.log"
-                },
-                -- property "path" is required
-                {
-                    path = nil
-                }
-            }
-
-            local plugin = require("apisix.plugins.file-logger")
-
-            for i = 1, #configs do
-                ok, err = plugin.check_schema(configs[i])
-                if err then
-                    ngx.say(err)
-                else
-                    ngx.say("done")
-                end
-            end
-        }
-    }
---- response_body_like
-done
-property "path" is required
-
-
-
-=== TEST 2: add plugin metadata
+=== TEST 1: prepare
 --- config
     location /t {
         content_by_lua_block {
@@ -86,20 +62,10 @@ property "path" is required
 
             if code >= 300 then
                 ngx.status = code
+                ngx.say(body)
+                return
             end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
 
-
-
-=== TEST 3: add plugin
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
@@ -129,13 +95,48 @@ passed
 
 
 
-=== TEST 4: verify plugin
+=== TEST 2: cache file
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
             local code = t("/hello", ngx.HTTP_GET)
+            assert(io.open("file.log", 'r'))
+            os.remove("file.log")
+            local code = t("/hello", ngx.HTTP_GET)
+            local _, err = io.open("file.log", 'r')
+            ngx.say(err)
+        }
+    }
+--- response_body
+file.log: No such file or directory
+
+
+
+=== TEST 3: reopen file
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code = t("/hello", ngx.HTTP_GET)
+            assert(io.open("file.log", 'r'))
+            os.remove("file.log")
+
+            local process = require "ngx.process"
+            local resty_signal = require "resty.signal"
+            local pid = process.get_master_pid()
+
+            local ok, err = resty_signal.kill(pid, "USR1")
+            if not ok then
+                ngx.log(ngx.ERR, "failed to kill process of pid ", pid, ": ", err)
+                return
+            end
+
+            local code = t("/hello", ngx.HTTP_GET)
+
+            -- file is reopened
             local fd, err = io.open("file.log", 'r')
             local msg
 
@@ -155,59 +156,16 @@ passed
                 ngx.say(msg)
             end
 
-            --- a new request is logged
-            t("/hello", ngx.HTTP_GET)
-            msg = fd:read("*l")
-            local new_msg = core.json.decode(msg)
-            if new_msg.client_ip == '127.0.0.1' and new_msg.route_id == '1'
-                and new_msg.host == '127.0.0.1'
-            then
-                msg = "write file log success"
-                ngx.say(msg)
-            end
+            os.remove("file.log")
+            local code = t("/hello", ngx.HTTP_GET)
+            local _, err = io.open("file.log", 'r')
+            ngx.say(err)
         }
     }
 --- response_body
 write file log success
-write file log success
-
-
-
-=== TEST 5: failed to open the path
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "file-logger": {
-                                "path": "/log/file.log"
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1982": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-            end
-
-            local code, messages = t("/hello", GET)
-            core.log.warn("messages: ", messages)
-            if code >= 300 then
-                ngx.status = code
-            end
-        }
-    }
---- error_log
-failed to open file: /log/file.log, error info: /log/file.log: No such file or directory
+file.log: No such file or directory
+--- grep_error_log eval
+qr/reopen cached log file: file.log/
+--- grep_error_log_out
+reopen cached log file: file.log

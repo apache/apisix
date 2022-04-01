@@ -93,7 +93,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H "Authorization: Bearer {replace_jwt_token}"
 ```
 
-当 Oauth 2 授权服务器返回结果里面除了 token 之外还有过期时间, token 将在 APISIX 中缓存直至过期。
+当 Oauth 2 授权服务器返回结果里面除了 token 之外还有过期时间，token 将在 APISIX 中缓存直至过期。
 具体细节参见：
 
 1. [lua-resty-openidc](https://github.com/zmartzone/lua-resty-openidc) 的文档和代码。
