@@ -154,6 +154,9 @@ function _M.check_schema(conf)
 
     if conf.filters then
         for _, filter in ipairs(conf.filters) do
+            if filter.regex == "" then
+                return false, "invalid value as filter field regex"
+            end
             local ok, err = re_compile(filter.regex, filter.options)
             if not ok then
                 return false, err
