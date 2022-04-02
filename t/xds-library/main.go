@@ -82,7 +82,7 @@ func write_config(config_zone unsafe.Pointer, version_zone unsafe.Pointer) {
 }`)
 
 	r_u_key := "/routes/2"
-	r_u__value := fmt.Sprintf(`{
+	r_u_value := fmt.Sprintf(`{
 "status": 1,
 "update_time": 1647250524,
 "create_time": 1646972532,
@@ -94,7 +94,7 @@ func write_config(config_zone unsafe.Pointer, version_zone unsafe.Pointer) {
 
 	write_shdict(route_key, route_value, config_zone)
 	write_shdict(upstream_key, upstream_value, config_zone)
-	write_shdict(r_u_key, r_u__value, config_zone)
+	write_shdict(r_u_key, r_u_value, config_zone)
 	update_conf_version(version_zone)
 
 }
