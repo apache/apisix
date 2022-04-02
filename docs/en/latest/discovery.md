@@ -31,20 +31,6 @@ When system traffic changes, the number of servers of the upstream service also 
 2. The gateway gets service instance information from the registry in near-real time.
 3. When the user requests the service through the gateway, the gateway selects one instance from the registry for proxy.
 
-Common registries: Eureka, Etcd, Consul, Zookeeper, Nacos etc.
-
-## Supported discovery registries
-
-Currently we support Eureka/Consul/Nacos and service discovery via DNS.
-
-For service discovery via DNS, see [service discovery via DNS](discovery/dns.md).
-
-For Consul, see [service discovery via Consul](discovery/consul_kv.md)
-
-For Nacos, see [service discovery via Nacos](discovery/nacos.md)
-
-For Eureka, see below.
-
 ## How to extend the discovery client?
 
 ### Basic steps
