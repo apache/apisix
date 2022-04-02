@@ -492,9 +492,7 @@ passed
 
 === TEST 20: verify auth request args is hidden
 --- request
-GET /hello?auth=auth-one
---- more_args
-auth: auth-one
+GET /hello?auth=auth-one&test=auth-two
 --- response_args
 !auth
 --- no_error_log
@@ -505,9 +503,6 @@ auth: auth-one
 === TEST 21: Verify that only the keys in the query parameters are deleted
 --- request
 GET /hello?auth=auth-one&test=auth-two
---- more_args
-auth: auth-one
-test: auth-two
 --- response_args
 !auth
 test: auth-two
@@ -558,8 +553,6 @@ passed
 === TEST 22: verify auth request args should not hidden
 --- request
 GET /hello?auth=auth-one
---- more_args
-auth: auth-one
 --- response_args
 auth: auth-one
 --- no_error_log
