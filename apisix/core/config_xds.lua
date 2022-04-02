@@ -43,7 +43,7 @@ local math_ceil         = math.ceil
 local ffi               = require ("ffi")
 local C                 = ffi.C
 local config            = ngx.shared["xds-config"]
-local conf_ver          = ngx.shared["xds-conf-version"]
+local conf_ver          = ngx.shared["xds-config-version"]
 local is_http           = ngx.config.subsystem == "http"
 local ngx_re_match      = ngx.re.match
 local ngx_re_gmatch     = ngx.re.gmatch

@@ -31,7 +31,7 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    if (!$block->no_error_log) {
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
         $block->set_value("no_error_log", "[error]\n[alert]");
     }
 
@@ -132,7 +132,7 @@ hello world
             local core = require("apisix.core")
             ngx.shared["xds-config"]:flush_all()
             ngx.update_time()
-            ngx.shared["xds-conf-version"]:set("version", ngx.now())
+            ngx.shared["xds-config-version"]:set("version", ngx.now())
             ngx.sleep(1.5)
 
             local http = require "resty.http"
@@ -169,7 +169,7 @@ hello world
             }]]
             ngx.shared["xds-config"]:set("/routes/3", data)
             ngx.update_time()
-            ngx.shared["xds-conf-version"]:set("version", ngx.now())
+            ngx.shared["xds-config-version"]:set("version", ngx.now())
             ngx.sleep(1.5)
 
             local http = require "resty.http"
@@ -211,7 +211,7 @@ decode the conf of [/routes/3] failed, err: Expected object key string but found
 
             ngx.shared["xds-config"]:set("/routes/3", data_str)
             ngx.update_time()
-            ngx.shared["xds-conf-version"]:set("version", ngx.now())
+            ngx.shared["xds-config-version"]:set("version", ngx.now())
             ngx.sleep(1.5)
         }
     }
@@ -230,7 +230,7 @@ failed to check the conf of [/routes/3] err:allOf 1 failed: value should match o
             local data = "/not_table"
             ngx.shared["xds-config"]:set("/routes/3", data)
             ngx.update_time()
-            ngx.shared["xds-conf-version"]:set("version", ngx.now())
+            ngx.shared["xds-config-version"]:set("version", ngx.now())
             ngx.sleep(1.5)
         }
     }

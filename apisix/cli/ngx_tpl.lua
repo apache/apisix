@@ -245,7 +245,7 @@ http {
 
     {% if config_center == "xds" then %}
     lua_shared_dict xds-config  10m;
-    lua_shared_dict xds-conf-version  1m;
+    lua_shared_dict xds-config-version  1m;
     {% end %}
 
     # for custom shared dict

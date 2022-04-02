@@ -113,7 +113,7 @@ qr/can not load xDS library/
             -- wait for xds library sync data
             ngx.sleep(1.5)
             local core = require("apisix.core")
-            local version = ngx.shared["xds-conf-version"]:get("version")
+            local version = ngx.shared["xds-config-version"]:get("version")
             ngx.say(version)
         }
     }
