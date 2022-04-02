@@ -437,7 +437,21 @@ apikey: auth-one
 
 
 
-=== TEST 18: customize query string, set hide_credentials = true
+=== TEST 18: Verify that only the keys in the title are deleted
+--- request
+GET /echo
+--- more_headers
+apikey: auth-one
+test: auth-two
+--- response_headers
+!apikey
+test: auth-two
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: customize query string, set hide_credentials = true
 --- config
     location /t {
         content_by_lua_block {
@@ -476,7 +490,7 @@ passed
 
 
 
-=== TEST 19: verify auth request args is hidden
+=== TEST 20: verify auth request args is hidden
 --- request
 GET /hello?auth=auth-one
 --- more_args
@@ -488,7 +502,21 @@ auth: auth-one
 
 
 
-=== TEST 20: customize query string, set hide_credentials = false
+=== TEST 21: Verify that only the keys in the query parameters are deleted
+--- request
+GET /hello?auth=auth-one&test=auth-two
+--- more_args
+auth: auth-one
+test: auth-two
+--- response_args
+!auth
+test: auth-two
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: customize query string, set hide_credentials = false
 --- config
     location /t {
         content_by_lua_block {
@@ -527,7 +555,7 @@ passed
 
 
 
-=== TEST 21: verify auth request args should not hidden
+=== TEST 22: verify auth request args should not hidden
 --- request
 GET /hello?auth=auth-one
 --- more_args

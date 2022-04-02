@@ -116,8 +116,9 @@ function _M.rewrite(conf, ctx)
 
     if conf.hide_credentials then
         core.request.set_header(ctx, conf.header, nil)
-        core.request.get_uri_args(ctx)
-        core.request.set_uri_args(ctx, {})
+        local args = core.request.get_uri_args(ctx)
+        args[conf.query] = nil
+        core.request.set_uri_args(ctx, args)
     end
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
