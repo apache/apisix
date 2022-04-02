@@ -437,7 +437,7 @@ apikey: auth-one
 
 
 
-=== TEST 18: Verify that only the keys in the title are deleted
+=== TEST 18: verify that only the keys in the title are deleted
 --- request
 GET /echo
 --- more_headers
@@ -492,7 +492,7 @@ passed
 
 === TEST 20: verify auth request args is hidden
 --- request
-GET /hello?auth=auth-one&test=auth-two
+GET /hello?auth=auth-one
 --- response_args
 !auth
 --- no_error_log
@@ -500,7 +500,7 @@ GET /hello?auth=auth-one&test=auth-two
 
 
 
-=== TEST 21: Verify that only the keys in the query parameters are deleted
+=== TEST 21: verify that only the keys in the query parameters are deleted
 --- request
 GET /hello?auth=auth-one&test=auth-two
 --- response_args
@@ -550,7 +550,7 @@ passed
 
 
 
-=== TEST 22: verify auth request args should not hidden
+=== TEST 23: verify auth request args should not hidden
 --- request
 GET /hello?auth=auth-one
 --- response_args
