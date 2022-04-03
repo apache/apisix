@@ -194,8 +194,9 @@ function _M.body_filter(conf, ctx)
 
         ngx.arg[1] = body
         return
+    end
 
-    elseif conf.body then
+    if conf.body then
 
         if conf.body_base64 then
             ngx.arg[1] = ngx.decode_base64(conf.body)
