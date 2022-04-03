@@ -1,5 +1,5 @@
 ---
-title: nacos
+title: zookeeper
 ---
 
 <!--
@@ -27,19 +27,19 @@ title: nacos
 
 ### How `apisix-seed` Works
 
-![APISIX-SEED](../../../assets/images/apisix-seed.png)
+![APISIX-SEED](../../../assets/images/apisix-seed.svg)
 
-`apisix-seed` completes data exchange by watch the changes of `etcd` and `zookeeper` at the same time.
+`apisix-seed` completes data exchange by watching the changes of `etcd` and `zookeeper` at the same time.
 
 The process is as follows:
 
-1. `APISIX` registers a route and specifies the service discovery type as `zookeeper` to `etcd`.
-2. `apisix-seed` watch the resource changes of `APISIX` in `etcd` and filters the discovery type and obtains the service name.
-3. `apisix-seed` binds the service to the `etcd` resource and starts watch the service in zookeeper.
+1. `APISIX` registers an upstream and specifies the service discovery type as `zookeeper` to `etcd`.
+2. `apisix-seed` watches the resource changes of `APISIX` in `etcd` and filters the discovery type and obtains the service name.
+3. `apisix-seed` binds the service to the `etcd` resource and starts watching the service in zookeeper.
 4. The client registers the service with `zookeeper`.
 5. `apisix-seed` gets the service changes in `zookeeper`.
 6. `apisix-seed` queries the bound `etcd` resource information through the service name, and writes the updated service node to `etcd`.
-7. The `APISIX` worker watch etcd changes and refreshes the service node information to the memory.
+7. The `APISIX` worker watches `etcd` changes and refreshes the service node information to the memory.
 
 ### Setting `apisix-seed` and Zookeeper
 
