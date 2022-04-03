@@ -53,8 +53,8 @@ local schema = {
             type = "array",
         },
         filters = {
-            description = "a group of filters that modify response body\
-by replacing one specified string by another",
+            description = "a group of filters that modify response body" ..
+                          "by replacing one specified string by another",
             type = "array",
             minItems = 1,
             items = {
