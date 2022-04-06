@@ -39,7 +39,6 @@ local package           = package
 local ipairs            = ipairs
 local type              = type
 local sub_str           = string.sub
-local math_ceil         = math.ceil
 local ffi               = require ("ffi")
 local C                 = ffi.C
 local config            = ngx.shared["xds-config"]
@@ -60,7 +59,10 @@ if is_http then
 end
 
 ffi.cdef[[
+typedef unsigned int  useconds_t;
+
 extern void initial(void* config_zone, void* version_zone);
+int usleep(useconds_t usec);
 ]]
 
 local created_obj  = {}
@@ -135,10 +137,8 @@ local function load_libxds(lib_name)
 end
 
 
-local sync_data
 local latest_version
-sync_data = function(self)
-
+local function sync_data(self)
     if self.conf_version == latest_version then
         return true
     end
@@ -163,11 +163,8 @@ sync_data = function(self)
         return false, "no keys"
     end
 
-    -- v1 version we only support route/upstream
-    local capacity = math_ceil(#keys / 2)
-
-    self.values = new_tab(capacity, 0)
-    self.values_hash = new_tab(0, capacity)
+    self.values = new_tab(#keys, 0)
+    self.values_hash = new_tab(0, #keys)
 
     for _, key in ipairs(keys) do
         if string.has_prefix(key, self.key) then
@@ -318,6 +315,7 @@ function _M.new(key, opts)
 
         -- blocking until xds completes initial configuration
         while true do
+            C.usleep(0.1)
             fetch_version()
             if latest_version then
                 break
