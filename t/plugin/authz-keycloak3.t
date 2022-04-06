@@ -90,8 +90,6 @@ passed
             if res.status == 200 then
                 local body = json_decode(res.body)
                 local accessToken = body["access_token"]
-
-
                 uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1"
                 local res, err = httpc:request_uri(uri, {
                     method = "GET",
