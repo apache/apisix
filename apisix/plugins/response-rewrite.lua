@@ -24,6 +24,7 @@ local re_gsub     = ngx.re.gsub
 local pairs       = pairs
 local ipairs      = ipairs
 local type        = type
+local pcall       = pcall
 
 
 local schema = {
@@ -159,10 +160,10 @@ function _M.check_schema(conf)
             if filter.regex == "" then
                 return false, "invalid value as filter field regex"
             end
-            local ok, err = re_compile(filter.regex, filter.options)
+            local ok, err = pcall(re_compile,filter.regex, filter.options)
             if not ok then
-                return false, "failed to validate regex '" .. filter.regex ..
-"' and options '" .. filter.options .. "':"  .. err
+                return false, "regex \"" .. filter.regex ..
+                        "\" validation failed: "  .. err
             end
         end
     end

@@ -162,6 +162,7 @@ invalid value as filter field regex
                 filters = {
                     {
                         regex = "hello",
+                        replace = "HELLO",
                         options = "h"
                     }
                 }
@@ -176,9 +177,11 @@ invalid value as filter field regex
 --- request
 GET /t
 --- error_code eval
-500
---- error_log
-unknown flag "h"
+200
+--- response_body
+regex "hello" validation failed: unknown flag "h" (flags "h")
+--- no_error_log
+[error]
 
 
 
