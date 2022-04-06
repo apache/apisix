@@ -706,3 +706,115 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to check the configuration of plugin proxy-cache err/
+
+
+
+=== TEST 28: check purge method (route no purge method)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-cache": {
+                               "cache_key":["$host","$uri"],
+                               "cache_zone": "disk_cache_one",
+                               "cache_bypass": ["$arg_bypass"],
+                               "cache_method": ["GET"],
+                               "cache_http_status": [200],
+                               "hide_cache_headers": true,
+                               "no_cache": ["$arg_no_cache"]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1986": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello*",
+                        "methods":["GET"]
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+passed
+
+
+
+=== TEST 29: hit route (cache miss)
+--- request
+GET /hello_purge
+--- response_body chop
+hello world!
+--- response_headers
+Apisix-Cache-Status: MISS
+
+
+
+=== TEST 30: purge cache (route missmatch, method not allow)
+--- request
+PURGE /hello_purge
+--- error_code: 404
+
+
+
+=== TEST 31: check purge method (route with purge method)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-cache": {
+                               "cache_key":["$host","$uri"],
+                               "cache_zone": "disk_cache_one",
+                               "cache_bypass": ["$arg_bypass"],
+                               "cache_method": ["GET"],
+                               "cache_http_status": [200],
+                               "hide_cache_headers": true,
+                               "no_cache": ["$arg_no_cache"]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1986": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello*",
+                        "methods":["GET", "PURGE"]
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+passed
+
+
+
+=== TEST 32: purge cache
+--- request
+PURGE /hello_purge
+--- error_code: 200
