@@ -59,9 +59,6 @@ if is_http then
     process = require("ngx.process")
 end
 
-local latest_version
-
-
 ffi.cdef[[
 extern void initial(void* config_zone, void* version_zone);
 ]]
@@ -138,11 +135,9 @@ local function load_libxds(lib_name)
 end
 
 
-
-local function sync_data(self)
-    if not latest_version then
-        return false, "wait for more time"
-    end
+local sync_data
+local latest_version
+sync_data = function(self)
 
     if self.conf_version == latest_version then
         return true
