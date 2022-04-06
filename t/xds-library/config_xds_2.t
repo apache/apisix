@@ -184,10 +184,8 @@ hello world
             ngx.status = res.status
         }
     }
+--- wait: 2
 --- error_code: 404
---- no_error_log
-[alert]
--- wait: 2
 --- error_log
 decode the conf of [/routes/3] failed, err: Expected object key string but found invalid token
 

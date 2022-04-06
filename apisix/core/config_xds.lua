@@ -165,7 +165,7 @@ local function sync_data(self)
 
     if not keys or #keys <= 0 then
         -- xds did not write any data to shdict
-        return true, "no keys"
+        return false, "no keys"
     end
 
     -- v1 version we only support route/upstream
