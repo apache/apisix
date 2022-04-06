@@ -65,7 +65,35 @@ done
 
 
 
-=== TEST 2:  add plugin with invalid filter scope
+=== TEST 2:  add plugin with invalid filter required filed
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.response-rewrite")
+            local ok, err = plugin.check_schema({
+                filters = {
+                    {
+                        regex = "Hello",
+                    }
+                }
+            })
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("done")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+property "filters" validation failed: failed to validate item 1: property "replace" is required
+--- no_error_log
+[error]
+
+
+
+=== TEST 3:  add plugin with invalid filter scope
 --- config
     location /t {
         content_by_lua_block {
@@ -96,7 +124,7 @@ property "filters" validation failed: failed to validate item 1: property "scope
 
 
 
-=== TEST 3:  add plugin with invalid filter empty value
+=== TEST 4:  add plugin with invalid filter empty value
 --- config
     location /t {
         content_by_lua_block {
@@ -125,7 +153,7 @@ invalid value as filter field regex
 
 
 
-=== TEST 4:  add plugin with invalid filter regex options
+=== TEST 5:  add plugin with invalid filter regex options
 --- config
     location /t {
         content_by_lua_block {
@@ -154,7 +182,7 @@ unknown flag "h"
 
 
 
-=== TEST 5: set route with filters and vars expr
+=== TEST 6: set route with filters and vars expr
 --- config
     location /t {
         content_by_lua_block {
@@ -197,7 +225,7 @@ passed
 
 
 
-=== TEST 6: check http body that matches filters
+=== TEST 7: check http body that matches filters
 --- request
 GET /hello
 --- response_body
@@ -205,7 +233,7 @@ test world
 
 
 
-=== TEST 7: filter substitute global
+=== TEST 8: filter substitute global
 --- config
     location /t {
         content_by_lua_block {
@@ -249,7 +277,7 @@ passed
 
 
 
-=== TEST 8: check http body that substitute global
+=== TEST 9: check http body that substitute global
 --- request
 GET /hello
 --- response_body
@@ -257,7 +285,7 @@ hetto wortd
 
 
 
-=== TEST 9: filter replace with empty
+=== TEST 10: filter replace with empty
 --- config
     location /t {
         content_by_lua_block {
@@ -300,7 +328,7 @@ passed
 
 
 
-=== TEST 10: check http body that replace with empty
+=== TEST 11: check http body that replace with empty
 --- request
 GET /hello
 --- response_body
@@ -308,7 +336,7 @@ GET /hello
 
 
 
-=== TEST 11: filter replace with words
+=== TEST 12: filter replace with words
 --- config
     location /t {
         content_by_lua_block {
@@ -351,7 +379,7 @@ passed
 
 
 
-=== TEST 12: check http body that replace with words
+=== TEST 13: check http body that replace with words
 --- request
 GET /hello
 --- response_body
@@ -359,7 +387,7 @@ hello *
 
 
 
-=== TEST 13: set body and filters(body no effect)
+=== TEST 14: set body and filters(body no effect)
 --- config
     location /t {
         content_by_lua_block {
@@ -403,7 +431,7 @@ passed
 
 
 
-=== TEST 14: check http body that set body and filters
+=== TEST 15: check http body that set body and filters
 --- request
 GET /hello
 --- response_body
@@ -411,7 +439,7 @@ HELLO world
 
 
 
-=== TEST 15: set multiple filters
+=== TEST 16: set multiple filters
 --- config
     location /t {
         content_by_lua_block {
@@ -458,7 +486,7 @@ passed
 
 
 
-=== TEST 16: check http body that set multiple filters
+=== TEST 17: check http body that set multiple filters
 --- request
 GET /hello
 --- response_body
@@ -466,7 +494,7 @@ HETLO world
 
 
 
-=== TEST 17: filters no any match
+=== TEST 18: filters no any match
 --- config
     location /t {
         content_by_lua_block {
@@ -509,7 +537,7 @@ passed
 
 
 
-=== TEST 18: check http body that filters no any match
+=== TEST 19: check http body that filters no any match
 --- request
 GET /hello
 --- response_body

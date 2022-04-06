@@ -60,6 +60,7 @@ local schema = {
             items = {
                 description = "filter that modifies response body",
                 type = "object",
+                required = {"regex", "replace"},
                 properties = {
                     regex = {
                         description = "match pattern on response body",
