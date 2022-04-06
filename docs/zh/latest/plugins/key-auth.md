@@ -40,7 +40,8 @@ router 端配置：
 | 名称 | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                          |
 | ---- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------------- |
 | header  | string | 可选 | apikey |        | 设置我们从哪个 header 获取 key。 |
-| query  | string | 可选 | apikey |        | 设置我们从哪个 querystring 获取 key，优先级低于 header |
+| query  | string | 可选 | apikey |        | 设置我们从哪个 query string 获取 key，优先级低于 `header` |
+| hide_credentials  | bool | 可选 | false |        | 是否将含有认证信息的请求头传递给 upstream。 |
 
 ## 如何启用
 
