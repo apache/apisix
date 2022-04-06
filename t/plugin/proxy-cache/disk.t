@@ -763,7 +763,7 @@ Apisix-Cache-Status: MISS
 
 
 
-=== TEST 30: purge cache (route missmatch, method not allow)
+=== TEST 30: purge cache (route mismatch, method not allow)
 --- request
 PURGE /hello_purge
 --- error_code: 404
