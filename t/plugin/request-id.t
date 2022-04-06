@@ -674,9 +674,8 @@ X-Request-ID: 123
                 }]]
                 )
             if code >= 300 then
-                ngx.status = code
+                ngx.say("algorithm nanoid is error")
             end
-            ngx.say(body)
             for i = 1, 180 do
                 local th = assert(ngx.thread.spawn(function()
                     local httpc = http.new()
@@ -711,6 +710,6 @@ X-Request-ID: 123
             ngx.say("true")
         }
     }
---- wait: 5    
+--- wait: 5
 --- response_body
-passed
+true
