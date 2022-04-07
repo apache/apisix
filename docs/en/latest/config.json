@@ -208,6 +208,7 @@
             "discovery/consul_kv",
             "discovery/nacos",
             "discovery/eureka",
+            "discovery/zookeeper",
             "discovery/kubernetes"
           ]
         },
