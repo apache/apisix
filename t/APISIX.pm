@@ -509,7 +509,8 @@ _EOC_
     lua_shared_dict ext-plugin 1m;
     lua_shared_dict kubernetes 1m;
     lua_shared_dict tars 1m;
-    lua_shared_dict xds-route-config 1m;
+    lua_shared_dict xds-config 1m;
+    lua_shared_dict xds-config-version 1m;
 
     proxy_ssl_name \$upstream_host;
     proxy_ssl_server_name on;
