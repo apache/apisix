@@ -671,6 +671,11 @@ local function evaluate_permissions(conf, ctx, token)
     if res.status == 403 then
         -- Request permanently denied, e.g. due to lacking permissions.
         log.debug('Request denied: HTTP 403 Forbidden. Body: ', res.body)
+        if conf.access_denied_redirect_uri then
+            core.response.set_header("Location", conf.access_denied_redirect_uri)
+            return 307
+        end
+
         return res.status, res.body
     elseif res.status == 401 then
         -- Request temporarily denied, e.g access token not valid.
