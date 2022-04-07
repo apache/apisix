@@ -66,7 +66,6 @@ local schema = {
                     regex = {
                         description = "match pattern on response body",
                         type = "string",
-                        default = "",
                     },
                     scope = {
                         description = "regex substitution range",
@@ -77,7 +76,6 @@ local schema = {
                     replace = {
                         description = "regex substitution content",
                         type = "string",
-                        default = "",
                     },
                     options = {
                         description = "regex options",
