@@ -158,7 +158,7 @@ function _M.check_schema(conf)
             if filter.regex == "" then
                 return false, "invalid value as filter field regex"
             end
-            local ok, err = pcall(re_compile,filter.regex, filter.options)
+            local ok, err = pcall(re_compile, filter.regex, filter.options)
             if not ok then
                 return false, "regex \"" .. filter.regex ..
                         "\" validation failed: "  .. err
