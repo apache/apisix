@@ -648,6 +648,7 @@ X-Request-ID: 123
 X-Request-ID: 123
 
 
+
 === TEST 20: add plugin with algorithm nanoid (default uuid)
 --- config
     location /t {
