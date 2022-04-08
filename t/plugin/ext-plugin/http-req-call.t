@@ -727,6 +727,4 @@ plugin_proxy_rewrite_resp_header
 --- response_headers
 X-Resp: foo
 X-Req: bar
-Content-Type: text/plain
-Content-Encoding:
 X-Same: one, two
