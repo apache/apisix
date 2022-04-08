@@ -66,6 +66,7 @@ local schema = {
                     regex = {
                         description = "match pattern on response body",
                         type = "string",
+                        minLength = 1,
                     },
                     scope = {
                         description = "regex substitution range",
@@ -155,9 +156,6 @@ function _M.check_schema(conf)
 
     if conf.filters then
         for _, filter in ipairs(conf.filters) do
-            if filter.regex == "" then
-                return false, "invalid value as filter field regex"
-            end
             local ok, err = pcall(re_compile, filter.regex, filter.options)
             if not ok then
                 return false, "regex \"" .. filter.regex ..

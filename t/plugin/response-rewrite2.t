@@ -147,7 +147,7 @@ property "filters" validation failed: failed to validate item 1: property "scope
 --- request
 GET /t
 --- response_body
-invalid value as filter field regex
+property "filters" validation failed: failed to validate item 1: property "regex" validation failed: string too short, expected at least 1, got 0
 --- no_error_log
 [error]
 
