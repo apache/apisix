@@ -367,12 +367,14 @@ function _M.go(case)
             local action = http_req_call_rewrite.End(builder)
             build_action(action, http_req_call_action.Rewrite)
 
-        elseif case.rewrite_resp_header == true or case.rewrite_vital_resp_header == true then
+        elseif case.rewrite_resp_header == true or case.rewrite_vital_resp_header == true or case.rewrite_same_resp_header then
             local hdrs = {
                 {"X-Resp", "foo"},
                 {"X-Req", "bar"},
                 {"Content-Type", "application/json"},
                 {"Content-Encoding", "deflate"},
+                {"X-Same", "one"},
+                {"X-Same", "two"},
             }
             local len = #hdrs
             local textEntries = {}
