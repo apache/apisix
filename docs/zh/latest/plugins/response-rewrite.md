@@ -44,7 +44,7 @@ title: response-rewrite
 | filters.regex   | string  | 必选  |        |                 | 用于匹配响应体正则表达式。                                                                                                                                                  |
 | filters.scope   | string  | 可选  | "once" | "once","global" | 替换范围，"once" 表达式 `filters.regex` 仅替换首次匹配上响应体的内容，"global" 则进行全局替换。                                                                                               |
 | filters.replace | string  | 必选  |        |                 | 替换后的内容。                                                                                                                                                        |
-| filters.options | string  | 可选  | "jo"   |                 | 正则匹配有效参数，可选项见 `[ngx.re.match](https://github.com/openresty/lua-nginx-module#ngxrematch)`。                                                                      |
+| filters.options | string  | 可选  | "jo"   |                 | 正则匹配有效参数，可选项见 [ngx.re.match](https://github.com/openresty/lua-nginx-module#ngxrematch)。                                                                        |
 
 `body` 和 `filters`，两个只能配置其中一个。
 
