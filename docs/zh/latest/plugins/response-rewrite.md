@@ -42,7 +42,7 @@ title: response-rewrite
 | vars            | array[] | 可选  |        |                 | `vars` 是一个表达式列表，只有满足条件的请求和响应才会修改 body 和 header 信息，来自 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)。如果 `vars` 字段为空，那么所有的重写动作都会被无条件的执行。 |
 | filters         | array[] | 可选  |        |                 | 一组过滤器，采用指定字符串表达式修改响应体。                                                                                                                                         |
 | filters.regex   | string  | 必选  |        |                 | 用于匹配响应体正则表达式。                                                                                                                                                  |
-| filters.scope   | string  | 可选  | "once" | "once","global" | 替换范围。                                                                                                                                                          |
+| filters.scope   | string  | 可选  | "once" | "once","global" | 替换范围，"once" 表达式 `filters.regex` 仅替换首次匹配上响应体的内容，"global" 则进行全局替换。                                                                                               |
 | filters.replace | string  | 必选  |        |                 | 替换后的内容。                                                                                                                                                        |
 | filters.options | string  | 可选  | "jo"   |                 | 正则匹配有效参数，可选项见 `[ngx.re.match](https://github.com/openresty/lua-nginx-module#ngxrematch)`。                                                                      |
 
