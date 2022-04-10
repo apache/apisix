@@ -182,11 +182,15 @@ function _M.body_filter(conf, ctx)
             return
         end
 
+        local err
         for _, filter in ipairs(conf.filters) do
             if filter.scope == "once" then
-                body = re_sub(body, filter.regex, filter.replace, filter.options)
+                body, _, err = re_sub(body, filter.regex, filter.replace, filter.options)
             else
-                body = re_gsub(body, filter.regex, filter.replace, filter.options)
+                body, _, err = re_gsub(body, filter.regex, filter.replace, filter.options)
+            end
+            if err ~= nil then
+                core.log.error("regex \"" .. filter.regex .. "\" substitutes failed:" .. err)
             end
         end
 
