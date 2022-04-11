@@ -116,12 +116,6 @@ function _M.http_init_worker()
 
     require("apisix.debug").init_worker()
 
-    plugin.init_worker()
-    router.http_init_worker()
-    require("apisix.http.service").init_worker()
-    plugin_config.init_worker()
-    require("apisix.consumer").init_worker()
-
     if core.config.init_worker then
         local ok, err = core.config.init_worker()
         if not ok then
@@ -129,6 +123,12 @@ function _M.http_init_worker()
                            " config center, err: ", err)
         end
     end
+
+    plugin.init_worker()
+    router.http_init_worker()
+    require("apisix.http.service").init_worker()
+    plugin_config.init_worker()
+    require("apisix.consumer").init_worker()
 
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()

@@ -35,6 +35,10 @@ local schema = {
             type = "string",
             default = "apikey",
         },
+        hide_credentials = {
+            type = "boolean",
+            default = false,
+        }
     },
 }
 
@@ -109,6 +113,13 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "Invalid API key in request"}
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
+
+    if conf.hide_credentials then
+        core.request.set_header(ctx, conf.header, nil)
+        local args = core.request.get_uri_args(ctx)
+        args[conf.query] = nil
+        core.request.set_uri_args(ctx, args)
+    end
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
     core.log.info("hit key-auth rewrite")
