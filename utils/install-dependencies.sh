@@ -20,9 +20,9 @@
 set -ex
 
 function detect_aur_helper() {
-    if [[ $(which yay) ]]; then
+    if [[ $(command -v yay) ]]; then
         AUR_HELPER=yay
-    elif [[ $(which pacaur) ]]; then
+    elif [[ $(command -v pacaur) ]]; then
         AUR_HELPER=pacaur
     else
         echo No available AUR helpers found. Please specify your AUR helper by AUR_HELPER.

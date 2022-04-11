@@ -51,6 +51,17 @@ You can also use the [redirect](./redirect.md) Plugin to setup redirects.
 | body_base64 | boolean | False    | false   |                                                                                                               | When set, the body of the request will be decoded before writing to the client.                                                                                                                                                                                                                                 |
 | headers     | object  | False    |         |                                                                                                               | New headers for the response. Headers are overwritten if they are present in the Upstream response otherwise, they are added to the Upstream headers. To remove a header, set the header value to an empty string. The values in the header can contain Nginx variables like `$remote_addr` and `$balancer_ip`. |
 | vars        | array[] | False    |         | See [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) for a list of available operators. | Nginx variable expressions to conditionally execute the rewrite. The Plugin will be executed unconditionally if this value is empty.                                                                                                                                                                            |
+| filters         | array[] | False    |         |                 | List of filters that modify the response body by replacing one specified string with another.                                                                                                                                                                                                                             |
+| filters.regex   | string  | True    |         |                 | Regex pattern to match on the response body.                                                                                                                                                                                                                                                                                         |
+| filters.scope   | string  | False    | "once"  | "once","global" | Range to substitute. `once` substitutes the first match of `filters.regex` and `global` does global substitution.                                                                                                                                                                                          |
+| filters.replace | string  | True    |         |                 | Content to substitute with.                                                                                                                                                                                                                                                                                                   |
+| filters.options | string  | False    | "jo"    |                 | Regex options. See [ngx.re.match](https://github.com/openresty/lua-nginx-module#ngxrematch).                                                                                                                                                                                                                            |
+
+:::note
+
+Only one of `body` or `filters` can be configured.
+
+:::
 
 ## Enabling the Plugin
 

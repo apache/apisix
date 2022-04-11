@@ -69,7 +69,7 @@ local function check_conf(id, conf, need_id)
         end
     end
 
-    local ok, err = stream_route_checker(conf)
+    local ok, err = stream_route_checker(conf, true)
     if not ok then
         return nil, {error_msg = err}
     end
