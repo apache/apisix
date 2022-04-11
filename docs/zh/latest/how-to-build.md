@@ -93,10 +93,10 @@ sudo yum install ./apisix/*.rpm
   curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-dependencies.sh -sL | bash -
   ```
 
-2. 创建一个名为 `apisix-2.12.0` 的目录。
+2. 创建一个名为 `apisix-2.13.0` 的目录。
 
   ```shell
-  APISIX_VERSION='2.12.0'
+  APISIX_VERSION='2.13.0'
   mkdir apisix-${APISIX_VERSION}
   ```
 
@@ -154,7 +154,7 @@ sudo yum install ./apisix/*.rpm
 
 #### 通过源码包安装 LTS 版本
 
-目前 Apache APISIX 的 LTS 版本为 `2.10.4`，将“[通过源码包安装](#通过源码包安装)”中的 `APISIX_VERSION` 设置成 `2.10.4` ，其他步骤按顺序进行即可。
+目前 Apache APISIX 的 LTS 版本为 `2.13.0`，将“[通过源码包安装](#通过源码包安装)”中的 `APISIX_VERSION` 设置成该版本号，其他步骤按顺序进行即可。
 
 ## 步骤 2 安装 etcd
 
@@ -163,7 +163,7 @@ sudo yum install ./apisix/*.rpm
 你可以通过 Docker 或者二进制等方式安装 etcd。以下命令通过二进制方式在 Linux 上安装 etcd。
 
 ```shell
-ETCD_VERSION='3.4.13'
+ETCD_VERSION='3.4.18'
 wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
 tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
   cd etcd-v${ETCD_VERSION}-linux-amd64 && \

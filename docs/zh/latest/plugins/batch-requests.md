@@ -83,7 +83,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 | 参数名     | 类型    | 可选 | 默认值 | 有效值                                                                           | 描述                                                                      |
 | ---------- | ------- | ---- | ------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | version    | string  | 可选 | 1.1    | [1.0, 1.1]                                                                       | 请求用的 `http` 协议版本                                                  |
-| method     | string  | 可选 | GET    | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE"] | 请求使用的 `http` 方法                                                    |
+| method     | string  | 可选 | GET    | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE", "PURGE"] | 请求使用的 `http` 方法                                                    |
 | query      | object  | 可选 |        |                                                                                  | 独立请求所携带的 `query string`, 如果 `Key` 和全局的有冲突，以此设置为主。 |
 | headers    | object  | 可选 |        |                                                                                  | 独立请求所携带的 `header`, 如果 `Key` 和全局的有冲突，以此设置为主。      |
 | path       | string  | 必须 |        |                                                                                  | 请求路径                                                                  |
