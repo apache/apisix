@@ -150,10 +150,13 @@ local function load_plugin(name, plugins_list, plugin_type)
     core.table.insert(plugins_list, plugin)
 
     if plugin.init then
-        plugin.init()
+        if  type(plugin.init) == "function" then
+            plugin.init()
+        else
+            core.log.warn("plugin [", name,
+                           "]: field 'init' is not  a function")
+        end
     end
-
-    return
 end
 
 
