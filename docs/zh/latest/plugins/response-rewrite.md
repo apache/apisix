@@ -33,13 +33,20 @@ title: response-rewrite
 
 ## 属性
 
-| 名称        | 类型    | 必选项 | 默认值 | 有效值     | 描述                                                                                                                                   |
-| ----------- | ------- | ------ | ------ | ---------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| status_code | integer | 可选   |        | [200, 598] | 修改上游返回状态码，默认保留原始响应代码。                                                                                             |
-| body        | string  | 可选   |        |            | 修改上游返回的 `body` 内容，如果设置了新内容，header 里面的 content-length 字段也会被去掉                                              |
-| body_base64 | boolean | 可选   | false  |            | 描述 `body` 字段是否需要 base64 解码之后再返回给客户端，用在某些图片和 Protobuffer 场景                                                |
-| headers     | object  | 可选   |        |            | 返回给客户端的 `headers`，这里可以设置多个。头信息如果存在将重写，不存在则添加。想要删除某个 header 的话，把对应的值设置为空字符串即可。这个值能够以 `$var` 的格式包含 Nginx 变量，比如 `$remote_addr $balancer_ip` |
-| vars        | array[] | 可选   |        |            | `vars` 是一个表达式列表，只有满足条件的请求和响应才会修改 body 和 header 信息，来自 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)。如果 `vars` 字段为空，那么所有的重写动作都会被无条件的执行。 |
+| 名称              | 类型      | 必选项 | 默认值    | 有效值             | 描述                                                                                                                                                             |
+|-----------------|---------|-----|--------|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| status_code     | integer | 可选  |        | [200, 598]      | 修改上游返回状态码，默认保留原始响应代码。                                                                                                                                          |
+| body            | string  | 可选  |        |                 | 修改上游返回的 `body` 内容，如果设置了新内容，header 里面的 content-length 字段也会被去掉。                                                                                                  |
+| body_base64     | boolean | 可选  | false  |                 | 描述 `body` 字段是否需要 base64 解码之后再返回给客户端，用在某些图片和 Protobuffer 场景。                                                                                                    |
+| headers         | object  | 可选  |        |                 | 返回给客户端的 `headers`，这里可以设置多个。头信息如果存在将重写，不存在则添加。想要删除某个 header 的话，把对应的值设置为空字符串即可。这个值能够以 `$var` 的格式包含 Nginx 变量，比如 `$remote_addr $balancer_ip`。                      |
+| vars            | array[] | 可选  |        |                 | `vars` 是一个表达式列表，只有满足条件的请求和响应才会修改 body 和 header 信息，来自 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)。如果 `vars` 字段为空，那么所有的重写动作都会被无条件的执行。 |
+| filters         | array[] | 可选  |        |                 | 一组过滤器，采用指定字符串表达式修改响应体。                                                                                                                                         |
+| filters.regex   | string  | 必选  |        |                 | 用于匹配响应体正则表达式。                                                                                                                                                  |
+| filters.scope   | string  | 可选  | "once" | "once","global" | 替换范围，"once" 表达式 `filters.regex` 仅替换首次匹配上响应体的内容，"global" 则进行全局替换。                                                                                               |
+| filters.replace | string  | 必选  |        |                 | 替换后的内容。                                                                                                                                                        |
+| filters.options | string  | 可选  | "jo"   |                 | 正则匹配有效参数，可选项见 [ngx.re.match](https://github.com/openresty/lua-nginx-module#ngxrematch)。                                                                        |
+
+`body` 和 `filters`，两个只能配置其中一个。
 
 ## 示例
 

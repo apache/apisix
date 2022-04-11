@@ -82,40 +82,40 @@ property "request_method" validation failed: matches none of the enum values
                 },
                 {
                     url = "/apisix/admin/routes/auth",
-                    data = [[{
-                        "plugins": {
-                            "serverless-pre-function": {
-                                "phase": "rewrite",
-                                "functions": [
-                                    "return function(conf, ctx)
-                                        local core = require(\"apisix.core\");
-                                        if core.request.header(ctx, \"Authorization\") == \"111\" then
+                    data = {
+                        plugins = {
+                            ["serverless-pre-function"] = {
+                                phase = "rewrite",
+                                functions =  {
+                                    [[return function(conf, ctx)
+                                        local core = require("apisix.core");
+                                        if core.request.header(ctx, "Authorization") == "111" then
                                             core.response.exit(200);
                                         end
-                                    end",
-                                    "return function(conf, ctx)
-                                        local core = require(\"apisix.core\");
-                                        if core.request.header(ctx, \"Authorization\") == \"222\" then
-                                            core.response.set_header(\"X-User-ID\", \"i-am-an-user\");
+                                    end]],
+                                    [[return function(conf, ctx)
+                                        local core = require("apisix.core");
+                                        if core.request.header(ctx, "Authorization") == "222" then
+                                            core.response.set_header("X-User-ID", "i-am-an-user");
                                             core.response.exit(200);
                                         end
-                                    end",]] .. [[
-                                    "return function(conf, ctx)
-                                        local core = require(\"apisix.core\");
-                                        if core.request.header(ctx, \"Authorization\") == \"333\" then
-                                            core.response.set_header(\"Location\", \"http://example.com/auth\");
+                                    end]],
+                                    [[return function(conf, ctx)
+                                        local core = require("apisix.core");
+                                        if core.request.header(ctx, "Authorization") == "333" then
+                                            core.response.set_header("Location", "http://example.com/auth");
                                             core.response.exit(403);
                                         end
-                                    end",
-                                    "return function(conf, ctx)
-                                        local core = require(\"apisix.core\");
-                                        if core.request.header(ctx, \"Authorization\") == \"444\" then
+                                    end]],
+                                    [[return function(conf, ctx)
+                                        local core = require("apisix.core");
+                                        if core.request.header(ctx, "Authorization") == "444" then
                                             core.response.exit(403, core.request.headers(ctx));
                                         end
-                                    end",
-                                    "return function(conf, ctx)
-                                        local core = require(\"apisix.core\")
-                                        if core.request.get_method() == \"POST\" then
+                                    end]],
+                                    [[return function(conf, ctx)
+                                        local core = require("apisix.core")
+                                        if core.request.get_method() == "POST" then
                                            local req_body, err = core.request.get_body()
                                            if err then
                                                core.response.exit(400)
@@ -125,21 +125,21 @@ property "request_method" validation failed: matches none of the enum values
                                                if err then
                                                    core.response.exit(400)
                                                end
-                                               if data[\"authorization\"] == \"555\" then
-                                                   core.response.set_header(\"X-User-ID\", \"i-am-an-user\")
+                                               if data["authorization"] == "555" then
+                                                   core.response.set_header("X-User-ID", "i-am-an-user")
                                                    core.response.exit(200)
-                                               elseif data[\"authorization\"] == \"666\" then
-                                                   core.response.set_header(\"Location\", \"http://example.com/auth\")
+                                               elseif data["authorization"] == "666" then
+                                                   core.response.set_header("Location", "http://example.com/auth")
                                                    core.response.exit(403)
                                                end
                                            end
                                         end
-                                    end"
-                                ]
+                                    end]]
+                                }
                             }
                         },
-                        "uri": "/auth"
-                    }]],
+                        uri = "/auth"
+                    },
                 },
                 {
                     url = "/apisix/admin/routes/echo",

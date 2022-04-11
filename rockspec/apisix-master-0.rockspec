@@ -45,7 +45,7 @@ dependencies = {
     "lua-resty-cookie = 0.1.0",
     "lua-resty-session = 3.10",
     "opentracing-openresty = 0.1",
-    "lua-resty-radixtree = 2.8.1",
+    "lua-resty-radixtree = 2.8.2",
     "lua-protobuf = 0.3.4",
     "lua-resty-openidc = 1.7.2-1",
     "luafilesystem = 1.7.0-2",
@@ -76,6 +76,7 @@ dependencies = {
     "opentelemetry-lua = 0.1-3",
     "net-url = 0.9-1",
     "xml2lua = 1.5-2",
+    "nanoid = 0.1-1"
 }
 
 build = {

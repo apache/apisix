@@ -562,3 +562,35 @@ GET /t
 GET /t
 --- no_error_log
 [error]
+
+
+
+=== TEST 15: set route with unknown plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "remote_addr": "127.0.0.1",
+                    "plugins": {
+                        "mqttt-proxy": {
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"unknown plugin [mqttt-proxy]"}
+--- no_error_log
+[error]

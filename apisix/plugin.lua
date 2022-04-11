@@ -709,9 +709,9 @@ function _M.plugin_checker(item, schema_type)
 end
 
 
-function _M.stream_plugin_checker(item)
+function _M.stream_plugin_checker(item, in_cp)
     if item.plugins then
-        return stream_check_schema(item.plugins, nil, true)
+        return stream_check_schema(item.plugins, nil, not in_cp)
     end
 
     return true
