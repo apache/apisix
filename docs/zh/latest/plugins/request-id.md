@@ -31,7 +31,7 @@ title: request-id
 | ------------------- | ------- | -------- | -------------- | ------ | ------------------------------ |
 | header_name         | string  | 可选 | "X-Request-Id" |                       | Request ID header name         |
 | include_in_response | boolean | 可选 | true          |                       | 是否需要在返回头中包含该唯一 ID |
-| algorithm           | string  | 可选 | "uuid"         | ["uuid", "snowflake"] | ID 生成算法 |
+| algorithm           | string  | 可选 | "uuid"         | ["uuid", "snowflake", "nanoid"] | ID 生成算法 |
 
 ## 如何启用
 

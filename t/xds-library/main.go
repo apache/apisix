@@ -31,7 +31,10 @@ extern void ngx_http_lua_ffi_shdict_store(void *zone, int op,
 import "C"
 
 import (
+	"context"
 	"fmt"
+	"math/rand"
+	"strconv"
 	"time"
 	"unsafe"
 )
@@ -39,11 +42,14 @@ import (
 func main() {
 }
 
-
 //export initial
-func initial(zone unsafe.Pointer) {
-	time.Sleep(time.Second)
-	value := fmt.Sprintf(`{
+func initial(config_zone unsafe.Pointer, version_zone unsafe.Pointer) {
+	write_config(config_zone, version_zone)
+}
+
+func write_config(config_zone unsafe.Pointer, version_zone unsafe.Pointer) {
+	route_key := "/routes/1"
+	route_value := fmt.Sprintf(`{
 "status": 1,
 "update_time": 1647250524,
 "create_time": 1646972532,
@@ -53,7 +59,7 @@ func initial(zone unsafe.Pointer) {
 "upstream": {
 	"nodes": [
 		{
-			"port": 80,
+			"port": 1980,
 			"priority": 0,
 			"host": "127.0.0.1",
 			"weight": 1
@@ -66,10 +72,50 @@ func initial(zone unsafe.Pointer) {
 }
 }`)
 
-	write_route(zone, "/apisix/routes/1", value)
+	upstream_key := "/upstreams/1"
+	upstream_value := fmt.Sprintf(`{
+"id": "1",
+"nodes": {
+	"127.0.0.1:1980": 1
+},
+"type": "roundrobin"
+}`)
+
+	r_u_key := "/routes/2"
+	r_u_value := fmt.Sprintf(`{
+"status": 1,
+"update_time": 1647250524,
+"create_time": 1646972532,
+"uri": "/hello1",
+"priority": 0,
+"id": "1",
+"upstream_id": "1"
+}`)
+
+	write_shdict(route_key, route_value, config_zone)
+	write_shdict(upstream_key, upstream_value, config_zone)
+	write_shdict(r_u_key, r_u_value, config_zone)
+	update_conf_version(version_zone)
+
 }
 
-func write_route(zone unsafe.Pointer, key, value string) {
+func update_conf_version(zone unsafe.Pointer) {
+	ctx := context.Background()
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(time.Second * time.Duration(rand.Intn(10))):
+				key := "version"
+				version := strconv.FormatInt(time.Now().UnixNano()/1e6, 10)
+				write_shdict(key, version, zone)
+			}
+		}
+	}()
+}
+
+func write_shdict(key string, value string, zone unsafe.Pointer) {
 	var keyCStr = C.CString(key)
 	defer C.free(unsafe.Pointer(keyCStr))
 	var keyLen = C.size_t(len(key))

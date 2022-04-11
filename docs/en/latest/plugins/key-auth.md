@@ -47,6 +47,7 @@ For Route:
 |--------|--------|-------------|---------|-------|-------------------------------------------------------------------|
 | header | string | optional    | apikey  |       | The header to get the key from.                                   |
 | query  | string | optional    | apikey  |       | The query string to get the key from. Lower priority than header. |
+| hide_credentials   | bool | optional    | false        |       | When set to `false` passes the request header containing authentication information to the Upstream. |
 
 ## Enabling the Plugin
 

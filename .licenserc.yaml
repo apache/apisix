@@ -30,6 +30,7 @@ header:
     - '**/*.pb.go'
     - '.github/'
     - 'conf/mime.types'
+    - '**/*.svg'
     # Exclude CI env_file
     - 'ci/pod/**/*.env'
     # eyes has some limitation to handle git pattern

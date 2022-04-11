@@ -108,10 +108,17 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 
 - **安全防护**
 
-    - 多种身份认证方式：[key-auth](plugins/key-auth.md)、[JWT](plugins/jwt-auth.md)、[basic-auth](plugins/basic-auth.md)、[wolf-rbac](plugins/wolf-rbac.md)、[casbin](plugins/authz-casbin.md)、[keycloak](plugins/authz-keycloak.md)。
+    - 丰富的认证、鉴权支持：
+        * [key-auth](plugins/key-auth.md)
+        * [JWT](plugins/jwt-auth.md)
+        * [basic-auth](plugins/basic-auth.md)
+        * [wolf-rbac](plugins/wolf-rbac.md)
+        * [casbin](plugins/authz-casbin.md)
+        * [keycloak](plugins/authz-keycloak.md)
+        * [casdoor](../../en/latest/plugins/authz-casdoor.md)
     - [IP 黑白名单](plugins/ip-restriction.md)
     - [Referer 黑白名单](plugins/referer-restriction.md)
-    - [IdP 支持](plugins/openid-connect.md)：支持外部的身份认证服务，比如 Auth0，Okta，Authing 等，用户可以借此来对接 Oauth2.0 等认证方式。
+    - [IdP 支持](plugins/openid-connect.md)：支持外部的身份认证平台，比如 Auth0，Okta，Authing 等。
     - [限制速率](plugins/limit-req.md)
     - [限制请求数](plugins/limit-count.md)
     - [限制并发](plugins/limit-conn.md)
@@ -159,10 +166,6 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 ## 立刻开始
 
 1. 安装
-
-   APISIX 在以下操作系统中可顺利安装并做过测试：
-
-   CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
    请参考[安装文档](./how-to-build.md)。
 
