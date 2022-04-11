@@ -373,8 +373,6 @@ function _M.go(case)
                 {"X-Req", "bar"},
                 {"Content-Type", "application/json"},
                 {"Content-Encoding", "deflate"},
-                {"X-Same", "one"},
-                {"X-Same", "two"},
             }
             local len = #hdrs
             local textEntries = {}
