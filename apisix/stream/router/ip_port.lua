@@ -189,9 +189,9 @@ end
 
 local function stream_route_checker(item)
     if item.plugins then
-        local err, message = stream_plugin_checker(item)
-        if not err then
-            return err, message
+        local ok, message = stream_plugin_checker(item)
+        if not ok then
+            return false, message
         end
     end
     -- validate the address format when remote_address or server_address is not nil
