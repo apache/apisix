@@ -131,7 +131,6 @@ HTTP/1.1 401 Unauthorized
 {"message":"Missing API key found in request"}
 ```
 
-
 ```shell
 curl http://127.0.0.2:9080/index.html -H 'apikey: abcabcabc' -i
 ```

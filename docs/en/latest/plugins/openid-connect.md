@@ -163,7 +163,6 @@ When an incoming request does not contain an access token in its header nor in a
 
 Once the user has authenticated with the identity provider, the Plugin will obtain and manage the access token and further interaction with the identity provider. The access token will be stored in a session cookie.
 
-
 The example below adds the Plugin with this mode of operation to the Route:
 
 ```bash
