@@ -187,9 +187,9 @@ function _M.routes()
     return user_routes.values, user_routes.conf_version
 end
 
-local function stream_route_checker(item)
+local function stream_route_checker(item, in_cp)
     if item.plugins then
-        local ok, message = stream_plugin_checker(item)
+        local ok, message = stream_plugin_checker(item, in_cp)
         if not ok then
             return false, message
         end
