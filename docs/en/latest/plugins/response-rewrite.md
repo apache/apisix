@@ -1,5 +1,11 @@
 ---
 title: response-rewrite
+keywords:
+  - APISIX
+  - Plugin
+  - Response Rewrite
+  - response-rewrite
+description: This document contains information about the Apache APISIX response-rewrite Plugin.
 ---
 
 <!--
@@ -23,33 +29,43 @@ title: response-rewrite
 
 ## Description
 
-response rewrite plugin, rewrite the content returned by the upstream as well as Apache APISIX itself.
+The `response-rewrite` Plugin rewrites the content returned by the [Upstream](../terminology/upstream.md) and APISIX.
 
-**scenario**:
+This Plugin can be useful in these scenarios:
 
-1. can set `Access-Control-Allow-*` series field to support CORS(Cross-origin Resource Sharing).
-2. we can set customized `status_code` and `Location` field in header to achieve redirect, you can also use [redirect](redirect.md) plugin if you just want a redirection.
+- To set `Access-Control-Allow-*` field for supporting [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS).
+- To set custom `status_code` and `Location` fields in the header to redirect.
+
+:::tip
+
+You can also use the [redirect](./redirect.md) Plugin to setup redirects.
+
+:::
 
 ## Attributes
 
-| Name            | Type    | Requirement | Default | Valid           | Description                                                                                                                                                                                                                                                                                                             |
-|-----------------|---------|-------------|---------|-----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| status_code     | integer | optional    |         | [200, 598]      | New `status code` to client, keep the original response code by default.                                                                                                                                                                                                                                                |
-| body            | string  | optional    |         |                 | New `body` to client, and the content-length will be reset too.                                                                                                                                                                                                                                                         |
-| body_base64     | boolean | optional    | false   |                 | Identify if `body` in configuration need base64 decoded before rewrite to client.                                                                                                                                                                                                                                       |
-| headers         | object  | optional    |         |                 | Set the new `headers` for client, can set up multiple. If it exists already from upstream, will rewrite the header, otherwise will add the header. You can set the corresponding value to an empty string to remove a header. The value can contain Nginx variables in `$var` format, like `$remote_addr $balancer_ip`. |
-| vars            | array[] | optional    |         |                 | A DSL to evaluate with the given ngx.var. See `vars` [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). if the `vars` is empty, then all rewrite operations will be executed unconditionally.                                                                                                      |
-| filters         | array[] | optional    |         |                 | A group of filters that modify response body by replacing one specified string by another.                                                                                                                                                                                                                              |
-| filters.regex   | string  | required    |         |                 | match pattern on response body.                                                                                                                                                                                                                                                                                         |
-| filters.scope   | string  | optional    | "once"  | "once","global" | substitution range, "once" substitutes the first match of `filters.regex` on response body, "global" does global substitution.                                                                                                                                                                                          |
-| filters.replace | string  | required    |         |                 | substitution content.                                                                                                                                                                                                                                                                                                   |
-| filters.options | string  | optional    | "jo"    |                 | regex options, See [ngx.re.match](https://github.com/openresty/lua-nginx-module#ngxrematch).                                                                                                                                                                                                                            |
+| Name        | Type    | Required | Default | Valid values                                                                                                  | Description                                                                                                                                                                                                                                                                                                     |
+|-------------|---------|----------|---------|---------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| status_code | integer | False    |         | [200, 598]                                                                                                    | New HTTP status code in the response. If unset, falls back to the original status code.                                                                                                                                                                                                                         |
+| body        | string  | False    |         |                                                                                                               | New body of the response. The content-length would also be reset.                                                                                                                                                                                                                                               |
+| body_base64 | boolean | False    | false   |                                                                                                               | When set, the body of the request will be decoded before writing to the client.                                                                                                                                                                                                                                 |
+| headers     | object  | False    |         |                                                                                                               | New headers for the response. Headers are overwritten if they are present in the Upstream response otherwise, they are added to the Upstream headers. To remove a header, set the header value to an empty string. The values in the header can contain Nginx variables like `$remote_addr` and `$balancer_ip`. |
+| vars        | array[] | False    |         | See [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) for a list of available operators. | Nginx variable expressions to conditionally execute the rewrite. The Plugin will be executed unconditionally if this value is empty.                                                                                                                                                                            |
+| filters         | array[] | False    |         |                 | List of filters that modify the response body by replacing one specified string with another.                                                                                                                                                                                                                             |
+| filters.regex   | string  | True    |         |                 | Regex pattern to match on the response body.                                                                                                                                                                                                                                                                                         |
+| filters.scope   | string  | False    | "once"  | "once","global" | Range to substitute. `once` substitutes the first match of `filters.regex` and `global` does global substitution.                                                                                                                                                                                          |
+| filters.replace | string  | True    |         |                 | Content to substitute with.                                                                                                                                                                                                                                                                                                   |
+| filters.options | string  | False    | "jo"    |                 | Regex options. See [ngx.re.match](https://github.com/openresty/lua-nginx-module#ngxrematch).                                                                                                                                                                                                                            |
 
-Only one of `body`, `filters` can be specified.
+:::note
 
-## How To Enable
+Only one of `body` or `filters` can be configured.
 
-Here's an example, enable the `response-rewrite` plugin on the specified route:
+:::
+
+## Enabling the Plugin
+
+The example below enables the `response-rewrite` Plugin on a specific Route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -78,18 +94,19 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-## Test Plugin
+Here, `vars` is configured to run the Plugin only on responses with a 200 status code.
 
-Testing based on the above examples :
+## Example usage
+
+Once you have enabled the Plugin as shown above, you can make a request:
 
 ```shell
 curl -X GET -i  http://127.0.0.1:9080/test/index.html
 ```
 
-It will output like below,no matter what kind of content from upstream, the `vars` will make sure that only rewrite response that http status is `200`.
+The response will be as shown below no matter what the response is from the Upstream:
 
 ```
-
 HTTP/1.1 200 OK
 Date: Sat, 16 Nov 2019 09:15:12 GMT
 Transfer-Encoding: chunked
@@ -101,13 +118,21 @@ X-Server-balancer_addr: 127.0.0.1:80
 {"code":"ok","message":"new json body"}
 ```
 
-This means that the `response-rewrite` plugin is in effect.
+:::info IMPORTANT
+
+[ngx.exit](https://openresty-reference.readthedocs.io/en/latest/Lua_Nginx_API/#ngxexit) will interrupt the execution of a request and returns its status code to Nginx.
+
+However, if `ngx.exit` is executed during an access phase, it will only interrupt the request processing phase and the response phase will still continue to run.
+
+So, if you have configured the `response-rewrite` Plugin, it do a force overwrite of the response.
+
+![ngx.edit tabular overview](https://cdn.jsdelivr.net/gh/Miss-you/img/picgo/20201113010623.png)
+
+:::
 
 ## Disable Plugin
 
-When you want to disable the `response-rewrite` plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+To disable the `response-rewrite` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -122,13 +147,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
-
-The `response-rewrite` plugin has been disabled now. It works for other plugins.
-
-## Attention
-
-`ngx.exit` will interrupt the execution of the current request and return status code to Nginx.
-
-![ngx.edit tabular overview](https://cdn.jsdelivr.net/gh/Miss-you/img/picgo/20201113010623.png)
-
-However, if you execute `ngx.exit` during the access phase, it only interrupts the request processing phase, and the response phase will still process it, i.e. if you configure the `response-rewrite` plugin, it will force overwriting of your response information (e.g. response status code).
