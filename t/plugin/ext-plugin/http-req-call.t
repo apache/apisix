@@ -707,3 +707,24 @@ PUT /hello?xx=y&xx=z&&y=&&z
             ext.go({check_input = true})
         }
     }
+
+
+
+=== TEST 25: rewrite same response headers and call the upstream service
+--- request
+GET /hello
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
+        content_by_lua_block {
+            local ext = require("lib.ext-plugin")
+            ext.go({rewrite_same_resp_header = true})
+        }
+    }
+--- response_body
+plugin_proxy_rewrite_resp_header
+--- response_headers
+X-Resp: foo
+X-Req: bar
+X-Same: one, two
