@@ -65,7 +65,7 @@ APISIX-Datadog 插件维护了一个带有 timer 的 buffer。当 timer 失效�
 
 ## 如何使用插件
 
-### 启动 Datadog Agent
+### 前提： Datadog Agent
 
 1. 首先你必须在系统中安装一个 Datadog agent。它可以是一个 docker 容器，一个 pod 或是一个二进制的包管理器。你只需要确保 Apache APISIX agent 可以到达 Datadog agent 的 8125 端口。
 2. 如果你从没使用过 Datadog
@@ -126,7 +126,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-### 自定义配置
+### 补充：自定义配置
 
 在默认配置中，`datadog` 插件希望 Dogstatsd 服务在 `127.0.0.1:8125` 可用。如果你想更新配置，请更新插件的元数据。如果想要了解更多关于 `datadog` 插件元数据的字段，请参阅[元数据](#元数据)。
 
@@ -166,18 +166,18 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/datadog \
 
 ### 元数据
 
-| 名称        | 类型    | 必选项 |     默认值        | 有效值         | 描述                                                            |
-| ----------- | ------  | ----------- |      -------       | -----         | ---------------------------------------------------------------------- |
-| host        | string  | optional    |  "127.0.0.1"       |               | DogStatsD 服务器的主机地址                                      |
-| port        | integer | optional    |    8125            |               | DogStatsD 服务器的主机端口                                         |
-| namespace   | string  | optional    |    "apisix"        |               | 由 APISIX 代理发送的所有自定义参数的前缀。对寻找指标图的实体很有帮助，例如：(apisix.request.counter)。                                        |
-| constant_tags | array | optional    | [ "source:apisix" ] |              | 静态标签嵌入到生成的指标中。这对某些信号的度量进行分组很有用。 |
+| 名称        | 类型    | 必选项 |     默认值        | 描述                                                            |
+| ----------- | ------  | ----------- |      -------       | ---------------------------------------------------------------------- |
+| host        | string  | optional    |  "127.0.0.1"       | DogStatsD 服务器的主机地址                                      |
+| port        | integer | optional    |    8125            | DogStatsD 服务器的主机端口                                         |
+| namespace   | string  | optional    |    "apisix"        | 由 APISIX 代理发送的所有自定义参数的前缀。对寻找指标图的实体很有帮助，例如：apisix.request.counter。                                        |
+| constant_tags | array | optional    | [ "source:apisix" ] | 静态标签嵌入到生成的指标中。这对某些信号的度量进行分组很有用。 |
 
 要了解更多关于如何有效地编写标签，请访问[这里](https://docs.datadoghq.com/getting_started/tagging/#defining-tags)
 
 ### 输出指标
 
-Apache APISIX 代理，对于每个请求响应周期，如果启用了 datadog 插件，就会向 DogStatsD 服务器输出以下指标。
+启用 datadog 插件之后，APISIX 就会按照下面的指标格式，将数据整理成数据包最终发送到 DogStatsD server。
 
 | Metric Name               | StatsD Type   | Description               |
 | -----------               | -----------   | -------                   |
@@ -188,7 +188,7 @@ Apache APISIX 代理，对于每个请求响应周期，如果启用了 datadog 
 | Ingress Size              | Timer         | 以字节为单位的请求体大小。 |
 | Egress Size               | Timer         | 以字节为单位的响应体大小。 |
 
-这些指标将被发送到带有以下标签的 DogStatsD Agent。
+这些指标会带有以下标签，并首先被发送到本地 DogStatsD Agent。
 
 > 如果一个标签没有合适的值，该标签将被直接省略。
 
