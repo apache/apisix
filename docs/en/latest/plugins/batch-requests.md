@@ -1,5 +1,10 @@
 ---
 title: batch-requests
+keywords:
+  - APISIX
+  - Plugin
+  - Batch Requests
+description: This document contains information about the Apache APISIX batch-request Plugin.
 ---
 
 <!--
@@ -23,36 +28,45 @@ title: batch-requests
 
 ## Description
 
-`batch-requests` can accept multiple request and send them from `apisix` via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining), and return an aggregated response to client, which can significantly improve performance when the client needs to access multiple APIs.
+The `batch-requests` plugin accepts multiple requests, sends them from APISIX via [HTTP pipelining](https://en.wikipedia.org/wiki/HTTP_pipelining), and returns an aggregated response to the client.
 
-> **Tips**
->
-> The HTTP headers for the outer batch request, except for the Content- headers such as Content-Type, apply to every request in the batch. If you specify a given HTTP header in both the outer request and the individual call, the header's value of individual call would override the outer batch request header's value. The headers for an individual call apply only to that call.
+This improves the performance significantly in cases where the client needs to access multiple APIs.
+
+:::note
+
+The HTTP headers for the outer batch request (except for `Content-` headers like `Content-Type`) apply to every request in the batch.
+
+If the same HTTP header is specified in both the outer request and on an individual call, the header of the individual call takes precedence.
+
+:::
 
 ## Attributes
 
-None
+None.
 
 ## API
 
-This plugin will add `/apisix/batch-requests` as the endpoint.
-You may need to use [public-api](public-api.md) plugin to expose it.
+This plugin adds `/apisix/batch-requests` as an endpoint.
 
-## How To Enable
+:::note
 
-Enable the batch-requests plugin in the `config.yaml`:
+You may need to use the [public-api](public-api.md) plugin to expose this endpoint.
 
-```
-# Add this in config.yaml
+:::
+
+## Enabling the Plugin
+
+You can enable the `batch-requests` Plugin by adding it to your configuration file (`conf/config.yaml`):
+
+```yaml title="conf/config.yaml"
 plugins:
-  - ... # plugin you need
+  - ...
   - batch-requests
 ```
 
-## How To Configure
+## Configuration
 
-By default, the maximum body size sent to the `/apisix/batch-requests` can't be larger than 1 MiB.
-You can configure it via `apisix/admin/plugin_metadata/batch-requests`:
+By default, the maximum body size that can be sent to `/apisix/batch-requests` can't be larger than 1 MiB. You can change this configuration of the Plugin through the endpoint `apisix/admin/plugin_metadata/batch-requests`:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -63,54 +77,56 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 
 ## Metadata
 
-| Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
-| ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| max_body_size       | integer  | required   |  1048576  |    > 0  | the maximum of request body size in bytes |
+| Name          | Type    | Required | Default | Valid values | Description                                |
+| ------------- | ------- | -------- | ------- | ------------ | ------------------------------------------ |
+| max_body_size | integer | True     | 1048576 | [1, ...]     | Maximum size of the request body in bytes. |
 
-## Batch API Request/Response
+## Request and response format
 
-The plugin will create a API in `apisix` to handle your batch request.
+This plugin will create an API endpoint in APISIX to handle batch requests.
 
-### Batch API Request:
+### Request
 
-| Name     | Type                        | Requirement | Default | Valid | Description                           |
-| -------- | --------------------------- | ----------- | ------- | ----- | ------------------------------------- |
-| query    | object                      | optional    |         |       | Specify `query string` for all request |
-| headers  | object                      | optional    |         |       | Specify `header` for all request      |
-| timeout  | integer                     | optional    | 30000   |       | Aggregate API timeout in `ms`         |
-| pipeline | [HttpRequest](#httprequest) | required    |         |       | Request's detail                      |
+| Name     | Type                        | Required | Default | Description                   |
+| -------- | --------------------------- | -------- | ------- | ----------------------------- |
+| query    | object                      | False    |         | Query string for the request. |
+| headers  | object                      | False    |         | Headers for all the requests. |
+| timeout  | integer                     | False    | 30000   | Timeout in ms.                |
+| pipeline | [HttpRequest](#httprequest) | True     |         | Details of the request.       |
 
 #### HttpRequest
 
-| Name       | Type    | Requirement | Default | Valid                                                                            | Description                                                                                             |
-| ---------- | ------- | ----------- | ------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| version    | string  | optional    | 1.1     | [1.0, 1.1]                                                                       | http version                                                                                            |
-| method     | string  | optional    | GET     | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE", "PURGE"] | http method                                                                                             |
-| query      | object  | optional    |         |                                                                                  | request's `query string`, if `Key` is conflicted with global `query`, this setting's value will be used. |
-| headers    | object  | optional    |         |                                                                                  | request's `header`, if `Key` is conflicted with global `headers`, this setting's value will be used.    |
-| path       | string  | required    |         |                                                                                  | http request's path                                                                                     |
-| body       | string  | optional    |         |                                                                                  | http request's body                                                                                     |
-| ssl_verify | boolean | optional    | false   |                                                                                  | verify if SSL cert matches hostname.                                                                    |
+| Name       | Type    | Required | Default | Valid                                                                            | Description                                                                           |
+| ---------- | ------- | -------- | ------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| version    | string  | False    | 1.1     | [1.0, 1.1]                                                                       | HTTP version.                                                                         |
+| method     | string  | False    | GET     | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE"] | HTTP method.                                                                          |
+| query      | object  | False    |         |                                                                                  | Query string for the request. If set, overrides the value of the global query string. |
+| headers    | object  | False    |         |                                                                                  | Headers for the request. If set, overrides the value of the global query string.      |
+| path       | string  | True     |         |                                                                                  | Path of the HTTP request.                                                             |
+| body       | string  | False    |         |                                                                                  | Body of the HTTP request.                                                             |
+| ssl_verify | boolean | False    | false   |                                                                                  | Set to verify if the SSL certs matches the hostname.                                  |
 
-### Batch API Response：
+### Response
 
-Response is `Array` of [HttpResponse](#httpresponse).
+The response is an array of [HttpResponses](#httpresponse).
 
 #### HttpResponse
 
-| Name    | Type    | Description           |
-| ------- | ------- | --------------------- |
-| status  | integer | http status code      |
-| reason  | string  | http reason phrase    |
-| body    | string  | http response body    |
-| headers | object  | http response headers |
+| Name    | Type    | Description            |
+| ------- | ------- | ---------------------- |
+| status  | integer | HTTP status code.      |
+| reason  | string  | HTTP reason-phrase.    |
+| body    | string  | HTTP response body.    |
+| headers | object  | HTTP response headers. |
 
-## How to specify custom uri
+## Specifying a custom URI
 
-We have the [public-api](public-api.md) plugin, customizing the uri becomes even easier. We just need to set the `uri` you want when creating the route and change the configuration of the `public-api` plugin.
+You can specify a custom URI with the [public-api](public-api.md) Plugin.
+
+You can set the URI you want when creating the Route and change the configuration of the public-api Plugin:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/batch-requests",
     "plugins": {
@@ -121,12 +137,12 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-## Test Plugin
+## Example usage
 
-First you need to setup the route for the API that batch request, which will use the [public-api](public-api.md) plugin.
+First, you need to setup a Route to the batch request API. We will use the [public-api](public-api.md) Plugin for this:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/apisix/batch-requests",
     "plugins": {
@@ -135,7 +151,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-Then, you can pass your request detail to batch API(`/apisix/batch-requests`), APISIX can automatically complete requests via [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining). Such as:
+Now you can make a request to the batch request API (`/apisix/batch-requests`):
 
 ```shell
 curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
@@ -161,37 +177,37 @@ curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 }'
 ```
 
-response as below：
+This will give a response:
 
 ```json
 [
-    {
-        "status": 200,
-        "reason": "OK",
-        "body": "{\"ret\":500,\"msg\":\"error\",\"game_info\":null,\"gift\":[],\"to_gets\":0,\"get_all_msg\":\"\"}",
-        "headers": {
-            "Connection": "keep-alive",
-            "Date": "Sat, 11 Apr 2020 17:53:20 GMT",
-            "Content-Type": "application/json",
-            "Content-Length": "81",
-            "Server": "APISIX web server"
-        }
-    },
-    {
-        "status": 200,
-        "reason": "OK",
-        "body": "{\"ret\":500,\"msg\":\"error\",\"game_info\":null,\"gift\":[],\"to_gets\":0,\"get_all_msg\":\"\"}",
-        "headers": {
-            "Connection": "keep-alive",
-            "Date": "Sat, 11 Apr 2020 17:53:20 GMT",
-            "Content-Type": "application/json",
-            "Content-Length": "81",
-            "Server": "APISIX web server"
-        }
+  {
+    "status": 200,
+    "reason": "OK",
+    "body": "{\"ret\":500,\"msg\":\"error\",\"game_info\":null,\"gift\":[],\"to_gets\":0,\"get_all_msg\":\"\"}",
+    "headers": {
+      "Connection": "keep-alive",
+      "Date": "Sat, 11 Apr 2020 17:53:20 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "81",
+      "Server": "APISIX web server"
     }
+  },
+  {
+    "status": 200,
+    "reason": "OK",
+    "body": "{\"ret\":500,\"msg\":\"error\",\"game_info\":null,\"gift\":[],\"to_gets\":0,\"get_all_msg\":\"\"}",
+    "headers": {
+      "Connection": "keep-alive",
+      "Date": "Sat, 11 Apr 2020 17:53:20 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "81",
+      "Server": "APISIX web server"
+    }
+  }
 ]
 ```
 
 ## Disable Plugin
 
-Normally, you don't need to disable this plugin. If you do need, please make a new list of `plugins` you need in `/conf/config.yaml` to cover the original one.
+You can remove `batch-requests` from your list of Plugins in your configuration file (`conf/config.yaml`).
