@@ -796,6 +796,21 @@ _M.global_rule = {
 }
 
 
+local xrpc_protocol_schema = {
+    type = "object",
+    properties = {
+        name = {
+            type = "string",
+        },
+        conf = {
+            description = "protocol-specific configuration",
+            type = "object",
+        },
+    },
+    required = {"name"}
+}
+
+
 _M.stream_route = {
     type = "object",
     properties = {
@@ -821,6 +836,7 @@ _M.stream_route = {
         upstream = upstream_schema,
         upstream_id = id_schema,
         plugins = plugins_schema,
+        protocol = xrpc_protocol_schema,
     }
 }
 
