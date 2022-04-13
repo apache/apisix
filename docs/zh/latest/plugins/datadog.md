@@ -65,7 +65,7 @@ APISIX-Datadog 插件维护了一个带有 timer 的 buffer。当 timer 失效�
 
 ## 如何使用插件
 
-### 前提： Datadog Agent
+### 前提：Datadog Agent
 
 1. 首先你必须在系统中安装一个 Datadog agent。它可以是一个 docker 容器，一个 pod 或是一个二进制的包管理器。你只需要确保 Apache APISIX agent 可以到达 Datadog agent 的 8125 端口。
 2. 如果你从没使用过 Datadog
