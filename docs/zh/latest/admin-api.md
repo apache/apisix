@@ -979,6 +979,8 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 | server_addr      | 可选  | IP/CIDR  | 过滤选项：如果 APISIX 服务器 IP 与 server_addr 匹配，则转发到上游 | "127.0.0.1/32" 或 "127.0.0.1"  |
 | server_port      | 可选  | 整数     | 过滤选项：如果 APISIX 服务器 port 与 server_port 匹配，则转发到上游 | 9090  |
 | sni              | 可选  | Host     | 服务器名称指示 | "test.com"  |
+| protocol.name | 可选    | 字符串 | xRPC 框架代理的协议的名称                      | "redis"                    |
+| protocol.conf | 可选    | 配置 | 协议特定的配置                             |                    |
 
 点击 [此处](./stream-proxy.md#more-route-match-options)，了解更多有关过滤器如何工作的信息。
 

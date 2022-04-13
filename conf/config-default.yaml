@@ -410,6 +410,10 @@ stream_plugins: # sorted by priority
       #priority: 7999
       #file: t/wasm/log/main.go.wasm
 
+#xrpc:
+  #protocols:
+    #- name: pingpong
+
 plugin_attr:
   log-rotate:
     interval: 3600    # rotate interval (unit: second)
