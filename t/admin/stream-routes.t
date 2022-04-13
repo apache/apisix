@@ -580,7 +580,6 @@ GET /t
                     }
                 }]]
                 )
-
             if code >= 300 then
                 ngx.status = code
             end
@@ -592,5 +591,60 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"unknown plugin [mqttt-proxy]"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: validate protocol
+--- extra_yaml_config
+xrpc:
+  protocols:
+    - name: pingpong
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            for _, case in ipairs({
+                {input = {
+                    name = "xxx",
+                }},
+                {input = {
+                    name = "pingpong",
+                }},
+                {input = {
+                    name = "pingpong",
+                    conf = {
+                        faults = "a",
+                    }
+                }},
+            }) do
+                local code, body = t('/apisix/admin/stream_routes/1',
+                    ngx.HTTP_PUT,
+                    {
+                        protocol = case.input,
+                        upstream = {
+                            nodes = {
+                                ["127.0.0.1:8080"] = 1
+                            },
+                            type = "roundrobin"
+                        }
+                    }
+                )
+                if code > 300 then
+                    ngx.print(body)
+                else
+                    ngx.say(body)
+                end
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+{"error_msg":"unknown protocol [xxx]"}
+passed
+{"error_msg":"property \"faults\" validation failed: wrong type: expected array, got string"}
 --- no_error_log
 [error]

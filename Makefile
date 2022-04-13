@@ -340,11 +340,17 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/ssl/router
 	$(ENV_INSTALL) apisix/ssl/router/*.lua $(ENV_INST_LUADIR)/apisix/ssl/router/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/stream
+	$(ENV_INSTALL) apisix/stream/*.lua $(ENV_INST_LUADIR)/apisix/stream/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/stream/plugins
 	$(ENV_INSTALL) apisix/stream/plugins/*.lua $(ENV_INST_LUADIR)/apisix/stream/plugins/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/stream/router
 	$(ENV_INSTALL) apisix/stream/router/*.lua $(ENV_INST_LUADIR)/apisix/stream/router/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/stream/xrpc
+	$(ENV_INSTALL) apisix/stream/xrpc/*.lua $(ENV_INST_LUADIR)/apisix/stream/xrpc/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/utils
 	$(ENV_INSTALL) apisix/utils/*.lua $(ENV_INST_LUADIR)/apisix/utils/
