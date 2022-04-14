@@ -216,7 +216,7 @@ GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtl
 --- response_body
 {"message":"JWT token invalid"}
 --- error_log
-JWT invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
 
 
 
@@ -227,7 +227,7 @@ GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4
 --- response_body
 {"message":"JWT token verify failed"}
 --- error_log
-JWT verify failed: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT
+JWT token verify failed: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT
 
 
 
@@ -280,7 +280,7 @@ Authorization: bearer invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c
 --- response_body
 {"message":"JWT token invalid"}
 --- error_log
-JWT invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
 
 
 
@@ -433,7 +433,7 @@ GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtl
 --- response_body
 {"message":"JWT token invalid"}
 --- error_log
-JWT invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
 
 
 
@@ -446,7 +446,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtle
 --- response_body
 {"message":"JWT token verify failed"}
 --- error_log
-JWT verify failed: signature mismatch: fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
+JWT token verify failed: signature mismatch: fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 
 
 
