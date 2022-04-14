@@ -48,7 +48,7 @@ For Consumer:
 | algorithm     | string  | False                                                 | "HS256" | ["HS256", "HS512", "RS256"] | Encryption algorithm.                                                                                                                                                                       |
 | exp           | integer | False                                                 | 86400   | [1,...]                     | Expiry time of the token in seconds.                                                                                                                                                        |
 | base64_secret | boolean | False                                                 | false   |                             | Set to true if the secret is base64 encoded.                                                                                                                                                |
-| vault         | object  | False                                                 |         |                             | Set to true to use Vault for storing and retrieving secret (secret for HS256/HS512  or public_key and private_key for RS256). By default, the Vault path is `kv/apisix/consumer//jwt-auth`. |
+| vault         | object  | False                                                 |         |                             | Set to true to use Vault for storing and retrieving secret (secret for HS256/HS512  or public_key and private_key for RS256). By default, the Vault path is `kv/apisix/consumer/<consumer_name>/jwt-auth`. |
 
 :::info IMPORTANT
 
@@ -139,11 +139,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 [HashiCorp Vault](https://www.vaultproject.io/) offers a centralized key management solution and it can be used along with APISIX for authentication.
 
-So, if your organization changes the secret/keys (secret for HS256/HS512 or public_key and private_key for RS256) and you don't want to update the APISIX consumer each time or if you don't want to use the key through the Admin API, you can use Vault and the `jwt-auth` Plugin.
+So, if your organization frequently changes the secret/keys (secret for HS256/HS512 or public_key and private_key for RS256) and you don't want to update the APISIX consumer each time or if you don't want to use the key through the Admin API (to reduce secret sprawl), you can use Vault and the `jwt-auth` Plugin.
 
 :::note
 
-The current version of Apache APISIX expects the key names of the secret/keys in Vault to be `secret`, `public_key`, `private_key`.
+The current version of Apache APISIX expects the key names of the secrets stored in Vault to be among `secret`, `public_key`, and `private_key`. The former one is for the HS256/HS512 algorithm and the latter two are for the RS256 algorithm.
 
 Support for custom names will be added in a future release.
 
@@ -166,7 +166,15 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-The Plugin will look for a key "secret" in the provided Vault path (`<vault.prefix>/consumer/jack/jwt-auth`) and uses it for JWT authentication.
+The Plugin will look for a key "secret" in the provided Vault path (`<vault.prefix>/consumer/jack/jwt-auth`) and uses it for JWT authentication. If the key is not found in the same path, the Plugin logs an error and JWT authentication fails.
+
+:::note
+
+The `vault.prefix` should be set in your configuration file (`conf/config.yaml`) file based on the base path you have chosen while enabling the Vault kv secret engine.
+
+For example, if you did `vault secrets enable -path=foobar kv`, you should use `foobar` in `vault.prefix`.
+
+:::
 
 If the key is not found in this path, the Plugin will log an error.
 
