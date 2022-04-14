@@ -131,7 +131,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 - **运维友好**
 
     - OpenTracing 可观测性：支持 [Apache Skywalking](plugins/skywalking.md) 和 [Zipkin](plugins/zipkin.md)。
-    - 对接外部服务发现：除了内置的 etcd 外，还支持 [Consul](../../en/latest/discovery/consul_kv.md) 和 [Nacos](../../en/latest/discovery/nacos.md)，以及 [Eureka](discovery.md)。
+    - 对接外部服务发现：除了内置的 etcd 外，还支持 [Consul](../../en/latest/discovery/consul_kv.md)、[Nacos](discovery/nacos.md)、[Eureka](discovery/eureka.md) 和 [Zookeeper（CP）](../../en/latest/discovery/zookeeper.md)。
     - 监控和指标：[Prometheus](plugins/prometheus.md)
     - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://etcd.io/docs/v3.5/op-guide/clustering/)。
     - 高可用：支持配置同一个集群内的多个 etcd 地址。
