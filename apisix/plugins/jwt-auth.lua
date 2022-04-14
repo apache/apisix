@@ -361,8 +361,8 @@ function _M.rewrite(conf, ctx)
     local jwt_obj = jwt:load_jwt(jwt_token)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
     if not jwt_obj.valid then
-        core.log.error("JWT validate fail: " .. jwt_obj.reason)
-        return 401
+        core.log.error("JWT invalid: ", jwt_obj.reason)
+        return 401, {message = "JWT token invalid"}
     end
 
     local user_key = jwt_obj.payload and jwt_obj.payload.key
@@ -393,8 +393,8 @@ function _M.rewrite(conf, ctx)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
 
     if not jwt_obj.verified then
-        core.log.error("JWT verify fail: " .. jwt_obj.reason)
-        return 401
+        core.log.error("JWT verify failed: ", jwt_obj.reason)
+        return 401, {message = "JWT token verify failed"}
     end
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)

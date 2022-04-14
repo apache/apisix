@@ -213,8 +213,10 @@ GET /hello
 --- request
 GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
 --- error_code: 401
+--- response_body
+{"message":"JWT token invalid"}
 --- error_log
-JWT validate fail: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+JWT invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
 
 
 
@@ -222,8 +224,10 @@ JWT validate fail: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
 --- request
 GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
 --- error_code: 401
+--- response_body
+{"message":"JWT token verify failed"}
 --- error_log
-JWT verify fail: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT
+JWT verify failed: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT
 
 
 
@@ -273,8 +277,10 @@ GET /hello
 --- more_headers
 Authorization: bearer invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- error_code: 401
+--- response_body
+{"message":"JWT token invalid"}
 --- error_log
-JWT validate fail: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+JWT invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
 
 
 
@@ -424,8 +430,10 @@ hello world
 --- request
 GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
 --- error_code: 401
+--- response_body
+{"message":"JWT token invalid"}
 --- error_log
-JWT validate fail: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+JWT invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
 
 
 
@@ -435,8 +443,10 @@ GET /hello
 --- more_headers
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- error_code: 401
+--- response_body
+{"message":"JWT token verify failed"}
 --- error_log
-JWT verify fail: signature mismatch: fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
+JWT verify failed: signature mismatch: fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 
 
 
