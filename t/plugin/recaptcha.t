@@ -237,5 +237,3 @@ captcha: test
 --- request
 POST /active?captcha=test
 --- error_code: 404
---- no_error_log
-[error]
