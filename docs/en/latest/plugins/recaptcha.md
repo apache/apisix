@@ -92,6 +92,16 @@ $ curl -X POST 'http://127.0.0.1:9080/login'
 
 $ curl -X POST 'http://127.0.0.1:9080/login' -H 'captcha: the_invalid_captcha'
 {"message":"invalid captcha"}
+
+$ curl -X POST 'http://127.0.0.1:9080/login' -H 'captcha: the_valid_captcha'
+<html>
+<head><title>503 Service Temporarily Unavailable</title></head>
+<body>
+<center><h1>503 Service Temporarily Unavailable</h1></center>
+<hr><center>openresty</center>
+</body>
+</html>
+(Request has been proxied to the upstream service. Here 503 code is because we didn't set up an HTTP service on 127.0.0.1:1980)
 ```
 
 ## Disable Plugin
