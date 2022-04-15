@@ -591,7 +591,7 @@ local function evaluate_permissions(conf, ctx, token)
                                                           sa_access_token)
 
         -- Check result.
-        if permission == nil or err then
+        if permission == nil then
             -- No result back from resource registration endpoint.
             log.warn(err)
             return 503
