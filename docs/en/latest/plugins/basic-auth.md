@@ -1,5 +1,11 @@
 ---
 title: basic-auth
+keywords:
+  - APISIX
+  - Plugin
+  - Basic Auth
+  - basic-auth
+description: This document contains information about the Apache APISIX basic-auth Plugin.
 ---
 
 <!--
@@ -23,30 +29,28 @@ title: basic-auth
 
 ## Description
 
-`basic-auth` is an authentication plugin that need to work with `consumer`. Add Basic Authentication to a `service` or `route`.
+The `basic-auth` Plugin is used to add [basic access authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) to a Route or a Service.
 
-The `consumer` then adds its key to the request header to verify its request.
-
-For more information on Basic authentication, refer to [Wiki](https://en.wikipedia.org/wiki/Basic_access_authentication) for more information.
+This works well with a [Consumer](../architecture-design/consumer.md). Consumers of the API can then add their key to the header to authenticate their requests.
 
 ## Attributes
 
-For consumer side:
+For Consumer:
 
-| Name     | Type   | Requirement | Default | Valid | Description                                                                                                                                                      |
-| -------- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| username | string | required    |         |       | Different `consumer` should have different value which is unique. When different `consumer` use a same `username`, a request matching exception would be raised. |
-| password | string | required    |         |       | the user's password                                                                                                                                              |
+| Name     | Type   | Required | Description                                                                                                            |
+|----------|--------|----------|------------------------------------------------------------------------------------------------------------------------|
+| username | string | True     | Unique username for a Consumer. If multiple Consumers use the same `username`, a request matching exception is raised. |
+| password | string | True     | Password of the user.                                                                                                  |
 
-For route side:
+For Route:
 
-| Name             | Type    | Requirement | Default | Valid | Description                                                                                                                                                      |
-| --------         | ------  | ----------- | ------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| hide_credentials | boolean | optional    | false   |       | Whether to pass the Authorization request headers to the upstream.                                                                                            |
+| Name             | Type    | Required | Default | Description                                                            |
+|------------------|---------|----------|---------|------------------------------------------------------------------------|
+| hide_credentials | boolean | False    | false   | Set to true to pass the authorization request headers to the Upstream. |
 
-## How To Enable
+## Enabling the Plugin
 
-### 1. set a consumer and config the value of the `basic-auth` option
+To enable the Plugin, you have to create a Consumer object with the authentication configuration:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -61,15 +65,15 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-you also can add a Consumer through the web console:
+You can also use the [APISIX Dashboard](/docs/dashboard/USER_GUIDE) to complete the operation through a web UI.
 
-![auth-1](../../../assets/images/plugin/basic-auth-1.png)
+<!--
+![auth-1](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/basic-auth-1.png)
 
-then add basic-auth plugin in the Consumer page:
+![auth-2](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/basic-auth-2.png)
+-->
 
-![auth-2](../../../assets/images/plugin/basic-auth-2.png)
-
-### 2. add a Route or add a Service, and enable the `basic-auth` plugin
+Once you have created a Consumer object, you can then configure a Route or a Service to authenticate requests:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -88,52 +92,42 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+## Example usage
 
-- missing Authorization header
+After you have configured the Plugin as mentioned above, you can make a request to the Route as shown below:
 
 ```shell
-$ curl -i http://127.0.0.1:9080/hello
-HTTP/1.1 401 Unauthorized
-...
-{"message":"Missing authorization in request"}
+curl -i -ufoo:bar http://127.0.0.1:9080/hello
 ```
 
-- user is not exists:
-
-```shell
-$ curl -i -ubar:bar http://127.0.0.1:9080/hello
-HTTP/1.1 401 Unauthorized
-...
-{"message":"Invalid user authorization"}
 ```
-
-- password is invalid:
-
-```shell
-$ curl -i -ufoo:foo http://127.0.0.1:9080/hello
-HTTP/1.1 401 Unauthorized
-...
-{"message":"Invalid user authorization"}
-```
-
-- success:
-
-```shell
-$ curl -i -ufoo:bar http://127.0.0.1:9080/hello
 HTTP/1.1 200 OK
 ...
 hello, world
 ```
 
-## Disable Plugin
-
-When you want to disable the `basic-auth` plugin, it is very simple,
-you can delete the corresponding json configuration in the plugin configuration,
-no need to restart the service, it will take effect immediately:
+If the request is not authorized, an error will be thrown:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
+HTTP/1.1 401 Unauthorized
+...
+{"message":"Missing authorization in request"}
+```
+
+And if the user or password is not valid:
+
+```shell
+HTTP/1.1 401 Unauthorized
+...
+{"message":"Invalid user authorization"}
+```
+
+## Disable Plugin
+
+To disable the `jwt-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

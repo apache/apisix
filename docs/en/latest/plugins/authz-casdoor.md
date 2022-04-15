@@ -1,5 +1,11 @@
 ---
 title: authz-casdoor
+keywords:
+  - APISIX
+  - Plugin
+  - Authz Casdoor
+  - authz-casdoor
+description: This document contains information about the Apache APISIX authz-casdoor Plugin.
 ---
 
 <!--
@@ -23,24 +29,32 @@ title: authz-casdoor
 
 ## Description
 
-`authz-casdoor` is an authorization plugin based on [Casdoor](https://casdoor.org/). Casdoor is a centralized authentication / Single-Sign-On (SSO) platform supporting OAuth 2.0, OIDC and SAML, integrated with Casbin RBAC and ABAC permission management.
+The `authz-casdoor` Plugin can be used to add centralized authentication with [Casdoor](https://casdoor.org/).
 
 ## Attributes
 
-| Name        | Type   | Requirement | Default | Valid | Description                                                  |
-| ----------- | ------ | ----------- | ------- | ----- | ------------------------------------------------------------ |
-| endpoint_addr  | string | required    |         |       | The url of casdoor.             |
-| client_id | string | required    |         |       | The client id in casdoor.                          |
-| client_secret       | string | required    |         |       | The client secret in casdoor.               |
-| callback_url      | string | required    |         |       | The callback url which is used to receive state and code.                            |
+| Name          | Type   | Required | Description                                  |
+|---------------|--------|----------|----------------------------------------------|
+| endpoint_addr | string | True     | URL of Casdoor.                              |
+| client_id     | string | True     | Client ID in Casdoor.                        |
+| client_secret | string | True     | Client secret in Casdoor.                    |
+| callback_url  | string | True     | Callback URL used to receive state and code. |
 
-*Note: endpoint_addr and callback_url should not end with '/'*
+:::info IMPORTANT
 
-## How To Enable
+`endpoint_addr` and `callback_url` should not end with '/'.
 
-You can enable the plugin on any route by giving out all attributes mentioned above.
+:::
 
-### Example
+:::info IMPORTANT
+
+The `callback_url` must belong to the URI of your Route. See the code snippet below for an example configuration.
+
+:::
+
+## Enabling the Plugin
+
+You can enable the Plugin on a specific Route as shown below:
 
 ```shell
 curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
@@ -62,23 +76,12 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
     }
   }
 }'
-
 ```
 
-In this example, using apisix's admin API we created a route "/anything/*" pointed to "httpbin.org:80", and with "authz-casdoor" enabled. This route is now under authentication protection of Casdoor.
+## Example usage
 
-#### Explanations about parameters of this plugin
+Once you have enabled the Plugin, a new user visiting this Route would first be processed by the `authz-casdoor` Plugin. They would be redirected to the login page of Casdoor.
 
-In the configuration of "authz-casdoor" plugin we can see four parameters.
+After successfully logging in, Casdoor will redirect this user to the `callback_url` with GET parameters `code` and `state` specified. The Plugin will also request for an access token and confirm whether the user is really logged in. This process is only done once and subsequent requests are left uninterrupted.
 
-The first one is "callback_url". This is exactly the callback url in OAuth2. It should be emphasized that this callback url **must belong to the "uri" you specified for the route**, for example, in this example, http://localhost:9080/anything/callback obviously belong to "/anything/*". Only by this way can the visit toward callback_url can be intercepted and utilized by the plugin(so that the plugin can get the code and state in Oauth2). The logic of callback_url is implemented completely by the plugin so that there is no need to modify the server to implement this callback.
-
-The second parameter "endpoint_addr" is obviously the url of Casdoor. The third and fourth parameters are "client_id" and "client_secret", which you can acquire from Casdoor when you register an app.
-
-#### How it works?
-
-Suppose a new user who has never visited this route before is going to visit it (http://localhost:9080/anything/d?param1=foo&param2=bar), considering that "authz-casdoor" is enabled, this visit would be processed by "authz-casdoor" plugin first. After checking the session and confirming that this user hasn't been authenticated, the visit will be intercepted. With the original url user wants to visit kept, he will be redirected to the login page of Casdoor.
-
-After successfully logging in with username and password(or whatever method he uses), Casdoor will redirect this user to the "callback_url" with GET parameter "code" and "state" specified. Because the "callback_url" is known by the plugin, when the visit toward the "callback_url" is intercepted this time, the logic of "Authorization code Grant Flow" in Oauth2 will be triggered, which means this plugin will request the access token to confirm whether this user is really logged in. After this confirmation, this plugin will redirect this user to the original url user wants to visit, which was kept by us previously. The logged-in status will also be kept in the session.
-
-Next time this user want to visit url behind this route (for example, http://localhost:9080/anything/d), after discovering that this user has been authenticated previously, this plugin won't redirect this user anymore so that this user can visit whatever he wants under this route without being interfered.
+Once this is done, the user is redirected to the original URL they wanted to visit.

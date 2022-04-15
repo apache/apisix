@@ -1,5 +1,11 @@
 ---
 title: jwt-auth
+keywords:
+  - APISIX
+  - Plugin
+  - JWT Auth
+  - jwt-auth
+description: This document contains information about the Apache APISIX jwt-auth Plugin.
 ---
 
 <!--
@@ -23,47 +29,58 @@ title: jwt-auth
 
 ## Description
 
-`jwt-auth` is an authentication plugin that need to work with `consumer`. Add JWT Authentication to a `service` or `route`.
+The `jwt-auth` Plugin is used to add [JWT](https://jwt.io/) authentication to a [Service](../terminology/service.md) or a [Route](../terminology/route.md).
 
-The `consumer` then adds its key to the query string parameter, request header, or `cookie` to verify its request.
+A [Consumer](../terminology/consumer.md) of the service then needs to provide a key through a query string, a request header or a cookie to verify its request.
 
-For more information on JWT, refer to [JWT](https://jwt.io/) for more information.
-
-`jwt-auth` plugin can be integrated with HashiCorp Vault for storing and fetching secrets, RSA key pairs from its encrypted kv engine. See the [examples](#enable-jwt-auth-with-vault-compatibility) below to have an overview of how things work.
+The `jwt-auth` Plugin can be integrated with [HashiCorp Vault](https://www.vaultproject.io/) to store and fetch secrets and RSA keys pairs from its [encrypted KV engine](https://www.vaultproject.io/docs/secrets/kv). Learn more from the [examples](#enable-jwt-auth-with-vault-compatibility) below.
 
 ## Attributes
 
-For consumer side:
+For Consumer:
 
-| Name          | Type    | Requirement | Default | Valid                       | Description                                                                                                                                      |
-|:--------------|:--------|:------------|:--------|:----------------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------|
-| key           | string  | required    |         |                             | different `consumer` have different value, it's unique. different `consumer` use the same `key`, and there will be a request matching exception. |
-| secret        | string  | optional    |         |                             | encryption key. if you do not specify, the value is auto-generated in the background.                                                            |
-| public_key    | string  | optional    |         |                             | RSA public key, required when `algorithm` attribute selects `RS256` algorithm.                                                                   |
-| private_key   | string  | optional    |         |                             | RSA private key, required when `algorithm` attribute selects `RS256` algorithm.                                                                  |
-| algorithm     | string  | optional    | "HS256" | ["HS256", "HS512", "RS256"] | encryption algorithm.                                                                                                                            |
-| exp           | integer | optional    | 86400   | [1,...]                     | token's expire time, in seconds                                                                                                                  |
-| base64_secret | boolean | optional    | false   |                             | whether secret is base64 encoded                                                                                                                 |
-| vault | object | optional    |    |                             | whether vault to be used for secret (secret for HS256/HS512  or public_key and private_key for RS256) storage and retrieval. The plugin by default uses the vault path as `kv/apisix/consumer/<consumer name>/jwt-auth` for secret retrieval. |
+| Name          | Type    | Required                                              | Default | Valid values                | Description                                                                                                                                                                                 |
+|---------------|---------|-------------------------------------------------------|---------|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| key           | string  | True                                                  |         |                             | Unique key for a Consumer.                                                                                                                                                                  |
+| secret        | string  | False                                                 |         |                             | The encryption key. If unspecified, auto generated in the background.                                                                                                                       |
+| public_key    | string  | True if `RS256` is set for the `algorithm` attribute. |         |                             | RSA public key.                                                                                                                                                                             |
+| private_key   | string  | True if `RS256` is set for the `algorithm` attribute. |         |                             | RSA private key.                                                                                                                                                                            |
+| algorithm     | string  | False                                                 | "HS256" | ["HS256", "HS512", "RS256"] | Encryption algorithm.                                                                                                                                                                       |
+| exp           | integer | False                                                 | 86400   | [1,...]                     | Expiry time of the token in seconds.                                                                                                                                                        |
+| base64_secret | boolean | False                                                 | false   |                             | Set to true if the secret is base64 encoded.                                                                                                                                                |
+| vault         | object  | False                                                 |         |                             | Set to true to use Vault for storing and retrieving secret (secret for HS256/HS512  or public_key and private_key for RS256). By default, the Vault path is `kv/apisix/consumer/<consumer_name>/jwt-auth`. |
 
-**Note**: To enable vault integration, first visit the [config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml) update it with your vault server configuration, host address and access token. You can take a look of what APISIX expects from the config.yaml at [config-default.yaml](https://github.com/apache/apisix/blob/master/conf/config-default.yaml) under the vault attributes.
+:::info IMPORTANT
 
-For route side:
+To enable Vault integration, you have to first update your configuration file (`conf/config.yaml`) with your Vault server configuration, host address and access token.
 
-| Name | Type   | Requirement | Default | Valid | Description                                                                  |
-| ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
-| header  | string | optional    | authorization        |       | the header we get the token from |
-| query   | string | optional    | jwt        |       | the query string we get the token from, which priority is lower than `header` |
-| cookie | string | optional    | jwt |       | the cookie we get the token from, which priority is lower than `query` |
+Refer to the Vault attributes in the default configuration file ([config-default.yaml](https://github.com/apache/apisix/blob/master/conf/config-default.yaml)) to learn more about these configurations.
+
+:::
+
+For Route:
+
+| Name   | Type   | Required | Default       | Description                                                         |
+|--------|--------|----------|---------------|---------------------------------------------------------------------|
+| header | string | False    | authorization | The header to get the token from.                                   |
+| query  | string | False    | jwt           | The query string to get the token from. Lower priority than header. |
+| cookie | string | False    | jwt           | The cookie to get the token from. Lower priority than query.        |
 
 ## API
 
-This plugin will add `/apisix/plugin/jwt/sign` to sign.
-You may need to use [public-api](public-api.md) plugin to expose it.
+This Plugin adds `/apisix/plugin/jwt/sign` as an endpoint.
 
-## How To Enable
+:::note
 
-1. set a consumer and config the value of the `jwt-auth` option
+You may need to use the [public-api](public-api.md) plugin to expose this endpoint.
+
+:::
+
+## Enabling the Plugin
+
+To enable the Plugin, you have to create a Consumer object with the JWT token and configure your Route to use JWT authentication.
+
+First, you can create a Consumer object through the Admin API:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -78,7 +95,9 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-`jwt-auth` uses the `HS256` algorithm by default, and if you use the `RS256` algorithm, you need to specify the algorithm and configure the public key and private key, as follows:
+:::note
+
+The `jwt-auth` Plugin uses the HS256 algorithm by default. To use the RS256 algorithm, you can configure the public key and private key and specify the algorithm:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -95,7 +114,9 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-2. add a Route or add a Service, and enable the `jwt-auth` plugin
+:::
+
+Once you have created a Consumer object, you can configure a Route to authenticate requests:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -114,15 +135,23 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-### Enable jwt-auth with Vault Compatibility
+### Usage with HashiCorp Vault
 
-Sometimes, it's quite natural in production to have a centralized key management solution like [HashiCorp Vault](https://www.vaultproject.io/) where you don't have to update the APISIX consumer each time some part of your organization changes the signing secret key (secret for HS256/HS512 or public_key and private_key for RS256) and/or for privacy concerns you don't want to use the key through APISIX admin APIs. APISIX got you covered here. The `jwt-auth` is capable of referencing keys from vault.
+[HashiCorp Vault](https://www.vaultproject.io/) offers a centralized key management solution and it can be used along with APISIX for authentication.
 
-**Note**: For early version of this integration support, the plugin expects the key name of secrets stored into the vault path is among [ `secret`, `public_key`, `private_key` ] to successfully use the key. In future releases, we are going to add the support of referencing custom named keys.
+So, if your organization frequently changes the secret/keys (secret for HS256/HS512 or public_key and private_key for RS256) and you don't want to update the APISIX consumer each time or if you don't want to use the key through the Admin API (to reduce secret sprawl), you can use Vault and the `jwt-auth` Plugin.
 
-To enable vault compatibility, just add the empty vault object inside the jwt-auth plugin.
+:::note
 
-1. You have stored HS256 signing secret inside vault and you want to use it for jwt signing and verification.
+The current version of Apache APISIX expects the key names of the secrets stored in Vault to be among `secret`, `public_key`, and `private_key`. The former one is for the HS256/HS512 algorithm and the latter two are for the RS256 algorithm.
+
+Support for custom names will be added in a future release.
+
+:::
+
+To use Vault, you can add an empty vault object in your configuration.
+
+For example, if you have a stored HS256 signing secret inside Vault, you can use it in APISIX by:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -137,14 +166,24 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-Here the plugin looks up for key `secret` inside vault path (`<vault.prefix from conf.yaml>/consumer/jack/jwt-auth`) for consumer username `jack` mentioned in the consumer config and uses it for subsequent signing and jwt verification. If the key is not found in the same path, the plugin logs error and fails to perform jwt authentication.
+The Plugin will look for a key "secret" in the provided Vault path (`<vault.prefix>/consumer/jack/jwt-auth`) and uses it for JWT authentication. If the key is not found in the same path, the Plugin logs an error and JWT authentication fails.
 
-2. RS256 rsa key pairs, both public and private keys are stored into vault.
+:::note
+
+The `vault.prefix` should be set in your configuration file (`conf/config.yaml`) file based on the base path you have chosen while enabling the Vault kv secret engine.
+
+For example, if you did `vault secrets enable -path=foobar kv`, you should use `foobar` in `vault.prefix`.
+
+:::
+
+If the key is not found in this path, the Plugin will log an error.
+
+And for RS256, both the public and private keys should stored in Vault and it can be configured by:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "username": "kowalski",
+    "username": "jack",
     "plugins": {
         "jwt-auth": {
             "key": "rsa-keypair",
@@ -155,9 +194,11 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-The plugin looks up for `public_key` and `private_key` keys inside vault kv path (`<vault.prefix from conf.yaml>/consumer/kowalski/jwt-auth`) for username `kowalski` mentioned inside plugin vault configuration. If not found, authentication fails.
+The Plugin will look for keys "public_key" and "private_key" in the provided Vault path (`<vault.prefix>/consumer/jack/jwt-auth`) and uses it for JWT authentication.
 
-3. public key in consumer configuration, while the private key is in vault.
+If the key is not found in this path, the Plugin will log an error.
+
+You can also configure the `public_key` in the Consumer configuration and use the `private_key` stored in Vault:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -174,29 +215,20 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-This plugin uses rsa public key from consumer configuration and uses the private key directly fetched from vault.
+You can also use the [APISIX Dashboard](/docs/dashboard/USER_GUIDE) to complete the operation through a web UI.
 
-You can use [APISIX Dashboard](https://github.com/apache/apisix-dashboard) to complete the above operations through the web console.
-
-1. Add a Consumer through the web console:
-
+<!--
 ![create a consumer](../../../assets/images/plugin/jwt-auth-1.png)
-
-then add jwt-auth plugin in the Consumer page:
 ![enable jwt plugin](../../../assets/images/plugin/jwt-auth-2.png)
-
-2. Create a Route or Service object and enable the jwt-auth plugin:
-
 ![enable jwt from route or service](../../../assets/images/plugin/jwt-auth-3.png)
+-->
 
-## Test Plugin
+## Example usage
 
-#### Get the Token in `jwt-auth` Plugin:
-
-First, you need to set up the route for the API that signs the token, which will use the [public-api](public-api.md) plugin.
+You need to first setup a Route for an API that signs the token using the [public-api](public-api.md) Plugin:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/jas -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/jas -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/apisix/plugin/jwt/sign",
     "plugins": {
@@ -205,12 +237,15 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/jas -H 'X-API-KEY: edd1c9f03433
 }'
 ```
 
-Let's get a token.
+Now, we can get a token:
 
-* without extension payload:
+- Without extension payload:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
+curl http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
+```
+
+```
 HTTP/1.1 200 OK
 Date: Wed, 24 Jul 2019 10:33:31 GMT
 Content-Type: text/plain
@@ -221,10 +256,13 @@ Server: APISIX web server
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI
 ```
 
-* with extension payload:
+- With extension payload:
 
 ```shell
-$ curl -G --data-urlencode 'payload={"uid":10000,"uname":"test"}' http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
+curl -G --data-urlencode 'payload={"uid":10000,"uname":"test"}' http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
+```
+
+```
 HTTP/1.1 200 OK
 Date: Wed, 21 Apr 2021 06:43:59 GMT
 Content-Type: text/plain; charset=utf-8
@@ -235,21 +273,39 @@ Server: APISIX/2.4
 eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1bmFtZSI6InRlc3QiLCJ1aWQiOjEwMDAwLCJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTYxOTA3MzgzOX0.jI9-Rpz1gc3u8Y6lZy8I43RXyCu0nSHANCvfn0YZUCY
 ```
 
-#### Try Request with Token
-
-* without token:
+You can now use this token while making requests:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -i
+curl http://127.0.0.1:9080/index.html -H 'Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI' -i
+```
+
+```
+HTTP/1.1 200 OK
+Content-Type: text/html
+Content-Length: 13175
+...
+Accept-Ranges: bytes
+
+<!DOCTYPE html>
+<html lang="cn">
+...
+```
+
+Without the token, you will receive an error:
+
+```shell
 HTTP/1.1 401 Unauthorized
 ...
 {"message":"Missing JWT token in request"}
 ```
 
-* request header with token:
+You can also pass the token as query parameters:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI' -i
+curl http://127.0.0.1:9080/index.html?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i
+```
+
+```
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
@@ -261,25 +317,13 @@ Accept-Ranges: bytes
 ...
 ```
 
-* request params with token:
+And also as cookies:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i
-HTTP/1.1 200 OK
-Content-Type: text/html
-Content-Length: 13175
-...
-Accept-Ranges: bytes
-
-<!DOCTYPE html>
-<html lang="cn">
-...
+curl http://127.0.0.1:9080/index.html --cookie jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i
 ```
 
-* request cookie with token:
-
-```shell
-$ curl http://127.0.0.1:9080/index.html --cookie jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI -i
+```
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
@@ -293,12 +337,10 @@ Accept-Ranges: bytes
 
 ## Disable Plugin
 
-When you want to disable the `jwt-auth` plugin, it is very simple,
-you can delete the corresponding json configuration in the plugin configuration,
-no need to restart the service, it will take effect immediately:
+To disable the `jwt-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
