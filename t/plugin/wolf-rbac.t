@@ -218,7 +218,6 @@ qr/appid not found/
 
 
 === TEST 8: login failed, username missing
---- LAST
 --- request
 POST /apisix/plugin/wolf-rbac/login
 appid=wolf-rbac-app&password=123456

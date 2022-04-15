@@ -207,7 +207,6 @@ Authorization: Basic Zm9vOmZvbwo=
 
 
 === TEST 10: verify
---- LAST
 --- request
 GET /hello
 --- more_headers
