@@ -38,7 +38,6 @@ run_tests();
 __DATA__
 
 === TEST 1: sanity
---- FIRST
 --- config
     location /t {
         content_by_lua_block {
