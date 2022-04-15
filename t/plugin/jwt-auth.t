@@ -147,9 +147,7 @@ passed
             local code, body = t('/apisix/admin/routes/2',
                  ngx.HTTP_PUT,
                  [[{
-                        "plugins": {
-                            "public-api": {}
-                        },
+                        "plugins": {},
                         "uri": "/apisix/plugin/jwt/sign"
                  }]]
                 )
