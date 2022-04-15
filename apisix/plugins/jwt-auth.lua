@@ -361,7 +361,7 @@ function _M.rewrite(conf, ctx)
     local jwt_obj = jwt:load_jwt(jwt_token)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
     if not jwt_obj.valid then
-        core.log.error("JWT token invalid: ", jwt_obj.reason)
+        core.log.warn("JWT token invalid: ", jwt_obj.reason)
         return 401, {message = "JWT token invalid"}
     end
 
@@ -386,15 +386,15 @@ function _M.rewrite(conf, ctx)
 
     local auth_secret, err = algorithm_handler(consumer)
     if not auth_secret then
-        core.log.error("failed to retrieve secrets, err: ", err)
+        core.log.warn("failed to retrieve secrets, err: ", err)
         return 503, {message = "failed to verify jwt"}
     end
     jwt_obj = jwt:verify_jwt_obj(auth_secret, jwt_obj)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
 
     if not jwt_obj.verified then
-        core.log.error("JWT token verify failed: ", jwt_obj.reason)
-        return 401, {message = "JWT token verify failed"}
+        core.log.warn("failed to verify jwt: ", jwt_obj.reason)
+        return 401, {message = "failed to verify jwt"}
     end
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
