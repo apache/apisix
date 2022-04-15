@@ -479,6 +479,7 @@ qr/ERR_OLD_PASSWORD_INCORRECT/
 qr/ERR_OLD_PASSWORD_INCORRECT/
 
 
+
 === TEST 25: change password
 --- request
 PUT /apisix/plugin/wolf-rbac/change_pwd
