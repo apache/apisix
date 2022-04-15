@@ -38,6 +38,7 @@ run_tests();
 __DATA__
 
 === TEST 1: sanity
+--- FIRST
 --- config
     location /t {
         content_by_lua_block {
@@ -156,7 +157,11 @@ GET /hello
 Authorization: Bad_header Zm9vOmZvbwo=
 --- error_code: 401
 --- response_body
-{"message":"Invalid authorization header format"}
+{"message":"Invalid user authorization"}
+--- grep_error_log eval
+qr/Invalid authorization header format/
+--- grep_error_log_out
+Invalid authorization header format
 
 
 
@@ -167,7 +172,11 @@ GET /hello
 Authorization: Basic aca_a
 --- error_code: 401
 --- response_body
-{"message":"Failed to decode authentication header: aca_a"}
+{"message":"Invalid user authorization"}
+--- grep_error_log eval
+qr/Failed to decode authentication header: aca_a/
+--- grep_error_log_out
+Failed to decode authentication header: aca_a
 
 
 
@@ -178,7 +187,11 @@ GET /hello
 Authorization: Basic Zm9v
 --- error_code: 401
 --- response_body
-{"message":"Split authorization err: invalid decoded data: foo"}
+{"message":"Invalid user authorization"}
+--- grep_error_log eval
+qr/Split authorization err: invalid decoded data: foo/
+--- grep_error_log_out
+Split authorization err: invalid decoded data: foo
 
 
 
@@ -194,6 +207,7 @@ Authorization: Basic Zm9vOmZvbwo=
 
 
 === TEST 10: verify
+--- LAST
 --- request
 GET /hello
 --- more_headers

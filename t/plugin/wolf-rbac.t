@@ -211,20 +211,25 @@ appid=not-found&username=admin&password=123456
 Content-Type: application/x-www-form-urlencoded
 --- error_code: 400
 --- response_body_like eval
-qr/appid \[not-found\] not found/
+qr/appid not found/
 --- no_error_log
 [error]
 
 
 
 === TEST 8: login failed, username missing
+--- LAST
 --- request
 POST /apisix/plugin/wolf-rbac/login
 appid=wolf-rbac-app&password=123456
 --- more_headers
 Content-Type: application/x-www-form-urlencoded
 --- error_code: 200
---- response_body_like eval
+--- response_body
+{"message":"request to wolf-server failed!"}
+--- grep_error_log eval
+qr/ERR_USERNAME_MISSING/
+--- grep_error_log_out eval
 qr/ERR_USERNAME_MISSING/
 
 
@@ -236,7 +241,11 @@ appid=wolf-rbac-app&username=admin
 --- more_headers
 Content-Type: application/x-www-form-urlencoded
 --- error_code: 200
---- response_body_like eval
+--- response_body
+{"message":"request to wolf-server failed!"}
+--- grep_error_log eval
+qr/ERR_PASSWORD_MISSING/
+--- grep_error_log_out eval
 qr/ERR_PASSWORD_MISSING/
 
 
@@ -248,7 +257,11 @@ appid=wolf-rbac-app&username=not-found&password=123456
 --- more_headers
 Content-Type: application/x-www-form-urlencoded
 --- error_code: 200
---- response_body_like eval
+--- response_body
+{"message":"request to wolf-server failed!"}
+--- grep_error_log eval
+qr/ERR_USER_NOT_FOUND/
+--- grep_error_log_out eval
 qr/ERR_USER_NOT_FOUND/
 
 
@@ -260,7 +273,11 @@ appid=wolf-rbac-app&username=admin&password=wrong-password
 --- more_headers
 Content-Type: application/x-www-form-urlencoded
 --- error_code: 200
---- response_body_like eval
+--- response_body
+{"message":"request to wolf-server failed!"}
+--- grep_error_log eval
+qr/ERR_PASSWORD_ERROR/
+--- grep_error_log_out eval
 qr/ERR_PASSWORD_ERROR/
 
 
