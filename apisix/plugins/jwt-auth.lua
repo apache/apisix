@@ -253,7 +253,7 @@ function _M.rewrite(conf, ctx)
     local jwt_token, err = fetch_jwt_token(ctx)
     if not jwt_token then
         if err and err:sub(1, #"no cookie") ~= "no cookie" then
-            core.log.error("failed to fetch JWT token: ", err)
+            core.log.warn("failed to fetch JWT token: ", err)
         end
 
         return 401, {message = "Missing JWT token in request"}
@@ -262,7 +262,7 @@ function _M.rewrite(conf, ctx)
     local jwt_obj = jwt:load_jwt(jwt_token)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
     if not jwt_obj.valid then
-        core.log.error("JWT token invalid: ", jwt_obj.reason)
+        core.log.warn("JWT token invalid: ", jwt_obj.reason)
         return 401, {message = "JWT token invalid"}
     end
 
@@ -290,7 +290,7 @@ function _M.rewrite(conf, ctx)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
 
     if not jwt_obj.verified then
-        core.log.error("JWT token verify failed: ", jwt_obj.reason)
+        core.log.warn("JWT token verify failed: ", jwt_obj.reason)
         return 401, {message = "JWT token verify failed"}
     end
 
