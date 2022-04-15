@@ -572,7 +572,7 @@ local function evaluate_permissions(conf, ctx, token)
     -- Ensure discovered data.
     local err = authz_keycloak_ensure_discovered_data(conf)
     if err then
-        log.error(err)
+        log.warn(err)
         return 503
     end
 
@@ -582,6 +582,7 @@ local function evaluate_permissions(conf, ctx, token)
         -- Ensure service account access token.
         local sa_access_token, err = authz_keycloak_ensure_sa_access_token(conf)
         if err then
+            log.warn(err)
             return 503
         end
 
@@ -592,6 +593,7 @@ local function evaluate_permissions(conf, ctx, token)
         -- Check result.
         if permission == nil or err then
             -- No result back from resource registration endpoint.
+            log.warn(err)
             return 503
         end
     else
