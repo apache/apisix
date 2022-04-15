@@ -61,6 +61,7 @@ title: CHANGELOG
 
 - 修复 jwt-auth 返回结果里可能暴露 secret 的问题 [#6846](https://github.com/apache/apisix/pull/6846)
 - 升级 lua-resty-jwt 到一个新版本 [#6847](https://github.com/apache/apisix/pull/6847)
+- 修改 jwt-auth 在响应码为503时 仍使用 error 错误等级 [#6858](https://github.com/apache/apisix/pull/6858)
 
 ## 2.13.0
 

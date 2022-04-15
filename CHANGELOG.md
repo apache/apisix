@@ -61,6 +61,7 @@ title: Changelog
 
 - fix: jwt-auth error may leak secret [#6846](https://github.com/apache/apisix/pull/6846)
 - chore: upgrade lua-resty-jwt to a new version [#6847](https://github.com/apache/apisix/pull/6847)
+- chore(jwt-auth): adjust error log level to warn [#6858](https://github.com/apache/apisix/pull/6858)
 
 ## 2.13.0
 
