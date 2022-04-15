@@ -38,7 +38,7 @@ title: recaptcha
 | response | object | 可选    | content_type  = `application/json; charset=utf-8`; status_code = `400`; body = `{"message":"invalid captcha"}` |  | 无效验证码的 HTTP 响应体                     |
 | ssl_verify | boolean | 可选 | true                                                                                                           | | 验证 SSL 证书与主机名是否匹配 |
 
-插件的配置如下:
+插件的配置如下：
 
 ```json
 {
@@ -62,7 +62,7 @@ $ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034
 {
     "plugins": {
         "recaptcha": {
-            "secret_key": "6LeIxAcTAAAAAGG-XXXXXXXXXXXXXX",
+            "secret_key": "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe",
             "parameter_source": "header",
             "parameter_name": "captcha",
             "response": {
