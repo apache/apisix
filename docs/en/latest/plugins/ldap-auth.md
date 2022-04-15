@@ -1,5 +1,11 @@
 ---
 title: ldap-auth
+keywords:
+  - APISIX
+  - Plugin
+  - LDAP Authentication
+  - ldap-auth
+description: This document contains information about the Apache APISIX ldap-auth Plugin.
 ---
 
 <!--
@@ -23,34 +29,32 @@ title: ldap-auth
 
 ## Description
 
-`ldap-auth` is an authentication plugin that can works with `consumer`. Add Ldap Authentication to a `service` or `route`.
+The `ldap-auth` Plugin can be used to add LDAP authentication to a Route or a Service.
 
-The `consumer` then authenticate against the Ldap server using Basic authentication.
+This Plugin works with the Consumer object and the consumers of the API can authenticate with an LDAP server using [basic authentication](https://en.wikipedia.org/wiki/Basic_access_authentication).
 
-For more information on Basic authentication, refer to [Wiki](https://en.wikipedia.org/wiki/Basic_access_authentication) for more information.
-
-This authentication plugin use [lualdap](https://lualdap.github.io/lualdap/) plugin to connect against the ldap server
+This Plugin uses [lualdap](https://lualdap.github.io/lualdap/) for connecting with an LDAP server.
 
 ## Attributes
 
-For consumer side:
+For Consumer:
 
-| Name     | Type    | Requirement | Default | Valid | Description |
-| -------- | ------- | ----------- | ------- | ----- | ----------- |
-| user_dn  | string  | required    |         |       | the user dn of the `ladp` client (example: `cn=user01,ou=users,dc=example,dc=org`)      |
+| Name    | Type   | Required | Description                                                                      |
+| ------- | ------ | -------- | -------------------------------------------------------------------------------- |
+| user_dn | string | True     | User dn of the LDAP client. For example, `cn=user01,ou=users,dc=example,dc=org`. |
 
-For route side:
+For Route:
 
-| Name     | Type    | Requirement | Default | Valid | Description |
-| -------- | ------- | ----------- | ------- | ----- | ----------- |
-| base_dn  | string  | required    |         |       | the base dn of the `ldap` server (example : `ou=users,dc=example,dc=org`)                |
-| ldap_uri | string  | required    |         |       | the uri of the ldap server                                                               |
-| use_tls  | boolean | optional    | `true`  |       | Boolean flag indicating if Transport Layer Security (TLS) should be used.                |
-| uid      | string  | optional    | `cn`    |       | the `uid` attribute                                                                      |
+| Name     | Type    | Required | Default | Description                                                            |
+|----------|---------|----------|---------|------------------------------------------------------------------------|
+| base_dn  | string  | True     |         | Base dn of the LDAP server. For example, `ou=users,dc=example,dc=org`. |
+| ldap_uri | string  | True     |         | URI of the LDAP server.                                                |
+| use_tls  | boolean | False    | `true`  | If set to `true` uses TLS.                                             |
+| uid      | string  | False    | `cn`    | uid attribute.                                                         |
 
-## How To Enable
+## Enabling the plugin
 
-### 1. set a consumer and config the value of the `ldap-auth` option
+First, you have to create a Consumer and enable the `ldap-auth` Plugin on it:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -64,7 +68,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-### 2. add a Route or add a Service, and enable the `ldap-auth` plugin
+Now you can enable the Plugin on a specific Route or a Service as shown below:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -87,52 +91,58 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+## Example usage
 
-- missing Authorization header
+After configuring the Plugin as mentioned above, clients can make requests with authorization to access the API:
 
 ```shell
-$ curl -i http://127.0.0.1:9080/hello
-HTTP/1.1 401 Unauthorized
-...
-{"message":"Missing authorization in request"}
+curl -i -uuser01:password1 http://127.0.0.1:9080/hello
 ```
 
-- user is not exists:
-
 ```shell
-$ curl -i -uuser:password1 http://127.0.0.1:9080/hello
-HTTP/1.1 401 Unauthorized
-...
-{"message":"Invalid user authorization"}
-```
-
-- password is invalid:
-
-```shell
-$ curl -i -uuser01:passwordfalse http://127.0.0.1:9080/hello
-HTTP/1.1 401 Unauthorized
-...
-{"message":"Invalid user authorization"}
-```
-
-- success:
-
-```shell
-$ curl -i -uuser01:password1 http://127.0.0.1:9080/hello
 HTTP/1.1 200 OK
 ...
 hello, world
 ```
 
-## Disable Plugin
-
-When you want to disable the `ldap-auth` plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+If an authorization header is missing or invalid, the request is denied:
 
 ```shell
-$ curl http://127.0.0.1:2379/apisix/admin/routes/1 -X PUT -d value='
+curl -i http://127.0.0.1:9080/hello
+```
+
+```shell
+HTTP/1.1 401 Unauthorized
+...
+{"message":"Missing authorization in request"}
+```
+
+```shell
+curl -i -uuser:password1 http://127.0.0.1:9080/hello
+```
+
+```shell
+HTTP/1.1 401 Unauthorized
+...
+{"message":"Invalid user authorization"}
+```
+
+```shell
+curl -i -uuser01:passwordfalse http://127.0.0.1:9080/hello
+```
+
+```shell
+HTTP/1.1 401 Unauthorized
+...
+{"message":"Invalid user authorization"}
+```
+
+## Disable Plugin
+
+To disable the `ldap-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+
+```shell
+curl http://127.0.0.1:2379/apisix/admin/routes/1 -X PUT -d value='
 {
     "methods": ["GET"],
     "uri": "/hello",

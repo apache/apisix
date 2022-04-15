@@ -16,12 +16,12 @@
 --
 
 package = "apisix"
-version = "master-0"
+version = "2.13.1-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/apache/apisix",
-    branch = "master",
+    branch = "2.13.1",
 }
 
 description = {
@@ -43,9 +43,9 @@ dependencies = {
     "api7-lua-resty-jwt = 0.2.4",
     "lua-resty-hmac-ffi = 0.05",
     "lua-resty-cookie = 0.1.0",
-    "lua-resty-session = 3.10",
+    "lua-resty-session = 2.24",
     "opentracing-openresty = 0.1",
-    "lua-resty-radixtree = 2.8.2",
+    "lua-resty-radixtree = 2.8.1",
     "lua-protobuf = 0.3.4",
     "lua-resty-openidc = 1.7.2-1",
     "luafilesystem = 1.7.0-2",
@@ -76,7 +76,6 @@ dependencies = {
     "opentelemetry-lua = 0.1-3",
     "net-url = 0.9-1",
     "xml2lua = 1.5-2",
-    "nanoid = 0.1-1"
 }
 
 build = {

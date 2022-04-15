@@ -1,5 +1,11 @@
 ---
 title: authz-casbin
+keywords:
+  - APISIX
+  - Plugin
+  - Authz Casbin
+  - authz-casbin
+description: This document contains information about the Apache APISIX authz-casbin Plugin.
 ---
 
 <!--
@@ -23,34 +29,40 @@ title: authz-casbin
 
 ## Description
 
-`authz-casbin` is an authorization plugin based on [Lua Casbin](https://github.com/casbin/lua-casbin/). This plugin supports powerful authorization scenarios based on various access control models.
-
-For detailed documentation on how to create model and policy, refer [Casbin](https://casbin.org/docs/en/supported-models).
+The `authz-casbin` Plugin is an authorization Plugin based on [Lua Casbin](https://github.com/casbin/lua-casbin/). This Plugin supports powerful authorization scenarios based on various [access control models](https://casbin.org/docs/en/supported-models).
 
 ## Attributes
 
-| Name        | Type   | Requirement | Default | Valid | Description                                                  |
-| ----------- | ------ | ----------- | ------- | ----- | ------------------------------------------------------------ |
-| model_path  | string | required    |         |       | The path of the Casbin model configuration file.             |
-| policy_path | string | required    |         |       | The path of the Casbin policy file.                          |
-| model       | string | required    |         |       | The Casbin model configuration in text format.               |
-| policy      | string | required    |         |       | The Casbin policy in text format.                            |
-| username    | string | required    |         |       | The header you will be using in request to pass the username (subject). |
+| Name        | Type   | Required | Description                                                                            |
+|-------------|--------|----------|----------------------------------------------------------------------------------------|
+| model_path  | string | True     | Path of the Casbin model configuration file.                                           |
+| policy_path | string | True     | Path of the Casbin policy file.                                                        |
+| model       | string | True     | Casbin model configuration in text format.                                             |
+| policy      | string | True     | Casbin policy in text format.                                                          |
+| username    | string | True     | Header in the request that will be used in the request to pass the username (subject). |
 
-**NOTE**: You must either specify `model_path`, `policy_path` and `username` in plugin config or specify `model`, `policy` and `username` in the plugin config for the configuration to be valid. Or if you wish to use a global Casbin configuration, you can first specify `model` and `policy` in the plugin metadata and only `username` in the plugin configuration, all routes will use the plugin metadata configuration in this way.
+:::note
+
+You must either specify the `model_path`, `policy_path`, and the `username` attributes or specify the `model`, `policy` and the `username` attributes in the Plugin configuration for it to be valid.
+
+If you wish to use a global Casbin configuration, you can first specify `model` and `policy` attributes in the Plugin metadata and only the `username` attribute in the Plugin configuration. All Routes will use the Plugin configuration this way.
+
+:::
 
 ## Metadata
 
-| Name        | Type   | Requirement | Default | Valid | Description                                                            |
-| ----------- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------- |
-| model       | string | required    |         |       | The Casbin model configuration in text format.                         |
-| policy      | string | required    |         |       | The Casbin policy in text format.                                      |
+| Name   | Type   | Required | Description                                |
+|--------|--------|----------|--------------------------------------------|
+| model  | string | True     | Casbin model configuration in text format. |
+| policy | string | True     | Casbin policy in text format.              |
 
-## How To Enable
+## Enabling the Plugin
 
-You can enable the plugin on any route either by using the model/policy file paths or directly using the model/policy text.
+You can enable the Plugin on a Route by either using the model/policy file paths or using the model/policy text in Plugin configuration/metadata.
 
-### By using file paths
+### By using model/policy file paths
+
+The example below shows setting up Casbin authentication from your model/policy configuration file:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -72,9 +84,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-This will create a Casbin enforcer from the model and policy files at your first request.
+### By using model/policy text in Plugin configuration
 
-### By using model/policy text
+The example below shows setting up Casbin authentication from your model/policy text in your Plugin configuration:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -113,11 +125,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-This will create a Casbin enforcer from the model and policy text at your first request.
+### By using model/policy text in Plugin metadata
 
-### By using model/policy text using plugin metadata
+First, you need to send a `PUT` request to the Admin API to add the `model` and `policy` text to the Plugin metadata.
 
-First, send a `PUT` request to add the model and policy text to the plugin's metadata using the Admin API. All routes configured in this way will use a single Casbin enforcer with plugin metadata configuration. You can also update the model/policy this way, the plugin will automatically update itself with the updated configuration.
+All Routes configured this way will use a single Casbin enforcer with the configured Plugin metadata. You can also update the model/policy in this way and the Plugin will automatically update to the new configuration.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/authz-casbin -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
@@ -143,7 +155,7 @@ g, alice, admin"
 }'
 ```
 
-Then add this plugin on a route by sending the following request. Note, there is no requirement for model/policy now.
+Once you have updated the Plugin metadata, you can add the Plugin to a specific Route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -163,11 +175,15 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-**NOTE**: The plugin route configuration has a higher precedence than the plugin metadata configuration. Hence if the model/policy configuration is present in the plugin route config, the plugin will use that instead of the metadata config.
+:::note
 
-## Test Plugin
+The Plugin Route configuration has a higher precedence than the Plugin metadata configuration. If the model/policy configuration is present in the Plugin Route configuration, it is used instead of the metadata configuration.
 
-We defined the example model as:
+:::
+
+## Example usage
+
+We define the example model as:
 
 ```conf
 [request_definition]
@@ -194,22 +210,24 @@ p, admin, *, *
 g, alice, admin
 ```
 
-This means that anyone can access the homepage (`/`) using `GET` request method while only users with admin permissions can access other pages and use other request methods.
+See [examples](https://github.com/casbin/lua-casbin/tree/master/examples) for more policy and model configurations.
 
-For example, here anyone can access the homepage with the GET request method and the request proceeds normally:
+The above configuration will let anyone access the homepage (`/`) using a `GET` request while only users with admin permissions can access other pages and use other request methods.
+
+So if we make a get request to the homepage:
 
 ```shell
 curl -i http://127.0.0.1:9080/ -X GET
 ```
 
-If some unauthorized user `bob` tries to access any other page, they will get a 403 error:
+But if an unauthorized user tries to access any other page, they will get a 403 error:
 
 ```shell
 curl -i http://127.0.0.1:9080/res -H 'user: bob' -X GET
 HTTP/1.1 403 Forbidden
 ```
 
-But someone with admin permissions like `alice`can access it:
+And only users with admin privileges can access the endpoints:
 
 ```shell
 curl -i http://127.0.0.1:9080/res -H 'user: alice' -X GET
@@ -217,11 +235,10 @@ curl -i http://127.0.0.1:9080/res -H 'user: alice' -X GET
 
 ## Disable Plugin
 
-Remove the corresponding json configuration in the plugin configuration to disable the `authz-casbin` plugin.
-APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
+To disable the `authz-casbin` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/*",
@@ -234,7 +251,3 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335
     }
 }'
 ```
-
-## Examples
-
-Checkout examples for model and policy conguration [here](https://github.com/casbin/lua-casbin/tree/master/examples).

@@ -1,5 +1,11 @@
 ---
 title: key-auth
+keywords:
+  - APISIX
+  - Plugin
+  - Key Auth
+  - key-auth
+description: This document contains information about the Apache APISIX key-auth Plugin.
 ---
 
 <!--
@@ -23,31 +29,31 @@ title: key-auth
 
 ## Description
 
-`key-auth` is an authentication plugin, it should work with `consumer` together.
+The `key-auth` Plugin is used to add an authentication key (API key) to a Route or a Service.
 
-Add Key Authentication (also sometimes referred to as an API key) to a Service or a Route. Consumers then add their key either in a query string parameter or a header to authenticate their requests.
+This works well with a [Consumer](../architecture-design/consumer.md). Consumers of the API can then add their key to the query string or the header to authenticate their requests.
 
 ## Attributes
 
-For consumer side:
+For Consumer:
 
-| Name | Type   | Requirement | Default | Valid | Description                                                                  |
-| ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
-| key  | string | required    |         |       | different consumer objects should use different values, it should be unique. |
+| Name | Type   | Requirement | Description                |
+|------|--------|-------------|----------------------------|
+| key  | string | required    | Unique key for a Consumer. |
 
-For route side:
+For Route:
 
-| Name | Type   | Requirement | Default | Valid | Description                                                                  |
-| ---- | ------ | ----------- | ------- | ----- | ---------------------------------------------------------------------------- |
-| header  | string | optional    | apikey        |       | the header we get the key from |
-| query   | string | optional    | apikey        |       | the query string we get the key from, which priority is lower than `header` |
-| hide_credentials   | bool | optional    | false        |       | Whether to pass the request header containing authentication information to upstream. |
+| Name   | Type   | Requirement | Default | Valid | Description                                                       |
+|--------|--------|-------------|---------|-------|-------------------------------------------------------------------|
+| header | string | optional    | apikey  |       | The header to get the key from.                                   |
+| query  | string | optional    | apikey  |       | The query string to get the key from. Lower priority than header. |
+| hide_credentials   | bool | optional    | false        |       | When set to `false` passes the request header containing authentication information to the Upstream. |
 
-## How To Enable
+## Enabling the Plugin
 
-Two steps are required:
+To enable the Plugin, you have to create a Consumer object with an authentication key and configure your Route to authenticate requests.
 
-1. creates a consumer object, and set the attributes of plugin `key-auth`.
+First you can create a Consumer object through the [Admin API](../admin-api.md) with a unique key:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -61,13 +67,17 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-You also can complete the above operation through the web interface, first add a route:
-![create a consumer](../../../assets/images/plugin/key-auth-1.png)
+You can also use the [APISIX Dashboard](/docs/dashboard/USER_GUIDE) to complete the operation through a web UI.
 
-Then add key-auth plugin:
-![enable key-auth plugin](../../../assets/images/plugin/key-auth-2.png)
+First, create a Consumer object:
 
-2. creates a route or service object, and enable plugin `key-auth`.
+![create a consumer](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/key-auth-1.png)
+
+You can then add the `key-auth` Plugin:
+
+![enable key-auth plugin](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/key-auth-2.png)
+
+Once you have created a Consumer object, you can then configure a Route or a Service to authenticate requests:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -87,7 +97,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-If you don't want to fetch key from the default `apikey` header, you can customize the header:
+To fetch the key from a different header than `apikey`, change the `header` in the configuration:
 
 ```json
 {
@@ -97,25 +107,36 @@ If you don't want to fetch key from the default `apikey` header, you can customi
 }
 ```
 
-## Test Plugin
+## Example usage
 
-Here is a correct test example:
+After you have configured the Plugin as mentioned above, you can make a request as shown:
 
 ```shell
-$ curl http://127.0.0.2:9080/index.html -H 'apikey: auth-one' -i
+curl http://127.0.0.2:9080/index.html -H 'apikey: auth-one' -i
+```
+
+```
 HTTP/1.1 200 OK
 ...
 ```
 
-If the request does not set `apikey` correctly, will get a `401` response.
+And if the request has a missing key or a wrong key:
 
 ```shell
-$ curl http://127.0.0.2:9080/index.html -i
+curl http://127.0.0.2:9080/index.html -i
+```
+
+```
 HTTP/1.1 401 Unauthorized
 ...
 {"message":"Missing API key found in request"}
+```
 
-$ curl http://127.0.0.2:9080/index.html -H 'apikey: abcabcabc' -i
+```shell
+curl http://127.0.0.2:9080/index.html -H 'apikey: abcabcabc' -i
+```
+
+```
 HTTP/1.1 401 Unauthorized
 ...
 {"message":"Invalid API key in request"}
@@ -123,12 +144,10 @@ HTTP/1.1 401 Unauthorized
 
 ## Disable Plugin
 
-When you want to disable the `key-auth` plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+To disable the `key-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},
@@ -140,5 +159,3 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
 }'
 ```
-
-The `key-auth` plugin has been disabled now. It works for other plugins.
