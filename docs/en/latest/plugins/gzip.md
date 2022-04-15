@@ -1,5 +1,10 @@
 ---
 title: gzip
+keywords:
+  - APISIX
+  - Plugin
+  - gzip
+description: This document contains information about the Apache APISIX gzip Plugin.
 ---
 
 <!--
@@ -23,25 +28,29 @@ title: gzip
 
 ## Description
 
-The `gzip` plugin dynamically set the gzip behavior of Nginx.
+The `gzip` Plugin dynamically sets the behavior of [gzip in Nginx](https://docs.nginx.com/nginx/admin-guide/web-server/compression/).
 
-**This plugin requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#step-6-build-openresty-for-apache-apisix).**
+:::info IMPORTANT
+
+This Plugin requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#step-6-build-openresty-for-apache-apisix).
+
+:::
 
 ## Attributes
 
-| Name           | Type                 | Requirement | Default        | Valid                                                                      | Description                                                                                                                                         |
-| --------------------------------------| ------------| -------------- | -------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| types          | array[string] or "*" | optional    |  ["text/html"] |          | dynamically set the `gzip_types` directive, special value `"*"` matches any MIME type |
-| min_length     | integer              | optional    |  20            | >= 1     | dynamically set the `gzip_min_length` directive |
-| comp_level     | integer              | optional    |  1             | [1, 9]   | dynamically set the `gzip_comp_level` directive |
-| http_version   | number               | optional    |  1.1           | 1.1, 1.0 | dynamically set the `gzip_http_version` directive |
-| buffers.number | integer              | optional    |  32            | >= 1     | dynamically set the `gzip_buffers` directive |
-| buffers.size   | integer              | optional    |  4096          | >= 1     | dynamically set the `gzip_buffers` directive |
-| vary | boolean                        | optional    |  false         |          | dynamically set the `gzip_vary` directive |
+| Name           | Type                 | Required | Default       | Valid values | Description                                                                             |
+|----------------|----------------------|----------|---------------|--------------|-----------------------------------------------------------------------------------------|
+| types          | array[string] or "*" | False    | ["text/html"] |              | Dynamically sets the `gzip_types` directive. Special value `"*"` matches any MIME type. |
+| min_length     | integer              | False    | 20            | >= 1         | Dynamically sets the `gzip_min_length` directive.                                       |
+| comp_level     | integer              | False    | 1             | [1, 9]       | Dynamically sets the `gzip_comp_level` directive.                                       |
+| http_version   | number               | False    | 1.1           | 1.1, 1.0     | Dynamically sets the `gzip_http_version` directive.                                     |
+| buffers.number | integer              | False    | 32            | >= 1         | Dynamically sets the `gzip_buffers` directive.                                          |
+| buffers.size   | integer              | False    | 4096          | >= 1         | Dynamically sets the `gzip_buffers` directive.                                          |
+| vary           | boolean              | False    | false         |              | Dynamically sets the `gzip_vary` directive.                                             |
 
-## How To Enable
+## Enabling the Plugin
 
-Here's an example, enable this plugin on the specified route:
+The example below enables the `gzip` Plugin on the specified Route:
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -63,12 +72,15 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 }'
 ```
 
-## Test Plugin
+## Example usage
 
-Use curl to access:
+Once you have configured the Plugin as shown above, you can make a request as shown below:
 
 ```shell
 curl http://127.0.0.1:9080/index.html -i -H "Accept-Encoding: gzip"
+```
+
+```
 HTTP/1.1 404 Not Found
 Content-Type: text/html; charset=utf-8
 Transfer-Encoding: chunked
@@ -84,9 +96,7 @@ Warning: <FILE>" to save to a file.
 
 ## Disable Plugin
 
-When you want to disable this plugin, it is very simple,
-you can delete the corresponding JSON configuration in the plugin configuration,
-no need to restart the service, it will take effect immediately:
+To disable the `gzip` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -100,5 +110,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
-
-This plugin has been disabled now. It works for other plugins.

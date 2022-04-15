@@ -84,7 +84,7 @@ sudo yum install ./apisix/*.rpm
 
 ### 通过源码包安装
 
-注意：如果你想针对特定平台打包 Apache APISIX，请更新 https://github.com/api7/apisix-build-tools。
+注意：如果你想针对特定平台打包 Apache APISIX，请更新 [apisix-build-tools](https://github.com/api7/apisix-build-tools)
 以下步骤仅用于设置 Apache APISIX 的开发环境。
 
 1. 安装依赖
@@ -163,7 +163,7 @@ sudo yum install ./apisix/*.rpm
 你可以通过 Docker 或者二进制等方式安装 etcd。以下命令通过二进制方式在 Linux 上安装 etcd。
 
 ```shell
-ETCD_VERSION='3.4.13'
+ETCD_VERSION='3.4.18'
 wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
 tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
   cd etcd-v${ETCD_VERSION}-linux-amd64 && \

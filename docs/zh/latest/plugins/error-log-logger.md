@@ -121,7 +121,9 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-A
 ## 如何设置接收日志的 clickhouse 数据库
 
 插件将 error log 作为一个字符串发送到 clickhouse 表的 `data` 字段。
-*TODO 将 error log 作为一个字符串保持到 clickhouse 数据库的 data 字段，未来我们将会增加更多的字段。*
+
+*TODO 将 error log 作为一个字符串保存到 clickhouse 数据库的 data 字段，未来我们将会增加更多的字段。*
+
 步骤：更新插件属性
 
 ```shell

@@ -105,10 +105,17 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 - **Security**
 
-  - Authentications: [key-auth](docs/en/latest/plugins/key-auth.md), [JWT](docs/en/latest/plugins/jwt-auth.md), [basic-auth](docs/en/latest/plugins/basic-auth.md), [wolf-rbac](docs/en/latest/plugins/wolf-rbac.md), [casbin](docs/en/latest/plugins/authz-casbin.md), [keycloak](docs/en/latest/plugins/authz-keycloak.md)
+  - Rich authentication & authorization support:
+    * [key-auth](docs/en/latest/plugins/key-auth.md)
+    * [JWT](docs/en/latest/plugins/jwt-auth.md)
+    * [basic-auth](docs/en/latest/plugins/basic-auth.md)
+    * [wolf-rbac](docs/en/latest/plugins/wolf-rbac.md)
+    * [casbin](docs/en/latest/plugins/authz-casbin.md)
+    * [keycloak](docs/en/latest/plugins/authz-keycloak.md)
+    * [casdoor](docs/en/latest/plugins/authz-casdoor.md)
   - [IP Whitelist/Blacklist](docs/en/latest/plugins/ip-restriction.md)
   - [Referer Whitelist/Blacklist](docs/en/latest/plugins/referer-restriction.md)
-  - [IdP](docs/en/latest/plugins/openid-connect.md): Support external authentication services, such as Auth0, okta, etc., users can use this to connect to OAuth 2.0 and other authentication methods.
+  - [IdP](docs/en/latest/plugins/openid-connect.md): Support external Identity platforms, such as Auth0, okta, etc..
   - [Limit-req](docs/en/latest/plugins/limit-req.md)
   - [Limit-count](docs/en/latest/plugins/limit-count.md)
   - [Limit-concurrency](docs/en/latest/plugins/limit-conn.md)
@@ -122,7 +129,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
   - Zipkin tracing: [Zipkin](docs/en/latest/plugins/zipkin.md)
   - Open source APM: support [Apache SkyWalking](docs/en/latest/plugins/skywalking.md)
-  - Works with external service discovery: In addition to the built-in etcd, it also supports [Consul](docs/en/latest/discovery/consul_kv.md) and [Nacos](docs/en/latest/discovery/nacos.md), and [Eureka](docs/en/latest/discovery.md)
+  - Works with external service discovery: In addition to the built-in etcd, it also supports [Consul](docs/en/latest/discovery/consul_kv.md), [Nacos](docs/en/latest/discovery/nacos.md), [Eureka](docs/en/latest/discovery/eureka.md) and [Zookeeper (CP)](docs/en/latest/discovery/zookeeper.md).
   - Monitoring And Metrics: [Prometheus](docs/en/latest/plugins/prometheus.md)
   - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://etcd.io/docs/v3.5/op-guide/clustering/).
   - High availability: Support to configure multiple etcd addresses in the same cluster.
@@ -161,10 +168,6 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 ## Get Started
 
 1. Installation
-
-   APISIX Installed and tested in the following systems:
-
-   CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
 
    Please refer to [install documentation](docs/en/latest/how-to-build.md).
 
