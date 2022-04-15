@@ -217,6 +217,8 @@ GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtl
 {"message":"JWT token invalid"}
 --- error_log
 JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+--- no_error_log
+[error]
 
 
 
@@ -225,9 +227,11 @@ JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
 GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
 --- error_code: 401
 --- response_body
-{"message":"JWT token verify failed"}
+{"message":"failed to verify jwt"}
 --- error_log
-JWT token verify failed: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT
+failed to verify jwt: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT
+--- no_error_log
+[error]
 
 
 
@@ -281,6 +285,8 @@ Authorization: bearer invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c
 {"message":"JWT token invalid"}
 --- error_log
 JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+--- no_error_log
+[error]
 
 
 
@@ -434,6 +440,8 @@ GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtl
 {"message":"JWT token invalid"}
 --- error_log
 JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+--- no_error_log
+[error]
 
 
 
@@ -444,9 +452,11 @@ GET /hello
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- error_code: 401
 --- response_body
-{"message":"JWT token verify failed"}
+{"message":"failed to verify jwt"}
 --- error_log
-JWT token verify failed: signature mismatch: fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
+failed to verify jwt: signature mismatch: fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
+--- no_error_log
+[error]
 
 
 
