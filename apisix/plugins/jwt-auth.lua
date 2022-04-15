@@ -386,7 +386,7 @@ function _M.rewrite(conf, ctx)
 
     local auth_secret, err = algorithm_handler(consumer)
     if not auth_secret then
-        core.log.warn("failed to retrieve secrets, err: ", err)
+        core.log.error("failed to retrieve secrets, err: ", err)
         return 503, {message = "failed to verify jwt"}
     end
     jwt_obj = jwt:verify_jwt_obj(auth_secret, jwt_obj)
