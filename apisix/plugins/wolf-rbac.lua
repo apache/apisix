@@ -23,7 +23,6 @@ local ngx_re = require("ngx.re")
 local http     = require("resty.http")
 local ipairs   = ipairs
 local ngx      = ngx
-local tostring = tostring
 local rawget   = rawget
 local rawset   = rawset
 local setmetatable = setmetatable
