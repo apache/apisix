@@ -322,7 +322,7 @@ GET /hello
 --- more_headers
 x-rbac-token: invalid-rbac-token
 --- response_body
-{"message":"invalid rbac token: parse failed"}
+{"message":"Invalid rbac token: parse failed"}
 --- no_error_log
 [error]
 
@@ -346,7 +346,13 @@ GET /hello1
 --- more_headers
 x-rbac-token: V1#wolf-rbac-app#wolf-rbac-token
 --- response_body
-{"message":"no permission to access"}
+{"message":"Invalid user authorization"}
+--- grep_error_log eval
+qr/no permission to access */
+--- grep_error_log_out
+no permission to access
+no permission to access
+no permission to access
 
 
 
@@ -465,9 +471,12 @@ PUT /apisix/plugin/wolf-rbac/change_pwd
 Content-Type: application/json
 Cookie: x-rbac-token=V1#wolf-rbac-app#wolf-rbac-token
 --- error_code: 200
---- response_body_like eval
+--- response_body
+{"message":"request to wolf-server failed!"}
+--- grep_error_log eval
 qr/ERR_OLD_PASSWORD_INCORRECT/
-
+--- grep_error_log_out eval
+qr/ERR_OLD_PASSWORD_INCORRECT/
 
 
 === TEST 25: change password
