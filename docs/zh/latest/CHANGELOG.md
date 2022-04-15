@@ -58,7 +58,7 @@ title: CHANGELOG
 
 ## 2.13.1
 
-**这是一个 LTS 维护版本，您可以在 `release/2.12` 分支中看到 CHANGELOG。**
+**这是一个 LTS 维护版本，您可以在 `release/2.13` 分支中看到 CHANGELOG。**
 
 ## 2.13.0
 
