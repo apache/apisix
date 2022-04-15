@@ -20,6 +20,19 @@ repeat_each(2);
 no_long_string();
 no_root_location();
 no_shuffle();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+});
+
 run_tests;
 
 __DATA__
@@ -40,12 +53,8 @@ __DATA__
             ngx.say(require("toolkit.json").encode(conf))
         }
     }
---- request
-GET /t
 --- response_body_like eval
 qr/{"algorithm":"HS256","base64_secret":false,"exp":86400,"key":"123","secret":"[a-zA-Z0-9+\\\/]+={0,2}"}/
---- no_error_log
-[error]
 
 
 
@@ -63,13 +72,9 @@ qr/{"algorithm":"HS256","base64_secret":false,"exp":86400,"key":"123","secret":"
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 property "key" validation failed: wrong type: expected string, got number
 done
---- no_error_log
-[error]
 
 
 
@@ -105,16 +110,14 @@ done
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -145,12 +148,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -177,12 +176,8 @@ passed
             ngx.print(res)
         }
     }
---- request
-GET /t
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -199,8 +194,6 @@ GET /hello
 --- error_code: 401
 --- response_body
 {"message":"Missing JWT token in request"}
---- no_error_log
-[error]
 
 
 
@@ -209,9 +202,9 @@ GET /hello
 GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
 --- error_code: 401
 --- response_body
-{"message":"invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"}
---- no_error_log
-[error]
+{"message":"JWT token invalid"}
+--- error_log
+JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
 
 
 
@@ -220,9 +213,9 @@ GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtl
 GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
 --- error_code: 401
 --- response_body
-{"message":"'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT"}
---- no_error_log
-[error]
+{"message":"JWT token verify failed"}
+--- error_log
+JWT token verify failed: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT
 
 
 
@@ -233,8 +226,6 @@ GET /hello
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -245,8 +236,6 @@ GET /hello
 Cookie: jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -257,8 +246,6 @@ GET /hello
 Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -269,8 +256,6 @@ GET /hello
 Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -281,9 +266,9 @@ GET /hello
 Authorization: bearer invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- error_code: 401
 --- response_body
-{"message":"invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"}
---- no_error_log
-[error]
+{"message":"JWT token invalid"}
+--- error_log
+JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
 
 
 
@@ -332,15 +317,11 @@ Authorization: bearer invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c
             ngx.say("code: ", code < 300, " body: ", body)
         }
     }
---- request
-GET /t
 --- response_body
 code: true body: passed
 code: true body: passed
 code: true body: passed
 code: true body: passed
---- no_error_log
-[error]
 
 
 
@@ -377,16 +358,15 @@ code: true body: passed
                     "action": "set"
                 }]]
                 )
-            ngx.status = code
+
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -416,12 +396,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -448,12 +424,8 @@ passed
             ngx.print(res)
         }
     }
---- request
-GET /t
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -462,9 +434,9 @@ hello world
 GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
 --- error_code: 401
 --- response_body
-{"message":"invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"}
---- no_error_log
-[error]
+{"message":"JWT token invalid"}
+--- error_log
+JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
 
 
 
@@ -475,9 +447,9 @@ GET /hello
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- error_code: 401
 --- response_body
-{"message":"signature mismatch: fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs"}
---- no_error_log
-[error]
+{"message":"JWT token verify failed"}
+--- error_log
+JWT token verify failed: signature mismatch: fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 
 
 
@@ -488,8 +460,6 @@ GET /hello
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0._kNmXeH1uYVAvApFTONk2Z3Gh-a4XfGrjmqd_ahoOI0
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -508,12 +478,8 @@ hello world
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 property "key" is required
---- no_error_log
-[error]
 
 
 
@@ -532,10 +498,6 @@ property "key" is required
             ngx.status = code
         }
     }
---- request
-GET /t
---- no_error_log
-[error]
 
 
 
@@ -554,10 +516,6 @@ GET /t
             ngx.status = code
         }
     }
---- request
-GET /t
---- no_error_log
-[error]
 
 
 
@@ -576,10 +534,6 @@ GET /t
             ngx.status = code
         }
     }
---- request
-GET /t
---- no_error_log
-[error]
 
 
 
@@ -618,16 +572,15 @@ GET /t
                     "action": "set"
                 }]]
                 )
-            ngx.status = code
+
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -658,12 +611,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -690,12 +639,8 @@ passed
             ngx.print(res)
         }
     }
---- request
-GET /t
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -741,12 +686,8 @@ hello world
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -777,12 +718,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -809,12 +746,8 @@ passed
             ngx.print(res)
         }
     }
---- request
-GET /t
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -841,12 +774,8 @@ hello world
             ngx.print(res)
         }
     }
---- request
-GET /t
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -892,12 +821,8 @@ hello world
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -928,12 +853,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -960,12 +881,8 @@ passed
             ngx.print(res)
         }
     }
---- request
-GET /t
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -992,12 +909,8 @@ hello world
             ngx.print(res)
         }
     }
---- request
-GET /t
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -1040,12 +953,8 @@ hello world
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1076,12 +985,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1110,12 +1015,8 @@ qr/failed to sign jwt/
             ngx.say(require("toolkit.json").encode(conf))
         }
     }
---- request
-GET /t
 --- response_body_like eval
 qr/{"algorithm":"HS512","base64_secret":false,"exp":86400,"key":"123","secret":"[a-zA-Z0-9+\\\/]+={0,2}"}/
---- no_error_log
-[error]
 
 
 
@@ -1157,12 +1058,8 @@ qr/{"algorithm":"HS512","base64_secret":false,"exp":86400,"key":"123","secret":"
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1193,12 +1090,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1225,12 +1118,8 @@ passed
             ngx.print(res)
         }
     }
---- request
-GET /t
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -1257,18 +1146,12 @@ hello world
             ngx.print(res)
         }
     }
---- request
-GET /t
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
 === TEST 45: test for unsupported algorithm
---- request
-PATCH /apisix/plugin/jwt/sign?key=user-key
 --- config
     location /t {
         content_by_lua_block {
@@ -1284,8 +1167,6 @@ PATCH /apisix/plugin/jwt/sign?key=user-key
             ngx.say(require("toolkit.json").encode(conf))
         }
     }
---- request
-GET /t
 --- response_body_like eval
 qr/property "algorithm" validation failed/
 
@@ -1311,10 +1192,6 @@ qr/property "algorithm" validation failed/
     }
 --- response_body
 base64_secret required but the secret is not in base64 format
---- no_error_log
-[error]
---- request
-GET /t
 
 
 
@@ -1354,12 +1231,8 @@ GET /t
             ngx.say(require("toolkit.json").encode(res_data))
         }
     }
---- request
-GET /t
 --- response_body_like eval
 qr/"exp":86400/
---- no_error_log
-[error]
 
 
 
@@ -1379,12 +1252,8 @@ qr/"exp":86400/
             ngx.say(use_default_exp)
         }
     }
---- request
-GET /t
 --- response_body
 true
---- no_error_log
-[error]
 
 
 
@@ -1409,13 +1278,9 @@ true
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/failed to validate dependent schema for \\"algorithm\\"/
---- no_error_log
-[error]
 
 
 
@@ -1441,10 +1306,6 @@ qr/failed to validate dependent schema for \\"algorithm\\"/
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/failed to validate dependent schema for \\"algorithm\\"/
---- no_error_log
-[error]
