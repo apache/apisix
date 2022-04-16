@@ -1,7 +1,12 @@
 ---
 title: authz-casbin
+keywords:
+  - APISIX
+  - Plugin
+  - Authz Casbin
+  - authz-casbin
+description: This document contains information about the Apache APISIX authz-casbin Plugin.
 ---
-
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more

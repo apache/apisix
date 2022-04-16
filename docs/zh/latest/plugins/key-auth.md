@@ -1,5 +1,11 @@
 ---
 title: key-auth
+keywords:
+  - APISIX
+  - Plugin
+  - Key Auth
+  - key-auth
+description: This document contains information about the Apache APISIX key-auth Plugin.
 ---
 
 <!--

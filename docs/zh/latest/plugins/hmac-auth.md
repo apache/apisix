@@ -1,5 +1,11 @@
 ---
 title: hmac-auth
+keywords:
+  - APISIX
+  - Plugin
+  - HMAC Authentication
+  - hmac-auth
+description: This document contains information about the Apache APISIX hmac-auth Plugin.
 ---
 
 <!--

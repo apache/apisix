@@ -1,5 +1,11 @@
 ---
 title: openid-connect
+keywords:
+  - APISIX
+  - Plugin
+  - OpenID Connect
+  - openid-connect
+description: This document contains information about the Apache APISIX openid-connect Plugin.
 ---
 
 <!--

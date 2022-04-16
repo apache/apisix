@@ -1,5 +1,11 @@
 ---
 title: wolf-rbac
+keywords:
+  - APISIX
+  - Plugin
+  - wolf RBAC
+  - wolf-rbac
+description: This document contains information about the Apache APISIX wolf-rbac Plugin.
 ---
 
 <!--

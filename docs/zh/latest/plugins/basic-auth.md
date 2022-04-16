@@ -1,6 +1,13 @@
 ---
 title: basic-auth
+keywords:
+  - APISIX
+  - Plugin
+  - Basic Auth
+  - basic-auth
+description: This document contains information about the Apache APISIX basic-auth Plugin.
 ---
+
 
 <!--
 #

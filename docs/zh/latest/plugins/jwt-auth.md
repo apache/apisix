@@ -1,5 +1,11 @@
 ---
 title: jwt-auth
+keywords:
+  - APISIX
+  - Plugin
+  - JWT Auth
+  - jwt-auth
+description: This document contains information about the Apache APISIX jwt-auth Plugin.
 ---
 
 <!--
