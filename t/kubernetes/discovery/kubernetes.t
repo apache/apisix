@@ -14,74 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-BEGIN {
-    my $token_var_file = "/var/run/secrets/kubernetes.io/serviceaccount/token";
-    my $token_from_var = eval {`cat $token_var_file 2>/dev/null`};
-    if ($token_from_var) {
-
-        our $yaml_config = <<_EOC_;
-apisix:
-  node_listen: 1984
-  config_center: yaml
-  enable_admin: false
-discovery:
-  kubernetes: {}
-_EOC_
-        our $token_file = $token_var_file;
-        our $token_value = $token_from_var;
-
-    }
-
-    my $token_tmp_file = "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token";
-    my $token_from_tmp = eval {`cat $token_tmp_file 2>/dev/null`};
-    if ($token_from_tmp) {
-
-        our $yaml_config = <<_EOC_;
-apisix:
-  node_listen: 1984
-  config_center: yaml
-  enable_admin: false
-discovery:
-  kubernetes:
-    client:
-      token_file: /tmp/var/run/secrets/kubernetes.io/serviceaccount/token
-_EOC_
-        our $token_file = $token_tmp_file;
-        our $token_value = $token_from_tmp;
-    }
-
-    our $scale_ns_c = <<_EOC_;
-[
-  {
-    "op": "replace_subsets",
-    "name": "ep",
-    "namespace": "ns-c",
-    "subsets": [
-      {
-        "addresses": [
-          {
-            "ip": "10.0.0.1"
-          }
-        ],
-        "ports": [
-          {
-            "name": "p1",
-            "port": 5001
-          }
-        ]
-      }
-    ]
-  }
-]
-_EOC_
-
-}
-
 use t::APISIX 'no_plan';
 
 repeat_each(1);
-log_level('debug');
+log_level('info');
 no_root_location();
 no_shuffle();
 workers(4);
@@ -89,21 +25,29 @@ workers(4);
 add_block_preprocessor(sub {
     my ($block) = @_;
 
+    my $yaml_config = $block->yaml_config // <<_EOC_;
+apisix:
+  node_listen: 1984
+  config_center: yaml
+  enable_admin: false
+apisix:
+  node_listen: 1984
+  config_center: yaml
+  enable_admin: false
+discovery:
+  kubernetes:
+    client:
+      token_file: \${KUBERNETES_CLIENT_TOKEN_FILE}
+_EOC_
+
+    $block->set_value("yaml_config", $yaml_config);
+
     my $apisix_yaml = $block->apisix_yaml // <<_EOC_;
 routes: []
 #END
 _EOC_
 
     $block->set_value("apisix_yaml", $apisix_yaml);
-
-    my $main_config = $block->main_config // <<_EOC_;
-env KUBERNETES_SERVICE_HOST=127.0.0.1;
-env KUBERNETES_SERVICE_PORT=6443;
-env KUBERNETES_CLIENT_TOKEN=$::token_value;
-env KUBERNETES_CLIENT_TOKEN_FILE=$::token_file;
-_EOC_
-
-    $block->set_value("main_config", $main_config);
 
     my $config = $block->config // <<_EOC_;
         location /queries {
@@ -199,7 +143,36 @@ _EOC_
 _EOC_
 
     $block->set_value("config", $config);
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
 });
+
+our $scale_ns_c = <<_EOC_;
+[
+  {
+    "op": "replace_subsets",
+    "name": "ep",
+    "namespace": "ns-c",
+    "subsets": [
+      {
+        "addresses": [
+          {
+            "ip": "10.0.0.1"
+          }
+        ],
+        "ports": [
+          {
+            "name": "p1",
+            "port": 5001
+          }
+        ]
+      }
+    ]
+  }
+]
+_EOC_
 
 run_tests();
 
@@ -337,8 +310,6 @@ POST /operators
 --- more_headers
 Content-type: application/json
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
@@ -351,8 +322,6 @@ GET /queries
 Content-type: application/json
 --- response_body eval
 qr{ 2 2 2 2 2 2 }
---- no_error_log
-[error]
 
 
 
@@ -376,8 +345,6 @@ GET /queries
 Content-type: application/json
 --- response_body eval
 qr{ 2 2 2 2 2 2 }
---- no_error_log
-[error]
 
 
 
@@ -401,8 +368,6 @@ GET /queries
 Content-type: application/json
 --- response_body eval
 qr{ 2 2 2 2 2 2 }
---- no_error_log
-[error]
 
 
 
@@ -423,8 +388,6 @@ GET /queries
 Content-type: application/json
 --- response_body eval
 qr{ 2 2 2 2 2 2 }
---- no_error_log
-[error]
 
 
 
@@ -449,8 +412,6 @@ GET /queries
 Content-type: application/json
 --- response_body eval
 qr{ 2 2 2 2 2 2 }
---- no_error_log
-[error]
 
 
 
@@ -473,8 +434,6 @@ GET /queries
 Content-type: application/json
 --- response_body eval
 qr{ 2 2 0 0 0 0 }
---- no_error_log
-[error]
 
 
 
@@ -497,8 +456,6 @@ GET /queries
 Content-type: application/json
 --- response_body eval
 qr{ 0 0 2 2 2 2 }
---- no_error_log
-[error]
 
 
 
@@ -521,8 +478,6 @@ GET /queries
 Content-type: application/json
 --- response_body eval
 qr{ 2 2 2 2 0 0 }
---- no_error_log
-[error]
 
 
 
@@ -545,8 +500,6 @@ GET /queries
 Content-type: application/json
 --- response_body eval
 qr{ 2 2 2 2 0 0 }
---- no_error_log
-[error]
 
 
 
@@ -569,8 +522,6 @@ GET /queries
 Content-type: application/json
 --- response_body eval
 qr{ 0 0 2 2 2 2 }
---- no_error_log
-[error]
 
 
 
@@ -593,8 +544,6 @@ GET /queries
 Content-type: application/json
 --- response_body eval
 qr{ 0 0 0 0 2 2 }
---- no_error_log
-[error]
 
 
 
@@ -673,8 +622,6 @@ discovery:
     "DONE\n",
     "{ 0 2 2 }\n",
 ]
---- no_error_log
-[error]
 
 
 
@@ -710,5 +657,3 @@ $::scale_ns_c",
     "DONE\n",
     "{ 0 0 1 }\n",
 ]
---- no_error_log
-[error]

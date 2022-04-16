@@ -644,6 +644,56 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
+    -- inject kubernetes discovery environment variable
+    if enabled_discoveries["kubernetes"] then
+
+        local keys = {}
+        local envs = {}
+
+        local kubernetes_conf = yaml_conf.discovery["kubernetes"]
+
+        if kubernetes_conf.service then
+            if kubernetes_conf.service.host then
+                table_insert(keys, kubernetes_conf.service.host)
+            else
+                envs["KUBERNETES_SERVICE_HOST"] = ""
+            end
+
+            if kubernetes_conf.service.port then
+                table_insert(keys, kubernetes_conf.service.port)
+            else
+                envs["KUBERNETES_SERVICE_PORT"] = ""
+            end
+        else
+            envs["KUBERNETES_SERVICE_HOST"] = ""
+            envs["KUBERNETES_SERVICE_PORT"] = ""
+        end
+
+        if kubernetes_conf.client then
+            if kubernetes_conf.client.token then
+                table_insert(keys, kubernetes_conf.client.token)
+            end
+
+            if kubernetes_conf.client.token_file then
+                table_insert(keys, kubernetes_conf.client.token_file)
+            end
+        end
+
+        for key in pairs(keys) do
+            if #key > 3 then
+                local a, b = str_byte(key, 1, 2)
+                local c = str_byte(key, #key, #key)
+                if a == str_byte['$'] and b == str_byte['{'] and c == str_byte['}'] then
+                    envs[key] = ""
+                end
+            end
+        end
+
+        for item in pairs(envs) do
+            table_insert(sys_conf["envs"], item)
+        end
+    end
+
     -- fix up lua path
     sys_conf["extra_lua_path"] = get_lua_path(yaml_conf.apisix.extra_lua_path)
     sys_conf["extra_lua_cpath"] = get_lua_path(yaml_conf.apisix.extra_lua_cpath)
