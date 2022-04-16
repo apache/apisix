@@ -125,7 +125,10 @@ function _M.header_filter(conf, ctx)
         core.response.set_header("Access-Control-Allow-Methods", DEFAULT_CORS_ALLOW_METHODS)
         core.response.set_header("Access-Control-Allow-Headers", DEFAULT_CORS_ALLOW_HEADERS)
     end
-    core.response.set_header("Access-Control-Allow-Origin", DEFAULT_CORS_ALLOW_ORIGIN)
+
+    if not ctx.cors_allow_origins then
+        core.response.set_header("Access-Control-Allow-Origin", DEFAULT_CORS_ALLOW_ORIGIN)
+    end
     core.response.set_header("Content-Type", ctx.grpc_web_mime)
 end
 

@@ -176,3 +176,58 @@ Access-Control-Allow-Origin: *
 Content-Type: application/grpc-web
 --- error_log
 routing configuration error, grpc-web plugin only supports `prefix matching` pattern routing
+
+
+
+=== TEST 9: set route (with cors plugin)
+--- config
+    location /t {
+        content_by_lua_block {
+            local config = {
+                uri = "/grpc/web/*",
+                upstream = {
+                    scheme = "grpc",
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:50001"] = 1
+                    }
+                },
+                plugins = {
+                    ["grpc-web"] = {},
+                    cors = {
+                        allow_origins = "http://test.com",
+                        allow_methods = "POST,OPTIONS",
+                        allow_headers = "application/grpc-web",
+                        expose_headers = "application/grpc-web",
+                        max_age = 5,
+                        allow_credential = true
+                    }
+                }
+            }
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: don't override Access-Control-Allow-Origin header in response
+--- request
+POST /grpc/web/a6.RouteService/GetRoute
+{}
+--- more_headers
+Origin: http://test.com
+Content-Type: application/grpc-web
+--- response_headers
+Access-Control-Allow-Origin: http://test.com
+Content-Type: application/grpc-web

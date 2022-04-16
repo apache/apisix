@@ -960,6 +960,8 @@ Route used in the [Stream Proxy](./stream-proxy.md).
 | server_addr | False    | IP/CIDR  | Filters Upstream forwards by matching with APISIX Server IP.        | "127.0.0.1/32" or "127.0.0.1" |
 | server_port | False    | Integer  | Filters Upstream forwards by matching with APISIX Server port.      | 9090                          |
 | sni         | False    | Host     | Server Name Indication.                                             | "test.com"                    |
+| protocol.name | False    | String | Name of the protocol proxyed by xRPC framework.                     | "redis"                    |
+| protocol.conf | False    | Configuration | Protocol-specific configuration.                             |                    |
 
 To learn more about filtering in stream proxies, check [this](./stream-proxy.md#more-route-match-options) document.
 

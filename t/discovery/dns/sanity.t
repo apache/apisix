@@ -276,3 +276,36 @@ upstreams:
 proxy request to 127.0.0.1:1980
 --- response_body
 hello world
+
+
+
+=== TEST 14: SRV (port is 0)
+--- apisix_yaml
+upstreams:
+    - service_name: "zero.srv.test.local"
+      discovery_type: dns
+      type: roundrobin
+      id: 1
+--- error_log
+connect() failed
+--- error_code: 502
+--- grep_error_log eval
+qr/proxy request to \S+/
+--- grep_error_log_out
+proxy request to 127.0.0.1:80
+
+
+
+=== TEST 15: SRV (override port)
+--- apisix_yaml
+upstreams:
+    - service_name: "port.srv.test.local:1980"
+      discovery_type: dns
+      type: roundrobin
+      id: 1
+--- grep_error_log eval
+qr/upstream nodes: \{[^}]+\}/
+--- grep_error_log_out eval
+qr/upstream nodes: \{("127.0.0.1:1980":60,"127.0.0.2:1980":20|"127.0.0.2:1980":20,"127.0.0.1:1980":60)\}/
+--- response_body
+hello world

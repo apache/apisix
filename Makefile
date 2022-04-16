@@ -39,7 +39,7 @@ ENV_RM                 ?= rm -vf
 ENV_DOCKER             ?= docker
 ENV_DOCKER_COMPOSE     ?= docker-compose --project-directory $(CURDIR) -p $(project_name) -f $(project_compose_ci)
 ENV_NGINX              ?= $(ENV_NGINX_EXEC) -p $(CURDIR) -c $(CURDIR)/conf/nginx.conf
-ENV_NGINX_EXEC         := $(shell which openresty 2>/dev/null || which nginx 2>/dev/null)
+ENV_NGINX_EXEC         := $(shell command -v openresty 2>/dev/null || command -v nginx 2>/dev/null)
 ENV_OPENSSL_PREFIX     ?= $(addprefix $(ENV_NGINX_PREFIX), openssl)
 ENV_LUAROCKS           ?= luarocks
 ## These variables can be injected by luarocks
@@ -340,11 +340,17 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/ssl/router
 	$(ENV_INSTALL) apisix/ssl/router/*.lua $(ENV_INST_LUADIR)/apisix/ssl/router/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/stream
+	$(ENV_INSTALL) apisix/stream/*.lua $(ENV_INST_LUADIR)/apisix/stream/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/stream/plugins
 	$(ENV_INSTALL) apisix/stream/plugins/*.lua $(ENV_INST_LUADIR)/apisix/stream/plugins/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/stream/router
 	$(ENV_INSTALL) apisix/stream/router/*.lua $(ENV_INST_LUADIR)/apisix/stream/router/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/stream/xrpc
+	$(ENV_INSTALL) apisix/stream/xrpc/*.lua $(ENV_INST_LUADIR)/apisix/stream/xrpc/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/utils
 	$(ENV_INSTALL) apisix/utils/*.lua $(ENV_INST_LUADIR)/apisix/utils/
