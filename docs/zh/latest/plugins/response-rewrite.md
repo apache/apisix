@@ -1,7 +1,12 @@
 ---
 title: response-rewrite
+keywords:
+  - APISIX
+  - Plugin
+  - Response Rewrite
+  - response-rewrite
+description: This document contains information about the Apache APISIX response-rewrite Plugin.
 ---
-
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more

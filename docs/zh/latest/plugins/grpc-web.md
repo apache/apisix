@@ -1,5 +1,11 @@
 ---
 title: grpc-web
+keywords:
+  - APISIX
+  - Plugin
+  - gRPC Web
+  - grpc-web
+description: This document contains information about the Apache APISIX grpc-web Plugin.
 ---
 
 <!--

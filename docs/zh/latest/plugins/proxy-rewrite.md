@@ -1,5 +1,11 @@
 ---
 title: proxy-rewrite
+keywords:
+  - APISIX
+  - Plugin
+  - Proxy Rewrite
+  - proxy-rewrite
+description: This document contains information about the Apache APISIX proxy-rewrite Plugin.
 ---
 
 <!--

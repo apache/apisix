@@ -1,5 +1,11 @@
 ---
 title: mocking
+keywords:
+  - APISIX
+  - Plugin
+  - Mocking
+  - mocking
+  description: This document contains information about the Apache APISIX mocking Plugin.
 ---
 
 <!--
