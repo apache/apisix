@@ -201,16 +201,17 @@ end
 
 local function read_env(key)
     if #key > 3 then
-        local a, b = string.byte(key, 1, 2)
-        local c = string.byte(key, #key, #key)
-        -- '$', '{', '}' == 36,123,125
-        if a == 36 and b == 123 and c == 125 then
-            local env = string.sub(key, 3, #key - 1)
-            local value = os.getenv(env)
-            if not value then
-                return nil, "not found environment variable " .. env
+        local first, second = string.byte(key, 1, 2)
+        if first == string.byte('$') and second == string.byte('{') then
+            local last = string.byte(key, #key)
+            if last == string.byte('}') then
+                local env = string.sub(key, 3, #key - 1)
+                local value = os.getenv(env)
+                if not value then
+                    return nil, "not found environment variable " .. env
+                end
+                return value, nil
             end
-            return value, nil
         end
     end
 
