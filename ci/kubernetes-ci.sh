@@ -21,6 +21,12 @@
 run_case() {
     export_or_prefix
     export PERL5LIB=.:$PERL5LIB
+
+    export KUBERNETES_SERVICE_HOST=127.0.0.1
+    export KUBERNETES_SERVICE_PORT=6443
+    export KUBERNETES_CLIENT_TOKEN_FILE="/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+    export KUBERNETES_CLIENT_TOKEN=$(cat $KUBERNETES_CLIENT_TOKEN_FILE)
+
     prove -Itest-nginx/lib -I./ -r t/kubernetes | tee test-result
     rerun_flaky_tests test-result
 }
