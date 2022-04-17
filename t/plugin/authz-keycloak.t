@@ -626,7 +626,7 @@ true
 
 
 
-=== TEST 19: no username of password
+=== TEST 19: no username or password
 --- config
     location /t {
         content_by_lua_block {
