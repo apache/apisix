@@ -31,8 +31,6 @@ return function(ctx, proto, service, method, pb_option)
     -- the buffer is an empty string
     if buffer == "" and ctx.resp_body then
         buffer = ctx.resp_body
-    else
-        return nil
     end
 
     local m = util.find_method(proto, service, method)

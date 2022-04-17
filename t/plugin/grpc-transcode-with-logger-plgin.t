@@ -159,7 +159,27 @@ qr/request log: \{.*body":\"\\u0000\\u0000\\u0000\\u0000\\u0002\\b\\u0003\\u0000
 
 
 
-=== TEST 4: work with logger plugin which on route and read response body (logger plugins store decoded body)
+=== TEST 4: delete global rules
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/global_rules/1',
+                ngx.HTTP_DELETE,
+                nil,
+                [[{
+                    "action": "delete"
+                }]]
+                )
+            ngx.say("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- response_body
+[delete] code: 200 message: passed
+
+
+
+=== TEST 5: work with logger plugin which on route and read response body (logger plugins store decoded body)
 --- config
     location /t {
         content_by_lua_block {
@@ -203,7 +223,7 @@ passed
 
 
 
-=== TEST 5: hit route
+=== TEST 6: hit route
 --- request
 GET /grpc_plus?a=1&b=2
 --- response_body eval
