@@ -667,9 +667,11 @@ Please modify "admin_key" in conf/config.yaml .
         for _, key in ipairs(keys) do
             if #key > 3 then
                 local first, second = str_byte(key, 1, 2)
-                local last = str_byte(key, #key)
-                if first == str_byte('$') and second == str_byte('{') and last == str_byte('}') then
-                    envs[str_sub(key, 3, #key - 1)] = ""
+                if first == str_byte('$') and second == str_byte('{') then
+                    local last = str_byte(key, #key)
+                    if last == str_byte('}') then
+                        envs[str_sub(key, 3, #key - 1)] = ""
+                    end
                 end
             end
         end

@@ -19,8 +19,6 @@
 
 . ./t/cli/common.sh
 
-exit_if_not_customed_nginx
-
 echo '
 discovery:
     kubernetes:
