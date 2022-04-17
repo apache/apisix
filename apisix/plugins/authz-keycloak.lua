@@ -721,12 +721,12 @@ local function generate_token_using_password_grant(conf,ctx)
 
     if not username then
         local err = "username is missing."
-        log.error(err)
+        log.warn(err)
         return 422, {message = err}
     end
     if not password then
         local err = "password is missing."
-        log.error(err)
+        log.warn(err)
         return 422, {message = err}
     end
 
