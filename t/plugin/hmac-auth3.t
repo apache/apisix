@@ -154,8 +154,12 @@ passed
         }
     }
 --- error_code: 401
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid digest
 --- response_body eval
-qr/\{"message":"Invalid digest"\}/
+qr/\{"message":"client request can't be validated"\}/
 
 
 
@@ -215,8 +219,12 @@ qr/\{"message":"Invalid digest"\}/
         }
     }
 --- error_code: 401
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid digest
 --- response_body eval
-qr/\{"message":"Invalid digest"\}/
+qr/\{"message":"client request can't be validated"\}/
 
 
 
@@ -367,8 +375,12 @@ passed
         }
     }
 --- error_code: 401
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Exceed body limit size
 --- response_body eval
-qr/\{"message":"Exceed body limit size"}/
+qr/\{"message":"client request can't be validated"}/
 
 
 
@@ -433,8 +445,12 @@ plugin_attr:
         }
     }
 --- error_code: 401
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid digest
 --- response_body eval
-qr/\{"message":"Invalid digest"\}/
+qr/\{"message":"client request can't be validated"\}/
 
 
 
