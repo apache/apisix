@@ -157,7 +157,11 @@ GET /hello
 Authorization: Bad_header YmFyOmJhcgo=
 --- error_code: 401
 --- response_body
-{"message":"Invalid authorization header format"}
+{"message":"Invalid authorization in request"}
+--- grep_error_log eval
+qr/Invalid authorization header format/
+--- grep_error_log_out
+Invalid authorization header format
 --- no_error_log
 [error]
 
@@ -170,7 +174,11 @@ GET /hello
 Authorization: Basic aca_a
 --- error_code: 401
 --- response_body
-{"message":"Failed to decode authentication header: aca_a"}
+{"message":"Invalid authorization in request"}
+--- grep_error_log eval
+qr/Failed to decode authentication header: aca_a/
+--- grep_error_log_out
+Failed to decode authentication header: aca_a
 --- no_error_log
 [error]
 
@@ -183,7 +191,11 @@ GET /hello
 Authorization: Basic YmFy
 --- error_code: 401
 --- response_body
-{"message":"Split authorization err: invalid decoded data: bar"}
+{"message":"Invalid authorization in request"}
+--- grep_error_log eval
+qr/Split authorization err: invalid decoded data: bar/
+--- grep_error_log_out
+Split authorization err: invalid decoded data: bar
 --- no_error_log
 [error]
 
