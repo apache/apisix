@@ -322,7 +322,7 @@ GET /hello
 --- more_headers
 x-rbac-token: invalid-rbac-token
 --- response_body
-{"message":"Invalid rbac token: parse failed"}
+{"message":"invalid rbac token: parse failed"}
 --- no_error_log
 [error]
 
@@ -346,7 +346,7 @@ GET /hello1
 --- more_headers
 x-rbac-token: V1#wolf-rbac-app#wolf-rbac-token
 --- response_body
-{"message":"Invalid user authorization"}
+{"message":"Invalid user permission"}
 --- grep_error_log eval
 qr/no permission to access */
 --- grep_error_log_out

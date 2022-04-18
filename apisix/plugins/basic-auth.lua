@@ -152,14 +152,13 @@ function _M.rewrite(conf, ctx)
     local username, password, err = extract_auth_header(auth_header)
     if err then
         core.log.warn(err)
-        return 401, { message = "Invalid user authorization" }
+        return 401, { message = "Invalid authorization in request" }
     end
 
     -- 2. get user info from consumer plugin
     local consumer_conf = consumer.plugin(plugin_name)
     if not consumer_conf then
-        core.log.warn("Missing related consumer")
-        return 401, { message = "Invalid user authorization" }
+        return 401, { message = "Missing related consumer" }
     end
 
     local consumers = consumers_lrucache("consumers_key",

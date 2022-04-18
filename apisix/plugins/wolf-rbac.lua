@@ -273,7 +273,7 @@ function _M.rewrite(conf, ctx)
     core.log.info("token info: ", core.json.delay_encode(tokenInfo),
                   ", err: ", err)
     if err then
-        return 401, fail_response('Invalid rbac token: parse failed')
+        return 401, fail_response('invalid rbac token: parse failed')
     end
 
     local appid = tokenInfo.appid
@@ -283,8 +283,7 @@ function _M.rewrite(conf, ctx)
 
     local consumer_conf = consumer.plugin(plugin_name)
     if not consumer_conf then
-        core.log.warn("Missing related consumer")
-        return 401, fail_response("Invalid user authorization")
+        return 401, fail_response("Missing related consumer")
     end
 
     local consumers = lrucache("consumers_key", consumer_conf.conf_version,
@@ -326,7 +325,7 @@ function _M.rewrite(conf, ctx)
         core.log.error(" check_url_permission(",
             core.json.delay_encode(perm_item),
             ") failed, res: ",core.json.delay_encode(res))
-        return 401, fail_response("Invalid user authorization",
+        return 401, fail_response("Invalid user permission",
             { username = username, nickname = nickname }
         )
     end
