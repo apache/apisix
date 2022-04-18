@@ -623,3 +623,76 @@ GET /t
 true
 --- no_error_log
 [error]
+
+
+
+=== TEST 19: no username or password
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "authz-keycloak": {
+                                "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "permissions": ["course_resource#view"],
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
+                                "timeout": 3000,
+                                "ssl_verify": false,
+                                "password_grant_token_generation_incoming_uri": "/api/token"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/api/token"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            local json_decode = require("toolkit.json").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/api/token"
+            local headers = {
+                ["Content-Type"] = "application/x-www-form-urlencoded",
+            }
+
+            -- no username
+            local res, err = httpc:request_uri(uri, {
+                method = "POST",
+                headers = headers,
+                body =  ngx.encode_args({
+                    password = "123456",
+                }),
+            })
+            ngx.print(res.body)
+
+            -- no password
+            local res, err = httpc:request_uri(uri, {
+                method = "POST",
+                headers = headers,
+                body =  ngx.encode_args({
+                    username = "teacher@gmail.com",
+                }),
+            })
+            ngx.print(res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+{"message":"username is missing."}
+{"message":"password is missing."}
+--- no_error_log
+[error]
