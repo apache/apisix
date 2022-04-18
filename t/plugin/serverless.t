@@ -590,3 +590,53 @@ GET /echo?args=%40%23%24%25%5E%26
 args=@#$%^&
 --- no_error_log
 [error]
+
+
+
+=== TEST 25: return status code should exit the request like other plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "serverless-post-function": {
+                        "functions" : ["return function(conf, ctx) return 403, 'forbidden' end",
+                                       "return function(conf, ctx) ngx.log(ngx.ERR, 'unreachable') end"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: check plugin
+--- request
+GET /hello
+--- error_code: 403
+--- response_body chomp
+forbidden
+--- no_error_log
+[error]
