@@ -644,6 +644,47 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
+    -- inject kubernetes discovery environment variable
+    if enabled_discoveries["kubernetes"] then
+
+        local kubernetes_conf = yaml_conf.discovery["kubernetes"]
+
+        local keys = {
+            kubernetes_conf.service.host,
+            kubernetes_conf.service.port,
+        }
+
+        if kubernetes_conf.client.token then
+            table_insert(keys, kubernetes_conf.client.token)
+        end
+
+        if kubernetes_conf.client.token_file then
+            table_insert(keys, kubernetes_conf.client.token_file)
+        end
+
+        local envs = {}
+
+        for _, key in ipairs(keys) do
+            if #key > 3 then
+                local first, second = str_byte(key, 1, 2)
+                if first == str_byte('$') and second == str_byte('{') then
+                    local last = str_byte(key, #key)
+                    if last == str_byte('}') then
+                        envs[str_sub(key, 3, #key - 1)] = ""
+                    end
+                end
+            end
+        end
+
+        if not sys_conf["envs"] then
+            sys_conf["envs"] = {}
+        end
+
+        for item in pairs(envs) do
+            table_insert(sys_conf["envs"], item)
+        end
+    end
+
     -- fix up lua path
     sys_conf["extra_lua_path"] = get_lua_path(yaml_conf.apisix.extra_lua_path)
     sys_conf["extra_lua_cpath"] = get_lua_path(yaml_conf.apisix.extra_lua_cpath)
