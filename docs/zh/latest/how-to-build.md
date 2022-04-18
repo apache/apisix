@@ -27,6 +27,8 @@ title: 如何构建 Apache APISIX
 
 ### 通过 RPM 仓库安装（CentOS）
 
+> 这种安装方式适用于 CentOS 7 和 CentOS 8 操作系统。
+
 如果尚未安装 OpenResty 的官方 RPM 仓库，请使用以下命令自动安装 OpenResty 和 Apache APISIX 的 RPM 仓库。
 
 ```shell

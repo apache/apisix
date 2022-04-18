@@ -29,6 +29,8 @@ Apache APISIX can be installed via the [RPM package](#installation-via-rpm-repos
 
 ### Installation via RPM Repository (CentOS)
 
+> This installation method is suitable for CentOS 7 and CentOS 8.
+
 If the official OpenResty repository is **not installed yet**, the following command will help you automatically install both OpenResty and Apache APISIX repositories.
 
 ```shell
