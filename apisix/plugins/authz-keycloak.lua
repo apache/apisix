@@ -572,8 +572,7 @@ local function evaluate_permissions(conf, ctx, token)
     -- Ensure discovered data.
     local err = authz_keycloak_ensure_discovered_data(conf)
     if err then
-        log.warn(err)
-        return 503
+        return 500, err
     end
 
     local permission
@@ -582,8 +581,7 @@ local function evaluate_permissions(conf, ctx, token)
         -- Ensure service account access token.
         local sa_access_token, err = authz_keycloak_ensure_sa_access_token(conf)
         if err then
-            log.warn(err)
-            return 503
+            return 500, err
         end
 
         -- Resolve URI to resource(s).
@@ -593,8 +591,7 @@ local function evaluate_permissions(conf, ctx, token)
         -- Check result.
         if permission == nil then
             -- No result back from resource registration endpoint.
-            log.warn(err)
-            return 503
+            return 500, err
         end
     else
         -- Use statically configured permissions.
@@ -724,13 +721,13 @@ local function generate_token_using_password_grant(conf,ctx)
 
     if not username then
         local err = "username is missing."
-        log.error(err)
-        return 422, err
+        log.warn(err)
+        return 422, {message = err}
     end
     if not password then
         local err = "password is missing."
-        log.error(err)
-        return 422, err
+        log.warn(err)
+        return 422, {message = err}
     end
 
     local client_id = authz_keycloak_get_client_id(conf)
@@ -740,7 +737,7 @@ local function generate_token_using_password_grant(conf,ctx)
     if not token_endpoint then
         local err = "Unable to determine token endpoint."
         log.error(err)
-        return 503
+        return 503, {message = err}
     end
     local httpc = authz_keycloak_get_http_client(conf)
 
@@ -766,7 +763,7 @@ local function generate_token_using_password_grant(conf,ctx)
         err = "Accessing token endpoint URL (" .. token_endpoint
               .. ") failed: " .. err
         log.error(err)
-        return 503
+        return 401, {message = "Accessing token endpoint URL failed."}
     end
 
     log.debug("Response data: " .. res.body)
@@ -776,7 +773,7 @@ local function generate_token_using_password_grant(conf,ctx)
         err = "Could not decode JSON from response"
               .. (err and (": " .. err) or '.')
         log.error(err)
-        return 401, {message = err}
+        return 401, {message = "Could not decode JSON from response."}
     end
 
     return res.status, res.body
