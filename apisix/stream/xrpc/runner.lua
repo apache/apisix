@@ -14,6 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local core = require("apisix.core")
+local ngx_now = ngx.now
 local OK = ngx.OK
 local DECLINED = ngx.DECLINED
 local DONE = ngx.DONE
@@ -24,7 +26,8 @@ local _M = {}
 
 local function open_session(conn_ctx)
     conn_ctx.xrpc_session = {
-        upstream_conf = conn_ctx.matched_upstream
+        upstream_conf = conn_ctx.matched_upstream,
+        id_seq = 0,
     }
     return conn_ctx.xrpc_session
 end
@@ -42,8 +45,19 @@ local function close_session(session, upstream_broken)
 end
 
 
+local function put_req_ctx(session, ctx)
+    local id = ctx.id
+    session.ctxs[id] = nil
+
+    core.tablepool.release("xrpc_ctxs", ctx)
+end
+
+
 local function finish_req(protocol, session, ctx)
+    ctx.rpc_end_time = ngx_now()
+
     protocol.log(session, ctx)
+    put_req_ctx(session, ctx)
 end
 
 
