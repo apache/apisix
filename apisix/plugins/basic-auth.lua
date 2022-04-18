@@ -151,7 +151,8 @@ function _M.rewrite(conf, ctx)
 
     local username, password, err = extract_auth_header(auth_header)
     if err then
-        return 401, { message = err }
+        core.log.warn(err)
+        return 401, { message = "Invalid authorization in request" }
     end
 
     -- 2. get user info from consumer plugin

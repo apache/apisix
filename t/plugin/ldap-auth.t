@@ -156,7 +156,11 @@ GET /hello
 Authorization: Bad_header Zm9vOmZvbwo=
 --- error_code: 401
 --- response_body
-{"message":"Invalid authorization header format"}
+{"message":"Invalid authorization in request"}
+--- grep_error_log eval
+qr/Invalid authorization header format/
+--- grep_error_log_out
+Invalid authorization header format
 
 
 
@@ -167,7 +171,11 @@ GET /hello
 Authorization: Basic aca_a
 --- error_code: 401
 --- response_body
-{"message":"Failed to decode authentication header: aca_a"}
+{"message":"Invalid authorization in request"}
+--- grep_error_log eval
+qr/Failed to decode authentication header: aca_a/
+--- grep_error_log_out
+Failed to decode authentication header: aca_a
 
 
 
@@ -178,7 +186,11 @@ GET /hello
 Authorization: Basic Zm9v
 --- error_code: 401
 --- response_body
-{"message":"Split authorization err: invalid decoded data: foo"}
+{"message":"Invalid authorization in request"}
+--- grep_error_log eval
+qr/Split authorization err: invalid decoded data: foo/
+--- grep_error_log_out
+Split authorization err: invalid decoded data: foo
 
 
 
