@@ -21,7 +21,7 @@ title: Introducing APISIX's testing framework
 #
 -->
 
-APISIX uses a testing framework based on our fork of test-nginx: https://github.com/openresty/test-nginx.
+APISIX uses a testing framework based on test-nginx: https://github.com/openresty/test-nginx.
 For details, you can check the [documentation](https://metacpan.org/pod/Test::Nginx) of this project.
 
 If you want to test the CLI behavior of APISIX (`./bin/apisix`),
