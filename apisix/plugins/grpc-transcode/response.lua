@@ -27,6 +27,12 @@ return function(ctx, proto, service, method, pb_option)
         return nil
     end
 
+    -- when body has already been read by other plugin
+    -- the buffer is an empty string
+    if buffer == "" and ctx.resp_body then
+        buffer = ctx.resp_body
+    end
+
     local m = util.find_method(proto, service, method)
     if not m then
         return false, "2.Undefined service method: " .. service .. "/" .. method
