@@ -382,3 +382,188 @@ Content-Type: application/json
 --- error_log
 Undefined service method
 --- error_code: 503
+
+
+
+=== TEST 11: set proto(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/proto/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "content" : "syntax = \"proto3\";
+                      package helloworld;
+                      service Greeter {
+                          rpc SayHello (HelloRequest) returns (HelloReply) {}
+                          rpc Plus (PlusRequest) returns (PlusReply) {}
+                          rpc SayHelloAfterDelay (HelloRequest) returns (HelloReply) {}
+                      }
+
+                      message HelloRequest {
+                          string name = 1;
+                      }
+                      message HelloReply {
+                          string message = 1;
+                         }
+                      message PlusRequest {
+                          int64 a = 1;
+                          int64 b = 2;
+                      }
+                      message PlusReply {
+                          int64 result = 1;
+                      }"
+                   }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 12: work with logger plugin which on global rule and read response body (logger plugins store undecoded body)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "uri": "/grpc_plus",
+                    "plugins": {
+                        "grpc-transcode": {
+                            "proto_id": "1",
+                            "service": "helloworld.Greeter",
+                            "method": "Plus",
+                            "pb_option":["int64_as_string", "enum_as_name"]
+                        }
+                    },
+                    "upstream": {
+                        "scheme": "grpc",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:50051": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            local code, body = t('/apisix/admin/global_rules/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "http-logger": {
+                            "uri": "http://127.0.0.1:1980/log",
+                            "batch_max_size": 1,
+                            "include_resp_body": true
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: hit route
+--- request
+GET /grpc_plus?a=1&b=2
+--- response_body eval
+qr/\{"result":3\}/
+--- error_log eval
+qr/request log: \{.*body":\"\\u0000\\u0000\\u0000\\u0000\\u0002\\b\\u0003\\u0000\\u0000\\u0000\\u0000\\u0002\\b\\u0003"/
+
+
+
+=== TEST 14: delete global rules
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/global_rules/1',
+                ngx.HTTP_DELETE,
+                nil,
+                [[{
+                    "action": "delete"
+                }]]
+                )
+            ngx.say("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- response_body
+[delete] code: 200 message: passed
+
+
+
+=== TEST 15: work with logger plugin which on route and read response body (logger plugins store decoded body)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "uri": "/grpc_plus",
+                    "plugins": {
+                        "grpc-transcode": {
+                            "proto_id": "1",
+                            "service": "helloworld.Greeter",
+                            "method": "Plus",
+                            "pb_option":["int64_as_string", "enum_as_name"]
+                        },
+                        "http-logger": {
+                            "uri": "http://127.0.0.1:1980/log",
+                            "batch_max_size": 1,
+                            "include_resp_body": true
+                        }
+                    },
+                    "upstream": {
+                        "scheme": "grpc",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:50051": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: hit route
+--- request
+GET /grpc_plus?a=1&b=2
+--- response_body eval
+qr/\{"result":3\}/
+--- error_log eval
+qr/request log: \{.*body":\"\{\\"result\\":3}/
