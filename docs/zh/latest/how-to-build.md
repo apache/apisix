@@ -25,9 +25,9 @@ title: 如何构建 Apache APISIX
 
 你可以通过 RPM 仓库、Docker、Helm Chart、源码包、源码包（LTS 版本）等多种方式来安装 Apache APISIX。请在以下选项中选择其中一种执行。
 
-### 通过 RPM 仓库安装（CentOS 7）
+### 通过 RPM 仓库安装（CentOS）
 
-这种安装方式适用于 CentOS 7 操作系统。
+> 这种安装方式适用于 CentOS 7 和 CentOS 8 操作系统。
 
 如果尚未安装 OpenResty 的官方 RPM 仓库，请使用以下命令自动安装 OpenResty 和 Apache APISIX 的 RPM 仓库。
 
@@ -57,7 +57,7 @@ sudo yum install apisix
 sudo yum install apisix-2.10.3-0.el7
 ```
 
-### 通过 RPM 包离线安装（CentOS 7）
+### 通过 RPM 包离线安装（CentOS）
 
 下载 APISIX 离线 RPM 包到 `./apisix` 文件夹
 
@@ -355,7 +355,7 @@ Content-Type: text/html
 
 ## 步骤 7 为 Apache APISIX 添加 systemd 配置文件
 
-如果您使用的操作系统是 CentOS 7，且在步骤 2 中通过 RPM 包安装 Apache APISIX，配置文件已经自动安装到位，你可以直接运行以下命令：
+如果使用的操作系统为 CentOS，且在步骤 2 中通过 RPM 包安装 Apache APISIX，配置文件已经自动安装到位，你可以直接运行以下命令：
 
 ```shell
 systemctl start apisix
