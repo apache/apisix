@@ -355,7 +355,7 @@ Content-Type: text/html
 
 ## 步骤 7 为 Apache APISIX 添加 systemd 配置文件
 
-如果您使用的操作系统是 CentOS，且在步骤 2 中通过 RPM 包安装 Apache APISIX，配置文件已经自动安装到位，你可以直接运行以下命令：
+如果使用的操作系统为 CentOS，且在步骤 2 中通过 RPM 包安装 Apache APISIX，配置文件已经自动安装到位，你可以直接运行以下命令：
 
 ```shell
 systemctl start apisix

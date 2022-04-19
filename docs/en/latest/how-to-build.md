@@ -361,7 +361,7 @@ If you need these features, you can build APISIX OpenResty. You can refer to the
 
 ## Step 7: Add Systemd unit file for Apache APISIX
 
-If you are using CentOS and you installed [Apache APISIX via the RPM package](#installation-via-rpm-repository-centos), the configuration file will already be in place and you can run the following command directly.
+If you are using CentOS and installed [Apache APISIX via the RPM package](#installation-via-rpm-repository-centos), the configuration file will already be in place and you can run the following command directly.
 
 ```shell
 systemctl start apisix
