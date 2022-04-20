@@ -89,12 +89,29 @@ local function read_req(sk)
             return nil, err
         end
 
-        local p, err = sk:read(n + 2)
-        if not p then
-            return nil, err
+        local s
+        if n > 1024 then
+            -- avoid recording big value
+            local p, err = sk:read(1024)
+            if not p then
+                return nil, err
+            end
+
+            local ok, err = sk:drain(n - 1024 + 2)
+            if not ok then
+                return nil, err
+            end
+
+            s = ffi_str(p, 1024) .. "..."
+        else
+            local p, err = sk:read(n + 2)
+            if not p then
+                return nil, err
+            end
+
+            s = ffi_str(p, n)
         end
 
-        local s = ffi_str(p, n)
         ctx.cmd_line[i] = s
     end
 
