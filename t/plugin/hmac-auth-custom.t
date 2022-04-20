@@ -14,16 +14,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-BEGIN {
-    $ENV{"CUSTOM_HMAC_AUTH"} = "true"
-}
-
 use t::APISIX 'no_plan';
 
 repeat_each(2);
 no_long_string();
 no_root_location();
 no_shuffle();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
+    my $extra_yaml_config = <<_EOC_;
+plugin_attr:
+  hmac-auth:
+    signature_key: X-APISIX-HMAC-SIGNATURE
+    algorithm_key: X-APISIX-HMAC-ALGORITHM
+    date_key: X-APISIX-DATE
+    access_key: X-APISIX-HMAC-ACCESS-KEY
+    signed_headers_key: X-APISIX-HMAC-SIGNED-HEADERS
+_EOC_
+
+    $block->set_value("extra_yaml_config", $extra_yaml_config);
+});
+
 run_tests;
 
 __DATA__
@@ -53,12 +74,8 @@ __DATA__
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -82,11 +99,7 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- error_code: 400
---- no_error_log
-[error]
 
 
 
@@ -110,11 +123,7 @@ GET /t
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- error_code: 400
---- no_error_log
-[error]
 
 
 
@@ -145,12 +154,8 @@ GET /t
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -158,10 +163,12 @@ passed
 --- request
 GET /hello
 --- error_code: 401
---- response_body
-{"message":"access key or signature missing"}
---- no_error_log
-[error]
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: access key or signature missing
+--- response_body eval
+qr/\{"message":"client request can't be validated"\}/
 
 
 
@@ -174,10 +181,12 @@ X-APISIX-HMAC-ALGORITHM: hmac-sha256
 X-APISIX-Date: Thu, 24 Sep 2020 06:39:52 GMT
 X-APISIX-HMAC-ACCESS-KEY: sdf
 --- error_code: 401
---- response_body
-{"message":"Invalid access key"}
---- no_error_log
-[error]
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid access key
+--- response_body eval
+qr/\{"message":"client request can't be validated"\}/
 
 
 
@@ -190,10 +199,12 @@ X-APISIX-HMAC-ALGORITHM: ljlj
 X-APISIX-Date: Thu, 24 Sep 2020 06:39:52 GMT
 X-APISIX-HMAC-ACCESS-KEY: sdf
 --- error_code: 401
---- response_body
-{"message":"Invalid access key"}
---- no_error_log
-[error]
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid access key
+--- response_body eval
+qr/\{"message":"client request can't be validated"\}/
 
 
 
@@ -206,10 +217,12 @@ X-APISIX-HMAC-ALGORITHM: hmac-sha256
 X-APISIX-Date: adfa
 X-APISIX-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
---- response_body
-{"message":"Invalid GMT format time"}
---- no_error_log
-[error]
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid GMT format time
+--- response_body eval
+qr/\{"message":"client request can't be validated"\}/
 
 
 
@@ -264,12 +277,8 @@ location /t {
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -297,12 +306,8 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -347,10 +352,10 @@ location /t {
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- error_code: 401
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Clock skew exceeded
 --- response_body eval
-qr/\{"message":"Clock skew exceeded"\}/
---- no_error_log
-[error]
+qr/\{"message":"client request can't be validated"\}/

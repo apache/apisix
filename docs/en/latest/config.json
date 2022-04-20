@@ -71,6 +71,7 @@
             "plugins/jwt-auth",
             "plugins/basic-auth",
             "plugins/authz-keycloak",
+            "plugins/authz-casdoor",
             "plugins/wolf-rbac",
             "plugins/openid-connect",
             "plugins/hmac-auth",
@@ -207,6 +208,7 @@
             "discovery/consul_kv",
             "discovery/nacos",
             "discovery/eureka",
+            "discovery/zookeeper",
             "discovery/kubernetes"
           ]
         },

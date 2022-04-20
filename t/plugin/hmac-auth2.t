@@ -559,8 +559,12 @@ location /t {
     }
 }
 --- error_code: 401
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid signature
 --- response_body eval
-qr/\{"message":"Invalid signature"\}/
+qr/\{"message":"client request can't be validated"\}/
 --- error_log eval
 qr/name=LeBron\%2Cjames\&name2=\%2C\%3E/
 
@@ -707,8 +711,12 @@ location /t {
     }
 }
 --- error_code: 401
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid signature
 --- response_body eval
-qr/\{"message":"Invalid signature"\}/
+qr/\{"message":"client request can't be validated"\}/
 
 
 

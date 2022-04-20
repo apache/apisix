@@ -1,5 +1,11 @@
 ---
 title: real-ip
+keywords:
+  - APISIX
+  - Plugin
+  - Real IP
+  - real ip
+description: This document contains information about the Apache APISIX real-ip Plugin.
 ---
 
 <!--
@@ -23,24 +29,32 @@ title: real-ip
 
 ## Description
 
-The `real-ip` plugin dynamically changes the client's IP and port seen by APISIX.
+The `real-ip` Plugin is used to dynamically change the client's IP address and port as seen by APISIX.
 
-It works like Nginx's `ngx_http_realip_module`, but is more flexible.
+This is more flexible but functions similarly to Nginx's [ngx_http_realip_module](https://nginx.org/en/docs/http/ngx_http_realip_module.html).
 
-**This plugin requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#step-6-build-openresty-for-apache-apisix).**
+:::info IMPORTANT
+
+This Plugin requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#step-6-build-openresty-for-apache-apisix).
+
+:::
 
 ## Attributes
 
-| Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
-| --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| source      | string        | required    |            | Any Nginx variable like `arg_realip` or `http_x_forwarded_for`| dynamically set the client's IP and port in APISIX's view, according to the value of variable. If the value doesn't contain a port, the client's port won't be changed. |
-| trusted_addresses| array[string] | optional    |            | List of IPs or CIDR ranges | dynamically set the `set_real_ip_from` directive |
+| Name              | Type          | Required | Valid values                                                    | Description                                                                       |
+|-------------------|---------------|----------|-----------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| source            | string        | True     | Any Nginx variable like `arg_realip` or `http_x_forwarded_for`. | Dynamically sets the client's IP address and an optional port from APISIX's view. |
+| trusted_addresses | array[string] | False    | List of IPs or CIDR ranges.                                     | Dynamically sets the `set_real_ip_from` field.                                    |
 
-If the remote address comes from `source` is missing or invalid, this plugin will just let it go and don't change the client address.
+:::note
 
-## How To Enable
+If the address specified in `source` is missing or invalid, the Plugin would not change the client address.
 
-Here's an example, enable this plugin on the specified route:
+:::
+
+## Enabling the Plugin
+
+The example below enables the `real-ip` Plugin on the specified Route:
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -67,12 +81,15 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 }'
 ```
 
-## Test Plugin
+## Example usage
 
-Use curl to access:
+After you have enabled the Plugin as mentioned above, you can test it as shown below:
 
 ```shell
 curl 'http://127.0.0.1:9080/index.html?realip=1.2.3.4:9080' -I
+```
+
+```shell
 ...
 remote-addr: 1.2.3.4
 remote-port: 9080
@@ -80,9 +97,7 @@ remote-port: 9080
 
 ## Disable Plugin
 
-When you want to disable this plugin, it is very simple,
-you can delete the corresponding JSON configuration in the plugin configuration,
-no need to restart the service, it will take effect immediately:
+To disable the `real-ip` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -96,5 +111,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
-
-This plugin has been disabled now. It works for other plugins.

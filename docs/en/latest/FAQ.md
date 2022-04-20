@@ -302,7 +302,7 @@ apisix:
 Please follow the troubleshooting steps described below:
 
 1. Make sure that there aren't any networking issues between Apache APISIX and your etcd deployment in your cluster.
-2. If your network is healthy, check whether you have enabled the [gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/) for etcd. The default state depends on whether you used command line options or a configuration file to start the etcd server.
+2. If your network is healthy, check whether you have enabled the [gRPC gateway](https://etcd.io/docs/v3.4/dev-guide/api_grpc_gateway/) for etcd. The default state depends on whether you used command line options or a configuration file to start the etcd server.
 
    - If you used command line options, gRPC gateway is enabled by default. You can enable it manually as shown below:
 

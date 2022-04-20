@@ -20,7 +20,8 @@ version: "3.8"
 services:
   ## Redis
   apisix_redis:
-    image: redis:3.0-alpine
+    # The latest image is the latest stable version
+    image: redis:latest
     restart: unless-stopped
     ports:
       - "6379:6379"

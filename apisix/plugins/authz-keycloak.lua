@@ -671,6 +671,11 @@ local function evaluate_permissions(conf, ctx, token)
     if res.status == 403 then
         -- Request permanently denied, e.g. due to lacking permissions.
         log.debug('Request denied: HTTP 403 Forbidden. Body: ', res.body)
+        if conf.access_denied_redirect_uri then
+            core.response.set_header("Location", conf.access_denied_redirect_uri)
+            return 307
+        end
+
         return res.status, res.body
     elseif res.status == 401 then
         -- Request temporarily denied, e.g access token not valid.
@@ -716,13 +721,13 @@ local function generate_token_using_password_grant(conf,ctx)
 
     if not username then
         local err = "username is missing."
-        log.error(err)
-        return 422, err
+        log.warn(err)
+        return 422, {message = err}
     end
     if not password then
         local err = "password is missing."
-        log.error(err)
-        return 422, err
+        log.warn(err)
+        return 422, {message = err}
     end
 
     local client_id = authz_keycloak_get_client_id(conf)
@@ -732,7 +737,7 @@ local function generate_token_using_password_grant(conf,ctx)
     if not token_endpoint then
         local err = "Unable to determine token endpoint."
         log.error(err)
-        return 503, err
+        return 503, {message = err}
     end
     local httpc = authz_keycloak_get_http_client(conf)
 
@@ -758,7 +763,7 @@ local function generate_token_using_password_grant(conf,ctx)
         err = "Accessing token endpoint URL (" .. token_endpoint
               .. ") failed: " .. err
         log.error(err)
-        return 401, {message = err}
+        return 401, {message = "Accessing token endpoint URL failed."}
     end
 
     log.debug("Response data: " .. res.body)
@@ -768,7 +773,7 @@ local function generate_token_using_password_grant(conf,ctx)
         err = "Could not decode JSON from response"
               .. (err and (": " .. err) or '.')
         log.error(err)
-        return 401, {message = err}
+        return 401, {message = "Could not decode JSON from response."}
     end
 
     return res.status, res.body

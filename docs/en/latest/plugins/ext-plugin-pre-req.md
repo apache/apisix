@@ -1,5 +1,10 @@
 ---
 title: ext-plugin-pre-req
+keywords:
+  - APISIX
+  - Plugin
+  - ext-plugin-pre-req
+description: This document contains information about the Apache APISIX ext-plugin-pre-req Plugin.
 ---
 
 <!--
@@ -23,23 +28,26 @@ title: ext-plugin-pre-req
 
 ## Description
 
-The `ext-plugin-pre-req` runs specific external plugins in the plugin runner, before
-executing most of the builtin Lua plugins.
+The `ext-plugin-pre-req` Plugin is for running specific external Plugins in the Plugin Runner before executing the built-in Lua Plugins.
 
-To know what is the plugin runner, see [external plugin](../external-plugin.md) section.
+See [External Plugin](../external-plugin.md) to learn more.
 
-The result of external plugins execution will affect the behavior of the current request.
+:::note
+
+Execution of External Plugins will affect the behavior of the current request.
+
+:::
 
 ## Attributes
 
-| Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
-| --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| conf     | array        | optional    |              | [{"name": "ext-plugin-A", "value": "{\"enable\":\"feature\"}"}] |     The plugins list which will be executed at the plugin runner with their configuration    |
-| allow_degradation              | boolean  | optional                                | false       |                                                                     | Whether to enable plugin degradation when the plugin runner is temporarily unavailable. Allow requests to continue when the value is set to true, default false. |
+| Name              | Type    | Required | Default | Valid values                                                    | Description                                                                                                            |
+|-------------------|---------|----------|---------|-----------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| conf              | array   | False    |         | [{"name": "ext-plugin-A", "value": "{\"enable\":\"feature\"}"}] | List of Plugins and their configurations to be executed on the Plugin Runner.                                          |
+| allow_degradation | boolean | False    | false   |                                                                 | Sets Plugin degradation when the Plugin Runner is not available. When set to `true`, requests are allowed to continue. |
 
-## How To Enable
+## Enabling the Plugin
 
-Here's an example, enable this plugin on the specified route:
+The example below enables the `ext-plugin-pre-req` Plugin on a specific Route:
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -60,22 +68,19 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 }'
 ```
 
-## Test Plugin
+## Example usage
 
-Use curl to access:
+Once you have configured the External Plugin as shown above, you can make a request to execute the Plugin:
 
 ```shell
 curl -i http://127.0.0.1:9080/index.html
 ```
 
-You will see the configured plugin runner will be hit and plugin `ext-plugin-A`
-is executed at that side.
+This will reach the configured Plugin Runner and the `ext-plugin-A` will be executed.
 
 ## Disable Plugin
 
-When you want to disable this plugin, it is very simple,
-you can delete the corresponding json configuration in the plugin configuration,
-no need to restart the service, it will take effect immediately:
+To disable the `echo` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -89,5 +94,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
-
-This plugin has been disabled now. It works for other plugins.

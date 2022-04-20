@@ -34,7 +34,7 @@ title: syslog
 | host             | string  | 必须   |              |               | IP 地址或主机名                                                                                                                       |
 | port             | integer | 必须   |              |               | 目标上游端口                                                                                                                         |
 | name             | string  | 可选   | "sys logger" |               |                                                                                                                                      |
-| timeout          | integer | 可选   | 3            | [1, ...]      | 上游发送数据超时                                                                                                                     |
+| timeout          | integer | 可选   | 3000         | [1, ...]      | 上游发送数据超时（以毫秒为单位）。                                                                                                   |
 | tls              | boolean | 可选   | false        |               | 用于控制是否执行 SSL 验证                                                                                                              |
 | flush_limit      | integer | 可选   | 4096         | [1, ...]      | 如果缓冲的消息的大小加上当前消息的大小达到（> =）此限制（以字节为单位），则缓冲的日志消息将被写入日志服务器。默认为 4096（4KB）|
 | drop_limit       | integer | 可选   | 1048576      |               | 如果缓冲的消息的大小加上当前消息的大小大于此限制（以字节为单位），则由于缓冲区大小有限，当前的日志消息将被丢弃。默认为 1048576（1MB）|

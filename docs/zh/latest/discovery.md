@@ -33,18 +33,6 @@ title: 集成服务发现注册中心
 
 常见的注册中心：Eureka, Etcd, Consul, Nacos, Zookeeper 等
 
-## 当前支持的注册中心
-
-目前支持 Eureka / Consul 和基于 DNS 的服务注册发现。
-
-基于 DNS 的服务注册发现见 [基于 DNS 的服务支持发现](../../en/latest/discovery/dns.md)。
-
-Consul 的支持见 [基于 Consul 的服务支持发现](../../en/latest/discovery/consul_kv.md)
-
-Nacos 的支持见 [基于 Nacos 的服务支持发现](../../en/latest/discovery/nacos.md)
-
-Eureka 的支持方式见下文。
-
 ## 如何扩展注册中心？
 
 ### 基本步骤

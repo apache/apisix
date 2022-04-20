@@ -19,6 +19,8 @@ header:
     spdx-id: Apache-2.0
     copyright-owner: Apache Software Foundation
 
+  license-location-threshold: 250
+
   paths-ignore:
     - '.gitignore'
     - 'LICENSE'
@@ -30,6 +32,7 @@ header:
     - '**/*.pb.go'
     - '.github/'
     - 'conf/mime.types'
+    - '**/*.svg'
     # Exclude CI env_file
     - 'ci/pod/**/*.env'
     # eyes has some limitation to handle git pattern

@@ -37,6 +37,7 @@ local router          = require("apisix.router")
 local apisix_upstream = require("apisix.upstream")
 local set_upstream    = apisix_upstream.set_by_route
 local upstream_util   = require("apisix.utils.upstream")
+local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
 local ipmatcher       = require("resty.ipmatcher")
 local ngx_balancer    = require("ngx.balancer")
@@ -86,6 +87,8 @@ function _M.http_init(args)
             core.log.error("failed to load the configuration: ", err)
         end
     end
+
+    xrpc.init()
 end
 
 
@@ -116,12 +119,6 @@ function _M.http_init_worker()
 
     require("apisix.debug").init_worker()
 
-    plugin.init_worker()
-    router.http_init_worker()
-    require("apisix.http.service").init_worker()
-    plugin_config.init_worker()
-    require("apisix.consumer").init_worker()
-
     if core.config.init_worker then
         local ok, err = core.config.init_worker()
         if not ok then
@@ -129,6 +126,12 @@ function _M.http_init_worker()
                            " config center, err: ", err)
         end
     end
+
+    plugin.init_worker()
+    router.http_init_worker()
+    require("apisix.http.service").init_worker()
+    plugin_config.init_worker()
+    require("apisix.consumer").init_worker()
 
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()
@@ -830,6 +833,8 @@ function _M.stream_init(args)
             core.log.error("failed to load the configuration: ", err)
         end
     end
+
+    xrpc.init()
 end
 
 
@@ -845,6 +850,7 @@ function _M.stream_init_worker()
     core.log.info("random stream test in [1, 10000]: ", math.random(1, 10000))
 
     plugin.init_worker()
+    xrpc.init_worker()
     router.stream_init_worker()
     apisix_upstream.init_worker()
 
@@ -920,6 +926,11 @@ function _M.stream_preread_phase()
     api_ctx.conf_id = matched_route.value.id
 
     plugin.run_plugin("preread", plugins, api_ctx)
+
+    if matched_route.value.protocol then
+        xrpc.run_protocol(matched_route.value.protocol, api_ctx)
+        return
+    end
 
     local code, err = set_upstream(matched_route, api_ctx)
     if code then
