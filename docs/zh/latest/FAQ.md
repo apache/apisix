@@ -29,7 +29,7 @@ APISIX 在这些指标上优于其它 API 网关，同时具有平台无关性�
 
 ## APISIX 和其他的 API 网关有什么不同之处？
 
-Apache APISIX在以下方面有所不同：
+Apache APISIX 在以下方面有所不同：
 
 — 它使用 etcd 来保存和同步配置，而不是使用如 PostgreSQL 或 MySQL 这类的关系数据库。etcd 中的实时事件通知系统比这些替代方案更容易扩展。这允许 APISIX 实时同步配置，使代码简洁，并避免单点故障。
 - 完全动态
@@ -60,13 +60,13 @@ APISIX 可以动态处理以下行为：
 
 ## APISIX 是否有控制台界面？
 
-是的，APISIX 具有功能强大的 Dashboard。APISIX 与 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 是从 Apache 独立出来的一个项目，你可以通过 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 这个用户操作界面来部署 Apache APISIX Dashboard。
+APISIX 具有功能强大的 Dashboard，并且 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 是一个独立的项目。你可以通过 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 用户操作界面来部署 APISIX Dashboard。
 
-## 我可以自己为 Apache APISIX写插件吗？
+## 我可以为 Apache APISIX 开发适合自身业务的插件吗？
 
 当然可以，APISIX 提供了灵活的自定义插件，方便开发者和企业编写自己的逻辑。
 
-你可以通过这个文档来编写你自己的插件:具体可参考：[如何开发插件](plugin-develop.md)
+如果你想开发符合自身业务逻辑的插件，请参考：[如何开发插件](plugin-develop.md)。
 
 ## 为什么 Apache APISIX 选择 etcd 作为配置中心？
 
@@ -80,36 +80,36 @@ APISIX 可以动态处理以下行为：
 
 etcd 提供了这些特性，并且使它比 PostgreSQL 和 MySQL 等其他数据库更理想。
 
-要了解更多关于 etcd 与其他替代方案的比较，请参阅[对比图表](https://etcd.io/docs/latest/learning/why/#comparison-chart)。
+如果你想了解更多关于 etcd 与其他替代方案的比较，请参考[对比图表](https://etcd.io/docs/latest/learning/why/#comparison-chart)。
 
-## 使用 LuaRocks 安装 Apache APISIX 依赖项时，为什么会导致超时或安装缓慢或不成功?
+## 使用 LuaRocks 安装 Apache APISIX 依赖项时，为什么会导致超时、安装缓慢或安装失败？
 
-这可能是因为使用的 LuaRocks 服务器被阻塞了。
+可能是因为使用的 LuaRocks 服务器延迟过高。
 
-为了解决这个问题，你可以使用https_proxy或者使用'--server '标志来指定一个更快的LuaRocks服务器。
+为了解决这个问题，你可以使用 https_proxy 或者使用 `--server` 参数指定一个更快的 LuaRocks 服务器。
 
-你可以运行下面的命令来查看可用的服务器(需要LuaRocks 3.0+):
+你可以运行如下命令来查看可用的服务器（需要 LuaRocks 3.0+）：
 
 ```shell
 luarocks config rocks_servers
 ```
 
-中国大陆用户可以使用“LuaRocks .cn”作为LuaRocks的服务器。你可以在Makefile中使用这个包装器来设置:
+中国大陆用户可以使用 `luarocks.cn` 作为 LuaRocks 的服务器。您可以将此包装器与 Makefile 一起使用来进行设置：
 
 ```bash
 make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 ```
 
-如果这不能解决问题，您可以尝试使用'——verbose '标志来诊断问题，从而获得详细的日志。
+如果通过上述操作仍然无法解决问题，您可以尝试使用 `--verbose` 参数获取详细的日志来诊断问题。
 
-## 我该如何使用 Apache APISIX 发布灰色版本?
+## 我该如何使用 Apache APISIX 进行灰色发布？
 
-让我们举个例子,比如，`foo.com/product/index.html?id=204&page=2`, 考虑到你需要基于查询字符串中的' id '做出一个灰色发布:
+让我们举个例子，比如：`foo.com/product/index.html?id=204&page=2`，并考虑您需要根据查询字符串中的 id 在此条件下进行灰色发布：
 
 1. Group A: `id <= 1000`
 2. Group B: `id > 1000`
 
-在 Apache APISIX 中有两种不同的方式来实现这一点:
+在 Apache APISIX 中有两种不同的方法来实现这一点：
 
 1. 创建一个[Route](architecture-design/route.md)并配置 `vars` 字段：
 
@@ -141,7 +141,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-更多 `lua-resty-radixtree` 匹配操作，请参考：[lua-resty-radixtree] (https://github.com/api7/lua-resty-radixtree#operator-list)。
+更多 `lua-resty-radixtree` 匹配操作，请参考：[lua-resty-radixtree](https://github.com/api7/lua-resty-radixtree#operator-list)。
 
 2、通过 [traffic-split](plugins/traffic-split.md) 插件来实现
 
@@ -278,7 +278,7 @@ nginx_config:
 
 ## APISIX 利用 etcd 如何实现毫秒级别的配置同步
 
-Apache APISIX使用etcd作为它的配置中心。Etcd提供以下订阅功能（比如： [watch](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watch)、[watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir)）。它可以监视对特定关键字或目录的更改。
+Apache APISIX 使用 etcd 作为它的配置中心。etcd 提供以下订阅功能（比如：[watch](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watch)、[watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir)）。它可以监视对特定关键字或目录的更改。
 
 APISIX 主要使用 [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir) 监视目录内容变更：
 
@@ -290,7 +290,7 @@ APISIX 主要使用 [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/
 
 默认情况下，APISIX 从 `conf/apisix.uid` 中读取实例 id。如果找不到，且没有配置 id，APISIX 会生成一个 `uuid` 作为实例 id。
 
-要指定一个有意义的id来绑定Apache APISIX到您的内部系统，请在您的“conf/config”中设置“id”。yaml的文件:
+要指定一个有意义的 id 来绑定 Apache APISIX 到您的内部系统，请在您的 `conf/config` 中设置 id。yaml 的文件：
 
 ```yaml
 apisix:
@@ -301,7 +301,7 @@ apisix:
 
 请按照以下步骤进行故障排除:
 
-1. 确保Apache APISIX和集群中的etcd部署之间没有任何网络问题。
+1. 确保 Apache APISIX 和集群中的 etcd 部署之间没有任何网络问题。
 2. 如果网络正常，请检查是否为etcd启用了[gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/)。默认状态取决于您是使用命令行选项还是配置文件来启动etcd服务器。
 
 — 如果使用命令行选项，默认启用gRPC网关。可以手动启用，如下所示:
@@ -310,7 +310,7 @@ apisix:
 etcd --enable-grpc-gateway --data-dir=/path/to/data
 ```
 
-**注意**:当运行' etcd——help '时，这个标志不会显示。
+**注意**：当运行 `etcd——help` 时，这个标志不会显示。
 
 — 如果使用配置文件，默认关闭gRPC网关。您可以手动启用，如下所示:
 
@@ -329,17 +329,17 @@ etcd --enable-grpc-gateway --data-dir=/path/to/data
 enable-grpc-gateway: true
 ```
 
-**注意**:事实上这种差别已经在 etcd 的 master 分支中消除，但并没有向后移植到已经发布的版本中，所以在部署 etcd 集群时，依然需要小心。
+**注意**：事实上这种差别已经在 etcd 的 master 分支中消除，但并没有向后移植到已经发布的版本中，所以在部署 etcd 集群时，依然需要小心。
 
 ## 我应该如何创建高可用的 Apache APISIX 集群？
 
-Apache APISIX可以通过在其前面添加一个负载均衡器来实现高可用性，因为APISIX的数据平面是无状态的，并且可以在需要时进行扩展。
+Apache APISIX 可以通过在其前面添加一个负载均衡器来实现高可用性，因为 APISIX 的数据面是无状态的，并且可以在需要时进行扩展。
 
-Apache APISIX 的控制平面是依赖于 `etcd cluster` 的高可用实现的，它只依赖于etcd集群。
+Apache APISIX 的控制平面是依赖于 `etcd cluster` 的高可用实现的，它只依赖于 etcd 集群。
 
-## 安装Apache APISIX时，为什么make deps命令失败?
+## 安装 Apache APISIX 时，为什么 make deps 命令失败?
 
-当执行' make deps '从源代码安装Apache APISIX时，你可能会出现如下错误:
+当执行 `make deps` 从源代码安装 Apache APISIX 时，你可能会出现如下错误：
 
 ```shell
 $ make deps
@@ -351,13 +351,13 @@ Example: luarocks install luasec OPENSSL_DIR=/usr/local
 make: *** [deps] Error 1
 ```
 
-这是由于缺少OpenResty openssl开发工具包。要安装它，请参考[installation dependencies](install-dependencies.md)。
+这是由于缺少 OpenResty openssl 开发工具包。要安装它，请参考[installation dependencies](install-dependencies.md)。
 
 ## 我应该如何通过 APISIX 代理访问 APISIX Dashboard
 
 您可以按照以下步骤进行配置:
 
-1. 为Apache APISIX代理和管理API配置不同的端口。或者，禁用管理API。
+1. 为 Apache APISIX 代理和管理 API 配置不同的端口。或者，禁用管理 API。
 
 ```yaml
 apisix:
@@ -384,9 +384,9 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 }'
 ```
 
-**注意**:Apache APISIX Dashboard 正在监听' 127.0.0.1:9000 '。
+**注意**: Apache APISIX Dashboard 正在监听' 127.0.0.1:9000'。
 
-## 如何在一个路由使用正则表达式(regex)匹配' uri '?
+## 如何在一个路由使用正则表达式（regex）匹配 `uri`？
 
 你可以通过使用 route 的 `vars` 字段来实现 uri 的正则匹配。
 
@@ -424,7 +424,7 @@ HTTP/1.1 404 Not Found
 
 ## upstream 节点是否支持配置 [FQDN](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) 地址？
 
-是的。下面的例子展示了如何配置一个 `FQDN` 为 `httpbin.default.svc.cluster.local`（一个 Kubernetes Service）的示例：
+这是支持的，下面是一个 `FQDN` 为 `httpbin.default.svc.cluster.local`（一个 Kubernetes Service）的示例：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -523,7 +523,7 @@ acme.sh --renew --domain demo.domain
 
 详细步骤，可以参考博客 [this post](https://juejin.cn/post/6965778290619449351)。
 
-## 在Apache APISIX中，我如何在转发到上游之前从路径中删除一个前缀?
+## 在 Apache APISIX 中，我如何在转发到上游之前从路径中删除一个前缀?
 
 在转发至上游之前剪除请求路径中的前缀，比如说从 `/foo/get` 改成 `/get`，你可以使用下面这个插件来实现[proxy-rewrite](plugins/proxy-rewrite.md) Plugin:
 
