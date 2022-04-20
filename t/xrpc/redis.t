@@ -170,3 +170,37 @@ hget animals: null
 failed to set animals: WRONGTYPE Operation against a key holding the wrong kind of value
 hget animals: bark
 --- stream_conf_enable
+
+
+
+=== TEST 4: big value
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local res, err = red:set("big-key", ("\r\n"):rep(1024 * 1024 * 16))
+            if not res then
+                ngx.say("failed to set: ", err)
+                return
+            end
+
+            local res, err = red:get("big-key")
+            if not res then
+                ngx.say("failed to get: ", err)
+                return
+            end
+
+            ngx.print(res)
+        }
+    }
+--- response_body eval
+"\r\n" x 16777216
+--- stream_conf_enable
