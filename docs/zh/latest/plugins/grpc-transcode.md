@@ -42,7 +42,7 @@ APISIX 接收 HTTP 请求后，首先对请求进行转码，并将转码后的�
 | proto_id  | string/integer                                                             | 是   |        |        | `.proto` 内容的 id。         |
 | service   | string                                                                     | 是   |        |        | gRPC 服务名。                |
 | method    | string                                                                     | 是   |        |        | gRPC 服务中要调用的方法名。  |
-| deadline  | number                                                                     | 否   | 0      |        | gRPC 服务的 deadline, 单位为：ms。          |
+| deadline  | number                                                                     | 否   | 0      |        | gRPC 服务的 deadline，单位为：ms。          |
 | pb_option | array[string([pb_option_def](#b_option 的选项))]                            | 否   |        |        | proto 编码过程中的转换选项。 |
 
 ### pb_option 的选项
@@ -146,7 +146,7 @@ chmod +x ./upload_pb.pb
 # {"node":{"value":{"create_time":1643879753,"update_time":1643883085,"content":"CmgKEnByb3RvL2ltcG9ydC5wcm90bxIDcGtnIhoKBFVzZXISEgoEbmFtZRgBIAEoCVIEbmFtZSIeCghSZXNwb25zZRISCgRib2R5GAEgASgJUgRib2R5QglaBy4vcHJvdG9iBnByb3RvMwq9AQoPcHJvdG8vc3JjLnByb3RvEgpoZWxsb3dvcmxkGhJwcm90by9pbXBvcnQucHJvdG8iPAoHUmVxdWVzdBIdCgR1c2VyGAEgASgLMgkucGtnLlVzZXJSBHVzZXISEgoEYm9keRgCIAEoCVIEYm9keTI5CgpUZXN0SW1wb3J0EisKA1J1bhITLmhlbGxvd29ybGQuUmVxdWVzdBoNLnBrZy5SZXNwb25zZSIAQglaBy4vcHJvdG9iBnByb3RvMw=="},"key":"\/apisix\/proto\/1"},"action":"set"}
 ```
 
-现在我们可以在特定路由中启用 `grpc-transcode` 插件：
+现在我们可以在指定路由中启用 `grpc-transcode` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 \

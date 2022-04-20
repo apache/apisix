@@ -33,7 +33,7 @@ description: 本文介绍了关于 Apache APISIX `grpc-web` 插件的基本信�
 
 ## 启用插件
 
-你可以通过如下命令在特定路由上启用 `gRPC-web` 插件：
+你可以通过如下命令在指定路由上启用 `gRPC-web` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 \

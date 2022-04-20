@@ -65,7 +65,7 @@ description: 本文介绍了关于 Apache APISIX `response-rewrite` 插件的基
 
 ## 启用插件
 
-你可以通过如下命令在特定路由上启用 `response-rewrite` 插件：
+你可以通过如下命令在指定路由上启用 `response-rewrite` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 \
@@ -95,7 +95,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 }'
 ```
 
-在上述命令中，通过配置 `vars` 参数让该插件仅在具有 200 状态码的响应上运行插件。
+在上述命令中，通过配置 `vars` 参数可以让该插件仅在具有 200 状态码的响应上运行插件。
 
 ## 测试插件
 
@@ -105,7 +105,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 curl -X GET -i http://127.0.0.1:9080/test/index.html
 ```
 
-无论来自上游的响应是什么，返回结果都是如下所示：
+无论来自上游的响应是什么，返回结果都是相同的：
 
 ```shell
 HTTP/1.1 200 OK

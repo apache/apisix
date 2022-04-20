@@ -123,7 +123,7 @@ JSON schema 在其字段中支持以下类型：
 
 ## 启用插件
 
-你可以通过如下命令在特定路由上启用 `mocking` 插件：
+你可以通过如下命令在指定路由上启用 `mocking` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 \

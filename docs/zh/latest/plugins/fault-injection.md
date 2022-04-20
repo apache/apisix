@@ -29,7 +29,7 @@ description: 本文介绍了关于 Apache APISIX `fault-injection` 插件的基�
 
 ## 描述
 
-`fault-injection` 插件，该插件可以和其他插件一起使用，并且会在其他插件前被执行.
+`fault-injection` 插件，该插件可以和其他插件一起使用，并且会在其他插件前被执行。
 
 `abort` 属性将直接返回给客户端指定的响应码并且终止其他插件的执行。
 
@@ -75,7 +75,7 @@ description: 本文介绍了关于 Apache APISIX `fault-injection` 插件的基�
 
 ## 启用插件
 
-你可以为特定路由启用 `fault-injection` 插件，并指定 `abort` 属性。如下所示：
+你可以在指定路由启用 `fault-injection` 插件，并指定 `abort` 属性。如下所示：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 \
@@ -122,7 +122,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 }'
 ```
 
-你还可以同时为特定路由启用 `fault-injection` 插件，并指定 `abort` 属性和 `delay` 属性的 `vars` 规则。如下所示：
+还可以同时为指定路由启用 `fault-injection` 插件，并指定 `abort` 属性和 `delay` 属性的 `vars` 规则。如下所示：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  \
