@@ -51,7 +51,7 @@ end
 
 
 local function put_req_ctx(session, ctx)
-    local id = ctx.id
+    local id = ctx._id
     session._ctxs[id] = nil
 
     core.tablepool.release("xrpc_ctxs", ctx)

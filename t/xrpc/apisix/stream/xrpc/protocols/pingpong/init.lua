@@ -205,8 +205,8 @@ function _M.from_upstream(session, downstream, upstream)
         core.log.info("send heartbeat")
 
         -- need to reset read buf as we won't forward it
-        downstream:reset_read_buf()
-        downstream:send(ffi_str(p, HDR_LEN))
+        upstream:reset_read_buf()
+        upstream:send(ffi_str(p, HDR_LEN))
         return DONE
     end
 
@@ -214,10 +214,12 @@ function _M.from_upstream(session, downstream, upstream)
     local ctx = sdk.get_req_ctx(session, stream_id)
 
     local body_len = to_int32(p, 6)
-    if body_len ~= ctx.len - HDR_LEN then
-        core.log.error("upstream body len mismatch, expected: ", ctx.len - HDR_LEN,
-                       ", actual: ", body_len)
-        return DECLINED
+    if ctx.len then
+        if body_len ~= ctx.len - HDR_LEN then
+            core.log.error("upstream body len mismatch, expected: ", ctx.len - HDR_LEN,
+                        ", actual: ", body_len)
+            return DECLINED
+        end
     end
 
     local p = read_data(upstream, body_len, true)
