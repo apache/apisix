@@ -213,7 +213,7 @@ curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 
 ## 禁用插件
 
-当你需要禁用 `batch-requests` 插件时，可通过以下命令删除相应的 `JSON` 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+如果你想禁用插件，可以将 `batch-requests` 从配置文件中的插件列表删除，重新加载 APISIX 后就可以生效。
 
 ```yaml title="conf/config.yaml"
 plugins:    # plugin list
