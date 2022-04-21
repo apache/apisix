@@ -96,6 +96,7 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 1. <a href="https://www.unipus.cn/" rel="nofollow">外研在线</a>
 1. <a href="https://paramland.com/#/" rel="nofollow">数地科技</a>
 1. <a href="https://www.vhall.com/" rel="nofollow">微吼</a>
+1. <a href="https://www.xiaopeng.com/" rel="nofollow">小鹏汽车</a>
 
 <img src="https://user-images.githubusercontent.com/40708551/109484046-f7c4e280-7aa5-11eb-9d71-aab90830773a.png" width="725" height="1700" />
 
