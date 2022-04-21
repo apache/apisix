@@ -234,7 +234,7 @@ curl -i http://127.0.0.1:9080/res -H 'user: bob' -X GET
 HTTP/1.1 403 Forbidden
 ```
 
-拥有管理权限的用户（如 `alice`） 则可以访问其它页面。
+拥有管理权限的用户（如 `alice`）则可以访问其它页面。
 
 ```shell
 curl -i http://127.0.0.1:9080/res -H 'user: alice' -X GET

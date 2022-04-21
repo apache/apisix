@@ -146,7 +146,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 
 :::note
 
-当前版本的 Apache APISIX 期望存储在 Vault 中的机密的密钥名称位于 `secret`、`public_key` 和 `private_key` 之间。前一个用于HS256/HS512算法，后两个用于RS256算法。
+当前版本的 Apache APISIX 期望存储在 Vault 中的机密的密钥名称位于 `secret`、`public_key` 和 `private_key` 之间。前一个用于 HS256/HS512 算法，后两个用于 RS256 算法。
 
 在未来的版本中，该插件将支持引用自定义命名键。
 

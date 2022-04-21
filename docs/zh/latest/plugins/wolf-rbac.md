@@ -163,7 +163,7 @@ curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/login -i \
 -d 'appid=restful&username=test&password=user-password'
 ```
 
-现在开始测试路由:
+现在开始测试路由：
 
 - 缺少 token
 

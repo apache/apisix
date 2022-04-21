@@ -110,7 +110,7 @@ HTTP/1.1 200 OK
 hello, world
 ```
 
-如果请求未授权，则返回如下结果:
+如果请求未授权，则返回如下结果：
 
 ```shell
 HTTP/1.1 401 Unauthorized
