@@ -264,3 +264,113 @@ passed
     end
 --- error_log
 failed to read: timeout
+
+
+
+=== TEST 10: client stream, N:N
+--- request eval
+"POST /t
+" .
+"pp\x03\x00\x01\x00\x00\x00\x00\x03ABC" .
+"pp\x03\x00\x02\x00\x00\x00\x00\x04ABCD"
+--- stream_conf_enable
+--- stream_upstream_code
+    local sock = ngx.req.socket(true)
+    sock:settimeout(10)
+    local data1 = sock:receive(13)
+    if not data1 then
+        return
+    end
+    local data2 = sock:receive(14)
+    if not data2 then
+        return
+    end
+    assert(sock:send(data2))
+    assert(sock:send(data1))
+--- response_body eval
+"pp\x03\x00\x02\x00\x00\x00\x00\x04ABCD" .
+"pp\x03\x00\x01\x00\x00\x00\x00\x03ABC"
+--- no_error_log
+RPC is not finished
+[error]
+
+
+
+=== TEST 11: client stream, bad response
+--- request eval
+"POST /t
+" .
+"pp\x03\x00\x01\x00\x00\x00\x00\x03ABC" .
+"pp\x03\x00\x02\x00\x00\x00\x00\x04ABCD"
+--- stream_conf_enable
+--- stream_upstream_code
+    local sock = ngx.req.socket(true)
+    sock:settimeout(10)
+    local data1 = sock:receive(13)
+    if not data1 then
+        return
+    end
+    local data2 = sock:receive(14)
+    if not data2 then
+        return
+    end
+    assert(sock:send(data2))
+    assert(sock:send(data1:sub(11)))
+--- response_body eval
+"pp\x03\x00\x02\x00\x00\x00\x00\x04ABCD"
+--- error_log
+RPC is not finished
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: server stream, heartbeat
+--- request eval
+"POST /t
+" .
+"pp\x03\x00\x01\x00\x00\x00\x00\x03ABC"
+--- stream_conf_enable
+--- stream_upstream_code
+    local sock = ngx.req.socket(true)
+    sock:settimeout(10)
+    local data1 = sock:receive(13)
+    if not data1 then
+        return
+    end
+    local hb = "pp\x01\x00\x00\x00\x00\x00\x00\x00"
+    assert(sock:send(hb))
+    local data2 = sock:receive(10)
+    if not data2 then
+        return
+    end
+    assert(data2 == hb)
+    assert(sock:send(data1))
+--- response_body eval
+"pp\x03\x00\x01\x00\x00\x00\x00\x03ABC"
+--- no_error_log
+RPC is not finished
+[error]
+
+
+
+=== TEST 13: server stream
+--- request eval
+"POST /t
+" .
+"pp\x03\x00\x01\x00\x00\x00\x00\x01A"
+--- stream_conf_enable
+--- stream_upstream_code
+    local sock = ngx.req.socket(true)
+    sock:settimeout(10)
+    local data1 = sock:receive(11)
+    if not data1 then
+        return
+    end
+    assert(sock:send("pp\x03\x00\x03\x00\x00\x00\x00\x03ABC"))
+    assert(sock:send("pp\x03\x00\x02\x00\x00\x00\x00\x02AB"))
+    assert(sock:send(data1))
+--- response_body eval
+"pp\x03\x00\x03\x00\x00\x00\x00\x03ABC" .
+"pp\x03\x00\x02\x00\x00\x00\x00\x02AB" .
+"pp\x03\x00\x01\x00\x00\x00\x00\x01A"

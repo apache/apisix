@@ -225,6 +225,11 @@ function _M.connect_upstream(session, ctx)
 end
 
 
+function _M.disconnect_upstream(session, upstream, upstream_broken)
+    sdk.disconnect_upstream(upstream, session.upstream_conf, upstream_broken)
+end
+
+
 function _M.to_upstream(session, ctx, downstream, upstream)
     local ok, err = upstream:move(downstream)
     if not ok then

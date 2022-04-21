@@ -15,6 +15,8 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local pairs = pairs
+local ngx = ngx
 local ngx_now = ngx.now
 local OK = ngx.OK
 local DECLINED = ngx.DECLINED
@@ -27,34 +29,37 @@ local _M = {}
 local function open_session(conn_ctx)
     conn_ctx.xrpc_session = {
         upstream_conf = conn_ctx.matched_upstream,
-        id_seq = 0,
+        _ctxs = {},
     }
     return conn_ctx.xrpc_session
 end
 
 
-local function close_session(session, upstream_broken)
-    local upstream = session.upstream
-    if upstream then
-        if upstream_broken then
-            upstream:close()
-        else
-            upstream:setkeepalive()
-        end
+local function close_session(session, protocol)
+    local upstream_ctx = session._upstream_ctx
+    if upstream_ctx then
+        upstream_ctx.closed = true
+
+        local up = upstream_ctx.upstream
+        protocol.disconnect_upstream(session, up, upstream_ctx.broken)
+    end
+
+    for id in pairs(session._ctxs) do
+        core.log.info("RPC is not finished, id: ", id)
     end
 end
 
 
 local function put_req_ctx(session, ctx)
-    local id = ctx.id
-    session.ctxs[id] = nil
+    local id = ctx._id
+    session._ctxs[id] = nil
 
     core.tablepool.release("xrpc_ctxs", ctx)
 end
 
 
 local function finish_req(protocol, session, ctx)
-    ctx.rpc_end_time = ngx_now()
+    ctx._rpc_end_time = ngx_now()
 
     protocol.log(session, ctx)
     put_req_ctx(session, ctx)
@@ -62,8 +67,8 @@ end
 
 
 local function open_upstream(protocol, session, ctx)
-    if session.upstream then
-        return OK, session.upstream
+    if session._upstream_ctx then
+        return OK, session._upstream_ctx
     end
 
     local state, upstream = protocol.connect_upstream(session, session)
@@ -71,21 +76,49 @@ local function open_upstream(protocol, session, ctx)
         return state, nil
     end
 
-    session.upstream = upstream
-    return OK, upstream
+    session._upstream_ctx = {
+        upstream = upstream,
+        broken = false,
+        closed = false,
+    }
+    return OK, session._upstream_ctx
+end
+
+
+local function start_upstream_coroutine(session, protocol, downstream, up_ctx)
+    local upstream = up_ctx.upstream
+    while not up_ctx.closed do
+        local status, ctx = protocol.from_upstream(session, downstream, upstream)
+        if status ~= OK then
+            if ctx ~= nil then
+                finish_req(protocol, session, ctx)
+            end
+
+            if status == DECLINED then
+                -- fail to read
+                break
+            end
+
+            if status == DONE then
+                -- a rpc is finished
+                goto continue
+            end
+        end
+
+        ::continue::
+    end
 end
 
 
 function _M.run(protocol, conn_ctx)
     local session = open_session(conn_ctx)
     local downstream = protocol.init_downstream(session)
-    local upstream_broken = false
 
     while true do
         local status, ctx = protocol.from_downstream(session, downstream)
         if status ~= OK then
             if ctx ~= nil then
-                finish_req(session, ctx)
+                finish_req(protocol, session, ctx)
             end
 
             if status == DECLINED then
@@ -100,14 +133,14 @@ function _M.run(protocol, conn_ctx)
         end
 
         -- need to do some auth/routing jobs before reaching upstream
-        local status, upstream = open_upstream(protocol, session, ctx)
+        local status, up_ctx = open_upstream(protocol, session, ctx)
         if status ~= OK then
             break
         end
 
-        status = protocol.to_upstream(session, ctx, downstream, upstream)
+        status = protocol.to_upstream(session, ctx, downstream, up_ctx.upstream)
         if status == DECLINED then
-            upstream_broken = true
+            up_ctx.broken = true
             break
         end
 
@@ -116,10 +149,21 @@ function _M.run(protocol, conn_ctx)
             goto continue
         end
 
+        if not up_ctx.coroutine then
+            local co, err = ngx.thread.spawn(
+                start_upstream_coroutine, session, protocol, downstream, up_ctx)
+            if not co then
+                core.log.error("failed to start upstream coroutine: ", err)
+                break
+            end
+
+            up_ctx.coroutine = co
+        end
+
         ::continue::
     end
 
-    close_session(session, upstream_broken)
+    close_session(session, protocol)
 
     -- return non-zero code to terminal the session
     return 200
