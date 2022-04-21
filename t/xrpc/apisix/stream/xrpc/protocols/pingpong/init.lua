@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local sdk = require("apisix.stream.xrpc.sdk")
 local xrpc_socket = require("resty.apisix.stream.xrpc.socket")
 local bit = require("bit")
 local lshift = bit.lshift
@@ -36,6 +37,7 @@ local _M = {}
 local HDR_LEN = 10
 local TYPE_HEARTBEAT = 1
 local TYPE_UNARY = 2
+local TYPE_STREAM = 3
 
 
 function _M.init_worker()
@@ -55,9 +57,7 @@ local function read_data(sk, len, body)
     local f = body and sk.drain or sk.read
     local p, err = f(sk, len)
     if not p then
-        if err == "closed" then
-            core.log.info("failed to read: ", err)
-        else
+        if err ~= "closed" then
             core.log.error("failed to read: ", err)
         end
         return nil
@@ -98,6 +98,9 @@ function _M.from_downstream(session, downstream)
         return DONE
     end
 
+    local stream_id = p[3] * 256 + p[4]
+    local ctx = sdk.get_req_ctx(session, stream_id)
+
     local body_len = to_int32(p, 6)
     core.log.info("read body len: ", body_len)
 
@@ -106,10 +109,11 @@ function _M.from_downstream(session, downstream)
         return DECLINED
     end
 
-    return OK, {
-        is_unary = typ == TYPE_UNARY,
-        len = HDR_LEN + body_len
-    }
+    ctx.is_unary = typ == TYPE_UNARY
+    ctx.is_stream = typ == TYPE_STREAM
+    ctx.id = stream_id
+    ctx.len = HDR_LEN + body_len
+    return OK, ctx
 end
 
 
@@ -146,6 +150,14 @@ function _M.connect_upstream(session, ctx)
 end
 
 
+function _M.disconnect_upstream(session, upstream, upstream_broken)
+    -- disconnect upstream created by connect_upstream
+    -- the upstream_broken flag is used to indicate whether the upstream is
+    -- already broken
+    sdk.disconnect_upstream(upstream, session.upstream_conf, upstream_broken)
+end
+
+
 function _M.to_upstream(session, ctx, downstream, upstream)
     -- send the request read from downstream to the upstream
     -- return whether the request is sent
@@ -173,6 +185,55 @@ function _M.to_upstream(session, ctx, downstream, upstream)
     end
 
     return OK
+end
+
+
+function _M.from_upstream(session, downstream, upstream)
+    local p = read_data(upstream, HDR_LEN, false)
+    if p == nil then
+        return DECLINED
+    end
+
+    local p_b = str_byte("p")
+    if p[0] ~= p_b or p[1] ~= p_b then
+        core.log.error("invalid magic number: ", ffi_str(p, 2))
+        return DECLINED
+    end
+
+    local typ = p[2]
+    if typ == TYPE_HEARTBEAT then
+        core.log.info("send heartbeat")
+
+        -- need to reset read buf as we won't forward it
+        upstream:reset_read_buf()
+        upstream:send(ffi_str(p, HDR_LEN))
+        return DONE
+    end
+
+    local stream_id = p[3] * 256 + p[4]
+    local ctx = sdk.get_req_ctx(session, stream_id)
+
+    local body_len = to_int32(p, 6)
+    if ctx.len then
+        if body_len ~= ctx.len - HDR_LEN then
+            core.log.error("upstream body len mismatch, expected: ", ctx.len - HDR_LEN,
+                        ", actual: ", body_len)
+            return DECLINED
+        end
+    end
+
+    local p = read_data(upstream, body_len, true)
+    if p == nil then
+        return DECLINED
+    end
+
+    local ok, err = downstream:move(upstream)
+    if not ok then
+        core.log.error("failed to handle upstream: ", err)
+        return DECLINED
+    end
+
+    return DONE, ctx
 end
 
 

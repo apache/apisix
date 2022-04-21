@@ -21,6 +21,7 @@
 local core = require("apisix.core")
 local xrpc_socket = require("resty.apisix.stream.xrpc.socket")
 local ngx_now = ngx.now
+local error = error
 
 
 local _M = {}
@@ -41,8 +42,10 @@ function _M.connect_upstream(node, up_conf)
         core.log.error("failed to connect: ", err)
         return nil
     end
+    -- TODO: support timeout
 
     if up_conf.scheme == "tls" then
+        -- TODO: support mTLS
         local ok, err = sk:sslhandshake(nil, node.host)
         if not ok then
             core.log.error("failed to handshake: ", err)
@@ -55,7 +58,24 @@ end
 
 
 ---
--- Returns the request level ctx with an optional id
+-- Returns disconnected xRPC upstream socket according to the configuration
+--
+-- @function xrpc.sdk.disconnect_upstream
+-- @tparam table xRPC upstream socket
+-- @tparam table upstream configuration
+-- @tparam boolean is the upstream already broken
+function _M.disconnect_upstream(upstream, up_conf, upstream_broken)
+    if upstream_broken then
+        upstream:close()
+    else
+        -- TODO: support keepalive according to the up_conf
+        upstream:setkeepalive()
+    end
+end
+
+
+---
+-- Returns the request level ctx with an id
 --
 -- @function xrpc.sdk.get_req_ctx
 -- @tparam table xrpc session
@@ -63,14 +83,19 @@ end
 -- @treturn table the request level ctx
 function _M.get_req_ctx(session, id)
     if not id then
-        id = session.id_seq
-        session.id_seq = session.id_seq + 1
+        error("id is required")
     end
 
-    local ctx = core.tablepool.fetch("xrpc_ctxs")
-    session.ctxs[id] = ctx
+    local ctx = session._ctxs[id]
+    if ctx then
+        return ctx
+    end
 
-    ctx.rpc_start_time = ngx_now()
+    local ctx = core.tablepool.fetch("xrpc_ctxs", 4, 4)
+    ctx._id = id
+    session._ctxs[id] = ctx
+
+    ctx._rpc_start_time = ngx_now()
     return ctx
 end
 
