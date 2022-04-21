@@ -77,6 +77,12 @@ do
             end
 
             local route = item.value
+            if route.protocol and route.protocol.superior_id then
+                -- subordinate route won't be matched in the entry
+                -- TODO: check the subordinate relationship in the Admin API
+                goto CONTINUE
+            end
+
             if item.value.remote_addr then
                 item.value.remote_addr_matcher = core_ip.create_ip_matcher({item.value.remote_addr})
             end

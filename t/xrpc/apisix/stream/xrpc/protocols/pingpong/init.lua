@@ -21,6 +21,7 @@ local bit = require("bit")
 local lshift = bit.lshift
 local ffi = require("ffi")
 local ffi_str = ffi.string
+local ipairs = ipairs
 local math_random = math.random
 local OK = ngx.OK
 local DECLINED = ngx.DECLINED
@@ -28,16 +29,19 @@ local DONE = ngx.DONE
 local str_byte = string.byte
 
 
+local _M = {}
+local router_version
+local router
 -- pingpong protocol is designed to use in the test of xRPC.
 -- It contains two part: a fixed-length header & a body.
 -- Header format:
 -- "pp" (magic number) + 1 bytes req type + 2 bytes stream id + 1 reserved bytes
--- + 4 bytes body length
-local _M = {}
+-- + 4 bytes body length + optional 4 bytes service name
 local HDR_LEN = 10
 local TYPE_HEARTBEAT = 1
 local TYPE_UNARY = 2
 local TYPE_STREAM = 3
+local TYPE_UNARY_DYN_UP = 4
 
 
 function _M.init_worker()
@@ -48,7 +52,7 @@ end
 function _M.init_downstream(session)
     -- create the downstream
     local sk = xrpc_socket.downstream.socket()
-    sk:settimeout(10) -- the short timeout is just for test
+    sk:settimeout(1000) -- the short timeout is just for test
     return sk
 end
 
@@ -104,15 +108,54 @@ function _M.from_downstream(session, downstream)
     local body_len = to_int32(p, 6)
     core.log.info("read body len: ", body_len)
 
+    if typ == TYPE_UNARY_DYN_UP then
+        local p = read_data(downstream, 4, false)
+        if p == nil then
+            return DECLINED
+        end
+
+        local len = 4
+        for i = 0, 3 do
+            if p[i] == 0 then
+                len = i
+                break
+            end
+        end
+        local service = ffi_str(p, len)
+        core.log.info("get service [", service, "]")
+        ctx.service = service
+
+        local changed, raw_router, version = sdk.get_router(session, router_version)
+        if changed then
+            router_version = version
+            router = {}
+
+            for _, r in ipairs(raw_router) do
+                local conf = r.protocol.conf
+                if conf and conf.service then
+                    router[conf.service] = r
+                end
+            end
+        end
+
+        local conf = router[ctx.service]
+        if conf then
+            sdk.set_upstream(session, conf)
+        end
+    end
+
     local p = read_data(downstream, body_len, true)
     if p == nil then
         return DECLINED
     end
 
-    ctx.is_unary = typ == TYPE_UNARY
+    ctx.is_unary = typ == TYPE_UNARY or typ == TYPE_UNARY_DYN_UP
     ctx.is_stream = typ == TYPE_STREAM
     ctx.id = stream_id
     ctx.len = HDR_LEN + body_len
+    if typ == TYPE_UNARY_DYN_UP then
+        ctx.len = ctx.len + 4
+    end
     return OK, ctx
 end
 
@@ -131,7 +174,10 @@ function _M.connect_upstream(session, ctx)
     end
     local node = nodes[math_random(#nodes)]
     local sk = xrpc_socket.upstream.socket()
-    sk:settimeout(10) -- the short timeout is just for test
+    sk:settimeout(1000) -- the short timeout is just for test
+
+    core.log.info("connect to ", node.host, ":", node.port)
+
     local ok, err = sk:connect(node.host, node.port)
     if not ok then
         core.log.error("failed to connect: ", err)

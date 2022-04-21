@@ -802,6 +802,7 @@ local xrpc_protocol_schema = {
         name = {
             type = "string",
         },
+        superior_id = id_schema,
         conf = {
             description = "protocol-specific configuration",
             type = "object",
