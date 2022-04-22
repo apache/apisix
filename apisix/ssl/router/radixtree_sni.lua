@@ -117,7 +117,7 @@ local function set_pem_ssl_key(sni, cert, pkey)
 end
 
 
-function _M.match_and_set(api_ctx)
+function _M.match_and_set(api_ctx, match_only)
     local err
     if not radixtree_router or
        radixtree_router_ver ~= ssl_certificates.conf_version then
@@ -174,6 +174,10 @@ function _M.match_and_set(api_ctx)
 
     local matched_ssl = api_ctx.matched_ssl
     core.log.info("debug - matched: ", core.json.delay_encode(matched_ssl, true))
+
+    if match_only then
+        return true
+    end
 
     ngx_ssl.clear_certs()
 
