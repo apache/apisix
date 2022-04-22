@@ -361,7 +361,7 @@ function _M.http_access_phase()
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
 
-    if not verify_tls_client(ngx_ctx.api_ctx) then
+    if not verify_tls_client(api_ctx) then
         return core.response.exit(400)
     end
 
@@ -882,7 +882,7 @@ function _M.stream_preread_phase()
         ngx_ctx.api_ctx = api_ctx
     end
 
-    if not verify_tls_client(ngx_ctx.api_ctx) then
+    if not verify_tls_client(api_ctx) then
         return ngx_exit(1)
     end
 
