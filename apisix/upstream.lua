@@ -421,16 +421,18 @@ local function check_upstream_conf(in_dp, conf)
         end
     end
 
-    if conf.pass_host == "node" and conf.nodes and
-        not balancer.recreate_request and core.table.nkeys(conf.nodes) ~= 1
-    then
-        return false, "only support single node for `node` mode currently"
-    end
+    if is_http then
+        if conf.pass_host == "node" and conf.nodes and
+            not balancer.recreate_request and core.table.nkeys(conf.nodes) ~= 1
+        then
+            return false, "only support single node for `node` mode currently"
+        end
 
-    if conf.pass_host == "rewrite" and
-        (conf.upstream_host == nil or conf.upstream_host == "")
-    then
-        return false, "`upstream_host` can't be empty when `pass_host` is `rewrite`"
+        if conf.pass_host == "rewrite" and
+            (conf.upstream_host == nil or conf.upstream_host == "")
+        then
+            return false, "`upstream_host` can't be empty when `pass_host` is `rewrite`"
+        end
     end
 
     if conf.tls then
