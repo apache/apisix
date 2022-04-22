@@ -314,7 +314,7 @@ end
 
 
 local function verify_tls_client(ctx)
-    local matched = router.router_ssl.match_and_set(ctx)
+    local matched = router.router_ssl.match_and_set(ctx, true)
     if not matched then
         return true
     end
