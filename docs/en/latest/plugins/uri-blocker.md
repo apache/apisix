@@ -1,5 +1,10 @@
 ---
 title: uri-blocker
+keywords:
+  - APISIX
+  - Plugin
+  - URI Blocker
+description: This document contains information about the Apache APISIX uri-blocker Plugin.
 ---
 
 <!--
@@ -23,20 +28,20 @@ title: uri-blocker
 
 ## Description
 
-The plugin helps we intercept user requests, we only need to indicate the `block_rules`.
+The `uri-blocker` Plugin intercepts user requests with a set of `block_rules`.
 
 ## Attributes
 
-| Name          | Type          | Requirement | Default | Valid      | Description                                                                 |
-| ------------- | ------------- | ----------- | ------- | ---------- | --------------------------------------------------------------------------- |
-| block_rules   | array[string] | required    |         |            | Regular filter rule array. Each of these items is a regular rule. If the current request URI hits any one of them, set the response code to rejected_code to exit the current user request. Example: `["root.exe", "root.m+"]`. |
-| rejected_code | integer       | optional    | 403     | [200, ...] | The HTTP status code returned when the request URI hit any of `block_rules`. |
-| rejected_msg | string       | optional    |      | non-empty | The HTTP response body returned when the request URI hit any of `block_rules`. |
-| case_insensitive | boolean       | optional    | false     |  | Whether case insensitive or not. Set true will ignore case when matching the request URI. Default is false. |
+| Name             | Type          | Required | Default | Valid values | Description                                                                                                                                                                                           |
+|------------------|---------------|----------|---------|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| block_rules      | array[string] | True     |         |              | List of regex filter rules. If the request URI hits any one of the rules, the response code is set to the `rejected_code` and the user request is terminated. For example, `["root.exe", "root.m+"]`. |
+| rejected_code    | integer       | False    | 403     | [200, ...]   | HTTP status code returned when the request URI hits any of the `block_rules`.                                                                                                                         |
+| rejected_msg     | string        | False    |         | non-empty    | HTTP response body returned when the request URI hits any of the `block_rules`.                                                                                                                       |
+| case_insensitive | boolean       | False    | false   |              | When set to `true`, ignores the case when matching request URI.                                                                                                                                       |
 
-## How To Enable
+## Enabling the Plugin
 
-Here's an example, enable the `uri blocker` plugin on the specified route:
+The example below enables the `uri-blocker` Plugin on a specific Route:
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -56,10 +61,15 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-## Test Plugin
+## Example usage
+
+Once you have configured the Plugin as shown above, you can try accessing the file:
 
 ```shell
-$ curl -i http://127.0.0.1:9080/root.exe?a=a
+curl -i http://127.0.0.1:9080/root.exe?a=a
+```
+
+```shell
 HTTP/1.1 403 Forbidden
 Date: Wed, 17 Jun 2020 13:55:41 GMT
 Content-Type: text/html; charset=utf-8
@@ -70,10 +80,9 @@ Server: APISIX web server
 ... ...
 ```
 
-If you set the property `rejected_msg` to `"access is not allowed"` , the response body will like below:
+You can also set a `rejected_msg` and it will be added to the response body:
 
 ```shell
-$ curl -i http://127.0.0.1:9080/root.exe?a=a
 HTTP/1.1 403 Forbidden
 Date: Wed, 17 Jun 2020 13:55:41 GMT
 Content-Type: text/html; charset=utf-8
@@ -86,7 +95,7 @@ Server: APISIX web server
 
 ## Disable Plugin
 
-When you want to disable the `uri blocker` plugin, it is very simple, you can delete the corresponding json configuration in the plugin configuration, no need to restart the service, it will take effect immediately:
+To disable the `uri-blocker` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -100,5 +109,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
-
-The `uri blocker` plugin has been disabled now. It works for other plugins.
