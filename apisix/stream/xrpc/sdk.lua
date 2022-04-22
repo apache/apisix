@@ -19,9 +19,13 @@
 --
 -- @module xrpc.sdk
 local core = require("apisix.core")
+local config_util = require("apisix.core.config_util")
+local router = require("apisix.stream.router.ip_port")
 local xrpc_socket = require("resty.apisix.stream.xrpc.socket")
 local ngx_now = ngx.now
+local tab_insert = table.insert
 local error = error
+local tostring = tostring
 
 
 local _M = {}
@@ -92,11 +96,75 @@ function _M.get_req_ctx(session, id)
     end
 
     local ctx = core.tablepool.fetch("xrpc_ctxs", 4, 4)
+    -- fields start with '_' should not be accessed by the protocol implementation
     ctx._id = id
     session._ctxs[id] = ctx
 
     ctx._rpc_start_time = ngx_now()
     return ctx
+end
+
+
+---
+-- Returns the new router if the stream routes are changed
+--
+-- @function xrpc.sdk.get_router
+-- @tparam table xrpc session
+-- @tparam string the current router version, should come from the last call
+-- @treturn boolean whether there is a change
+-- @treturn table the new router under the specific protocol
+-- @treturn string the new router version
+function _M.get_router(session, version)
+    local protocol_name = session._route.protocol.name
+    local id = session._route.id
+
+    local items, conf_version = router.routes()
+    if version == conf_version then
+        return false
+    end
+
+    local proto_router = {}
+    for _, item in config_util.iterate_values(items) do
+        if item.value == nil then
+            goto CONTINUE
+        end
+
+        local route = item.value
+        if route.protocol.name ~= protocol_name then
+            goto CONTINUE
+        end
+
+        if tostring(route.protocol.superior_id) ~= id then
+            goto CONTINUE
+        end
+
+        tab_insert(proto_router, route)
+
+        ::CONTINUE::
+    end
+
+    return true, proto_router, conf_version
+end
+
+
+---
+-- Set the session's current upstream according to the route's configuration
+--
+-- @function xrpc.sdk.set_upstream
+-- @tparam table xrpc session
+-- @tparam table the route configuration
+function _M.set_upstream(session, conf)
+    local up
+    if conf.upstream then
+        up = conf.upstream
+        -- TODO: support upstream_id
+    end
+
+    local key = tostring(conf)
+    core.log.info("set upstream to: ", key)
+
+    session._upstream_key = key
+    session.upstream_conf = up
 end
 
 

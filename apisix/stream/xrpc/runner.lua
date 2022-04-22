@@ -28,7 +28,9 @@ local _M = {}
 
 local function open_session(conn_ctx)
     conn_ctx.xrpc_session = {
-        upstream_conf = conn_ctx.matched_upstream,
+        _upstream_conf = conn_ctx.matched_upstream,
+        -- fields start with '_' should not be accessed by the protocol implementation
+        _route = conn_ctx.matched_route.value,
         _ctxs = {},
     }
     return conn_ctx.xrpc_session
@@ -44,8 +46,18 @@ local function close_session(session, protocol)
         protocol.disconnect_upstream(session, up, upstream_ctx.broken)
     end
 
+    local upstream_ctxs = session._upstream_ctxs
+    if upstream_ctxs then
+        for _, upstream_ctx in pairs(upstream_ctxs) do
+            upstream_ctx.closed = true
+
+            local up = upstream_ctx.upstream
+            protocol.disconnect_upstream(session, up, upstream_ctx.broken)
+        end
+    end
+
     for id in pairs(session._ctxs) do
-        core.log.info("RPC is not finished, id: ", id)
+        core.log.notice("RPC is not finished, id: ", id)
     end
 end
 
@@ -67,8 +79,24 @@ end
 
 
 local function open_upstream(protocol, session, ctx)
-    if session._upstream_ctx then
-        return OK, session._upstream_ctx
+    local key = session._upstream_key
+    session._upstream_key = nil
+
+    if key then
+        if not session._upstream_ctxs then
+            session._upstream_ctxs = {}
+        end
+
+        local up_ctx = session._upstream_ctxs[key]
+        if up_ctx then
+            return OK, up_ctx
+        end
+    else
+        if session._upstream_ctx then
+            return OK, session._upstream_ctx
+        end
+
+        session.upstream_conf = session._upstream_conf
     end
 
     local state, upstream = protocol.connect_upstream(session, session)
@@ -76,12 +104,18 @@ local function open_upstream(protocol, session, ctx)
         return state, nil
     end
 
-    session._upstream_ctx = {
+    local up_ctx = {
         upstream = upstream,
         broken = false,
         closed = false,
     }
-    return OK, session._upstream_ctx
+    if key then
+        session._upstream_ctxs[key] = up_ctx
+    else
+        session._upstream_ctx = up_ctx
+    end
+
+    return OK, up_ctx
 end
 
 
@@ -135,18 +169,28 @@ function _M.run(protocol, conn_ctx)
         -- need to do some auth/routing jobs before reaching upstream
         local status, up_ctx = open_upstream(protocol, session, ctx)
         if status ~= OK then
+            if ctx ~= nil then
+                finish_req(protocol, session, ctx)
+            end
+
             break
         end
 
         status = protocol.to_upstream(session, ctx, downstream, up_ctx.upstream)
-        if status == DECLINED then
-            up_ctx.broken = true
-            break
-        end
+        if status ~= OK then
+            if ctx ~= nil then
+                finish_req(protocol, session, ctx)
+            end
 
-        if status == DONE then
-            -- for Unary request we can directly reply here
-            goto continue
+            if status == DECLINED then
+                up_ctx.broken = true
+                break
+            end
+
+            if status == DONE then
+                -- for Unary request we can directly reply here
+                goto continue
+            end
         end
 
         if not up_ctx.coroutine then

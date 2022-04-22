@@ -73,15 +73,13 @@ local function read_len(sk)
 end
 
 
-local function read_req(sk)
+local function read_req(sk, ctx)
     local narg, err = read_len(sk)
     if not narg then
         return nil, err
     end
 
-    local ctx = {
-        cmd_line = core.table.new(narg, 0)
-    }
+    ctx.cmd_line = core.table.new(narg, 0)
 
     for i = 1, narg do
         local n, err = read_len(sk)
@@ -116,7 +114,7 @@ local function read_req(sk)
     end
 
     ctx.cmd = ctx.cmd_line[1]
-    return ctx
+    return true
 end
 
 
@@ -195,8 +193,9 @@ end
 
 
 function _M.from_downstream(session, downstream)
-    local ctx, err = read_req(downstream)
-    if not ctx then
+    local ctx = sdk.get_req_ctx(session, 0)
+    local ok, err = read_req(downstream, ctx)
+    if not ok then
         if err ~= "timeout" and err ~= "closed" then
             core.log.error("failed to read request: ", err)
         end
