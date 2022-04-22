@@ -33,6 +33,7 @@ add_block_preprocessor(sub {
 xrpc:
   protocols:
     - name: pingpong
+    - name: redis
 _EOC_
         $block->set_value("extra_yaml_config", $extra_yaml_config);
     }
@@ -83,7 +84,7 @@ _EOC_
     $block->set_value("stream_upstream_code", $stream_upstream_code);
 
     if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
+        $block->set_value("no_error_log", "[error]\nRPC is not finished");
     }
 
     $block;
@@ -98,7 +99,6 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
             local code, body = t('/apisix/admin/stream_routes/1',
                 ngx.HTTP_PUT,
                 {
@@ -174,7 +174,6 @@ pp\x01\x00\x00\x00\x00\x00\x00\x00"
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
             local code, body = t('/apisix/admin/stream_routes/1',
                 ngx.HTTP_PUT,
                 {
@@ -218,7 +217,6 @@ failed to connect: connection refused
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
             local code, body = t('/apisix/admin/stream_routes/1',
                 ngx.HTTP_PUT,
                 {
@@ -254,7 +252,7 @@ passed
 --- stream_conf_enable
 --- stream_upstream_code
     local sock = ngx.req.socket(true)
-    sock:settimeout(10)
+    sock:settimeout(1100)
     while true do
         local data = sock:receiveany(4096)
         if not data then
@@ -264,6 +262,7 @@ passed
     end
 --- error_log
 failed to read: timeout
+--- wait: 1.1
 
 
 
@@ -290,9 +289,6 @@ failed to read: timeout
 --- response_body eval
 "pp\x03\x00\x02\x00\x00\x00\x00\x04ABCD" .
 "pp\x03\x00\x01\x00\x00\x00\x00\x03ABC"
---- no_error_log
-RPC is not finished
-[error]
 
 
 
@@ -348,9 +344,6 @@ RPC is not finished
     assert(sock:send(data1))
 --- response_body eval
 "pp\x03\x00\x01\x00\x00\x00\x00\x03ABC"
---- no_error_log
-RPC is not finished
-[error]
 
 
 
@@ -374,3 +367,241 @@ RPC is not finished
 "pp\x03\x00\x03\x00\x00\x00\x00\x03ABC" .
 "pp\x03\x00\x02\x00\x00\x00\x00\x02AB" .
 "pp\x03\x00\x01\x00\x00\x00\x00\x01A"
+
+
+
+=== TEST 14: superior & subordinate
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        name = "pingpong"
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.3:1995"] = 1
+                        },
+                        type = "roundrobin"
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/stream_routes/2',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        superior_id = 1,
+                        conf = {
+                            service = "a"
+                        },
+                        name = "pingpong"
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:1995"] = 1
+                        },
+                        type = "roundrobin"
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/stream_routes/3',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        superior_id = 1,
+                        conf = {
+                            service = "b"
+                        },
+                        name = "pingpong"
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.2:1995"] = 1
+                        },
+                        type = "roundrobin"
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            -- routes below should not be used to matched
+            local code, body = t('/apisix/admin/stream_routes/4',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        superior_id = 10000,
+                        conf = {
+                            service = "b"
+                        },
+                        name = "pingpong"
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.2:1979"] = 1
+                        },
+                        type = "roundrobin"
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/stream_routes/5',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        name = "redis"
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:6379"] = 1
+                        },
+                        type = "roundrobin"
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 15: hit
+--- request eval
+"POST /t
+" .
+"pp\x04\x00\x00\x00\x00\x00\x00\x03a\x00\x00\x00ABC" .
+"pp\x04\x00\x00\x00\x00\x00\x00\x04b\x00\x00\x00ABCD" .
+"pp\x04\x00\x00\x00\x00\x00\x00\x03a\x00\x00\x00ABC"
+--- response_body eval
+"pp\x04\x00\x00\x00\x00\x00\x00\x03a\x00\x00\x00ABC" .
+"pp\x04\x00\x00\x00\x00\x00\x00\x04b\x00\x00\x00ABCD" .
+"pp\x04\x00\x00\x00\x00\x00\x00\x03a\x00\x00\x00ABC"
+--- grep_error_log eval
+qr/connect to \S+ while prereading client data/
+--- grep_error_log_out
+connect to 127.0.0.1:1995 while prereading client data
+connect to 127.0.0.2:1995 while prereading client data
+--- stream_conf_enable
+
+
+
+=== TEST 16: hit (fallback to superior if not found)
+--- request eval
+"POST /t
+" .
+"pp\x04\x00\x00\x00\x00\x00\x00\x03abcdABC" .
+"pp\x04\x00\x00\x00\x00\x00\x00\x04a\x00\x00\x00ABCD" .
+"pp\x04\x00\x00\x00\x00\x00\x00\x03abcdABC"
+--- response_body eval
+"pp\x04\x00\x00\x00\x00\x00\x00\x03abcdABC" .
+"pp\x04\x00\x00\x00\x00\x00\x00\x04a\x00\x00\x00ABCD" .
+"pp\x04\x00\x00\x00\x00\x00\x00\x03abcdABC"
+--- grep_error_log eval
+qr/connect to \S+ while prereading client data/
+--- grep_error_log_out
+connect to 127.0.0.3:1995 while prereading client data
+connect to 127.0.0.1:1995 while prereading client data
+--- stream_conf_enable
+
+
+
+=== TEST 17: cache router by version
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local sock = ngx.socket.tcp()
+            sock:settimeout(1000)
+            local ok, err = sock:connect("127.0.0.1", 1985)
+            if not ok then
+                ngx.log(ngx.ERR, "failed to connect: ", err)
+                return ngx.exit(503)
+            end
+
+            assert(sock:send("pp\x04\x00\x00\x00\x00\x00\x00\x03a\x00\x00\x00ABC"))
+
+            ngx.sleep(0.1)
+
+            local code, body = t('/apisix/admin/stream_routes/2',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        superior_id = 1,
+                        conf = {
+                            service = "c"
+                        },
+                        name = "pingpong"
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.4:1995"] = 1
+                        },
+                        type = "roundrobin"
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(0.1)
+
+            local s = "pp\x04\x00\x00\x00\x00\x00\x00\x04a\x00\x00\x00ABCD"
+            assert(sock:send(s .. "pp\x04\x00\x00\x00\x00\x00\x00\x03c\x00\x00\x00ABC"))
+
+            while true do
+                local data, err = sock:receiveany(4096)
+                if not data then
+                    sock:close()
+                    break
+                end
+                ngx.print(data)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+"pp\x04\x00\x00\x00\x00\x00\x00\x03a\x00\x00\x00ABC" .
+"pp\x04\x00\x00\x00\x00\x00\x00\x04a\x00\x00\x00ABCD" .
+"pp\x04\x00\x00\x00\x00\x00\x00\x03c\x00\x00\x00ABC"
+--- grep_error_log eval
+qr/connect to \S+ while prereading client data/
+--- grep_error_log_out
+connect to 127.0.0.1:1995 while prereading client data
+connect to 127.0.0.3:1995 while prereading client data
+connect to 127.0.0.4:1995 while prereading client data
+--- stream_conf_enable
