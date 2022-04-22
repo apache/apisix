@@ -313,8 +313,8 @@ end
 
 
 local function verify_tls_client(ctx)
-    if ctx and ctx.ssl_client_verified then
-        local res = ngx_var.ssl_client_verify
+    local res = ngx_var.ssl_client_verify
+    if res ~= nil then
         if res ~= "SUCCESS" then
             if res == "NONE" then
                 core.log.error("client certificate was not present")

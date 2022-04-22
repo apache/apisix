@@ -209,8 +209,6 @@ function _M.match_and_set(api_ctx)
             if not ok then
                 return false, err
             end
-
-            api_ctx.ssl_client_verified = true
         end
     end
 
