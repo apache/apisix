@@ -200,7 +200,7 @@ if ($version =~ m/\/apisix-nginx-module/) {
     $a6_ngx_directives = <<_EOC_;
     apisix_delay_client_max_body_check on;
     apisix_mirror_on_demand on;
-    wasm_vm wasmtime;
+    #wasm_vm wasmtime;
 _EOC_
 }
 

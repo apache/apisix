@@ -476,11 +476,12 @@ GET /t
                 )
 
             ngx.status = code
-            ngx.print(body)
+            ngx.say(body)
         }
     }
 --- request
 GET /t
---- error_code: 201
+--- response_body
+passed
 --- no_error_log
 [error]
