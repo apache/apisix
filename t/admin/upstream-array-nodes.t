@@ -453,7 +453,7 @@ GET /t
 
 
 
-=== TEST 22: nodes host include ipv6 addr
+=== TEST 14: nodes host include ipv6 addr
 --- config
     location /t {
         content_by_lua_block {
