@@ -1,5 +1,11 @@
 ---
 title: ua-restriction
+keywords:
+  - APISIX
+  - Plugin
+  - UA restriction
+  - ua-restriction
+description: This document contains information about the Apache APISIX ua-restriction Plugin.
 ---
 
 <!--
@@ -23,24 +29,26 @@ title: ua-restriction
 
 ## Description
 
-The `ua-restriction` can restrict access to a Service or a Route by `allowlist` and `denylist` `User-Agent` header.
+The `ua-restriction` Plugin allows you to restrict access to a Route or Service based on the `User-Agent` header with an `allowlist` and a `denylist`.
 
 ## Attributes
 
-| Name      | Type          | Requirement | Default | Valid | Description                              |
-| --------- | ------------- | ----------- | ------- | ----- | ---------------------------------------- |
-| bypass_missing  | boolean       | optional    | false   |       | Whether to bypass the check when the User-Agent header is missing |
-| allowlist | array[string] | optional    |         |       | A list of allowed User-Agent headers. |
-| denylist | array[string] | optional    |         |       | A list of denied User-Agent headers. |
-| message | string | optional             | Not allowed. | length range: [1, 1024] | Message of deny reason. |
+| Name           | Type          | Required | Default      | Valid values            | Description                                                                     |
+|----------------|---------------|----------|--------------|-------------------------|---------------------------------------------------------------------------------|
+| bypass_missing | boolean       | False    | false        |                         | When set to `true`, bypasses the check when the `User-Agent` header is missing. |
+| allowlist      | array[string] | False    |              |                         | List of allowed `User-Agent` headers.                                           |
+| denylist       | array[string] | False    |              |                         | List of denied `User-Agent` headers.                                            |
+| message        | string        | False    | Not allowed. | length range: [1, 1024] | Message with the reason for denial to be added to the response.                 |
 
-Any of `allowlist` or `denylist` can be optional, and can work together in this order: allowlist->denylist
+:::note
 
-The message can be user-defined.
+Both `allowlist` and `denylist` can be used on their own. If they are used together, the `allowlist` matches before the `denylist`.
 
-## How To Enable
+:::
 
-Creates a route or service object, and enable plugin `ua-restriction`.
+## Enabling the Plugin
+
+You can enable the Plugin on a Route or a Service as shown below:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -68,7 +76,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-Default returns `{"message":"Not allowed"}` when rejected. If you want to use a custom message, you can configure it in the plugin section.
+You can also configure the Plugin to respond with a custom rejection message:
 
 ```json
 "plugins": {
@@ -82,31 +90,35 @@ Default returns `{"message":"Not allowed"}` when rejected. If you want to use a 
 }
 ```
 
-## Test Plugin
+## Example usage
 
-Requests from normal User-Agent:
+After you have configured the Plugin as shown above, you can make a normal request which will get accepted:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -i
+curl http://127.0.0.1:9080/index.html -i
+```
+
+```shell
 HTTP/1.1 200 OK
 ...
 ```
 
-Requests with the bot User-Agent:
+Now if the `User-Agent` header is in the `denylist` i.e the bot User-Agent:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html --header 'User-Agent: Twitterspider/2.0'
+curl http://127.0.0.1:9080/index.html --header 'User-Agent: Twitterspider/2.0'
+```
+
+```shell
 HTTP/1.1 403 Forbidden
 ```
 
 ## Disable Plugin
 
-When you want to disable the `ua-restriction` plugin, it is very simple,
-you can delete the corresponding json configuration in the plugin configuration,
-no need to restart the service, it will take effect immediately:
+To disable the `ua-restriction` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},
@@ -118,5 +130,3 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
 }'
 ```
-
-The `ua-restriction` plugin has been disabled now. It works for other plugins.
