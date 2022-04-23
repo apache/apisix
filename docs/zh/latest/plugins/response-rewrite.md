@@ -123,7 +123,7 @@ X-Server-balancer_addr: 127.0.0.1:80
 
 [ngx.exit](https://openresty-reference.readthedocs.io/en/latest/Lua_Nginx_API/#ngxexit) 将会中断当前请求的执行并将其状态码返回给 NGINX。
 
-如果你在 `access` 阶段执行 `ngx.exit`，只是中断了请求处理阶段，响应阶段仍然会处理。比如，如果你配置了 `response-rewrite` 插件，它会强制覆盖你的响应信息（如响应代码）。
+如果你在 `access` 阶段执行了 `ngx.exit`，该操作只是中断了请求处理阶段，响应阶段仍然会处理。如果你配置了 `response-rewrite` 插件，它会强制覆盖你的响应信息（如响应代码）。
 
 ![ngx.edit tabular overview](https://cdn.jsdelivr.net/gh/Miss-you/img/picgo/20201113010623.png)
 
@@ -131,7 +131,7 @@ X-Server-balancer_addr: 127.0.0.1:80
 
 ## 禁用插件
 
-当你需要禁用 `response-rewrite` 插件时，可以通过以下命令删除相应的 `JSON` 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要禁用 `response-rewrite` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  \

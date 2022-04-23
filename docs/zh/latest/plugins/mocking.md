@@ -29,7 +29,7 @@ keywords:
 
 ## 描述
 
-`mocking` 插件用于 Mock API。当执行该插件时，它将随机返回指定格式的模拟数据，并且请求不会转发到上游。
+`mocking` 插件用于模拟 API。当执行该插件时，它将随机返回指定格式的模拟数据，并且请求不会转发到上游。
 
 ## 属性
 
@@ -42,7 +42,7 @@ keywords:
 | response_schema | object | 否    |                  | 指定响应的 `jsonschema` 对象，未指定 `response_example` 字段时生效。                        |
 | with_mock_header| boolean| 否    | true             | 当设置为 `true` 时，将添加响应头 `x-mock-by: APISIX/{version}`。设置为 `false` 时则不添加该响应头。   |
 
-JSON schema 在其字段中支持以下类型：
+JSON Schema 在其字段中支持以下类型：
 
 - `string`
 - `number`
@@ -51,7 +51,7 @@ JSON schema 在其字段中支持以下类型：
 - `object`
 - `array`
 
-以下是一个 JSON schema 示例：
+以下是一个 JSON Schema 示例：
 
 ```json
 {
@@ -99,7 +99,7 @@ JSON schema 在其字段中支持以下类型：
 }
 ```
 
-以下为上述 JSON schema 可能生成的返回对象：
+以下为上述 JSON Schema 可能生成的返回对象：
 
 ```json
 {
@@ -226,7 +226,7 @@ Server: APISIX/2.10.0
 
 ## 禁用插件
 
-当你需要禁用 `mocking` 插件时，可以通过以下命令删除相应的 `JSON` 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要禁用 `mocking` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 \

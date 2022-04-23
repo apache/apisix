@@ -29,7 +29,7 @@ description: 本文介绍了关于 Apache APISIX `proxy-rewrite` 插件的基本
 
 ## 描述
 
-`proxy-rewrite` 是上游代理信息重写插件，支持对 `scheme`、`uri`、`host` 等信息的重写。
+`proxy-rewrite` 是处理上游代理信息重写的插件，支持对 `scheme`、`uri`、`host` 等信息进行重写。
 
 ## 属性
 
@@ -81,7 +81,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  \
 curl -X GET http://127.0.0.1:9080/test/index.html
 ```
 
-发送请求，查看上游服务 `access.log`，如果输出信息与配置一致则表示 `proxy-rewrite` 插件已经生效。示例如下：
+发送请求，查看上游服务的 `access.log`，如果输出信息与配置一致则表示 `proxy-rewrite` 插件已经生效。示例如下：
 
 ```
 127.0.0.1 - [26/Sep/2019:10:52:20 +0800] iresty.com GET /test/home.html HTTP/1.1 200 38 - curl/7.29.0 - 0.000 199 107
@@ -89,7 +89,7 @@ curl -X GET http://127.0.0.1:9080/test/index.html
 
 ## 禁用插件
 
-当你需要禁用 `proxy-rewrite` 插件时，可以通过以下命令删除相应的 `JSON` 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要禁用 `proxy-rewrite` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

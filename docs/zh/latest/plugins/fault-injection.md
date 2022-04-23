@@ -29,11 +29,7 @@ description: 本文介绍了关于 Apache APISIX `fault-injection` 插件的基�
 
 ## 描述
 
-`fault-injection` 插件，该插件可以和其他插件一起使用，并且会在其他插件前被执行。
-
-`abort` 属性将直接返回给客户端指定的响应码并且终止其他插件的执行。
-
-`delay` 属性将延迟某个请求，并且还会执行配置的其他插件。
+`fault-injection` 插件是故障注入插件，该插件可以和其他插件一起使用，并在其他插件执行前被执行。
 
 ## 属性
 
@@ -49,13 +45,17 @@ description: 本文介绍了关于 Apache APISIX `fault-injection` 插件的基�
 
 :::info IMPORTANT
 
+`abort` 属性将直接返回给客户端指定的响应码并且终止其他插件的执行。
+
+`delay` 属性将延迟某个请求，并且还会执行配置的其他插件。
+
 `abort` 和 `delay` 属性至少要配置一个。
 
 :::
 
 :::tip
 
-`vars` 是由 [`lua-resty-expr`](https://github.com/api7/lua-resty-expr) 的表达式组成的列表，它可以灵活的实现规则之间的 AND/OR 关系，示例如下：
+`vars` 是由 [`lua-resty-expr`](https://github.com/api7/lua-resty-expr) 的表达式组成的列表，它可以灵活的实现规则之间的 AND/OR 关系，示例如下：：
 
 ```json
 [
@@ -161,7 +161,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  \
 
 ## 测试插件
 
-通过上述示例启用插件后，可以向路由发起请求：
+通过上述示例启用插件后，可以向路由发起如下请求：
 
 ```shell
 curl http://127.0.0.1:9080/hello -i
@@ -269,7 +269,7 @@ Fault Injection!
 
 ## 禁用插件
 
-当你需要禁用 `fault-injection` 插件时，可以通过以下命令删除相应的 `JSON` 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要禁用 `fault-injection` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 \

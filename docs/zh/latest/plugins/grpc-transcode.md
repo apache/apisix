@@ -29,7 +29,7 @@ description: 本文介绍了关于 Apache APISIX `grpc-transcode` 插件的基�
 
 ## 描述
 
-`grpc-transcode` 插件可以在 HTTP 和 gRPC 请求之间进行转换。
+使用 `grpc-transcode` 插件可以在 HTTP 和 gRPC 请求之间进行转换。
 
 APISIX 接收 HTTP 请求后，首先对请求进行转码，并将转码后的请求转发到 gRPC 服务，获取响应并以 HTTP 格式将其返回给客户端。
 
@@ -37,13 +37,13 @@ APISIX 接收 HTTP 请求后，首先对请求进行转码，并将转码后的�
 
 ## 属性
 
-| 名称      | 类型                                                                       | 必选项 | 默认值 | 有效值 | 描述                       |
-| --------- | -------------------------------------------------------------------------- | ------ | ------ | ------ | -------------------------- |
-| proto_id  | string/integer                                                             | 是   |        |        | `.proto` 内容的 id。         |
-| service   | string                                                                     | 是   |        |        | gRPC 服务名。                |
-| method    | string                                                                     | 是   |        |        | gRPC 服务中要调用的方法名。  |
-| deadline  | number                                                                     | 否   | 0      |        | gRPC 服务的 deadline，单位为：ms。          |
-| pb_option | array[string([pb_option_def](#b_option 的选项))]                            | 否   |        |        | proto 编码过程中的转换选项。 |
+| 名称      | 类型                                                                       | 必选项 | 默认值 |描述                               |
+| --------- | -------------------------------------------------  | ----- | ------  ------------------------------ |
+| proto_id  | string/integer                                     | 是    |        | `.proto` 内容的 id。             |
+| service   | string                                             | 是    |        | gRPC 服务名。                    |
+| method    | string                                             | 是    |        | gRPC 服务中要调用的方法名。        |
+| deadline  | number                                             | 否    | 0      | gRPC 服务的 deadline，单位为：ms。 |
+| pb_option | array[string([pb_option_def](#pb_option-的选项))]    | 否    |        | proto 编码过程中的转换选项。       |
 
 ### pb_option 的选项
 
@@ -98,7 +98,7 @@ protoc --include_imports --descriptor_set_out=proto.pb proto/helloworld.proto
 
 输出的二进制文件 `proto.pb` 将同时包含 `helloworld.proto` 和 `import.proto`。
 
-然后我们可以将 `proto.pb` 的内容作为 proto 的 `content` 字段提交。
+然后将 `proto.pb` 的内容作为 proto 的 `content` 字段提交。
 
 由于 proto 的内容是二进制的，我们需要使用以下 Python 脚本将其转换成 `base64`：
 
@@ -134,7 +134,7 @@ print(resp.text)
 
 运行脚本：
 
-```bash
+```shell
 chmod +x ./upload_pb.pb
 ./upload_pb.py proto.pb 1
 ```
@@ -251,7 +251,7 @@ Trailer: grpc-message
 
 ## 禁用插件
 
-当你需要禁用 `grpc-transcode` 插件时，可以通过以下命令删除相应的 `JSON` 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要禁用 `grpc-transcode` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
