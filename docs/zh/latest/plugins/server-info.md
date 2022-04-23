@@ -69,7 +69,7 @@ plugins:                          # plugin list
 | --------------- | ------- | ------ | --------------------------------------------------------------- |
 | report_ttl      | integer | 36     | etcd 中服务信息保存的 TTL（单位：秒，最大值：86400，最小值：3）。|
 
-以下是示例是修改配置文件（`conf/config.yaml`）中的 `plugin_attr` 部分将 `report_ttl` 设置为 1 分钟：
+以下是示例是通过修改配置文件（`conf/config.yaml`）中的 `plugin_attr` 部分将 `report_ttl` 设置为 1 分钟：
 
 ```yaml title="conf/config.yaml"
 plugin_attr:
@@ -103,7 +103,7 @@ curl http://127.0.0.1:9090/v1/server_info -s | jq .
 
 ## 禁用插件
 
-如果你想禁用插件，可以将 `server-info` 从配置文件中的插件列表删除，重新加载 APISIX 后就可以生效。
+如果你想禁用插件，可以将 `server-info` 从配置文件中的插件列表删除，重新加载 APISIX 后即可生效。
 
 ```yaml title="conf/config.yaml"
 plugins:    # plugin list

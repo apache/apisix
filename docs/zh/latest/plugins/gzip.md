@@ -28,11 +28,11 @@ description: 本文介绍了关于 Apache APISIX `gzip` 插件的基本信息及
 
 ## 描述
 
-`gzip` 插件能动态设置 `Nginx` 的压缩行为。
+`gzip` 插件能动态设置 NGINX 的压缩行为。
 
 :::info IMPORTANT
 
-该插件要求 `APISIX` 运行在 [APISIX-OpenResty](../how-to-build.md#步骤-6-为-apache-apisix-构建-openresty) 上。
+该插件要求 Apache APISIX 运行在 [APISIX-OpenResty](../how-to-build.md#步骤-6-为-apache-apisix-构建-openresty) 上。
 
 :::
 
@@ -97,7 +97,7 @@ Warning: <FILE>" to save to a file.
 
 ## 禁用插件
 
-当你需要禁用 `gzip` 插件时，可以通过以下命令删除相应的 `JSON` 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要禁用 `gzip` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  \

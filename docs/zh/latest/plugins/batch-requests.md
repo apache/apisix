@@ -124,7 +124,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests \
 
 你可以通过 [public-api](../../../en/latest/plugins/public-api.md) 插件设置自定义 URI。
 
-只需要在创建 Route 时设置所需的 URI 并更改 `public-api` 插件的配置：
+只需要在创建路由时设置所需的 URI 并更改 `public-api` 插件的配置：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/br \
@@ -141,7 +141,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/br \
 
 ## 测试插件
 
-首先，你需要为 `batch-requests` 插件的 API 创建一个 Route，它将使用 [public-api](../../../en/latest/plugins/public-api.md) 插件。
+首先，你需要为 `batch-requests` 插件的 API 创建一个路由，它将使用 [public-api](../../../en/latest/plugins/public-api.md) 插件。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 \
@@ -213,7 +213,7 @@ curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 
 ## 禁用插件
 
-如果你想禁用插件，可以将 `batch-requests` 从配置文件中的插件列表删除，重新加载 APISIX 后就可以生效。
+如果你想禁用插件，可以将 `batch-requests` 从配置文件中的插件列表删除，重新加载 APISIX 后即可生效。
 
 ```yaml title="conf/config.yaml"
 plugins:    # plugin list

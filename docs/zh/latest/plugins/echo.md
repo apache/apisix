@@ -43,9 +43,9 @@ description: 本文介绍了关于 Apache APISIX `echo` 插件的基本信息及
 
 | 名称        | 类型   | 必选项  |  描述                                                                                            |
 | ----------- | ------ | ------ | ----------------------------------------------------------------------------------------------- |
-| before_body | string | 否     | 在 `body` 属性之前添加的内容，如果 `body` 属性没有指定，就会将其添加在 Upstream response body 之前。 |
-| body        | string | 否     | 返回给客户端的响应内容，它将覆盖 Upstream 返回的响应 `body`。                                        |
-| after_body  | string | 否     | 在 `body` 属性之后添加的内容，如果 body 属性没有指定将在 Upstream 响应 `body` 之后添加。              |
+| before_body | string | 否     | 在 `body` 属性之前添加的内容，如果 `body` 属性没有指定，就会将其添加在上游 `response body` 之前。 |
+| body        | string | 否     | 返回给客户端的响应内容，它将覆盖上游返回的响应 `body`。                                        |
+| after_body  | string | 否     | 在 `body` 属性之后添加的内容，如果 body 属性没有指定将在上游响应 `body` 之后添加。              |
 | headers     | object | 否     | 返回值的 headers。                                                                                |
 
 :::note
@@ -93,7 +93,7 @@ before the body modification hello world
 
 ## 禁用插件
 
-当你需要禁用 `echo` 插件时，可通过以下命令删除相应的 `JSON` 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要禁用 `echo` 插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  \
