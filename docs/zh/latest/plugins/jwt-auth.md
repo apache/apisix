@@ -31,7 +31,7 @@ description: 本文介绍了关于 Apache APISIX `jwt-auth` 插件的基本信�
 
 `jwt-auth` 插件用于将 [JWT](https://jwt.io/) 身份验证添加到 [Service](../terminology/service.md) 或 [Route](../terminology/route.md) 中。
 
-然后 Consumer 需要将其密匙添加到查询字符串参数、请求头或 `cookie` 中用来验证其请求。
+通过 Consumer 将其密匙添加到查询字符串参数、请求头或 `cookie` 中用来验证其请求。
 
 `jwt-auth` 插件可以与 [HashiCorp Vault](https://www.vaultproject.io/) 集成，用于存储和获取密钥，并从 HashiCorp Vault 的 [encrypted KV engine](https://www.vaultproject.io/docs/secrets/kv)中获取 RSA 密匙对。你可以从下面的 [示例](#与-HashiCorp-Vault-一起使用) 中了解更多信息。
 
@@ -138,15 +138,15 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 }'
 ```
 
-### 与 HashiCorp Vault 一起使用
+### 与 HashiCorp Vault 集成使用
 
 [HashiCorp Vault](https://www.vaultproject.io/) 提供集中式密钥管理解决方案，可与 APISIX 一起用于身份验证。
 
-因此，如果你的企业经常更改 secret/keys（HS256/HS512 的密钥或 RS256 的 public_key 和 private_key）并且你不想每次都更新 APISIX 的 Consumer，或者你不想通过 Admin API（以减少秘密蔓延），你可以使用 Vault 和 `jwt-auth` 插件。
+因此，如果你的企业经常更改 secret/keys（HS256/HS512 的密钥或 RS256 的 public_key 和 private_key）并且你不想每次都更新 APISIX 的 Consumer，或者你不想通过 Admin API（减少信息泄漏），你可以将 Vault 和 `jwt-auth` 插件一起使用。
 
 :::note
 
-当前版本的 Apache APISIX 期望存储在 Vault 中的机密的密钥名称位于 `secret`、`public_key` 和 `private_key` 之间。前一个用于 HS256/HS512 算法，后两个用于 RS256 算法。
+当前版本的 Apache APISIX 期望存储在 Vault 中机密的密钥名称位于 `secret`、`public_key` 和 `private_key` 之间。前一个用于 HS256/HS512 算法，后两个用于 RS256 算法。
 
 在未来的版本中，该插件将支持引用自定义命名键。
 
@@ -170,11 +170,11 @@ curl http://127.0.0.1:9080/apisix/admin/consumers \
 }'
 ```
 
-该插件将在提供的 Vault 路径（<vault.prefix>/consumer/jack/jwt-auth）中查找密钥 `secret`，并将其用于 JWT 身份验证。 如果在同一路径中找不到密钥，插件会记录错误并且无法执行 JWT 验证。
+该插件将在提供的 Vault 路径（<vault.prefix>/consumer/jack/jwt-auth）中查找密钥 `secret`，并将其用于 JWT 身份验证。如果在同一路径中找不到密钥，插件会记录错误并且无法执行 JWT 验证。
 
 :::note
 
-`vault.prefix` 应该在你的配置文件（`conf/config.yaml`）中根据你在启用 Vault kv secret engine 时选择的基本路径进行设置。
+`vault.prefix` 会在配置文件（`conf/config.yaml`）中根据启用 `Vault kv secret engine` 时选择的基本路径进行设置。
 
 例如，如果设置了 `vault secrets enable -path=foobar kv`，就需要在 `vault.prefix` 中使用 `foobar`。
 
@@ -221,7 +221,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers \
 }'
 ```
 
-你还可以使用 [APISIX Dashboard](https://github.com/apache/apisix-dashboard)，通过 Web UI 完成上述操作。
+你还可以通过 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 的 Web 界面完成上述操作。
 
 <!--
 ![create a consumer](../../../assets/images/plugin/jwt-auth-1.png)
@@ -244,7 +244,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/jas \
 }'
 ```
 
-之后，你就可以调用它获取 token 了。
+之后就可以通过调用它来获取 token 了。
 
 * 没有额外的 payload:
 

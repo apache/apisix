@@ -29,7 +29,7 @@ description: 本文介绍了关于 Apache APISIX `hmac-auth` 插件的基本信�
 
 ## 描述
 
-`hmac-auth` 插件可以将 [HMAC authentication](https://en.wikipedia.org/wiki/HMAC)添加到 Route 或者 Service。
+`hmac-auth` 插件可以将 [HMAC authentication](https://en.wikipedia.org/wiki/HMAC) 添加到 Route 或者 Service。
 
 该插件需要和 Consumer 一起使用，API 的使用者必须将密匙添加到请求头中以验证其请求。
 
@@ -67,7 +67,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers \
 }'
 ```
 
-你也可以使用 [APISIX Dashboard](/docs/dashboard/USER_GUIDE) 通过 Web UI 完成操作。
+你也可以通过 [APISIX Dashboard](/docs/dashboard/USER_GUIDE) 的 Web 界面完成操作。
 
 <!--
 ![create a consumer](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/hmac-auth-1.png)
@@ -75,7 +75,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers \
 ![enable hmac plugin](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/hmac-auth-2.png)
 -->
 
-然后，你可以在 Route 或 Service 中启用插件，如下所示：
+然后就可以在 Route 或 Service 中启用插件，如下所示：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 \
@@ -98,13 +98,13 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 
 ### 签名生成公式
 
-签名的计算公式为 `signature = HMAC-SHAx-HEX(secret_key, signing_string)`。
+需注意，在使用 `hmac-auth` 插件时，会涉及到签名。签名的计算公式为 `signature = HMAC-SHAx-HEX(secret_key, signing_string)`。
 
-为了生成签名需要两个参数：`secret_key` 和 `signing_string`。其中 `secret_key` 由对应 Consumer 配置，`signing_string` 的计算公式为 `signing_string = HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n + signed_headers_string`。如果 `signing_string` 中的某一项不存在，也需要使用一个空字符串代替：
+为了生成签名需要两个参数：`secret_key` 和 `signing_string`。其中 `secret_key` 由对应 Consumer 配置，`signing_string` 的计算公式为 `signing_string = HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n + signed_headers_string`。如果 `signing_string` 中的某一项不存在，则需要使用一个空字符串代替：
 
 - **HTTP Method**：指 HTTP 协议中定义的 GET、PUT、POST 等请求方法，必须使用全大写的形式。
-- **HTTP URI**：HTTP URI。必须以“/”开头，“/”表示空路径。
-- **Date**：请求头中的日期（ GMT 格式 ）。
+- **HTTP URI**：HTTP URI。必须以 “/” 开头，“/” 表示空路径。
+- **Date**：请求头中的日期（GMT 格式）。
 - **canonical_query_string**：对 URL 中的 query（query 即 URL 中 `?` 后面的 `key1=valve1&key2=valve2` 字符串）进行编码后的结果。
 - **signed_headers_string**：从请求头中获取客户端指定的字段，并按顺序拼接字符串的结果。
 
@@ -114,12 +114,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 2. 使用 `&` 作为分隔符，将 query 拆分成键值对。
 3. 如果 `encode_uri_param` 为 true 时：
   1. 当该项有 `key` 时，转换公式为 `url_encode(key) + "="`。
-  2. 当该项同时有 `key` `value` 时，转换公式为 `url_encode(key) + "=" + url_encode(value)` 。此处 `value` 可以是空字符串。
+  2. 当该项同时有 `key` 和 `value` 时，转换公式为 `url_encode(key) + "=" + url_encode(value)` 。此处 `value` 可以是空字符串。
   3. 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 `canonical_query_string` 。
 4. 如果 `encode_uri_param` 为 false 时：
   1. 当该项只有 `key` 时，转换公式为 `key + "="` 。
-  2. 当该项同时有 `key` `value` 时，转换公式为 `key + "=" + value` 。此处 `value` 可以是空字符串。
-  3. 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 `canonical_query_string`。
+  2. 当该项同时有 `key` 和 `value` 时，转换公式为 `key + "=" + value` 。此处 `value` 可以是空字符串。
+  3. 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 `&` 符号连接起来，生成相应的 `canonical_query_string`。
 
 > 生成 `signed_headers_string` 的算法如下：
 
@@ -271,14 +271,14 @@ Accept-Ranges: bytes
 :::note
 
 1. ACCESS_KEY、SIGNATURE、ALGORITHM、DATE、SIGNED_HEADERS 分别代表对应的变量。
-2. SIGNED_HEADERS 为客户端指定的加入加密计算的 headers。若存在多个 headers 需以 ";" 分割：`x-custom-header-a;x-custom-header-b`。
+2. SIGNED_HEADERS 为客户端指定的加入加密计算的 headers。若存在多个 headers 需以 “;” 分割，例如：`x-custom-header-a;x-custom-header-b`。
 3. SIGNATURE 需要使用 base64 进行加密：`base64_encode(SIGNATURE)`。
 
 :::
 
 ## 自定义 header 名称
 
-你可以在 `conf/config.yaml` 配置文件中的`plugin_attr` 配置项下添加 `hmac-auth` 插件的属性来自定义参数 header 名称。如下所示：
+除了配置签名外，你还可以在配置文件（`conf/config.yaml`）中的`plugin_attr` 配置项下，添加 `hmac-auth` 插件的属性来自定义参数 header 名称。如下所示：
 
 ```yaml title="conf/config.yaml"
 plugin_attr:

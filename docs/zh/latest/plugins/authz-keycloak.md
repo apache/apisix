@@ -33,7 +33,7 @@ description: 本文介绍了关于 Apache APISIX `authz-keycloak` 插件的基�
 
 :::tip
 
-虽然该插件是为了与 Keycloak 一起使用而开发的，但是它也可以与任何符合 OAuth/OIDC 和 UMA 协议的身份认证软件一起使用。
+虽然该插件是为了与 Keycloak 一起使用而开发的，但是它也可以与任何符合 OAuth/OIDC 或 UMA 协议的身份认证软件一起使用。
 
 :::
 
@@ -71,39 +71,19 @@ description: 本文介绍了关于 Apache APISIX `authz-keycloak` 插件的基�
 下述描述需要认真 review！
 -->
 
-### Discovery and endpoints
-
-使用 `discovery` 属性后，`authz-keycloak` 插件就可以从中发现 Keycloak API 的端点。
-
-如果你设置了该参数，`token_endpoint` 和 `resource_registration_endpoint` 将覆盖从发现文档中获得的值。
-
-### Client ID and secret
-
-该插件需要配置 `client_id` 或 `audience`（用于向后兼容）属性来识别，并且此属性指定该插件在与 Keycloak 交互时进行评估权限的背景。
-
-如果两者都已经配置，则 `client_id` 优先级最高。
-
-如果 `lazy_load_paths` 属性被设置为 `true`，那么该插件还需要从 Keycloak 中为自己获得一个访问令牌。在这种情况下，如果客户端对 Keycloak 的访问是加密的，就需要配置 `client_secret` 属性。
-
-### Policy enforcement mode
-
-`policy_enforcement_mode` 属性指定了在处理发送到服务器的授权请求时，该插件如何执行策略。
-
-#### `ENFORCING` mode
-
-即使没有与资源关联的策略，请求也会默认被拒绝。
-
-`policy_enforcement_mode` 默认设置为 `ENFORCING`。
-
-#### `PERMISSIVE` mode
-
-如果资源没有绑定任何访问策略，请求会被允许。
-
-### Permissions
-
-在处理传入的请求时，插件可以根据请求的参数确定静态或动态检查 Keycloak 的权限。
-
-如果 `lazy_load_paths` 参数设置为 `false`，则权限来自 `permissions` 属性。`permissions` 中的每个条目都需要按照令牌端点预设的 `permission` 属性进行格式化。详细信息请参考 [Obtaining Permissions](https://www.keycloak.org/docs/latest/authorization_services/index.html#_service_obtaining_permissions).
+- Discovery and endpoints
+    - 使用 `discovery` 属性后，`authz-keycloak` 插件就可以从其 URL 中发现 Keycloak API 的端点。该 URL 指向 Keyloak 针对相应领域授权服务的发现文档。
+    - 如果发现文档可用，则插件将根据该文档确定令牌端点 URL。如果 URL 存在，则 `token_endpoint` 和 `resource_registration_endpoint` 的值将被其覆盖。
+- Client ID and secret
+    - 该插件需配置 `client_id` 或 `audience`（用于向后兼容）属性来标识自身，如果两者都已经配置，则 `client_id` 优先级更高。
+    - 如果 `lazy_load_paths` 属性被设置为 `true`，那么该插件还需要从 Keycloak 中获得一个自身访问令牌。在这种情况下，如果客户端对 Keycloak 的访问是加密的，就需要配置 `client_secret` 属性。
+- Policy enforcement mode
+    - `policy_enforcement_mode` 属性指定了在处理发送到服务器的授权请求时，该插件如何执行策略。
+        - `ENFORCING` mode：即使没有与给定资源关联的策略，请求也会默认被拒绝。`policy_enforcement_mode` 默认设置为 `ENFORCING`。
+        - `PERMISSIVE` mode：如果资源没有绑定任何访问策略，也被允许请求。
+- Permissions
+    - 在处理传入的请求时，插件可以根据请求的参数确定静态或动态检查 Keycloak 的权限。
+    - 如果 `lazy_load_paths` 参数设置为 `false`，则权限来自 `permissions` 属性。`permissions` 中的每个条目都需要按照令牌端点预设的 `permission` 属性进行格式化。详细信息请参考 [Obtaining Permissions](https://www.keycloak.org/docs/latest/authorization_services/index.html#_service_obtaining_permissions).
 
 :::note
 
@@ -121,21 +101,21 @@ description: 本文介绍了关于 Apache APISIX `authz-keycloak` 插件的基�
 
 :::
 
-### Automatically mapping HTTP method to scope
+### 自动将 HTTP method 映射到作用域
 
 `http_method_as_scope` 通常与 `lazy_load_paths` 一起使用，但也可以与静态权限列表一起使用。
 
-如果 `http_method_as_scope` 属性设置为 `true`，插件会将请求的 HTTP 方法映射到同名范围。然后将范围添加到每个要检查的权限。
+- 如果 `http_method_as_scope` 属性设置为 `true`，插件会将请求的 HTTP 方法映射到同名范围。然后将范围添加到每个要检查的权限。
 
-如果 `lazy_load_paths` 属性设置为 `false`，则插件会将映射范围添加到 `permissions` 属性中配置的任意一个静态权限——即使它们已经包含一个或多个范围。
+- 如果 `lazy_load_paths` 属性设置为 `false`，则插件会将映射范围添加到 `permissions` 属性中配置的任意一个静态权限——即使它们已经包含一个或多个范围。
 
-### Generating a token using `password` grant
+### 使用 `password` 授权生成令牌
 
 如果要使用 `password` 授权生成令牌，你可以设置 `password_grant_token_generation_incoming_uri` 属性的值。
 
 如果传入的 URI 与配置的属性匹配并且请求方法是 POST，则使用 `token_endpoint` 生成一个令牌。
 
-你还需要添加 `application/x-www-form-urlencoded` 作为 `Content-Type` 标头以及 `username` 和 `password` 作为参数。
+同时，你还需要添加 `application/x-www-form-urlencoded` 作为 `Content-Type` 标头，`username` 和 `password` 作为参数。
 
 如下示例是当 `password_grant_token_generation_incoming_uri` 设置为 `/api/token` 时的命令：
 
@@ -149,7 +129,7 @@ curl --location --request POST 'http://127.0.0.1:9080/api/token' \
 
 ## 如何启用
 
-以下示例为你展示了如何在指定 Route 中启用 `authz-keycloak` 插件，其中 `${realm}` 是 `Keycloak` 中的 `realm` 名称：
+以下示例为你展示了如何在指定 Route 中启用 `authz-keycloak` 插件，其中 `${realm}` 是 Keycloak 中的 `realm` 名称：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 \
@@ -176,7 +156,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 
 通过上述命令启用插件后，可以通过以下方法测试插件。
 
-首先你必须从 Keycloak 获取 JWT 令牌：
+首先需要从 Keycloak 获取 JWT 令牌：
 
 ```shell
 curl \
@@ -215,6 +195,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 
 ## 插件 Roadmap
 
-- 目前，`authz-keycloak` 插件要求你定义资源名称和所需的范围，用来强制执行路由策略。 但是 Keycloak 官方适配的其他语言客户端（Java、JavaScript）还可以通过动态查询 Keycloak 路径以及延迟加载身份资源的路径来提供路径匹配。 即将发布的插件将支持此功能。
+- 目前，`authz-keycloak` 插件通过要求定义资源名称和所需的范围，来强制执行路由策略。但 Keycloak 官方适配的其他语言客户端（Java、JavaScript）仍然可以通过动态查询 Keycloak 路径以及延迟加载身份资源的路径来提供路径匹配。在 Apache APISIX 之后发布的插件中即将支持此功能。
 
 - 支持从 Keycloak JSON 文件中读取权限范畴和其他配置项。

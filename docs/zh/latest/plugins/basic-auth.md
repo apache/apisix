@@ -29,9 +29,9 @@ description: 本文介绍了关于 Apache APISIX `basic-auth` 插件的基本信
 
 ## 描述
 
-`basic-auth` 插件用于将 [Basic_access_authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) 添加到路由或服务中。
+使用 `basic-auth` 插件可以将 [Basic_access_authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) 添加到 Route 或 Service 中。
 
-该插件需要与 [Consumer](../architecture-design/consumer.md) 一起使用。API 的消费者可以将它们的密钥添加到请求头中以验证其的请求。
+该插件需要与 [Consumer](../architecture-design/consumer.md) 一起使用。API 的消费者可以将它们的密钥添加到请求头中以验证其请求。
 
 ## 属性
 
@@ -66,7 +66,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers \
 }'
 ```
 
-你也可以通过 [APISIX Dashboard](/docs/dashboard/USER_GUIDE) 完成上面的操作。
+你也可以通过 [APISIX Dashboard](/docs/dashboard/USER_GUIDE) 完成上述操作。
 
 <!--
 ![auth-1](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/basic-auth-1.png)

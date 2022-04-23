@@ -28,24 +28,24 @@ description: 本文介绍了关于 Apache APISIX `forward-auth` 插件的基本�
 
 ## 描述
 
-`forward-auth` 插件使用的是经典外部认证。当身份认证失败时，你可以实现自定义错误或者重定向到认证页面。
+`forward-auth` 插件使用的是经典外部认证。当身份认证失败时，可以实现自定义错误或者重定向到认证页面的场景。
 
-`forward-auth` 插件巧妙地将身份认证和授权逻辑移到了一个专门的外部服务中，APISIX 将用户的请求转发给认证服务并阻塞原始请求，并且在认证服务以非 2xx 状态响应时替换结果。
+`forward-auth` 插件巧妙地将身份认证和授权逻辑移到了一个专门的外部服务中，APISIX 将用户的请求转发给认证服务并阻塞原始请求，然后在认证服务下以非 2xx 状态响应时进行结果替换。
 
 ## 属性
 
-| 名称              | 类型           | 必选项 |  默认值 | 有效值         | 描述                                                                                                                                   |
-| ----------------- | ------------- | ------| ------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| uri               | string        | 是    |         |                | 设置 `authorization` 服务的地址 (例如：https://localhost:9188)。                                                                         |
-| ssl_verify        | boolean       | 否    | true    | [true, false]  | 当设置为 `true` 时，验证 SSL 证书。                                                                                                      |
-| request_method    | string        | 否    | GET     | ["GET","POST"] | 客户端向 `authorization` 服务发送请求的方法。当设置为 POST 时，会将 request body 转发至 `authorization` 服务。                             |
-| request_headers   | array[string] | 否    |         |                | 设置需要由客户端转发到 `authorization` 服务的请求头。如果没有设置，则只发送 APISIX 提供的 headers (例如：X-Forwarded-XXX)。                 |
-| upstream_headers  | array[string] | 否    |         |                | 认证通过时，设置 `authorization` 服务转发至 `upstream` 的请求头。如果不设置则不转发任何请求头。                                             |
-| client_headers    | array[string] | 否    |         |                | 认证失败时，由 `authorization` 服务向 `client` 发送的响应头。如果不设置则不转发任何响应头。                                                 |
-| timeout           | integer       | 否    | 3000ms  | [1, 60000]ms   | `authorization` 服务请求超时时间。                                                                                                       |
-| keepalive         | boolean       | 否    | true    | [true, false]  | HTTP 长连接。                                                                                                                            |
-| keepalive_timeout | integer       | 否    | 60000ms | [1000, ...]ms  | 长连接超时时间。                                                                                                                         |
-| keepalive_pool    | integer       | 否    | 5       | [1, ...]ms     | 长连接池大小。                                                                                                                           |
+| 名称              | 类型           | 必选项 |  默认值 | 有效值         | 描述                                                                                                               |
+| ----------------- | ------------- | ------| ------- | -------------- | -------------------------------------------------------------------------------------------------------------------- |
+| uri               | string        | 是    |         |                | 设置 `authorization` 服务的地址 (例如：https://localhost:9188)。                                                      |
+| ssl_verify        | boolean       | 否    | true    | [true, false]  | 当设置为 `true` 时，验证 SSL 证书。                                                                                  |
+| request_method    | string        | 否    | GET     | ["GET","POST"] | 客户端向 `authorization` 服务发送请求的方法。当设置为 POST 时，会将 `request body` 转发至 `authorization` 服务。         |
+| request_headers   | array[string] | 否    |         |                | 设置需要由客户端转发到 `authorization` 服务的请求头。如果没有设置，则只发送 APISIX 提供的 headers (例如：X-Forwarded-XXX)。 |
+| upstream_headers  | array[string] | 否    |         |                | 认证通过时，设置 `authorization` 服务转发至 `upstream` 的请求头。如果不设置则不转发任何请求头。                             |
+| client_headers    | array[string] | 否    |         |                | 认证失败时，由 `authorization` 服务向 `client` 发送的响应头。如果不设置则不转发任何响应头。                                |
+| timeout           | integer       | 否    | 3000ms  | [1, 60000]ms   | `authorization` 服务请求超时时间。                                                                                     |
+| keepalive         | boolean       | 否    | true    | [true, false]  | HTTP 长连接。                                                                                                         |
+| keepalive_timeout | integer       | 否    | 60000ms | [1000, ...]ms  | 长连接超时时间。                                                                                                      |
+| keepalive_pool    | integer       | 否    | 5       | [1, ...]ms     | 长连接池大小。                                                                                                        |
 
 ## 数据定义
 
@@ -87,7 +87,7 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
 }'
 ```
 
-现在你可以在指定路由上启用 `forward-auth` 插件：
+现在你可以在指定 Route 上启用 `forward-auth` 插件：
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/1' \
@@ -111,9 +111,9 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/1' \
 }'
 ```
 
-完成上述配置后，我们可以通过以下三种方式进行测试：
+完成上述配置后，可通过以下三种方式进行测试：
 
-- 在请求标头中发送认证的详细信息：
+- 在请求头中发送认证的详细信息：
 
 ```shell
 curl http://127.0.0.1:9080/headers -H 'Authorization: 123'

@@ -57,7 +57,7 @@ description: 本文介绍了关于 Apache APISIX `wolf-rbac` 插件的基本信�
 
 如果要使用这个插件，你必须要[安装 wolf](https://github.com/iGeeky/wolf/blob/master/quick-start-with-docker/README.md) 并启动它。
 
-完成后，你需要添加`application`、`admin`、`普通用户`、`permission`、`resource`和用户授权到 [wolf-console](https://github.com/iGeeky/wolf/blob/master/docs/usage.md)。
+完成后，你需要添加`application`、`admin`、`regular user`、`permission`、`resource` 等字段，并将用户授权到 [wolf-console](https://github.com/iGeeky/wolf/blob/master/docs/usage.md)。
 
 ## 启用插件
 
@@ -80,7 +80,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers  \
 
 :::note
 
-示例中填写的 `appid` 需要在 wolf 控制台中已经存在的。
+示例中填写的 `appid`，必须是已经在 wolf 控制台中存在的。
 
 :::
 
@@ -104,7 +104,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  \
 }'
 ```
 
-你还可以使用 [APISIX Dashboard](https://github.com/apache/apisix-dashboard)，通过 Web UI 完成上述操作。
+你还可以通过 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 的 Web 界面完成上述操作。
 
 <!--
 ![add a consumer](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/wolf-rbac-1.png)
@@ -149,7 +149,7 @@ Server: APISIX web server
 
 :::note
 
-上述示例中， `appid`、`username`、`password` 必须为 wolf 系统中真实存在的。
+上述示例中，`appid`、`username` 和 `password` 必须为 wolf 系统中真实存在的。
 
 `authType` 为认证类型，`1` 为密码认证（默认），`2` 为 LDAP 认证。`wolf` 从 0.5.0 版本开始支持了 LDAP 认证。
 
@@ -163,7 +163,7 @@ curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/login -i \
 -d 'appid=restful&username=test&password=user-password'
 ```
 
-现在开始测试路由：
+现在开始测试 Route：
 
 - 缺少 token
 
@@ -228,7 +228,7 @@ HTTP/1.1 200 OK
 <!DOCTYPE html>
 ```
 
-获取用户信息：
+- 获取用户信息：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/user_info \
@@ -254,7 +254,7 @@ HTTP/1.1 200 OK
 }
 ```
 
-更改用户的密码：
+- 更改用户的密码：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/change_pwd \
