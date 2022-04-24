@@ -260,9 +260,9 @@ passed
         end
         sock:send(data:sub(5))
     end
+--- wait: 1.1
 --- error_log
 failed to read: timeout
---- wait: 1.1
 
 
 
@@ -604,4 +604,130 @@ qr/connect to \S+ while prereading client data/
 connect to 127.0.0.1:1995 while prereading client data
 connect to 127.0.0.3:1995 while prereading client data
 connect to 127.0.0.4:1995 while prereading client data
+--- stream_conf_enable
+
+
+
+=== TEST 18: use upstream_id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                {
+                    nodes = {
+                        ["127.0.0.3:1995"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/stream_routes/2',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        superior_id = 1,
+                        conf = {
+                            service = "a"
+                        },
+                        name = "pingpong"
+                    },
+                    upstream_id = 1
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 19: hit
+--- request eval
+"POST /t
+" .
+"pp\x04\x00\x00\x00\x00\x00\x00\x03a\x00\x00\x00ABC"
+--- response_body eval
+"pp\x04\x00\x00\x00\x00\x00\x00\x03a\x00\x00\x00ABC"
+--- grep_error_log eval
+qr/connect to \S+ while prereading client data/
+--- grep_error_log_out
+connect to 127.0.0.3:1995 while prereading client data
+--- stream_conf_enable
+
+
+
+=== TEST 20: cache router by version, with upstream_id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local sock = ngx.socket.tcp()
+            sock:settimeout(1000)
+            local ok, err = sock:connect("127.0.0.1", 1985)
+            if not ok then
+                ngx.log(ngx.ERR, "failed to connect: ", err)
+                return ngx.exit(503)
+            end
+
+            assert(sock:send("pp\x04\x00\x00\x00\x00\x00\x00\x03a\x00\x00\x00ABC"))
+
+            ngx.sleep(0.1)
+
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                {
+                    nodes = {
+                        ["127.0.0.1:1995"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(0.1)
+
+            local s = "pp\x04\x00\x00\x00\x00\x00\x00\x04a\x00\x00\x00ABCD"
+            assert(sock:send(s))
+
+            while true do
+                local data, err = sock:receiveany(4096)
+                if not data then
+                    sock:close()
+                    break
+                end
+                ngx.print(data)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+"pp\x04\x00\x00\x00\x00\x00\x00\x03a\x00\x00\x00ABC" .
+"pp\x04\x00\x00\x00\x00\x00\x00\x04a\x00\x00\x00ABCD"
+--- grep_error_log eval
+qr/connect to \S+ while prereading client data/
+--- grep_error_log_out
+connect to 127.0.0.3:1995 while prereading client data
+connect to 127.0.0.1:1995 while prereading client data
 --- stream_conf_enable
