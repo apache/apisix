@@ -613,7 +613,7 @@ end
 -- This function should be used in the `init_worker_by_lua` phase.
 --
 -- @function core.config.new
--- @tparam string etcd directory to be monitored, e.g. "/routes".
+-- @tparam string key etcd directory to be monitored, e.g. "/routes".
 -- @tparam table opts Parameters related to the etcd client connection.
 -- The keys in `opts` are as follows:
 --  * automatic: whether to get the latest etcd data automatically
