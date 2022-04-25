@@ -21,8 +21,10 @@
 local core = require("apisix.core")
 local config_util = require("apisix.core.config_util")
 local router = require("apisix.stream.router.ip_port")
+local apisix_upstream = require("apisix.upstream")
 local xrpc_socket = require("resty.apisix.stream.xrpc.socket")
 local ngx_now = ngx.now
+local str_fmt = string.format
 local tab_insert = table.insert
 local error = error
 local tostring = tostring
@@ -153,18 +155,25 @@ end
 -- @function xrpc.sdk.set_upstream
 -- @tparam table xrpc session
 -- @tparam table the route configuration
+-- @treturn nil|string error message if present
 function _M.set_upstream(session, conf)
     local up
     if conf.upstream then
         up = conf.upstream
-        -- TODO: support upstream_id
+    else
+        local id = conf.upstream_id
+        up = apisix_upstream.get_by_id(id)
+        if not up then
+            return str_fmt("upstream %s can't be got", id)
+        end
     end
 
-    local key = tostring(conf)
-    core.log.info("set upstream to: ", key)
+    local key = tostring(up)
+    core.log.info("set upstream to: ", key, " conf: ", core.json.delay_encode(up, true))
 
     session._upstream_key = key
     session.upstream_conf = up
+    return nil
 end
 
 

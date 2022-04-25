@@ -544,4 +544,30 @@ function _M.init_worker()
 end
 
 
+function _M.get_by_id(up_id)
+    local upstream
+    local upstreams = core.config.fetch_created_obj("/upstreams")
+    if upstreams then
+        upstream = upstreams:get(tostring(up_id))
+    end
+
+    if not upstream then
+        core.log.error("failed to find upstream by id: ", up_id)
+        return nil
+    end
+
+    if upstream.has_domain then
+        local err
+        upstream, err = upstream_util.parse_domain_in_up(upstream)
+        if err then
+            core.log.error("failed to get resolved upstream: ", err)
+            return nil
+        end
+    end
+
+    core.log.info("parsed upstream: ", core.json.delay_encode(upstream, true))
+    return upstream.dns_value or upstream.value
+end
+
+
 return _M
