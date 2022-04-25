@@ -140,7 +140,11 @@ function _M.from_downstream(session, downstream)
 
         local conf = router[ctx.service]
         if conf then
-            sdk.set_upstream(session, conf)
+            local err = sdk.set_upstream(session, conf)
+            if err then
+                core.log.error("failed to set upstream: ", err)
+                return DECLINED
+            end
         end
     end
 
