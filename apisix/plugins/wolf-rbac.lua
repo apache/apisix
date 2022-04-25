@@ -29,7 +29,6 @@ local setmetatable = setmetatable
 local type     = type
 local string   = string
 local req_read_body = ngx.req.read_body
-local req_get_post_args = ngx.req.get_post_args
 local req_get_body_data = ngx.req.get_body_data
 
 local plugin_name = "wolf-rbac"
