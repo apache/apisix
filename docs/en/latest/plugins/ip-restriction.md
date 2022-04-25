@@ -1,5 +1,11 @@
 ---
 title: ip-restriction
+keywords:
+  - APISIX
+  - Plugin
+  - IP restriction
+  - ip-restriction
+description: This document contains information about the Apache APISIX ip-restriction Plugin.
 ---
 
 <!--
@@ -23,24 +29,27 @@ title: ip-restriction
 
 ## Description
 
-The `ip-restriction` can restrict access to a Service or a Route by either
-whitelisting or blacklisting IP addresses. Single IPs, multiple IPs or ranges
-in CIDR notation like 10.10.10.0/24 can be used.
+The `ip-restriction` Plugin allows you to restrict access to a Service or a Route by either whitelisting or blacklisting IP addresses.
+
+Single IPs, multiple IPs or even IP ranges in CIDR notation like `10.10.10.0/24` can be used.
 
 ## Attributes
 
-| Name      | Type          | Requirement | Default | Valid | Description                              |
-| --------- | ------------- | ----------- | ------- | ----- | ---------------------------------------- |
-| whitelist | array[string] | optional    |         |       | List of IPs or CIDR ranges to whitelist. |
-| blacklist | array[string] | optional    |         |       | List of IPs or CIDR ranges to blacklist. |
-| message | string | optional    | Your IP address is not allowed. | [1, 1024] | Message returned in case IP access is not allowed. |
+| Name      | Type          | Required | Default                         | Valid values | Description                                                 |
+|-----------|---------------|----------|---------------------------------|--------------|-------------------------------------------------------------|
+| whitelist | array[string] | False    |                                 |              | List of IPs or CIDR ranges to whitelist.                    |
+| blacklist | array[string] | False    |                                 |              | List of IPs or CIDR ranges to blacklist.                    |
+| message   | string        | False    | Your IP address is not allowed. | [1, 1024]    | Message returned when the IP address is not allowed access. |
 
-One of `whitelist` or `blacklist` must be specified, and they can not work together.
-The message can be user-defined.
+:::note
 
-## How To Enable
+Either one of `whitelist` or `blacklist` attribute must be specified. They cannot be used together.
 
-Creates a route or service object, and enable plugin `ip-restriction`.
+:::
+
+## Enabling the Plugin
+
+You can enable the Plugin on a Route or a Service as shown below:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -63,7 +72,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-Default returns `{"message":"Your IP address is not allowed"}` when unallowed IP access. If you want to use a custom message, you can configure it in the plugin section.
+To return a custom message when an IP address is not allowed access, configure it in the Plugin as shown below:
 
 ```json
 "plugins": {
@@ -77,30 +86,32 @@ Default returns `{"message":"Your IP address is not allowed"}` when unallowed IP
 }
 ```
 
-## Test Plugin
+## Example usage
 
-Requests from `127.0.0.1`:
+After you have configured the Plugin as shown above, when you make a request from the IP `127.0.0.1`:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -i
+curl http://127.0.0.1:9080/index.html -i
+```
+
+```shell
 HTTP/1.1 200 OK
 ...
 ```
 
-Requests from `127.0.0.2`:
+But if you make requests from `127.0.0.2`:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -i --interface 127.0.0.2
+curl http://127.0.0.1:9080/index.html -i --interface 127.0.0.2
+```
+
+```
 HTTP/1.1 403 Forbidden
 ...
 {"message":"Your IP address is not allowed"}
 ```
 
-## Change the restriction
-
-When you want to change the whitelisted ip, it is very simple,
-you can send the corresponding json configuration in the plugin configuration,
-no need to restart the service, it will take effect immediately:
+To change the whitelisted/blacklisted IPs, you can update the Plugin configuration. The changes are hot reloaded and there is no need to restart the service.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -123,33 +134,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin after restriction change
-
-Requests from `127.0.0.2`:
-
-```shell
-$ curl http://127.0.0.2:9080/index.html -i --interface 127.0.0.2
-HTTP/1.1 200 OK
-...
-```
-
-Requests from `127.0.0.1`:
-
-```shell
-$ curl http://127.0.0.1:9080/index.html -i
-HTTP/1.1 403 Forbidden
-...
-{"message":"Your IP address is not allowed"}
-```
-
 ## Disable Plugin
 
-When you want to disable the `ip-restriction` plugin, it is very simple,
-you can delete the corresponding json configuration in the plugin configuration,
-no need to restart the service, it will take effect immediately:
+To disable the `ip-restriction` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},
@@ -161,5 +151,3 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
 }'
 ```
-
-The `ip-restriction` plugin has been disabled now. It works for other plugins.
