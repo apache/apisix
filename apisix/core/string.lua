@@ -27,6 +27,8 @@ local ffi         = require("ffi")
 local C           = ffi.C
 local ffi_cast    = ffi.cast
 local ngx         = ngx
+local ngx_decode_args  = ngx.decode_args
+local ngx_encode_args  = ngx.encode_args
 
 
 ffi.cdef[[
@@ -102,5 +104,16 @@ function _M.compress_script(s)
     return s
 end
 
+
+function _M.decode_args(args)
+    -- use 0 to avoid truncated result and keep the behavior as the
+    -- same as other platforms
+    return ngx_decode_args(args, 0)
+end
+
+
+function _M.encode_args(args)
+    return ngx_encode_args(args)
+end
 
 return _M
