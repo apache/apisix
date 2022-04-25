@@ -59,7 +59,7 @@ description: 本文介绍了关于 Apache APISIX `response-rewrite` 插件的基
 
 :::note
 
-`body` 和 `filters`属性只能配置其中一个。
+`body` 和 `filters` 属性只能配置其中一个。
 
 :::
 
