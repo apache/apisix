@@ -144,7 +144,7 @@ docker-compose -p docker-apisix up -d
 ```
 
 </TabItem>
-  
+
 <TabItem value="arm">
 
 ```shell
