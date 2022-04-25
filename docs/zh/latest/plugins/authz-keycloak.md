@@ -67,9 +67,7 @@ description: 本文介绍了关于 Apache APISIX `authz-keycloak` 插件的基�
 | access_denied_redirect_uri                   | string        | 否    |                                               | [1, 2048]                                                          | 需要将用户重定向到的 URI，而不是返回类似 `"error_description":"not_authorized"` 这样的错误消息。                                                                                                                                        |
 | password_grant_token_generation_incoming_uri | string        | 否    |                                               | /api/token                                                         | 将此设置为使用密码授予类型生成令牌。该插件会将传入的请求 URI 与此值进行比较。                                                                                                                |
 
-<!--
-下述描述需要认真 review！
--->
+除上述释义外，还有以下需要注意的点：
 
 - Discovery and endpoints
     - 使用 `discovery` 属性后，`authz-keycloak` 插件就可以从其 URL 中发现 Keycloak API 的端点。该 URL 指向 Keyloak 针对相应领域授权服务的发现文档。
@@ -85,47 +83,47 @@ description: 本文介绍了关于 Apache APISIX `authz-keycloak` 插件的基�
     - 在处理传入的请求时，插件可以根据请求的参数确定静态或动态检查 Keycloak 的权限。
     - 如果 `lazy_load_paths` 参数设置为 `false`，则权限来自 `permissions` 属性。`permissions` 中的每个条目都需要按照令牌端点预设的 `permission` 属性进行格式化。详细信息请参考 [Obtaining Permissions](https://www.keycloak.org/docs/latest/authorization_services/index.html#_service_obtaining_permissions).
 
-:::note
+    :::note
 
-有效权限可以是单个资源，也可以是与一个或多个范围配对的资源。
+    有效权限可以是单个资源，也可以是与一个或多个范围配对的资源。
 
-:::
+    :::
 
-如果 `lazy_load_paths` 属性设置为 `true`，则请求 URI 将解析为使用资源注册端点在 Keycloak 中配置的一个或多个资源。已经解析的资源被用作于检查的权限。
+    如果 `lazy_load_paths` 属性设置为 `true`，则请求 URI 将解析为使用资源注册端点在 Keycloak 中配置的一个或多个资源。已经解析的资源被用作于检查的权限。
 
-:::note
+    :::note
 
-需要该插件从令牌端点为自己获取单独的访问令牌。因此，请确保在 Keycloak 的客户端设置中设置了 `Service Accounts Enabled` 选项。
+    需要该插件从令牌端点为自己获取单独的访问令牌。因此，请确保在 Keycloak 的客户端设置中设置了 `Service Accounts Enabled` 选项。
 
-还需要确保颁发的访问令牌包含具有 `uma_protection` 角色的 `resource_access` 声明，以保证插件能够通过 Protection API 查询资源。
+    还需要确保颁发的访问令牌包含具有 `uma_protection` 角色的 `resource_access` 声明，以保证插件能够通过 Protection API 查询资源。
 
-:::
+    :::
 
-### 自动将 HTTP method 映射到作用域
+- 自动将 HTTP method 映射到作用域
 
-`http_method_as_scope` 通常与 `lazy_load_paths` 一起使用，但也可以与静态权限列表一起使用。
+    `http_method_as_scope` 通常与 `lazy_load_paths` 一起使用，但也可以与静态权限列表一起使用。
 
-- 如果 `http_method_as_scope` 属性设置为 `true`，插件会将请求的 HTTP 方法映射到同名范围。然后将范围添加到每个要检查的权限。
+    - 如果 `http_method_as_scope` 属性设置为 `true`，插件会将请求的 HTTP 方法映射到同名范围。然后将范围添加到每个要检查的权限。
 
-- 如果 `lazy_load_paths` 属性设置为 `false`，则插件会将映射范围添加到 `permissions` 属性中配置的任意一个静态权限——即使它们已经包含一个或多个范围。
+    - 如果 `lazy_load_paths` 属性设置为 `false`，则插件会将映射范围添加到 `permissions` 属性中配置的任意一个静态权限——即使它们已经包含一个或多个范围。
 
-### 使用 `password` 授权生成令牌
+- 使用 `password` 授权生成令牌
 
-如果要使用 `password` 授权生成令牌，你可以设置 `password_grant_token_generation_incoming_uri` 属性的值。
+    - 如果要使用 `password` 授权生成令牌，你可以设置 `password_grant_token_generation_incoming_uri` 属性的值。
 
-如果传入的 URI 与配置的属性匹配并且请求方法是 POST，则使用 `token_endpoint` 生成一个令牌。
+    - 如果传入的 URI 与配置的属性匹配并且请求方法是 POST，则使用 `token_endpoint` 生成一个令牌。
 
-同时，你还需要添加 `application/x-www-form-urlencoded` 作为 `Content-Type` 标头，`username` 和 `password` 作为参数。
+    同时，你还需要添加 `application/x-www-form-urlencoded` 作为 `Content-Type` 标头，`username` 和 `password` 作为参数。
 
-如下示例是当 `password_grant_token_generation_incoming_uri` 设置为 `/api/token` 时的命令：
+    如下示例是当 `password_grant_token_generation_incoming_uri` 设置为 `/api/token` 时的命令：
 
-```shell
-curl --location --request POST 'http://127.0.0.1:9080/api/token' \
---header 'Accept: application/json, text/plain, */*' \
---header 'Content-Type: application/x-www-form-urlencoded' \
---data-urlencode 'username=<User_Name>' \
---data-urlencode 'password=<Password>'
-```
+    ```shell
+    curl --location --request POST 'http://127.0.0.1:9080/api/token' \
+    --header 'Accept: application/json, text/plain, */*' \
+    --header 'Content-Type: application/x-www-form-urlencoded' \
+    --data-urlencode 'username=<User_Name>' \
+    --data-urlencode 'password=<Password>'
+    ```
 
 ## 如何启用
 
