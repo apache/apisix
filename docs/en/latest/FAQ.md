@@ -245,7 +245,7 @@ nginx_config:
 
 All Plugins in Apache APISIX are hot reloaded.
 
-You can learn more about hot reloading of Plugins [here](https://apisix.apache.org/docs/apisix/next/plugins/#hot-reload).
+You can learn more about hot reloading of Plugins [here](https://apisix.apache.org/docs/apisix/architecture-design/plugin/#hot-reload).
 
 ## How do I configure Apache APISIX to listen on multiple ports when handling HTTP or HTTPS requests?
 
