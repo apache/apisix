@@ -548,7 +548,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 测试这个配置:
 
 ```shell
-$ curl http://127.0.0.1:9080/foo/get -i
+curl http://127.0.0.1:9080/foo/get -i
 HTTP/1.1 200 OK
 ...
 {
