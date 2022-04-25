@@ -344,7 +344,7 @@ local function get_args()
             core.log.error("json.decode(", req_body, ") failed! ", err)
         end
     else
-        args = req_get_post_args()
+        args = core.request.get_post_args(ctx)
     end
 
     return args
