@@ -504,3 +504,44 @@ X-Nickname: administrator
 id:100,username:admin,nickname:administrator
 --- no_error_log
 [error]
+
+
+
+=== TEST 27: change password by post raw args
+--- request
+PUT /apisix/plugin/wolf-rbac/change_pwd
+oldPassword=123456&newPassword=abcdef
+--- more_headers
+Cookie: x-rbac-token=V1#wolf-rbac-app#wolf-rbac-token
+--- error_code: 200
+--- response_body_like eval
+qr/success to change password/
+
+
+
+=== TEST 28: change password by post raw args, greater than 100 args is ok
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin")
+
+        local headers = {
+            ["Cookie"] = "x-rbac-token=V1#wolf-rbac-app#wolf-rbac-token"
+        }
+        local tbl = {}
+        for i=1, 100 do
+            tbl[i] = "test"..tostring(i).."=test&"
+        end
+        tbl[101] = "oldPassword=123456&newPassword=abcdef"
+        local code, _, real_body = t.test('/apisix/plugin/wolf-rbac/change_pwd',
+            ngx.HTTP_PUT,
+            table.concat(tbl, ""),
+            nil,
+            headers
+        )
+        ngx.status = 200
+        ngx.say(real_body)
+    }
+}
+--- response_body_like eval
+qr/success to change password/
