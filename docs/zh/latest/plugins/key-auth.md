@@ -1,5 +1,11 @@
 ---
 title: key-auth
+keywords:
+  - APISIX
+  - Plugin
+  - Key Auth
+  - key-auth
+description: 本文介绍了关于 Apache APISIX `key-auth` 插件的基本信息及使用方法。
 ---
 
 <!--
@@ -23,32 +29,35 @@ title: key-auth
 
 ## 描述
 
-`key-auth` 是一个认证插件，它需要与 `consumer` 一起配合才能工作。
+`key-auth` 插件用于向 Route 或 Service 添加身份验证密钥（API key）。
 
-添加 Key Authentication 到一个 `service` 或 `route`。 然后，`consumer` 将其密钥添加到查询字符串参数或标头中以验证其请求。
+它需要与 [Consumer](../architecture-design/consumer.md) 一起配合才能工作，通过 Consumer 将其密钥添加到查询字符串参数或标头中以验证其请求。
 
 ## 属性
 
-consumer 端配置：
+Consumer 端：
 
-| 名称 | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                          |
-| ---- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------------- |
-| key  | string | 必需   |        |        | 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `key`，将会出现请求匹配异常。 |
+| 名称 | 类型   | 必选项  | 描述                                                                                                          |
+| ---- | ------ | ------ | ------------------------------------------------------------------------------------------------------------- |
+| key  | string | 是     | 不同的 Consumer 应有不同的 `key`，它应当是唯一的。如果多个 Consumer 使用了相同的 `key`，将会出现请求匹配异常。 |
 
-router 端配置：
+Router 端：
 
-| 名称 | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                          |
-| ---- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------------- |
-| header  | string | 可选 | apikey |        | 设置我们从哪个 header 获取 key。 |
-| query  | string | 可选 | apikey |        | 设置我们从哪个 query string 获取 key，优先级低于 `header` |
-| hide_credentials  | bool | 可选 | false |        | 是否将含有认证信息的请求头传递给 upstream。 |
+| 名称              | 类型   | 必选项 | 默认值 | 描述                                                                                                          |
+| ----------------- | ------ | ----- | ------ |------------------------------------------------------------------------------------------------------------- |
+| header            | string | 否    | apikey | 设置我们从哪个 header 获取 key。 |
+| query             | string | 否    | apikey | 设置我们从哪个 query string 获取 key，优先级低于 `header` |
+| hide_credentials  | bool   | 否    | false  | 当设置为 `false` 时将含有认证信息的请求头传递给 Upstream。 |
 
-## 如何启用
+## 启用插件
 
-1. 创建一个 consumer 对象，并设置插件 `key-auth` 的值。
+如果你要启用插件，就必须使用身份验证密钥创建一个 Consumer 对象，并且需要配置 Route 才可以对请求进行身份验证。
+
+首先，你可以通过 Admin API 创建一个具有唯一 key 的 Consumer：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -59,16 +68,25 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-你也可以通过 web 界面来完成上面的操作，先增加一个 consumer：
-![create a consumer](../../../assets/images/plugin/key-auth-1.png)
+你还可以通过 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 的 Web 界面完成上述操作。
 
-然后在 consumer 页面中添加 key-auth 插件：
-![enable key-auth plugin](../../../assets/images/plugin/key-auth-2.png)
+<!--
 
-2. 创建 route 或 service 对象，并开启 `key-auth` 插件。
+首先创建一个 Consumer：
+
+![create a consumer](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/key-auth-1.png)
+
+然后在 Consumer 页面中添加 `key-auth` 插件：
+
+![enable key-auth plugin](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/key-auth-2.png)
+
+-->
+
+创建 Consumer 对象后，你可以创建 Route 进行验证：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -85,7 +103,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-如果不想从默认的 `apikey` header 获取 key，可以自定义 header：
+如果你不想从默认的 `apikey` header 获取 key，可以自定义 header，如下所示：
 
 ```json
 {
@@ -97,23 +115,34 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-下面是一个正常通过 `key-auth` 验证的请求：
+通过上述方法配置插件后，可以通过以下命令测试插件：
 
 ```shell
-$ curl http://127.0.0.2:9080/index.html -H 'apikey: auth-one' -i
+curl http://127.0.0.2:9080/index.html -H 'apikey: auth-one' -i
+```
+
+```
 HTTP/1.1 200 OK
 ...
 ```
 
-如果当前请求没有正确设置 `apikey`，将得到一个 `401` 的应答。
+如果当前请求没有正确配置 `apikey`，将得到一个 `401` 的应答：
 
 ```shell
-$ curl http://127.0.0.2:9080/index.html -i
+curl http://127.0.0.2:9080/index.html -i
+```
+
+```shell
 HTTP/1.1 401 Unauthorized
 ...
 {"message":"Missing API key found in request"}
+```
 
-$ curl http://127.0.0.2:9080/index.html -H 'apikey: abcabcabc' -i
+```shell
+curl http://127.0.0.2:9080/index.html -H 'apikey: abcabcabc' -i
+```
+
+```shell
 HTTP/1.1 401 Unauthorized
 ...
 {"message":"Invalid API key in request"}
@@ -121,10 +150,11 @@ HTTP/1.1 401 Unauthorized
 
 ## 禁用插件
 
-当你想去掉 `key-auth` 插件的时候，很简单，在插件的配置中把对应的 `json` 配置删除即可，无须重启服务，即刻生效：
+当你需要禁用 `key-auth` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -139,5 +169,3 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
 }'
 ```
-
-现在就已经移除了该插件配置，其他插件的开启和移除也是同样的方法。
