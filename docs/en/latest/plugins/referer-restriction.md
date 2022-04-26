@@ -29,8 +29,7 @@ description: This document contains information about the Apache APISIX referer-
 
 ## Description
 
-The `referer-restriction` Plugin can be used to restrict access to a Service or a Route by
-whitelisting/blacklisting the `Referer` request header.
+The `referer-restriction` Plugin can be used to restrict access to a Service or a Route by whitelisting/blacklisting the `Referer` request header.
 
 ## Attributes
 

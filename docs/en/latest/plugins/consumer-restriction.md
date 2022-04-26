@@ -29,7 +29,7 @@ description: This document contains information about the Apache APISIX consumer
 
 ## Description
 
-The `consumer-restriction` Plugin allows to set access restrictions based on Consumer, Route, or Service.
+The `consumer-restriction` Plugin allows users to set access restrictions based on Consumer, Route, or Service.
 
 ## Attributes
 
