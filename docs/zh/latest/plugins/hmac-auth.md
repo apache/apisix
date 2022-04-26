@@ -1,5 +1,11 @@
 ---
 title: hmac-auth
+keywords:
+  - APISIX
+  - Plugin
+  - HMAC Authentication
+  - hmac-auth
+description: 本文介绍了关于 Apache APISIX `hmac-auth` 插件的基本信息及使用方法。
 ---
 
 <!--
@@ -23,30 +29,31 @@ title: hmac-auth
 
 ## 描述
 
-`hmac-auth` 是一个认证插件，它需要与 `consumer` 一起配合才能工作。
+`hmac-auth` 插件可以将 [HMAC authentication](https://en.wikipedia.org/wiki/HMAC) 添加到 Route 或者 Service。
 
-添加 HMAC Authentication 到一个 `service` 或 `route`。 然后 `consumer` 将其签名添加到请求头以验证其请求。
+该插件需要和 Consumer 一起使用，API 的使用者必须将密匙添加到请求头中以验证其请求。
 
 ## 属性
 
-| 名称             | 类型          | 必选项 | 默认值        | 有效值                                      | 描述                                                                                                                                                                                    |
-| ---------------- | ------------- | ------ | ------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| access_key       | string        | 必须   |               |                                             | 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `access_key` ，将会出现请求匹配异常。                                                                    |
-| secret_key       | string        | 必须   |               |                                             | 与 `access_key` 配对使用。                                                                                                                                                              |
-| algorithm        | string        | 可选   | "hmac-sha256" | ["hmac-sha1", "hmac-sha256", "hmac-sha512"] | 加密算法。                                                                                                                                                                              |
-| clock_skew       | integer       | 可选   | 0             |                                             | 签名允许的时间偏移，以秒为单位的计时。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。特别地，`0` 表示不对 `Date` 进行检查。                                                             |
-| signed_headers   | array[string] | 可选   |               |                                             | 限制加入加密计算的 headers ，指定后客户端请求只能在此范围内指定 headers ，此项为空时将把所有客户端请求指定的 headers 加入加密计算。如： ["User-Agent", "Accept-Language", "x-custom-a"] |
-| keep_headers     | boolean       | 可选   | false         | [ true, false ]                             | 认证成功后的 http 请求中是否需要保留 `X-HMAC-SIGNATURE`、`X-HMAC-ALGORITHM` 和 `X-HMAC-SIGNED-HEADERS` 的请求头。true: 表示保留 http 请求头，false: 表示移除 http 请求头。              |
-| encode_uri_param | boolean       | 可选   | true          | [ true, false ]                             | 是否对签名中的 uri 参数进行编码，例如：`params1=hello%2Cworld` 进行了编码，`params2=hello,world` 没有进行编码。true: 表示对签名中的 uri 参数进行编码，false: 不对签名中的 uri 参数编码。 |
-| validate_request_body | boolean  | 可选   | false         | [ true, false ]                             | 是否对请求 body 做签名校验。|
-| max_req_body     | integer        | 可选   | 512 * 1024         |                                             | 最大允许的 body 大小。|
+| 名称             | 类型          | 必选项 | 默认值        | 有效值                                      | 描述                                                                                                                                                                                      |
+| ---------------- | ------------- | ------ | ------------- | ------------------------------------------| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| access_key       | string        | 是   |               |                                             |  Consumer 的 `access_key` 必须是唯一的。如果不同 Consumer 使用了相同的 `access_key` ，将会出现请求匹配异常。                                                                                   |
+| secret_key       | string        | 是   |               |                                             | 与 `access_key` 配对使用。                                                                                                                                                                 |
+| algorithm        | string        | 否   | "hmac-sha256" | ["hmac-sha1", "hmac-sha256", "hmac-sha512"] | 可以使用的加密算法。                                                                                                                                                                        |
+| clock_skew       | integer       | 否   | 0             |                                             | 签名允许的时间偏移（以秒为单位）。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。如果将其设置为 `0`，则表示表示跳过日期检查。                                                                      |
+| signed_headers   | array[string] | 否   |               |                                             | 要在加密计算中使用的 headers 列表。指定后客户端请求只能在此范围内指定 headers，如果未指定，就会在所有客户端请求指定的 headers 加入加密计算。如： ["User-Agent", "Accept-Language", "x-custom-a"]。  |
+| keep_headers     | boolean       | 否   | false         | [ true, false ]                             | 当设置为 `true` 时，认证成功后的 HTTP 请求中则会保留 `X-HMAC-SIGNATURE`、`X-HMAC-ALGORITHM` 和 `X-HMAC-SIGNED-HEADERS` 的请求头。否则将移除 HTTP 请求头。                                       |
+| encode_uri_param | boolean       | 否   | true          | [ true, false ]                             | 当设置为 `true` 时，对签名中的 URI 参数进行编码。例如：`params1=hello%2Cworld` 进行了编码，`params2=hello,world` 没有进行编码。设置为 `false` 时则不对签名中的 URI 参数编码。                     |
+| validate_request_body | boolean  | 否   | false         | [ true, false ]                             | 当设置为 `true` 时，对请求 body 做签名校验。                                                                                                                                                 |
+| max_req_body     | integer       | 否   | 512 * 1024    |                                             | 最大允许的 body 大小。                                                                                                                                                                      |
 
-## 如何启用
+## 启用插件
 
-1. 创建一个 consumer 对象，并设置插件 `hmac-auth` 的值。
+首先，我们需要在 Consumer 中启用该插件，如下所示：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -60,12 +67,19 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-默认 `keep_headers` 为 false，`encode_uri_param` 为 true。
+你也可以通过 [APISIX Dashboard](/docs/dashboard/USER_GUIDE) 的 Web 界面完成操作。
 
-2. 创建 Route 或 Service 对象，并开启 `hmac-auth` 插件。
+<!--
+![create a consumer](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/hmac-auth-1.png)
+
+![enable hmac plugin](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/hmac-auth-2.png)
+-->
+
+然后就可以在 Route 或 Service 中启用插件，如下所示：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -84,34 +98,33 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ### 签名生成公式
 
-签名的计算公式为 `signature = HMAC-SHAx-HEX(secret_key, signing_string)`，从公式可以看出，想要获得签名需要得到 `secret_key` 和 `signing_string` 两个参数。其中 `secret_key` 为对应 consumer 所配置的， `signing_string` 的计算公式为 `signing_string = HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n + signed_headers_string`。如果 signing_string 中的某一项不存在，也需要使用一个空字符串代替。
+需注意，在使用 `hmac-auth` 插件时，会涉及到签名。签名的计算公式为 `signature = HMAC-SHAx-HEX(secret_key, signing_string)`。
 
-1. **HTTP Method**：指 HTTP 协议中定义的 GET、PUT、POST 等请求方法，必须使用全大写的形式。
-2. **HTTP URI**：要求必须以“/”开头，不以“/”开头的需要补充上，空路径为“/”。
-3. **Date**：请求头中的 Date（ GMT 格式 ）。
-4. **canonical_query_string**：是对于 URL 中的 query（ query 即 URL 中 ? 后面的 key1=valve1&key2=valve2 字符串）进行编码后的结果。
-5. **signed_headers_string**：是从请求头中获取客户端指定的字段，并按顺序拼接字符串的结果。
+为了生成签名需要两个参数：`secret_key` 和 `signing_string`。其中 `secret_key` 由对应 Consumer 配置，`signing_string` 的计算公式为 `signing_string = HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n + signed_headers_string`。如果 `signing_string` 中的某一项不存在，则需要使用一个空字符串代替：
 
-> canonical_query_string 编码步骤如下：
+- **HTTP Method**：指 HTTP 协议中定义的 GET、PUT、POST 等请求方法，必须使用全大写的形式。
+- **HTTP URI**：HTTP URI。必须以 “/” 开头，“/” 表示空路径。
+- **Date**：请求头中的日期（GMT 格式）。
+- **canonical_query_string**：对 URL 中的 query（query 即 URL 中 `?` 后面的 `key1=valve1&key2=valve2` 字符串）进行编码后的结果。
+- **signed_headers_string**：从请求头中获取客户端指定的字段，并按顺序拼接字符串的结果。
 
-* 提取 URL 中的 query 项，即 URL 中 ? 后面的 key1=valve1&key2=valve2 字符串。
-* 将 query 根据&分隔符拆开成若干项，每一项是 key=value 或者只有 key 的形式。
-* 根据 uri 参数是否编码，有下面两种情况：
-* `encode_uri_param` 为 true 时：
-  * 对拆开后的每一项进行编码处理，分以下两种情况：
-  * 当该项只有 key 时，转换公式为 url_encode(key) + "=" 的形式。
-  * 当该项是 key=value 的形式时，转换公式为 url_encode(key) + "=" + url_encode(value) 的形式。这里 value 可以是空字符串。
-  * 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 canonical_query_string 。
-* `encode_uri_param` 为 false 时：
-  * 对拆开后的每一项进行编码处理，分以下两种情况：
-  * 当该项只有 key 时，转换公式为 key + "=" 的形式。
-  * 当该项是 key=value 的形式时，转换公式为 key + "=" + value 的形式。这里 value 可以是空字符串。
-  * 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 canonical_query_string 。
+> 生成 `canonical_query_string` 的算法描述如下：
 
-> signed_headers_string 生成步骤如下：
+1. 提取 URL 中的 query 项。
+2. 使用 `&` 作为分隔符，将 query 拆分成键值对。
+3. 如果 `encode_uri_param` 为 true 时：
+  1. 当该项有 `key` 时，转换公式为 `url_encode(key) + "="`。
+  2. 当该项同时有 `key` 和 `value` 时，转换公式为 `url_encode(key) + "=" + url_encode(value)` 。此处 `value` 可以是空字符串。
+  3. 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 `canonical_query_string` 。
+4. 如果 `encode_uri_param` 为 false 时：
+  1. 当该项只有 `key` 时，转换公式为 `key + "="` 。
+  2. 当该项同时有 `key` 和 `value` 时，转换公式为 `key + "=" + value` 。此处 `value` 可以是空字符串。
+  3. 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 `&` 符号连接起来，生成相应的 `canonical_query_string`。
 
-* 从请求头中获取指定加入计算的 headers ，具体请参考下节 `使用生成好的签名进行请求尝试` 中的 `SIGNED_HEADERS` 放置的位置。
-* 从请求头中按顺序取出 `SIGNED_HEADERS` 指定的 headers ，并按顺序用 `name:value` 方式拼接起来，拼接完后就生成了 `signed_headers_string`。
+> 生成 `signed_headers_string` 的算法如下：
+
+1. 从请求头中获取指定的 headers 加入计算中。
+2. 从请求头中按顺序取出 `SIGNED_HEADERS` 指定的 headers，并按顺序用 `name:value` 方式拼接起来，拼接完后就生成了 `signed_headers_string`。
 
 ```plain
 HeaderKey1 + ":" + HeaderValue1 + "\n"\+
@@ -120,18 +133,16 @@ HeaderKey2 + ":" + HeaderValue2 + "\n"\+
 HeaderKeyN + ":" + HeaderValueN + "\n"
 ```
 
-**签名字符串拼接示例**
-
-以下面请求为例：
+以下示例为你展示了签名字符串的拼接：
 
 ```shell
-$ curl -i http://127.0.0.1:9080/index.html?name=james&age=36 \
+curl -i http://127.0.0.1:9080/index.html?name=james&age=36 \
 -H "X-HMAC-SIGNED-HEADERS: User-Agent;x-custom-a" \
 -H "x-custom-a: test" \
 -H "User-Agent: curl/7.29.0"
 ```
 
-根据 `签名生成公式` 生成的 `signing_string` 为：
+根据上述算法生成的 `signing_string` 为：
 
 ```plain
 "GET
@@ -144,11 +155,9 @@ x-custom-a:test
 "
 ```
 
-注意：最后一个请求头也需要 + `\n`。
+最后一个请求头也需要 + `\n`。
 
-**生成签名**
-
-使用 Python 来生成签名 `SIGNATURE`：
+以下示例是通过使用 Python 来生成签名 `SIGNATURE`：
 
 ```python
 import base64
@@ -175,22 +184,30 @@ print(base64.b64encode(hash.digest()))
 | --------- | -------------------------------------------- |
 | SIGNATURE | 8XV1GB7Tq23OJcoz6wjqTs4ZLxr9DiLoY4PxzScWGYg= |
 
+您也可以参考 [Generating HMAC signatures](../examples/plugins-hmac-auth-generate-signature.md) 了解如何为不同的编程语言生成签名。
+
 ### Body 校验
 
-`validate_request_body` 设置为 true 时，插件将计算请求 body 的 `hmac-sha` 值，并与请求 headers 中的 `X-HMAC-DIGEST` 的值进行校验。
+当 `validate_request_body` 设置为 `true` 时，插件将计算请求 body 的 `hmac-sha` 值，并与请求 headers 中的 `X-HMAC-DIGEST` 的值进行校验。
 
 ```
 X-HMAC-DIGEST: base64(hmac-sha(<body>))
 ```
 
-当没有请求 body 时，插件会计算长度为 0 的空字符串的 hmac-sha 值。
+如果没有请求 body，你可以将 `X-HMAC-DIGEST` 的值设置为空字符串的 HMAC-SHA。
 
-**注：**当开启 body 校验时，为了计算请求 body 的 `hmac-sha` 值，插件会把 body 加载到内存中，在请求 body 较大的情况下，可能会造成较高的内存消耗。插件提供了 `max_req_body`（默认值 512KB）配置项来配置最大允许的 body 大小，body 超过此大小的请求会被拒绝。
+:::note
+
+当开启 body 校验时，为了计算请求 body 的 `hmac-sha` 值，插件会把 body 加载到内存中，在请求 body 较大的情况下，可能会造成较高的内存消耗。为了避免这种情况，你可以通过设置 `max_req_body`（默认值是 512KB）配置项来配置最大允许的 body 大小，body 超过此大小的请求会被拒绝。
+
+:::
 
 ### 使用生成好的签名进行请求尝试
 
+你可以通过以下示例使用生成的签名发起请求：
+
 ```shell
-$ curl -i "http://127.0.0.1:9080/index.html?name=james&age=36" \
+curl -i "http://127.0.0.1:9080/index.html?name=james&age=36" \
 -H "X-HMAC-SIGNATURE: 8XV1GB7Tq23OJcoz6wjqTs4ZLxr9DiLoY4PxzScWGYg=" \
 -H "X-HMAC-ALGORITHM: hmac-sha256" \
 -H "X-HMAC-ACCESS-KEY: user-key" \
@@ -198,7 +215,9 @@ $ curl -i "http://127.0.0.1:9080/index.html?name=james&age=36" \
 -H "X-HMAC-SIGNED-HEADERS: User-Agent;x-custom-a" \
 -H "x-custom-a: test" \
 -H "User-Agent: curl/7.29.0"
+```
 
+```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 Transfer-Encoding: chunked
@@ -208,12 +227,14 @@ Server: APISIX/2.2
 ......
 ```
 
-**下面是签名信息的两种组装形式**
-
-* 签名信息拼一起放到请求头 `Authorization` 字段中：
+签名可以放到请求头 `Authorization` 字段中：
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'Authorization: hmac-auth-v1# + ACCESS_KEY + # + base64_encode(SIGNATURE) + # + ALGORITHM + # + DATE + # + SIGNED_HEADERS' -i
+curl http://127.0.0.1:9080/index.html \
+-H 'Authorization: hmac-auth-v1# + ACCESS_KEY + # + base64_encode(SIGNATURE) + # + ALGORITHM + # + DATE + # + SIGNED_HEADERS' -i
+```
+
+```shell
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
@@ -225,10 +246,18 @@ Accept-Ranges: bytes
 ...
 ```
 
-- 签名信息分开分别放到请求头：
+也可以将签名单独放在另一个请求头中：
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'X-HMAC-SIGNATURE: base64_encode(SIGNATURE)' -H 'X-HMAC-ALGORITHM: ALGORITHM' -H 'Date: DATE' -H 'X-HMAC-ACCESS-KEY: ACCESS_KEY' -H 'X-HMAC-SIGNED-HEADERS: SIGNED_HEADERS' -i
+curl http://127.0.0.1:9080/index.html \
+-H 'X-HMAC-SIGNATURE: base64_encode(SIGNATURE)' \
+-H 'X-HMAC-ALGORITHM: ALGORITHM' \
+-H 'Date: DATE' \
+-H 'X-HMAC-ACCESS-KEY: ACCESS_KEY' \
+-H 'X-HMAC-SIGNED-HEADERS: SIGNED_HEADERS' -i
+```
+
+```shell
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
@@ -239,17 +268,19 @@ Accept-Ranges: bytes
 <html lang="cn">
 ```
 
-**注：**
+:::note
 
-1. **ACCESS_KEY, SIGNATURE, ALGORITHM, DATE, SIGNED_HEADERS 分别代表对应的变量**
-2. **SIGNED_HEADERS 为客户端指定的加入加密计算的 headers。若存在多个 headers 需以 ";" 分割：`x-custom-header-a;x-custom-header-b`**
-3. **SIGNATURE 需要使用 base64 进行加密：`base64_encode(SIGNATURE)`**
+1. ACCESS_KEY、SIGNATURE、ALGORITHM、DATE、SIGNED_HEADERS 分别代表对应的变量。
+2. SIGNED_HEADERS 为客户端指定的加入加密计算的 headers。若存在多个 headers 需以 “;” 分割，例如：`x-custom-header-a;x-custom-header-b`。
+3. SIGNATURE 需要使用 base64 进行加密：`base64_encode(SIGNATURE)`。
+
+:::
 
 ## 自定义 header 名称
 
-我们可以在 `conf/config.yaml` 中，`plugin_attr` 下添加插件的属性配置来自定义参数 header 名称。
+除了配置签名外，你还可以在配置文件（`conf/config.yaml`）中的`plugin_attr` 配置项下，添加 `hmac-auth` 插件的属性来自定义参数 header 名称。如下所示：
 
-```yaml
+```yaml title="conf/config.yaml"
 plugin_attr:
   hmac-auth:
     signature_key: X-APISIX-HMAC-SIGNATURE
@@ -260,10 +291,19 @@ plugin_attr:
     body_digest_key: X-APISIX-HMAC-BODY-DIGEST
 ```
 
-**自定义 header 后，请求示例：**
+配置完成后，你可以使用自定义的 header 发起请求。
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'X-APISIX-HMAC-SIGNATURE: base64_encode(SIGNATURE)' -H 'X-APISIX-HMAC-ALGORITHM: ALGORITHM' -H 'X-APISIX-DATE: DATE' -H 'X-APISIX-HMAC-ACCESS-KEY: ACCESS_KEY' -H 'X-APISIX-HMAC-SIGNED-HEADERS: SIGNED_HEADERS' -H 'X-APISIX-HMAC-BODY-DIGEST: BODY_DIGEST' -i
+curl http://127.0.0.1:9080/index.html \
+-H 'X-APISIX-HMAC-SIGNATURE: base64_encode(SIGNATURE)' \
+-H 'X-APISIX-HMAC-ALGORITHM: ALGORITHM' \
+-H 'X-APISIX-DATE: DATE' \
+-H 'X-APISIX-HMAC-ACCESS-KEY: ACCESS_KEY' \
+-H 'X-APISIX-HMAC-SIGNED-HEADERS: SIGNED_HEADERS' \
+-H 'X-APISIX-HMAC-BODY-DIGEST: BODY_DIGEST' -i
+```
+
+```
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
@@ -274,35 +314,13 @@ Accept-Ranges: bytes
 <html lang="cn">
 ```
 
-### 开启 body 校验
-
-```shell
-$ curl -X "POST" "http://localhost:9080/index.html?age=36&name=james" \
-     -H 'X-HMAC-ACCESS-KEY: my-access-key' \
-     -H 'X-HMAC-SIGNATURE: lSWO4vcyVoZG5bn8miHudzABAeJQd8tqEHyM7RsjeiU=' \
-     -H 'X-HMAC-ALGORITHM: hmac-sha256' \
-     -H 'Date: Tue, 24 Aug 2021 03:19:21 GMT' \
-     -H 'X-HMAC-SIGNED-HEADERS: User-Agent;X-HMAC-DIGEST' \
-     -H 'User-Agent: curl/7.29.0' \
-     -H 'X-HMAC-DIGEST: L9b/+QMvhvnoUlSw5vq+kHPqnZiHGl61T8oavMVTaC4=' \
-     -H 'Content-Type: text/plain; charset=utf-8' \
-     -d "{\"hello\":\"world\"}"
-
-HTTP/1.1 200 OK
-Content-Type: text/html; charset=utf-8
-Transfer-Encoding: chunked
-Connection: keep-alive
-Date: Tue, 14 Sep 2021 03:28:14 GMT
-Server: APISIX/2.9
-...
-```
-
 ## 禁用插件
 
-当你想去掉 `hmac-auth` 插件的时候，很简单，在插件的配置中把对应的 `json` 配置删除即可，无须重启服务，即刻生效：
+当你需要禁用 `hmac-auth` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},
@@ -314,23 +332,3 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
 }'
 ```
-
-## 签名生成示例
-
-以 HMAC SHA256 为例，介绍一下各种语言的签名生成示例。需要注意各种语言中对签名字符串的换行符的处理方式，这很容易导致出现 `{"message":"Invalid signature"}` 的问题。
-
-示例入参说明：
-
-| Variable | Value                      |
-| -------- | -------------------------- |
-| secret   | the shared secret key here |
-| message  | this is signature string   |
-
-示例出参说明：
-
-| Type   | Hash                                                             |
-| ------ | ---------------------------------------------------------------- |
-| hexit  | ad1b76c7e5054009380edca35d3f36cc5b6f45c82ee02ea3af64197ebddb9345 |
-| base64 | rRt2x+UFQAk4DtyjXT82zFtvRcgu4C6jr2QZfr3bk0U=                     |
-
-具体代码请参考：[**HMAC Generate Signature Examples**](../../../en/latest/examples/plugins-hmac-auth-generate-signature.md)
