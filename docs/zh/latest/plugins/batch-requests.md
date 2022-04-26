@@ -1,5 +1,10 @@
 ---
 title: batch-requests
+keywords:
+  - APISIX
+  - Plugin
+  - Batch Requests
+description: 本文介绍了关于 Apache APISIX `batch-request` 插件的基本信息及使用方法。
 ---
 
 <!--
@@ -23,11 +28,17 @@ title: batch-requests
 
 ## 描述
 
-`batch-requests` 插件可以一次接受多个请求并以 [http pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式在网关发起多个 http 请求，合并结果后再返回客户端，这在客户端需要访问多个接口时可以显著地提升请求性能。
+`batch-requests` 插件可以一次接受多个请求并以 [HTTP pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式在网关发起多个 HTTP 请求，合并结果后再返回客户端。
 
-> **提示**
->
-> 外层的 Http 请求头会自动设置到每一个独立请求中，如果独立请求中出现相同键值的请求头，那么只有独立请求的请求头会生效。
+在客户端需要访问多个 API 的情况下，这将显著提高性能。
+
+:::note
+
+外部批处理请求的 HTTP 请求头（除了以 `Content-` 开始的请求头，例如：`Content-Type`）适用于**批处理**中的每个请求。
+
+如果在外部请求和单个调用中都指定了相同的 HTTP 请求头，则单个调用的请求头优先。
+
+:::
 
 ## 属性
 
@@ -35,25 +46,31 @@ title: batch-requests
 
 ## 接口
 
-插件会增加 `/apisix/batch-requests` 这个接口，需要通过 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露它。
+该插件会增加 `/apisix/batch-requests` 接口。
 
-## 如何启用
+:::note
 
-你需要在 `config.yaml` 里面启用 batch-requests 插件：
+你需要通过 [public-api](../../../zh/latest/plugins/public-api.md) 插件来暴露它。
 
-```
-# 加到 config.yaml
+:::
+
+## 启用插件
+
+该插件默认是禁用状态，你可以在配置文件（`./conf/config.yaml`）添加如下配置启用 `batch-requests` 插件：
+
+```yaml title="conf/config.yaml"
 plugins:
-  - ... # plugin you need
+  - ...
   - batch-requests
 ```
 
-## 如何配置
+## 配置插件
 
-默认本插件限制请求体的大小不能大于 1 MiB。这个限制可以通过 `apisix/admin/plugin_metadata/batch-requests` 来修改。
+默认情况下，可以发送到 `/apisix/batch-requests` 的最大请求体不能大于 1 MiB。 你可以通过 `apisix/admin/plugin_metadata/batch-requests` 更改插件的此配置：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "max_body_size": 4194304
 }'
@@ -61,54 +78,57 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API
 
 ## 元数据
 
-| 名称          | 类型    | 必选项 | 默认值  | 有效值 | 描述                           |
-| ------------- | ------- | ------ | ------- | ------ | ------------------------------ |
-| max_body_size | integer | 必选   | 1048576 | > 0    | 请求体的最大大小，单位为字节。 |
+| 名称          | 类型     | 必选项 | 默认值   | 有效值 | 描述                          |
+| ------------- | ------- | -------| ------- | ------ | ---------------------------- |
+| max_body_size | integer | 是     | 1048576 |[1, ...]| 请求体的最大大小，单位：bytes。 |
 
-## 批量接口请求/响应
+## 请求和响应格式
 
-插件会为 `apisix` 创建一个 `/apisix/batch-requests` 的接口来处理你的批量请求。
+该插件会为 `apisix` 创建一个 `/apisix/batch-requests` 的接口，用来处理批量请求。
 
-### 接口请求参数：
+### Request
 
-| 参数名   | 类型                        | 可选项 | 默认值 | 有效值 | 描述                             |
-| -------- | --------------------------- | ------ | ------ | ------ | -------------------------------- |
-| query    | object                      | 可选   |        |        | 给所有请求都携带的 `query string` |
-| headers  | object                      | 可选   |        |        | 给所有请求都携带的 `header`      |
-| timeout  | number                      | 可选   | 30000  |        | 聚合请求的超时时间，单位为 `ms`  |
-| pipeline | [HttpRequest](#httprequest) | 必须   |        |        | Http 请求的详细信息              |
+| 参数名   | 类型                         | 必选项 | 默认值 |  描述                             |
+| -------- | --------------------------- | ------ | ------ |  -------------------------------- |
+| query    | object                      | 否     |        | 给所有请求都携带的 `query string`。 |
+| headers  | object                      | 否     |        | 给所有请求都携带的 `header`。       |
+| timeout  | number                      | 否     | 30000  | 聚合请求的超时时间，单位为 `ms`。    |
+| pipeline | [HttpRequest](#httprequest) | 是     |        | HTTP 请求的详细信息。               |
 
 #### HttpRequest
 
-| 参数名     | 类型    | 可选 | 默认值 | 有效值                                                                           | 描述                                                                      |
-| ---------- | ------- | ---- | ------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| version    | string  | 可选 | 1.1    | [1.0, 1.1]                                                                       | 请求用的 `http` 协议版本                                                  |
-| method     | string  | 可选 | GET    | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE", "PURGE"] | 请求使用的 `http` 方法                                                    |
-| query      | object  | 可选 |        |                                                                                  | 独立请求所携带的 `query string`, 如果 `Key` 和全局的有冲突，以此设置为主。 |
-| headers    | object  | 可选 |        |                                                                                  | 独立请求所携带的 `header`, 如果 `Key` 和全局的有冲突，以此设置为主。      |
-| path       | string  | 必须 |        |                                                                                  | 请求路径                                                                  |
-| body       | string  | 可选 |        |                                                                                  | 请求体                                                                    |
-| ssl_verify | boolean | 可选 | false  |                                                                                  | 验证 SSL 证书与主机名是否匹配                                             |
+| 参数名      | 类型    | 必选项    | 默认值  | 有效值                                                                            | 描述                                                                  |
+| ---------- | ------- | -------- | ------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| version    | string  | 否       | 1.1     | [1.0, 1.1]                                                                       | 请求所使用的 HTTP 协议版本。                                              |
+| method     | string  | 否       | GET     | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE"] | 请求使用的 HTTP 方法。                                                   |
+| query      | object  | 否       |         |                                                                                  | 独立请求所携带的 `query string`, 如果 `Key` 和全局的有冲突，以此设置为主。 |
+| headers    | object  | 否       |         |                                                                                  | 独立请求所携带的 `header`, 如果 `Key` 和全局的有冲突，以此设置为主。       |
+| path       | string  | 是       |         |                                                                                  | HTTP 请求路径。                                                        |
+| body       | string  | 否       |         |                                                                                  | HTTP 请求体。                                                          |
+| ssl_verify | boolean | 否       | false   |                                                                                  | 验证 SSL 证书与主机名是否匹配。                                          |
 
-### 接口响应参数：
+### 响应参数：
 
-返回值为一个 [HttpResponse](#httpresponse) 的 `数组`。
+返回值是一个 [HttpResponse](#httpresponse) 的 `数组`。
 
 #### HttpResponse
 
-| 参数名  | 类型    | 描述                |
+| 参数名   | 类型    | 描述                 |
 | ------- | ------- | ------------------- |
-| status  | integer | Http 请求的状态码   |
-| reason  | string  | Http 请求的返回信息 |
-| body    | string  | Http 请求的响应体   |
-| headers | object  | Http 请求的响应头   |
+| status  | integer | HTTP 请求的状态码。   |
+| reason  | string  | HTTP 请求的返回信息。 |
+| body    | string  | HTTP 请求的响应体。   |
+| headers | object  | HTTP 请求的响应头。   |
 
-## 如何修改自定义 uri
+## 修改自定义 URI
 
-我们可以使用 [public-api](../../../en/latest/plugins/public-api.md) 插件轻易的设置自定义 uri。只需要在创建路由时设置需要的 uri 并改变 `public-api` 插件的配置即可。
+你可以通过 [public-api](../../../en/latest/plugins/public-api.md) 插件设置自定义 URI。
+
+只需要在创建路由时设置所需的 URI 并更改 `public-api` 插件的配置：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/br \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/batch-requests",
     "plugins": {
@@ -121,10 +141,11 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335
 
 ## 测试插件
 
-首先，你需要为 batch request 的 API 设置一个路由，它将使用 [public-api](../../../en/latest/plugins/public-api.md) 插件。
+首先，你需要为 `batch-requests` 插件的 API 创建一个路由，它将使用 [public-api](../../../en/latest/plugins/public-api.md) 插件。
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/apisix/batch-requests",
     "plugins": {
@@ -159,7 +180,7 @@ curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 }'
 ```
 
-返回如下：
+正常返回结果如下：
 
 ```json
 [
@@ -192,4 +213,9 @@ curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 
 ## 禁用插件
 
-正常情况不需要禁用本插件，如有需要，在 `/conf/config.yaml` 中新建一个所需的 `plugins` 列表，以覆盖原列表。
+如果你想禁用插件，可以将 `batch-requests` 从配置文件中的插件列表删除，重新加载 APISIX 后即可生效。
+
+```yaml title="conf/config.yaml"
+plugins:    # plugin list
+  - ...
+```
