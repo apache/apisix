@@ -50,12 +50,17 @@ local function transform_node(new_nodes, node)
         new_nodes._priority_index = {}
     end
 
-    if not new_nodes[node.priority] then
-        new_nodes[node.priority] = {}
-        core.table.insert(new_nodes._priority_index, node.priority)
+    local node_priority = 0   -- if nodes don't specify priority using default
+    if node.priority then
+        node_priority = node.priority
     end
 
-    new_nodes[node.priority][node.host .. ":" .. node.port] = node.weight
+    if not new_nodes[node_priority] then
+        new_nodes[node_priority] = {}
+        core.table.insert(new_nodes._priority_index, node_priority)
+    end
+
+    new_nodes[node_priority][node.host .. ":" .. node.port] = node.weight
     return new_nodes
 end
 

@@ -251,3 +251,118 @@ host: 39.97.63.217 count: 4
 host: 39.97.63.218 count: 12
 --- no_error_log
 [error]
+
+
+
+=== TEST 6: don't specify the priority
+--- config
+    location /t {
+        content_by_lua_block {
+            local up_conf = {
+                type = "roundrobin",
+                nodes = {
+                    {host = "39.97.63.215", port = 80, weight = 1},
+                    {host = "39.97.63.216", port = 81, weight = 1, priority = 0},
+                    {host = "39.97.63.217", port = 82, weight = 1, priority = 0},
+                }
+            }
+            local ctx = {conf_version = 1}
+            ctx.upstream_conf = up_conf
+            ctx.upstream_version = "ver"
+            ctx.upstream_key = up_conf.type .. "#route_" .. "id"
+
+            test(route, ctx)
+        }
+    }
+--- request
+GET /t
+--- response_body
+host: 39.97.63.215 count: 4
+host: 39.97.63.216 count: 4
+host: 39.97.63.217 count: 4
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: don't specify the priority, then use one node
+--- config
+    location /t {
+        content_by_lua_block {
+            local up_conf = {
+                type = "roundrobin",
+                nodes = {
+                    {host = "39.97.63.215", port = 80, weight = 1},
+                    {host = "39.97.63.216", port = 81, weight = 1},
+                    {host = "39.97.63.217", port = 82, weight = 1, priority = 0},
+                }
+            }
+            local ctx = {}
+            ctx.upstream_conf = up_conf
+            ctx.upstream_version = 1
+            ctx.upstream_key = up_conf.type .. "#route_" .. "id"
+
+            test(route, ctx)
+
+            -- one item in nodes, return it directly
+            up_conf.nodes = {
+                {host = "39.97.63.218", port = 80, weight = 1},
+            }
+            test(route, ctx)
+        }
+    }
+--- request
+GET /t
+--- response_body
+host: 39.97.63.215 count: 4
+host: 39.97.63.216 count: 4
+host: 39.97.63.217 count: 4
+host: 39.97.63.218 count: 12
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: don't specify the priority and cached version
+--- config
+    location /t {
+        content_by_lua_block {
+            local up_conf = {
+                type = "roundrobin",
+                nodes = {
+                    {host = "39.97.63.215", port = 80, weight = 1, priority = 0},
+                    {host = "39.97.63.216", port = 81, weight = 1, priority = 0},
+                    {host = "39.97.63.217", port = 82, weight = 1},
+                }
+            }
+            local ctx = {}
+            ctx.upstream_conf = up_conf
+            ctx.upstream_version = 1
+            ctx.upstream_key = up_conf.type .. "#route_" .. "id"
+
+            test(route, ctx)
+
+            -- cached by version
+            up_conf.nodes = {
+                {host = "39.97.63.218", port = 80, weight = 1},
+                {host = "39.97.63.219", port = 80, weight = 0, priority = 0},
+            }
+            test(route, ctx)
+
+            -- update, version changed
+            ctx.upstream_version = 2
+            test(route, ctx)
+        }
+    }
+--- request
+GET /t
+--- response_body
+host: 39.97.63.215 count: 4
+host: 39.97.63.216 count: 4
+host: 39.97.63.217 count: 4
+host: 39.97.63.215 count: 4
+host: 39.97.63.216 count: 4
+host: 39.97.63.217 count: 4
+host: 39.97.63.218 count: 12
+--- no_error_log
+[error]
