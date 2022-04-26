@@ -18,8 +18,6 @@
 local casbin          = require("casbin")
 local core            = require("apisix.core")
 local plugin          = require("apisix.plugin")
-local ngx             = ngx
-local get_headers     = ngx.req.get_headers
 
 local plugin_name = "authz-casbin"
 
@@ -117,7 +115,8 @@ function _M.rewrite(conf, ctx)
 
     local path = ctx.var.uri
     local method = ctx.var.method
-    local username = get_headers()[conf.username] or "anonymous"
+    local headers = core.request.headers(ctx)
+    local username = headers[conf.username] or "anonymous"
 
     if conf.casbin_enforcer then
         if not conf.casbin_enforcer:enforce(username, path, method) then
