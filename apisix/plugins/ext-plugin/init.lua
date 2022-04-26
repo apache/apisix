@@ -577,9 +577,16 @@ local rpc_handlers = {
 
             local len = stop:HeadersLength()
             if len > 0 then
+                local stop_resp_headers = {}
                 for i = 1, len do
                     local entry = stop:Headers(i)
-                    core.response.set_header(entry:Name(), entry:Value())
+                    local name = str_lower(entry:Name())
+                    if stop_resp_headers[name] == nil then
+                        core.response.set_header(name, entry:Value())
+                        stop_resp_headers[name] = true
+                    else
+                        core.response.add_header(name, entry:Value())
+                    end
                 end
             end
 
