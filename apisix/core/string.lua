@@ -105,6 +105,15 @@ function _M.compress_script(s)
 end
 
 
+---
+-- Decodes a URI encoded query-string into a Lua table.
+-- All request arguments received will be decoded by default.
+--
+-- @function core.string.decode_args
+-- @tparam string args A URI encoded query-string.
+-- @treturn table the value of decoded query-string.
+-- @usage
+-- local args, err = core.string.decode_args("a=1&b=2") -- {a=1, b=2}
 function _M.decode_args(args)
     -- use 0 to avoid truncated result and keep the behavior as the
     -- same as other platforms
@@ -112,6 +121,14 @@ function _M.decode_args(args)
 end
 
 
+---
+-- Encode the Lua table to a query args string according to the URI encoded rules.
+--
+-- @function core.string.encode_args
+-- @tparam table args The query args Lua table.
+-- @treturn string the value of query args string.
+-- @usage
+-- local str = core.string.encode_args({a=1, b=2}) -- "a=1&b=2"
 function _M.encode_args(args)
     return ngx_encode_args(args)
 end
