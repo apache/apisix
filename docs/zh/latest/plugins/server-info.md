@@ -1,5 +1,11 @@
 ---
 title: server-info
+keywords:
+  - APISIX
+  - Plugin
+  - Server info
+  - server-info
+description: 本文介绍了关于 Apache APISIX `server-info` 插件的基本信息及使用方法。
 ---
 
 <!--
@@ -23,21 +29,21 @@ title: server-info
 
 ## 描述
 
-`server-info` 是一款能够定期将服务基本信息上报至 etcd 的插件。
+`server-info` 插件可以定期将服务基本信息上报至 etcd。
 
 服务信息中每一项的含义如下：
 
-| 名称             | 类型    | 描述                                                                                                                    |
+| 名称             | 类型    | 描述                                                                                                                   |
 | ---------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
-| boot_time        | integer | APISIX 服务实例的启动时间（UNIX 时间戳），如果对 APISIX 进行热更新操作，该值将被重置；普通的 reload 操作不会影响该值。               |
-| id               | string  | APISIX 服务实例 id 。                                                                                                   |
-| etcd_version     | string  | etcd 集群的版本信息，如果 APISIX 和 etcd 集群之间存在网络分区，该值将设置为 `"unknown"`。                                       |
+| boot_time        | integer | APISIX 服务实例的启动时间（UNIX 时间戳），如果对 APISIX 进行热更新操作，该值将被重置。普通的 reload 操作不会影响该值。         |
+| id               | string  | APISIX 服务实例 id。                                                                                                   |
+| etcd_version     | string  | etcd 集群的版本信息，如果 APISIX 和 etcd 集群之间存在网络分区，该值将设置为 `"unknown"`。                                   |
 | version          | string  | APISIX 版本信息。                                                                                                       |
-| hostname         | string  | APISIX 所部署的机器或 pod 的主机名信息。                                                                                   |
+| hostname         | string  | 部署 APISIX 的主机或 Pod 的主机名信息。                                                                                  |
 
-## 插件属性
+## 属性
 
-无
+无。
 
 ## 插件接口
 
@@ -45,30 +51,27 @@ title: server-info
 
 ## 启用插件
 
-在配置文件 `apisix/conf/config.yaml` 的插件列表中添加 `server-info`, 即可启用该插件。
+该插件默认是禁用状态，你可以在配置文件（`./conf/config.yaml`）中添加如下配置启用 `server-info` 插件。
 
-```
+```yaml title="conf/config.yaml"
 plugins:                          # plugin list
-  - example-plugin
-  - limit-req
-  - node-status
+  - ...
   - server-info
-  - jwt-auth
-  - zipkin
-  ......
 ```
 
-## 如何自定义服务信息上报配置
+## 自定义服务信息上报配置
 
-我们可以在 `conf/config.yaml` 文件的 `plugin_attr` 一节中修改上报配置。
+我们可以在 `./conf/config.yaml` 文件的 `plugin_attr` 部分修改上报配置。
 
-| 名称            | 类型    | 默认值 | 描述                                                               |
+下表是可以自定义配置的参数：
+
+| 名称            | 类型    | 默认值  | 描述                                                               |
 | --------------- | ------- | ------ | --------------------------------------------------------------- |
-| report_ttl      | integer | 36   | etcd 中服务信息保存的 TTL（单位：秒，最大值：86400，最小值：3）|
+| report_ttl      | integer | 36     | etcd 中服务信息保存的 TTL（单位：秒，最大值：86400，最小值：3）。|
 
-下面的例子将 `report_ttl` 修改成了 1 分钟：
+以下是示例是通过修改配置文件（`conf/config.yaml`）中的 `plugin_attr` 部分将 `report_ttl` 设置为 1 分钟：
 
-```yaml
+```yaml title="conf/config.yaml"
 plugin_attr:
   server-info:
     report_ttl: 60
@@ -76,10 +79,13 @@ plugin_attr:
 
 ## 测试插件
 
-在启用该插件后，你可以通过插件的 Control API 来访问到这些数据：
+在启用 `server-info` 插件后，可以通过插件的 Control API 来访问到这些数据：
 
 ```shell
-$ curl http://127.0.0.1:9090/v1/server_info -s | jq .
+curl http://127.0.0.1:9090/v1/server_info -s | jq .
+```
+
+```JSON
 {
   "etcd_version": "3.5.0",
   "id": "b7ce1c5c-b1aa-4df7-888a-cbe403f3e948",
@@ -89,18 +95,17 @@ $ curl http://127.0.0.1:9090/v1/server_info -s | jq .
 }
 ```
 
-Apache APISIX Dashboard 会收集上报到 etcd 中的服务信息，因此你也可以通过 APISIX Dashboard 来查看这些数据。
+:::tip
+
+你可以通过 [APISIX Dashboard](/docs/dashboard/USER_GUIDE) 查看服务信息报告。
+
+:::
 
 ## 禁用插件
 
-通过移除配置文件 `apisix/conf/config.yaml` 插件列表中的 `server-info`，即可方便地禁用该插件。
+如果你想禁用插件，可以将 `server-info` 从配置文件中的插件列表删除，重新加载 APISIX 后即可生效。
 
-```
-plugins:                          # plugin list
-  - example-plugin
-  - limit-req
-  - node-status
-  - jwt-auth
-  - zipkin
-  ......
+```yaml title="conf/config.yaml"
+plugins:    # plugin list
+  - ...
 ```
