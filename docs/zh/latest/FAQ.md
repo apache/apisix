@@ -32,6 +32,7 @@ APISIX 在这些指标上优于其它 API 网关，同时具有平台无关性�
 Apache APISIX 在以下方面有所不同：
 
 — 它使用 etcd 来保存和同步配置，而不是使用如 PostgreSQL 或 MySQL 这类的关系数据库。etcd 中的实时事件通知系统比这些替代方案更容易扩展。这允许 APISIX 实时同步配置，使代码简洁，并避免单点故障。
+
 - 完全动态
 - 支持[热加载插件](/docs/apisix/terminology/plugin#热加载)。
 
@@ -41,9 +42,9 @@ Apache APISIX 在以下方面有所不同：
 
 如果您想获取性能基准测试的具体结果，请查看 [benchmark](benchmark.md)。
 
-## Apache APISIX支持哪些平台?
+## Apache APISIX 支持哪些平台?
 
-Apache APISIX 是一个开源的云原生 API 网关，它支持在裸金属服务器上运行，也支持在 Kubernetes 的上使用，甚至也可以运行在 Apple Silicon ARM 芯片上。
+Apache APISIX 是一个开源的云原生 API 网关，它支持在裸金属服务器上运行，也支持在 Kubernetes 上使用，甚至也可以运行在 Apple Silicon ARM 芯片上。
 
 ## 如何理解“Apache APISIX 是全动态的”？
 
@@ -94,20 +95,22 @@ etcd 提供了这些特性，并且使它比 PostgreSQL 和 MySQL 等其他数�
 luarocks config rocks_servers
 ```
 
-中国大陆用户可以使用 `luarocks.cn` 作为 LuaRocks 的服务器。您可以将此包装器与 Makefile 一起使用来进行设置：
+中国大陆用户可以使用 `luarocks.cn` 作为 LuaRocks 的服务器。
+
+以下命令可以帮助你更快速的安装依赖：
 
 ```bash
 make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 ```
 
-如果通过上述操作仍然无法解决问题，您可以尝试使用 `--verbose` 参数获取详细的日志来诊断问题。
+如果通过上述操作仍然无法解决问题，可以尝试使用 `--verbose` 参数获取详细的日志来诊断问题。
 
 ## 我该如何使用 Apache APISIX 进行灰色发布？
 
-让我们举个例子，比如：`foo.com/product/index.html?id=204&page=2`，并考虑您需要根据查询字符串中的 id 在此条件下进行灰色发布：
+举个例子，比如：`foo.com/product/index.html?id=204&page=2`，并考虑您需要根据查询字符串中的 `id` 在此条件下进行灰色发布：
 
-1. Group A: `id <= 1000`
-2. Group B: `id > 1000`
+1. Group A：`id <= 1000`
+2. Group B：`id > 1000`
 
 在 Apache APISIX 中有两种不同的方法来实现这一点：
 
@@ -143,11 +146,11 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 
 更多 `lua-resty-radixtree` 匹配操作，请参考：[lua-resty-radixtree](https://github.com/api7/lua-resty-radixtree#operator-list)。
 
-2、通过 [traffic-split](plugins/traffic-split.md) 插件来实现
+2、通过 [traffic-split](plugins/traffic-split.md) 插件来实现。
 
 ## 我如何通过 Apache APISIX 实现从 HTTP 自动跳转到 HTTPS？
 
-比如，将 `http://foo.com` 重定向到 `https://foo.com`
+比如，将 `http://foo.com` 重定向到 `https://foo.com`。
 
 Apache APISIX 提供了几种不同的方法来实现：
 
@@ -230,28 +233,28 @@ Server: APISIX web server
 </html>
 ```
 
-## 我应该如何更改 Apache APISIX 的日志等级?
+## 我应该如何更改 Apache APISIX 的日志等级？
 
-默认的 Apache APISIX 日志等级为 `warn`，你需要将日志等级调整为 `info`来查看 `core.log.info` 的打印结果。
+Apache APISIX 默认的日志等级为 `warn`，你需要将日志等级调整为 `info` 来查看 `core.log.info` 的打印结果。
 
-你可以通过修改 conf/config.yaml 中的 `nginx_config` 配置参数 `error_log_level: "warn"` 为 `error_log_level: "info"`。然后重新加载 Apache APISIX。
+你需要修改 `./conf/config.yaml` 中的 `nginx_config` 配置参数 `error_log_level: "warn"` 为 `error_log_level: "info"`，然后重新加载 Apache APISIX 使其生效。
 
 ```yaml
 nginx_config:
   error_log_level: "info"
 ```
 
-## 我应该如何重新加载 Apache APISIX 的自定义插件?
+## 我应该如何重新加载 Apache APISIX 的自定义插件？
 
 所有的 Apache APISIX 的插件都支持热加载的方式。
 
-你可以通过下面的文档来了解更多关于热加载的内容，具体参考 [插件](./plugins.md) 中关于“热加载”的部分。
+如果你想了解更多关于热加载的内容，请参考[热加载](https://apisix.apache.org/docs/apisix/next/terminology/plugin#hot-reload-in-stand-alone-mode)。
 
-## 在处理 HTTP 或 HTTPS 请求时，我如何配置 Apache APISIX 监听多个端口?
+## 在处理 HTTP 或 HTTPS 请求时，我如何配置 Apache APISIX 监听多个端口？
 
 默认情况下，APISIX 在处理 HTTP 请求时只监听 9080 端口。
 
-要配置Apache APISIX监听多个端口，你可以:
+要配置 Apache APISIX 监听多个端口，你可以:
 
 1. 修改 `conf/config.yaml` 中 HTTP 端口监听的参数 `node_listen`，示例：
 
@@ -274,9 +277,9 @@ nginx_config:
          - 9445
    ```
 
-2.重启抑或 reload APISIX。
+2. 重启或者重新加载 APISIX。
 
-## APISIX 利用 etcd 如何实现毫秒级别的配置同步
+## APISIX 如何利用 etcd 如何实现毫秒级别的配置同步？
 
 Apache APISIX 使用 etcd 作为它的配置中心。etcd 提供以下订阅功能（比如：[watch](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watch)、[watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir)）。它可以监视对特定关键字或目录的更改。
 
@@ -286,11 +289,11 @@ APISIX 主要使用 [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/
 
 如果监听目录有数据更新：etcd 将立刻返回订阅（毫秒级）到的新数据，APISIX 将它更新到内存缓存。
 
-## 我应该如何自定义 APISIX 实例 id
+## 我应该如何自定义 APISIX 实例 id？
 
 默认情况下，APISIX 从 `conf/apisix.uid` 中读取实例 id。如果找不到，且没有配置 id，APISIX 会生成一个 `uuid` 作为实例 id。
 
-要指定一个有意义的 id 来绑定 Apache APISIX 到您的内部系统，请在您的 `conf/config` 中设置 id。yaml 的文件：
+要指定一个有意义的 id 来绑定 Apache APISIX 到你的内部系统，请在你的 `./conf/config.yaml` 中设置 id：
 
 ```yaml
 apisix:
@@ -302,17 +305,17 @@ apisix:
 请按照以下步骤进行故障排除:
 
 1. 确保 Apache APISIX 和集群中的 etcd 部署之间没有任何网络问题。
-2. 如果网络正常，请检查是否为etcd启用了[gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/)。默认状态取决于您是使用命令行选项还是配置文件来启动etcd服务器。
+2. 如果网络正常，请检查是否为 etcd 启用了[gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/)。默认状态取决于你是使用命令行还是配置文件来启动 etcd 服务器。
 
-— 如果使用命令行选项，默认启用gRPC网关。可以手动启用，如下所示:
+- 如果使用命令行选项，默认启用 gRPC 网关。可以手动启用，如下所示:
 
-```sh
+```shell
 etcd --enable-grpc-gateway --data-dir=/path/to/data
 ```
 
-**注意**：当运行 `etcd——help` 时，这个标志不会显示。
+**注意**：当运行 `etcd --help` 时，这个参数不会显示。
 
-— 如果使用配置文件，默认关闭gRPC网关。您可以手动启用，如下所示:
+- 如果使用配置文件，默认关闭 gRPC 网关。你可以手动启用，如下所示：
 
   In `etcd.json`:
 
@@ -337,9 +340,9 @@ Apache APISIX 可以通过在其前面添加一个负载均衡器来实现高可
 
 Apache APISIX 的控制平面是依赖于 `etcd cluster` 的高可用实现的，它只依赖于 etcd 集群。
 
-## 安装 Apache APISIX 时，为什么 make deps 命令失败?
+## 为什么使用源码安装 Apache APISIX 时，执行 `make deps` 命令会失败？
 
-当执行 `make deps` 从源代码安装 Apache APISIX 时，你可能会出现如下错误：
+当使用源代码安装 Apache APISIX 时，执行 `make deps` 命令可能会出现如下错误：
 
 ```shell
 $ make deps
@@ -353,11 +356,11 @@ make: *** [deps] Error 1
 
 这是由于缺少 OpenResty openssl 开发工具包。要安装它，请参考[installation dependencies](install-dependencies.md)。
 
-## 我应该如何通过 APISIX 代理访问 APISIX Dashboard
+## 我如何通过 APISIX 代理访问 APISIX Dashboard？
 
-您可以按照以下步骤进行配置:
+你可以按照以下步骤进行配置:
 
-1. 为 Apache APISIX 代理和管理 API 配置不同的端口。或者，禁用管理 API。
+1. 为 Apache APISIX 代理和 Admin API 配置不同的端口，或者禁用 Admin API。
 
 ```yaml
 apisix:
@@ -384,11 +387,11 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 }'
 ```
 
-**注意**: Apache APISIX Dashboard 正在监听' 127.0.0.1:9000'。
+**注意**: Apache APISIX Dashboard 正在监听 `127.0.0.1:9000`。
 
-## 如何在一个路由使用正则表达式（regex）匹配 `uri`？
+## 如何使用正则表达式 (regex) 匹配 Route 中的 `uri`？
 
-你可以通过使用 route 的 `vars` 字段来实现 uri 的正则匹配。
+你可以在 Route 中使用 `vars` 字段来匹配正则表达式：
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -420,9 +423,9 @@ HTTP/1.1 404 Not Found
 ...
 ```
 
-`vars` 的更多使用细节请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。
+如果你想了解 `vars` 字段的更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。
 
-## upstream 节点是否支持配置 [FQDN](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) 地址？
+## Upstream 节点是否支持配置 [FQDN](https://en.wikipedia.org/wiki/Fully_qualified_domain_name) 地址？
 
 这是支持的，下面是一个 `FQDN` 为 `httpbin.default.svc.cluster.local`（一个 Kubernetes Service）的示例：
 
@@ -439,19 +442,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-测试路由
+使用如下命令测试路由：
 
 ```shell
-$ curl http://127.0.0.1:9080/ip -i
-HTTP/1.1 200 OK
-...
+curl http://127.0.0.1:9080/ip -i
 ```
 
 ## Admin API 的 `X-API-KEY` 指的是什么？是否可以修改？
 
-Admin API 的 `X-API-KEY` 指的是 `config.yaml` 文件中的 `apisix.admin_key.key`，默认值是 `edd1c9f034335f136f87ad84b625c8f1`。它是 Admin API 的访问 token。
+Admin API 的 `X-API-KEY` 指的是 `./conf/config.yaml` 文件中的 `apisix.admin_key.key`，默认值是 `edd1c9f034335f136f87ad84b625c8f1`。它是 Admin API 的访问 token。
 
-默认情况下，它被设置为“edd1c9f034335f136f87ad84b625c8f1”，并且可以通过修改您的“conf/config”中的参数来修改。yaml的文件:
+默认情况下，它被设置为 `edd1c9f034335f136f87ad84b625c8f1`，也可以通过修改 `./conf/conf/config` 中的参数来修改，如下示例：
 
 ```yaml
 apisix:
@@ -465,7 +466,7 @@ apisix:
 然后访问 Admin API：
 
 ```shell
-$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: newkey' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: newkey' -X PUT -d '
 {
     "uris":[ "/*" ],
     "name":"admin-token-test",
@@ -485,13 +486,13 @@ HTTP/1.1 200 OK
 ......
 ```
 
-**注意**:通过使用默认令牌，您可能会暴露于安全风险。在将其部署到生产环境时，需要对其进行更新。
+**注意**：通过使用默认令牌，可能会面临安全风险。在将其部署到生产环境时，需要对其进行更新。
 
-## 如何允许所有ip访问 Apache APISIX 的管理API?
+## 如何允许所有 IP 访问 Apache APISIX 的 Admin API？
 
 Apache APISIX 默认只允许 `127.0.0.0/24` 的 IP 段范围访问 `Admin API`，
 
-如果你想允许所有的 IP 访问，那么你只需在 `conf/config.yaml` 配置文件中添加如下的配置然后重新开启或重新加载 APISIX，所有 IP 便可以访问 `Admin API`。
+如果你想允许所有的 IP 访问，只需在 `./conf/config.yaml` 配置文件中添加如下的配置，然后重启或重新加载 APISIX 就可以让所有 IP 访问 `Admin API`。
 
 ```yaml
 apisix:
@@ -499,9 +500,9 @@ apisix:
     - 0.0.0.0/0
 ```
 
-**注意：您可以在非生产环境中使用此方法，以允许所有客户端从任何地方访问您的 `Apache APISIX` 实例，但是在生产环境中使用它并不安全。在生产环境中，请仅授权特定的 IP 地址或地址范围访问您的实例。**
+**注意**：你可以在非生产环境中使用此方法，以允许所有客户端从任何地方访问 Apache APISIX 实例，但是在生产环境中该设置并不安全。在生产环境中，请仅授权特定的 IP 地址或地址范围访问 Apache APISIX 实例。
 
-## 我应该如何基于 acme.sh 自动更新 apisix ssl 证书?
+## 如何基于 acme.sh 自动更新 APISIX SSL 证书？
 
 你可以运行以下命令来实现这一点:
 
@@ -521,11 +522,11 @@ acme.sh  --issue  --staging  -d demo.domain --renew-hook "/root/.acme.sh/renew-h
 acme.sh --renew --domain demo.domain
 ```
 
-详细步骤，可以参考博客 [this post](https://juejin.cn/post/6965778290619449351)。
+详细步骤，请参考 [APISIX 基于 acme.sh 自动更新 HTTPS 证书](https://juejin.cn/post/6965778290619449351)。
 
-## 在 Apache APISIX 中，我如何在转发到上游之前从路径中删除一个前缀?
+## 在 Apache APISIX 中，我如何在转发到上游之前从路径中删除一个前缀？
 
-在转发至上游之前剪除请求路径中的前缀，比如说从 `/foo/get` 改成 `/get`，你可以使用下面这个插件来实现[proxy-rewrite](plugins/proxy-rewrite.md) Plugin:
+在转发至上游之前移除请求路径中的前缀，比如说从 `/foo/get` 改成 `/get`，可以通过 `[proxy-rewrite](plugins/proxy-rewrite.md)` 插件来实现：
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -545,7 +546,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-测试这个配置:
+测试这个配置：
 
 ```shell
 curl http://127.0.0.1:9080/foo/get -i
@@ -557,9 +558,9 @@ HTTP/1.1 200 OK
 }
 ```
 
-## 我应该如何解决 `unable to get local issuer certificate` 这个错误?
+## 我应该如何解决 `unable to get local issuer certificate` 这个错误？
 
-您可以手动设置证书的路径，将其添加到 `conf/config.yaml` 文件中，具体操作如下所示：
+你可以手动设置证书的路径，将其添加到 `./conf/config.yaml` 文件中，具体操作如下所示：
 
 ```yaml
 apisix:
@@ -569,11 +570,11 @@ apisix:
 
 **注意：**当你尝试使用 cosocket 连接任何 TLS 服务时，如果 APISIX 不信任对端 TLS 服务证书，都需要配置 `apisix.ssl.ssl_trusted_certificate`。
 
-例如：在 APISIX 中使用 Nacos 作为服务发现时，Nacos 开启了 TLS 协议， 即 Nacos 配置的 `host` 是 `https://` 开头，需要配置 `apisix.ssl.ssl_trusted_certificate`，并且使用和 Nacos 相同的 CA 证书。
+例如：如果在 APISIX 中使用 Nacos 作为服务发现时，Nacos 开启了 TLS 协议，即 Nacos 配置的 `host` 是 `https://` 开头，就需要配置 `apisix.ssl.ssl_trusted_certificate`，并且使用和 Nacos 相同的 CA 证书。
 
-## 我应该如何解决 `module 'resty.worker.events' not found` 这个错误?
+## 我应该如何解决 `module 'resty.worker.events' not found` 这个错误？
 
-引起这个错误的原因是在`/root` 目录下安装了 APISIX。因为 worker 进程的用户是 nobody，无权访问 `/root` 目录下的文件。
+引起这个错误的原因是在 `/root` 目录下安装了 APISIX。因为 worker 进程的用户是 nobody，无权访问 `/root` 目录下的文件。
 
 解决办法是改变 APISIX 的安装目录，推荐安装在 `/usr/local` 目录下。
 
@@ -583,11 +584,11 @@ apisix:
 
 | `plugin-metadata`                                                                                                | `plugin-config`                                                                                                                                     |
 | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 由插件的所有配置实例共享的插件元数据。                                        | 多个不同插件的配置实例集合。                                         |
-| 当需要跨Plugin的所有配置实例传播属性更改时使用。 | 当你需要重用一组公共的配置实例，以便它可以被提取到一个“plugin-config”并绑定到不同的路由时使用。 |
+| 当更改该 Plugin 属性后，需要应用到配置该插件的所有路由上时使用。 | 当你需要复用一组通用的插件配置时使用，可以把 Plugin 配置提取到一个 `plugin-config` 并绑定到不同的路由。 |
+| 对绑定到 Plugin 的配置实例的所有实体生效。                           | 对绑定到 `plugin-config` 的路由生效。                                                                                               |
 | 对绑定到Plugin的配置实例的所有实体生效。                           | 对绑定到' plugin-config '的路由生效。                                                                                               |
 
-## 我在哪里可以找到更多的答案?
+## 我可以在哪里寻求更多帮助？
 
 - [Apache APISIX Slack Channel](/docs/general/community#joining-the-slack-channel)
 - [Ask questions on APISIX mailing list](/docs/general/community#joining-the-mailing-list)
