@@ -577,7 +577,7 @@ apisix:
 
 解决办法是改变 APISIX 的安装目录，推荐安装在 `/usr/local` 目录下。
 
-## 在Apache APISIX中，“plugin-metadata”和“plugin-configs”有什么区别?
+## 在Apache APISIX中，`plugin-metadata` 和 `plugin-configs` 有什么区别？
 
 两者之间的差异如下:
 
