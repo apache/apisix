@@ -43,7 +43,7 @@ You will learn:
 
 Apache APISIX is an open source, dynamic, scalable, and high-performance cloud native API gateway for all your APIs and microservices.
 
-APISIX facilitates interface traffic handling for websites, mobile and IoT applications by providing services such as load balancing, dynamic upstream, grayscale publishing, refined routing, current and speed limiting, and many more.
+APISIX facilitates interface traffic handling for websites, mobile and IoT applications by providing services such as load balancing, dynamic upstream, canary release, fine-grained routing, rate limiting, and many more.
 
 ### Features
 
@@ -82,7 +82,7 @@ This is an echo service, meaning it will return back the parameters we pass in t
 
 The components of the request URL are shown and explained below:
 
-![RequestURL](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/requesturl.jpg)
+![RequestURL](../../assets/images/requesturl.jpg)
 
 - Protocol: The network transport protocol. `HTTP` protocol is used for this example.
 - Port: The port. `80` is used for this example.
@@ -173,7 +173,7 @@ sudo fuser -k 9443/tcp
 If a Docker container is crashing, you can inspect the logs to diagnose the problem:
 
 ```bash
-docker logs -f --tail container_id
+docker logs -f --tail <container_id>
 ```
 
 :::
@@ -282,11 +282,11 @@ Click on [Route](http://localhost:9000/routes/list) from the sidebar to view a l
 
 You can create a new Route through the dashboard by clicking the [Create](http://localhost:9000/routes/create) button and following the instructions:
 
-![Creating a Route with APISIX Dashboard](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/create-a-route.png)
+![Creating a Route with APISIX Dashboard](../../assets/images/create-a-route.png)
 
 The newly created Route is added to the list of Routes:
 
-![Creating a Route with APISIX Dashboard](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/list-of-routes.png)
+![Creating a Route with APISIX Dashboard](../../assets/images/list-of-routes.png)
 
 Check out the [APISIX Dashboard documentation](/docs/dashboard/USER_GUIDE) to learn more.
 
