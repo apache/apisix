@@ -216,6 +216,7 @@ local function get_full_log_in_stream(ngx)
             version = core.version.VERSION
         },
         upstream = var.upstream_addr,
+        service_id = service_id,
         route_id = route_id,
         client_ip = core.request.get_remote_client_ip(ngx.ctx.api_ctx),
         start_time = ngx.req.start_time() * 1000,
