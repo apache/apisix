@@ -714,7 +714,7 @@ local function generate_token_using_password_grant(conf,ctx)
         log.error("Failed to get request body: ", err)
         return 503
     end
-    local parameters = ngx.decode_args(body)
+    local parameters = core.string.decode_args(body)
 
     local username = parameters["username"]
     local password = parameters["password"]
