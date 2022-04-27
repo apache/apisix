@@ -590,6 +590,6 @@ apisix:
 
 ## 如果在使用 APISIX 过程中遇到问题，我可以在哪里寻求更多帮助？
 
-- [Apache APISIX Slack Channel](/docs/general/community#joining-the-slack-channel)
-- [Ask questions on APISIX mailing list](/docs/general/community#joining-the-mailing-list)
-- [GitHub Issues](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc) and [GitHub Discussions](https://github.com/apache/apisix/discussions)
+- [Apache APISIX Slack Channel](/docs/general/community#joining-the-slack-channel)：加入后请选择 channel-apisix 频道，即可通过此频道进行 APISIX 相关问题的提问。
+- [Ask questions on APISIX mailing list](/docs/general/community#joining-the-mailing-list)：任何问题或对项目提议都可以通过社区邮件进行讨论。
+- [GitHub Issues](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc) and [GitHub Discussions](https://github.com/apache/apisix/discussions)：也可直接在 GitHub 中进行相关 issue 创建进行问题的表述。
