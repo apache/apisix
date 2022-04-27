@@ -25,7 +25,7 @@ title: 常见问题
 
 随着企业向云本地微服务的发展，企业对高性能、灵活、安全、可扩展的 API 网关的需求越来越大。
 
-APISIX 在这些指标上优于其它 API 网关，同时具有平台无关性和完全动态的特性，如支持多种协议、细粒度路由和多语言支持。
+APISIX 在这些指标表现上优于其它 API 网关，同时具有平台无关性和完全动态的特性，如支持多种协议、细粒度路由和多语言支持。
 
 ## APISIX 和其他的 API 网关有什么不同之处？
 
@@ -38,7 +38,7 @@ Apache APISIX 在以下方面有所不同：
 
 ## APISIX 所展现出的性能如何？
 
-与其它API网关相比较，Apache APISIX 提供了最好的性能，其单核QPS高达18,000，平均延迟仅为0.2 ms。
+与其它 API 网关相比，Apache APISIX 提供了更好的性能，其单核 QPS 高达 18,000，平均延迟仅为 0.2 ms。
 
 如果您想获取性能基准测试的具体结果，请查看 [benchmark](benchmark.md)。
 
@@ -73,11 +73,11 @@ APISIX 具有功能强大的 Dashboard，并且 [APISIX Dashboard](https://githu
 
 对于配置中心，配置存储只是最基本功能，APISIX 还需要下面几个特性：
 
-1. 集群中的分布式部署。
-2. 通过比较来监视业务。
-3. 多版本并发控制。
-4. 通知和观看流。
-5. 高性能和最小的读/写延迟。
+1. 集群中的分布式部署
+2. 通过比较来监视业务
+3. 多版本并发控制
+4. 通知和观看流
+5. 高性能和最小的读/写延迟
 
 etcd 提供了这些特性，并且使它比 PostgreSQL 和 MySQL 等其他数据库更理想。
 
@@ -105,9 +105,9 @@ make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 
 如果通过上述操作仍然无法解决问题，可以尝试使用 `--verbose` 参数获取详细的日志来诊断问题。
 
-## 我该如何使用 Apache APISIX 进行灰色发布？
+## 我该如何使用 Apache APISIX 进行灰度发布？
 
-举个例子，比如：`foo.com/product/index.html?id=204&page=2`，并考虑您需要根据查询字符串中的 `id` 在此条件下进行灰色发布：
+举个例子，比如：`foo.com/product/index.html?id=204&page=2`，并考虑您需要根据查询字符串中的 `id` 在此条件下进行灰度发布：
 
 1. Group A：`id <= 1000`
 2. Group B：`id > 1000`
@@ -237,7 +237,7 @@ Server: APISIX web server
 
 Apache APISIX 默认的日志等级为 `warn`，你需要将日志等级调整为 `info` 来查看 `core.log.info` 的打印结果。
 
-你需要修改 `./conf/config.yaml` 中的 `nginx_config` 配置参数 `error_log_level: "warn"` 为 `error_log_level: "info"`，然后重新加载 Apache APISIX 使其生效。
+你需要将 `./conf/config.yaml` 中的 `nginx_config` 配置参数 `error_log_level: "warn"` 修改为 `error_log_level: "info"`，然后重新加载 Apache APISIX 使其生效。
 
 ```yaml
 nginx_config:
@@ -250,7 +250,7 @@ nginx_config:
 
 如果你想了解更多关于热加载的内容，请参考[热加载](https://apisix.apache.org/docs/apisix/next/terminology/plugin#hot-reload-in-stand-alone-mode)。
 
-## 在处理 HTTP 或 HTTPS 请求时，我如何配置 Apache APISIX 监听多个端口？
+## 在处理 HTTP 或 HTTPS 请求时，我该如何配置 Apache APISIX 来监听多个端口？
 
 默认情况下，APISIX 在处理 HTTP 请求时只监听 9080 端口。
 
@@ -285,9 +285,9 @@ Apache APISIX 使用 etcd 作为它的配置中心。etcd 提供以下订阅功�
 
 APISIX 主要使用 [etcd.watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir) 监视目录内容变更：
 
-如果监听目录没有数据更新：该调用会被阻塞，直到超时或其他错误返回。
+- 如果监听目录没有数据更新：则该调用会被阻塞，直到超时或其他错误返回。
 
-如果监听目录有数据更新：etcd 将立刻返回订阅（毫秒级）到的新数据，APISIX 将它更新到内存缓存。
+- 如果监听目录有数据更新：etcd 将立刻返回订阅（毫秒级）到的新数据，APISIX 将它更新到内存缓存。
 
 ## 我应该如何自定义 APISIX 实例 id？
 
@@ -332,7 +332,7 @@ etcd --enable-grpc-gateway --data-dir=/path/to/data
 enable-grpc-gateway: true
 ```
 
-**注意**：事实上这种差别已经在 etcd 的 master 分支中消除，但并没有向后移植到已经发布的版本中，所以在部署 etcd 集群时，依然需要小心。
+**注意**：事实上这种差别已经在 etcd 的 master 分支中消除，但并没有向后兼容到已经发布的版本中，所以在部署 etcd 集群时，依然需要小心。
 
 ## 我应该如何创建高可用的 Apache APISIX 集群？
 
@@ -588,7 +588,7 @@ apisix:
 | 对绑定到 Plugin 的配置实例的所有实体生效。                           | 对绑定到 `plugin-config` 的路由生效。                                                                                               |
 | 对绑定到Plugin的配置实例的所有实体生效。                           | 对绑定到' plugin-config '的路由生效。                                                                                               |
 
-## 我可以在哪里寻求更多帮助？
+## 如果在使用 APISIX 过程中遇到问题，我可以在哪里寻求更多帮助？
 
 - [Apache APISIX Slack Channel](/docs/general/community#joining-the-slack-channel)
 - [Ask questions on APISIX mailing list](/docs/general/community#joining-the-mailing-list)
