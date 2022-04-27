@@ -37,8 +37,8 @@ local _M = {}
 -- Returns the connected xRPC upstream socket according to the configuration
 --
 -- @function xrpc.sdk.connect_upstream
--- @tparam table selected upstream node
--- @tparam table upstream configuration
+-- @tparam table node selected upstream node
+-- @tparam table up_conf upstream configuration
 -- @treturn table|nil the xRPC upstream socket, or nil if failed
 function _M.connect_upstream(node, up_conf)
     local sk = xrpc_socket.upstream.socket()
@@ -67,9 +67,9 @@ end
 -- Returns disconnected xRPC upstream socket according to the configuration
 --
 -- @function xrpc.sdk.disconnect_upstream
--- @tparam table xRPC upstream socket
--- @tparam table upstream configuration
--- @tparam boolean is the upstream already broken
+-- @tparam table upstream xRPC upstream socket
+-- @tparam table up_conf upstream configuration
+-- @tparam boolean upstream_broken whether the upstream is already broken
 function _M.disconnect_upstream(upstream, up_conf, upstream_broken)
     if upstream_broken then
         upstream:close()
@@ -84,8 +84,8 @@ end
 -- Returns the request level ctx with an id
 --
 -- @function xrpc.sdk.get_req_ctx
--- @tparam table xrpc session
--- @tparam string optional ctx id
+-- @tparam table session xrpc session
+-- @tparam string id ctx id
 -- @treturn table the request level ctx
 function _M.get_req_ctx(session, id)
     if not id then
@@ -111,8 +111,8 @@ end
 -- Returns the new router if the stream routes are changed
 --
 -- @function xrpc.sdk.get_router
--- @tparam table xrpc session
--- @tparam string the current router version, should come from the last call
+-- @tparam table session xrpc session
+-- @tparam string version the current router version, should come from the last call
 -- @treturn boolean whether there is a change
 -- @treturn table the new router under the specific protocol
 -- @treturn string the new router version
@@ -153,8 +153,8 @@ end
 -- Set the session's current upstream according to the route's configuration
 --
 -- @function xrpc.sdk.set_upstream
--- @tparam table xrpc session
--- @tparam table the route configuration
+-- @tparam table session xrpc session
+-- @tparam table conf the route configuration
 -- @treturn nil|string error message if present
 function _M.set_upstream(session, conf)
     local up
