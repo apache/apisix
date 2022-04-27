@@ -244,9 +244,9 @@ GET /t
 GET /mtls2
 --- more_headers
 Host: localhost
---- error_code: 400
+--- error_code: 502
 --- error_log
-client certificate was not present
+peer did not return a certificate
 
 
 
@@ -301,6 +301,6 @@ GET /t
 GET /mtls3
 --- more_headers
 Host: localhost
---- error_code: 400
+--- error_code: 502
 --- error_log
-client certificate verification is not passed: FAILED:self signed certificate
+certificate verify failed
