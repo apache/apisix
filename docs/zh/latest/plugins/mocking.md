@@ -5,7 +5,7 @@ keywords:
   - Plugin
   - Mocking
   - mocking
-  description: 本文介绍了关于 Apache APISIX `mocking` 插件的基本信息及使用方法。
+description: 本文介绍了关于 Apache APISIX `mocking` 插件的基本信息及使用方法。
 ---
 
 <!--
