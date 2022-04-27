@@ -155,7 +155,7 @@ local function init(env)
     end
 
     local min_ulimit = 1024
-    if env.ulimit <= min_ulimit then
+    if env.ulimit ~= "unlimited" and env.ulimit <= min_ulimit then
         print(str_format("Warning! Current maximum number of open file "
                 .. "descriptors [%d] is not greater than %d, please increase user limits by "
                 .. "execute \'ulimit -n <new user limits>\' , otherwise the performance"
