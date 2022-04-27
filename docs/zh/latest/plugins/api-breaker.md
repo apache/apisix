@@ -45,7 +45,7 @@ title: api-breaker
 | ----------------------- | -------------- | ------ | ---------- | --------------- | -------------------------------- |
 | break_response_code     | integer        | 必须   | 无         | [200, ..., 599] | 不健康返回错误码                 |
 | break_response_body     | string         | 可选   | 无         |                 | 不健康返回报文                   |
-| break_response_content_type     | string | 可选   | application/json |           | 不健康返回Content-Type          |
+| break_response_content_type     | string | 可选   | application/json |           | 不健康返回 Content-Type          |
 | max_breaker_sec         | integer        | 可选   | 300        | >=3             | 最大熔断持续时间                 |
 | unhealthy.http_statuses | array[integer] | 可选   | {500}      | [500, ..., 599] | 不健康时候的状态码               |
 | unhealthy.failures      | integer        | 可选   | 3          | >=1             | 触发不健康状态的连续错误请求次数 |
