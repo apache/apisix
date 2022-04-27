@@ -77,7 +77,7 @@ done
 --- request
 GET /t
 --- response_body
-{"break_response_code":502,"healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
+{"break_response_code":502,"break_response_content_type":"application/json","healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
 --- no_error_log
 [error]
 
@@ -104,7 +104,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"break_response_code":502,"healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
+{"break_response_code":502,"break_response_content_type":"application/json","healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
 --- no_error_log
 [error]
 
@@ -131,7 +131,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"break_response_code":502,"healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
+{"break_response_code":502,"break_response_content_type":"application/json","healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
 --- no_error_log
 [error]
 
@@ -458,6 +458,7 @@ breaker_time: 2
                     "plugins": {
                         "api-breaker": {
                             "break_response_code": 502,
+                            "break_response_body": "{\"message\":\"breaker opened.\"}",
                             "unhealthy": {
                                 "failures": 3
                             },
@@ -509,6 +510,8 @@ GET /api_breaker?code=500
 ]
 --- error_code eval
 [200, 500, 503, 500, 500, 502]
+--- response_body_like eval
+[".*", ".*", ".*", ".*", ".*", "{\"message\":\"breaker opened\"}"]
 --- no_error_log
 [error]
 

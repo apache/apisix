@@ -35,6 +35,13 @@ local schema = {
             minimum = 200,
             maximum = 599,
         },
+        break_response_body = {
+            type = "string"
+        },
+        break_response_content_type = {
+            type = "string",
+            default = "application/json"
+        },
         max_breaker_sec = {
             type = "integer",
             minimum = 3,
@@ -158,6 +165,11 @@ function _M.access(conf, ctx)
 
     -- breaker
     if lasttime + breaker_time >= ngx.time() then
+        if conf.break_response_body then
+            core.response.clear_header_as_body_modified()
+            ngx.header["Content-Type"] = conf.break_response_content_type
+            return conf.break_response_code, conf.break_response_body
+        end
         return conf.break_response_code
     end
 
