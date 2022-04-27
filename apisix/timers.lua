@@ -49,9 +49,9 @@ local function background_timer()
 ::continue::
     end
 
-    local ok, err = thread_wait(unpack(threads))
+    local ok = thread_wait(unpack(threads))
     if not ok then
-        core.log.error("failed to wait threads: ", err)
+        core.log.error("failed to wait threads")
     end
 end
 
