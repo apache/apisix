@@ -28,7 +28,12 @@ local batch_processor_mt = {
 local execute_func
 local create_buffer_timer
 local batch_metrics
-local prometheus = require("apisix.plugins.prometheus.exporter")
+local prometheus
+local is_http = false
+if ngx.config.subsystem == "http" then
+    is_http = true
+    prometheus = require("apisix.plugins.prometheus.exporter")
+end
 
 
 local schema = {
@@ -181,7 +186,7 @@ function batch_processor:push(entry)
         return
     end
 
-    if not batch_metrics and prometheus.get_prometheus() and self.name
+    if is_http and not batch_metrics and prometheus.get_prometheus() and self.name
        and self.route_id and self.server_addr then
         batch_metrics = prometheus.get_prometheus():gauge("batch_process_entries",
                                                           "batch process remaining entries",

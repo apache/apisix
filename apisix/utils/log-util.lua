@@ -193,6 +193,41 @@ end
 _M.get_full_log = get_full_log
 
 
+local function get_full_log_in_stream(ngx)
+    local ctx = ngx.ctx.api_ctx
+    local var = ctx.var
+    local service_id
+    local route_id
+    local matched_route = ctx.matched_route and ctx.matched_route.value
+
+    if matched_route then
+        service_id = matched_route.service_id or ""
+        route_id = matched_route.id
+    else
+        service_id = var.host
+    end
+
+
+    local latency, upstream_latency, apisix_latency = latency_details_in_ms(ctx)
+
+    local log =  {
+        server = {
+            hostname = core.utils.gethostname(),
+            version = core.version.VERSION
+        },
+        upstream = var.upstream_addr,
+        route_id = route_id,
+        client_ip = core.request.get_remote_client_ip(ngx.ctx.api_ctx),
+        start_time = ngx.req.start_time() * 1000,
+        latency = latency,
+        upstream_latency = upstream_latency,
+        apisix_latency = apisix_latency
+    }
+    return log
+end
+_M.get_full_log_in_stream = get_full_log_in_stream
+
+
 function _M.get_req_original(ctx, conf)
     local headers = {
         ctx.var.request, "\r\n"

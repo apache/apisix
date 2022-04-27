@@ -61,7 +61,8 @@ __DATA__
                     "plugins": {
                         "syslog": {
                             "host" : "127.0.0.1",
-                            "port" : 5044
+                            "port" : 5044,
+                            "batch_max_size": 1
                         }
                     },
                     "upstream_id": "1"
@@ -78,3 +79,209 @@ __DATA__
 GET /t
 --- response_body
 passed
+
+
+
+=== TEST 2: hit
+--- stream_request eval
+mmm
+--- stream_response
+hello world
+--- error_log
+sending a batch logs to 127.0.0.1:5044
+
+
+
+=== TEST 3: flush manually
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.stream.plugins.syslog")
+            local logger_socket = require("resty.logger.socket")
+            local logger, err = logger_socket:new({
+                    host = "127.0.0.1",
+                    port = 5044,
+                    flush_limit = 100,
+            })
+
+            local bytes, err = logger:log("abc")
+            if err then
+                ngx.log(ngx.ERR, err)
+            end
+
+            local bytes, err = logger:log("efg")
+            if err then
+                ngx.log(ngx.ERR, err)
+            end
+
+            local ok, err = plugin.flush_syslog(logger)
+            if not ok then
+                ngx.say("failed to flush syslog: ", err)
+                return
+            end
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+
+
+
+=== TEST 4: small flush_limit, instant flush
+--- stream_conf_enable
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "syslog": {
+                                "host" : "127.0.0.1",
+                                "port" : 5044,
+                                "flush_limit" : 1,
+                                "inactive_timeout": 1
+                            }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1995": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+
+            -- wait etcd sync
+            ngx.sleep(0.5)
+
+            local sock = ngx.socket.tcp()
+            local ok, err = sock:connect("127.0.0.1", 1985)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            assert(sock:send("mmm"))
+            local data = assert(sock:receive("*a"))
+            ngx.print(data)
+
+            -- wait flush log
+            ngx.sleep(2.5)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+hello world
+--- timeout: 5
+--- error_log
+try to lock with key stream/route#1
+unlock with key stream/route#1
+
+
+
+=== TEST 5: check plugin configuration updating
+--- stream_conf_enable
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body1 = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "syslog": {
+                                "host" : "127.0.0.1",
+                                "port" : 5044,
+                                "batch_max_size": 1
+                            }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1995": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            local sock = ngx.socket.tcp()
+            local ok, err = sock:connect("127.0.0.1", 1985)
+            if not ok then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            assert(sock:send("mmm"))
+            local body2 = assert(sock:receive("*a"))
+
+            local code, body3 = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "syslog": {
+                                "host" : "127.0.0.1",
+                                "port" : 5045,
+                                 "batch_max_size": 1
+                            }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1995": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            local sock = ngx.socket.tcp()
+            local ok, err = sock:connect("127.0.0.1", 1985)
+            if not ok then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            assert(sock:send("mmm"))
+            local body4 = assert(sock:receive("*a"))
+
+            ngx.print(body1)
+            ngx.print(body2)
+            ngx.print(body3)
+            ngx.print(body4)
+        }
+    }
+--- request
+GET /t
+--- wait: 0.5
+--- response_body
+passedhello world
+passedhello world
+--- grep_error_log eval
+qr/sending a batch logs to 127.0.0.1:(\d+)/
+--- grep_error_log_out
+sending a batch logs to 127.0.0.1:5044
+sending a batch logs to 127.0.0.1:5045
