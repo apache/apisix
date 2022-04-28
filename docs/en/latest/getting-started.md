@@ -261,12 +261,7 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
   "methods": ["GET"],
   "host": "example.com",
   "uri": "/anything/*",
-  "upstream": {
-    "type": "roundrobin",
-    "nodes": {
-      "httpbin.org:80": 1
-    }
-  }
+  "upstream_id": "1"
 }'
 ```
 
