@@ -170,7 +170,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers \
 }'
 ```
 
-该插件将在提供的 Vault 路径（<vault.prefix>/consumer/jack/jwt-auth）中查找密钥 `secret`，并将其用于 JWT 身份验证。如果在同一路径中找不到密钥，插件会记录错误并且无法执行 JWT 验证。
+该插件将在提供的 Vault 路径（`<vault.prefix>/consumer/jack/jwt-auth`）中查找密钥 `secret`，并将其用于 JWT 身份验证。如果在同一路径中找不到密钥，插件会记录错误并且无法执行 JWT 验证。
 
 :::note
 
