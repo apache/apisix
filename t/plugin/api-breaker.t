@@ -511,7 +511,7 @@ GET /api_breaker?code=500
 --- error_code eval
 [200, 500, 503, 500, 500, 502]
 --- response_body_like eval
-[".*", ".*", ".*", ".*", ".*", "{\"message\":\"breaker opened\"}"]
+[".*", ".*", ".*", ".*", ".*", "{\"message\":\"breaker opened.\"}"]
 --- no_error_log
 [error]
 
