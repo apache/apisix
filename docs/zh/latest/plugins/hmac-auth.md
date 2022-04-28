@@ -112,14 +112,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 
 1. 提取 URL 中的 query 项。
 2. 使用 `&` 作为分隔符，将 query 拆分成键值对。
-3. 如果 `encode_uri_param` 为 true 时：
-  1. 当该项有 `key` 时，转换公式为 `url_encode(key) + "="`。
-  2. 当该项同时有 `key` 和 `value` 时，转换公式为 `url_encode(key) + "=" + url_encode(value)` 。此处 `value` 可以是空字符串。
-  3. 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 & 符号连接起来，生成相应的 `canonical_query_string` 。
-4. 如果 `encode_uri_param` 为 false 时：
-  1. 当该项只有 `key` 时，转换公式为 `key + "="` 。
-  2. 当该项同时有 `key` 和 `value` 时，转换公式为 `key + "=" + value` 。此处 `value` 可以是空字符串。
-  3. 将每一项转换后，以 key 按照字典顺序（ ASCII 码由小到大）排序，并使用 `&` 符号连接起来，生成相应的 `canonical_query_string`。
+3. 如果 `encode_uri_param` 为 `true` 时：
+
+    - 当该项有 `key` 时，转换公式为 `url_encode(key) + "="`。
+    - 当该项同时有 `key` 和 `value` 时，转换公式为 `url_encode(key) + "=" + url_encode(value)` 。此处 `value` 可以是空字符串。
+    - 将每一项转换后，以 `key` 按照字典顺序（ASCII 码由小到大）排序，并使用 `&` 符号连接起来，生成相应的 `canonical_query_string` 。
+
+4. 如果 `encode_uri_param` 为 `false` 时：
+
+    - 当该项只有 `key` 时，转换公式为 `key + "="` 。
+    - 当该项同时有 `key` 和 `value` 时，转换公式为 `key + "=" + value` 。此处 `value` 可以是空字符串。
+    - 将每一项转换后，以 `key` 按照字典顺序（ASCII 码由小到大）排序，并使用 `&` 符号连接起来，生成相应的 `canonical_query_string`。
 
 > 生成 `signed_headers_string` 的算法如下：
 
