@@ -23,11 +23,11 @@ title: xRPC
 
 ## What is xRPC
 
-APISIX supports proxy TCP protocols, but there are times when a pure TCP protocol proxy is not enough. What you need is an application-specific proxy, such as Redis Proxy, Kafka Proxy, etc. Because some features must be coded and decoded for that protocol before they can be implemented.
+APISIX supports proxy TCP protocols, but there are times when a pure TCP protocol proxy is not enough. It would help if you had an application-specific proxy, such as Redis Proxy, Kafka Proxy, etc. In addition, some features must be coded and decoded for that protocol before they can be implemented.
 
-Therefore, Apache APISIX implements an L4 protocol extension framework called xRPC that allows developers to customize application-specific protocols on top. Based on xRPC, developers can codec requests and responses through Lua code, and then implement fault injection, log reporting, dynamic routing, and other functions based on the understanding of the protocol content.
+Therefore, Apache APISIX implements an L4 protocol extension framework called xRPC that allows developers to customize application-specific protocols. Based on xRPC, developers can codec requests and responses through Lua code and then implement fault injection, log reporting, dynamic routing, and other functions based on understanding the protocol content.
 
-Based on the xRPC framework, APISIX can provide a proxy implementation of several major application protocols. Users can also support their own private TCP-based application protocols based on this framework, giving them the precise granularity and higher-level 7-layer control similar to HTTP protocol proxies.
+Based on the xRPC framework, APISIX can provide a proxy implementation of several major application protocols. In addition, users can also support their own private TCP-based application protocols based on this framework, giving them precise granularity and higher-level 7-layer control similar to HTTP protocol proxies.
 
 ## How to use
 
@@ -71,7 +71,7 @@ The TCP connection that hits that `stream_route` is then handled according to th
 
 ### Fault injection
 
-Taking Redis protocol as an example, after decoding the RESP protocol of Redis, we can know the command and parameters of the current request, and then get the corresponding content according to the configuration, encode it using RESP protocol, and return it to the client.
+Taking Redis protocol as an example, after decoding the RESP protocol of Redis, we can know the command and parameters of the current request and then get the corresponding content according to the configuration, encode it using RESP protocol, and return it to the client.
 
 Suppose the user uses the following routing configuration.
 
