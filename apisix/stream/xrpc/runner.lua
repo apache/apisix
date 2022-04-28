@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local expr = require("resty.expr.v1")
 local pairs = pairs
 local ngx = ngx
 local ngx_now = ngx.now
@@ -70,10 +71,29 @@ local function put_req_ctx(session, ctx)
 end
 
 
+local function match_log_filter(session, ctx)
+    local logger = session._route.protocol.logger
+    if not logger or not logger.filter or #logger.filter == 0 then
+        return false
+    end
+
+    local expr, err = expr.new(logger.filter)
+    if err then
+        core.log.error("failed to validate the 'filter' expression: ", err)
+        return false
+    end
+    return expr:eval(ctx)
+end
+
+
 local function finish_req(protocol, session, ctx)
     ctx._rpc_end_time = ngx_now()
 
-    protocol.log(session, ctx)
+    local matched = match_log_filter(session, ctx)
+    if matched then
+        protocol.log(session, ctx)
+    end
+
     put_req_ctx(session, ctx)
 end
 

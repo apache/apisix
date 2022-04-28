@@ -731,3 +731,250 @@ qr/connect to \S+ while prereading client data/
 connect to 127.0.0.3:1995 while prereading client data
 connect to 127.0.0.1:1995 while prereading client data
 --- stream_conf_enable
+
+
+
+=== TEST 21: bad loggger filter
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        name = "pingpong",
+                        logger = {
+                            name = "syslog",
+                            filter = {
+                                {}
+                            }
+                        }
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:1995"] = 1
+                        },
+                        type = "roundrobin"
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 22: failed to validate the 'filter' expression
+--- request eval
+"POST /t
+" .
+"pp\x02\x00\x00\x00\x00\x00\x00\x03ABC"
+--- stream_conf_enable
+--- error_log
+failed to validate the 'filter' expression: rule too short
+
+
+
+=== TEST 23: set loggger filter(single rule)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        name = "pingpong",
+                        logger = {
+                            name = "syslog",
+                            filter = {
+                                {"len", ">", 10}
+                            }
+                        }
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:1995"] = 1
+                        },
+                        type = "roundrobin"
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 24: log filter matched successful
+--- request eval
+"POST /t
+" .
+"pp\x02\x00\x00\x00\x00\x00\x00\x03ABC"
+--- stream_conf_enable
+--- error_log
+call pingpong's log
+
+
+
+=== TEST 25: update loggger filter
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        name = "pingpong",
+                        logger = {
+                            name = "syslog",
+                            filter = {
+                                {"len", "<", 10}
+                            }
+                        }
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:1995"] = 1
+                        },
+                        type = "roundrobin"
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 26: failed to match log filter
+--- request eval
+"POST /t
+" .
+"pp\x02\x00\x00\x00\x00\x00\x00\x03ABC"
+--- stream_conf_enable
+--- no_error_log
+call pingpong's log
+
+
+
+=== TEST 27: set loggger filter(multiple rules)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        name = "pingpong",
+                        logger = {
+                            name = "syslog",
+                            filter = {
+                                {"len", ">", 12},
+                                {"len", "<", 14}
+                            }
+                        }
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:1995"] = 1
+                        },
+                        type = "roundrobin"
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 28: log filter matched successful
+--- request eval
+"POST /t
+" .
+"pp\x02\x00\x00\x00\x00\x00\x00\x03ABC"
+--- stream_conf_enable
+--- error_log
+call pingpong's log
+
+
+
+=== TEST 29: update loggger filter
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        name = "pingpong",
+                        logger = {
+                            name = "syslog",
+                            filter = {
+                                {"len", "<", 10},
+                                {"len", ">", 12}
+                            }
+                        }
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:1995"] = 1
+                        },
+                        type = "roundrobin"
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 30: failed to match log filter
+--- request eval
+"POST /t
+" .
+"pp\x02\x00\x00\x00\x00\x00\x00\x03ABC"
+--- stream_conf_enable
+--- no_error_log
+call pingpong's log
