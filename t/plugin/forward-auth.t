@@ -44,7 +44,9 @@ __DATA__
                 {uri = "http://127.0.0.1:8199"},
                 {request_headers = {"test"}},
                 {uri = 3233},
-                {uri = "http://127.0.0.1:8199", request_headers = "test"}
+                {uri = "http://127.0.0.1:8199", request_headers = "test"},
+                {uri = "http://127.0.0.1:8199", request_method = "POST"},
+                {uri = "http://127.0.0.1:8199", request_method = "PUT"}
             }
             local plugin = require("apisix.plugins.forward-auth")
 
@@ -59,6 +61,8 @@ done
 property "uri" is required
 property "uri" validation failed: wrong type: expected string, got number
 property "request_headers" validation failed: wrong type: expected array, got string
+done
+property "request_method" validation failed: matches none of the enum values
 
 
 
@@ -78,42 +82,64 @@ property "request_headers" validation failed: wrong type: expected array, got st
                 },
                 {
                     url = "/apisix/admin/routes/auth",
-                    data = [[{
-                        "plugins": {
-                            "serverless-pre-function": {
-                                "phase": "rewrite",
-                                "functions": [
-                                    "return function(conf, ctx)
-                                        local core = require(\"apisix.core\");
-                                        if core.request.header(ctx, \"Authorization\") == \"111\" then
+                    data = {
+                        plugins = {
+                            ["serverless-pre-function"] = {
+                                phase = "rewrite",
+                                functions =  {
+                                    [[return function(conf, ctx)
+                                        local core = require("apisix.core");
+                                        if core.request.header(ctx, "Authorization") == "111" then
                                             core.response.exit(200);
                                         end
-                                    end",
-                                    "return function(conf, ctx)
-                                        local core = require(\"apisix.core\");
-                                        if core.request.header(ctx, \"Authorization\") == \"222\" then
-                                            core.response.set_header(\"X-User-ID\", \"i-am-an-user\");
+                                    end]],
+                                    [[return function(conf, ctx)
+                                        local core = require("apisix.core");
+                                        if core.request.header(ctx, "Authorization") == "222" then
+                                            core.response.set_header("X-User-ID", "i-am-an-user");
                                             core.response.exit(200);
                                         end
-                                    end",]] .. [[
-                                    "return function(conf, ctx)
-                                        local core = require(\"apisix.core\");
-                                        if core.request.header(ctx, \"Authorization\") == \"333\" then
-                                            core.response.set_header(\"Location\", \"http://example.com/auth\");
+                                    end]],
+                                    [[return function(conf, ctx)
+                                        local core = require("apisix.core");
+                                        if core.request.header(ctx, "Authorization") == "333" then
+                                            core.response.set_header("Location", "http://example.com/auth");
                                             core.response.exit(403);
                                         end
-                                    end",
-                                    "return function(conf, ctx)
-                                        local core = require(\"apisix.core\");
-                                        if core.request.header(ctx, \"Authorization\") == \"444\" then
+                                    end]],
+                                    [[return function(conf, ctx)
+                                        local core = require("apisix.core");
+                                        if core.request.header(ctx, "Authorization") == "444" then
                                             core.response.exit(403, core.request.headers(ctx));
                                         end
-                                    end"
-                                ]
+                                    end]],
+                                    [[return function(conf, ctx)
+                                        local core = require("apisix.core")
+                                        if core.request.get_method() == "POST" then
+                                           local req_body, err = core.request.get_body()
+                                           if err then
+                                               core.response.exit(400)
+                                           end
+                                           if req_body then
+                                               local data, err = core.json.decode(req_body)
+                                               if err then
+                                                   core.response.exit(400)
+                                               end
+                                               if data["authorization"] == "555" then
+                                                   core.response.set_header("X-User-ID", "i-am-an-user")
+                                                   core.response.exit(200)
+                                               elseif data["authorization"] == "666" then
+                                                   core.response.set_header("Location", "http://example.com/auth")
+                                                   core.response.exit(403)
+                                               end
+                                           end
+                                        end
+                                    end]]
+                                }
                             }
                         },
-                        "uri": "/auth"
-                    }]],
+                        uri = "/auth"
+                    },
                 },
                 {
                     url = "/apisix/admin/routes/echo",
@@ -166,6 +192,24 @@ property "request_headers" validation failed: wrong type: expected array, got st
                         "uri": "/empty"
                     }]],
                 },
+                {
+                    url = "/apisix/admin/routes/3",
+                    data = [[{
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.0.0.1:1984/auth",
+                                "request_method": "POST",
+                                "upstream_headers": ["X-User-ID"],
+                                "client_headers": ["Location"]
+                            },
+                            "proxy-rewrite": {
+                                "uri": "/echo"
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/ping"
+                    }]],
+                },
             }
 
             local t = require("lib.test_admin").test
@@ -177,7 +221,7 @@ property "request_headers" validation failed: wrong type: expected array, got st
         }
     }
 --- response_body eval
-"201passed\n" x 5
+"201passed\n" x 6
 
 
 
@@ -246,3 +290,22 @@ Authorization: 333
 --- error_code: 403
 --- response_headers
 !Location
+
+
+
+=== TEST 9: hit route (test upstream_headers when use post method)
+--- request
+POST /ping
+{"authorization": "555"}
+--- response_body_like eval
+qr/\"x-user-id\":\"i-am-an-user\"/
+
+
+
+=== TEST 10: hit route (test client_headers when use post method)
+--- request
+POST /ping
+{"authorization": "666"}
+--- error_code: 403
+--- response_headers
+Location: http://example.com/auth

@@ -154,8 +154,12 @@ passed
         }
     }
 --- error_code: 401
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid digest
 --- response_body eval
-qr/\{"message":"Invalid digest"\}/
+qr/\{"message":"client request can't be validated"\}/
 
 
 
@@ -215,8 +219,12 @@ qr/\{"message":"Invalid digest"\}/
         }
     }
 --- error_code: 401
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid digest
 --- response_body eval
-qr/\{"message":"Invalid digest"\}/
+qr/\{"message":"client request can't be validated"\}/
 
 
 
@@ -367,8 +375,12 @@ passed
         }
     }
 --- error_code: 401
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Exceed body limit size
 --- response_body eval
-qr/\{"message":"Exceed body limit size"}/
+qr/\{"message":"client request can't be validated"}/
 
 
 
@@ -433,8 +445,12 @@ plugin_attr:
         }
     }
 --- error_code: 401
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid digest
 --- response_body eval
-qr/\{"message":"Invalid digest"\}/
+qr/\{"message":"client request can't be validated"\}/
 
 
 
@@ -559,5 +575,110 @@ passed
             ngx.say(body)
         }
     }
+--- response_body
+passed
+
+
+
+=== TEST 11: update consumer
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "robin",
+                    "plugins": {
+                        "hmac-auth": {
+                            "access_key": "my-access-key",
+                            "secret_key": "my-secret-key",
+                            "clock_skew": 10
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 12: verify that uri args are greater than 100 is ok
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time = ngx.time
+        local ngx_http_time = ngx.http_time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key"
+        local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
+        local access_key = "my-access-key"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "23879fmsldfk"
+
+        local uri_args = {}
+        for i = 1, 101 do
+            uri_args["arg_" .. tostring(i)] = "val_" .. tostring(i)
+        end
+        local keys = {}
+        local query_tab = {}
+
+        for k, v in pairs(uri_args) do
+            core.table.insert(keys, k)
+        end
+        core.table.sort(keys)
+
+        local args_str = ""
+        for _, key in pairs(keys) do
+            args_str = args_str .. key .. "=" .. uri_args[key] .. "&"
+        end
+        -- remove the last '&'
+        args_str = args_str:sub(1, -2)
+
+        local signing_string = {
+            "GET",
+            "/hello",
+            args_str,
+            access_key,
+            gmt,
+            "x-custom-header-a:" .. custom_header_a,
+            "x-custom-header-b:" .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
+        core.log.info("signing_string:", signing_string)
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local headers = {}
+        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
+        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
+        headers["Date"] = gmt
+        headers["X-HMAC-ACCESS-KEY"] = access_key
+        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+        headers["x-custom-header-a"] = custom_header_a
+        headers["x-custom-header-b"] = custom_header_b
+
+        local code, body = t.test('/hello' .. '?' .. args_str,
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
 --- response_body
 passed

@@ -29,7 +29,7 @@ title: Plugin Config
 # 创建 Plugin config
 $ curl http://127.0.0.1:9080/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
-    "desc": "吾乃插件配置1",
+    "desc": "吾乃插件配置 1",
     "plugins": {
         "limit-count": {
             "count": 2,
@@ -62,7 +62,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 
 ```
 {
-    "desc": "吾乃插件配置1",
+    "desc": "吾乃插件配置 1",
     "plugins": {
         "ip-restriction": {
             "whitelist": [

@@ -1,21 +1,28 @@
 {
-  "version": "2.12.0",
+  "version": "2.13.0",
   "sidebar": [
     {
       "type": "category",
       "label": "Architecture Design",
       "items": [
         "architecture-design/apisix",
-        "architecture-design/route",
-        "architecture-design/plugin",
-        "architecture-design/script",
-        "architecture-design/service",
-        "architecture-design/consumer",
-        "architecture-design/upstream",
-        "architecture-design/global-rule",
         "architecture-design/plugin-config",
-        "architecture-design/router",
         "architecture-design/debug-mode"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Terminology",
+      "items": [
+        "terminology/api-gateway",
+        "terminology/consumer",
+        "terminology/global-rule",
+        "terminology/plugin",
+        "terminology/route",
+        "terminology/router",
+        "terminology/script",
+        "terminology/service",
+        "terminology/upstream"
       ]
     },
     {

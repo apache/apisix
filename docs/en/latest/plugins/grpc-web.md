@@ -1,5 +1,11 @@
 ---
 title: grpc-web
+keywords:
+  - APISIX
+  - Plugin
+  - gRPC Web
+  - grpc-web
+description: This document contains information about the Apache APISIX grpc-web Plugin.
 ---
 
 <!--
@@ -23,17 +29,13 @@ title: grpc-web
 
 ## Description
 
-The `grpc-web` plugin is a proxy plugin used to process [gRPC Web](https://github.com/grpc/grpc-web) client requests to `gRPC Server`.
+The `grpc-web` Plugin is a proxy Plugin that can process [gRPC Web](https://github.com/grpc/grpc-web) requests from JavaScript clients to a gRPC service.
 
-gRPC Web Client -> APISIX -> gRPC server
+## Enabling the Plugin
 
-## How To Enable
+You can enable the `grpc-web` Plugin on a specific Route as shown below:
 
-To enable the `gRPC Web` proxy plugin, routing must use the `Prefix matching` pattern (for example: `/*` or `/grpc/example/*`),
-Because the `gRPC Web` client will pass the `package name`, `service interface name`, `method name` and other information declared in the `proto` in the URI (for example: `/path/a6.RouteService/Insert`) ,
-When using `Absolute Match`, it will not be able to hit the plugin and extract the `proto` information.
-
-```bash
+```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri":"/grpc/web/*",
@@ -50,17 +52,31 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+:::info IMPORTANT
 
-- The request method only supports `POST` and `OPTIONS`, refer to: [CORS support](https://github.com/grpc/grpc-web/blob/master/doc/browser-features.md#cors-support).
-- The `Content-Type` supports `application/grpc-web`, `application/grpc-web-text`, `application/grpc-web+proto`, `application/grpc-web-text+proto`, refer to: [Protocol differences vs gRPC over HTTP2](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md#protocol-differences-vs-grpc-over-http2).
-- Client deployment, refer to: [gRPC-Web Client Runtime Library](https://www.npmjs.com/package/grpc-web) or [Apache APISIX gRPC Web Test Framework](https://github.com/apache/apisix/tree/master/t/plugin/grpc-web).
-- After the `gRPC Web` client is deployed, you can initiate a `gRPC Web` proxy request to `APISIX` through `browser` or `node`.
+While using the `grpc-web` Plugin, always using a prefix matching pattern (`/*`, `/grpc/example/*`) for matching Routes. This is because the gRPC Web client passes the package name, the service interface name, the method name and other information in the proto in the URI. For example, `/path/a6.RouteService/Insert`.
+
+So, when absolute matching is used, the Plugin would not be hit and the information from the proto would not be extracted.
+
+:::
+
+## Example usage
+
+Refer to [gRPC-Web Client Runtime Library](https://www.npmjs.com/package/grpc-web) or [Apache APISIX gRPC Web Test Framework](https://github.com/apache/apisix/tree/master/t/plugin/grpc-web) to learn how to setup your web client.
+
+Once you have your gRPC Web client running, you can make a request to APISIX from the browser or through Node.js.
+
+:::note
+
+The supported request methods are `POST` and `OPTIONS`. See [CORS support](https://github.com/grpc/grpc-web/blob/master/doc/browser-features.md#cors-support).
+
+The supported `Content-Type` includes `application/grpc-web`, `application/grpc-web-text`, `application/grpc-web+proto`, and `application/grpc-web-text+proto`. See [Protocol differences vs gRPC over HTTP2](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md#protocol-differences-vs-grpc-over-http2).
+
+:::
 
 ## Disable Plugin
 
-Just delete the JSON configuration of `grpc-web` in the plugin configuration.
-The APISIX plug-in is hot-reloaded, so there is no need to restart APISIX.
+To disable the `grpc-web` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

@@ -20,6 +20,7 @@ local config_util = require("apisix.core.config_util")
 local stream_plugin_checker = require("apisix.plugin").stream_plugin_checker
 local router_new = require("apisix.utils.router").new
 local apisix_ssl = require("apisix.ssl")
+local xrpc = require("apisix.stream.xrpc")
 local error     = error
 local tonumber  = tonumber
 local ipairs = ipairs
@@ -76,6 +77,12 @@ do
             end
 
             local route = item.value
+            if route.protocol and route.protocol.superior_id then
+                -- subordinate route won't be matched in the entry
+                -- TODO: check the subordinate relationship in the Admin API
+                goto CONTINUE
+            end
+
             if item.value.remote_addr then
                 item.value.remote_addr_matcher = core_ip.create_ip_matcher({item.value.remote_addr})
             end
@@ -187,11 +194,11 @@ function _M.routes()
     return user_routes.values, user_routes.conf_version
 end
 
-local function stream_route_checker(item)
+local function stream_route_checker(item, in_cp)
     if item.plugins then
-        local err, message = stream_plugin_checker(item)
-        if not err then
-            return err, message
+        local ok, message = stream_plugin_checker(item, in_cp)
+        if not ok then
+            return false, message
         end
     end
     -- validate the address format when remote_address or server_address is not nil
@@ -205,6 +212,17 @@ local function stream_route_checker(item)
             return false, "invalid server_addr: " .. item.server_addr
         end
     end
+
+    if item.protocol then
+        local prot_conf = item.protocol
+        if prot_conf then
+            local ok, message = xrpc.check_schema(prot_conf, false)
+            if not ok then
+                return false, message
+            end
+        end
+    end
+
     return true
 end
 _M.stream_route_checker = stream_route_checker

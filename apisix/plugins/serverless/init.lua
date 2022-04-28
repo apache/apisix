@@ -20,6 +20,13 @@ local loadstring = loadstring
 local require = require
 local type = type
 
+
+local phases = {
+    "rewrite", "access", "header_filter", "body_filter",
+    "log", "before_proxy"
+}
+
+
 return function(plugin_name, priority)
     local core = require("apisix.core")
 
@@ -34,8 +41,7 @@ return function(plugin_name, priority)
             phase = {
                 type = "string",
                 default = "access",
-                enum = {"rewrite", "access", "header_filter", "body_filter",
-                        "log", "before_proxy"}
+                enum = phases,
             },
             functions = {
                 type = "array",
@@ -75,7 +81,10 @@ return function(plugin_name, priority)
                                                    load_funcs, conf.functions)
 
         for _, func in ipairs(functions) do
-            func(conf, ctx)
+            local code, body = func(conf, ctx)
+            if code or body then
+                return code, body
+            end
         end
     end
 
@@ -105,28 +114,10 @@ return function(plugin_name, priority)
         return true
     end
 
-    function _M.rewrite(conf, ctx)
-        call_funcs('rewrite', conf, ctx)
-    end
-
-    function _M.access(conf, ctx)
-        call_funcs('access', conf, ctx)
-    end
-
-    function _M.before_proxy(conf, ctx)
-        call_funcs('before_proxy', conf, ctx)
-    end
-
-    function _M.header_filter(conf, ctx)
-        call_funcs('header_filter', conf, ctx)
-    end
-
-    function _M.body_filter(conf, ctx)
-        call_funcs('body_filter', conf, ctx)
-    end
-
-    function _M.log(conf, ctx)
-        call_funcs('log', conf, ctx)
+    for _, phase in ipairs(phases) do
+        _M[phase] = function (conf, ctx)
+            return call_funcs(phase, conf, ctx)
+        end
     end
 
     return _M

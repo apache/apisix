@@ -1,5 +1,11 @@
 ---
 title: csrf
+keywords:
+  - APISIX
+  - Plugin
+  - Cross-site request forgery
+  - csrf
+description: This document contains information about the Apache APISIX csrf Plugin.
 ---
 
 <!--
@@ -23,23 +29,21 @@ title: csrf
 
 ## Description
 
-The `CSRF` plugin based on the [`Double Submit Cookie`](https://en.wikipedia.org/wiki/Cross-site_request_forgery#Double_Submit_Cookie) way, protect your API from CSRF attacks. This plugin considers the `GET`, `HEAD` and `OPTIONS` methods to be safe operations. Therefore calls to the `GET`, `HEAD` and `OPTIONS` methods are not checked for interception.
+The `csrf` Plugin can be used to protect your API against [CSRF attacks](https://en.wikipedia.org/wiki/Cross-site_request_forgery) using the [Double Submit Cookie](https://en.wikipedia.org/wiki/Cross-site_request_forgery#Double_Submit_Cookie) method.
 
-In the following we define `GET`, `HEAD` and `OPTIONS` as the `safe-methods` and those other than these as `unsafe-methods`.
+This Plugin considers the `GET`, `HEAD` and `OPTIONS` methods to be safe operations (`safe-methods`) and such requests are not checked for interception by an attacker. Other methods are termed as `unsafe-methods`.
 
 ## Attributes
 
-| Name             | Type    | Requirement | Default | Valid | Description                                                  |
-| ---------------- | ------- | ----------- | ------- | ----- | ------------------------------------------------------------ |
-|   name   |  string |    optional    | `apisix-csrf-token`  |    | The name of the token in the generated cookie. |
-| expires |  number | optional | `7200` | | Expiration time(s) of csrf cookie. |
-| key | string | required |  |  | The secret key used to encrypt the cookie. |
+| Name    | Type   | Required | Default             | Description                                                                                 |
+|---------|--------|----------|---------------------|---------------------------------------------------------------------------------------------|
+| name    | string | False    | `apisix-csrf-token` | Name of the token in the generated cookie.                                                  |
+| expires | number | False    | `7200`              | Expiration time in seconds of the CSRF cookie. Set to `0` to skip checking expiration time. |
+| key     | string | True     |                     | Secret key used to encrypt the cookie.                                                      |
 
-**Note: When expires is set to 0 the plugin will ignore checking if the token is expired or not.**
+## Enabling the Plugin
 
-## How To Enable
-
-1. Create the route and enable the plugin.
+The example below shows how you can enable the Plugin on a specific Route:
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT-d '
@@ -59,38 +63,46 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-The route is then protected, and if you access it using methods other than `GET`, you will see that the request was blocked and receive a 401 status code back.
+The Route is now protected and trying to access it with methods other than `GET` will be blocked with a 401 status code.
 
-2. Using `GET` requests `/hello`, a cookie with an encrypted token is received in the response. Token name is the `name` field set in the plugin configuration, if not set, the default value is `apisix-csrf-token`.
+Sending a `GET` request to the `/hello` endpoint will send back a cookie with an encrypted token. The name of the token can be set through the `name` attribute of the Plugin configuration and if unset, it defaults to `apisix-csrf-token`.
 
-Please note: We return a new cookie for each request.
+:::note
 
-3. In subsequent unsafe-methods requests to this route, you need to read the encrypted token from the cookie and append the token to the `request header`, setting the field name to the `name` in the plugin configuration.
+A new cookie is returned for each request.
 
-## Test Plugin
+:::
 
-Direct access to the '/hello' route using a `POST` method will return an error:
+For subsequent requests with `unsafe-methods`, you need to read the encrypted token from the cookie and append the token to the request header by setting the field name to the `name` attribute in the Plugin configuration.
+
+## Example usage
+
+After you have configured the Plugin as shown above, trying to directly make a `POST` request to the `/hello` Route will result in an error:
 
 ```shell
 curl -i http://127.0.0.1:9080/hello -X POST
+```
 
+```shell
 HTTP/1.1 401 Unauthorized
 ...
 {"error_msg":"no csrf token in headers"}
 ```
 
-When accessed with a GET request, the correct return and a cookie with an encrypted token are obtained:
+To get the cookie with the encrypted token, you can make a `GET` request:
 
 ```shell
 curl -i http://127.0.0.1:9080/hello
+```
 
+```shell
 HTTP/1.1 200 OK
 Set-Cookie: apisix-csrf-token=eyJyYW5kb20iOjAuNjg4OTcyMzA4ODM1NDMsImV4cGlyZXMiOjcyMDAsInNpZ24iOiJcL09uZEF4WUZDZGYwSnBiNDlKREtnbzVoYkJjbzhkS0JRZXVDQm44MG9ldz0ifQ==;path=/;Expires=Mon, 13-Dec-21 09:33:55 GMT
 ```
 
-The token needs to be read from the cookie and carried in the request header in subsequent unsafe-methods requests.
+This token must then be read from the cookie and added to the request header for subsequent `unsafe-methods` requests.
 
-For example, use [js-cookie](https://github.com/js-cookie/js-cookie) read cookie and [axios](https://github.com/axios/axios) send request in client:
+For example, you can use [js-cookie](https://github.com/js-cookie/js-cookie) to read the cookie and [axios](https://github.com/axios/axios) to send requests:
 
 ```js
 const token = Cookie.get('apisix-csrf-token');
@@ -100,19 +112,21 @@ const instance = axios.create({
 });
 ```
 
-You also need to make sure that you carry the cookie.
+Also make sure that you carry the cookie.
 
-Use curl send request:
+You can also use curl to send the request:
 
 ```shell
 curl -i http://127.0.0.1:9080/hello -X POST -H 'apisix-csrf-token: eyJyYW5kb20iOjAuNjg4OTcyMzA4ODM1NDMsImV4cGlyZXMiOjcyMDAsInNpZ24iOiJcL09uZEF4WUZDZGYwSnBiNDlKREtnbzVoYkJjbzhkS0JRZXVDQm44MG9ldz0ifQ==' -b 'apisix-csrf-token=eyJyYW5kb20iOjAuNjg4OTcyMzA4ODM1NDMsImV4cGlyZXMiOjcyMDAsInNpZ24iOiJcL09uZEF4WUZDZGYwSnBiNDlKREtnbzVoYkJjbzhkS0JRZXVDQm44MG9ldz0ifQ=='
+```
 
+```shell
 HTTP/1.1 200 OK
 ```
 
 ## Disable Plugin
 
-Send a request to update the route to disable the plugin:
+To disable the `csrf` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -126,5 +140,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
   }
 }'
 ```
-
-The CSRF plugin has been disabled.

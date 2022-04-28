@@ -20,6 +20,7 @@ local bit = require("bit")
 local core = require("apisix.core")
 local snowflake = require("snowflake")
 local uuid = require("resty.jit-uuid")
+local nanoid = require("nanoid")
 local process = require("ngx.process")
 local timers = require("apisix.timers")
 local tostring = tostring
@@ -39,7 +40,7 @@ local schema = {
     properties = {
         header_name = {type = "string", default = "X-Request-Id"},
         include_in_response = {type = "boolean", default = true},
-        algorithm = {type = "string", enum = {"uuid", "snowflake"}, default = "uuid"}
+        algorithm = {type = "string", enum = {"uuid", "snowflake", "nanoid"}, default = "uuid"}
     }
 }
 
@@ -204,6 +205,9 @@ end
 local function get_request_id(algorithm)
     if algorithm == "uuid" then
         return uuid()
+    end
+    if algorithm == "nanoid" then
+        return nanoid.safe_simple()
     end
     return next_id()
 end

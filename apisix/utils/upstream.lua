@@ -15,6 +15,8 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local ipmatcher = require("resty.ipmatcher")
+local ngx_now = ngx.now
 local ipairs = ipairs
 local type = type
 
@@ -27,7 +29,7 @@ local function sort_by_key_host(a, b)
 end
 
 
-function _M.compare_upstream_node(up_conf, new_t)
+local function compare_upstream_node(up_conf, new_t)
     if up_conf == nil then
         return false
     end
@@ -55,6 +57,58 @@ function _M.compare_upstream_node(up_conf, new_t)
     end
 
     return true
+end
+_M.compare_upstream_node = compare_upstream_node
+
+
+local function parse_domain_for_nodes(nodes)
+    local new_nodes = core.table.new(#nodes, 0)
+    for _, node in ipairs(nodes) do
+        local host = node.host
+        if not ipmatcher.parse_ipv4(host) and
+                not ipmatcher.parse_ipv6(host) then
+            local ip, err = core.resolver.parse_domain(host)
+            if ip then
+                local new_node = core.table.clone(node)
+                new_node.host = ip
+                new_node.domain = host
+                core.table.insert(new_nodes, new_node)
+            end
+
+            if err then
+                core.log.error("dns resolver domain: ", host, " error: ", err)
+            end
+        else
+            core.table.insert(new_nodes, node)
+        end
+    end
+    return new_nodes
+end
+_M.parse_domain_for_nodes = parse_domain_for_nodes
+
+
+function _M.parse_domain_in_up(up)
+    local nodes = up.value.nodes
+    local new_nodes, err = parse_domain_for_nodes(nodes)
+    if not new_nodes then
+        return nil, err
+    end
+
+    local ok = compare_upstream_node(up.dns_value, new_nodes)
+    if ok then
+        return up
+    end
+
+    if not up.orig_modifiedIndex then
+        up.orig_modifiedIndex = up.modifiedIndex
+    end
+    up.modifiedIndex = up.orig_modifiedIndex .. "#" .. ngx_now()
+
+    up.dns_value = core.table.clone(up.value)
+    up.dns_value.nodes = new_nodes
+    core.log.info("resolve upstream which contain domain: ",
+                  core.json.delay_encode(up, true))
+    return up
 end
 
 

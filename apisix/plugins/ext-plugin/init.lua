@@ -577,9 +577,16 @@ local rpc_handlers = {
 
             local len = stop:HeadersLength()
             if len > 0 then
+                local stop_resp_headers = {}
                 for i = 1, len do
                     local entry = stop:Headers(i)
-                    core.response.set_header(entry:Name(), entry:Value())
+                    local name = str_lower(entry:Name())
+                    if stop_resp_headers[name] == nil then
+                        core.response.set_header(name, entry:Value())
+                        stop_resp_headers[name] = true
+                    else
+                        core.response.add_header(name, entry:Value())
+                    end
                 end
             end
 
@@ -625,11 +632,17 @@ local rpc_handlers = {
 
             local len = rewrite:RespHeadersLength()
             if len > 0 then
+                local rewrite_resp_headers = {}
                 for i = 1, len do
                     local entry = rewrite:RespHeaders(i)
-                    local name = entry:Name()
-                    if exclude_resp_header[str_lower(name)] == nil then
-                        core.response.set_header(name, entry:Value())
+                    local name = str_lower(entry:Name())
+                    if exclude_resp_header[name] == nil then
+                        if rewrite_resp_headers[name] == nil then
+                            core.response.set_header(name, entry:Value())
+                            rewrite_resp_headers[name] = true
+                        else
+                            core.response.add_header(name, entry:Value())
+                        end
                     end
                 end
             end

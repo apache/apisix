@@ -1,5 +1,10 @@
 ---
 title: redirect
+keywords:
+  - APISIX
+  - Plugin
+  - Redirect
+description: 本文介绍了关于 Apache APISIX `redirect` 插件的基本信息及使用方法。
 ---
 
 <!--
@@ -23,7 +28,7 @@ title: redirect
 
 ## 描述
 
-URI 重定向插件。
+`redirect` 插件可用于配置 URI 重定向。
 
 ## 属性
 
@@ -37,16 +42,19 @@ URI 重定向插件。
 | encode_uri    | boolean | 可选        | false   |       | 当设置为 `true` 时，对返回的 `Location` header进行编码，编码格式参考 [RFC3986](https://datatracker.ietf.org/doc/html/rfc3986) |
 | append_query_string    | boolean | optional    | false   |       | 当设置为 `true` 时，将请求url的query部分添加到Location里。如果在 `uri` 或 `regex_uri` 中配置了query, 那么请求的query会被追加在这个query后，以 `&` 分隔。 注意：如果已经处理了query，比如使用了nginx变量 `$request_uri`，那么启用此功能会造成query重复 |
 
-`http_to_https`，`uri` 或 `regex_uri` 三个中只能配置一个。
+:::note
 
-## 示例
+`http_to_https`、`uri` 和 `regex_uri` 只能配置其中一个属性。
 
-### 启用插件
+:::
 
-下面是一个基本实例，为特定路由启用 `redirect` 插件：
+## 启用插件
+
+以下示例展示了如何在指定路由中启用 `redirect` 插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/test/index.html",
     "plugins": {
@@ -64,10 +72,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-我们可以在新的 URI 中使用 Nginx 内置的任意变量：
+你也可以在新的 URI 中使用 NGINX 内置的任意变量：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/test",
     "plugins": {
@@ -85,29 +94,31 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-### 测试
+## 测试插件
 
-测试示例基于上述例子：
+通过上述命令启用插件后，可以使用如下命令测试插件是否启用成功：
 
 ```shell
-$ curl http://127.0.0.1:9080/test/index.html -i
+curl http://127.0.0.1:9080/test/index.html -i
+```
+
+```
 HTTP/1.1 301 Moved Permanently
 Date: Wed, 23 Oct 2019 13:48:23 GMT
 Content-Type: text/html
 Content-Length: 166
 Connection: keep-alive
 Location: /test/default.html
-
 ...
 ```
 
-我们可以检查响应码和响应头中的 `Location` 参数，它表示该插件已启用。
+通过上述返回结果，可以看到响应码和响应头中的 `Location` 参数，它表示该插件已启用。
 
-```
+以下示例展示了如何将 HTTP 重定向到 HTTPS：
 
-下面是一个实现 http 到 https 跳转的示例：
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -119,23 +130,26 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-基于上述例子的测试示例：
+基于上述例子进行测试：
 
 ```shell
-$ curl http://127.0.0.1:9080/hello -i
+curl http://127.0.0.1:9080/hello -i
+```
+
+```
 HTTP/1.1 301 Moved Permanently
 ...
 Location: https://127.0.0.1:9443/hello
-
 ...
 ```
 
-### 禁用插件
+## 禁用插件
 
-移除插件配置中相应的 JSON 配置可立即禁用该插件，无需重启服务：
+当你需要禁用 `redirect` 插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/test/index.html",
     "plugins": {},
@@ -147,5 +161,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
-
-这时该插件已被禁用。

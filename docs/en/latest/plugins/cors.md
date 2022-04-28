@@ -1,5 +1,10 @@
 ---
 title: cors
+keywords:
+  - APISIX
+  - Plugin
+  - CORS
+description: This document contains information about the Apache APISIX cors Plugin.
 ---
 
 <!--
@@ -23,35 +28,36 @@ title: cors
 
 ## Description
 
-`cors` plugin can help you enable [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) easily.
+The `cors` Plugins lets you enable [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) easily.
 
 ## Attributes
 
-| Name             | Type    | Requirement | Default | Valid | Description                                                  |
-| ---------------- | ------- | ----------- | ------- | ----- | ------------------------------------------------------------ |
-| allow_origins    | string  | optional    | "*"     |       | Which Origins is allowed to enable CORS, format as: `scheme`://`host`:`port`, for example: https://somehost.com:8081. Multiple origin use `,` to split. When `allow_credential` is `false`, you can use `*` to indicate allow any origin. you also can allow all any origins forcefully using `**` even already enable `allow_credential`, but it will bring some security risks. |
-| allow_methods    | string  | optional    | "*"     |       | Which Method is allowed to enable CORS, such as: `GET`, `POST` etc. Multiple method use `,` to split. When `allow_credential` is `false`, you can use `*` to indicate allow all any method. You also can allow any method forcefully using `**` even already enable `allow_credential`, but it will bring some security risks. |
-| allow_headers    | string  | optional    | "*"     |       | Which headers are allowed to set in request when access cross-origin resource. Multiple value use `,` to split. When `allow_credential` is `false`, you can use `*` to indicate allow all request headers. You also can allow any header forcefully using `**` even already enable `allow_credential`, but it will bring some security risks. |
-| expose_headers   | string  | optional    | "*"     |       | Which headers are allowed to set in response when access cross-origin resource. Multiple value use `,` to split. When `allow_credential` is false, you can use `*` to indicate allow any header. You also can allow any header forcefully using `**` even already enable allow_credential, but it will bring some security risks.|
-| max_age          | integer | optional    | 5       |       | Maximum number of seconds the results can be cached. Within this time range, the browser will reuse the last check result. `-1` means no cache. Please note that the maximum value is depended on browser, please refer to [MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#Directives) for details. |
-| allow_credential | boolean | optional    | false   |       | Enable request include credential (such as Cookie etc.). According to CORS specification, if you set this option to `true`, you can not use '*' for other options. |
-| allow_origins_by_regex | array | optional    | nil   |       | Use regex expressions to match which origin is allowed to enable CORS, for example, [".*\.test.com"] can use to match all subdomain of test.com  |
-| allow_origins_by_metadata | array | optional    | nil   |       | Match which origin is allowed to enable CORS by referencing `allow_origins` set in plugin metadata. For example, if `"allow_origins": {"EXAMPLE": "https://example.com"}` is set in metadata, then `["EXAMPLE"]` can be used to match the origin `https://example.com`  |
+| Name                      | Type    | Required | Default | Description                                                                                                                                                                                                                                                                                                                                                                                        |
+|---------------------------|---------|----------|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| allow_origins             | string  | False    | "*"     | Origins to allow CORS. Use the `scheme://host:port` format. For example, `https://somedomain.com:8081`. If you have multiple origins, use a `,` to list them. If `allow_credential` is set to `false`, you can enable CORS for all origins by using `*`. If `allow_credential` is set to `true`, you can forcefully allow CORS on all origins by using `**` but it will pose some security issues. |
+| allow_methods             | string  | False    | "*"     | Request methods to enable CORS on. For example `GET`, `POST`. Use `,` to add multiple methods. If `allow_credential` is set to `false`, you can enable CORS for all methods by using `*`. If `allow_credential` is set to `true`, you can forcefully allow CORS on all methods by using `**` but it will pose some security issues.                                                                |
+| allow_headers             | string  | False    | "*"     | Headers in the request allowed when accessing a cross-origin resource. Use `,` to add multiple headers. If `allow_credential` is set to `false`, you can enable CORS for all request headers by using `*`. If `allow_credential` is set to `true`, you can forcefully allow CORS on all request headers by using `**` but it will pose some security issues.                                       |
+| expose_headers            | string  | False    | "*"     | Headers in the response allowed when accessing a cross-origin resource. Use `,` to add multiple headers. If `allow_credential` is set to `false`, you can enable CORS for all response headers by using `*`. If `allow_credential` is set to `true`, you can forcefully allow CORS on all response headers by using `**` but it will pose some security issues.                                    |
+| max_age                   | integer | False    | 5       | Maximum time in seconds the result is cached. If the time is within this limit, the browser will check the cached result. Set to `-1` to disable caching. Note that the maximum value is browser dependent. See [Access-Control-Max-Age](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#Directives) for more details.                                            |
+| allow_credential          | boolean | False    | false   | When set to `true`, allows requests to include credentials like cookies. According to CORS specification, if you set this to `true`, you cannot use '*' to allow all for the other attributes.                                                                                                                                                                                                     |
+| allow_origins_by_regex    | array   | False    | nil     | Regex to match with origin for enabling CORS. For example, `[".*\.test.com"]` can match all subdomain of `test.com`.                                                                                                                                                                                                                                                                               |
+| allow_origins_by_metadata | array   | False    | nil     | Origins to enable CORS referenced from `allow_origins` set in the Plugin metadata. For example, if `"allow_origins": {"EXAMPLE": "https://example.com"}` is set in the Plugin metadata, then `["EXAMPLE"]` can be used to allow CORS on the origin `https://example.com`.                                                                                                                          |
 
-> **Tips**
->
-> Please note that `allow_credential` is a very sensitive option, so choose to enable it carefully. After set it be `true`, the default `*` of other parameters will be invalid, you must specify their values explicitly.
-> When using `**`, you must fully understand that it introduces some security risks, such as CSRF, so make sure that this security level meets your expectations before using it。
+:::info IMPORTANT
+
+The `allow_credential` attribute is sensitive and must be used carefully. If set to `true` the default value `*` of the other attributes will be invalid and they should be specified explicitly. When using `**` you are vulnerable to security risks like CSRF. Make sure that this meets your security levels before using it.
+
+:::
 
 ## Metadata
 
-| Name          | Type    | Requirement | Default | Valid | Description                                                            |
-| -----------   | ------  | ----------- | ------- | ----- | ---------------------------------------------------------------------- |
-| allow_origins | object  | optional    |         |       | A map from origin reference to allowed origins; its key is the reference used by `allow_origins_by_metadata` and its value is a string equivalent to `allow_origins` in plugin attributes  |
+| Name          | Type   | Required | Description                                                                                                                                                                                             |
+|---------------|--------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| allow_origins | object | False    | A map with origin reference and allowed origins. The keys in the map are used in the attribute `allow_origins_by_metadata` and the value are equivalent to the `allow_origins` attribute of the Plugin. |
 
-## How To Enable
+## Enabling the Plugin
 
-Create a `Route` or `Service` object and configure `cors` plugin.
+You can enable the Plugin on a specific Route or Service:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -69,12 +75,15 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+## Example usage
 
-curl to server, you will find the headers about `CORS` is be returned, which means plugin is working fine.
+After enabling the Plugin, you can make a request to the server and see the CORS headers returned:
 
 ```shell
 curl http://127.0.0.1:9080/hello -v
+```
+
+```shell
 ...
 < Server: APISIX web server
 < Access-Control-Allow-Origin: *
@@ -87,10 +96,10 @@ curl http://127.0.0.1:9080/hello -v
 
 ## Disable Plugin
 
-When you want to disable the `cors` plugin, it is very simple, you can delete the corresponding json configuration in the plugin configuration, no need to restart the service, it will take effect immediately:
+To disable the `cors` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},
@@ -102,5 +111,3 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
 }'
 ```
-
-The `cors` plugin has been disabled now. It works for other plugins.

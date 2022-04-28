@@ -25,11 +25,11 @@ This guide walks you through how you can build and get Apache APISIX running on 
 
 ## Step 1: Install Apache APISIX
 
-Apache APISIX can be installed via the [RPM package](#installation-via-rpm-repository-centos-7), [Docker image](#installation-via-docker), [Helm Chart](#installation-via-helm-chart) or the [source release package](#installation-via-source-release-package). You can install via any one of these options.
+Apache APISIX can be installed via the [RPM package](#installation-via-rpm-repository-centos), [Docker image](#installation-via-docker), [Helm Chart](#installation-via-helm-chart) or the [source release package](#installation-via-source-release-package). You can install via any one of these options.
 
-### Installation via RPM Repository (CentOS 7)
+### Installation via RPM Repository (CentOS)
 
-This installation method is suitable for CentOS 7.
+> This installation method is suitable for CentOS 7 and CentOS 8.
 
 If the official OpenResty repository is **not installed yet**, the following command will help you automatically install both OpenResty and Apache APISIX repositories.
 
@@ -59,7 +59,7 @@ sudo yum install apisix
 sudo yum install apisix-2.10.3-0.el7
 ```
 
-### Installation via RPM Offline Package (CentOS 7)
+### Installation via RPM Offline Package (CentOS)
 
 First, download Apache APISIX offline RPM package to `./apisix` folder.
 
@@ -97,10 +97,10 @@ Follow the steps below to install Apache APISIX via the source release package.
   curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-dependencies.sh -sL | bash -
   ```
 
-2. Create a directory named `apisix-2.12.0`.
+2. Create a directory named `apisix-2.13.0`.
 
   ```shell
-  APISIX_VERSION='2.12.0'
+  APISIX_VERSION='2.13.0'
   mkdir apisix-${APISIX_VERSION}
   ```
 
@@ -125,8 +125,6 @@ Follow the steps below to install Apache APISIX via the source release package.
   cd apisix-${APISIX_VERSION}
   # Create dependencies
   make deps
-  # Install apisix command
-  make install
   ```
 
   **Note**: If you fail to install dependency packages using `make deps` and get an error message like `Could not find header file for LDAP/PCRE/openssl`, you can use this general method to solve problems.
@@ -149,11 +147,9 @@ Follow the steps below to install Apache APISIX via the source release package.
      `/opt/homebrew/cellar/openldap/` is default path to install openldap on macOS(Apple Silicon) using brew.
      `/usr/local/opt/openldap/` is default path to install openldap on macOS(Intel) using brew.
 
-5. To uninstall the Apache APISIX runtime, run:
+6. To uninstall the Apache APISIX runtime, run:
 
    ```shell
-   # Uninstall apisix command
-   make uninstall
    # Purge dependencies
    make undeps
    ```
@@ -162,9 +158,9 @@ Follow the steps below to install Apache APISIX via the source release package.
 
 #### LTS version installation via Source Release Package
 
-The [current LTS version](https://apisix.apache.org/downloads/) of Apache APISIX is `2.10.4`.
+The [current LTS version](https://apisix.apache.org/downloads/) of Apache APISIX is `2.13.0`.
 
-To install this version, set `APISIX_VERSION` in [Installation via Source Release Package](#installation-via-source-release-package) to `2.10.4` and continue with the other steps.
+To install this version, set `APISIX_VERSION` in [Installation via Source Release Package](#installation-via-source-release-package) to this version and continue with the other steps.
 
 ## Step 2: Install etcd
 
@@ -173,7 +169,7 @@ This step is required only if you haven't installed [etcd](https://github.com/et
 Run the command below to install etcd via the binary in Linux:
 
 ```shell
-ETCD_VERSION='3.4.13'
+ETCD_VERSION='3.4.18'
 wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
 tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
   cd etcd-v${ETCD_VERSION}-linux-amd64 && \
@@ -365,7 +361,7 @@ If you need these features, you can build APISIX OpenResty. You can refer to the
 
 ## Step 7: Add Systemd unit file for Apache APISIX
 
-If you are using CentOS 7 and you installed [Apache APISIX via the RPM package](#installation-via-rpm-repository-centos-7), the configuration file will already be in place and you can run the following command directly.
+If you are using CentOS and installed [Apache APISIX via the RPM package](#installation-via-rpm-repository-centos), the configuration file will already be in place and you can run the following command directly.
 
 ```shell
 systemctl start apisix

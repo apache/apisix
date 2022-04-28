@@ -155,7 +155,7 @@ local function init(env)
     end
 
     local min_ulimit = 1024
-    if env.ulimit <= min_ulimit then
+    if env.ulimit ~= "unlimited" and env.ulimit <= min_ulimit then
         print(str_format("Warning! Current maximum number of open file "
                 .. "descriptors [%d] is not greater than %d, please increase user limits by "
                 .. "execute \'ulimit -n <new user limits>\' , otherwise the performance"
@@ -641,6 +641,47 @@ Please modify "admin_key" in conf/config.yaml .
             if value then
                 table_insert(sys_conf["envs"], name .. "=" .. value)
             end
+        end
+    end
+
+    -- inject kubernetes discovery environment variable
+    if enabled_discoveries["kubernetes"] then
+
+        local kubernetes_conf = yaml_conf.discovery["kubernetes"]
+
+        local keys = {
+            kubernetes_conf.service.host,
+            kubernetes_conf.service.port,
+        }
+
+        if kubernetes_conf.client.token then
+            table_insert(keys, kubernetes_conf.client.token)
+        end
+
+        if kubernetes_conf.client.token_file then
+            table_insert(keys, kubernetes_conf.client.token_file)
+        end
+
+        local envs = {}
+
+        for _, key in ipairs(keys) do
+            if #key > 3 then
+                local first, second = str_byte(key, 1, 2)
+                if first == str_byte('$') and second == str_byte('{') then
+                    local last = str_byte(key, #key)
+                    if last == str_byte('}') then
+                        envs[str_sub(key, 3, #key - 1)] = ""
+                    end
+                end
+            end
+        end
+
+        if not sys_conf["envs"] then
+            sys_conf["envs"] = {}
+        end
+
+        for item in pairs(envs) do
+            table_insert(sys_conf["envs"], item)
         end
     end
 

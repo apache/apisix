@@ -33,7 +33,8 @@ return function (apisix_home, pkg_cpath_org, pkg_path_org)
     if not res then
         error("failed to exec ulimit cmd \'ulimit -n \', err: " .. err)
     end
-    local ulimit = tonumber(util.trim(res))
+    local trimed_res = util.trim(res)
+    local ulimit = trimed_res == "unlimited" and trimed_res or tonumber(trimed_res)
     if not ulimit then
         error("failed to fetch current maximum number of open file descriptors")
     end
@@ -78,7 +79,14 @@ return function (apisix_home, pkg_cpath_org, pkg_path_org)
         end
     end
 
-    local openresty_args = [[openresty -p ]] .. apisix_home .. [[ -c ]]
+    -- pre-transform openresty path
+    res, err = util.execute_cmd("command -v openresty")
+    if not res then
+        error("failed to exec ulimit cmd \'command -v openresty\', err: " .. err)
+    end
+    local openresty_path_abs = util.trim(res)
+
+    local openresty_args = openresty_path_abs .. [[ -p ]] .. apisix_home .. [[ -c ]]
                            .. apisix_home .. [[/conf/nginx.conf]]
 
     local min_etcd_version = "3.4.0"

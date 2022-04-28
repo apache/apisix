@@ -23,14 +23,12 @@ local ngx_re = require("ngx.re")
 local http     = require("resty.http")
 local ipairs   = ipairs
 local ngx      = ngx
-local tostring = tostring
 local rawget   = rawget
 local rawset   = rawset
 local setmetatable = setmetatable
 local type     = type
 local string   = string
 local req_read_body = ngx.req.read_body
-local req_get_post_args = ngx.req.get_post_args
 local req_get_body_data = ngx.req.get_body_data
 
 local plugin_name = "wolf-rbac"
@@ -326,7 +324,7 @@ function _M.rewrite(conf, ctx)
         core.log.error(" check_url_permission(",
             core.json.delay_encode(perm_item),
             ") failed, res: ",core.json.delay_encode(res))
-        return 401, fail_response(res.err,
+        return 401, fail_response("Invalid user permission",
             { username = username, nickname = nickname }
         )
     end
@@ -345,7 +343,7 @@ local function get_args()
             core.log.error("json.decode(", req_body, ") failed! ", err)
         end
     else
-        args = req_get_post_args()
+        args = core.request.get_post_args(ctx)
     end
 
     return args
@@ -365,7 +363,7 @@ local function get_consumer(appid)
     if not consumer then
         core.log.info("request appid [", appid, "] not found")
         core.response.exit(400,
-                fail_response("appid [" .. tostring(appid) .. "] not found")
+                fail_response("appid not found")
             )
     end
     return consumer
@@ -386,7 +384,7 @@ local function request_to_wolf_server(method, uri, headers, body)
     if not res then
         core.log.error("request [", request_debug, "] failed! err: ", err)
         return core.response.exit(500,
-            fail_response("request to wolf-server failed! " .. tostring(err))
+            fail_response("request to wolf-server failed!")
         )
     end
     core.log.info("request [", request_debug, "] status: ", res.status,
@@ -396,8 +394,7 @@ local function request_to_wolf_server(method, uri, headers, body)
         core.log.error("request [", request_debug, "] failed! status: ",
                         res.status)
         return core.response.exit(500,
-        fail_response("request to wolf-server failed! status:"
-                          .. tostring(res.status))
+        fail_response("request to wolf-server failed!")
         )
     end
     local body, err = json.decode(res.body)
@@ -408,7 +405,7 @@ local function request_to_wolf_server(method, uri, headers, body)
     if not body.ok then
         core.log.error("request [", request_debug, "] failed! response body:",
                        core.json.delay_encode(body))
-        return core.response.exit(200, fail_response(body.reason))
+        return core.response.exit(200, fail_response("request to wolf-server failed!"))
     end
 
     core.log.info("request [", request_debug, "] success! response body:",
