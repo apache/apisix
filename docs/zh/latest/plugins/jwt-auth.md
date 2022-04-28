@@ -33,7 +33,7 @@ description: 本文介绍了关于 Apache APISIX `jwt-auth` 插件的基本信�
 
 通过 Consumer 将其密匙添加到查询字符串参数、请求头或 `cookie` 中用来验证其请求。
 
-`jwt-auth` 插件可以与 [HashiCorp Vault](https://www.vaultproject.io/) 集成，用于存储和获取密钥，并从 HashiCorp Vault 的 [encrypted KV engine](https://www.vaultproject.io/docs/secrets/kv)中获取 RSA 密匙对。你可以从下面的 [示例](#与-HashiCorp-Vault-一起使用) 中了解更多信息。
+`jwt-auth` 插件可以与 [HashiCorp Vault](https://www.vaultproject.io/) 集成，用于存储和获取密钥，并从 HashiCorp Vault 的 [encrypted KV engine](https://www.vaultproject.io/docs/secrets/kv)中获取 RSA 密匙对。你可以从下面的[示例](#与-hashicorp-vault-集成使用)中了解更多信息。
 
 ## 属性
 
