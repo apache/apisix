@@ -186,7 +186,7 @@ function batch_processor:push(entry)
         return
     end
 
-    if is_http and not batch_metrics and prometheus.get_prometheus() and self.name
+    if prometheus and not batch_metrics and self.name
        and self.route_id and self.server_addr then
         batch_metrics = prometheus.get_prometheus():gauge("batch_process_entries",
                                                           "batch process remaining entries",

@@ -73,7 +73,7 @@ local function send_syslog_data(conf, log_message, api_ctx)
 end
 
 
--- log phase in APISIX
+-- called in log phase of APISIX
 function _M.push_entry(conf, ctx, entry)
     if batch_processor_manager:add_entry(conf, entry) then
         return

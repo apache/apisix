@@ -34,7 +34,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: set route
+=== TEST 1: custom log format not set
 --- config
     location /t {
         content_by_lua_block {
@@ -88,11 +88,52 @@ mmm
 --- stream_response
 hello world
 --- error_log
+syslog's log_format is not set
+
+
+
+=== TEST 3: set custom log format
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/syslog',
+                ngx.HTTP_PUT,
+                [[{
+                    "log_format": {
+                        "host": "$host",
+                        "client_ip": "$remote_addr"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 4: hit
+--- stream_request eval
+mmm
+--- stream_response
+hello world
+--- error_log
 sending a batch logs to 127.0.0.1:5044
 
 
 
-=== TEST 3: flush manually
+=== TEST 5: flush manually
 --- config
     location /t {
         content_by_lua_block {
@@ -129,7 +170,7 @@ done
 
 
 
-=== TEST 4: small flush_limit, instant flush
+=== TEST 6: small flush_limit, instant flush
 --- stream_conf_enable
 --- config
     location /t {
@@ -190,7 +231,7 @@ unlock with key stream/route#1
 
 
 
-=== TEST 5: check plugin configuration updating
+=== TEST 7: check plugin configuration updating
 --- stream_conf_enable
 --- config
     location /t {

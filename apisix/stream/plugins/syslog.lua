@@ -19,7 +19,7 @@ local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local syslog = require("apisix.plugins.syslog.init")
-local ngx = ngx
+local plugin = require("apisix.plugin")
 local plugin_name = "syslog"
 
 local batch_processor_manager = bp_manager_mod.new("stream sys logger")
@@ -40,23 +40,41 @@ local schema = {
 
 local schema = batch_processor_manager:wrap_schema(schema)
 
+local metadata_schema = {
+    type = "object",
+    properties = {
+        log_format = log_util.metadata_schema_log_format,
+    },
+}
+
 local _M = {
     version = 0.1,
     priority = 401,
     name = plugin_name,
     schema = schema,
+    metadata_schema = metadata_schema,
     flush_syslog = syslog.flush_syslog,
 }
 
 
-function _M.check_schema(conf)
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
     return core.schema.check(schema, conf)
 end
 
 
--- log phase in APISIX
 function _M.log(conf, ctx)
-    local entry = log_util.get_full_log_in_stream(ngx)
+    local metadata = plugin.plugin_metadata(plugin_name)
+    if not metadata or not metadata.value.log_format
+          or core.table.nkeys(metadata.value.log_format) <= 0
+    then
+        core.log.error("syslog's log_format is not set")
+        return
+    end
+
+    local entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
     syslog.push_entry(conf, ctx, entry)
 end
 

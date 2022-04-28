@@ -65,7 +65,6 @@ function _M.check_schema(conf)
 end
 
 
--- log phase in APISIX
 function _M.log(conf, ctx)
     local entry = log_util.get_full_log(ngx, conf)
     syslog.push_entry(conf, ctx, entry)
