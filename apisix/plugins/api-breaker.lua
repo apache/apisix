@@ -167,7 +167,9 @@ function _M.access(conf, ctx)
     if lasttime + breaker_time >= ngx.time() then
         if conf.break_response_body then
             core.response.clear_header_as_body_modified()
-            ngx.header["Content-Type"] = conf.break_response_content_type
+            if conf.break_response_content_type then
+                core.response.set_header("Content-Type", conf.break_response_content_type)
+            end
             return conf.break_response_code, conf.break_response_body
         end
         return conf.break_response_code
