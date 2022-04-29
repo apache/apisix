@@ -80,7 +80,7 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
 
 ## 测试插件
 
-一旦你启用了该插件，访问该路线的新用户将会首先被 `authz-casdoor` 插件处理，并被重定向到Casdoor 登录页面。
+一旦你启用了该插件，访问该路线的新用户将会首先被 `authz-casdoor` 插件处理，并被重定向到 Casdoor 登录页面。
 
 成功登录后，Casdoor 会将该用户重定向到 `callback_url`，并指定 GET 参数的 `code` 和 `state`。该插件还将请求一个访问 Token，并确认用户是否真正登录了。该过程只运行一次，后续请求将不会被此打断。
 
