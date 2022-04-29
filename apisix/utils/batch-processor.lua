@@ -29,9 +29,7 @@ local execute_func
 local create_buffer_timer
 local batch_metrics
 local prometheus
-local is_http = false
 if ngx.config.subsystem == "http" then
-    is_http = true
     prometheus = require("apisix.plugins.prometheus.exporter")
 end
 
