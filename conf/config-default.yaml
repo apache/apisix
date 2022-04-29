@@ -349,6 +349,49 @@ etcd:
 #    dump:                         # if you need, when registered nodes updated can dump into file
 #       path: "logs/consul_kv.dump"
 #       expire: 2592000      # unit sec, here is 30 day
+#  kubernetes:
+#    service:
+       # apiserver schema, options [http, https]
+#      schema: https #default https
+#
+       # apiserver host, options [ipv4, ipv6, domain, environment variable]
+#      host: ${KUBERNETES_SERVICE_HOST} #default ${KUBERNETES_SERVICE_HOST}
+#
+       # apiserver port, options [port number, environment variable]
+#      port: ${KUBERNETES_SERVICE_PORT}  #default ${KUBERNETES_SERVICE_PORT}
+#
+#    client:
+       # serviceaccount token or token_file
+#      token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+#
+       #token: |-
+        # eyJhbGciOiJSUzI1NiIsImtpZCI6Ikx5ME1DNWdnbmhQNkZCNlZYMXBsT3pYU3BBS2swYzBPSkN3ZnBESGpkUEEif
+        # 6Ikx5ME1DNWdnbmhQNkZCNlZYMXBsT3pYU3BBS2swYzBPSkN3ZnBESGpkUEEifeyJhbGciOiJSUzI1NiIsImtpZCI
+#
+     # kubernetes discovery plugin support use namespace_selector
+     # you can use one of [equal, not_equal, match, not_match] filter namespace
+#    namespace_selector:
+       # only save endpoints with namespace equal default
+#      equal: default
+#
+       # only save endpoints with namespace not equal default
+       #not_equal: default
+#
+       # only save endpoints with namespace match one of [default, ^my-[a-z]+$]
+       #match:
+        #- default
+        #- ^my-[a-z]+$
+#
+       # only save endpoints with namespace not match one of [default, ^my-[a-z]+$ ]
+       #not_match:
+        #- default
+        #- ^my-[a-z]+$
+#
+     # kubernetes discovery plugin support use label_selector
+     # for the expression of label_selector, please refer to https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+#    label_selector: |-
+#      first="a",second="b"
+                   # default 10s
 
 graphql:
   max_size: 1048576               # the maximum size limitation of graphql in bytes, default 1MiB
