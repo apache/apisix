@@ -45,7 +45,7 @@ In an unhealthy state, when a request is forwarded to an upstream service and th
 | ----------------------- | ------------- | ----------- | -------- | --------------- | --------------------------------------------------------------------------- |
 | break_response_code     | integer        | required |            | [200, ..., 599] | Return error code when unhealthy |
 | break_response_body     | string         | optional |            |                 | Return response body when unhealthy |
-| break_response_content_type     | string        | optional | application/json |    | Return body's content type when unhealthy |
+| break_response_content_type     | string        | optional | application/json |    | Return body's content type when unhealthy. This field is in effective only if `break_response_body` is configured. |
 | max_breaker_sec         | integer        | optional | 300        | >=3             | Maximum breaker time(seconds) |
 | unhealthy.http_statuses | array[integer] | optional | {500}      | [500, ..., 599] | Status codes when unhealthy |
 | unhealthy.failures      | integer        | optional | 3          | >=1             | Number of consecutive error requests that triggered an unhealthy state |
