@@ -21,7 +21,7 @@ title: 常见问题
 #
 -->
 
-## 为什么我们需要一个新的 API 网关？不是已经有其他的开源网关了吗？
+## 为什么需要一个新的 API 网关？不是已经有其他的开源网关了吗？
 
 随着企业向云本地微服务的发展，企业对高性能、灵活、安全、可扩展的 API 网关的需求越来越大。
 
@@ -76,7 +76,7 @@ APISIX 具有功能强大的 Dashboard，并且 [APISIX Dashboard](https://githu
 1. 集群中的分布式部署
 2. 通过比较来监视业务
 3. 多版本并发控制
-4. 通知和观看流
+4. 变化通知
 5. 高性能和最小的读/写延迟
 
 etcd 提供了这些特性，并且使它比 PostgreSQL 和 MySQL 等其他数据库更理想。
@@ -248,7 +248,7 @@ nginx_config:
 
 所有的 Apache APISIX 的插件都支持热加载的方式。
 
-如果你想了解更多关于热加载的内容，请参考[热加载](https://apisix.apache.org/docs/apisix/next/terminology/plugin#hot-reload-in-stand-alone-mode)。
+如果你想了解更多关于热加载的内容，请参考[热加载](../terminology/plugin#热加载)。
 
 ## 在处理 HTTP 或 HTTPS 请求时，我该如何配置 Apache APISIX 来监听多个端口？
 
@@ -591,5 +591,5 @@ apisix:
 ## 如果在使用 APISIX 过程中遇到问题，我可以在哪里寻求更多帮助？
 
 - [Apache APISIX Slack Channel](/docs/general/community#joining-the-slack-channel)：加入后请选择 channel-apisix 频道，即可通过此频道进行 APISIX 相关问题的提问。
-- [Ask questions on APISIX mailing list](/docs/general/community#joining-the-mailing-list)：任何问题或对项目提议都可以通过社区邮件进行讨论。
+- [邮件列表](/docs/general/community#joining-the-mailing-list)：任何问题或对项目提议都可以通过社区邮件进行讨论。
 - [GitHub Issues](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc) and [GitHub Discussions](https://github.com/apache/apisix/discussions)：也可直接在 GitHub 中进行相关 issue 创建进行问题的表述。
