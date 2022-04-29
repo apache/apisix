@@ -459,6 +459,7 @@ breaker_time: 2
                         "api-breaker": {
                             "break_response_code": 502,
                             "break_response_body": "{\"message\":\"breaker opened.\"}",
+                            "break_response_content_type": "application/json+v1",
                             "unhealthy": {
                                 "failures": 3
                             },
@@ -510,6 +511,8 @@ GET /api_breaker?code=500
 ]
 --- error_code eval
 [200, 500, 503, 500, 500, 502]
+--- response_headers eval
+["Content-Type: text/plain", "Content-Type: text/html", "Content-Type: text/html", "Content-Type: text/html", "Content-Type: text/html", "Content-Type: application/json+v1"]
 --- response_body_like eval
 [".*", ".*", ".*", ".*", ".*", "{\"message\":\"breaker opened.\"}"]
 --- no_error_log
