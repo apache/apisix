@@ -33,7 +33,7 @@ Based on the xRPC framework, APISIX can provide a proxy implementation of severa
 
 Currently, the steps for users to use xRPC are relatively simple and can be handled quickly in just two steps.
 
-1. First enable the corresponding protocol in `conf/config.yaml`.
+1. First, enable the corresponding protocol in `conf/config.yaml`.
 
 ```yaml
 xrpc:
@@ -95,7 +95,7 @@ Since xRPC requires developers to codec the protocol when customizing it, the sa
 
 ### Dynamic Routing
 
-In the process of proxy RPC protocol, there are often different RPC calls need to be forwarded to different upstream requirements. Therefore, the xRPC framework has built-in support for dynamic routing.
+In the process of proxy RPC protocol, there are often different RPC calls that need to be forwarded to different upstream requirements. Therefore, the xRPC framework has built-in support for dynamic routing.
 
 To solve this problem, the concept of superior and subordinate is used in xRPC routing, as shown in the following two examples.
 
@@ -133,7 +133,7 @@ For example, for the Dubbo RPC protocol, the subordinate route is matched based 
 
 ## How to write your own protocol
 
-Assuming that your protocol is named `my_proto`, you need to create a directory that can be introduced by `require "apisix.stream.xrpc.protcols.my_proto"`.
+Assuming that your protocol is named `my_proto`, you need to create a directory that can be introduced by `require "apisix.stream.xrpc.protocols.my_proto"`.
 Inside this directory you need to have two files, `init.lua`, which implements the methods required by the xRPC framework, and `schema.lua`, which implements the schema checks for the protocol configuration.
 
 For a concrete implementation, you can refer to the existing protocols at:
