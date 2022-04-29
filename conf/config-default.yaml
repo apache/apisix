@@ -315,6 +315,40 @@ etcd:
 #      connect: 2000              # default 2000ms
 #      send: 2000                 # default 2000ms
 #      read: 5000                 # default 5000ms
+#  nacos:
+#    host:
+#      - "http://${username}:${password}@${host1}:${port1}"
+#    prefix: "/nacos/v1/"
+#    fetch_interval: 30    # default 30 sec
+#    weight: 100           # default 100
+#    timeout:
+#      connect: 2000       # default 2000 ms
+#      send: 2000          # default 2000 ms
+#      read: 5000          # default 5000 ms
+#  consul_kv:
+#    servers:
+#      - "http://127.0.0.1:8500"
+#      - "http://127.0.0.1:8600"
+#    prefix: "upstreams"
+#    skip_keys:                    # if you need to skip special keys
+#      - "upstreams/unused_api/"
+#    timeout:
+#      connect: 1000               # default 2000 ms
+#      read: 1000                  # default 2000 ms
+#      wait: 60                    # default 60 sec
+#    weight: 1                     # default 1
+#    fetch_interval: 5             # default 3 sec, only take effect for keepalive: false way
+#    keepalive: true               # default true, use the long pull way to query consul servers
+#    default_server:               # you can define default server when missing hit
+#      host: "127.0.0.1"
+#      port: 20999
+#      metadata:
+#        fail_timeout: 1           # default 1 ms
+#        weight: 1                 # default 1
+#        max_fails: 1              # default 1
+#    dump:                         # if you need, when registered nodes updated can dump into file
+#       path: "logs/consul_kv.dump"
+#       expire: 2592000      # unit sec, here is 30 day
 
 graphql:
   max_size: 1048576               # the maximum size limitation of graphql in bytes, default 1MiB
