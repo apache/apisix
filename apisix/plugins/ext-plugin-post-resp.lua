@@ -19,10 +19,6 @@ local ext = require("apisix.plugins.ext-plugin.init")
 local constants = require("apisix.constants")
 local http = require("resty.http")
 
-local ngx       = ngx
-local ngx_print = ngx.print
-local ngx_exit  = ngx.exit
-local ngx_flush = ngx.flush
 
 local name = "ext-plugin-post-resp"
 local _M = {
