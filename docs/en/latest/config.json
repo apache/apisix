@@ -213,6 +213,13 @@
           ]
         },
         {
+          "type": "category",
+          "label": "xRPC",
+          "items": [
+            "xrpc"
+          ]
+        },
+        {
           "type": "doc",
           "id": "health-check"
         },
