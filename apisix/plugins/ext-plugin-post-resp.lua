@@ -80,7 +80,7 @@ end
 function _M.response(conf, ctx)
      -- TODO: request
      local res, err = get_response(ctx)
-    if err then
+    if not res or err then
         core.log.error("failed to request: ", err or "")
         return core.response.exit(503)
     end
@@ -95,18 +95,12 @@ function _M.response(conf, ctx)
      end
      core.log.info("ext-plugin will send response")
      -- send origin response
-     ngx.status = res.status
+     -- TODO: chunk
      core.response.set_header(headers)
-     repeat
-         local chunk = res.body_reader()
-         if chunk then
-            core.log.info("response body chunk: ", chunk)
-             ngx_print(chunk)
-         end
-     until not chunk
+     local body = res.body_reader()
+     core.log.info("response body chunk: ", body)
 
-     ngx_flush(true)
-     return ngx_exit(ngx.status)
+     return res.status, body
 end
 
 

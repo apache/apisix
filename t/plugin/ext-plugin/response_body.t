@@ -117,6 +117,8 @@ GET /hello
         }
     }
 --- error_code: 200
+--- response_body
+hello world
 
 
 
