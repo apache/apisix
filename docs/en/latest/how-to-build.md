@@ -32,6 +32,42 @@ This guide walks you through how you can install and run Apache APISIX in your e
 
 Refer to the [Getting Started](./getting-started.md) guide for a quick walk-through on running Apache APISIX.
 
+## Installing etcd
+
+APISIX uses [etcd](https://github.com/etcd-io/etcd) to save and synchronize configuration. Before installing APISIX, you need to install etcd on your machine.
+
+It would be installed automatically if you choose the Docker or Helm install method while installing APISIX. If you choose a different method or you need to install it manually, follow the steps shown below:
+
+<Tabs
+  groupId="os"
+  defaultValue="linux"
+  values={[
+    {label: 'Linux', value: 'linux'},
+    {label: 'macOS', value: 'mac'},
+  ]}>
+<TabItem value="linux">
+
+```shell
+ETCD_VERSION='3.4.18'
+wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
+tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
+  cd etcd-v${ETCD_VERSION}-linux-amd64 && \
+  sudo cp -a etcd etcdctl /usr/bin/
+nohup etcd >/tmp/etcd.log 2>&1 &
+```
+
+</TabItem>
+
+<TabItem value="mac">
+
+```shell
+brew install etcd
+brew services start etcd
+```
+
+</TabItem>
+</Tabs>
+
 ## Installing APISIX
 
 APISIX can be installed by the different methods listed below:
@@ -124,7 +160,7 @@ sudo yum install apisix
 You can also install a specific version of APISIX by specifying it:
 
 ```shell
-sudo yum install apisix-2.10.3-0.el7
+sudo yum install apisix-2.13.1
 ```
 
 :::
@@ -165,44 +201,6 @@ apisix start
 Run `apisix help` to get a list of all available operations.
 
 :::
-
-</TabItem>
-</Tabs>
-
-## Installing etcd
-
-APISIX uses [etcd](https://github.com/etcd-io/etcd) to save and synchronize configuration.
-
-etcd would be installed automatically if you have chosen the Docker or Helm install method above.
-
-If etcd is not installed you can install it as shown below.
-
-<Tabs
-  groupId="os"
-  defaultValue="linux"
-  values={[
-    {label: 'Linux', value: 'linux'},
-    {label: 'macOS', value: 'mac'},
-  ]}>
-<TabItem value="linux">
-
-```shell
-ETCD_VERSION='3.4.18'
-wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
-tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
-  cd etcd-v${ETCD_VERSION}-linux-amd64 && \
-  sudo cp -a etcd etcdctl /usr/bin/
-nohup etcd >/tmp/etcd.log 2>&1 &
-```
-
-</TabItem>
-
-<TabItem value="mac">
-
-```shell
-brew install etcd
-brew services start etcd
-```
 
 </TabItem>
 </Tabs>
