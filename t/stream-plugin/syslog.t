@@ -28,6 +28,19 @@ add_block_preprocessor(sub {
     if (!$block->error_log && !$block->no_error_log) {
         $block->set_value("no_error_log", "[error]\n[alert]");
     }
+
+    if (!defined $block->extra_stream_config) {
+        my $stream_config = <<_EOC_;
+    server {
+        listen 8125 udp;
+        content_by_lua_block {
+            require("lib.mock_layer4").dogstatsd()
+        }
+    }
+_EOC_
+        $block->set_value("extra_stream_config", $stream_config);
+    }
+
 });
 
 run_tests;
@@ -61,8 +74,10 @@ __DATA__
                     "plugins": {
                         "syslog": {
                             "host" : "127.0.0.1",
-                            "port" : 5044,
-                            "batch_max_size": 1
+                            "port" : 8125,
+                            "sock_type": "udp",
+                            "batch_max_size": 1,
+                            "flush_limit":1
                         }
                     },
                     "upstream_id": "1"
@@ -101,7 +116,6 @@ syslog's log_format is not set
                 ngx.HTTP_PUT,
                 [[{
                     "log_format": {
-                        "host": "$host",
                         "client_ip": "$remote_addr"
                     }
                 }]]
@@ -128,8 +142,9 @@ passed
 mmm
 --- stream_response
 hello world
---- error_log
-sending a batch logs to 127.0.0.1:5044
+--- wait: 0.5
+--- error_log eval
+qr/message received:.*\"client_ip\\"\:\\"127.0.0.1\\"/
 
 
 
