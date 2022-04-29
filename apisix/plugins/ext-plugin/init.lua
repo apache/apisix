@@ -24,6 +24,8 @@ local http_req_call_resp = require("A6.HTTPReqCall.Resp")
 local http_req_call_action = require("A6.HTTPReqCall.Action")
 local http_req_call_stop = require("A6.HTTPReqCall.Stop")
 local http_req_call_rewrite = require("A6.HTTPReqCall.Rewrite")
+local http_resp_call_req = require("A6.HTTPRespCall.Req")
+local http_resp_call_resp = require("A6.HTTPRespCall.Resp")
 local extra_info = require("A6.ExtraInfo.Info")
 local extra_info_req = require("A6.ExtraInfo.Req")
 local extra_info_var = require("A6.ExtraInfo.Var")
@@ -605,7 +607,6 @@ local rpc_handlers = {
         end
 
         if action_type == http_req_call_action.Rewrite then
-            ctx.request_rewritten = constants.REWRITTEN_BY_EXT_PLUGIN
 
             local action = call_resp:Action()
             local rewrite = http_req_call_rewrite.New()
@@ -682,6 +683,96 @@ local rpc_handlers = {
 
         return true
     end,
+    nil,
+    function (conf, ctx, sock, entry)
+        local lrucache_id = core.lrucache.plugin_ctx_id(ctx, entry)
+        local token, err = core.lrucache.plugin_ctx(lrucache, ctx, entry, rpc_call,
+                                                    constants.RPC_PREPARE_CONF, conf, ctx,
+                                                    lrucache_id)
+        if not token then
+            return nil, err
+        end
+
+        builder:Clear()
+        local var = ctx.var
+
+        local res = ctx.runner_ext_response
+        local textEntries = {}
+        local hdrs = res.headers
+        for key, val in pairs(hdrs) do
+            local ty = type(val)
+            core.log.info("header: ", key, ": ", val)
+            if ty == "table" then
+                for _, v in ipairs(val) do
+                    core.table.insert(textEntries, build_headers(var, builder, key, v))
+                end
+            else
+                core.table.insert(textEntries, build_headers(var, builder, key, val))
+            end
+        end
+        local len = #textEntries
+        http_resp_call_req.StartHeadersVector(builder, len)
+        for i = len, 1, -1 do
+            builder:PrependUOffsetTRelative(textEntries[i])
+        end
+        local hdrs_vec = builder:EndVector(len)
+
+        local id = generate_id()
+        local status = res.status
+
+        http_resp_call_req.Start(builder)
+        http_resp_call_req.AddId(builder, id)
+        http_resp_call_req.AddStatus(builder, status)
+        http_resp_call_req.AddConfToken(builder, token)
+        http_resp_call_req.AddHeaders(builder, hdrs_vec)
+
+        local req = http_resp_call_req.End(builder)
+        builder:Finish(req)
+
+        local ok, err = send(sock, constants.RPC_HTTP_RESP_CALL, builder:Output())
+        if not ok then
+            return nil, "failed to send RPC_HTTP_RESP_CALL: " .. err
+        end
+
+        local ty, resp = receive(sock)
+        if ty == nil then
+            return nil, "failed to receive RPC_HTTP_RESP_CALL: " .. resp
+        end
+
+        if ty ~= constants.RPC_HTTP_RESP_CALL then
+            return nil, "failed to receive RPC_HTTP_RESP_CALL: unexpected type " .. ty
+        end
+
+        local buf = flatbuffers.binaryArray.New(resp)
+        local call_resp = http_resp_call_resp.GetRootAsResp(buf, 0)
+        local len = call_resp:HeadersLength()
+        if len > 0 then
+            local resp_headers = {}
+            for i = 1, len do
+                local entry = call_resp:Headers(i)
+                local name = str_lower(entry:Name())
+                -- TODO: handle content-length
+                if resp_headers[name] == nil then
+                    core.response.set_header(name, entry:Value())
+                    resp_headers[name] = true
+                else
+                    core.response.add_header(name, entry:Value())
+                end
+            end
+        end
+
+        local body
+        local len = call_resp:BodyLength()
+        if len > 0 then
+            -- TODO: support empty body
+            body = call_resp:BodyAsString()
+        end
+        local code = call_resp:Status()
+        core.log.info("recv resp, code: ", code, " body: ", body, " len: ", len)
+        code = code ~= 0 and code or nil
+
+        return true, nil, code, body
+    end
 }
 
 
@@ -721,12 +812,13 @@ local function recreate_lrucache()
 end
 
 
-function _M.communicate(conf, ctx, plugin_name)
+function _M.communicate(conf, ctx, plugin_name, rpc_cmd)
     local ok, err, code, body
     local tries = 0
+    local ty = rpc_cmd and rpc_cmd or constants.RPC_HTTP_REQ_CALL
     while tries < 3 do
         tries = tries + 1
-        ok, err, code, body = rpc_call(constants.RPC_HTTP_REQ_CALL, conf, ctx, plugin_name)
+        ok, err, code, body = rpc_call(ty, conf, ctx, plugin_name)
         if ok then
             if code then
                 return code, body
