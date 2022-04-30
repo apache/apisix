@@ -32,19 +32,20 @@ description: 本文介绍了关于 Apache APISIX `redirect` 插件的基本信�
 
 ## 属性
 
-| Name          | Type    | Requirement | Default | Valid      | Description                                                                                                                                                                                                                   |
-| ------------- | ------- | ----------- | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| http_to_https | boolean | 可选        | false   |            | 当设置为 `true` 并且请求是 http 时，会自动 301 重定向为 https，uri 保持不变                                                                                                                                                   |
-| uri           | string  | 可选        |         |            | 可以包含 Nginx 变量的 URI，例如：`/test/index.html`, `$uri/index.html`。你可以通过类似于 `$ {xxx}` 的方式引用变量，以避免产生歧义，例如：`${uri}foo/index.html`。若你需要保留 `$` 字符，那么使用如下格式：`/\$foo/index.html` |
-| regex_uri | array[string] | 可选        |         |                   | 转发到上游的新 `uri` 地址, 使用正则表达式匹配来自客户端的 `uri`，当匹配成功后使用模板替换发送重定向到客户端, 未匹配成功时将客户端请求的 `uri` 转发至上游。`uri` 和 `regex_uri` 不可以同时存在。例如：["^/iresty/(.*)/(.*)/(.*)","/$1-$2-$3"] 第一个元素代表匹配来自客户端请求的 `uri` 正则表达式，第二个元素代表匹配成功后发送重定向到客户端的 `uri` 模板。 |
-| ret_code      | integer | 可选        | 302     | [200, ...] | 请求响应码                                                                                                                                                                                                                    |
-| ret_port      | integer | 可选        | 443     | [1, 65535] | 重定向服务器端口，仅在开启 `http_to_https` 有效。|
-| encode_uri    | boolean | 可选        | false   |       | 当设置为 `true` 时，对返回的 `Location` header进行编码，编码格式参考 [RFC3986](https://datatracker.ietf.org/doc/html/rfc3986) |
-| append_query_string    | boolean | optional    | false   |       | 当设置为 `true` 时，将请求url的query部分添加到Location里。如果在 `uri` 或 `regex_uri` 中配置了query, 那么请求的query会被追加在这个query后，以 `&` 分隔。 注意：如果已经处理了query，比如使用了nginx变量 `$request_uri`，那么启用此功能会造成query重复 |
+| 名称                  | 类型            | 必选项 | 默认值   | 有效值          | 描述                                                                                                                                                                                                  |
+|---------------------|---------------|-----|-------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| http_to_https       | boolean       | 是   | false | [true,false] | 当设置为 `true` 并且请求是 HTTP 时，它将被重定向具有相同 URI 和 301 状态码的 HTTPS。                                                                                                                                           |
+| uri                 | string        | 是   |       |              | 要重定向到的 URI，可以包含 NGINX 变量。例如：`/test/index.htm`, `$uri/index.html`，`${uri}/index.html`。如果你引入了一个不存在的变量，它不会报错，而是将其视为一个空变量。                                                                              |
+| regex_uri           | array[string] | 是   |       |              | 将来自客户端的 URL 与正则表达式匹配并重定向。当匹配成功后使用模板替换发送重定向到客户端，如果未匹配成功会将客户端请求的 URI 转发至上游。 和 `regex_uri` 不可以同时存在。例如：["^/iresty/(.)/(.)/(.*)","/$1-$2-$3"] 第一个元素代表匹配来自客户端请求的 URI 正则表达式，第二个元素代表匹配成功后发送重定向到客户端的 URI 模板。 |
+| ret_code            | integer       | 是   | 302   | [200, ...]   | HTTP 响应码                                                                                                                                                                                            |
+| encode_uri          | boolean       | 是   | false | [true,false] | 当设置为 `true` 时，对返回的 `Location` Header 按照 [RFC3986](https://datatracker.ietf.org/doc/html/rfc3986)的编码格式进行编码。                                                                                          |
+| append_query_string | boolean       | 是   | false | [true,false] | 当设置为 `true` 时，将原始请求中的查询字符串添加到 `Location` Header。如果已配置 `uri` 或 `regex_uri` 已经包含查询字符串，则请求中的查询字符串将附加一个`&`。如果你已经处理过查询字符串（例如，使用 NGINX 变量 `$request_uri`），请不要再使用该参数以避免重复。                                 |
 
 :::note
 
 `http_to_https`、`uri` 和 `regex_uri` 只能配置其中一个属性。
+
+* 当开启 `http_to_https`，你可以设置请求头 `X-Forwarded-Port` 指定重定向的服务器端口。
 
 :::
 
@@ -123,8 +124,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  \
     "uri": "/hello",
     "plugins": {
         "redirect": {
-            "http_to_https": true,
-            "ret_port": 9443
+            "http_to_https": true
         }
     }
 }'

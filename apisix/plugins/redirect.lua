@@ -24,6 +24,7 @@ local ipairs = ipairs
 local ngx = ngx
 local str_find = core.string.find
 local str_sub  = string.sub
+local tonumber = tonumber
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 100
@@ -38,7 +39,6 @@ local schema = {
     type = "object",
     properties = {
         ret_code = {type = "integer", minimum = 200, default = 302},
-        ret_port = {type = "integer", minimum = 1, maxmum = 65535, default = 443},
         uri = {type = "string", minLength = 2, pattern = reg},
         regex_uri = {
             description = "params for generating new uri that substitute from client uri, " ..
@@ -148,7 +148,7 @@ function _M.rewrite(conf, ctx)
     core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
     local ret_code = conf.ret_code
-    local ret_port = conf.ret_port
+    local ret_port = tonumber(ctx.var["var_x_forwarded_port"])
     local uri = conf.uri
     local regex_uri = conf.regex_uri
 
@@ -157,7 +157,7 @@ function _M.rewrite(conf, ctx)
     if conf.http_to_https and _scheme == "http" then
         -- TODO： add test case
         -- PR: https://github.com/apache/apisix/pull/1958
-        if ret_port == 443 then
+        if ret_port == 443 or ret_port == 0 then
             uri = "https://$host$request_uri"
         else
             uri = "https://$host:" .. ret_port .. "$request_uri"

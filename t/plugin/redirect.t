@@ -435,11 +435,23 @@ GET /hello
 Host: foo.com
 --- error_code: 301
 --- response_headers
+Location: https://foo.com:1984/hello
+
+
+
+=== TEST 19: redirect(pass x-forwarded-port)
+--- request
+GET /hello
+--- more_headers
+Host: foo.com
+x-forwarded-port: 443
+--- error_code: 301
+--- response_headers
 Location: https://foo.com/hello
 
 
 
-=== TEST 19: enable http_to_https with ret_code(not take effect)
+=== TEST 20: enable http_to_https with ret_code(not take effect)
 --- config
     location /t {
         content_by_lua_block {
@@ -473,18 +485,18 @@ passed
 
 
 
-=== TEST 20: redirect
+=== TEST 21: redirect
 --- request
 GET /hello
 --- more_headers
 Host: foo.com
 --- error_code: 301
 --- response_headers
-Location: https://foo.com/hello
+Location: https://foo.com:1984/hello
 
 
 
-=== TEST 21: wrong configure, enable http_to_https with uri
+=== TEST 22: wrong configure, enable http_to_https with uri
 --- config
     location /t {
         content_by_lua_block {
@@ -519,7 +531,7 @@ qr/error_msg":"failed to check the configuration of plugin redirect err: value s
 
 
 
-=== TEST 22: enable http_to_https with upstream
+=== TEST 23: enable http_to_https with upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -558,18 +570,18 @@ passed
 
 
 
-=== TEST 23: redirect
+=== TEST 24: redirect
 --- request
 GET /hello
 --- more_headers
 Host: test.com
 --- error_code: 301
 --- response_headers
-Location: https://test.com/hello
+Location: https://test.com:1984/hello
 
 
 
-=== TEST 24: set ssl(sni: test.com)
+=== TEST 25: set ssl(sni: test.com)
 --- config
 location /t {
     content_by_lua_block {
@@ -600,7 +612,7 @@ passed
 
 
 
-=== TEST 25: client https request
+=== TEST 26: client https request
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
@@ -674,7 +686,7 @@ close: 1 nil}
 
 
 
-=== TEST 26: add plugin with new uri: /test/add
+=== TEST 27: add plugin with new uri: /test/add
 --- config
     location /t {
         content_by_lua_block {
@@ -709,46 +721,46 @@ passed
 
 
 
-=== TEST 27: http to https post redirect
+=== TEST 28: http to https post redirect
 --- request
 POST /hello-https
 --- more_headers
 Host: test.com
 --- response_headers
-Location: https://test.com/hello-https
+Location: https://test.com:1984/hello-https
 --- error_code: 308
 --- no_error_log
 [error]
 
 
 
-=== TEST 28: http to https get redirect
+=== TEST 29: http to https get redirect
 --- request
 GET /hello-https
 --- more_headers
 Host: test.com
 --- response_headers
-Location: https://test.com/hello-https
+Location: https://test.com:1984/hello-https
 --- error_code: 301
 --- no_error_log
 [error]
 
 
 
-=== TEST 29: http to https head redirect
+=== TEST 30: http to https head redirect
 --- request
 HEAD /hello-https
 --- more_headers
 Host: test.com
 --- response_headers
-Location: https://test.com/hello-https
+Location: https://test.com:1984/hello-https
 --- error_code: 301
 --- no_error_log
 [error]
 
 
 
-=== TEST 30: add plugin with new regex_uri: /test/1 redirect to http://test.com/1
+=== TEST 31: add plugin with new regex_uri: /test/1 redirect to http://test.com/1
 --- config
     location /t {
         content_by_lua_block {
@@ -787,7 +799,7 @@ passed
 
 
 
-=== TEST 31: regex_uri redirect
+=== TEST 32: regex_uri redirect
 --- request
 GET /test/1
 --- response_headers
@@ -798,7 +810,7 @@ Location: http://test.com/1
 
 
 
-=== TEST 32: regex_uri not match, get response from upstream
+=== TEST 33: regex_uri not match, get response from upstream
 --- request
 GET /hello
 --- error_code: 200
@@ -809,7 +821,7 @@ hello world
 
 
 
-=== TEST 33: add plugin with new regex_uri: encode_uri = true
+=== TEST 34: add plugin with new regex_uri: encode_uri = true
 --- config
     location /t {
         content_by_lua_block {
@@ -849,7 +861,7 @@ passed
 
 
 
-=== TEST 34: regex_uri redirect with special characters
+=== TEST 35: regex_uri redirect with special characters
 --- request
 GET /test/with%20space
 --- error_code: 200
@@ -861,7 +873,7 @@ Location: http://test.com/with%20space
 
 
 
-=== TEST 35: add plugin with new uri: encode_uri = true
+=== TEST 36: add plugin with new uri: encode_uri = true
 --- config
     location /t {
         content_by_lua_block {
@@ -895,7 +907,7 @@ passed
 
 
 
-=== TEST 36: redirect with special characters
+=== TEST 37: redirect with special characters
 --- request
 GET /hello/with%20space
 --- response_headers
@@ -906,7 +918,7 @@ Location: /hello/with%20space
 
 
 
-=== TEST 37: add plugin with new uri: $uri (append_query_string = true)
+=== TEST 38: add plugin with new uri: $uri (append_query_string = true)
 --- config
     location /t {
         content_by_lua_block {
@@ -940,7 +952,7 @@ passed
 
 
 
-=== TEST 38: redirect
+=== TEST 39: redirect
 --- request
 GET /hello?name=json
 --- response_headers
@@ -951,7 +963,7 @@ Location: /hello?name=json
 
 
 
-=== TEST 39: add plugin with new uri: $uri?type=string (append_query_string = true)
+=== TEST 40: add plugin with new uri: $uri?type=string (append_query_string = true)
 --- config
     location /t {
         content_by_lua_block {
@@ -985,7 +997,7 @@ passed
 
 
 
-=== TEST 40: redirect
+=== TEST 41: redirect
 --- request
 GET /hello?name=json
 --- response_headers
@@ -996,7 +1008,7 @@ Location: /hello?type=string&name=json
 
 
 
-=== TEST 41: enable http_to_https (pass X-Forwarded-Proto)
+=== TEST 42: enable http_to_https (pass X-Forwarded-Proto)
 --- config
     location /t {
         content_by_lua_block {
@@ -1036,7 +1048,7 @@ passed
 
 
 
-=== TEST 42: enable http_to_https (pass X-Forwarded-Proto)
+=== TEST 43: enable http_to_https (pass X-Forwarded-Proto)
 --- request
 GET /hello
 --- more_headers
@@ -1044,94 +1056,4 @@ Host: foo.com
 X-Forwarded-Proto: http
 --- error_code: 301
 --- response_headers
-Location: https://foo.com/hello
-
-
-
-=== TEST 43: enable http_to_https with ret_port
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/hello",
-                    "host": "foo.com",
-                    "plugins": {
-                        "redirect": {
-                            "http_to_https": true,
-                            "ret_port": 9443
-                        }
-                    }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 44: redirect
---- request
-GET /hello
---- more_headers
-Host: foo.com
---- error_code: 301
---- response_headers
-Location: https://foo.com:9443/hello
-
-
-
-=== TEST 45: enable http_to_https with ret_port(not take effect)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/hello",
-                    "host": "foo.com",
-                    "plugins": {
-                        "redirect": {
-                            "http_to_https": true,
-                            "ret_port": 443
-                        }
-                    }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 46: redirect
---- request
-GET /hello
---- more_headers
-Host: foo.com
---- error_code: 301
---- response_headers
-Location: https://foo.com/hello
+Location: https://foo.com:1984/hello
