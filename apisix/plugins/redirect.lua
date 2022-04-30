@@ -157,7 +157,7 @@ function _M.rewrite(conf, ctx)
     if conf.http_to_https and _scheme == "http" then
         -- TODO： add test case
         -- PR: https://github.com/apache/apisix/pull/1958
-        if ret_port == 443 or ret_port == 0 then
+        if ret_port == 443 or ret_port == 0 or ret_port == nil then
             uri = "https://$host$request_uri"
         else
             uri = "https://$host:" .. ret_port .. "$request_uri"

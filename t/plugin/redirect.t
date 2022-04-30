@@ -439,7 +439,7 @@ Location: https://foo.com:1984/hello
 
 
 
-=== TEST 19: redirect(pass x-forwarded-port)
+=== TEST 19: redirect(pass well-known port 443 to x-forwarded-port)
 --- request
 GET /hello
 --- more_headers
@@ -451,7 +451,19 @@ Location: https://foo.com/hello
 
 
 
-=== TEST 20: enable http_to_https with ret_code(not take effect)
+=== TEST 20: redirect(pass invalid non-number to x-forwarded-port)
+--- request
+GET /hello
+--- more_headers
+Host: foo.com
+x-forwarded-port: ok
+--- error_code: 301
+--- response_headers
+Location: https://foo.com/hello
+
+
+
+=== TEST 21: enable http_to_https with ret_code(not take effect)
 --- config
     location /t {
         content_by_lua_block {
@@ -485,7 +497,7 @@ passed
 
 
 
-=== TEST 21: redirect
+=== TEST 22: redirect
 --- request
 GET /hello
 --- more_headers
@@ -496,7 +508,7 @@ Location: https://foo.com:1984/hello
 
 
 
-=== TEST 22: wrong configure, enable http_to_https with uri
+=== TEST 23: wrong configure, enable http_to_https with uri
 --- config
     location /t {
         content_by_lua_block {
@@ -531,7 +543,7 @@ qr/error_msg":"failed to check the configuration of plugin redirect err: value s
 
 
 
-=== TEST 23: enable http_to_https with upstream
+=== TEST 24: enable http_to_https with upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -570,7 +582,7 @@ passed
 
 
 
-=== TEST 24: redirect
+=== TEST 25: redirect
 --- request
 GET /hello
 --- more_headers
@@ -581,7 +593,7 @@ Location: https://test.com:1984/hello
 
 
 
-=== TEST 25: set ssl(sni: test.com)
+=== TEST 26: set ssl(sni: test.com)
 --- config
 location /t {
     content_by_lua_block {
@@ -612,7 +624,7 @@ passed
 
 
 
-=== TEST 26: client https request
+=== TEST 27: client https request
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
@@ -686,7 +698,7 @@ close: 1 nil}
 
 
 
-=== TEST 27: add plugin with new uri: /test/add
+=== TEST 28: add plugin with new uri: /test/add
 --- config
     location /t {
         content_by_lua_block {
@@ -721,7 +733,7 @@ passed
 
 
 
-=== TEST 28: http to https post redirect
+=== TEST 29: http to https post redirect
 --- request
 POST /hello-https
 --- more_headers
@@ -734,7 +746,7 @@ Location: https://test.com:1984/hello-https
 
 
 
-=== TEST 29: http to https get redirect
+=== TEST 30: http to https get redirect
 --- request
 GET /hello-https
 --- more_headers
@@ -747,7 +759,7 @@ Location: https://test.com:1984/hello-https
 
 
 
-=== TEST 30: http to https head redirect
+=== TEST 31: http to https head redirect
 --- request
 HEAD /hello-https
 --- more_headers
@@ -760,7 +772,7 @@ Location: https://test.com:1984/hello-https
 
 
 
-=== TEST 31: add plugin with new regex_uri: /test/1 redirect to http://test.com/1
+=== TEST 32: add plugin with new regex_uri: /test/1 redirect to http://test.com/1
 --- config
     location /t {
         content_by_lua_block {
@@ -799,7 +811,7 @@ passed
 
 
 
-=== TEST 32: regex_uri redirect
+=== TEST 33: regex_uri redirect
 --- request
 GET /test/1
 --- response_headers
@@ -810,7 +822,7 @@ Location: http://test.com/1
 
 
 
-=== TEST 33: regex_uri not match, get response from upstream
+=== TEST 34: regex_uri not match, get response from upstream
 --- request
 GET /hello
 --- error_code: 200
@@ -821,7 +833,7 @@ hello world
 
 
 
-=== TEST 34: add plugin with new regex_uri: encode_uri = true
+=== TEST 35: add plugin with new regex_uri: encode_uri = true
 --- config
     location /t {
         content_by_lua_block {
@@ -861,7 +873,7 @@ passed
 
 
 
-=== TEST 35: regex_uri redirect with special characters
+=== TEST 36: regex_uri redirect with special characters
 --- request
 GET /test/with%20space
 --- error_code: 200
@@ -873,7 +885,7 @@ Location: http://test.com/with%20space
 
 
 
-=== TEST 36: add plugin with new uri: encode_uri = true
+=== TEST 37: add plugin with new uri: encode_uri = true
 --- config
     location /t {
         content_by_lua_block {
@@ -907,7 +919,7 @@ passed
 
 
 
-=== TEST 37: redirect with special characters
+=== TEST 38: redirect with special characters
 --- request
 GET /hello/with%20space
 --- response_headers
@@ -918,7 +930,7 @@ Location: /hello/with%20space
 
 
 
-=== TEST 38: add plugin with new uri: $uri (append_query_string = true)
+=== TEST 39: add plugin with new uri: $uri (append_query_string = true)
 --- config
     location /t {
         content_by_lua_block {
@@ -952,7 +964,7 @@ passed
 
 
 
-=== TEST 39: redirect
+=== TEST 40: redirect
 --- request
 GET /hello?name=json
 --- response_headers
@@ -963,7 +975,7 @@ Location: /hello?name=json
 
 
 
-=== TEST 40: add plugin with new uri: $uri?type=string (append_query_string = true)
+=== TEST 41: add plugin with new uri: $uri?type=string (append_query_string = true)
 --- config
     location /t {
         content_by_lua_block {
@@ -997,7 +1009,7 @@ passed
 
 
 
-=== TEST 41: redirect
+=== TEST 42: redirect
 --- request
 GET /hello?name=json
 --- response_headers
@@ -1008,7 +1020,7 @@ Location: /hello?type=string&name=json
 
 
 
-=== TEST 42: enable http_to_https (pass X-Forwarded-Proto)
+=== TEST 43: enable http_to_https (pass X-Forwarded-Proto)
 --- config
     location /t {
         content_by_lua_block {
@@ -1048,7 +1060,7 @@ passed
 
 
 
-=== TEST 43: enable http_to_https (pass X-Forwarded-Proto)
+=== TEST 44: enable http_to_https (pass X-Forwarded-Proto)
 --- request
 GET /hello
 --- more_headers
