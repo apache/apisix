@@ -45,7 +45,7 @@ The `redirect` Plugin can be used to configure redirects.
 
 Only one of `http_to_https`, `uri` and `regex_uri` can be configured.
 
-* When enable `http_to_https`, you can specify redirect server port with the header `X-Forwarded-Port`.
+* When enabling `http_to_https`, the port in the redirect URL will be the value of header `X-Forwarded-Port` or the port of the server.
 
 :::
 
