@@ -45,7 +45,7 @@ description: 本文介绍了关于 Apache APISIX `redirect` 插件的基本信�
 
 `http_to_https`、`uri` 和 `regex_uri` 只能配置其中一个属性。
 
-* 当开启 `http_to_https`，你可以设置请求头 `X-Forwarded-Port` 指定重定向的服务器端口。
+* 当开启 `http_to_https` 时，重定向 URL 中的端口将是 `X-Forwarded-Port` 请求头的值或服务器的端口。
 
 :::
 
