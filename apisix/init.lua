@@ -444,13 +444,20 @@ function _M.http_access_phase()
         local plugins = plugin.filter(api_ctx, route)
         api_ctx.plugins = plugins
 
+        local conf = plugin_config.get(route.value.plugin_config_id)
+        if conf == nil then
+            core.log.error("failed to fetch plugin config by ",
+                    "id: ", route.value.plugin_config_id)
+            return core.response.exit(503)
+        end
         plugin.run_plugin("rewrite", plugins, api_ctx)
         if api_ctx.consumer then
             local changed
             route, changed = plugin.merge_consumer_route(
                 route,
                 api_ctx.consumer,
-                api_ctx
+                api_ctx,
+                conf
             )
 
             core.log.info("find consumer ", api_ctx.consumer.username,

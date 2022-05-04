@@ -54,6 +54,7 @@ local function plugin_consumer()
                 local new_consumer = core.table.clone(consumer.value)
                 -- Note: the id here is the key of consumer data, which
                 -- is 'username' field in admin
+                new_consumer.plugin_config_id = consumer.value.plugin_config_id
                 new_consumer.consumer_name = new_consumer.id
                 new_consumer.auth_conf = config
                 core.log.info("consumer:", core.json.delay_encode(new_consumer))
