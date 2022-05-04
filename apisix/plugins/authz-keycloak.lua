@@ -451,7 +451,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
     if not session then
         -- No session available. Create a new one.
 
-        core.log.debug("Getting access token for Protection API from token endpoint.")
+        log.debug("Getting access token for Protection API from token endpoint.")
         local httpc = authz_keycloak_get_http_client(conf)
 
         local params = {
@@ -527,7 +527,7 @@ local function authz_keycloak_resolve_resource(conf, uri, sa_access_token)
     if not resource_registration_endpoint then
         local err = "Unable to determine registration endpoint."
         log.error(err)
-        return nil, err
+        return 503, err
     end
 
     log.debug("Resource registration endpoint: ", resource_registration_endpoint)
@@ -550,7 +550,7 @@ local function authz_keycloak_resolve_resource(conf, uri, sa_access_token)
         err = "Accessing resource registration endpoint URL (" .. resource_registration_endpoint
               .. ") failed: " .. err
         log.error(err)
-        return nil, err
+        return 503, err
     end
 
     log.debug("Response data: " .. res.body)
@@ -561,7 +561,7 @@ local function authz_keycloak_resolve_resource(conf, uri, sa_access_token)
       err = "Could not decode JSON from resource registration endpoint"
             .. (err and (": " .. err) or '.')
       log.error(err)
-      return nil, err
+      return 503, err
     end
 
     return json.resources
@@ -581,7 +581,7 @@ local function evaluate_permissions(conf, ctx, token)
         -- Ensure service account access token.
         local sa_access_token, err = authz_keycloak_ensure_sa_access_token(conf)
         if err then
-            core.log.error(err)
+            log.error(err)
             return 503, err
         end
 
