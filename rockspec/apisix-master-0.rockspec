@@ -76,7 +76,8 @@ dependencies = {
     "opentelemetry-lua = 0.1-3",
     "net-url = 0.9-1",
     "xml2lua = 1.5-2",
-    "nanoid = 0.1-1"
+    "nanoid = 0.1-1",
+    "lua-resty-mediador = 0.1.2-1"
 }
 
 build = {
