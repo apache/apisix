@@ -550,7 +550,7 @@ local function authz_keycloak_resolve_resource(conf, uri, sa_access_token)
         err = "Accessing resource registration endpoint URL (" .. resource_registration_endpoint
               .. ") failed: " .. err
         log.error(err)
-        return 503, err
+        return nil, err
     end
 
     log.debug("Response data: " .. res.body)
@@ -561,7 +561,7 @@ local function authz_keycloak_resolve_resource(conf, uri, sa_access_token)
       err = "Could not decode JSON from resource registration endpoint"
             .. (err and (": " .. err) or '.')
       log.error(err)
-      return 503, err
+      return nil, err
     end
 
     return json.resources
