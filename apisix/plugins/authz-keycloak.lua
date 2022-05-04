@@ -345,7 +345,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
 
     if not token_endpoint then
         log.error("Unable to determine token endpoint.")
-        return 500, "Unable to determine token endpoint."
+        return 503, "Unable to determine token endpoint."
     end
 
     local session = authz_keycloak_cache_get("access-tokens", token_endpoint .. ":"
@@ -572,7 +572,7 @@ local function evaluate_permissions(conf, ctx, token)
     -- Ensure discovered data.
     local err = authz_keycloak_ensure_discovered_data(conf)
     if err then
-        return 500, err
+        return 503, err
     end
 
     local permission
@@ -581,7 +581,8 @@ local function evaluate_permissions(conf, ctx, token)
         -- Ensure service account access token.
         local sa_access_token, err = authz_keycloak_ensure_sa_access_token(conf)
         if err then
-            return 500, err
+            core.log.error(err)
+            return 503, err
         end
 
         -- Resolve URI to resource(s).
@@ -591,7 +592,7 @@ local function evaluate_permissions(conf, ctx, token)
         -- Check result.
         if permission == nil then
             -- No result back from resource registration endpoint.
-            return 500, err
+            return 503, err
         end
     else
         -- Use statically configured permissions.
