@@ -305,8 +305,6 @@ do
             pool_opt.pool_size = size
             local ok, err = balancer.set_current_peer(server.host, server.port,
                                                       pool_opt)
-            require("lualib.mobdebug").start("127.0.0.1", 8172)
-
             if not ok then
                 return ok, err
             end
