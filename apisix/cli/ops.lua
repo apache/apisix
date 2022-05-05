@@ -713,8 +713,15 @@ local function start(env, ...)
         util.die("Error: It is forbidden to run APISIX in the /root directory.\n")
     end
 
-    local cmd_logs = "mkdir -p " .. env.apisix_home .. "/logs"
-    util.execute_cmd(cmd_logs)
+    local logs_path = env.apisix_home .. "/logs"
+    if not pl_path.exists(logs_path) then
+        local _, err = pl_path.mkdir(logs_path)
+        if err ~= nil then
+            util.die("failed to mkdir ", logs_path, ", error: ", err)
+        end
+    elseif not pl_path.isdir(logs_path) and not pl_path.islink(logs_path) then
+        util.die(logs_path, " is not directory nor symbol link")
+    end
 
     -- check running
     local pid_path = env.apisix_home .. "/logs/nginx.pid"
