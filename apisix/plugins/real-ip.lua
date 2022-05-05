@@ -18,6 +18,8 @@ local core = require("apisix.core")
 local is_apisix_or, client = pcall(require, "resty.apisix.client")
 local str_byte = string.byte
 local str_sub = string.sub
+local str_gmatch = string.gmatch
+local tb_insert = table.insert
 local ipairs = ipairs
 local type = type
 
@@ -33,6 +35,10 @@ local schema = {
         source = {
             type = "string",
             minLength = 1
+        },
+        recursive = {
+            type = "boolean",
+            default = false
         }
     },
     required = {"source"},
@@ -67,6 +73,19 @@ function _M.check_schema(conf)
 end
 
 
+local function addr_match(conf, addr)
+    if not conf.trusted_addresses then
+        return false
+    end
+
+    if not conf.matcher then
+        conf.matcher = core.ip.create_ip_matcher(conf.trusted_addresses)
+    end
+
+    return conf.matcher:match(addr)
+end
+
+
 local function get_addr(conf, ctx)
     if conf.source == "http_x_forwarded_for" then
         -- use the last address from X-Forwarded-For header
@@ -82,6 +101,21 @@ local function get_addr(conf, ctx)
         local idx = core.string.rfind_char(addrs, ",")
         if not idx then
             return addrs
+        end
+
+        if conf.recursive and conf.trusted_addresses then
+            local split_addrs = {}
+            for str in str_gmatch(addrs, ",\s*") do
+                tb_insert(split_addrs, str)
+            end
+
+            for i = #split_addrs, 1, -1 do
+                if not addr_match(conf, split_addrs[i]) then
+                    return split_addrs[i]
+                end
+            end
+
+            return split_addrs[1]
         end
 
         for i = idx + 1, #addrs do
@@ -105,12 +139,8 @@ function _M.rewrite(conf, ctx)
     end
 
     if conf.trusted_addresses then
-        if not conf.matcher then
-            conf.matcher = core.ip.create_ip_matcher(conf.trusted_addresses)
-        end
-
         local remote_addr = ctx.var.remote_addr
-        local trusted = conf.matcher:match(remote_addr)
+        local trusted = addr_match(conf, remote_addr)
         if not trusted then
             return
         end
