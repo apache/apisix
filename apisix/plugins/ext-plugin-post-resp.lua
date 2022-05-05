@@ -130,7 +130,7 @@ function _M.response(conf, ctx)
     local res, err = get_response(ctx)
     if not res or err then
         core.log.error("failed to request: ", err or "")
-        return core.response.exit(502)
+        return 502
     end
     ctx.runner_ext_response = res
 
@@ -170,7 +170,7 @@ function _M.response(conf, ctx)
         end
 
         if read_err or print_err then
-            break
+            return 502
         end
     until not chunk
 
