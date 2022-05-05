@@ -345,7 +345,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
 
     if not token_endpoint then
         log.error("Unable to determine token endpoint.")
-        return 500, "Unable to determine token endpoint."
+        return 503, "Unable to determine token endpoint."
     end
 
     local session = authz_keycloak_cache_get("access-tokens", token_endpoint .. ":"
@@ -451,7 +451,7 @@ local function authz_keycloak_ensure_sa_access_token(conf)
     if not session then
         -- No session available. Create a new one.
 
-        core.log.debug("Getting access token for Protection API from token endpoint.")
+        log.debug("Getting access token for Protection API from token endpoint.")
         local httpc = authz_keycloak_get_http_client(conf)
 
         local params = {
@@ -527,7 +527,7 @@ local function authz_keycloak_resolve_resource(conf, uri, sa_access_token)
     if not resource_registration_endpoint then
         local err = "Unable to determine registration endpoint."
         log.error(err)
-        return 500, err
+        return 503, err
     end
 
     log.debug("Resource registration endpoint: ", resource_registration_endpoint)
@@ -572,7 +572,7 @@ local function evaluate_permissions(conf, ctx, token)
     -- Ensure discovered data.
     local err = authz_keycloak_ensure_discovered_data(conf)
     if err then
-        return 500, err
+        return 503, err
     end
 
     local permission
@@ -581,7 +581,8 @@ local function evaluate_permissions(conf, ctx, token)
         -- Ensure service account access token.
         local sa_access_token, err = authz_keycloak_ensure_sa_access_token(conf)
         if err then
-            return 500, err
+            log.error(err)
+            return 503
         end
 
         -- Resolve URI to resource(s).
@@ -591,7 +592,8 @@ local function evaluate_permissions(conf, ctx, token)
         -- Check result.
         if permission == nil then
             -- No result back from resource registration endpoint.
-            return 500, err
+            log.error(err)
+            return 503
         end
     else
         -- Use statically configured permissions.
@@ -636,7 +638,7 @@ local function evaluate_permissions(conf, ctx, token)
     if not token_endpoint then
         err = "Unable to determine token endpoint."
         log.error(err)
-        return 500, err
+        return 503, err
     end
     log.debug("Token endpoint: ", token_endpoint)
 
@@ -663,7 +665,7 @@ local function evaluate_permissions(conf, ctx, token)
     if not res then
         err = "Error while sending authz request to " .. token_endpoint .. ": " .. err
         log.error(err)
-        return 500, err
+        return 503
     end
 
     log.debug("Response status: ", res.status, ", data: ", res.body)
