@@ -683,7 +683,7 @@ local rpc_handlers = {
 
         return true
     end,
-    nil,
+    nil, -- ignore RPC_EXTRA_INFO, already processed during RPC_HTTP_REQ_CALL interaction
     function (conf, ctx, sock, entry)
         local lrucache_id = core.lrucache.plugin_ctx_id(ctx, entry)
         local token, err = core.lrucache.plugin_ctx(lrucache, ctx, entry, rpc_call,
@@ -751,12 +751,13 @@ local rpc_handlers = {
             for i = 1, len do
                 local entry = call_resp:Headers(i)
                 local name = str_lower(entry:Name())
-                -- TODO: handle content-length
-                if resp_headers[name] == nil then
-                    core.response.set_header(name, entry:Value())
-                    resp_headers[name] = true
-                else
-                    core.response.add_header(name, entry:Value())
+                if exclude_resp_header[name] == nil then
+                    if resp_headers[name] == nil then
+                        core.response.set_header(name, entry:Value())
+                        resp_headers[name] = true
+                    else
+                        core.response.add_header(name, entry:Value())
+                    end
                 end
             end
         end

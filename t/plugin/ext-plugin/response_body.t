@@ -47,8 +47,6 @@ _EOC_
 ext-plugin:
     path_for_test: $unix_socket_path
     cmd: $cmd
-plugins:
-    - ext-plugin-post-resp
 _EOC_
 
     $block->set_value("extra_yaml_config", $extra_yaml_config);
