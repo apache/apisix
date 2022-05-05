@@ -45,6 +45,8 @@ The `redirect` Plugin can be used to configure redirects.
 
 Only one of `http_to_https`, `uri` and `regex_uri` can be configured.
 
+* When enabling `http_to_https`, the port in the redirect URL will be the value of header `X-Forwarded-Port` or the port of the server.
+
 :::
 
 ## Enabling the Plugin
@@ -106,7 +108,6 @@ Content-Type: text/html
 Content-Length: 166
 Connection: keep-alive
 Location: /test/default.html
-
 ...
 ```
 
@@ -136,7 +137,6 @@ curl http://127.0.0.1:9080/hello -i
 HTTP/1.1 301 Moved Permanently
 ...
 Location: https://127.0.0.1:9443/hello
-
 ...
 ```
 
