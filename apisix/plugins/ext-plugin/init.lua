@@ -607,7 +607,6 @@ local rpc_handlers = {
         end
 
         if action_type == http_req_call_action.Rewrite then
-
             local action = call_resp:Action()
             local rewrite = http_req_call_rewrite.New()
             rewrite:Init(action.bytes, action.pos)
