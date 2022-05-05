@@ -43,12 +43,20 @@ local _M = {}
 function _M.connect_upstream(node, up_conf)
     local sk = xrpc_socket.upstream.socket()
 
+    local timeout = up_conf.timeout
+    if not timeout then
+        -- use the default timeout of Nginx proxy
+        sk:settimeouts(60 * 1000, 600 * 1000, 600 * 1000)
+    else
+        -- the timeout unit for balancer is second while the unit for cosocket is millisecond
+        sk:settimeouts(timeout.connect * 1000, timeout.send * 1000, timeout.read * 1000)
+    end
+
     local ok, err = sk:connect(node.host, node.port)
     if not ok then
         core.log.error("failed to connect: ", err)
         return nil
     end
-    -- TODO: support timeout
 
     if up_conf.scheme == "tls" then
         -- TODO: support mTLS
