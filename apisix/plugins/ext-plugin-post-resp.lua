@@ -22,7 +22,7 @@ local http = require("resty.http")
 local ngx       = ngx
 local ngx_print = ngx.print
 local ngx_flush = ngx.flush
-
+local pairs     = pairs
 local string    = string
 local str_sub   = string.sub
 local str_lower = string.lower
