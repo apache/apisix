@@ -24,6 +24,7 @@ local ipairs = ipairs
 local ngx = ngx
 local str_find = core.string.find
 local str_sub  = string.sub
+local tonumber = tonumber
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 100
@@ -147,6 +148,7 @@ function _M.rewrite(conf, ctx)
     core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
     local ret_code = conf.ret_code
+    local ret_port = tonumber(ctx.var["var_x_forwarded_port"])
     local uri = conf.uri
     local regex_uri = conf.regex_uri
 
@@ -155,7 +157,12 @@ function _M.rewrite(conf, ctx)
     if conf.http_to_https and _scheme == "http" then
         -- TODO： add test case
         -- PR: https://github.com/apache/apisix/pull/1958
-        uri = "https://$host$request_uri"
+        if ret_port == nil or ret_port == 443 or ret_port <= 0 or ret_port > 65535  then
+            uri = "https://$host$request_uri"
+        else
+            uri = "https://$host:" .. ret_port .. "$request_uri"
+        end
+
         local method_name = ngx.req.get_method()
         if method_name == "GET" or method_name == "HEAD" then
             ret_code = 301
