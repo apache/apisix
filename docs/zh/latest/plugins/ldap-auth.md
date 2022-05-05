@@ -5,7 +5,7 @@ keywords:
   - Plugin
   - LDAP Authentication
   - ldap-auth
-description: This document contains information about the Apache APISIX ldap-auth Plugin.
+description: 本篇文档介绍了 Apache APISIX ldap-auth 插件的相关信息。
 ---
 
 <!--
@@ -29,26 +29,26 @@ description: This document contains information about the Apache APISIX ldap-aut
 
 ## 描述
 
-`ldap-auth`是用来给路由或服务添加 LDAP 认证的插件，使用 [lualdap](https://lualdap.github.io/lualdap/)连接 LDAP 服务器。
+`ldap-auth` 是用来给路由或服务添加 LDAP 认证的插件，使用 [lualdap](https://lualdap.github.io/lualdap/) 连接 LDAP 服务器。
 
-该插件需要与 `consumer` 一起配合使用，API Consumer 可以使用 [basic authentication](https://en.wikipedia.org/wiki/Basic_access_authentication)与 LDAP 服务器进行认证。
+该插件需要与 Consumer 一起配合使用，API 的调用方可以使用 [basic authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) 与 LDAP 服务器进行认证。
 
 ## 属性
 
-Consumer 端配置：
+Consumer 端：
 
 | 名称    | 类型   | 必选项 | 描述                                                                      |
 | ------- | ------ | -------- | -------------------------------------------------------------------------------- |
 | user_dn | string | 是     | LDAP 客户端的用户可分辨名称，例如：`cn=user01,ou=users,dc=example,dc=org`。 |
 
-Route 端配置：
+Route 端：
 
 | 名称     | 类型    | 必选项 | 默认值 | 描述                                                            |
 |----------|---------|----------|---------|------------------------------------------------------------------------|
 | base_dn  | string  | 是     |         | LDAP 服务器的基础可分辨名称，例如：`ou=users,dc=example,dc=org`。|
 | ldap_uri | string  | 是     |         | LDAP 服务器的 URI。                                                |
-| use_tls  | boolean | 否    | `true`  | 如果设置为 `true` 则表示启用 TLS。                                             |
-| uid      | string  | 否    | `cn`    | UID 属性。                                                         |
+| use_tls  | boolean | 否    | true  | 如果设置为 `true` 则表示启用 TLS。                                             |
+| uid      | string  | 否    | cn    | UID 属性。                                                         |
 
 ## 启用插件
 
@@ -66,7 +66,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-然后你就可以在指定 Route 或 Service 中启用该插件，具体代码如下：
+然后就可以在指定 Route 或 Service 中启用该插件，具体代码如下：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -91,7 +91,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-按照上文所述进行插件配置后，用户就可以通过授权提出请求并访问 API：
+通过上述方法配置插件后，可以通过以下命令测试插件：
 
 ```shell
 curl -i -uuser01:password1 http://127.0.0.1:9080/hello
@@ -107,6 +107,9 @@ hello, world
 
 ```shell
 curl -i http://127.0.0.1:9080/hello
+```
+
+```shell
 HTTP/1.1 401 Unauthorized
 ...
 {"message":"Missing authorization in request"}
@@ -114,6 +117,9 @@ HTTP/1.1 401 Unauthorized
 
 ```shell
 curl -i -uuser:password1 http://127.0.0.1:9080/hello
+```
+
+```shell
 HTTP/1.1 401 Unauthorized
 ...
 {"message":"Invalid user authorization"}
@@ -121,6 +127,9 @@ HTTP/1.1 401 Unauthorized
 
 ```shell
 curl -i -uuser01:passwordfalse http://127.0.0.1:9080/hello
+```
+
+```shell
 HTTP/1.1 401 Unauthorized
 ...
 {"message":"Invalid user authorization"}
@@ -131,7 +140,7 @@ HTTP/1.1 401 Unauthorized
 当你需要禁用 `ldap-auth` 插件时，可以通过以下命令删除相应的 JSON 配置。APISIX 将自动重新加载，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:2379/apisix/admin/routes/1 -X PUT -d value='
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

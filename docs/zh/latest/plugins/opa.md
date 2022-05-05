@@ -5,7 +5,7 @@ keywords:
   - Plugin
   - Open Policy Agent
   - opa
-description: This document contains information about the Apache APISIX opa Plugin.
+description: 本篇文档介绍了 Apache APISIX opa 插件的相关信息。
 ---
 
 <!--
@@ -29,7 +29,7 @@ description: This document contains information about the Apache APISIX opa Plug
 
 ## 描述
 
-`opa` 插件可用于与 [Open Policy Agent](https://www.openpolicyagent.org) 进行集成，实现后端服务的认证授权和访问服务等功能解耦，减少系统复杂性。
+`opa` 插件可用于与 [Open Policy Agent](https://www.openpolicyagent.org) 进行集成，实现后端服务的认证授权与访问服务等功能解耦，减少系统复杂性。
 
 ## 属性
 
@@ -81,9 +81,9 @@ description: This document contains information about the Apache APISIX opa Plug
 }
 ```
 
-上述代码中释义如下：
+上述代码具体释义如下：
 
-- `type` 代表请求类型（如 `http`或`stream`）；
+- `type` 代表请求类型（如 `http` 或 `stream`）；
 - `request` 则需要在 `type` 为 `http` 时使用，包含基本的请求信息（如 URL、头信息等）；
 - `var` 包含关于请求连接的基本信息（如 IP、端口、请求时间戳等）；
 - `route`、`service` 和 `consumer` 会包含与存储在 APISIX 中相同的数据，只有当 `opa` 插件配置在这些对象上时才会发送。
@@ -160,7 +160,7 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
 }'
 ```
 
-之后可对其进行如下测试：
+使用如下命令进行测试：
 
 ```shell
 curl -i -X GET 127.0.0.1:9080/get
@@ -172,7 +172,7 @@ HTTP/1.1 200 OK
 
 如果尝试向不同的端点发出请求，会出现请求失败的状态：
 
-```
+```shell
 curl -i -X POST 127.0.0.1:9080/post
 ```
 
@@ -221,17 +221,17 @@ status_code = 302 {
 curl -i -X GET 127.0.0.1:9080/get
 ```
 
-```
+```shell
 HTTP/1.1 200 OK
 ```
 
 这时如果你发出一个失败请求，将会收到来自 OPA 服务的自定义响应反馈，如下所示：
 
-```
+```shell
 curl -i -X POST 127.0.0.1:9080/post
 ```
 
-```
+```shell
 HTTP/1.1 302 FOUND
 Location: http://example.com/auth
 
@@ -300,7 +300,7 @@ curl -X GET 127.0.0.1:9080/get
 当你需要禁用 `opa` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:2379/apisix/admin/routes/1 -X PUT -d value='
+curl http://127.0.0.1:2379/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
