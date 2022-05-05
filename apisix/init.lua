@@ -52,6 +52,11 @@ if ngx.config.subsystem == "http" then
     control_api_router = require("apisix.control.router")
 end
 
+local ok, apisix_base_flags = pcall(require, "resty.apisix.patch")
+if not ok then
+    apisix_base_flags = {}
+end
+
 local load_balancer
 local local_conf
 local ver_header = "APISIX/" .. core.version.VERSION
@@ -309,6 +314,12 @@ end
 
 
 local function verify_tls_client(ctx)
+    if apisix_base_flags.client_cert_verified_in_handshake then
+        -- For apisix-base, there is no need to rematch SSL rules as the invalid
+        -- connections are already rejected in the handshake
+        return true
+    end
+
     if ctx and ctx.ssl_client_verified then
         local res = ngx_var.ssl_client_verify
         if res ~= "SUCCESS" then
