@@ -170,7 +170,7 @@ function _M.response(conf, ctx)
         end
 
         if read_err or print_err then
-            return 502
+            break
         end
     until not chunk
 
