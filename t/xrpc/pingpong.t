@@ -212,7 +212,69 @@ failed to connect: connection refused
 
 
 
-=== TEST 8: reset
+=== TEST 8: use short timeout to check upstream's bad response
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        name = "pingpong"
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:1995"] = 1
+                        },
+                        timeout = {
+                            connect = 0.01,
+                            send = 0.009,
+                            read = 0.008,
+                        },
+                        type = "roundrobin"
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 9: bad response
+--- request eval
+"POST /t
+" .
+"pp\x02\x00\x00\x00\x00\x00\x00\x03ABC" x 1
+--- stream_conf_enable
+--- stream_upstream_code
+    local sock = ngx.req.socket(true)
+    sock:settimeout(10)
+    while true do
+        local data = sock:receiveany(4096)
+        if not data then
+            return
+        end
+        sock:send(data:sub(5))
+    end
+--- error_log
+failed to read: timeout
+stream lua tcp socket connect timeout: 10
+lua tcp socket send timeout: 9
+stream lua tcp socket read timeout: 8
+--- log_level: debug
+
+
+
+=== TEST 10: reset
 --- config
     location /t {
         content_by_lua_block {
@@ -244,29 +306,7 @@ passed
 
 
 
-=== TEST 9: bad response
---- request eval
-"POST /t
-" .
-"pp\x02\x00\x00\x00\x00\x00\x00\x03ABC" x 1
---- stream_conf_enable
---- stream_upstream_code
-    local sock = ngx.req.socket(true)
-    sock:settimeout(1100)
-    while true do
-        local data = sock:receiveany(4096)
-        if not data then
-            return
-        end
-        sock:send(data:sub(5))
-    end
---- wait: 1.1
---- error_log
-failed to read: timeout
-
-
-
-=== TEST 10: client stream, N:N
+=== TEST 11: client stream, N:N
 --- request eval
 "POST /t
 " .
@@ -292,7 +332,7 @@ failed to read: timeout
 
 
 
-=== TEST 11: client stream, bad response
+=== TEST 12: client stream, bad response
 --- request eval
 "POST /t
 " .
@@ -321,7 +361,7 @@ RPC is not finished
 
 
 
-=== TEST 12: server stream, heartbeat
+=== TEST 13: server stream, heartbeat
 --- request eval
 "POST /t
 " .
@@ -347,7 +387,7 @@ RPC is not finished
 
 
 
-=== TEST 13: server stream
+=== TEST 14: server stream
 --- request eval
 "POST /t
 " .
@@ -370,7 +410,7 @@ RPC is not finished
 
 
 
-=== TEST 14: superior & subordinate
+=== TEST 15: superior & subordinate
 --- config
     location /t {
         content_by_lua_block {
@@ -495,7 +535,7 @@ passed
 
 
 
-=== TEST 15: hit
+=== TEST 16: hit
 --- request eval
 "POST /t
 " .
@@ -515,7 +555,7 @@ connect to 127.0.0.2:1995 while prereading client data
 
 
 
-=== TEST 16: hit (fallback to superior if not found)
+=== TEST 17: hit (fallback to superior if not found)
 --- request eval
 "POST /t
 " .
@@ -535,7 +575,7 @@ connect to 127.0.0.1:1995 while prereading client data
 
 
 
-=== TEST 17: cache router by version
+=== TEST 18: cache router by version
 --- config
     location /t {
         content_by_lua_block {
@@ -608,7 +648,7 @@ connect to 127.0.0.4:1995 while prereading client data
 
 
 
-=== TEST 18: use upstream_id
+=== TEST 19: use upstream_id
 --- config
     location /t {
         content_by_lua_block {
@@ -657,7 +697,7 @@ passed
 
 
 
-=== TEST 19: hit
+=== TEST 20: hit
 --- request eval
 "POST /t
 " .
@@ -672,7 +712,7 @@ connect to 127.0.0.3:1995 while prereading client data
 
 
 
-=== TEST 20: cache router by version, with upstream_id
+=== TEST 21: cache router by version, with upstream_id
 --- config
     location /t {
         content_by_lua_block {
