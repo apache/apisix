@@ -20,7 +20,6 @@ local constants = require("apisix.constants")
 local http = require("resty.http")
 
 local ngx       = ngx
-local ngx_exit  = ngx.exit
 local ngx_print = ngx.print
 local ngx_flush = ngx.flush
 
