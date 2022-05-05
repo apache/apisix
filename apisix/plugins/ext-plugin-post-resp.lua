@@ -170,7 +170,7 @@ function _M.response(conf, ctx)
         end
 
         if read_err or print_err then
-            ngx_exit(502)
+            return 502
         end
     until not chunk
 
