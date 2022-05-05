@@ -55,9 +55,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
                 "properties": {
                     "required_payload": {"type": "string"},
                     "boolean_payload": {"type": "boolean"}
-                },
-                "rejected_msg": "customize reject message"
-            }
+                }
+            },
+            "rejected_msg": "customize reject message"
         }
     },
     "upstream": {
@@ -262,9 +262,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
         "properties": {
           "required_payload": {"type": "string"},
           "boolean_payload": {"type": "boolean"}
-        },
-        "rejected_msg": "customize reject message"
-      }
+        }
+      },
+      "rejected_msg": "customize reject message"
     }
   },
   "upstream": {

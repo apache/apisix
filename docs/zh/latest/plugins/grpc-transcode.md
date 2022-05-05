@@ -1,5 +1,5 @@
 ---
-title: grpc-web
+title: grpc-transcode
 keywords:
   - APISIX
   - Plugin

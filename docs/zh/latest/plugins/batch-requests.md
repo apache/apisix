@@ -42,7 +42,7 @@ description: 本文介绍了关于 Apache APISIX `batch-request` 插件的基本
 
 ## 属性
 
-无
+无。
 
 ## 接口
 
@@ -86,7 +86,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests \
 
 该插件会为 `apisix` 创建一个 `/apisix/batch-requests` 的接口，用来处理批量请求。
 
-### Request
+### 请求参数
 
 | 参数名   | 类型                         | 必选项 | 默认值 |  描述                             |
 | -------- | --------------------------- | ------ | ------ |  -------------------------------- |
@@ -107,9 +107,9 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests \
 | body       | string  | 否       |         |                                                                                  | HTTP 请求体。                                                          |
 | ssl_verify | boolean | 否       | false   |                                                                                  | 验证 SSL 证书与主机名是否匹配。                                          |
 
-### 响应参数：
+### 响应参数
 
-返回值是一个 [HttpResponse](#httpresponse) 的 `数组`。
+返回值是一个 [HttpResponse](#httpresponse) 的`数组`。
 
 #### HttpResponse
 

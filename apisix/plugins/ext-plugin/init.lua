@@ -605,8 +605,6 @@ local rpc_handlers = {
         end
 
         if action_type == http_req_call_action.Rewrite then
-            ctx.request_rewritten = constants.REWRITTEN_BY_EXT_PLUGIN
-
             local action = call_resp:Action()
             local rewrite = http_req_call_rewrite.New()
             rewrite:Init(action.bytes, action.pos)
