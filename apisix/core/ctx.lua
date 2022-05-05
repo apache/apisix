@@ -199,6 +199,7 @@ do
         upstream_cache_bypass      = true,
 
         var_x_forwarded_proto = true,
+        var_x_forwarded_port  = true,
     }
 
     -- sort in alphabetical
