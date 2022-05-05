@@ -177,23 +177,12 @@ function _M.connect_upstream(session, ctx)
         return DECLINED
     end
     local node = nodes[math_random(#nodes)]
-    local sk = xrpc_socket.upstream.socket()
-    sk:settimeout(1000) -- the short timeout is just for test
 
     core.log.info("connect to ", node.host, ":", node.port)
 
-    local ok, err = sk:connect(node.host, node.port)
-    if not ok then
-        core.log.error("failed to connect: ", err)
+    local sk = sdk.connect_upstream(node, conf)
+    if not sk then
         return DECLINED
-    end
-
-    if conf.scheme == "tls" then
-        local ok, err = sk:sslhandshake(nil, node.host)
-        if not ok then
-            core.log.error("failed to handshake: ", err)
-            return DECLINED
-        end
     end
 
     return OK, sk
