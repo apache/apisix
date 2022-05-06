@@ -317,7 +317,7 @@ etcd --enable-grpc-gateway --data-dir=/path/to/data
 
 - 如果使用配置文件，默认关闭 gRPC 网关。你可以手动启用，如下所示：
 
-  In `etcd.json`:
+  在 `etcd.json` 配置：
 
 ```json
 {
@@ -326,7 +326,7 @@ etcd --enable-grpc-gateway --data-dir=/path/to/data
 }
 ```
 
-  In `etcd.conf.yml`:
+  在 `etcd.conf.yml` 配置
 
 ```yml
 enable-grpc-gateway: true
