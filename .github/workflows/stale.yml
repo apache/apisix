@@ -5,8 +5,14 @@ on:
   schedule:
   - cron: '0 10 * * *'
 
+permissions:
+  contents: read
+
 jobs:
   prune_stale:
+    permissions:
+      issues: write  # for actions/stale to close stale issues
+      pull-requests: write  # for actions/stale to close stale PRs
     name: Prune Stale
     runs-on: ubuntu-latest
     timeout-minutes: 10
