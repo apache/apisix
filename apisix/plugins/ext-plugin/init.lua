@@ -700,7 +700,6 @@ local rpc_handlers = {
         local hdrs = res.headers
         for key, val in pairs(hdrs) do
             local ty = type(val)
-            core.log.info("header: ", key, ": ", val)
             if ty == "table" then
                 for _, v in ipairs(val) do
                     core.table.insert(textEntries, build_headers(var, builder, key, v))
@@ -750,13 +749,20 @@ local rpc_handlers = {
             for i = 1, len do
                 local entry = call_resp:Headers(i)
                 local name = str_lower(entry:Name())
-                if exclude_resp_header[name] == nil then
+                if not exclude_resp_header[name] then
                     if resp_headers[name] == nil then
                         core.response.set_header(name, entry:Value())
                         resp_headers[name] = true
                     else
                         core.response.add_header(name, entry:Value())
                     end
+                end
+            end
+        else
+            -- Filter out origin headeres
+            for k, v in pairs(res.headers) do
+                if not exclude_resp_header[str_lower(k)] then
+                    core.response.set_header(k, v)
                 end
             end
         end
@@ -769,7 +775,11 @@ local rpc_handlers = {
         end
         local code = call_resp:Status()
         core.log.info("recv resp, code: ", code, " body: ", body, " len: ", len)
-        code = code ~= 0 and code or nil
+
+        if code == 0 then
+            -- runner change body only, we should set code.
+            code = body and res.status or nil
+        end
 
         return true, nil, code, body
     end

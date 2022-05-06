@@ -268,16 +268,6 @@ local function common_phase(phase_name)
 end
 
 
-local function ext_response_phase(phase_name)
-    local api_ctx = ngx.ctx.api_ctx
-    if not api_ctx then
-        return
-    end
-
-    return plugin.run_plugin(phase_name, nil, api_ctx)
-end
-
-
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
 
@@ -481,9 +471,6 @@ function _M.http_access_phase()
     if api_ctx.dubbo_proxy_enabled then
         return ngx.exec("@dubbo_pass")
     end
-
-    -- plugin runner response call
-    ext_response_phase("response")
 end
 
 

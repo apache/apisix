@@ -465,7 +465,8 @@ function _M.go(case)
             assert(json.encode(headers), '{"Connection":"close","Content-Length":"12",' ..
                                     '"Content-Type":"text/plain","Server":"openresty"}')
             http_resp_call_resp.Start(builder)
-        elseif case.motify_body then
+
+        elseif case.modify_body then
             local len = 3
             http_resp_call_resp.StartBodyVector(builder, len)
             builder:PrependByte(string.byte("t"))
@@ -473,21 +474,59 @@ function _M.go(case)
             builder:PrependByte(string.byte("c"))
             local b = builder:EndVector(len)
 
-            local hdrs = {
-                {"X-Resp", "foo"},
-            }
-            local len = #hdrs
-            local textEntries = {}
+
+            http_resp_call_resp.Start(builder)
+            http_resp_call_resp.AddBody(builder, b)
+
+        elseif case.modify_header then
+            local len = call_req:HeadersLength()
+
+            local headers = {}
             for i = 1, len do
-                local name = builder:CreateString(hdrs[i][1])
-                local value = builder:CreateString(hdrs[i][2])
-                text_entry.Start(builder)
-                text_entry.AddName(builder, name)
-                text_entry.AddValue(builder, value)
-                local c = text_entry.End(builder)
-                textEntries[i] = c
+                local entry = call_req:Headers(i)
+                local r = headers[entry:Name()]
+                if r then
+                    headers[entry:Name()] = {r, entry:Value()}
+                else
+                    headers[entry:Name()] = entry:Value() or true
+                end
             end
 
+            if case.same_header then
+                headers["x-same"] = {"one", "two"}
+            else
+                local runner = headers["x-runner"]
+                if runner and runner == "Go-runner" then
+                    headers["x-runner"] = "Test-Runner"
+                end
+            end
+
+            local i = 1
+            local textEntries = {}
+            for k, v in pairs(headers) do
+                local name = builder:CreateString(k)
+                if type(v) == "table" then
+                    for j = 1, #v do
+                        local value = builder:CreateString(v[j])
+                        text_entry.Start(builder)
+                        text_entry.AddName(builder, name)
+                        text_entry.AddValue(builder, value)
+                        local c = text_entry.End(builder)
+                        textEntries[i] = c
+                        i = i + 1
+                    end
+                else
+                    local value = builder:CreateString(v)
+                    text_entry.Start(builder)
+                    text_entry.AddName(builder, name)
+                    text_entry.AddValue(builder, value)
+                    local c = text_entry.End(builder)
+                    textEntries[i] = c
+                    i = i + 1
+                end
+            end
+
+            len = #textEntries
             http_resp_call_resp.StartHeadersVector(builder, len)
             for i = len, 1, -1 do
                 builder:PrependUOffsetTRelative(textEntries[i])
@@ -495,9 +534,18 @@ function _M.go(case)
             local vec = builder:EndVector(len)
 
             http_resp_call_resp.Start(builder)
-            http_resp_call_resp.AddStatus(builder, 200)
-            http_resp_call_resp.AddBody(builder, b)
             http_resp_call_resp.AddHeaders(builder, vec)
+
+        elseif case.modify_status then
+            local status = call_req:Status()
+            if status == 200 then
+                status = 304
+            end
+            http_resp_call_resp.Start(builder)
+            http_resp_call_resp.AddStatus(builder, status)
+
+        else
+            http_resp_call_resp.Start(builder)
         end
 
         local resp = http_resp_call_resp.End(builder)
