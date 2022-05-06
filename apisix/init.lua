@@ -314,10 +314,10 @@ local function kafka_access_phase(api_ctx)
 
     pubsub:on("cmd_kafka_list_offset", function (params)
         -- The timestamp parameter uses a 64-bit integer, which is difficult
-        -- for luaKit to handle well, so the int64_as_string pattern in
+        -- for luajit to handle well, so the int64_as_string option in
         -- lua-protobuf is used here. Smaller numbers will be decoded as
-        -- lua number, while overly long integers will be decoded as strings
-        -- in the format #number, where the # sign at the beginning of the
+        -- lua number, while overly larger numbers will be decoded as strings
+        -- in the format #number, where the # symbol at the beginning of the
         -- string will be removed and converted to int64_t with the atoll function.
         local timestamp = type(params.timestamp) == "string" and
             C.atoll(str_sub(params.timestamp, 2, #params.timestamp)) or params.timestamp
