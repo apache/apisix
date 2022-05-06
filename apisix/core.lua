@@ -52,4 +52,5 @@ return {
     tablepool   = require("tablepool"),
     resolver    = require("apisix.core.resolver"),
     os          = require("apisix.core.os"),
+    pubsub      = require("apisix.core.pubsub"),
 }
