@@ -263,6 +263,7 @@ install: runtime
 	# Lua directories listed in alphabetical order
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix
 	$(ENV_INSTALL) apisix/*.lua $(ENV_INST_LUADIR)/apisix/
+	$(ENV_INSTALL) apisix/*.proto $(ENV_INST_LUADIR)/apisix/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/admin
 	$(ENV_INSTALL) apisix/admin/*.lua $(ENV_INST_LUADIR)/apisix/admin/
