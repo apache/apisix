@@ -43,11 +43,11 @@ For Consumer:
 
 For Route:
 
-| Name   | Type   | Requirement | Default | Valid | Description                                                       |
-|--------|--------|-------------|---------|-------|-------------------------------------------------------------------|
-| header | string | optional    | apikey  |       | The header to get the key from.                                   |
-| query  | string | optional    | apikey  |       | The query string to get the key from. Lower priority than header. |
-| hide_credentials   | bool | optional    | false        |       | When set to `false` passes the request header containing authentication information to the Upstream. |
+| Name   | Type   | Requirement | Default | Valid | Description                                                                                                                                                                                                                                                                   |
+|--------|--------|-------------|---------|-------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| header | string | optional    | apikey  |       | The header to get the key from.                                                                                                                                                                                                                                               |
+| query  | string | optional    | apikey  |       | The query string to get the key from. Lower priority than header.                                                                                                                                                                                                             |
+| hide_credentials   | bool | optional    | false        |       | When set to `false` passes the request header or query string containing authentication information to the Upstream. If `true`, the corresponding header or query string will be deleted, depending on whether the key is obtained from the header or from the query string.  |
 
 ## Enabling the Plugin
 
