@@ -195,6 +195,7 @@ GET /hello
 --- error_code: 304
 
 
+
 === TEST 7: default allow_degradation
 --- config
     location /t {
