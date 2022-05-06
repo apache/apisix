@@ -55,6 +55,8 @@ local ngx_var         = ngx.var
 local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
+local tostring        = tostring
+local type            = type
 local pairs           = pairs
 local C               = ffi.C
 local control_api_router
