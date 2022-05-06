@@ -230,7 +230,7 @@ nginx_config:
 
 Apache APISIX 的插件支持热加载。
 
-具体怎么做参考 [插件](./plugin.md) 中关于“热加载”的部分。
+具体怎么做参考 [插件](./plugins.md) 中关于“热加载”的部分。
 
 ## 如何让 APISIX 在处理 HTTP 或 HTTPS 请求时监听多个端口
 
