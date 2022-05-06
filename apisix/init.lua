@@ -60,7 +60,6 @@ local str_sub         = string.sub
 local tonumber        = tonumber
 local pairs           = pairs
 local C               = ffi.C
-local ffi_new        = ffi.new
 local control_api_router
 
 local is_http = false

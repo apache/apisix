@@ -15,7 +15,6 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-local ngx_var = ngx.var
 
 
 local schema = {
@@ -62,8 +61,6 @@ function _M.access(conf, ctx)
     ctx.kafka_consumer_enabled = true
 
     -- write kafka-related configuration
-    ctx.kafka_consumer_enable_tls = conf.enable_tls
-    ctx.kafka_consumer_ssl_verify = conf.ssl_verify
     ctx.kafka_consumer_enable_sasl = conf.enable_sasl
     ctx.kafka_consumer_sasl_username = conf.sasl_username
     ctx.kafka_consumer_sasl_password = conf.sasl_password
