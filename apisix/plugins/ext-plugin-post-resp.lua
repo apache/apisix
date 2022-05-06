@@ -49,7 +49,7 @@ end
 local function close(ctx, http_obj)
     -- TODO: keepalive
     local ok, err = http_obj:close()
-    if err then
+    if not ok then
         core.log.error("close http object failed: ", err)
     end
 end
