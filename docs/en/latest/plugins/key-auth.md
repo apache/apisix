@@ -47,7 +47,7 @@ For Route:
 |--------|--------|-------------|---------|-------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | header | string | optional    | apikey  |       | The header to get the key from.                                                                                                                                                                                                                                               |
 | query  | string | optional    | apikey  |       | The query string to get the key from. Lower priority than header.                                                                                                                                                                                                             |
-| hide_credentials   | bool | optional    | false        |       | When set to `false` passes the request header or query string containing authentication information to the Upstream. If `true`, the corresponding header or query string will be deleted, depending on whether the key is obtained from the header or from the query string.  |
+| hide_credentials   | bool | optional    | false        |       | Apache APISIX will pass the request header or query string that contains the authentication information to the Upstream if `hide_credentials` is `false`. Otherwise the authentication information will be removed before proxying.|
 
 ## Enabling the Plugin
 
