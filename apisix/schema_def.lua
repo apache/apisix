@@ -406,8 +406,15 @@ local upstream_schema = {
             properties = {
                 client_cert = certificate_scheme,
                 client_key = private_key_schema,
+                verify = {
+                    type = "boolean",
+                    description = "Turn on server certificate verification",
+                },
             },
-            required = {"client_cert", "client_key"},
+            anyOf = {
+                {required = {"client_cert", "client_key"}},
+                {required = {"verify"}},
+            },
         },
         keepalive_pool = {
             type = "object",
