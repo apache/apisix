@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+option go_package = "pubsub";
+
+// request
+message CmdKafkaListOffset {
+    string topic = 1;
+    int32 partition = 2;
+    int64 timestamp = 3;
+}
+
+message CmdKafkaFetch {
+    string topic = 1;
+    int32 partition = 2;
+    int64 offset = 3;
+}
+
+message PubSubReq {
+    int64 sequence = 1;
+    oneof req {
+        CmdKafkaFetch      cmd_kafka_fetch       = 31;
+        CmdKafkaListOffset cmd_kafka_list_offset = 32;
+    };
+}
+
+// response
+message KafkaMessage {
+    int64 offset = 1;
+    int64 timestamp = 2;
+    bytes key = 3;
+    bytes value = 4;
+}
+
+message ErrorResp {
+    int32 code = 1;
+    string message = 2;
+}
+
+message KafkaFetchResp {
+    repeated KafkaMessage messages = 1;
+}
+
+message KafkaListOffsetResp {
+    int64 offset = 1;
+}
+
+message PubSubResp {
+    int64 sequence = 1;
+    oneof resp {
+        ErrorResp error_resp = 31;
+        KafkaFetchResp kafka_fetch_resp = 32;
+        KafkaListOffsetResp kafka_list_offset_resp = 33;
+    };
+}

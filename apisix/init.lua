@@ -40,8 +40,13 @@ local apisix_ssl      = require("apisix.ssl")
 local upstream_util   = require("apisix.utils.upstream")
 local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
+local ws_server       = require("resty.websocket.server")
 local ngx_balancer    = require("ngx.balancer")
 local debug           = require("apisix.debug")
+local kafka_bconsumer = require("resty.kafka.basic-consumer")
+local protoc          = require("protoc")
+local pb              = require("pb")
+local ffi             = require("ffi")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -54,6 +59,8 @@ local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
 local pairs           = pairs
+local C               = ffi.C
+local ffi_new        = ffi.new
 local control_api_router
 
 local is_http = false
@@ -267,6 +274,160 @@ local function common_phase(phase_name)
     return plugin.run_plugin(phase_name, nil, api_ctx)
 end
 
+protoc.reload()
+local pubsub_protoc = protoc.new()
+pb.option("int64_as_string")
+ffi.cdef[[
+    int64_t atoll(const char *num);
+]]
+local function kafka_access_phase(api_ctx)
+    local ws, err = ws_server:new()
+    if not ws then
+        ngx.log(ngx.ERR, "failed to new websocket: ", err)
+        return ngx.exit(444)
+    end
+
+    local up_nodes = api_ctx.matched_upstream.nodes
+
+    -- kafka client broker-related configuration
+    local broker_list = {}
+    for i, node in ipairs(up_nodes) do
+        broker_list[i] = {
+            host = node.host,
+            port = node.port,
+        }
+
+        if api_ctx.kafka_consumer_enable_sasl then
+            broker_list[i].sasl_config = {
+                mechanism = "PLAIN",
+                user = api_ctx.kafka_consumer_sasl_username,
+                password = api_ctx.kafka_consumer_sasl_password,
+            }
+        end
+    end
+
+    -- kafka client socket-related configuration
+    local client_config = {
+        ssl = api_ctx.kafka_consumer_enable_tls,
+        ssl_verify = api_ctx.kafka_consumer_ssl_verify,
+        refresh_interval = 30 * 60 * 1000
+    }
+
+    -- load and create the consumer instance when it is determined
+    -- that the websocket connection was created successfully
+    local c = kafka_bconsumer:new(broker_list, client_config)
+
+    -- compile the protobuf file on initial connection
+    -- ensure that each worker is loaded once
+    if not pubsub_protoc.loaded["pubsub.proto"] then
+        pubsub_protoc:addpath("apisix")
+        local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
+        if not ok then
+            pubsub_protoc:reset()
+            ngx.log(ngx.ERR, "failed to load pubsub protocol, err:", err)
+            return ngx.exit(444)
+        end
+    end
+
+    while true do
+        -- read raw data frames from websocket connection
+        local raw_data, raw_type, err = ws:recv_frame()
+
+        if err then
+            ws:send_close()
+            core.log.error("failed to recieve frame from kafka client, err: ", err)
+            return
+        end
+
+        -- handle client close connection
+        if raw_type == "close" then
+            ws:send_close()
+            core.log.info("kafka client close connection, status code: ", err)
+            return
+        end
+
+        -- decode req
+        if raw_type ~= "binary" then
+            ws:send_close()
+            core.log.error("recieve error type message from kafka client, err: ", err)
+            return
+        end
+
+        local data = pb.decode("PubSubReq", raw_data)
+        local sequence = data.sequence
+
+        -- list offset command
+        if data.cmd_kafka_list_offset then
+            local params = data.cmd_kafka_list_offset
+            local timestamp = type(params.timestamp) == "string" and
+                C.atoll(str_sub(params.timestamp, 2, #params.timestamp)) or params.timestamp
+
+            local offset, err = c:list_offset(params.topic, params.partition, timestamp)
+            if not offset then
+                ws:send_binary(pb.encode("PubSubResp", {
+                    sequence = sequence,
+                    error_resp = {
+                        code = 0,
+                        message = "failed to list offset, topic: " .. params.topic ..
+                            ", partition: " .. params.partition .. ", err: " .. err,
+                    }
+                }))
+                goto continue
+            end
+
+            offset = tostring(offset)
+            ws:send_binary(pb.encode("PubSubResp", {
+                sequence = sequence,
+                kafka_list_offset_resp = {
+                    offset = str_sub(offset, 1, #offset - 2)
+                }
+            }))
+            goto continue
+        end
+
+        if data.cmd_kafka_fetch then
+            ngx.log(ngx.ERR, core.json.encode(data.cmd_kafka_fetch))
+            local params = data.cmd_kafka_fetch
+            local offset = type(params.offset) == "string" and
+                C.atoll(str_sub(params.offset, 2, #params.offset)) or params.offset
+
+            local ret, err = c:fetch(params.topic, params.partition, offset)
+            if not ret then
+                ws:send_binary(pb.encode("PubSubResp", {
+                    sequence = sequence,
+                    error_resp = {
+                        code = 0,
+                        message = "failed to fetch message, topic: " .. params.topic ..
+                            ", partition: " .. params.partition .. ", err: " .. err,
+                    }
+                }))
+                goto continue
+            end
+
+            -- split into multiple messages when the amount of data in
+            -- a single batch is too large
+            local messages = ret.records
+
+            -- special handling of int64 for luajit compatibility
+            for _, message in ipairs(messages) do
+                local timestamp = tostring(message.timestamp)
+                message.timestamp = str_sub(timestamp, 1, #timestamp - 2)
+                local offset = tostring(message.offset)
+                message.offset = str_sub(offset, 1, #offset - 2)
+            end
+
+            ws:send_binary(pb.encode("PubSubResp", {
+                sequence = sequence,
+                kafka_fetch_resp = {
+                    messages = messages,
+                },
+            }))
+        end
+
+        ::continue::
+    end
+end
+
 
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
@@ -438,6 +599,15 @@ function _M.http_access_phase()
 
     if route.value.service_protocol == "grpc" then
         api_ctx.upstream_scheme = "grpc"
+    end
+
+    -- load balancer is not required by kafka upstream
+    if api_ctx.matched_upstream.scheme == "kafka" then
+        if not api_ctx.kafka_consumer_enabled then
+            core.log.error("need to configure the kafka-consumer plugin for kafka upstream")
+            return core.response.exit(501)
+        end
+        return kafka_access_phase(api_ctx)
     end
 
     local code, err = set_upstream(route, api_ctx)

@@ -451,7 +451,7 @@ local upstream_schema = {
         },
         scheme = {
             default = "http",
-            enum = {"grpc", "grpcs", "http", "https", "tcp", "tls", "udp"},
+            enum = {"grpc", "grpcs", "http", "https", "tcp", "tls", "udp", "kafka"},
             description = "The scheme of the upstream." ..
                 " For L7 proxy, it can be one of grpc/grpcs/http/https." ..
                 " For L4 proxy, it can be one of tcp/tls/udp."
@@ -493,6 +493,7 @@ local upstream_schema = {
     oneOf = {
         {required = {"type", "nodes"}},
         {required = {"type", "service_name", "discovery_type"}},
+        {required = {"scheme", "nodes"}}
     },
 }
 
