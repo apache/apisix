@@ -40,12 +40,9 @@ local apisix_ssl      = require("apisix.ssl")
 local upstream_util   = require("apisix.utils.upstream")
 local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
-local ws_server       = require("resty.websocket.server")
 local ngx_balancer    = require("ngx.balancer")
 local debug           = require("apisix.debug")
 local kafka_bconsumer = require("resty.kafka.basic-consumer")
-local protoc          = require("protoc")
-local pb              = require("pb")
 local ffi             = require("ffi")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
@@ -273,17 +270,16 @@ local function common_phase(phase_name)
     return plugin.run_plugin(phase_name, nil, api_ctx)
 end
 
-protoc.reload()
-local pubsub_protoc = protoc.new()
-pb.option("int64_as_string")
+
 ffi.cdef[[
     int64_t atoll(const char *num);
 ]]
 local function kafka_access_phase(api_ctx)
-    local ws, err = ws_server:new()
-    if not ws then
-        ngx.log(ngx.ERR, "failed to new websocket: ", err)
-        return ngx.exit(444)
+    local pubsub, err = core.pubsub.new()
+    if not pubsub then
+        core.log.error("failed to initialize pub-sub module, err: ", err)
+        core.response.exit(400)
+        return
     end
 
     local up_nodes = api_ctx.matched_upstream.nodes
@@ -314,116 +310,66 @@ local function kafka_access_phase(api_ctx)
 
     -- load and create the consumer instance when it is determined
     -- that the websocket connection was created successfully
-    local c = kafka_bconsumer:new(broker_list, client_config)
+    local consumer = kafka_bconsumer:new(broker_list, client_config)
 
-    -- compile the protobuf file on initial connection
-    -- ensure that each worker is loaded once
-    if not pubsub_protoc.loaded["pubsub.proto"] then
-        pubsub_protoc:addpath("apisix")
-        local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
-        if not ok then
-            pubsub_protoc:reset()
-            ngx.log(ngx.ERR, "failed to load pubsub protocol, err:", err)
-            return ngx.exit(444)
-        end
-    end
+    pubsub:on("cmd_kafka_list_offset", function (params)
+        -- The timestamp parameter uses a 64-bit integer, which is difficult
+        -- for luaKit to handle well, so the int64_as_string pattern in
+        -- lua-protobuf is used here. Smaller numbers will be decoded as
+        -- lua number, while overly long integers will be decoded as strings
+        -- in the format #number, where the # sign at the beginning of the
+        -- string will be removed and converted to int64_t with the atoll function.
+        local timestamp = type(params.timestamp) == "string" and
+            C.atoll(str_sub(params.timestamp, 2, #params.timestamp)) or params.timestamp
 
-    while true do
-        -- read raw data frames from websocket connection
-        local raw_data, raw_type, err = ws:recv_frame()
+        local offset, err = consumer:list_offset(params.topic, params.partition, timestamp)
 
-        if err then
-            ws:send_close()
-            core.log.error("failed to receive frame from kafka client, err: ", err)
-            return
+        if not offset then
+            return nil, "failed to list offset, topic: " .. params.topic ..
+                ", partition: " .. params.partition .. ", err: " .. err
         end
 
-        -- handle client close connection
-        if raw_type == "close" then
-            ws:send_close()
-            core.log.info("kafka client close connection, status code: ", err)
-            return
+        offset = tostring(offset)
+        return {
+            kafka_list_offset_resp = {
+                offset = str_sub(offset, 1, #offset - 2)
+            }
+        }
+    end)
+
+    pubsub:on("cmd_kafka_fetch", function (params)
+        local offset = type(params.offset) == "string" and
+            C.atoll(str_sub(params.offset, 2, #params.offset)) or params.offset
+
+        local ret, err = consumer:fetch(params.topic, params.partition, offset)
+        if not ret then
+            return nil, "failed to fetch message, topic: " .. params.topic ..
+                ", partition: " .. params.partition .. ", err: " .. err
         end
 
-        -- decode req
-        if raw_type ~= "binary" then
-            ws:send_close()
-            core.log.error("receive error type message from kafka client, err: ", err)
-            return
+        -- split into multiple messages when the amount of data in
+        -- a single batch is too large
+        local messages = ret.records
+
+        -- special handling of int64 for luajit compatibility
+        for _, message in ipairs(messages) do
+            local timestamp = tostring(message.timestamp)
+            message.timestamp = str_sub(timestamp, 1, #timestamp - 2)
+            local offset = tostring(message.offset)
+            message.offset = str_sub(offset, 1, #offset - 2)
         end
 
-        local data = pb.decode("PubSubReq", raw_data)
-        local sequence = data.sequence
+        return {
+            kafka_fetch_resp = {
+                messages = messages,
+            },
+        }
+    end)
 
-        -- list offset command
-        if data.cmd_kafka_list_offset then
-            local params = data.cmd_kafka_list_offset
-            local timestamp = type(params.timestamp) == "string" and
-                C.atoll(str_sub(params.timestamp, 2, #params.timestamp)) or params.timestamp
-
-            local offset, err = c:list_offset(params.topic, params.partition, timestamp)
-            if not offset then
-                ws:send_binary(pb.encode("PubSubResp", {
-                    sequence = sequence,
-                    error_resp = {
-                        code = 0,
-                        message = "failed to list offset, topic: " .. params.topic ..
-                            ", partition: " .. params.partition .. ", err: " .. err,
-                    }
-                }))
-                goto continue
-            end
-
-            offset = tostring(offset)
-            ws:send_binary(pb.encode("PubSubResp", {
-                sequence = sequence,
-                kafka_list_offset_resp = {
-                    offset = str_sub(offset, 1, #offset - 2)
-                }
-            }))
-            goto continue
-        end
-
-        if data.cmd_kafka_fetch then
-            ngx.log(ngx.ERR, core.json.encode(data.cmd_kafka_fetch))
-            local params = data.cmd_kafka_fetch
-            local offset = type(params.offset) == "string" and
-                C.atoll(str_sub(params.offset, 2, #params.offset)) or params.offset
-
-            local ret, err = c:fetch(params.topic, params.partition, offset)
-            if not ret then
-                ws:send_binary(pb.encode("PubSubResp", {
-                    sequence = sequence,
-                    error_resp = {
-                        code = 0,
-                        message = "failed to fetch message, topic: " .. params.topic ..
-                            ", partition: " .. params.partition .. ", err: " .. err,
-                    }
-                }))
-                goto continue
-            end
-
-            -- split into multiple messages when the amount of data in
-            -- a single batch is too large
-            local messages = ret.records
-
-            -- special handling of int64 for luajit compatibility
-            for _, message in ipairs(messages) do
-                local timestamp = tostring(message.timestamp)
-                message.timestamp = str_sub(timestamp, 1, #timestamp - 2)
-                local offset = tostring(message.offset)
-                message.offset = str_sub(offset, 1, #offset - 2)
-            end
-
-            ws:send_binary(pb.encode("PubSubResp", {
-                sequence = sequence,
-                kafka_fetch_resp = {
-                    messages = messages,
-                },
-            }))
-        end
-
-        ::continue::
+    -- start processing client commands
+    local err = pubsub:wait()
+    if err then
+        core.log.error("failed to handle pub-sub command, err: ", err)
     end
 end
 
