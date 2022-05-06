@@ -31,7 +31,7 @@ description: 本文介绍了关于 Apache APISIX `basic-auth` 插件的基本信
 
 使用 `basic-auth` 插件可以将 [Basic_access_authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) 添加到 Route 或 Service 中。
 
-该插件需要与 [Consumer](../architecture-design/consumer.md) 一起使用。API 的消费者可以将它们的密钥添加到请求头中以验证其请求。
+该插件需要与 [Consumer](../terminology/consumer.md) 一起使用。API 的消费者可以将它们的密钥添加到请求头中以验证其请求。
 
 ## 属性
 

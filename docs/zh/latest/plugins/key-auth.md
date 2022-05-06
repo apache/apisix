@@ -31,7 +31,7 @@ description: 本文介绍了关于 Apache APISIX `key-auth` 插件的基本信�
 
 `key-auth` 插件用于向 Route 或 Service 添加身份验证密钥（API key）。
 
-它需要与 [Consumer](../architecture-design/consumer.md) 一起配合才能工作，通过 Consumer 将其密钥添加到查询字符串参数或标头中以验证其请求。
+它需要与 [Consumer](../terminology/consumer.md) 一起配合才能工作，通过 Consumer 将其密钥添加到查询字符串参数或标头中以验证其请求。
 
 ## 属性
 
