@@ -24,6 +24,7 @@ local OK = ngx.OK
 local DECLINED = ngx.DECLINED
 local DONE = ngx.DONE
 local tostring = tostring
+local pcall = pcall
 
 
 local _M = {}

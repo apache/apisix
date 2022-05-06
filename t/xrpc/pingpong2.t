@@ -565,7 +565,7 @@ unlock with key xrpc-logger#table
 
 
 
-=== TEST 7: check plugin configuration updating
+=== TEST 17: check plugin configuration updating
 --- stream_conf_enable
 --- config
     location /t {
