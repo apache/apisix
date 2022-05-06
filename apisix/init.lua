@@ -334,7 +334,7 @@ local function kafka_access_phase(api_ctx)
 
         if err then
             ws:send_close()
-            core.log.error("failed to recieve frame from kafka client, err: ", err)
+            core.log.error("failed to receive frame from kafka client, err: ", err)
             return
         end
 
@@ -348,7 +348,7 @@ local function kafka_access_phase(api_ctx)
         -- decode req
         if raw_type ~= "binary" then
             ws:send_close()
-            core.log.error("recieve error type message from kafka client, err: ", err)
+            core.log.error("receive error type message from kafka client, err: ", err)
             return
         end
 
