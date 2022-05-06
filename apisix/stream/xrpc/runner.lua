@@ -99,7 +99,7 @@ local function run_log_plugin(session, ctx)
     ctx.conf_type = "xrpc-logger"
 
     if not ok then
-        core.log.error("failed to load plugin [", name, "] err: ", plugin)
+        core.log.error("failed to load plugin [", plugin, "] err: ", plugin)
         return
     end
 
