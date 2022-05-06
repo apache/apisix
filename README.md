@@ -184,7 +184,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 4. Plugin development
 
    You can refer to [plugin development guide](docs/en/latest/plugin-develop.md), and sample plugin `example-plugin`'s code implementation.
-   Reading [plugin concept](docs/en/latest/architecture-design/plugin.md) would help you learn more about the plugin.
+   Reading [plugin concept](docs/en/latest/terminology/plugin.md) would help you learn more about the plugin.
 
 For more documents, please refer to [Apache APISIX Documentation site](https://apisix.apache.org/docs/apisix/getting-started/)
 
