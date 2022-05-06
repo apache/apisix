@@ -1,5 +1,11 @@
 ---
 title: basic-auth
+keywords:
+  - APISIX
+  - Plugin
+  - Basic Auth
+  - basic-auth
+description: 本文介绍了关于 Apache APISIX `basic-auth` 插件的基本信息及使用方法。
 ---
 
 <!--
@@ -23,33 +29,32 @@ title: basic-auth
 
 ## 描述
 
-`basic-auth` 是一个认证插件，它需要与 `consumer` 一起配合才能工作。
+使用 `basic-auth` 插件可以将 [Basic_access_authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) 添加到 Route 或 Service 中。
 
-添加 Basic Authentication 到一个 `service` 或 `route`。 然后 `consumer` 将其用户名和密码添加到请求头中以验证其请求。
-
-有关 Basic Authentication 的更多信息，可参考 [维基百科](https://zh.wikipedia.org/wiki/HTTP%E5%9F%BA%E6%9C%AC%E8%AE%A4%E8%AF%81) 查看更多信息。
+该插件需要与 [Consumer](../architecture-design/consumer.md) 一起使用。API 的消费者可以将它们的密钥添加到请求头中以验证其请求。
 
 ## 属性
 
-consumer 端配置：
+Consumer 端：
 
-| 名称     | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                               |
-| -------- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------------------ |
-| username | string | 必须   |        |        | 不同的 `consumer` 对象应有不同的值，它应当是唯一的。不同 consumer 使用了相同的 `username` ，将会出现请求匹配异常。 |
-| password | string | 必须   |        |        | 用户的密码                                                                                                         |
+| 名称     | 类型   | 必选项 | 描述                                                                                           |
+| -------- | ------ | -----| ----------------------------------------------------------------------------------------------- |
+| username | string | 是   | Consumer 的用户名并且该用户名是唯一，如果多个 Consumer 使用了相同的 `username`，将会出现请求匹配异常。|
+| password | string | 是   | 用户的密码。                                                                                      |
 
-router 端配置：
+Route 端：
 
-| 名称     | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                               |
-| -------- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------------------ |
-| hide_credentials | boolean | 可选    | false   |       | 是否将 Authorization 请求头传递给 upstream。                                                                                             |
+| 名称             | 类型     | 必选项 | 默认值  | 描述                                                            |
+| ---------------- | ------- | ------ | ------ | --------------------------------------------------------------- |
+| hide_credentials | boolean | 否     | false  | 该参数设置为 `true` 时，则会将 Authorization 请求头传递给 Upstream。|
 
-## 如何启用
+## 启用插件
 
-### 1. 创建一个 consumer 对象，并设置插件 `basic-auth` 的值。
+如果需要启用插件，就必须创建一个具有身份验证配置的 Consumer：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "foo",
     "plugins": {
@@ -61,18 +66,19 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-你也可以通过 web 界面来完成上面的操作，先增加一个 consumer：
+你也可以通过 [APISIX Dashboard](/docs/dashboard/USER_GUIDE) 完成上述操作。
 
-![auth-1](../../../assets/images/plugin/basic-auth-1.png)
+<!--
+![auth-1](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/basic-auth-1.png)
 
-然后在 consumer 页面中添加 basic-auth 插件：
+![auth-2](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/basic-auth-2.png)
+-->
 
-![auth-2](../../../assets/images/plugin/basic-auth-2.png)
-
-### 2. 创建 Route 或 Service 对象，并开启 `basic-auth` 插件。
+创建 Consumer 后，就可以通过配置 Route 或 Service 来验证插件，以下是配置 Route 的命令：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
@@ -90,50 +96,43 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-- 缺少 Authorization header
+通过上述命令启用插件后，可以通过以下方法测试插件。
 
 ```shell
-$ curl -i http://127.0.0.1:9080/hello
+curl -i -ubar:bar http://127.0.0.1:9080/hello
+```
+
+如果配置成功则返回如下结果：
+
+```shell
+HTTP/1.1 200 OK
+...
+hello, world
+```
+
+如果请求未授权，则返回如下结果：
+
+```shell
 HTTP/1.1 401 Unauthorized
 ...
 {"message":"Missing authorization in request"}
 ```
 
-- 用户名不存在：
+如果用户名和密码错则返回如下结果：
 
 ```shell
-$ curl -i -ubar:bar http://127.0.0.1:9080/hello
 HTTP/1.1 401 Unauthorized
 ...
 {"message":"Invalid user authorization"}
-```
-
-- 密码错误：
-
-```shell
-$ curl -i -ufoo:foo http://127.0.0.1:9080/hello
-HTTP/1.1 401 Unauthorized
-...
-{"message":"Invalid user authorization"}
-...
-```
-
-- 成功请求：
-
-```shell
-$ curl -i -ufoo:bar http://127.0.0.1:9080/hello
-HTTP/1.1 200 OK
-...
-hello, foo!
-...
 ```
 
 ## 禁用插件
 
-当你想去掉 `basic-auth` 插件的时候，很简单，在插件的配置中把对应的 `json` 配置删除即可，无须重启服务，即刻生效：
+当你需要禁用 `basic-auth` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

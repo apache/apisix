@@ -40,7 +40,6 @@ local apisix_ssl      = require("apisix.ssl")
 local upstream_util   = require("apisix.utils.upstream")
 local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
-local ipmatcher       = require("resty.ipmatcher")
 local ngx_balancer    = require("ngx.balancer")
 local debug           = require("apisix.debug")
 local ngx             = ngx
@@ -49,7 +48,6 @@ local ngx_exit        = ngx.exit
 local math            = math
 local error           = error
 local ipairs          = ipairs
-local tostring        = tostring
 local ngx_now         = ngx.now
 local ngx_var         = ngx.var
 local str_byte        = string.byte
@@ -62,6 +60,11 @@ local is_http = false
 if ngx.config.subsystem == "http" then
     is_http = true
     control_api_router = require("apisix.control.router")
+end
+
+local ok, apisix_base_flags = pcall(require, "resty.apisix.patch")
+if not ok then
+    apisix_base_flags = {}
 end
 
 local load_balancer
@@ -169,61 +172,9 @@ function _M.http_ssl_phase()
 end
 
 
-
-
-local function parse_domain_for_nodes(nodes)
-    local new_nodes = core.table.new(#nodes, 0)
-    for _, node in ipairs(nodes) do
-        local host = node.host
-        if not ipmatcher.parse_ipv4(host) and
-                not ipmatcher.parse_ipv6(host) then
-            local ip, err = core.resolver.parse_domain(host)
-            if ip then
-                local new_node = core.table.clone(node)
-                new_node.host = ip
-                new_node.domain = host
-                core.table.insert(new_nodes, new_node)
-            end
-
-            if err then
-                core.log.error("dns resolver domain: ", host, " error: ", err)
-            end
-        else
-            core.table.insert(new_nodes, node)
-        end
-    end
-    return new_nodes
-end
-
-
-local function parse_domain_in_up(up)
-    local nodes = up.value.nodes
-    local new_nodes, err = parse_domain_for_nodes(nodes)
-    if not new_nodes then
-        return nil, err
-    end
-
-    local ok = upstream_util.compare_upstream_node(up.dns_value, new_nodes)
-    if ok then
-        return up
-    end
-
-    if not up.orig_modifiedIndex then
-        up.orig_modifiedIndex = up.modifiedIndex
-    end
-    up.modifiedIndex = up.orig_modifiedIndex .. "#" .. ngx_now()
-
-    up.dns_value = core.table.clone(up.value)
-    up.dns_value.nodes = new_nodes
-    core.log.info("resolve upstream which contain domain: ",
-                  core.json.delay_encode(up, true))
-    return up
-end
-
-
 local function parse_domain_in_route(route)
     local nodes = route.value.upstream.nodes
-    local new_nodes, err = parse_domain_for_nodes(nodes)
+    local new_nodes, err = upstream_util.parse_domain_for_nodes(nodes)
     if not new_nodes then
         return nil, err
     end
@@ -281,39 +232,13 @@ local function set_upstream_headers(api_ctx, picked_server)
 end
 
 
-local function get_upstream_by_id(up_id)
-    local upstreams = core.config.fetch_created_obj("/upstreams")
-    if upstreams then
-        local upstream = upstreams:get(tostring(up_id))
-        if not upstream then
-            core.log.error("failed to find upstream by id: " .. up_id)
-            if is_http then
-                return core.response.exit(502)
-            end
-
-            return ngx_exit(1)
-        end
-
-        if upstream.has_domain then
-            local err
-            upstream, err = parse_domain_in_up(upstream)
-            if err then
-                core.log.error("failed to get resolved upstream: ", err)
-                if is_http then
-                    return core.response.exit(500)
-                end
-
-                return ngx_exit(1)
-            end
-        end
-
-        core.log.info("parsed upstream: ", core.json.delay_encode(upstream, true))
-        return upstream.dns_value or upstream.value
-    end
-end
-
-
 local function verify_tls_client(ctx)
+    if apisix_base_flags.client_cert_verified_in_handshake then
+        -- For apisix-base, there is no need to rematch SSL rules as the invalid
+        -- connections are already rejected in the handshake
+        return true
+    end
+
     local matched = router.router_ssl.match_and_set(ctx, true)
     if not matched then
         return true
@@ -482,7 +407,15 @@ function _M.http_access_phase()
     end
 
     if up_id then
-        local upstream = get_upstream_by_id(up_id)
+        local upstream = apisix_upstream.get_by_id(up_id)
+        if not upstream then
+            if is_http then
+                return core.response.exit(502)
+            end
+
+            return ngx_exit(1)
+        end
+
         api_ctx.matched_upstream = upstream
 
     else
@@ -872,15 +805,9 @@ end
 
 
 function _M.stream_preread_phase()
-    core.log.info("enter stream_preread_phase")
-
     local ngx_ctx = ngx.ctx
-    local api_ctx = ngx_ctx.api_ctx
-
-    if not api_ctx then
-        api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-        ngx_ctx.api_ctx = api_ctx
-    end
+    local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+    ngx_ctx.api_ctx = api_ctx
 
     if not verify_tls_client(api_ctx) then
         return ngx_exit(1)
@@ -905,7 +832,17 @@ function _M.stream_preread_phase()
 
     local up_id = matched_route.value.upstream_id
     if up_id then
-        api_ctx.matched_upstream = get_upstream_by_id(up_id)
+        local upstream = apisix_upstream.get_by_id(up_id)
+        if not upstream then
+            if is_http then
+                return core.response.exit(502)
+            end
+
+            return ngx_exit(1)
+        end
+
+        api_ctx.matched_upstream = upstream
+
     else
         if matched_route.has_domain then
             local err

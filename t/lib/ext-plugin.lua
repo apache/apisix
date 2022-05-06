@@ -251,6 +251,8 @@ function _M.go(case)
             local hdrs = {
                 {"X-Resp", "foo"},
                 {"X-Req", "bar"},
+                {"X-Same", "one"},
+                {"X-Same", "two"},
             }
             local len = #hdrs
             local textEntries = {}

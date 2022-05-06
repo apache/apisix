@@ -21,8 +21,10 @@
 local core = require("apisix.core")
 local config_util = require("apisix.core.config_util")
 local router = require("apisix.stream.router.ip_port")
+local apisix_upstream = require("apisix.upstream")
 local xrpc_socket = require("resty.apisix.stream.xrpc.socket")
 local ngx_now = ngx.now
+local str_fmt = string.format
 local tab_insert = table.insert
 local error = error
 local tostring = tostring
@@ -35,18 +37,26 @@ local _M = {}
 -- Returns the connected xRPC upstream socket according to the configuration
 --
 -- @function xrpc.sdk.connect_upstream
--- @tparam table selected upstream node
--- @tparam table upstream configuration
+-- @tparam table node selected upstream node
+-- @tparam table up_conf upstream configuration
 -- @treturn table|nil the xRPC upstream socket, or nil if failed
 function _M.connect_upstream(node, up_conf)
     local sk = xrpc_socket.upstream.socket()
+
+    local timeout = up_conf.timeout
+    if not timeout then
+        -- use the default timeout of Nginx proxy
+        sk:settimeouts(60 * 1000, 600 * 1000, 600 * 1000)
+    else
+        -- the timeout unit for balancer is second while the unit for cosocket is millisecond
+        sk:settimeouts(timeout.connect * 1000, timeout.send * 1000, timeout.read * 1000)
+    end
 
     local ok, err = sk:connect(node.host, node.port)
     if not ok then
         core.log.error("failed to connect: ", err)
         return nil
     end
-    -- TODO: support timeout
 
     if up_conf.scheme == "tls" then
         -- TODO: support mTLS
@@ -65,9 +75,9 @@ end
 -- Returns disconnected xRPC upstream socket according to the configuration
 --
 -- @function xrpc.sdk.disconnect_upstream
--- @tparam table xRPC upstream socket
--- @tparam table upstream configuration
--- @tparam boolean is the upstream already broken
+-- @tparam table upstream xRPC upstream socket
+-- @tparam table up_conf upstream configuration
+-- @tparam boolean upstream_broken whether the upstream is already broken
 function _M.disconnect_upstream(upstream, up_conf, upstream_broken)
     if upstream_broken then
         upstream:close()
@@ -82,8 +92,8 @@ end
 -- Returns the request level ctx with an id
 --
 -- @function xrpc.sdk.get_req_ctx
--- @tparam table xrpc session
--- @tparam string optional ctx id
+-- @tparam table session xrpc session
+-- @tparam string id ctx id
 -- @treturn table the request level ctx
 function _M.get_req_ctx(session, id)
     if not id then
@@ -109,8 +119,8 @@ end
 -- Returns the new router if the stream routes are changed
 --
 -- @function xrpc.sdk.get_router
--- @tparam table xrpc session
--- @tparam string the current router version, should come from the last call
+-- @tparam table session xrpc session
+-- @tparam string version the current router version, should come from the last call
 -- @treturn boolean whether there is a change
 -- @treturn table the new router under the specific protocol
 -- @treturn string the new router version
@@ -151,20 +161,27 @@ end
 -- Set the session's current upstream according to the route's configuration
 --
 -- @function xrpc.sdk.set_upstream
--- @tparam table xrpc session
--- @tparam table the route configuration
+-- @tparam table session xrpc session
+-- @tparam table conf the route configuration
+-- @treturn nil|string error message if present
 function _M.set_upstream(session, conf)
     local up
     if conf.upstream then
         up = conf.upstream
-        -- TODO: support upstream_id
+    else
+        local id = conf.upstream_id
+        up = apisix_upstream.get_by_id(id)
+        if not up then
+            return str_fmt("upstream %s can't be got", id)
+        end
     end
 
-    local key = tostring(conf)
-    core.log.info("set upstream to: ", key)
+    local key = tostring(up)
+    core.log.info("set upstream to: ", key, " conf: ", core.json.delay_encode(up, true))
 
     session._upstream_key = key
     session.upstream_conf = up
+    return nil
 end
 
 

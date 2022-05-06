@@ -1,5 +1,11 @@
 ---
 title: referer-restriction
+keywords:
+  - APISIX
+  - Plugin
+  - Referer restriction
+  - referer-restriction
+description: This document contains information about the Apache APISIX referer-restriction Plugin.
 ---
 
 <!--
@@ -23,24 +29,26 @@ title: referer-restriction
 
 ## Description
 
-The `referer-restriction` can restrict access to a Service or a Route by
-whitelisting/blacklisting request header Referrers.
+The `referer-restriction` Plugin can be used to restrict access to a Service or a Route by whitelisting/blacklisting the `Referer` request header.
 
 ## Attributes
 
-| Name      | Type          | Requirement | Default | Valid | Description                              |
-| --------- | ------------- | ----------- | ------- | ----- | ---------------------------------------- |
-| whitelist | array[string] | optional    |         |       | List of hostname to whitelist. The hostname can be started with `*` as a wildcard |
-| blacklist | array[string] | optional    |         |       | List of hostname to blacklist. The hostname can be started with `*` as a wildcard |
-| message | string | optional    | Your referer host is not allowed | [1, 1024] | Message returned in case access is not allowed. |
-| bypass_missing  | boolean       | optional    | false   |       | Whether to bypass the check when the Referer header is missing or malformed |
+| Name           | Type          | Required | Default                          | Valid values | Description                                                                                       |
+|----------------|---------------|----------|----------------------------------|--------------|---------------------------------------------------------------------------------------------------|
+| whitelist      | array[string] | False    |                                  |              | List of hostnames to whitelist. A hostname can start with `*` for wildcard.                       |
+| blacklist      | array[string] | False    |                                  |              | List of hostnames to blacklist. A hostname can start with `*` for wildcard.                       |
+| message        | string        | False    | Your referer host is not allowed | [1, 1024]    | Message returned when access is not allowed.                                                      |
+| bypass_missing | boolean       | False    | false                            |              | When set to `true`, bypasses the check when the `Referer` request header is missing or malformed. |
 
-One of `whitelist` or `blacklist` must be specified, and they can not work together.
-The message can be user-defined.
+:::info IMPORTANT
 
-## How To Enable
+Only one of `whitelist` or `blacklist` attribute must be specified. They cannot work together.
 
-Creates a route or service object, and enable plugin `referer-restriction`.
+:::
+
+## Enabling the Plugin
+
+You can enable the Plugin on a specific Route or a Service as shown below:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -64,41 +72,48 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+## Example usage
 
-Request with `Referer: http://xx.com/x`:
+Once you have configured the Plugin as shown above, you can test it by setting `Referer: http://xx.com/x`:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'Referer: http://xx.com/x'
+curl http://127.0.0.1:9080/index.html -H 'Referer: http://xx.com/x'
+```
+
+```shell
 HTTP/1.1 200 OK
 ...
 ```
 
-Request with `Referer: http://yy.com/x`:
+Now, if you make a request with `Referer: http://yy.com/x`, the request will be blocked:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'Referer: http://yy.com/x'
+curl http://127.0.0.1:9080/index.html -H 'Referer: http://yy.com/x'
+```
+
+```shell
 HTTP/1.1 403 Forbidden
 ...
 {"message":"Your referer host is not allowed"}
 ```
 
-Request without `Referer`:
+Since we have set `bypass_missing` to `true` a request without the `Referer` header will be successful as the check is skipped:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html
+curl http://127.0.0.1:9080/index.html
+```
+
+```shell
 HTTP/1.1 200 OK
 ...
 ```
 
 ## Disable Plugin
 
-When you want to disable the `referer-restriction` plugin, it is very simple,
-you can delete the corresponding json configuration in the plugin configuration,
-no need to restart the service, it will take effect immediately:
+To disable the `referer-restriction` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},
@@ -110,5 +125,3 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
 }'
 ```
-
-The `referer-restriction` plugin has been disabled now. It works for other plugins.

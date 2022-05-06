@@ -19,7 +19,6 @@ local type       = type
 local abs        = math.abs
 local ngx_time   = ngx.time
 local ngx_re     = require("ngx.re")
-local ngx_req    = ngx.req
 local pairs      = pairs
 local ipairs     = ipairs
 local hmac_sha1  = ngx.hmac_sha1
@@ -209,8 +208,8 @@ end
 local function generate_signature(ctx, secret_key, params)
     local canonical_uri = ctx.var.uri
     local canonical_query_string = ""
-    local request_method = ngx_req.get_method()
-    local args = ngx_req.get_uri_args()
+    local request_method = core.request.get_method()
+    local args = core.request.get_uri_args(ctx)
 
     if canonical_uri == "" then
         canonical_uri = "/"

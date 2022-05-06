@@ -403,7 +403,7 @@ end
 
 
 local function gen_token()
-    local args = ngx.req.get_uri_args()
+    local args = core.request.get_uri_args()
     if not args or not args.key then
         return core.response.exit(400)
     end

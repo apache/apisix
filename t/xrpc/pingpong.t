@@ -212,7 +212,69 @@ failed to connect: connection refused
 
 
 
-=== TEST 8: reset
+=== TEST 8: use short timeout to check upstream's bad response
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        name = "pingpong"
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:1995"] = 1
+                        },
+                        timeout = {
+                            connect = 0.01,
+                            send = 0.009,
+                            read = 0.008,
+                        },
+                        type = "roundrobin"
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 9: bad response
+--- request eval
+"POST /t
+" .
+"pp\x02\x00\x00\x00\x00\x00\x00\x03ABC" x 1
+--- stream_conf_enable
+--- stream_upstream_code
+    local sock = ngx.req.socket(true)
+    sock:settimeout(10)
+    while true do
+        local data = sock:receiveany(4096)
+        if not data then
+            return
+        end
+        sock:send(data:sub(5))
+    end
+--- error_log
+failed to read: timeout
+stream lua tcp socket connect timeout: 10
+lua tcp socket send timeout: 9
+stream lua tcp socket read timeout: 8
+--- log_level: debug
+
+
+
+=== TEST 10: reset
 --- config
     location /t {
         content_by_lua_block {
@@ -244,29 +306,7 @@ passed
 
 
 
-=== TEST 9: bad response
---- request eval
-"POST /t
-" .
-"pp\x02\x00\x00\x00\x00\x00\x00\x03ABC" x 1
---- stream_conf_enable
---- stream_upstream_code
-    local sock = ngx.req.socket(true)
-    sock:settimeout(1100)
-    while true do
-        local data = sock:receiveany(4096)
-        if not data then
-            return
-        end
-        sock:send(data:sub(5))
-    end
---- error_log
-failed to read: timeout
---- wait: 1.1
-
-
-
-=== TEST 10: client stream, N:N
+=== TEST 11: client stream, N:N
 --- request eval
 "POST /t
 " .
@@ -292,7 +332,7 @@ failed to read: timeout
 
 
 
-=== TEST 11: client stream, bad response
+=== TEST 12: client stream, bad response
 --- request eval
 "POST /t
 " .
@@ -321,7 +361,7 @@ RPC is not finished
 
 
 
-=== TEST 12: server stream, heartbeat
+=== TEST 13: server stream, heartbeat
 --- request eval
 "POST /t
 " .
@@ -347,7 +387,7 @@ RPC is not finished
 
 
 
-=== TEST 13: server stream
+=== TEST 14: server stream
 --- request eval
 "POST /t
 " .
@@ -370,7 +410,7 @@ RPC is not finished
 
 
 
-=== TEST 14: superior & subordinate
+=== TEST 15: superior & subordinate
 --- config
     location /t {
         content_by_lua_block {
@@ -495,7 +535,7 @@ passed
 
 
 
-=== TEST 15: hit
+=== TEST 16: hit
 --- request eval
 "POST /t
 " .
@@ -515,7 +555,7 @@ connect to 127.0.0.2:1995 while prereading client data
 
 
 
-=== TEST 16: hit (fallback to superior if not found)
+=== TEST 17: hit (fallback to superior if not found)
 --- request eval
 "POST /t
 " .
@@ -535,7 +575,7 @@ connect to 127.0.0.1:1995 while prereading client data
 
 
 
-=== TEST 17: cache router by version
+=== TEST 18: cache router by version
 --- config
     location /t {
         content_by_lua_block {
@@ -604,4 +644,130 @@ qr/connect to \S+ while prereading client data/
 connect to 127.0.0.1:1995 while prereading client data
 connect to 127.0.0.3:1995 while prereading client data
 connect to 127.0.0.4:1995 while prereading client data
+--- stream_conf_enable
+
+
+
+=== TEST 19: use upstream_id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                {
+                    nodes = {
+                        ["127.0.0.3:1995"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/stream_routes/2',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        superior_id = 1,
+                        conf = {
+                            service = "a"
+                        },
+                        name = "pingpong"
+                    },
+                    upstream_id = 1
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 20: hit
+--- request eval
+"POST /t
+" .
+"pp\x04\x00\x00\x00\x00\x00\x00\x03a\x00\x00\x00ABC"
+--- response_body eval
+"pp\x04\x00\x00\x00\x00\x00\x00\x03a\x00\x00\x00ABC"
+--- grep_error_log eval
+qr/connect to \S+ while prereading client data/
+--- grep_error_log_out
+connect to 127.0.0.3:1995 while prereading client data
+--- stream_conf_enable
+
+
+
+=== TEST 21: cache router by version, with upstream_id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local sock = ngx.socket.tcp()
+            sock:settimeout(1000)
+            local ok, err = sock:connect("127.0.0.1", 1985)
+            if not ok then
+                ngx.log(ngx.ERR, "failed to connect: ", err)
+                return ngx.exit(503)
+            end
+
+            assert(sock:send("pp\x04\x00\x00\x00\x00\x00\x00\x03a\x00\x00\x00ABC"))
+
+            ngx.sleep(0.1)
+
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                {
+                    nodes = {
+                        ["127.0.0.1:1995"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(0.1)
+
+            local s = "pp\x04\x00\x00\x00\x00\x00\x00\x04a\x00\x00\x00ABCD"
+            assert(sock:send(s))
+
+            while true do
+                local data, err = sock:receiveany(4096)
+                if not data then
+                    sock:close()
+                    break
+                end
+                ngx.print(data)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+"pp\x04\x00\x00\x00\x00\x00\x00\x03a\x00\x00\x00ABC" .
+"pp\x04\x00\x00\x00\x00\x00\x00\x04a\x00\x00\x00ABCD"
+--- grep_error_log eval
+qr/connect to \S+ while prereading client data/
+--- grep_error_log_out
+connect to 127.0.0.3:1995 while prereading client data
+connect to 127.0.0.1:1995 while prereading client data
 --- stream_conf_enable

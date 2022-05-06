@@ -1,5 +1,10 @@
 ---
 title: ext-plugin-pre-req
+keywords:
+  - APISIX
+  - Plugin
+  - ext-plugin-pre-req
+description: 本文介绍了关于 Apache APISIX `ext-plugin-pre-req` 插件的基本信息及使用方法。
 ---
 
 <!--
@@ -23,25 +28,30 @@ title: ext-plugin-pre-req
 
 ## 描述
 
-`ext-plugin-pre-req` 在执行大多数内置 Lua 插件执行之前，在 Plugin Runner 内运行特定 External Plugin。
+`ext-plugin-pre-req` 插件用于在执行内置 Lua 插件之前和在 Plugin Runner 内运行特定的 External Plugin。
 
-为了理解什么是 Plugin Runner，请参考 [external plugin](../external-plugin.md) 部分。
+如果你想了解更多关于 External Plugin 的信息，请参考 [External Plugin](../external-plugin.md) 。
 
-External Plugins 执行的结果会影响当前请求的行为。
+:::note
+
+External Plugin 执行的结果会影响当前请求的行为。
+
+:::
 
 ## 属性
 
-| 名称      | 类型          | 必选项 | 默认值    | 有效值                                                                    | 描述                                                                                                                                         |
-| --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| conf     | array        | 可选    |              | [{"name": "ext-plugin-A", "value": "{\"enable\":\"feature\"}"}] |     在 Plugin Runner 内执行的插件列表的配置 |
-| allow_degradation              | boolean  | 可选                                | false       |                                                                     | 当 Plugin Runner 临时不可用时是否允许请求继续。当值设置为 true 时则自动允许请求继续，默认值是 false。|
+| 名称              | 类型    | 必选项 | 默认值  | 有效值                                                           | 描述                                                                              |
+| ----------------- | ------ | ------ | ------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| conf              | array  | 否     |         | [{"name": "ext-plugin-A", "value": "{\"enable\":\"feature\"}"}] | 在 Plugin Runner 内执行的插件列表的配置。                                           |
+| allow_degradation | boolean| 否     | false   | [false, true]                                                    | 当 Plugin Runner 临时不可用时是否允许请求继续，当值设置为 true 时则自动允许请求继续。   |
 
-## 如何启用
+## 启用插件
 
-以下是一个示例，在指定路由中启用插件：
+以下示例展示了如何在指定路由中启用 `ext-plugin-pre-req` 插件：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -61,20 +71,21 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 
 ## 测试插件
 
-使用 `curl` 去测试：
+通过上述命令启用插件后，可以使用如下命令测试插件是否启用成功：
 
 ```shell
 curl -i http://127.0.0.1:9080/index.html
 ```
 
-你会看到配置的 Plugin Runner 将会被触发，同时 `ext-plugin-A` 插件将会被执行。
+在返回结果中可以看到刚刚配置的 Plugin Runner 已经被触发，同时 `ext-plugin-A` 插件也已经被执行。
 
 ## 禁用插件
 
-当你想去掉 ext-plugin-pre-req 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
+当你需要禁用 `ext-plugin-pre-req` 插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {
@@ -85,5 +96,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
-
-现在就已经移除 `ext-plugin-pre-req` 插件了。其他插件的开启和移除也是同样的方法。
