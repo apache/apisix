@@ -89,13 +89,13 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    local hide_header = true
+    local from_header = true
     local key = core.request.header(ctx, conf.header)
 
     if not key then
         local uri_args = core.request.get_uri_args(ctx) or {}
         key = uri_args[conf.query]
-        hide_header = false
+        from_header = false
     end
 
     if not key then
@@ -117,7 +117,7 @@ function _M.rewrite(conf, ctx)
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     if conf.hide_credentials then
-        if hide_header then
+        if from_header then
             core.request.set_header(ctx, conf.header, nil)
         else
             local args = core.request.get_uri_args(ctx)
