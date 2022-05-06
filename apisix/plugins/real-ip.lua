@@ -105,8 +105,9 @@ local function get_addr(conf, ctx)
 
         if conf.recursive and conf.trusted_addresses then
             local split_addrs = {}
-            for str in str_gmatch(addrs, ",\s*") do
-                tb_insert(split_addrs, str)
+            local match_itr = str_gmatch(addrs, "[^,%s*]+")
+            for itr in match_itr do
+                tb_insert(split_addrs, itr)
             end
 
             for i = #split_addrs, 1, -1 do
