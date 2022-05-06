@@ -15,10 +15,13 @@
 -- limitations under the License.
 --
 
-local core      = require("apisix.core")
-local ws_server = require("resty.websocket.server")
-local protoc    = require("protoc")
-local pb        = require("pb")
+local core         = require("apisix.core")
+local ws_server    = require("resty.websocket.server")
+local protoc       = require("protoc")
+local pb           = require("pb")
+local setmetatable = setmetatable
+local pcall        = pcall
+local pairs        = pairs
 
 protoc.reload()
 pb.option("int64_as_string")
