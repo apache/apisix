@@ -498,9 +498,13 @@ local upstream_schema = {
         id = id_schema,
     },
     oneOf = {
-        {required = {"type", "nodes"}},
+        {
+            anyOf = {
+                {required = {"type", "nodes"}},
+                {required = {"scheme", "nodes"}},
+            }
+        },
         {required = {"type", "service_name", "discovery_type"}},
-        {required = {"scheme", "nodes"}}
     },
 }
 
