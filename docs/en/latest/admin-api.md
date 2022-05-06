@@ -21,7 +21,7 @@ title: Admin API
 #
 -->
 
-The Admin API lets users control their deployed Apache APISIX instance. The [architecture design](./terminology/apisix.md) gives an idea about how everything fits together.
+The Admin API lets users control their deployed Apache APISIX instance. The [architecture design](./architecture-design/apisix.md) gives an idea about how everything fits together.
 
 By default, the Admin API listens to port `9080` (`9443` for HTTPS) when APISIX is launched. This can be changed by modifying your configuration file ([conf/config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml)).
 
