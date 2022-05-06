@@ -114,7 +114,7 @@ make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 
 在 Apache APISIX 中有两种不同的方法来实现这一点：
 
-1. 创建一个[Route](architecture-design/route.md)并配置 `vars` 字段：
+1. 创建一个[Route](terminology/route.md)并配置 `vars` 字段：
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
