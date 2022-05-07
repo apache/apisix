@@ -43,7 +43,7 @@ To enable parameter matching in plugin's control API, add `router: 'radixtree_ur
 
 ## Control API Added via Plugins
 
-[Plugins](./architecture-design/plugin.md) can be enabled to add its control API.
+[Plugins](./terminology/plugin.md) can be enabled to add its control API.
 
 Some Plugins have their own control APIs. See the documentation of the specific Plugin to learn more.
 
@@ -210,7 +210,7 @@ Triggers a full garbage collection in the HTTP subsystem.
 
 Introduced in [v3.0](https://github.com/apache/apisix/releases/tag/3.0).
 
-Returns all configured [Routes](./architecture-design/route.md):
+Returns all configured [Routes](./terminology/route.md):
 
 ```json
 [
