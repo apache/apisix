@@ -48,7 +48,7 @@ description: 本篇文档介绍了 Apache APISIX opa 插件的相关信息。
 
 ## 数据定义
 
-### 场景一：APISIX 向 OPA 发送信息
+### APISIX 向 OPA 发送信息
 
 下述示例代码展示了如何通过 APISIX 向 OPA 服务发送数据：
 
@@ -88,7 +88,7 @@ description: 本篇文档介绍了 Apache APISIX opa 插件的相关信息。
 - `var` 包含关于请求连接的基本信息（如 IP、端口、请求时间戳等）；
 - `route`、`service` 和 `consumer` 包含的数据与 APISIX 中存储的数据相同，只有当这些对象上配置了 `opa` 插件时才会发送。
 
-### 场景二：OPA 向 APISIX 发送数据
+### OPA 向 APISIX 返回数据
 
 下述示例代码展示了 OPA 服务对 APISIX 发送请求后的响应数据：
 
