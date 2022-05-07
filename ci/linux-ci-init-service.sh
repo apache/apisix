@@ -24,7 +24,7 @@ docker exec -i apache-apisix_kafka-server1_1 /opt/bitnami/kafka/bin/kafka-topics
 # create messages for test-consumer
 for i in `seq 30`
 do
-    docker exec -i apache-apisix_kafka-server1_1 echo "testmsg$i" | /opt/bitnami/kafka/bin/kafka-console-producer.sh --broker-list kafka-server1:9092 --topic test-consumer
+    docker exec -i apache-apisix_kafka-server1_1 bash -c "echo "testmsg$i" | /opt/bitnami/kafka/bin/kafka-console-producer.sh --broker-list kafka-server1:9092 --topic test-consumer"
 done
 
 # prepare openwhisk env
