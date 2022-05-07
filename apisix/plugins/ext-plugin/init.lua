@@ -777,7 +777,7 @@ local rpc_handlers = {
         core.log.info("recv resp, code: ", code, " body: ", body, " len: ", len)
 
         if code == 0 then
-            -- runner change body only, we should set code.
+            -- runner changes body only, we should set code.
             code = body and res.status or nil
         end
 
