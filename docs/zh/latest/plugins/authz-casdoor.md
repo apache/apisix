@@ -35,18 +35,14 @@ description: 本篇文档介绍了 Apache APISIX auth-casdoor 插件的相关信
 
 | 名称          | 类型   | 必选项 | 描述                                  |
 |---------------|--------|----------|----------------------------------------------|
-| endpoint_addr | string | 是     | Casdoor URL。                           |
-| client_id     | string | 是     | Casdoor 客户端 id。                      |
-| client_secret | string | 是     | Casdoor 客户端密码。                 |
+| endpoint_addr | string | 是     | Casdoor 的 URL。                           |
+| client_id     | string | 是     | Casdoor 的客户端 id。                      |
+| client_secret | string | 是     | Casdoor 的客户端密码。                 |
 | callback_url  | string | 是     | 用于接收状态和代码的回调 URL。 |
 
 :::info IMPORTANT
 
 指定 `endpoint_addr` 和 `callback_url` 属性时不要以 “/” 来结尾。
-
-:::
-
-:::info IMPORTANT
 
 `callback_url` 必须是路由的 URI。具体细节可查看下方示例内容，了解相关配置。
 
@@ -80,9 +76,9 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
 
 ## 测试插件
 
-一旦启用了该插件，访问该路由的新用户首先会经过 `authz-casdoor` 插件的处理，并被重定向到 Casdoor 登录页面。
+一旦启用了该插件，访问该路由的新用户首先会经过 `authz-casdoor` 插件的处理，然后被重定向到 Casdoor 登录页面。
 
-成功登录后，Casdoor 会将该用户重定向到 `callback_url`，并指定 GET 参数的 `code` 和 `state`。该插件还将请求一个访问 Token，并确认用户是否真正登录了。该过程只运行一次，后续请求将不会被此打断。
+成功登录后，Casdoor 会将该用户重定向到 `callback_url`，并指定 GET 参数的 `code` 和 `state`。该插件还会向 Casdoor 请求一个访问 Token，并确认用户是否真正登录了。该过程只运行一次，后续请求将不会被此打断。
 
 上述操作完成后，用户就会被重定向到他们本想访问的原始 URL 页面。
 
@@ -94,9 +90,8 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
-    "uri": "/*",
-    "plugins": {
-    },
+    "uri": "/anything/*",
+    "plugins": {},
     "upstream": {
         "type": "roundrobin",
         "nodes": {

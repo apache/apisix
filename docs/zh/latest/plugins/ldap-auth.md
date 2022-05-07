@@ -29,7 +29,7 @@ description: 本篇文档介绍了 Apache APISIX ldap-auth 插件的相关信息
 
 ## 描述
 
-`ldap-auth` 是用来给路由或服务添加 LDAP 认证的插件，使用 [lualdap](https://lualdap.github.io/lualdap/) 连接 LDAP 服务器。
+`ldap-auth` 插件可用于给路由或服务添加 LDAP 身份认证，该插件使用 [lualdap](https://lualdap.github.io/lualdap/) 连接 LDAP 服务器。
 
 该插件需要与 Consumer 一起配合使用，API 的调用方可以使用 [basic authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) 与 LDAP 服务器进行认证。
 
@@ -39,13 +39,13 @@ Consumer 端：
 
 | 名称    | 类型   | 必选项 | 描述                                                                      |
 | ------- | ------ | -------- | -------------------------------------------------------------------------------- |
-| user_dn | string | 是     | LDAP 客户端的用户可分辨名称，例如：`cn=user01,ou=users,dc=example,dc=org`。 |
+| user_dn | string | 是     | LDAP 客户端的 dn，例如：`cn=user01,ou=users,dc=example,dc=org`。 |
 
 Route 端：
 
 | 名称     | 类型    | 必选项 | 默认值 | 描述                                                            |
 |----------|---------|----------|---------|------------------------------------------------------------------------|
-| base_dn  | string  | 是     |         | LDAP 服务器的基础可分辨名称，例如：`ou=users,dc=example,dc=org`。|
+| base_dn  | string  | 是     |         | LDAP 服务器的 dn，例如：`ou=users,dc=example,dc=org`。|
 | ldap_uri | string  | 是     |         | LDAP 服务器的 URI。                                                |
 | use_tls  | boolean | 否    | true  | 如果设置为 `true` 则表示启用 TLS。                                             |
 | uid      | string  | 否    | cn    | UID 属性。                                                         |

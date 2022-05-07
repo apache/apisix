@@ -37,14 +37,14 @@ description: 本篇文档介绍了 Apache APISIX opa 插件的相关信息。
 |-------------------|---------|----------|---------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | host              | string  | 是     |         |               | OPA 服务的主机地址，例如 `https://localhost:8181`。                                                                                                                   |
 | ssl_verify        | boolean | 否    | true    |               | 当设置为 `true` 时，将验证 SSL 证书。                                                                                                                                          |
-| policy            | string  | 是     |         |               | OPA 政策路径，是 `package` 和 `decision` 配置的组合。当使用高级功能如自定义响应时，你可以省略`decision` 配置。                                                  |
-| timeout           | integer | 否    | 3000ms  | [1, 60000]ms  | HTTP 调用延迟设置。                                                                                                                                                                |
-| keepalive         | boolean | 否    | true    |               | 当设置为 `true` 时，将为多个请求保持连接状态。                                                                                                                               |
+| policy            | string  | 是     |         |               | OPA 策略路径，是 `package` 和 `decision` 配置的组合。当使用高级功能（如自定义响应）时，你可以省略 `decision` 配置。                                                  |
+| timeout           | integer | 否    | 3000ms  | [1, 60000]ms  | 设置 HTTP 调用超时时间。                                                                                                                                                                |
+| keepalive         | boolean | 否    | true    |               | 当设置为 `true` 时，将为多个请求保持连接并处于活动状态。                                                                                                                               |
 | keepalive_timeout | integer | 否    | 60000ms | [1000, ...]ms | 连接断开后的闲置时间。                                                                                                                                                                        |
 | keepalive_pool    | integer | 否    | 5       | [1, ...]ms    | 连接池限制。                                                                                                                                                                    |
 | with_route        | boolean | 否    | false   |               | 当设置为 `true` 时，发送关于当前 Route 的信息。                                                                                                                              |
 | with_service      | boolean | 否    | false   |               | 当设置为 `true` 时，发送关于当前 Service 的信息。                                                                                                                            |
-| with_consumer     | boolean | 否    | false   |               | 当设置为 `true` 时，发送关于当前 Consumer 的信息。注意，这可能会发送敏感信息，如 API 密钥。确保只有在你确定安全的情况下才打开它。 |
+| with_consumer     | boolean | 否    | false   |               | 当设置为 `true` 时，发送关于当前 Consumer 的信息。注意，这可能会发送敏感信息，如 API key。请确保在安全的情况下才打开它。 |
 
 ## 数据定义
 
@@ -86,11 +86,11 @@ description: 本篇文档介绍了 Apache APISIX opa 插件的相关信息。
 - `type` 代表请求类型（如 `http` 或 `stream`）；
 - `request` 则需要在 `type` 为 `http` 时使用，包含基本的请求信息（如 URL、头信息等）；
 - `var` 包含关于请求连接的基本信息（如 IP、端口、请求时间戳等）；
-- `route`、`service` 和 `consumer` 会包含与存储在 APISIX 中相同的数据，只有当 `opa` 插件配置在这些对象上时才会发送。
+- `route`、`service` 和 `consumer` 包含的数据与 APISIX 中存储的数据相同，只有当这些对象上配置了 `opa` 插件时才会发送。
 
 ### 场景二：OPA 向 APISIX 发送数据
 
-下述示例代码展示了如何通过 OPA 服务向 APISIX 发送数据：
+下述示例代码展示了 OPA 服务对 APISIX 发送请求后的响应数据：
 
 ```json
 {
@@ -105,7 +105,7 @@ description: 本篇文档介绍了 Apache APISIX opa 插件的相关信息。
 }
 ```
 
-上述代码响应中释义如下：
+上述响应中的代码释义如下：
 
 - `allow` 配置是必不可少的，它表示请求是否允许通过 APISIX 进行转发；
 - `reason`、`headers` 和 `status_code` 是可选的，只有当你配置一个自定义响应时才会返回这些选项信息，具体使用方法可查看后续测试用例。
@@ -137,7 +137,7 @@ allow {
 }'
 ```
 
-然后在一个特定的 Route 上配置 `opa` 插件：
+然后在指定路由上配置 `opa` 插件：
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
@@ -225,7 +225,7 @@ curl -i -X GET 127.0.0.1:9080/get
 HTTP/1.1 200 OK
 ```
 
-这时如果你发出一个失败请求，将会收到来自 OPA 服务的自定义响应反馈，如下所示：
+此时如果你发出一个失败请求，将会收到来自 OPA 服务的自定义响应反馈，如下所示：
 
 ```shell
 curl -i -X POST 127.0.0.1:9080/post
@@ -253,7 +253,7 @@ allow = false
 reason = input'
 ```
 
-现在就可以在 Route 上配置插件来发送 APISIX 数据：
+现在就可以在路由上配置插件来发送 APISIX 数据：
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
@@ -277,10 +277,13 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
 }'
 ```
 
-此时如果你提出一个请求，则可以通过自定义响应看到来自 Route 的数据：
+此时如果你提出一个请求，则可以通过自定义响应看到来自路由的数据：
 
 ```shell
 curl -X GET 127.0.0.1:9080/get
+```
+
+```shell
 {
     "type": "http",
     "request": {
