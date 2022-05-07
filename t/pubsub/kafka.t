@@ -170,7 +170,7 @@ failed to initialize pub-sub module, err: bad "upgrade" request header: nil
                     ngx.say("failed to decode the frame: ", err)
                     return
                 end
-                
+
                 if data.error_resp then
                     ngx.say(data.sequence..data.error_resp.message)
                 end
