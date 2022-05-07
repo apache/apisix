@@ -43,11 +43,11 @@ For Consumer:
 
 For Route:
 
-| Name   | Type   | Requirement | Default | Valid | Description                                                       |
-|--------|--------|-------------|---------|-------|-------------------------------------------------------------------|
-| header | string | optional    | apikey  |       | The header to get the key from.                                   |
-| query  | string | optional    | apikey  |       | The query string to get the key from. Lower priority than header. |
-| hide_credentials   | bool | optional    | false        |       | When set to `false` passes the request header containing authentication information to the Upstream. |
+| Name   | Type   | Requirement | Default | Valid | Description                                                                                                                                                                                                                                                                   |
+|--------|--------|-------------|---------|-------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| header | string | optional    | apikey  |       | The header to get the key from.                                                                                                                                                                                                                                               |
+| query  | string | optional    | apikey  |       | The query string to get the key from. Lower priority than header.                                                                                                                                                                                                             |
+| hide_credentials   | bool | optional    | false        |       | Apache APISIX will pass the request header or query string that contains the authentication information to the Upstream if `hide_credentials` is `false`. Otherwise the authentication information will be removed before proxying.|
 
 ## Enabling the Plugin
 
