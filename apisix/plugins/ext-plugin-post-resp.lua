@@ -101,6 +101,35 @@ local function get_response(ctx, http_obj)
 end
 
 
+local function send_response(res, code)
+    ngx.status = code or res.status
+
+    local reader = res.body_reader
+    repeat
+        local chunk, ok, read_err, print_err, flush_err
+        -- TODO: HEAD or 304
+        chunk, read_err = reader()
+        if read_err then
+            return "read response failed: ".. (read_err or "")
+        end
+
+        if chunk then
+            ok, print_err = ngx_print(chunk)
+            if not ok then
+                return "output response failed: ".. (print_err or "")
+            end
+            ok, flush_err = ngx_flush(true)
+            if not ok then
+                core.log.warn("flush response failed: ", flush_err)
+            end
+        end
+    until not chunk
+
+    return nil
+end
+
+
+
 function _M.check_schema(conf)
     return core.schema.check(_M.schema, conf)
 end
@@ -126,37 +155,17 @@ function _M.before_proxy(conf, ctx)
         return code, body
     end
     core.log.info("ext-plugin will send response")
+
     -- send origin response, status maybe changed.
-    ngx.status = code or res.status
+    err = send_response(res, code)
+    close(http_obj)
 
-    local reader = res.body_reader
-    repeat
-        local chunk, ok, read_err, print_err, flush_err
-        -- TODO: HEAD or 304
-        chunk, read_err = reader()
-        if read_err then
-            core.log.error("read response failed: ", read_err)
-            close(http_obj)
-            return 502
-        end
-
-        if chunk then
-            ok, print_err = ngx_print(chunk)
-            if not ok then
-                core.log.error("output response failed: ", print_err)
-                close(http_obj)
-                return 502
-            end
-            ok, flush_err = ngx_flush(true)
-            if not ok then
-                core.log.warn("flush response failed: ", flush_err)
-            end
-        end
-    until not chunk
+    if err then
+        core.log.error(err)
+        return ngx.headers_sent and nil or 502
+    end
 
     core.log.info("ext-plugin send response succefully")
-
-    close(http_obj)
 end
 
 
