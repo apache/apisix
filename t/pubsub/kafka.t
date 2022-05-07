@@ -191,4 +191,4 @@ failed to initialize pub-sub module, err: bad "upgrade" request header: nil
 1failed to fetch message, topic: not-exist, partition: 0, err: not found topic
 2offset: 0
 3offset: 30
-4offset: 14 msg: testmsg14
+4offset: 14 msg: testmsg15
