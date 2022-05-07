@@ -101,6 +101,11 @@ apisix:
       role: viewer
 
   delete_uri_tail_slash: false    # delete the '/' at the end of the URI
+  # The URI normalization in servlet is a little different from the RFC's.
+  # See https://github.com/jakartaee/servlet/blob/master/spec/src/main/asciidoc/servlet-spec-body.adoc#352-uri-path-canonicalization,
+  # which is used under Tomcat.
+  # Turn this option on if you want to be compatible with servlet when matching URI path.
+  normalize_uri_like_servlet: false
   router:
     http: radixtree_uri         # radixtree_uri: match route by uri(base on radixtree)
                                   # radixtree_host_uri: match route by host + uri(base on radixtree)
