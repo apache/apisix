@@ -549,11 +549,7 @@ function _M.http_access_phase()
     end
 
     -- load balancer is not required by kafka upstream
-    if api_ctx.matched_upstream.scheme == "kafka" then
-        if not api_ctx.kafka_consumer_enabled then
-            core.log.error("need to configure the kafka-consumer plugin for kafka upstream")
-            return core.response.exit(501)
-        end
+    if api_ctx.matched_upstream and api_ctx.matched_upstream.scheme == "kafka" then
         return kafka_access_phase(api_ctx)
     end
 
