@@ -45,6 +45,9 @@ __DATA__
                 {enable_sasl = true, sasl_username = "user", sasl_password = "pwd"},
                 {enable_sasl = false},
                 {enable_sasl = true},
+                {enable_sasl = true, sasl_username = "user"},
+                {enable_sasl = true, sasl_username = 123, sasl_password = "123"},
+                {enable_sasl = true, sasl_username = "123", sasl_password = 123},
             }
             local plugin = require("apisix.plugins.kafka-consumer")
 
@@ -58,4 +61,7 @@ __DATA__
 done
 done
 done
-done
+need to set sasl username when enabling kafka sasl authentication
+need to set sasl password when enabling kafka sasl authentication
+property "sasl_username" validation failed: wrong type: expected string, got number
+property "sasl_password" validation failed: wrong type: expected string, got number

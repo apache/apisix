@@ -45,6 +45,15 @@ local _M = {
 
 
 function _M.check_schema(conf)
+    if conf.enable_sasl then
+        if not conf.sasl_username or conf.sasl_username == "" then
+            return false, "need to set sasl username when enabling kafka sasl authentication"
+        end
+        if not conf.sasl_password or conf.sasl_password == "" then
+            return false, "need to set sasl password when enabling kafka sasl authentication"
+        end
+    end
+
     return core.schema.check(schema, conf)
 end
 
