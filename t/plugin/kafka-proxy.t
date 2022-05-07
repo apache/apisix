@@ -49,7 +49,7 @@ __DATA__
                 {enable_sasl = true, sasl_username = 123, sasl_password = "123"},
                 {enable_sasl = true, sasl_username = "123", sasl_password = 123},
             }
-            local plugin = require("apisix.plugins.kafka-consumer")
+            local plugin = require("apisix.plugins.kafka-proxy")
 
             for _, case in ipairs(test_cases) do
                 local ok, err = plugin.check_schema(case)

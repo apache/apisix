@@ -39,7 +39,7 @@ local schema = {
 local _M = {
     version = 0.1,
     priority = 508,
-    name = "kafka-consumer",
+    name = "kafka-proxy",
     schema = schema,
 }
 
