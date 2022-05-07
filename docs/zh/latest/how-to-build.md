@@ -37,7 +37,7 @@ import TabItem from '@theme/TabItem';
 
 APISIX 使用 [etcd](https://github.com/etcd-io/etcd) 作为配置中心，来保存和同步配置。在安装 APISIX 之前，你需要在你的主机上安装 etcd。
 
-如果你在安装 APISIX 时选择 Docker 或 Hlem 安装，etcd 将会自动安装。如果你选择其他方法或者需要手动安装 APISIX，请参考以下步骤安装 etcd。
+如果你在安装 APISIX 时选择 Docker 或 Hlem 安装，etcd 将会自动安装。如果你选择其他方法或者需要手动安装 APISIX，请参考以下步骤安装 etcd：
 
 <Tabs
   groupId="os"
@@ -136,7 +136,7 @@ helm install apisix apisix/apisix --create-namespace  --namespace apisix
 
 <TabItem value="rpm">
 
-该安装方法适用于 CentOS 7 和 Centos 8。
+该安装方法适用于 CentOS 7 和 CentOS 8。
 
 ### 通过 RPM 仓库安装
 
@@ -221,7 +221,7 @@ apisix:
   admin_key
     -
       name: "admin"
-      key: newsupersecurekey
+      key: newsupersecurekey  # 请修改 key 的值
       role: admin
 ```
 
@@ -233,7 +233,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes?api_key=newsupersecurekey -i
 
 ### 为 APISIX 添加 systemd 配置文件
 
-如果你是通过 RPM 包安装 Apache APISIX，配置文件已经自动安装，你可以直接运行以下命令：
+如果你是通过 RPM 包安装 APISIX，配置文件已经自动安装，你可以直接使用以下命令：
 
 ```shell
 systemctl start apisix
