@@ -41,12 +41,7 @@ local function include_req_headers(ctx)
 end
 
 
-local function get_http_obj(ctx)
-    return http.new()
-end
-
-
-local function close(ctx, http_obj)
+local function close(http_obj)
     -- TODO: keepalive
     local ok, err = http_obj:close()
     if not ok then
@@ -112,11 +107,11 @@ end
 
 
 function _M.before_proxy(conf, ctx)
-    local http_obj = get_http_obj(ctx)
+    local http_obj = http.new()
     local res, err = get_response(ctx, http_obj)
     if not res or err then
         core.log.error("failed to request: ", err or "")
-        close(ctx, http_obj)
+        close(http_obj)
         return 502
     end
     ctx.runner_ext_response = res
@@ -126,8 +121,8 @@ function _M.before_proxy(conf, ctx)
 
     local code, body = ext.communicate(conf, ctx, name, constants.RPC_HTTP_RESP_CALL)
     if body then
-        -- if body the body is changed, the code will be setc
-        close(ctx, http_obj)
+        close(http_obj)
+        -- if the body is changed, the code will be set.
         return code, body
     end
     core.log.info("ext-plugin will send response")
@@ -141,7 +136,7 @@ function _M.before_proxy(conf, ctx)
         chunk, read_err = reader()
         if read_err then
             core.log.error("read response failed: ", read_err)
-            close(ctx, http_obj)
+            close(http_obj)
             return 502
         end
 
@@ -149,7 +144,7 @@ function _M.before_proxy(conf, ctx)
             ok, print_err = ngx_print(chunk)
             if not ok then
                 core.log.error("output response failed: ", print_err)
-                close(ctx, http_obj)
+                close(http_obj)
                 return 502
             end
             ok, flush_err = ngx_flush(true)
@@ -161,7 +156,7 @@ function _M.before_proxy(conf, ctx)
 
     core.log.info("ext-plugin send response succefully")
 
-    close(ctx, http_obj)
+    close(http_obj)
 end
 
 
