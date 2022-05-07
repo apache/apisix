@@ -59,8 +59,6 @@ end
 
 
 function _M.access(conf, ctx)
-    ctx.kafka_consumer_plugin_enabled = true
-
     -- write kafka-related configuration
     ctx.kafka_consumer_enable_sasl = conf.enable_sasl
     ctx.kafka_consumer_sasl_username = conf.sasl_username
