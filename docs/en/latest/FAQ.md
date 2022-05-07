@@ -111,7 +111,7 @@ Let's take an example query `foo.com/product/index.html?id=204&page=2` and consi
 
 There are two different ways to achieve this in Apache APISIX:
 
-1. Using the `vars` field in a [Route](architecture-design/route.md):
+1. Using the `vars` field in a [Route](terminology/route.md):
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

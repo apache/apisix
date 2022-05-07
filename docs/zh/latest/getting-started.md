@@ -134,7 +134,7 @@ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335
 
 Apache APISIX 提供了强大的 [Admin API](./admin-api.md) 和 [Dashboard](https://github.com/apache/apisix-dashboard) 可供我们使用。在本文中，我们使用 Admin API 来做演示。
 
-我们可以创建一个 [Route](./architecture-design/route.md) 并与上游服务（通常也被称为 [Upstream](./architecture-design/upstream.md) 或后端服务）绑定，当一个 `请求（Request）` 到达 Apache APISIX 时，Apache APISIX 就会明白这个请求应该转发到哪个上游服务中。
+我们可以创建一个 [Route](./terminology/route.md) 并与上游服务（通常也被称为 [Upstream](./terminology/upstream.md) 或后端服务）绑定，当一个 `请求（Request）` 到达 Apache APISIX 时，Apache APISIX 就会明白这个请求应该转发到哪个上游服务中。
 
 因为我们为 Route 对象配置了匹配规则，所以 Apache APISIX 可以将请求转发到对应的上游服务。以下代码会创建一个示例 Route 配置：
 
@@ -194,7 +194,7 @@ curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f0343
 -->
 
 :::note 注意
-创建上游服务实际上并不是必需的，因为我们可以使用 [插件](./architecture-design/plugin.md) 拦截请求，然后直接响应。但在本指南中，我们假设需要设置至少一个上游服务。
+创建上游服务实际上并不是必需的，因为我们可以使用 [插件](./terminology/plugin.md) 拦截请求，然后直接响应。但在本指南中，我们假设需要设置至少一个上游服务。
 :::
 
 ### 绑定路由与上游服务
@@ -228,9 +228,9 @@ curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin
 
 我们在第二步中创建的路由是公共的，只要知道 Apache APISIX 对外暴露的地址，**任何人** 都可以访问这个上游服务，这种访问方式没有保护措施，存在一定的安全隐患。在实际应用场景中，我们需要为路由添加身份验证。
 
-现在我们希望只有特定的用户 `John` 可以访问这个上游服务，需要使用 [消费者（Consumer）](./architecture-design/consumer.md) 和 [插件（Plugin）](./architecture-design/plugin.md) 来实现身份验证。
+现在我们希望只有特定的用户 `John` 可以访问这个上游服务，需要使用 [消费者（Consumer）](./terminology/consumer.md) 和 [插件（Plugin）](./terminology/plugin.md) 来实现身份验证。
 
-首先，让我们用 [key-auth](./plugins/key-auth.md) 插件创建一个 [消费者（Consumer）](./architecture-design/consumer.md) `John`，我们需要提供一个指定的密钥：
+首先，让我们用 [key-auth](./plugins/key-auth.md) 插件创建一个 [消费者（Consumer）](./terminology/consumer.md) `John`，我们需要提供一个指定的密钥：
 
 ```bash
 curl "http://127.0.0.1:9080/apisix/admin/consumers" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '

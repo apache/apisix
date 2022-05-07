@@ -23,7 +23,7 @@ title: Admin API
 
 ## 描述
 
-Admin API 是为 Apache APISIX 服务的一组 API，我们可以将参数传递给 Admin API 以控制 APISIX 节点。更好地了解其工作原理，请参阅 [architecture-design](./architecture-design/apisix.md) 中的文档。
+Admin API 是为 Apache APISIX 服务的一组 API，我们可以将参数传递给 Admin API 以控制 APISIX 节点。更好地了解其工作原理，请参阅 [Architecture Design](./architecture-design/apisix.md) 中的文档。
 
 启动 Apache APISIX 时，默认情况下 Admin API 将监听 `9080` 端口（HTTPS 的 `9443` 端口）。您可以通过修改 [conf/config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml) 文件来改变默认监听的端口。
 
@@ -59,14 +59,14 @@ Admin API 是为 Apache APISIX 服务的一组 API，我们可以将参数传递
 
 | 名字             | 可选项                              | 类型     | 说明                                                                                                                                                                                                                                                                                    | 示例                                                 |
 | ---------------- | ---------------------------------- | -------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| ---------------------------------------------------- |
-| uri              | 必选，不能与 `uris` 一起使用          | 匹配规则 | 除了如 `/foo/bar`、`/foo/gloo` 这种全量匹配外，使用不同 [Router](architecture-design/router.md) 还允许更高级匹配，更多见 [Router](architecture-design/router.md)。                                                                                                                                                 | "/hello"                                             |
+| uri              | 必选，不能与 `uris` 一起使用          | 匹配规则 | 除了如 `/foo/bar`、`/foo/gloo` 这种全量匹配外，使用不同 [Router](terminology/router.md) 还允许更高级匹配，更多见 [Router](terminology/router.md)。                                                                                                                                                 | "/hello"                                             |
 | uris             | 必选，不能与 `uri` 一起使用           | 匹配规则 | 非空数组形式，可以匹配多个 `uri`                                                                                                                                                                                                                                                                   | ["/hello", "/world"]                                 |
-| plugins          | 可选                               | Plugin   | 详见 [Plugin](architecture-design/plugin.md)                                                                                                                                                                                                                                            |                                                      |
-| script           | 可选                               | Script   | 详见 [Script](architecture-design/script.md)                                                                                                                                                                                                                                            |                                                      |
-| upstream         | 可选                               | Upstream | 启用的 Upstream 配置，详见 [Upstream](architecture-design/upstream.md)                                                                                                                                                                                                                        |                                                      |
-| upstream_id      | 可选                               | Upstream | 启用的 upstream id，详见 [Upstream](architecture-design/upstream.md)                                                                                                                                                                                                                        |                                                      |
-| service_id       | 可选                               | Service  | 绑定的 Service 配置，详见 [Service](architecture-design/service.md)                                                                                                                                                                                                                           |                                                      |
-| plugin_config_id | 可选，无法跟 script 一起配置          | Plugin   | 绑定的 Plugin config 配置，详见 [Plugin config](architecture-design/plugin-config.md)                                                                                                                                                                                                         |                                                      |
+| plugins          | 可选                               | Plugin   | 详见 [Plugin](terminology/plugin.md)                                                                                                                                                                                                                                            |                                                      |
+| script           | 可选                               | Script   | 详见 [Script](terminology/script.md)                                                                                                                                                                                                                                            |                                                      |
+| upstream         | 可选                               | Upstream | 启用的 Upstream 配置，详见 [Upstream](terminology/upstream.md)                                                                                                                                                                                                                        |                                                      |
+| upstream_id      | 可选                               | Upstream | 启用的 upstream id，详见 [Upstream](terminology/upstream.md)                                                                                                                                                                                                                        |                                                      |
+| service_id       | 可选                               | Service  | 绑定的 Service 配置，详见 [Service](terminology/service.md)                                                                                                                                                                                                                           |                                                      |
+| plugin_config_id | 可选，无法跟 script 一起配置          | Plugin   | 绑定的 Plugin config 配置，详见 [Plugin config](terminology/plugin-config.md)                                                                                                                                                                                                         |                                                      |
 | name             | 可选                               | 辅助     | 标识路由名称                                                                                                                                                                                                                                                                                | route-xxxx                                           |
 | desc             | 可选                               | 辅助     | 标识描述、使用场景等。                                                                                                                                                                                                                                                                           | 路由 xxxx                                            |
 | host             | 可选，不能与 `hosts` 一起使用         | 匹配规则 | 当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`。                                                                                                                                                                                                                                            | "foo.com"                                            |
@@ -303,9 +303,9 @@ HTTP/1.1 200 OK
 
 | 名字             | 可选项                             | 类型     | 说明                                                                   | 示例                                             |
 | ---------------- | ---------------------------------- | -------- | ---------------------------------------------------------------------- | ------------------------------------------------ |
-| plugins          | 可选                               | Plugin   | 详见 [Plugin](architecture-design/plugin.md)                           |                                                  |
-| upstream         | upstream 或 upstream_id 两个选一个 | Upstream | 启用的 Upstream 配置，详见 [Upstream](architecture-design/upstream.md) |                                                  |
-| upstream_id      | upstream 或 upstream_id 两个选一个 | Upstream | 启用的 upstream id，详见 [Upstream](architecture-design/upstream.md)   |                                                  |
+| plugins          | 可选                               | Plugin   | 详见 [Plugin](terminology/plugin.md)                           |                                                  |
+| upstream         | upstream 或 upstream_id 两个选一个 | Upstream | 启用的 Upstream 配置，详见 [Upstream](terminology/upstream.md) |                                                  |
+| upstream_id      | upstream 或 upstream_id 两个选一个 | Upstream | 启用的 upstream id，详见 [Upstream](terminology/upstream.md)   |                                                  |
 | name             | 可选                               | 辅助     | 标识服务名称。                                                         |                                             |
 | desc             | 可选                               | 辅助     | 服务描述、使用场景等。                                                 |                                                  |
 | labels           | 可选                               | 匹配规则 | 标识附加属性的键值对                                                   | {"version":"v2","build":"16","env":"production"} |
@@ -837,7 +837,7 @@ ssl 对象 json 配置内容：
 
 | 名字        | 可选项 | 类型   | 说明                                          | 示例       |
 | ----------- | ------ | ------ | --------------------------------------------- | ---------- |
-| plugins     | 必需   | Plugin | 详见 [Plugin](architecture-design/plugin.md)  |            |
+| plugins     | 必需   | Plugin | 详见 [Plugin](terminology/plugin.md)  |            |
 | create_time | 可选   | 辅助   | 单位为秒的 epoch 时间戳，如果不指定则自动创建 | 1602883670 |
 | update_time | 可选   | 辅助   | 单位为秒的 epoch 时间戳，如果不指定则自动创建 | 1602883670 |
 
@@ -864,7 +864,7 @@ ssl 对象 json 配置内容：
 
 | 名字      | 可选项   | 类型 | 说明        | 示例 |
 |---------|---------|----|-----------|----|
-|plugins  | 必需 |Plugin| 详见 [Plugin](architecture-design/plugin.md) ||
+|plugins  | 必需 |Plugin| 详见 [Plugin](terminology/plugin.md) ||
 |desc     | 可选 | 辅助 | 标识描述、使用场景等 |customer xxxx|
 |labels   | 可选 | 辅助 | 标识附加属性的键值对 |{"version":"v2","build":"16","env":"production"}|
 |create_time| 可选 | 辅助 | 单位为秒的 epoch 时间戳，如果不指定则自动创建 |1602883670|
@@ -973,8 +973,8 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY:�
 
 | 名字             | 可选项 | 类型     | 说明  | 示例 |
 | ---------------- | ------| -------- | ------| -----|
-| upstream | 可选 | Upstream | 启用的 Upstream 配置，详见 [Upstream](architecture-design/upstream.md) |  |
-| upstream_id | 可选 | Upstream | 启用的 upstream id，详见 [Upstream](architecture-design/upstream.md) |  |
+| upstream | 可选 | Upstream | 启用的 Upstream 配置，详见 [Upstream](terminology/upstream.md) |  |
+| upstream_id | 可选 | Upstream | 启用的 upstream id，详见 [Upstream](terminology/upstream.md) |  |
 | remote_addr      | 可选  | IP/CIDR  | 过滤选项：如果客户端 IP 匹配，则转发到上游 | "127.0.0.1/32" 或 "127.0.0.1" |
 | server_addr      | 可选  | IP/CIDR  | 过滤选项：如果 APISIX 服务器 IP 与 server_addr 匹配，则转发到上游 | "127.0.0.1/32" 或 "127.0.0.1"  |
 | server_port      | 可选  | 整数     | 过滤选项：如果 APISIX 服务器 port 与 server_port 匹配，则转发到上游 | 9090  |
