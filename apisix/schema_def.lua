@@ -411,10 +411,7 @@ local upstream_schema = {
                     description = "Turn on server certificate verification",
                 },
             },
-            anyOf = {
-                {required = {"client_cert", "client_key"}},
-                {required = {"verify"}},
-            },
+            required = {"client_cert", "client_key"}
         },
         keepalive_pool = {
             type = "object",
