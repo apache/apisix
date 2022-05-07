@@ -74,8 +74,7 @@ local function put_req_ctx(session, ctx)
 end
 
 
-local function log_filter(session, ctx)
-    local logger = session._route.protocol.logger
+local function filter_logger(ctx, logger)
     if not logger or not logger.filter or #logger.filter == 0 then
         return false
     end
@@ -89,20 +88,17 @@ local function log_filter(session, ctx)
 end
 
 
-local function run_log_plugin(session, ctx)
-    local logger = session._route.protocol.logger
-
+local function run_log_plugin(ctx, logger)
     local pkg_name = "apisix.stream.plugins." .. logger.name
     local ok, plugin = pcall(require, pkg_name)
-
-    core.ctx.set_vars_meta(ctx)
-    ctx.conf_id = tostring(logger.conf)
-    ctx.conf_type = "xrpc-logger"
-
     if not ok then
         core.log.error("failed to load plugin [", plugin, "] err: ", plugin)
         return
     end
+
+    core.ctx.set_vars_meta(ctx)
+    ctx.conf_id = tostring(logger.conf)
+    ctx.conf_type = "xrpc-logger"
 
     local log_func = plugin.log
     if log_func then
@@ -114,14 +110,18 @@ end
 local function finish_req(protocol, session, ctx)
     ctx._rpc_end_time = ngx_now()
 
-    local matched = log_filter(session, ctx)
-    core.log.info("log filter result: ", matched)
-
-    if matched then
-        protocol.log(session, ctx)
-        run_log_plugin(session, ctx)
+    local loggers = session._route.protocol.logger
+    if loggers and #loggers > 0 then
+        for _, logger in ipairs(loggers) do
+            local matched = filter_logger(ctx, logger)
+            core.log.info("log filter: ", logger.name, " filter result: ", matched)
+            if matched then
+                run_log_plugin(ctx, logger)
+            end
+        end
     end
 
+    protocol.log(session, ctx)
     put_req_ctx(session, ctx)
 end
 

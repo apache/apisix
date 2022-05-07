@@ -808,22 +808,24 @@ local xrpc_protocol_schema = {
             type = "object",
         },
         logger = {
-            type = "object",
-            properties = {
-                name = {
-                    type = "string",
+            type = "array",
+            items = {
+                properties = {
+                    name = {
+                        type = "string",
+                    },
+                    filter = {
+                        description = "log filter rules",
+                        type = "array",
+                    },
+                    conf = {
+                        description = "logger plugin configuration",
+                        type = "object",
+                    },
                 },
-                filter = {
-                    description = "log filter rules",
-                    type = "array",
+                dependencies = {
+                    name = {"filter", "conf"},
                 },
-                conf = {
-                    description = "logger plugin configuration",
-                    type = "object",
-                },
-            },
-            dependencies = {
-                name = {"filter", "conf"},
             },
         },
 

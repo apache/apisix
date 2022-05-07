@@ -165,11 +165,13 @@ stream lua tcp socket read timeout: 60000
                     protocol = {
                         name = "pingpong",
                         logger = {
-                            name = "syslog",
-                            filter = {
-                                {}
-                            },
-                            conf = {}
+                            {
+                                name = "syslog",
+                                filter = {
+                                    {}
+                                },
+                                conf = {}
+                            }
                         }
                     },
                     upstream = {
@@ -215,11 +217,13 @@ failed to validate the 'filter' expression: rule too short
                     protocol = {
                         name = "pingpong",
                         logger = {
-                            name = "syslog",
-                            filter = {
-                                {"len", ">", 10}
-                            },
-                            conf = {}
+                            {
+                                name = "syslog",
+                                filter = {
+                                    {"len", ">", 10}
+                                },
+                                conf = {}
+                            }
                         }
                     },
                     upstream = {
@@ -265,11 +269,13 @@ call pingpong's log
                     protocol = {
                         name = "pingpong",
                         logger = {
-                            name = "syslog",
-                            filter = {
-                                {"len", "<", 10}
-                            },
-                            conf = {}
+                            {
+                                name = "syslog",
+                                filter = {
+                                    {"len", "<", 10}
+                                },
+                                conf = {}
+                            }
                         }
                     },
                     upstream = {
@@ -299,8 +305,8 @@ passed
 " .
 "pp\x02\x00\x00\x00\x00\x00\x00\x03ABC"
 --- stream_conf_enable
---- no_error_log
-call pingpong's log
+--- error_log
+log filter: syslog filter result: false
 
 
 
@@ -315,12 +321,14 @@ call pingpong's log
                     protocol = {
                         name = "pingpong",
                         logger = {
-                            name = "syslog",
-                            filter = {
-                                {"len", ">", 12},
-                                {"len", "<", 14}
-                            },
-                            conf = {}
+                            {
+                                name = "syslog",
+                                filter = {
+                                    {"len", ">", 12},
+                                    {"len", "<", 14}
+                                },
+                                conf = {}
+                            }
                         }
                     },
                     upstream = {
@@ -366,12 +374,14 @@ call pingpong's log
                     protocol = {
                         name = "pingpong",
                         logger = {
-                            name = "syslog",
-                            filter = {
-                                {"len", "<", 10},
-                                {"len", ">", 12}
-                            },
-                            conf = {}
+                            {
+                                name = "syslog",
+                                filter = {
+                                    {"len", "<", 10},
+                                    {"len", ">", 12}
+                                },
+                                conf = {}
+                            }
                         }
                     },
                     upstream = {
@@ -401,8 +411,8 @@ passed
 " .
 "pp\x02\x00\x00\x00\x00\x00\x00\x03ABC"
 --- stream_conf_enable
---- no_error_log
-call pingpong's log
+--- error_log
+log filter: syslog filter result: false
 
 
 
@@ -447,16 +457,18 @@ passed
                     protocol = {
                         name = "pingpong",
                         logger = {
-                            name = "syslog",
-                            filter = {
-                                {"len", ">", 10}
-                            },
-                            conf = {
-                                host = "127.0.0.1",
-                                port = 8125,
-                                sock_type = "udp",
-                                batch_max_size = 1,
-                                flush_limit = 1
+                            {
+                                name = "syslog",
+                                filter = {
+                                    {"len", ">", 10}
+                                },
+                                conf = {
+                                    host = "127.0.0.1",
+                                    port = 8125,
+                                    sock_type = "udp",
+                                    batch_max_size = 1,
+                                    flush_limit = 1
+                                }
                             }
                         }
                     },
@@ -505,15 +517,17 @@ qr/message received:.*\"client_ip\\"\:\\"127.0.0.1\\"/
                     protocol = {
                         name = "pingpong",
                         logger = {
-                            name = "syslog",
-                            filter = {
-                                {"len", ">", 10}
-                            },
-                            conf = {
-                                host = "127.0.0.1",
-                                port = 5044,
-                                batch_max_size = 1,
-                                flush_limit = 1
+                            {
+                                name = "syslog",
+                                filter = {
+                                    {"len", ">", 10}
+                                },
+                                conf = {
+                                    host = "127.0.0.1",
+                                    port = 5044,
+                                    batch_max_size = 1,
+                                    flush_limit = 1
+                                }
                             }
                         }
                     },
@@ -577,14 +591,16 @@ unlock with key xrpc-logger#table
                     protocol = {
                         name = "pingpong",
                         logger = {
-                            name = "syslog",
-                            filter = {
-                                {"len", ">", 10}
-                            },
-                            conf = {
-                                host = "127.0.0.1",
-                                port = 5044,
-                                batch_max_size = 1
+                            {
+                                name = "syslog",
+                                filter = {
+                                    {"len", ">", 10}
+                                },
+                                conf = {
+                                    host = "127.0.0.1",
+                                    port = 5044,
+                                    batch_max_size = 1
+                                }
                             }
                         }
                     },
@@ -623,14 +639,16 @@ unlock with key xrpc-logger#table
                     protocol = {
                         name = "pingpong",
                         logger = {
-                            name = "syslog",
-                            filter = {
-                                {"len", ">", 10}
-                            },
-                            conf = {
-                                host = "127.0.0.1",
-                                port = 5045,
-                                batch_max_size = 1
+                            {
+                                name = "syslog",
+                                filter = {
+                                    {"len", ">", 10}
+                                },
+                                conf = {
+                                    host = "127.0.0.1",
+                                    port = 5045,
+                                    batch_max_size = 1
+                                }
                             }
                         }
                     },
