@@ -1,11 +1,11 @@
 ---
-title: opa
+title: Open Policy Agent (OPA)
 keywords:
   - APISIX
   - Plugin
   - Open Policy Agent
   - opa
-description: 本篇文档介绍了 Apache APISIX opa 插件的相关信息。
+description: 本篇文档介绍了 Apache APISIX 通过 OPA 插件与 Open Policy Agent 对接的相关信息。
 ---
 
 <!--

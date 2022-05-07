@@ -66,7 +66,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-然后就可以在指定 Route 或 Service 中启用该插件，具体代码如下：
+然后就可以在指定路由或服务中启用该插件，具体代码如下：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
