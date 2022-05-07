@@ -23,6 +23,7 @@ local tb_insert = table.insert
 local ipairs = ipairs
 local type = type
 
+local matcher
 
 local schema = {
     type = "object",
@@ -78,11 +79,11 @@ local function addr_match(conf, addr)
         return false
     end
 
-    if not conf.matcher then
-        conf.matcher = core.ip.create_ip_matcher(conf.trusted_addresses)
+    if not matcher then
+        matcher = core.ip.create_ip_matcher(conf.trusted_addresses)
     end
 
-    return conf.matcher:match(addr)
+    return matcher:match(addr)
 end
 
 
