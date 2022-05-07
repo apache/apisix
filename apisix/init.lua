@@ -285,7 +285,6 @@ local function kafka_access_phase(api_ctx)
     end
 
     local up_nodes = api_ctx.matched_upstream.nodes
-    local up_tls = api_ctx.matched_upstream.tls
 
     -- kafka client broker-related configuration
     local broker_list = {}
@@ -306,10 +305,10 @@ local function kafka_access_phase(api_ctx)
 
     -- kafka client socket-related configuration
     local client_config = {refresh_interval = 30 * 60 * 1000}
-    if up_tls and type(up_tls.verify) ~= nil then
+    if api_ctx.kafka_consumer_enable_tls then
         client_config = {
-            ssl = up_tls,
-            ssl_verify = up_tls.verify,
+            ssl = api_ctx.kafka_consumer_enable_tls,
+            ssl_verify = api_ctx.kafka_consumer_ssl_verify,
         }
     end
 
