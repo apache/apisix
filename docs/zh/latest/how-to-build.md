@@ -1,9 +1,9 @@
 ---
-title: APISIX 安装教程
+title: APISIX 安装指南
 keywords:
   - APISIX
   - APISIX 安装教程
-  - 部署 APISIX 
+  - 部署 APISIX
 description: 本文档主要介绍了 APISIX 多种安装方法。
 ---
 
@@ -31,13 +31,13 @@ import TabItem from '@theme/TabItem';
 
 本文将介绍如何在你的环境中安装并运行 APISIX。
 
-关于如何快速运行 Apache APISIX，请参考 [入门指南](./getting-started.md)。
+关于如何快速运行 Apache APISIX，请参考[入门指南](./getting-started.md)。
 
-## 安装 etcd
+## 前提条件
 
-APISIX 使用 [etcd](https://github.com/etcd-io/etcd) 作为配置中心，来保存和同步配置。在安装 APISIX 之前，你需要在你的主机上安装 etcd。
+APISIX 使用 [etcd](https://github.com/etcd-io/etcd) 作为配置中心进行保存和同步配置。在安装 APISIX 之前，需要在你的主机上安装 etcd。
 
-如果你在安装 APISIX 时选择 Docker 或 Hlem 安装，etcd 将会自动安装。如果你选择其他方法或者需要手动安装 APISIX，请参考以下步骤安装 etcd：
+如果你在安装 APISIX 时选择了 Docker 或 Helm 安装，那么 etcd 将会自动安装；如果你选择其他方法或者需要手动安装 APISIX，请参考以下步骤安装 etcd：
 
 <Tabs
   groupId="os"
@@ -170,7 +170,7 @@ sudo yum install apisix-2.13.1
 
 ### 通过 RPM 包离线安装：
 
-下载 APISIX 离线 RPM 包到 `apisix` 文件夹：
+将 APISIX 离线 RPM 包下载到 `apisix` 文件夹：
 
 ```shell
 sudo mkdir -p apisix
@@ -240,6 +240,6 @@ systemctl start apisix
 systemctl stop apisix
 ```
 
-如果你是通过其他方法安装的 APISIX，可以参考[配置文件模板](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service)进行修改，并将其添加在 `/usr/lib/systemd/system/apisix.service` 路径下
+如果你是通过其他方法安装的 APISIX，可以参考[配置文件模板](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service)进行修改，并将其添加在 `/usr/lib/systemd/system/apisix.service` 路径下。
 
-请参考[入门指南](./getting-started.md)了解如何使用 APISIX。
+如需了解后续 APISIX 的使用，请参考[入门指南](./getting-started.md)获取更多信息
