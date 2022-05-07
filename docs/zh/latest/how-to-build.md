@@ -33,42 +33,6 @@ import TabItem from '@theme/TabItem';
 
 关于如何快速运行 Apache APISIX，请参考[入门指南](./getting-started.md)。
 
-## 前提条件
-
-APISIX 使用 [etcd](https://github.com/etcd-io/etcd) 作为配置中心进行保存和同步配置。在安装 APISIX 之前，需要在你的主机上安装 etcd。
-
-如果你在安装 APISIX 时选择了 Docker 或 Helm 安装，那么 etcd 将会自动安装；如果你选择其他方法或者需要手动安装 APISIX，请参考以下步骤安装 etcd：
-
-<Tabs
-  groupId="os"
-  defaultValue="linux"
-  values={[
-    {label: 'Linux', value: 'linux'},
-    {label: 'macOS', value: 'mac'},
-  ]}>
-<TabItem value="linux">
-
-```shell
-ETCD_VERSION='3.4.18'
-wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
-tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
-  cd etcd-v${ETCD_VERSION}-linux-amd64 && \
-  sudo cp -a etcd etcdctl /usr/bin/
-nohup etcd >/tmp/etcd.log 2>&1 &
-```
-
-</TabItem>
-
-<TabItem value="mac">
-
-```shell
-brew install etcd
-brew services start etcd
-```
-
-</TabItem>
-</Tabs>
-
 ## 安装 APISIX
 
 你可以选择以下任意一种方式安装 APISIX：
@@ -136,7 +100,7 @@ helm install apisix apisix/apisix --create-namespace  --namespace apisix
 
 <TabItem value="rpm">
 
-该安装方法适用于 CentOS 7 和 CentOS 8。
+该安装方法适用于 CentOS 7 和 CentOS 8。如果你选择该方法安装 APISIX，需要先安装 etcd。具体安装方法请参考[安装 etcd](#安装-etcd)。
 
 ### 通过 RPM 仓库安装
 
@@ -204,6 +168,42 @@ apisix start
 你可以运行 `apisix help` 命令，通过查看返回结果，获取其他操作的命令及描述。
 
 :::
+
+</TabItem>
+</Tabs>
+
+## 安装 etcd
+
+APISIX 使用 [etcd](https://github.com/etcd-io/etcd) 作为配置中心进行保存和同步配置。在安装 APISIX 之前，需要在你的主机上安装 etcd。
+
+如果你在安装 APISIX 时选择了 Docker 或 Helm 安装，那么 etcd 将会自动安装；如果你选择其他方法或者需要手动安装 APISIX，请参考以下步骤安装 etcd：
+
+<Tabs
+  groupId="os"
+  defaultValue="linux"
+  values={[
+    {label: 'Linux', value: 'linux'},
+    {label: 'macOS', value: 'mac'},
+  ]}>
+<TabItem value="linux">
+
+```shell
+ETCD_VERSION='3.4.18'
+wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
+tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
+  cd etcd-v${ETCD_VERSION}-linux-amd64 && \
+  sudo cp -a etcd etcdctl /usr/bin/
+nohup etcd >/tmp/etcd.log 2>&1 &
+```
+
+</TabItem>
+
+<TabItem value="mac">
+
+```shell
+brew install etcd
+brew services start etcd
+```
 
 </TabItem>
 </Tabs>
