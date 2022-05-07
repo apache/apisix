@@ -21,7 +21,7 @@ title: csrf
 #
 -->
 
-## 简介
+## 描述
 
 `CSRF` 插件基于 [`Double Submit Cookie`](https://en.wikipedia.org/wiki/Cross-site_request_forgery#Double_Submit_Cookie) 的方式，保护您的 API 免于 CSRF 攻击。本插件认为 `GET`、`HEAD` 和 `OPTIONS` 方法是安全操作。因此 `GET`、`HEAD` 和 `OPTIONS` 方法的调用不会被检查拦截。
 
@@ -29,11 +29,13 @@ title: csrf
 
 ## 属性
 
-| Name             | Type    | Requirement | Default | Valid | Description                                                  |
-| ---------------- | ------- | ----------- | ------- | ----- | ------------------------------------------------------------ |
+| Name             | Type    | Requirement | Default | Valid | Description         |
+| ---------------- | ------- | ----------- | ------- | ----- |---------------------|
 |   name   |  string |    optional    | `apisix-csrf-token`  |    | 生成的 Cookie 中的 token 的名字，需要使用这个名字在请求头携带 Cookie 中的内容 |
-| expires |  number | optional | `7200` | | CSRF Cookie 的过期时间(秒) |
-| key | string | required |  |  | 加密 token 的秘钥 |
+| expires |  number | optional | `7200` | | CSRF Cookie 的过期时间（秒）|
+| key | string | required |  |  | 加密 token 的秘钥        |
+
+**注意：当 expires 设置为 0 时插件将忽略检查 Token 是否过期**
 
 ## 如何启用
 
@@ -98,7 +100,7 @@ const instance = axios.create({
 });
 ```
 
-你还需要确保你的请求携带了Cookie。
+你还需要确保你的请求携带了 Cookie。
 
 使用 curl 发送请求：
 

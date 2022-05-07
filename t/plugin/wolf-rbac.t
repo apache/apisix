@@ -139,24 +139,12 @@ done
                             "server": "http://127.0.0.1:1982"
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "wolf_rbac_unit_test",
-                            "plugins": {
-                                "wolf-rbac": {
-                                    "appid": "wolf-rbac-app",
-                                    "server": "http://127.0.0.1:1982"
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -223,7 +211,7 @@ appid=not-found&username=admin&password=123456
 Content-Type: application/x-www-form-urlencoded
 --- error_code: 400
 --- response_body_like eval
-qr/appid \[not-found\] not found/
+qr/appid not found/
 --- no_error_log
 [error]
 
@@ -236,7 +224,11 @@ appid=wolf-rbac-app&password=123456
 --- more_headers
 Content-Type: application/x-www-form-urlencoded
 --- error_code: 200
---- response_body_like eval
+--- response_body
+{"message":"request to wolf-server failed!"}
+--- grep_error_log eval
+qr/ERR_USERNAME_MISSING/
+--- grep_error_log_out eval
 qr/ERR_USERNAME_MISSING/
 
 
@@ -248,7 +240,11 @@ appid=wolf-rbac-app&username=admin
 --- more_headers
 Content-Type: application/x-www-form-urlencoded
 --- error_code: 200
---- response_body_like eval
+--- response_body
+{"message":"request to wolf-server failed!"}
+--- grep_error_log eval
+qr/ERR_PASSWORD_MISSING/
+--- grep_error_log_out eval
 qr/ERR_PASSWORD_MISSING/
 
 
@@ -260,7 +256,11 @@ appid=wolf-rbac-app&username=not-found&password=123456
 --- more_headers
 Content-Type: application/x-www-form-urlencoded
 --- error_code: 200
---- response_body_like eval
+--- response_body
+{"message":"request to wolf-server failed!"}
+--- grep_error_log eval
+qr/ERR_USER_NOT_FOUND/
+--- grep_error_log_out eval
 qr/ERR_USER_NOT_FOUND/
 
 
@@ -272,7 +272,11 @@ appid=wolf-rbac-app&username=admin&password=wrong-password
 --- more_headers
 Content-Type: application/x-www-form-urlencoded
 --- error_code: 200
---- response_body_like eval
+--- response_body
+{"message":"request to wolf-server failed!"}
+--- grep_error_log eval
+qr/ERR_PASSWORD_ERROR/
+--- grep_error_log_out eval
 qr/ERR_PASSWORD_ERROR/
 
 
@@ -342,7 +346,13 @@ GET /hello1
 --- more_headers
 x-rbac-token: V1#wolf-rbac-app#wolf-rbac-token
 --- response_body
-{"message":"no permission to access"}
+{"message":"Invalid user permission"}
+--- grep_error_log eval
+qr/no permission to access */
+--- grep_error_log_out
+no permission to access
+no permission to access
+no permission to access
 
 
 
@@ -461,7 +471,11 @@ PUT /apisix/plugin/wolf-rbac/change_pwd
 Content-Type: application/json
 Cookie: x-rbac-token=V1#wolf-rbac-app#wolf-rbac-token
 --- error_code: 200
---- response_body_like eval
+--- response_body
+{"message":"request to wolf-server failed!"}
+--- grep_error_log eval
+qr/ERR_OLD_PASSWORD_INCORRECT/
+--- grep_error_log_out eval
 qr/ERR_OLD_PASSWORD_INCORRECT/
 
 
@@ -490,3 +504,44 @@ X-Nickname: administrator
 id:100,username:admin,nickname:administrator
 --- no_error_log
 [error]
+
+
+
+=== TEST 27: change password by post raw args
+--- request
+PUT /apisix/plugin/wolf-rbac/change_pwd
+oldPassword=123456&newPassword=abcdef
+--- more_headers
+Cookie: x-rbac-token=V1#wolf-rbac-app#wolf-rbac-token
+--- error_code: 200
+--- response_body_like eval
+qr/success to change password/
+
+
+
+=== TEST 28: change password by post raw args, greater than 100 args is ok
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin")
+
+        local headers = {
+            ["Cookie"] = "x-rbac-token=V1#wolf-rbac-app#wolf-rbac-token"
+        }
+        local tbl = {}
+        for i=1, 100 do
+            tbl[i] = "test"..tostring(i).."=test&"
+        end
+        tbl[101] = "oldPassword=123456&newPassword=abcdef"
+        local code, _, real_body = t.test('/apisix/plugin/wolf-rbac/change_pwd',
+            ngx.HTTP_PUT,
+            table.concat(tbl, ""),
+            nil,
+            headers
+        )
+        ngx.status = 200
+        ngx.say(real_body)
+    }
+}
+--- response_body_like eval
+qr/success to change password/

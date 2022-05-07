@@ -139,12 +139,12 @@ passed
             local fd, err = io.open("file.log", 'r')
             local msg
 
-            if fd then
-                msg = fd:read()
-            else
+            if not fd then
                 core.log.error("failed to open file: file.log, error info: ", err)
+                return
             end
-            fd:close()
+
+            msg = fd:read()
 
             local new_msg = core.json.decode(msg)
             if new_msg.client_ip == '127.0.0.1' and new_msg.route_id == '1'
@@ -154,9 +154,21 @@ passed
                 ngx.status = code
                 ngx.say(msg)
             end
+
+            --- a new request is logged
+            t("/hello", ngx.HTTP_GET)
+            msg = fd:read("*l")
+            local new_msg = core.json.decode(msg)
+            if new_msg.client_ip == '127.0.0.1' and new_msg.route_id == '1'
+                and new_msg.host == '127.0.0.1'
+            then
+                msg = "write file log success"
+                ngx.say(msg)
+            end
         }
     }
 --- response_body
+write file log success
 write file log success
 
 

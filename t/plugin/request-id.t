@@ -94,25 +94,6 @@ done
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                            "request-id": {
-                            }
-                        },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -224,27 +205,6 @@ true
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                            "request-id": {
-                                "header_name": "Custom-Header-Name",
-                                "include_in_response": true
-                            }
-                        },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -306,26 +266,6 @@ request header present
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                            "request-id": {
-                                "include_in_response": false
-                            }
-                        },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -516,26 +456,6 @@ done
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                            "request-id": {
-                                "algorithm": "snowflake"
-                            }
-                        },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1982": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/opentracing"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
             if code >= 300 then
@@ -726,3 +646,71 @@ GET /opentracing
 X-Request-ID: 123
 --- response_headers
 X-Request-ID: 123
+
+
+
+=== TEST 20: add plugin with algorithm nanoid (default uuid)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require "resty.http"
+            local v = {}
+            local ids = {}
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "request-id": {
+                                "algorithm": "nanoid"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+            if code >= 300 then
+                ngx.say("algorithm nanoid is error")
+            end
+            for i = 1, 180 do
+                local th = assert(ngx.thread.spawn(function()
+                    local httpc = http.new()
+                    local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/opentracing"
+                    local res, err = httpc:request_uri(uri,
+                        {
+                            method = "GET",
+                            headers = {
+                                ["Content-Type"] = "application/json",
+                            }
+                        }
+                    )
+                    if not res then
+                        ngx.log(ngx.ERR, err)
+                        return
+                    end
+                    local id = res.headers["X-Request-Id"]
+                    if not id then
+                        return -- ignore if the data is not synced yet.
+                    end
+                    if ids[id] == true then
+                        ngx.say("ids not unique")
+                        return
+                    end
+                    ids[id] = true
+                end, i))
+                table.insert(v, th)
+            end
+            for i, th in ipairs(v) do
+                ngx.thread.wait(th)
+            end
+            ngx.say("true")
+        }
+    }
+--- wait: 5
+--- response_body
+true

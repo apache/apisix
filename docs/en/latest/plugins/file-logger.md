@@ -21,7 +21,7 @@ title: file-logger
 #
 -->
 
-## Name
+## Description
 
 `file-logger` is a plugin that pushes a stream of log data to a specified location. For example, the output path can be customized: `logs/file.log`.
 

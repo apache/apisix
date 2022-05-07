@@ -450,3 +450,38 @@ GET /t
 {"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the required"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 14: nodes host include ipv6 addr
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": [
+                            {
+                                "host":"[::1]",
+                                "port":8082,
+                                "weight":1
+                            }
+                        ],
+                        "type": "roundrobin"
+                    },
+                    "uri": "/index.html"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]

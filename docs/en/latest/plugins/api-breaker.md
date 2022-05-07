@@ -21,7 +21,7 @@ title: api-breaker
 #
 -->
 
-## Name
+## Description
 
 The plugin implements API fuse functionality to help us protect our upstream business services.
 

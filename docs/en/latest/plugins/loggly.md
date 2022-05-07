@@ -21,7 +21,7 @@ title: loggly
 #
 -->
 
-## Name
+## Description
 
 The `loggly` plugin is used to forward the request log of `Apache APISIX` to `Loggly by SolarWinds` for analysis and storage. After the plugin is enabled, `Apache APISIX` will obtain request context information in `Log Phase` serialize it into [Loggly Syslog](https://documentation.solarwinds.com/en/success_center/loggly/content/admin/streaming-syslog-without-using-files.htm?cshid=loggly_streaming-syslog-without-using-files) data format which is actually syslog events with [RFC5424](https://datatracker.ietf.org/doc/html/rfc5424) compliant headers and submit it to the batch queue. When the maximum processing capacity of each batch of the batch processing queue or the maximum time to refresh the buffer is triggered, the data in the queue will be submitted to `Loggly` enterprise syslog endpoint.
 

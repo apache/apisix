@@ -21,7 +21,7 @@ title: http-logger
 #
 -->
 
-## Name
+## Description
 
 `http-logger` is a plugin which push Log data requests to HTTP/HTTPS servers.
 

@@ -17,7 +17,6 @@
 local require   = require
 local core = require("apisix.core")
 local check_schema = require("apisix.plugin").check_schema
-local stream_check_schema = require("apisix.plugin").stream_check_schema
 local ipairs    = ipairs
 local pcall     = pcall
 local table_sort = table.sort
@@ -30,11 +29,6 @@ local _M = {}
 
 function _M.check_schema(plugins_conf, schema_type)
     return check_schema(plugins_conf, schema_type, false)
-end
-
-
-function _M.stream_check_schema(plugins_conf, schema_type)
-    return stream_check_schema(plugins_conf, schema_type, false)
 end
 
 

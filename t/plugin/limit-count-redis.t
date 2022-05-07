@@ -152,33 +152,6 @@ passed
                         },
                         "type": "roundrobin"
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 2,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr",
-                                    "policy": "redis",
-                                    "redis_host": "127.0.0.1",
-                                    "redis_port": 6379,
-                                    "redis_timeout": 1000
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -246,14 +219,7 @@ unlock with key route#1#redis
             local count
             count, err = red:get_reused_times()
             if 0 == count then
-                local res, err = red:eval([[
-                    local key = 'requirepass'
-                    local value = "foobared"
-                    -- redis.replicate_commands()
-                    local val = redis.pcall('CONFIG', 'SET', key, value)
-                    return val
-                    ]], 0)
-                --
+                local res, err = red:config('set', 'requirepass', 'foobared')
                 if not res then
                     ngx.say("failed to set: ", err)
                     return
@@ -364,7 +330,7 @@ GET /hello_new
 --- error_code eval
 500
 --- error_log
-failed to limit count: ERR invalid password
+failed to limit count: WRONGPASS invalid username-password pair or user is disabled
 
 
 
@@ -413,14 +379,7 @@ failed to limit count: ERR invalid password
                         return nil, err
                     end
                 end
-                local res, err = red:eval([[
-                    local key = 'requirepass'
-                    local value = ''
-                    -- redis.replicate_commands()
-                    local val = redis.pcall('CONFIG', 'SET', key, value)
-                    return val
-                    ]], 0)
-                --
+                local res, err = red:config('set', 'requirepass', '')
                 if not res then
                     ngx.say("failed to set: ", err)
                     return

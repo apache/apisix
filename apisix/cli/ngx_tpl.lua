@@ -190,6 +190,14 @@ http {
     lua_shared_dict balancer-ewma-last-touched-at {* http.lua_shared_dict["balancer-ewma-last-touched-at"] *};
     lua_shared_dict etcd-cluster-health-check {* http.lua_shared_dict["etcd-cluster-health-check"] *}; # etcd health check
 
+    {% if enabled_discoveries["kubernetes"] then %}
+    lua_shared_dict kubernetes {* http.lua_shared_dict["kubernetes"] *};
+    {% end %}
+
+    {% if enabled_discoveries["tars"] then %}
+    lua_shared_dict tars {* http.lua_shared_dict["tars"] *};
+    {% end %}
+
     {% if enabled_plugins["limit-conn"] then %}
     lua_shared_dict plugin-limit-conn {* http.lua_shared_dict["plugin-limit-conn"] *};
     {% end %}
@@ -233,6 +241,11 @@ http {
 
     {% if enabled_plugins["ext-plugin-pre-req"] or enabled_plugins["ext-plugin-post-req"] then %}
     lua_shared_dict ext-plugin {* http.lua_shared_dict["ext-plugin"] *}; # cache for ext-plugin
+    {% end %}
+
+    {% if config_center == "xds" then %}
+    lua_shared_dict xds-config  10m;
+    lua_shared_dict xds-config-version  1m;
     {% end %}
 
     # for custom shared dict
@@ -765,6 +778,18 @@ http {
             }
             {% end %}
 
+
+            {% if proxy_mirror_timeouts then %}
+                {% if proxy_mirror_timeouts.connect then %}
+            proxy_connect_timeout {* proxy_mirror_timeouts.connect *};
+                {% end %}
+                {% if proxy_mirror_timeouts.read then %}
+            proxy_read_timeout {* proxy_mirror_timeouts.read *};
+                {% end %}
+                {% if proxy_mirror_timeouts.send then %}
+            proxy_send_timeout {* proxy_mirror_timeouts.send *};
+                {% end %}
+            {% end %}
             proxy_http_version 1.1;
             proxy_set_header Host $upstream_host;
             proxy_pass $upstream_mirror_uri;

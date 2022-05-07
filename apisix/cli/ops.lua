@@ -155,7 +155,7 @@ local function init(env)
     end
 
     local min_ulimit = 1024
-    if env.ulimit <= min_ulimit then
+    if env.ulimit ~= "unlimited" and env.ulimit <= min_ulimit then
         print(str_format("Warning! Current maximum number of open file "
                 .. "descriptors [%d] is not greater than %d, please increase user limits by "
                 .. "execute \'ulimit -n <new user limits>\' , otherwise the performance"
@@ -249,6 +249,11 @@ Please modify "admin_key" in conf/config.yaml .
     local use_apisix_openresty = true
     if or_info and not or_info:find("apisix-nginx-module", 1, true) then
         use_apisix_openresty = false
+    end
+
+    local enabled_discoveries = {}
+    for name in pairs(yaml_conf.discovery or {}) do
+        enabled_discoveries[name] = true
     end
 
     local enabled_plugins = {}
@@ -513,6 +518,11 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
+    local proxy_mirror_timeouts
+    if yaml_conf.plugin_attr["proxy-mirror"] then
+        proxy_mirror_timeouts = yaml_conf.plugin_attr["proxy-mirror"].timeout
+    end
+
     -- Using template.render
     local sys_conf = {
         use_openresty_1_17 = use_openresty_1_17,
@@ -523,6 +533,7 @@ Please modify "admin_key" in conf/config.yaml .
         with_module_status = with_module_status,
         use_apisix_openresty = use_apisix_openresty,
         error_log = {level = "warn"},
+        enabled_discoveries = enabled_discoveries,
         enabled_plugins = enabled_plugins,
         enabled_stream_plugins = enabled_stream_plugins,
         dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
@@ -530,6 +541,7 @@ Please modify "admin_key" in conf/config.yaml .
         admin_server_addr = admin_server_addr,
         control_server_addr = control_server_addr,
         prometheus_server_addr = prometheus_server_addr,
+        proxy_mirror_timeouts = proxy_mirror_timeouts,
     }
 
     if not yaml_conf.apisix then
@@ -632,6 +644,47 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
+    -- inject kubernetes discovery environment variable
+    if enabled_discoveries["kubernetes"] then
+
+        local kubernetes_conf = yaml_conf.discovery["kubernetes"]
+
+        local keys = {
+            kubernetes_conf.service.host,
+            kubernetes_conf.service.port,
+        }
+
+        if kubernetes_conf.client.token then
+            table_insert(keys, kubernetes_conf.client.token)
+        end
+
+        if kubernetes_conf.client.token_file then
+            table_insert(keys, kubernetes_conf.client.token_file)
+        end
+
+        local envs = {}
+
+        for _, key in ipairs(keys) do
+            if #key > 3 then
+                local first, second = str_byte(key, 1, 2)
+                if first == str_byte('$') and second == str_byte('{') then
+                    local last = str_byte(key, #key)
+                    if last == str_byte('}') then
+                        envs[str_sub(key, 3, #key - 1)] = ""
+                    end
+                end
+            end
+        end
+
+        if not sys_conf["envs"] then
+            sys_conf["envs"] = {}
+        end
+
+        for item in pairs(envs) do
+            table_insert(sys_conf["envs"], item)
+        end
+    end
+
     -- fix up lua path
     sys_conf["extra_lua_path"] = get_lua_path(yaml_conf.apisix.extra_lua_path)
     sys_conf["extra_lua_cpath"] = get_lua_path(yaml_conf.apisix.extra_lua_cpath)
@@ -660,8 +713,15 @@ local function start(env, ...)
         util.die("Error: It is forbidden to run APISIX in the /root directory.\n")
     end
 
-    local cmd_logs = "mkdir -p " .. env.apisix_home .. "/logs"
-    util.execute_cmd(cmd_logs)
+    local logs_path = env.apisix_home .. "/logs"
+    if not pl_path.exists(logs_path) then
+        local _, err = pl_path.mkdir(logs_path)
+        if err ~= nil then
+            util.die("failed to mkdir ", logs_path, ", error: ", err)
+        end
+    elseif not pl_path.isdir(logs_path) and not pl_path.islink(logs_path) then
+        util.die(logs_path, " is not directory nor symbol link")
+    end
 
     -- check running
     local pid_path = env.apisix_home .. "/logs/nginx.pid"

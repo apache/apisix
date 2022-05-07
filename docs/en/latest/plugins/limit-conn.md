@@ -21,7 +21,7 @@ title: limit-conn
 #
 -->
 
-## Name
+## Description
 
 Limiting request concurrency plugin.
 

@@ -23,7 +23,7 @@ install_dependencies() {
 
     # install development tools
     yum install -y wget tar gcc automake autoconf libtool make unzip \
-        git which sudo openldap-devel
+        git sudo openldap-devel
 
     # curl with http2
     wget https://github.com/moparisthebest/static-curl/releases/download/v7.79.1/curl-amd64 -O /usr/bin/curl
@@ -35,10 +35,10 @@ install_dependencies() {
     ./utils/linux-install-luarocks.sh
 
     # install etcdctl
-    wget https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz
-    tar xf etcd-v3.4.0-linux-amd64.tar.gz
-    cp ./etcd-v3.4.0-linux-amd64/etcdctl /usr/local/bin/
-    rm -rf etcd-v3.4.0-linux-amd64
+    wget https://github.com/etcd-io/etcd/releases/download/v3.4.18/etcd-v3.4.18-linux-amd64.tar.gz
+    tar xf etcd-v3.4.18-linux-amd64.tar.gz
+    cp ./etcd-v3.4.18-linux-amd64/etcdctl /usr/local/bin/
+    rm -rf etcd-v3.4.18-linux-amd64
 
     # install vault cli capabilities
     install_vault_cli
@@ -55,12 +55,6 @@ install_dependencies() {
     cd ..
     # install and start grpc_server_example
     cd t/grpc_server_example
-
-    # unless pulled recursively, the submodule directory will remain empty. So it's better to initialize and set the submodule to the particular commit.
-    if [ ! "$(ls -A . )" ]; then
-        git submodule init
-        git submodule update
-    fi
 
     CGO_ENABLED=0 go build
     ./grpc_server_example \

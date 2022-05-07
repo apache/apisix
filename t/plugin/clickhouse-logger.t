@@ -161,39 +161,6 @@ property "endpoint_addr" is required
                             "type": "roundrobin"
                         },
                         "uri": "/opentracing"
-                }]],
-                [[{
-                    "action":"set",
-                    "node":{
-                        "value":{
-                            "uri":"/opentracing",
-                            "upstream":{
-                                "scheme":"http",
-                                "nodes":{
-                                    "127.0.0.1:1982":1
-                                }
-                            },
-                            "plugins":{
-                                "clickhouse-logger":{
-                                    "batch_max_size":1,
-                                    "max_retry_count":0,
-                                    "retry_delay":1,
-                                    "ssl_verify":true,
-                                    "endpoint_addr":"http://127.0.0.1:10420/clickhouse-logger/test",
-                                    "password":"a",
-                                    "buffer_duration":60,
-                                    "timeout":3,
-                                    "user":"default",
-                                    "name":"clickhouse-logger",
-                                    "database":"default",
-                                    "logtable":"t",
-                                    "inactive_timeout":1
-                                }
-                            },
-                            "id":"1"
-                        },
-                        "key":"/apisix/routes/1"
-                    }
                 }]]
                 )
 

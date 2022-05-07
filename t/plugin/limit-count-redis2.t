@@ -136,7 +136,7 @@ GET /hello
 --- error_code eval
 500
 --- error_log
-failed to limit count: failed to change redis db, err: ERR invalid DB index
+failed to limit count: failed to change redis db, err: ERR DB index is out of range
 
 
 

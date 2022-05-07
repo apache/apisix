@@ -173,7 +173,6 @@ hello world
             local cases = {
                 "x.*",
                 "~y.xn",
-                "::1",
             }
             for _, c in ipairs(cases) do
                 local ok, err = plugin.check_schema({

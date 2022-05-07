@@ -21,18 +21,6 @@ title: 集成服务发现注册中心
 #
 -->
 
-- [摘要](#摘要)
-- [当前支持的注册中心](#当前支持的注册中心)
-- [如何扩展注册中心？](#如何扩展注册中心)
-  - [基本步骤](#基本步骤)
-  - [以 Eureka 举例](#以-eureka-举例)
-    - [实现 eureka.lua](#实现-eurekalua)
-    - [Eureka 与 APISIX 之间数据转换逻辑](#eureka-与-apisix-之间数据转换逻辑)
-- [注册中心配置](#注册中心配置)
-  - [初始化服务发现](#初始化服务发现)
-  - [Eureka 的配置](#eureka-的配置)
-- [upstream 配置](#upstream-配置)
-
 ## 摘要
 
 当业务量发生变化时，需要对上游服务进行扩缩容，或者因服务器硬件故障需要更换服务器。如果网关是通过配置来维护上游服务信息，在微服务架构模式下，其带来的维护成本可想而知。再者因不能及时更新这些信息，也会对业务带来一定的影响，还有人为误操作带来的影响也不可忽视，所以网关非常必要通过服务注册中心动态获取最新的服务实例信息。架构图如下所示：
@@ -44,18 +32,6 @@ title: 集成服务发现注册中心
 3. 当用户通过网关请求服务时，网关从注册中心获取的实例列表中选择一个进行代理；
 
 常见的注册中心：Eureka, Etcd, Consul, Nacos, Zookeeper 等
-
-## 当前支持的注册中心
-
-目前支持 Eureka / Consul 和基于 DNS 的服务注册发现。
-
-基于 DNS 的服务注册发现见 [基于 DNS 的服务支持发现](../../en/latest/discovery/dns.md)。
-
-Consul 的支持见 [基于 Consul 的服务支持发现](../../en/latest/discovery/consul_kv.md)
-
-Nacos 的支持见 [基于 Nacos 的服务支持发现](../../en/latest/discovery/nacos.md)
-
-Eureka 的支持方式见下文。
 
 ## 如何扩展注册中心？
 
@@ -145,7 +121,7 @@ APISIX 是通过 `upstream.nodes` 来配置上游服务的，所以使用注册�
 1. 首先要选择状态为 “UP” 的实例： overriddenStatus 值不为 "UNKNOWN" 以 overriddenStatus 为准，否则以 status 的值为准；
 2. IP 地址：以 ipAddr 的值为 IP; 并且必须是 IPv4 或 IPv6 格式的；
 3. 端口：端口取值规则是，如果 port["@enabled"] 等于 "true" 那么使用 port["\$"] 的值；如果 securePort["@enabled"] 等于 "true" 那么使用 securePort["$"] 的值；
-4. 权重：权重取值顺序是，先判断 `metadata.weight` 是否有值，如果没有，则取配置中的 `eureka.weight` 的值, 如果还没有，则取默认值`100`；
+4. 权重：权重取值顺序是，先判断 `metadata.weight` 是否有值，如果没有，则取配置中的 `eureka.weight` 的值，如果还没有，则取默认值`100`；
 
 这个例子转成 APISIX nodes 的结果如下：
 
@@ -188,12 +164,12 @@ discovery:
       - "http://${username}:${password}@${eureka_host1}:${eureka_port1}"
       - "http://${username}:${password}@${eureka_host2}:${eureka_port2}"
     prefix: "/eureka/"
-    fetch_interval: 30 # 从 eureka 中拉取数据的时间间隔，默认30秒
+    fetch_interval: 30 # 从 eureka 中拉取数据的时间间隔，默认 30 秒
     weight: 100 # default weight for node
     timeout:
-      connect: 2000 # 连接 eureka 的超时时间，默认2000ms
-      send: 2000 # 向 eureka 发送数据的超时时间，默认2000ms
-      read: 5000 # 从 eureka 读数据的超时时间，默认5000ms
+      connect: 2000 # 连接 eureka 的超时时间，默认 2000ms
+      send: 2000 # 向 eureka 发送数据的超时时间，默认 2000ms
+      read: 5000 # 从 eureka 读数据的超时时间，默认 5000ms
 ```
 
 通过 `discovery.eureka.host` 配置 eureka 的服务器地址。

@@ -21,7 +21,7 @@ title: traffic-split
 #
 -->
 
-## Name
+## Description
 
 The traffic split plugin allows users to incrementally direct percentages of traffic between various upstreams.
 

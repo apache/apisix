@@ -21,7 +21,7 @@ title: log-rotate
 #
 -->
 
-## Name
+## Description
 
 The plug-in can automatically rotate access and error log files in the log directory at regular intervals.
 

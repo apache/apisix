@@ -90,7 +90,7 @@ end
 -- A value without a suffix means seconds.
 --
 -- @function core.config_util.parse_time_unit
--- @tparam number|string Strings with time units, e.g. "60m".
+-- @tparam number|string s Strings with time units, e.g. "60m".
 -- @treturn number Number of seconds after conversion
 -- @usage
 -- local seconds = core.config_util.parse_time_unit("60m") -- 3600

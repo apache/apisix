@@ -21,7 +21,7 @@ title: kafka-logger
 #
 -->
 
-## Name
+## Description
 
 `kafka-logger` is a plugin which works as a Kafka client driver for the ngx_lua nginx module.
 

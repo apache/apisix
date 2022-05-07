@@ -79,6 +79,7 @@ uri-blocker
 request-validation
 openid-connect
 authz-casbin
+authz-casdoor
 wolf-rbac
 ldap-auth
 hmac-auth

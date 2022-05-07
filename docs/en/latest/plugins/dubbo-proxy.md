@@ -21,7 +21,7 @@ title: dubbo-proxy
 #
 -->
 
-## Name
+## Description
 
 dubbo-proxy plugin allows you proxy HTTP request to [**dubbo**](http://dubbo.apache.org).
 

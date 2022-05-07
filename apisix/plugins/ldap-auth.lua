@@ -131,7 +131,8 @@ function _M.rewrite(conf, ctx)
 
     local user, err = extract_auth_header(auth_header)
     if err then
-        return 401, { message = err }
+        core.log.warn(err)
+        return 401, { message = "Invalid authorization in request" }
     end
 
     -- 2. try authenticate the user against the ldap server
@@ -146,13 +147,13 @@ function _M.rewrite(conf, ctx)
     -- 3. Retrieve consumer for authorization plugin
     local consumer_conf = consumer_mod.plugin(plugin_name)
     if not consumer_conf then
-        return 401, {message = "Missing related consumer"}
+        return 401, { message = "Missing related consumer" }
     end
     local consumers = lrucache("consumers_key", consumer_conf.conf_version,
         create_consumer_cache, consumer_conf)
     local consumer = consumers[userdn]
     if not consumer then
-        return 401, {message = "Invalid API key in request"}
+        return 401, {message = "Invalid user authorization"}
     end
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
 

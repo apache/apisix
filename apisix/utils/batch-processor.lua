@@ -28,7 +28,10 @@ local batch_processor_mt = {
 local execute_func
 local create_buffer_timer
 local batch_metrics
-local prometheus = require("apisix.plugins.prometheus.exporter")
+local prometheus
+if ngx.config.subsystem == "http" then
+    prometheus = require("apisix.plugins.prometheus.exporter")
+end
 
 
 local schema = {
@@ -148,7 +151,7 @@ function batch_processor:new(func, config)
         return nil, err
     end
 
-    if not(type(func) == "function") then
+    if type(func) ~= "function" then
         return nil, "Invalid argument, arg #1 must be a function"
     end
 
@@ -181,7 +184,7 @@ function batch_processor:push(entry)
         return
     end
 
-    if not batch_metrics and prometheus.get_prometheus() and self.name
+    if prometheus and not batch_metrics and self.name
        and self.route_id and self.server_addr then
         batch_metrics = prometheus.get_prometheus():gauge("batch_process_entries",
                                                           "batch process remaining entries",

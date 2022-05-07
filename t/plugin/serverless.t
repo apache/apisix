@@ -179,26 +179,6 @@ done
                         "type": "roundrobin"
                     },
                     "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "serverless-post-function": {
-                                    "functions" : ["return function() ngx.log(ngx.ERR, 'serverless post function'); ngx.exit(201); end"]
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -246,26 +226,6 @@ serverless post function
                         "type": "roundrobin"
                     },
                     "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "serverless-pre-function": {
-                                    "functions" : ["return function() ngx.log(ngx.ERR, 'serverless pre function'); ngx.exit(201); end"]
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -316,29 +276,6 @@ serverless pre function
                         "type": "roundrobin"
                     },
                     "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "serverless-pre-function": {
-                                    "functions" : ["return function() ngx.log(ngx.ERR, 'serverless pre function'); end"]
-                                },
-                                "serverless-post-function": {
-                                    "functions" : ["return function() ngx.log(ngx.ERR, 'serverless post function'); ngx.exit(201); end"]
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -388,27 +325,6 @@ serverless post function
                         "type": "roundrobin"
                     },
                     "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "serverless-pre-function": {
-                                    "phase": "log",
-                                    "functions" : ["return function() ngx.log(ngx.ERR, 'serverless pre function'); end"]
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -456,27 +372,6 @@ serverless pre function
                         "type": "roundrobin"
                     },
                     "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "serverless-pre-function": {
-                                    "phase": "rewrite",
-                                    "functions" : ["return function() ngx.log(ngx.ERR, 'one'); end", "return function() ngx.log(ngx.ERR, 'two'); end"]
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -525,27 +420,6 @@ two
                         "type": "roundrobin"
                     },
                     "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "serverless-pre-function": {
-                                    "phase": "log",
-                            "functions" : ["local count = 1; return function() count = count + 1;ngx.log(ngx.ERR, 'serverless pre function:', count); end"]
-                                }
-                            },
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -586,20 +460,6 @@ serverless pre function:2
                         }
                     },
                     "uri": "/hello"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "serverless-pre-function": {
-                                    "functions" : ["return function() if ngx.var.scheme == \"http\" and ngx.var.host == \"foo.com\" then ngx.header[\"Location\"] = \"https://foo.com\" .. ngx.var.request_uri; ngx.exit(ngx.HTTP_MOVED_PERMANENTLY); end; end"]
-                                }
-                            },
-                            "uri": "/hello"
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -728,5 +588,55 @@ passed
 GET /echo?args=%40%23%24%25%5E%26
 --- response_body chomp
 args=@#$%^&
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: return status code should exit the request like other plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "serverless-post-function": {
+                        "functions" : ["return function(conf, ctx) return 403, 'forbidden' end",
+                                       "return function(conf, ctx) ngx.log(ngx.ERR, 'unreachable') end"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: check plugin
+--- request
+GET /hello
+--- error_code: 403
+--- response_body chomp
+forbidden
 --- no_error_log
 [error]

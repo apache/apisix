@@ -21,23 +21,23 @@ title: splunk-hec-logging
 #
 -->
 
-## 定义
+## 描述
 
 `splunk-hec-logging` 插件用于将 `Apache APISIX` 的请求日志转发到 `Splunk HTTP 事件收集器（HEC）` 中进行分析和存储，启用该插件后 `Apache APISIX` 将在 `Log Phase` 获取请求上下文信息并序列化为 [Splunk Event Data 格式](https://docs.splunk.com/Documentation/Splunk/latest/Data/FormateventsforHTTPEventCollector#Event_metadata) 后提交到批处理队列中，当触发批处理队列每批次最大处理容量或刷新缓冲区的最大时间时会将队列中的数据提交到 `Splunk HEC` 中。
 
 有关 `Apache APISIX` 的 `Batch-Processor` 的更多信息，请参考：
 [Batch-Processor](../batch-processor.md)
 
-## 属性列表
+## 属性
 
 | 名称                  | 是否必需 | 默认值                                                                                                                                                                                         | 描述                                                                                                                                                           |
 | ----------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | endpoint                | 必选   |                                                                                                                                                                                                   | Splunk HEC 端点配置信息                                                                                                                                     |
-| endpoint.uri            | 必选   |                                                                                                                                                                                                   | Splunk HEC 事件收集API                                                                                                                                     |
+| endpoint.uri            | 必选   |                                                                                                                                                                                                   | Splunk HEC 事件收集 API                                                                                                                                     |
 | endpoint.token          | 必选   |                                                                                                                                                                                                   | Splunk HEC 身份令牌                                                                                                                                        |
 | endpoint.channel        | 可选   |                                                                                                                                                                                                   | Splunk HEC 发送渠道标识，参考：[About HTTP Event Collector Indexer Acknowledgment](https://docs.splunk.com/Documentation/Splunk/8.2.3/Data/AboutHECIDXAck)   |
-| endpoint.timeout        | 可选   | 10                                                                                                                                                                                                | Splunk HEC 数据提交超时时间（以秒为单位）                                                                                                                      |
-| ssl_verify              | 可选   | true                                                                                                                                                                                              | 启用 `SSL` 验证, 参考：[OpenResty文档](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake)                                                    |
+| endpoint.timeout        | 可选   | 10                                                                                                                                                                                                | Splunk HEC 数据提交超时时间（以秒为单位）|
+| ssl_verify              | 可选   | true                                                                                                                                                                                              | 启用 `SSL` 验证，参考：[OpenResty 文档](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake)                                                    |
 
 本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
@@ -109,7 +109,7 @@ HTTP/1.1 200 OK
 hello, world
 ```
 
-* 登录Splunk控制台检索查看日志
+* 登录 Splunk 控制台检索查看日志
 
 ![splunk hec search view](../../../assets/images/plugin/splunk-hec-admin-cn.png)
 

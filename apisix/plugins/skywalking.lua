@@ -62,7 +62,7 @@ local schema = {
 
 local _M = {
     version = 0.1,
-    priority = -1100, -- last running plugin, but before serverless post func
+    priority = 12010,
     name = plugin_name,
     schema = schema,
     attr_schema = attr_schema,
@@ -89,7 +89,7 @@ function _M.rewrite(conf, ctx)
 end
 
 
-function _M.body_filter(conf, ctx)
+function _M.delayed_body_filter(conf, ctx)
     if ctx.skywalking_sample and ngx.arg[2] then
         Span.setComponentId(ngx.ctx.exitSpan, 6002)
         Span.setComponentId(ngx.ctx.entrySpan, 6002)

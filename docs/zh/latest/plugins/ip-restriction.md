@@ -21,7 +21,7 @@ title: ip-restriction
 #
 -->
 
-## 名字
+## 描述
 
 `ip-restriction` 可以通过以下方式限制对服务或路线的访问，将 IP 地址列入白名单或黑名单。 单个 IP 地址，多个 IP 地址 或 CIDR 范围，可以使用类似 10.10.10.0/24 的 CIDR 表示法。
 
@@ -31,14 +31,14 @@ title: ip-restriction
 | --------- | ------------- | ------ | ------ | ------ | -------------------------------- |
 | whitelist | array[string] | 可选   |        |        | 加入白名单的 IP 地址或 CIDR 范围 |
 | blacklist | array[string] | 可选   |        |        | 加入黑名单的 IP 地址或 CIDR 范围 |
-| message | string | 可选   | Your IP address is not allowed. | [1, 1024] | 在未允许的IP访问的情况下返回的信息 |
+| message | string | 可选   | Your IP address is not allowed. | [1, 1024] | 在未允许的 IP 访问的情况下返回的信息 |
 
 只能单独启用白名单或黑名单，两个不能一起使用。
 `message` 可以由用户自定义。
 
 ## 如何启用
 
-下面是一个示例，在指定的 route 上开启了 `ip-restriction` 插件:
+下面是一个示例，在指定的 route 上开启了 `ip-restriction` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -61,7 +61,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-当未允许的IP访问时，默认返回 `{"message":"Your IP address is not allowed"}`。如果你想使用自定义的 `message`，可以在插件部分进行配置:
+当未允许的 IP 访问时，默认返回 `{"message":"Your IP address is not allowed"}`。如果你想使用自定义的 `message`，可以在插件部分进行配置：
 
 ```json
 "plugins": {

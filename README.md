@@ -105,10 +105,17 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 - **Security**
 
-  - Authentications: [key-auth](docs/en/latest/plugins/key-auth.md), [JWT](docs/en/latest/plugins/jwt-auth.md), [basic-auth](docs/en/latest/plugins/basic-auth.md), [wolf-rbac](docs/en/latest/plugins/wolf-rbac.md), [casbin](docs/en/latest/plugins/authz-casbin.md), [keycloak](docs/en/latest/plugins/authz-keycloak.md)
+  - Rich authentication & authorization support:
+    * [key-auth](docs/en/latest/plugins/key-auth.md)
+    * [JWT](docs/en/latest/plugins/jwt-auth.md)
+    * [basic-auth](docs/en/latest/plugins/basic-auth.md)
+    * [wolf-rbac](docs/en/latest/plugins/wolf-rbac.md)
+    * [casbin](docs/en/latest/plugins/authz-casbin.md)
+    * [keycloak](docs/en/latest/plugins/authz-keycloak.md)
+    * [casdoor](docs/en/latest/plugins/authz-casdoor.md)
   - [IP Whitelist/Blacklist](docs/en/latest/plugins/ip-restriction.md)
   - [Referer Whitelist/Blacklist](docs/en/latest/plugins/referer-restriction.md)
-  - [IdP](docs/en/latest/plugins/openid-connect.md): Support external authentication services, such as Auth0, okta, etc., users can use this to connect to OAuth 2.0 and other authentication methods.
+  - [IdP](docs/en/latest/plugins/openid-connect.md): Support external Identity platforms, such as Auth0, okta, etc..
   - [Limit-req](docs/en/latest/plugins/limit-req.md)
   - [Limit-count](docs/en/latest/plugins/limit-count.md)
   - [Limit-concurrency](docs/en/latest/plugins/limit-conn.md)
@@ -122,7 +129,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
   - Zipkin tracing: [Zipkin](docs/en/latest/plugins/zipkin.md)
   - Open source APM: support [Apache SkyWalking](docs/en/latest/plugins/skywalking.md)
-  - Works with external service discovery: In addition to the built-in etcd, it also supports [Consul](docs/en/latest/discovery/consul_kv.md) and [Nacos](docs/en/latest/discovery/nacos.md), and [Eureka](docs/en/latest/discovery.md)
+  - Works with external service discovery: In addition to the built-in etcd, it also supports [Consul](docs/en/latest/discovery/consul_kv.md), [Nacos](docs/en/latest/discovery/nacos.md), [Eureka](docs/en/latest/discovery/eureka.md) and [Zookeeper (CP)](docs/en/latest/discovery/zookeeper.md).
   - Monitoring And Metrics: [Prometheus](docs/en/latest/plugins/prometheus.md)
   - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://etcd.io/docs/v3.5/op-guide/clustering/).
   - High availability: Support to configure multiple etcd addresses in the same cluster.
@@ -162,10 +169,6 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 1. Installation
 
-   APISIX Installed and tested in the following systems:
-
-   CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
-
    Please refer to [install documentation](docs/en/latest/how-to-build.md).
 
 2. Getting started
@@ -181,7 +184,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 4. Plugin development
 
    You can refer to [plugin development guide](docs/en/latest/plugin-develop.md), and sample plugin `example-plugin`'s code implementation.
-   Reading [plugin concept](docs/en/latest/architecture-design/plugin.md) would help you learn more about the plugin.
+   Reading [plugin concept](docs/en/latest/terminology/plugin.md) would help you learn more about the plugin.
 
 For more documents, please refer to [Apache APISIX Documentation site](https://apisix.apache.org/docs/apisix/getting-started/)
 
@@ -189,50 +192,9 @@ For more documents, please refer to [Apache APISIX Documentation site](https://a
 
 Using AWS's eight-core server, APISIX's QPS reaches 140,000 with a latency of only 0.2 ms.
 
-[Benchmark script](benchmark/run.sh), [test method and process](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01) has been open source, welcome to try and contribute.
+[Benchmark script](benchmark/run.sh) has been open sourced, welcome to try and contribute.
 
-## Apache APISIX vs. Kong
-
-#### Both of them have been covered core features of API gateway
-
-| **Features**         | **Apache APISIX** | **KONG** |
-| :------------------- | :---------------- | :------- |
-| **Dynamic upstream** | Yes               | Yes      |
-| **Dynamic router**   | Yes               | Yes      |
-| **Health check**     | Yes               | Yes      |
-| **Dynamic SSL**      | Yes               | Yes      |
-| **L4 and L7 proxy**  | Yes               | Yes      |
-| **Opentracing**      | Yes               | Yes      |
-| **Custom plugin**    | Yes               | Yes      |
-| **REST API**         | Yes               | Yes      |
-| **CLI**              | Yes               | Yes      |
-
-#### The advantages of Apache APISIX
-
-| **Features**                                                    | **Apache APISIX**                                 | **Kong**                |
-| :-------------------------------------------------------------- | :------------------------------------------------ | :---------------------- |
-| Belongs to                                                      | Apache Software Foundation                        | Kong Inc.               |
-| Tech Architecture                                               | Nginx + etcd                                      | Nginx + Postgres        |
-| Communication channels                                          | Mail list, Wechat group, QQ group, [GitHub](https://github.com/apache/apisix/issues), [Slack](https://join.slack.com/t/the-asf/shared_invite/zt-nggtva4i-hDCsW1S35MuZ2g_2DgVDGg), meetup | GitHub, Freenode, forum |
-| Single-core CPU, QPS(enable limit-count and Prometheus plugins) | 18000                                             | 1700                    |
-| Latency                                                         | 0.2 ms                                            | 2 ms                    |
-| Dubbo                                                           | Yes                                               | No                      |
-| Configuration rollback                                          | Yes                                               | No                      |
-| Route with TTL                                                  | Yes                                               | No                      |
-| Plug-in hot loading                                             | Yes                                               | No                      |
-| Custom LB and route                                             | Yes                                               | No                      |
-| REST API <--> gRPC transcoding                                  | Yes                                               | No                      |
-| MQTT                                                            | Yes                                               | No                      |
-| Configuration effective time                                    | Event-driven, < 1ms                               | polling, 5 seconds      |
-| Dashboard                                                       | Yes                                               | No                      |
-| IdP                                                             | Yes                                               | No                      |
-| Configuration Center HA                                         | Yes                                               | No                      |
-| Speed limit for a specified time window                         | Yes                                               | No                      |
-| Support any Nginx variable as routing condition                 | Yes                                               | No                      |
-
-Benchmark comparison test [details data](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)
-
-### Contributor Over Time
+## Contributor Over Time
 
 > [visit here](https://www.apiseven.com/contributor-graph) to generate Contributor Over Time.
 

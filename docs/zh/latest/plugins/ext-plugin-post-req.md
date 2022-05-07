@@ -1,5 +1,10 @@
 ---
 title: ext-plugin-post-req
+keywords:
+  - APISIX
+  - Plugin
+  - ext-plugin-post-req
+description: 本文介绍了关于 Apache APISIX `ext-plugin-post-req` 插件的基本信息及使用方法。
 ---
 
 <!--
@@ -21,8 +26,8 @@ title: ext-plugin-post-req
 #
 -->
 
-`ext-plugin-post-req` 插件的功能与 `ext-plugin-pre-req` 插件类似。
+## 描述
 
-唯一不同的是：它在内置 Lua 插件执行之后且在请求到达上游之前工作。
+`ext-plugin-post-req` 插件的功能与 `ext-plugin-pre-req` 插件的不同之处在于：`ext-plugin-post-req` 插件是在内置 Lua 插件执行之后且在请求到达上游之前工作。
 
-参考文档 [ext-plugin-pre-req](./ext-plugin-pre-req.md) 去学习如何配置并使用它。
+你可以参考 [ext-plugin-pre-req](./ext-plugin-pre-req.md) 文档，学习如何配置和使用 `ext-plugin-post-req` 插件。

@@ -21,7 +21,7 @@ title: azure-functions
 #
 -->
 
-## Name
+## Description
 
 `azure-functions` is a serverless plugin built into Apache APISIX for seamless integration with [Azure Serverless Function](https://azure.microsoft.com/en-in/services/functions/) as a dynamic upstream to proxy all requests for a particular URI to the Microsoft Azure cloud, one of the most used public cloud platforms for production environment. If enabled, this plugin terminates the ongoing request to that particular URI and initiates a new request to the azure faas (the new upstream) on behalf of the client with the suitable authorization details set by the users, request headers, request body, params ( all these three components are passed from the original request ) and returns the response body, status code and the headers back to the original client that has invoked the request to the APISIX agent.
 

@@ -21,6 +21,8 @@ title: proxy-mirror
 #
 -->
 
+## Description
+
 The proxy-mirror plugin, which provides the ability to mirror client requests.
 
 *Note*: The response returned by the mirror request is ignored.
@@ -75,7 +77,7 @@ hello world
 > Since the specified mirror address is 127.0.0.1:9797, so to verify whether this plugin is in effect, we need to confirm on the service with port 9797.
 > For example, we can start a simple server:  python -m SimpleHTTPServer 9797
 
-## Disable Plugin
+#### Disable Plugin
 
 Remove the corresponding JSON in the plugin configuration to disable the plugin immediately without restarting the service:
 
@@ -94,3 +96,22 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 ```
 
 The plugin has been disabled now.
+
+## Customize proxy timeouts for mirrored sub-request
+
+We can customize proxy timeouts for the mirrored sub-request in the `plugin_attr` of `conf/config.yaml`. This is useful while mirroring traffic to a slow backend in a long connection scenario.
+
+| Name | Type | Default | Description |
+| --- | --- | --- | --- |
+| connect | string | 60s | connect timeout to the mirrored upstream |
+| read | string | 60s | read timeout to the mirrored upstream |
+| send | string | 60s | send timeout to the mirrored upstream |
+
+```yaml
+plugin_attr:
+  proxy-mirror:
+    timeout:
+      connect: 2000ms
+      read: 2000ms
+      send: 2000ms
+```

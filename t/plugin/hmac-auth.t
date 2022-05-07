@@ -40,26 +40,12 @@ __DATA__
                             "clock_skew": 10
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "plugins": {
-                                "hmac-auth": {
-                                    "access_key": "my-access-key",
-                                    "secret_key": "my-secret-key",
-                                    "algorithm": "hmac-sha256",
-                                    "clock_skew": 10
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -235,7 +221,11 @@ passed
 GET /hello
 --- error_code: 401
 --- response_body
-{"message":"access key or signature missing"}
+{"message":"client request can't be validated"}
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: access key or signature missing
 --- no_error_log
 [error]
 
@@ -250,7 +240,11 @@ Date: Thu, 24 Sep 2020 06:39:52 GMT
 X-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
 --- response_body
-{"message":"algorithm missing"}
+{"message":"client request can't be validated"}
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: algorithm missing
 --- no_error_log
 [error]
 
@@ -266,7 +260,11 @@ Date: Thu, 24 Sep 2020 06:39:52 GMT
 X-HMAC-ACCESS-KEY: sdf
 --- error_code: 401
 --- response_body
-{"message":"Invalid access key"}
+{"message":"client request can't be validated"}
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid access key
 --- no_error_log
 [error]
 
@@ -282,7 +280,11 @@ Date: Thu, 24 Sep 2020 06:39:52 GMT
 X-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
 --- response_body
-{"message":"algorithm ljlj not supported"}
+{"message":"client request can't be validated"}
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: algorithm ljlj not supported
 --- no_error_log
 [error]
 
@@ -298,7 +300,11 @@ Date: Thu, 24 Sep 2020 06:39:52 GMT
 X-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
 --- response_body
-{"message":"Clock skew exceeded"}
+{"message":"client request can't be validated"}
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Clock skew exceeded
 --- no_error_log
 [error]
 
@@ -313,7 +319,11 @@ X-HMAC-ALGORITHM: hmac-sha256
 X-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
 --- response_body
-{"message":"Invalid GMT format time"}
+{"message":"client request can't be validated"}
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid GMT format time
 --- no_error_log
 [error]
 
@@ -329,7 +339,11 @@ Date: adfsdf
 X-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
 --- response_body
-{"message":"Invalid GMT format time"}
+{"message":"client request can't be validated"}
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid GMT format time
 --- no_error_log
 [error]
 
@@ -412,26 +426,11 @@ passed
                             "clock_skew": 0
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "robin",
-                            "plugins": {
-                                "hmac-auth": {
-                                    "access_key": "my-access-key3",
-                                    "secret_key": "my-secret-key3",
-                                    "algorithm": "hmac-sha256",
-                                    "clock_skew": 0
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
-
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -454,7 +453,11 @@ Date: Thu, 24 Sep 2020 06:39:52 GMT
 X-HMAC-ACCESS-KEY: my-access-key3
 --- error_code: 401
 --- response_body
-{"message":"Invalid signature"}
+{"message":"client request can't be validated"}
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid signature
 --- no_error_log
 [error]
 
@@ -476,26 +479,12 @@ X-HMAC-ACCESS-KEY: my-access-key3
                             "clock_skew": 1
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "pony",
-                            "plugins": {
-                                "hmac-auth": {
-                                    "access_key": "my-access-key2",
-                                    "secret_key": "my-secret-key2",
-                                    "algorithm": "hmac-sha256",
-                                    "clock_skew": 1
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -557,7 +546,11 @@ location /t {
 GET /t
 --- error_code: 401
 --- response_body eval
-qr/\{"message":"Clock skew exceeded"\}/
+qr/{"message":"client request can't be validated"}/
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Clock skew exceeded
 --- no_error_log
 [error]
 
@@ -697,7 +690,11 @@ passed
 GET /hello
 --- error_code: 401
 --- response_body
-{"message":"access key or signature missing"}
+{"message":"client request can't be validated"}
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: access key or signature missing
 --- no_error_log
 [error]
 
@@ -719,27 +716,12 @@ GET /hello
                             "signed_headers": ["x-custom-header-a", "x-custom-header-b"]
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "cook",
-                            "plugins": {
-                                "hmac-auth": {
-                                    "access_key": "my-access-key5",
-                                    "secret_key": "my-secret-key5",
-                                    "algorithm": "hmac-sha256",
-                                    "clock_skew": 0,
-                                    "signed_headers": ["x-custom-header-a", "x-custom-header-b"]
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -799,7 +781,11 @@ location /t {
 GET /t
 --- error_code: 401
 --- response_body eval
-qr/\{"message":"Invalid signed header x-custom-header-c"\}/
+qr/{"message":"client request can't be validated"}/
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid signed header x-custom-header-c
 --- no_error_log
 [error]
 

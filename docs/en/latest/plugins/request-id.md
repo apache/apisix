@@ -21,7 +21,7 @@ title: request-id
 #
 -->
 
-## Name
+## Description
 
 `request-id` plugin adds a unique ID (UUID) to each request proxied through APISIX. This plugin can be used to track an
 API request. The plugin will not add a request id if the `header_name` is already present in the request.
@@ -32,7 +32,7 @@ API request. The plugin will not add a request id if the `header_name` is alread
 | ------------------- | ------- | ----------- | -------------- | ----- | -------------------------------------------------------------- |
 | header_name         | string  | optional    | "X-Request-Id" |       | Request ID header name                                         |
 | include_in_response | boolean | optional    | true           |       | Option to include the unique request ID in the response header |
-| algorithm           | string  | optional    | "uuid"         | ["uuid", "snowflake"] | ID generation algorithm |
+| algorithm           | string  | optional    | "uuid"         | ["uuid", "snowflake", "nanoid"] | ID generation algorithm |
 
 ## How To Enable
 

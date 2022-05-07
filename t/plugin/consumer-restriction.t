@@ -91,24 +91,11 @@ done
                             "password": "123456"
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "jack1",
-                            "plugins": {
-                                "basic-auth": {
-                                    "username": "jack2019",
-                                    "password": "123456"
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
-
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -136,24 +123,11 @@ passed
                             "password": "123456"
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "jack2",
-                            "plugins": {
-                                "basic-auth": {
-                                    "username": "jack2020",
-                                    "password": "123456"
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
-
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -806,25 +780,11 @@ hello world
                         "type": "roundrobin"
                     },
                     "desc": "new service 001"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "desc": "new service 001"
-                        },
-                        "key": "/apisix/services/1"
-                    },
-                    "action": "set"
                 }]]
                 )
-
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -857,31 +817,11 @@ passed
                             "rejected_code": 401
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "plugins": {
-                                "hmac-auth": {
-                                    "access_key": "my-access-key",
-                                    "secret_key": "my-secret-key",
-                                    "algorithm": "hmac-sha256",
-                                    "clock_skew": 0
-                                },
-                                "consumer-restriction": {
-                                    "type": "service_id",
-                                    "whitelist": [ "1" ],
-                                    "rejected_code": 401
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
-
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -915,28 +855,6 @@ passed
                         "hmac-auth": {}
                     }
 
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/hello",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "service_id": 1,
-                            "plugins": {
-                                "hmac-auth": {}
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -1028,25 +946,11 @@ passed
                         "type": "roundrobin"
                     },
                     "desc": "new service 002"
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "desc": "new service 002"
-                        },
-                        "key": "/apisix/services/2"
-                    },
-                    "action": "set"
                 }]]
                 )
-
-            ngx.status = code
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -1080,28 +984,6 @@ passed
                         "hmac-auth": {}
                     }
 
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/hello",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "service_id": 2,
-                            "plugins": {
-                                "hmac-auth": {}
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -1201,27 +1083,6 @@ qr/\{"message":"The service_id is forbidden."\}/
                             "rejected_code": 401
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "plugins": {
-                                "hmac-auth": {
-                                    "access_key": "my-access-key",
-                                    "secret_key": "my-secret-key",
-                                    "algorithm": "hmac-sha256",
-                                    "clock_skew": 0
-                                },
-                                "consumer-restriction": {
-                                    "type": "service_id",
-                                    "blacklist": [ "1" ],
-                                    "rejected_code": 401
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -1259,28 +1120,6 @@ passed
                         "hmac-auth": {}
                     }
 
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/hello",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "service_id": 1,
-                            "plugins": {
-                                "hmac-auth": {}
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -1379,28 +1218,6 @@ qr/\{"message":"The service_id is forbidden."\}/
                         "hmac-auth": {}
                     }
 
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/hello",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            },
-                            "service_id": 2,
-                            "plugins": {
-                                "hmac-auth": {}
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -1497,27 +1314,6 @@ passed
                             "rejected_code": 401
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "plugins": {
-                                "hmac-auth": {
-                                    "access_key": "my-access-key",
-                                    "secret_key": "my-secret-key",
-                                    "algorithm": "hmac-sha256",
-                                    "clock_skew": 0
-                                },
-                                "consumer-restriction": {
-                                    "type": "route_id",
-                                    "whitelist": [ "1" ],
-                                    "rejected_code": 401
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 
@@ -1612,27 +1408,6 @@ passed
                             "rejected_code": 401
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "plugins": {
-                                "hmac-auth": {
-                                    "access_key": "my-access-key",
-                                    "secret_key": "my-secret-key",
-                                    "algorithm": "hmac-sha256",
-                                    "clock_skew": 0
-                                },
-                                "consumer-restriction": {
-                                    "type": "route_id",
-                                    "blacklist": [ "1" ],
-                                    "rejected_code": 401
-                                }
-                            }
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
 

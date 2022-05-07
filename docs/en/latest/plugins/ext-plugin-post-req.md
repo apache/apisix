@@ -1,5 +1,10 @@
 ---
 title: ext-plugin-post-req
+keywords:
+  - APISIX
+  - Plugin
+  - ext-plugin-post-req
+description: This document contains information about the Apache APISIX ext-plugin-post-req Plugin.
 ---
 
 <!--
@@ -21,9 +26,8 @@ title: ext-plugin-post-req
 #
 -->
 
-`ext-plugin-post-req` is almost the same as `ext-plugin-pre-req`.
+## Description
 
-The only difference is that it runs after executing builtin Lua plugins and
-before proxying to the upstream.
+`ext-plugin-post-req` differs from the [ext-plugin-pre-req](./ext-plugin-pre-req.md) Plugin in that it runs after executing the built-in Lua Plugins and before proxying to the Upstream.
 
-See the documentation of [ext-plugin-pre-req](./ext-plugin-pre-req.md) for how to configure it.
+You can learn more about the configuration from the [ext-plugin-pre-req](./ext-plugin-pre-req.md) Plugin document.

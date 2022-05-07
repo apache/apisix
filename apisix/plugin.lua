@@ -709,9 +709,9 @@ function _M.plugin_checker(item, schema_type)
 end
 
 
-function _M.stream_plugin_checker(item)
+function _M.stream_plugin_checker(item, in_cp)
     if item.plugins then
-        return stream_check_schema(item.plugins, nil, true)
+        return stream_check_schema(item.plugins, nil, not in_cp)
     end
 
     return true
@@ -733,6 +733,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
     if phase ~= "log"
         and phase ~= "header_filter"
         and phase ~= "body_filter"
+        and phase ~= "delayed_body_filter"
     then
         for i = 1, #plugins, 2 do
             if phase == "rewrite_in_consumer" and plugins[i + 1]._from_consumer

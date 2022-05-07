@@ -21,7 +21,7 @@ title: node-status
 #
 -->
 
-## Name
+## Description
 
 `node-status` is a plugin which we could get request status information through it's API.
 

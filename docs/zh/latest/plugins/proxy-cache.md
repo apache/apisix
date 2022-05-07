@@ -21,6 +21,8 @@ title: proxy-cache
 #
 -->
 
+## 描述
+
 代理缓存插件，该插件提供缓存后端响应数据的能力，它可以和其他插件一起使用。该插件支持基于磁盘的缓存，未来也会支持基于内存的缓存。目前可以根据响应码、请求 Method 来指定需要缓存的数据，另外也可以通过 no_cache 和 cache_bypass 配置更复杂的缓存策略。
 
 基于磁盘的缓存需要注意：
@@ -28,15 +30,15 @@ title: proxy-cache
 1. 不能动态配置缓存的过期时间，只能通过后端服务响应头 Expires 或 Cache-Control 来设置过期时间，如果后端响应头中没有 Expires 或 Cache-Control，那么 APISIX 将默认只缓存 10 秒钟
 2. 如果后端服务不可用， APISIX 将返回 502 或 504，那么 502 或 504 将被缓存 10 秒钟
 
-### 参数
+## 属性
 
 | 名称               | 类型           | 必选项 | 默认值                    | 有效值                                                                          | 描述                                                                                                                               |
 | ------------------ | -------------- | ------ | ------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | cache_strategy     | string         | 可选   | disk                      | ["disk","memory"]                                                               | 缓存策略，指定缓存数据存储在磁盘还是内存中 |
 | cache_zone         | string         | 可选   |        disk_cache_one     |                                                                                 | 指定使用哪个缓存区域，不同的缓存区域可以配置不同的路径，在 conf/config.yaml 文件中可以预定义使用的缓存区域。当不使用默认值时，指定的缓存区域与 conf/config.yaml 文件中预定义的缓存区域不一致，缓存无效。   |
-| cache_key          | array[string]  | 可选   | ["$host", "$request_uri"] |                                                                                 | 缓存key，可以使用变量。例如：["$host", "$uri", "-cache-id"]                                                                        |
+| cache_key          | array[string]  | 可选   | ["$host", "$request_uri"] |                                                                                 | 缓存 key，可以使用变量。例如：["$host", "$uri", "-cache-id"]                                                                        |
 | cache_bypass       | array[string]  | 可选   |                           |                                                                                 | 是否跳过缓存检索，即不在缓存中查找数据，可以使用变量，需要注意当此参数的值不为空或非'0'时将会跳过缓存的检索。例如：["$arg_bypass"] |
-| cache_method       | array[string]  | 可选   | ["GET", "HEAD"]           | ["GET", "POST", "HEAD"] | 根据请求method决定是否需要缓存                                                                                                     |
+| cache_method       | array[string]  | 可选   | ["GET", "HEAD"]           | ["GET", "POST", "HEAD"] | 根据请求 method 决定是否需要缓存                                                                                                     |
 | cache_http_status  | array[integer] | 可选   | [200, 301, 404]           | [200, 599]                                                                      | 根据响应码决定是否需要缓存                                                                                                         |
 | hide_cache_headers | boolean        | 可选   | false                     |                                                                                 | 是否将 Expires 和 Cache-Control 响应头返回给客户端                                                                                 |
 | cache_control      | boolean        | 可选   | false                     |                                                                                 | 是否遵守 HTTP 协议规范中的 Cache-Control 的行为                                 |
@@ -45,22 +47,22 @@ title: proxy-cache
 
 注：变量以$开头，也可以使用变量和字符串的结合，但是需要以数组的形式分开写，最终变量被解析后会和字符串拼接在一起。
 
-在 `conf/config.yaml` 文件中的配置示例:
+在 `conf/config.yaml` 文件中的配置示例：
 
 ```yaml
 proxy_cache:                       # 代理缓存配置
     cache_ttl: 10s                 # 如果上游未指定缓存时间，则为默认缓存时间
     zones:                         # 缓存的参数
-    - name: disk_cache_one         # 缓存名称(缓存区域)，管理员可以通过admin api中的 cache_zone 字段指定要使用的缓存区域
+    - name: disk_cache_one         # 缓存名称 (缓存区域)，管理员可以通过 admin api 中的 cache_zone 字段指定要使用的缓存区域
       memory_size: 50m             # 共享内存的大小，用于存储缓存索引
       disk_size: 1G                # 磁盘大小，用于存储缓存数据
       disk_path: "/tmp/disk_cache_one" # 存储缓存数据的路径
       cache_levels: "1:2"          # 缓存的层次结构级别
 ```
 
-### 示例
+## 示例
 
-#### 启用插件
+### 启用插件
 
 示例一：cache_zone 参数默认为 `disk_cache_one`
 
@@ -127,7 +129,7 @@ hello
 
 示例二：自定义 cache_zone 参数为 `disk_cache_two`
 
-1、在 `conf/config.yaml` 文件中的指定缓存区域等信息:
+1、在 `conf/config.yaml` 文件中的指定缓存区域等信息：
 
 ```yaml
 proxy_cache:
@@ -202,7 +204,7 @@ hello
 
 > 响应头 `Apisix-Cache-Status` 值变为了 HIT，说明数据已经被缓存
 
-示例3：指定 cache_zone 为 `invalid_disk_cache` 与 `conf/config.yaml` 文件中指定的缓存区域 `disk_cache_one` 不一致。
+示例 3：指定 cache_zone 为 `invalid_disk_cache` 与 `conf/config.yaml` 文件中指定的缓存区域 `disk_cache_one` 不一致。
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -234,7 +236,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335
 
 响应错误信息，表示插件配置无效。
 
-#### 清除缓存数据
+### 清除缓存数据
 
 如何清理缓存的数据，只需要指定请求的 method 为 PURGE。
 
@@ -272,7 +274,7 @@ Server: APISIX web server
 </html>
 ```
 
-#### 禁用插件
+### 禁用插件
 
 移除插件配置中相应的 JSON 配置可立即禁用该插件，无需重启服务：
 

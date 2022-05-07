@@ -21,6 +21,8 @@ title: prometheus
 #
 -->
 
+## Description
+
 This plugin exposes metrics in Prometheus Exposition format.
 
 ## Attributes
