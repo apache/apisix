@@ -111,7 +111,7 @@ local function get_addr(conf, ctx)
                 tb_insert(split_addrs, itr)
             end
 
-            for i = #split_addrs, 1, -1 do
+            for i = #split_addrs, 2, -1 do
                 if not addr_match(conf, split_addrs[i]) then
                     return split_addrs[i]
                 end
