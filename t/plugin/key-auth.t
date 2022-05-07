@@ -451,7 +451,21 @@ test: auth-two
 
 
 
-=== TEST 19: customize query string, set hide_credentials = true
+=== TEST 19: when apikey both in header and query string, verify apikey request header is hidden but request args is not hidden
+--- request
+GET /echo?apikey=auth-one
+--- more_headers
+apikey: auth-one
+--- response_headers
+!apikey
+--- response_args
+apikey: auth-one
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: customize query string, set hide_credentials = true
 --- config
     location /t {
         content_by_lua_block {
@@ -471,7 +485,7 @@ test: auth-two
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/hello"
+                    "uri": "/echo"
                 }]]
                 )
 
@@ -490,9 +504,9 @@ passed
 
 
 
-=== TEST 20: verify auth request args is hidden
+=== TEST 21: verify auth request args is hidden
 --- request
-GET /hello?auth=auth-one
+GET /echo?auth=auth-one
 --- response_args
 !auth
 --- no_error_log
@@ -500,9 +514,9 @@ GET /hello?auth=auth-one
 
 
 
-=== TEST 21: verify that only the keys in the query parameters are deleted
+=== TEST 22: verify that only the keys in the query parameters are deleted
 --- request
-GET /hello?auth=auth-one&test=auth-two
+GET /echo?auth=auth-one&test=auth-two
 --- response_args
 !auth
 test: auth-two
@@ -511,7 +525,21 @@ test: auth-two
 
 
 
-=== TEST 22: customize query string, set hide_credentials = false
+=== TEST 23: when auth both in header and query string, verify auth request args is hidden but request header is not hidden
+--- request
+GET /echo?auth=auth-one
+--- more_headers
+auth: auth-one
+--- response_headers
+auth: auth-one
+--- response_args
+!auth
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: customize query string, set hide_credentials = false
 --- config
     location /t {
         content_by_lua_block {
@@ -550,7 +578,7 @@ passed
 
 
 
-=== TEST 23: verify auth request args should not hidden
+=== TEST 25: verify auth request args should not hidden
 --- request
 GET /hello?auth=auth-one
 --- response_args
