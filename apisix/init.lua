@@ -50,6 +50,7 @@ local error           = error
 local ipairs          = ipairs
 local ngx_now         = ngx.now
 local ngx_var         = ngx.var
+local re_split        = require("ngx.re").split
 local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
@@ -262,6 +263,44 @@ local function verify_tls_client(ctx)
 end
 
 
+local function normalize_uri_like_servlet(uri)
+    local found = core.string.find(uri, ';')
+    if not found then
+        return uri
+    end
+
+    local segs, err = re_split(uri, "/", "jo")
+    if not segs then
+        return nil, err
+    end
+
+    local len = #segs
+    for i = 1, len do
+        local seg = segs[i]
+        local pos = core.string.find(seg, ';')
+        if pos then
+            seg = seg:sub(1, pos - 1)
+            -- reject bad uri which bypasses with ';'
+            if seg == "." or seg == ".." then
+                return nil, "dot segment with parameter"
+            end
+            if seg == "" and i < len then
+                return nil, "empty segment with parameters"
+            end
+
+            segs[i] = seg
+
+            seg = seg:lower()
+            if seg == "%2e" or seg == "%2e%2e" then
+                return nil, "encoded dot segment"
+            end
+        end
+    end
+
+    return core.table.concat(segs, '/')
+end
+
+
 local function common_phase(phase_name)
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
@@ -295,11 +334,25 @@ function _M.http_access_phase()
     debug.dynamic_debug(api_ctx)
 
     local uri = api_ctx.var.uri
-    if local_conf.apisix and local_conf.apisix.delete_uri_tail_slash then
-        if str_byte(uri, #uri) == str_byte("/") then
-            api_ctx.var.uri = str_sub(api_ctx.var.uri, 1, #uri - 1)
-            core.log.info("remove the end of uri '/', current uri: ",
-                          api_ctx.var.uri)
+    if local_conf.apisix then
+        if local_conf.apisix.delete_uri_tail_slash then
+            if str_byte(uri, #uri) == str_byte("/") then
+                api_ctx.var.uri = str_sub(api_ctx.var.uri, 1, #uri - 1)
+                core.log.info("remove the end of uri '/', current uri: ", api_ctx.var.uri)
+            end
+        end
+
+        if local_conf.apisix.normalize_uri_like_servlet then
+            local new_uri, err = normalize_uri_like_servlet(uri)
+            if not new_uri then
+                core.log.error("failed to normalize: ", err)
+                return core.response.exit(400)
+            end
+
+            api_ctx.var.uri = new_uri
+            -- forward the original uri so the servlet upstream
+            -- can consume the param after ';'
+            api_ctx.var.upstream_uri = uri
         end
     end
 
