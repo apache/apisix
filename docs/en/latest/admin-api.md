@@ -567,7 +567,7 @@ In addition to the basic complex equalization algorithm selection, APISIX's Upst
 1. When it is `vars_combinations`, the `key` is required. The `key` can be any [Nginx builtin variables](http://nginx.org/en/docs/varindex.html) combinations, such as `$request_uri$remote_addr`.
 1. If there is no value for either `hash_on` or `key`, `remote_addr` will be used as key.
 
-Features below require APISIX to run on [APISIX-OpenResty](./how-to-build.md#step-6-build-openresty-for-apache-apisix):
+Features below require APISIX to run on [APISIX-Base](./how-to-build.md#step-6-build-openresty-for-apache-apisix):
 
 The `scheme` can be set to `tls`, which actually means "TLS over TCP".
 

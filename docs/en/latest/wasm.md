@@ -23,7 +23,7 @@ title: Wasm
 
 APISIX supports Wasm plugins written with [Proxy Wasm SDK](https://github.com/proxy-wasm/spec#sdks).
 
-This plugin requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#step-6-build-openresty-for-apache-apisix), and is under construction.
+This plugin requires APISIX to run on [APISIX-Base](../how-to-build.md#step-6-build-openresty-for-apache-apisix), and is under construction.
 Currently, only a few APIs are implemented. Please follow [wasm-nginx-module](https://github.com/api7/wasm-nginx-module) to know the progress.
 
 ## Programming model

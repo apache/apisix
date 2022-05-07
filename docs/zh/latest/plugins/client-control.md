@@ -25,7 +25,7 @@ title: client-control
 
 `client-control` 插件能够动态地控制 Nginx 处理客户端的请求的行为。
 
-**这个插件需要 APISIX 在 [APISIX-OpenResty](../how-to-build.md#step-6-build-openresty-for-apache-apisix) 上运行。**
+**这个插件需要 APISIX 在 [APISIX-Base](../how-to-build.md#step-6-build-openresty-for-apache-apisix) 上运行。**
 
 ## 属性
 
