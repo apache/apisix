@@ -257,3 +257,311 @@ hget animals: bark
     }
 --- response_body
 --- stream_conf_enable
+
+
+
+=== TEST 6: delay
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        name = "redis",
+                        conf = {
+                            faults = {
+                                {delay = 0.01, key = "ignored", commands = {"Ping", "time"}}
+                            }
+                        }
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:6379"] = 1
+                        },
+                        type = "roundrobin"
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: hit
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local start = ngx.now()
+            local res, err = red:ping()
+            if not res then
+                ngx.say(err)
+                return
+            end
+            local now = ngx.now()
+            -- use integer to bypass float point number precision problem
+            if math.ceil((now - start) * 1000) < 10 then
+                ngx.say(now, " ", start)
+                return
+            end
+            start = now
+
+            local res, err = red:time()
+            if not res then
+                ngx.say(err)
+                return
+            end
+            local now = ngx.now()
+            if math.ceil((now - start) * 1000) < 10 then
+                ngx.say(now, " ", start)
+                return
+            end
+            start = now
+
+            red:init_pipeline()
+            red:time()
+            red:time()
+            red:get("A")
+
+            local results, err = red:commit_pipeline()
+            if not results then
+                ngx.say("failed to commit: ", err)
+                return
+            end
+            local now = ngx.now()
+            if math.ceil((now - start) * 1000) < 20 or math.ceil((now - start) * 1000) > 30 then
+                ngx.say(now, " ", start)
+                return
+            end
+
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
+--- stream_conf_enable
+
+
+
+=== TEST 8: DFS match
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        name = "redis",
+                        conf = {
+                            faults = {
+                                {delay = 0.02, key = "a", commands = {"get"}},
+                                {delay = 0.01, commands = {"get", "set"}},
+                            }
+                        }
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:6379"] = 1
+                        },
+                        type = "roundrobin"
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: hit
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local start = ngx.now()
+            local res, err = red:get("a")
+            if not res then
+                ngx.say(err)
+                return
+            end
+            local now = ngx.now()
+            if math.ceil((now - start) * 1000) < 20 then
+                ngx.say(now, " ", start)
+                return
+            end
+            start = now
+
+            local res, err = red:set("a", "a")
+            if not res then
+                ngx.say(err)
+                return
+            end
+            local now = ngx.now()
+            if math.ceil((now - start) * 1000) < 10 then
+                ngx.say(now, " ", start)
+                return
+            end
+            start = now
+
+            red:init_pipeline()
+            red:get("b")
+            red:set("A", "a")
+
+            local results, err = red:commit_pipeline()
+            if not results then
+                ngx.say("failed to commit: ", err)
+                return
+            end
+            local now = ngx.now()
+            if math.ceil((now - start) * 1000) < 20 or math.ceil((now - start) * 1000) > 30 then
+                ngx.say(now, " ", start)
+                return
+            end
+
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
+--- stream_conf_enable
+
+
+
+=== TEST 10: multi keys
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        name = "redis",
+                        conf = {
+                            faults = {
+                                {delay = 0.03, key = "b", commands = {"del"}},
+                                {delay = 0.02, key = "a", commands = {"mset"}},
+                                {delay = 0.01, key = "b", commands = {"mset"}},
+                            }
+                        }
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:6379"] = 1
+                        },
+                        type = "roundrobin"
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: hit
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local start = ngx.now()
+            local res, err = red:mset("c", 1, "a", 2, "b", 3)
+            if not res then
+                ngx.say(err)
+                return
+            end
+            local now = ngx.now()
+            if math.ceil((now - start) * 1000) < 20 then
+                ngx.say(now, " ", start)
+                return
+            end
+            start = now
+
+            local res, err = red:mset("b", 2, "a", 3)
+            if not res then
+                ngx.say(err)
+                return
+            end
+            local now = ngx.now()
+            if math.ceil((now - start) * 1000) < 10 or math.ceil((now - start) * 1000) > 15 then
+                ngx.say(now, " ", start)
+                return
+            end
+            start = now
+
+            local res, err = red:mset("c", "a")
+            if not res then
+                ngx.say(err)
+                return
+            end
+            local now = ngx.now()
+            if math.ceil((now - start) * 1000) > 5 then
+                ngx.say(now, " ", start)
+                return
+            end
+            start = now
+
+            local res, err = red:del("a", "b")
+            if not res then
+                ngx.say(err)
+                return
+            end
+            local now = ngx.now()
+            if math.ceil((now - start) * 1000) < 30 then
+                ngx.say(now, " ", start)
+                return
+            end
+            start = now
+
+            ngx.say("ok")
+        }
+    }
+--- response_body
+ok
+--- stream_conf_enable
