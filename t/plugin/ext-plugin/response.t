@@ -418,3 +418,14 @@ GET /hello_chunked
 --- error_code: 200
 --- response_body
 hello world
+
+
+
+=== TEST 16: check upstream uri with args
+--- request
+GET /plugin_proxy_rewrite_args?aaa=bbb&ccc=ddd
+--- error_code: 200
+--- response_body
+uri: /plugin_proxy_rewrite_args
+aaa: bbb
+ccc: ddd
