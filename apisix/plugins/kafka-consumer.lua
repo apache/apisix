@@ -20,14 +20,6 @@ local core = require("apisix.core")
 local schema = {
     type = "object",
     properties = {
-        enable_tls = {
-            type = "boolean",
-            default = false,
-        },
-        ssl_verify = {
-            type = "boolean",
-            default = true,
-        },
         enable_sasl = {
             type = "boolean",
             default = false,
@@ -58,7 +50,7 @@ end
 
 
 function _M.access(conf, ctx)
-    ctx.kafka_consumer_enabled = true
+    ctx.kafka_consumer_plugin_enabled = true
 
     -- write kafka-related configuration
     ctx.kafka_consumer_enable_sasl = conf.enable_sasl
