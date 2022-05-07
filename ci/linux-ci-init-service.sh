@@ -22,9 +22,9 @@ docker exec -i apache-apisix_kafka-server2_1 /opt/bitnami/kafka/bin/kafka-topics
 docker exec -i apache-apisix_kafka-server1_1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server1:2181 --replication-factor 1 --partitions 1 --topic test-consumer
 
 # create messages for test-consumer
-for ((i=1; i<=135; i++))
+for ((i=1; i<=30; i++))
 do
-    docker exec -i apache-apisix_kafka-server1_1 echo "testmsg" | kafka-console-producer --broker-list kafka-server1:9092 --topic test-consumer
+    docker exec -i apache-apisix_kafka-server1_1 echo "testmsg$i" | kafka-console-producer --broker-list kafka-server1:9092 --topic test-consumer
 done
 
 # prepare openwhisk env
