@@ -57,6 +57,8 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
     "uri": "/kafka",
     "plugins": {
         "kafka-proxy": {
+            "enable_tls": true,
+            "ssl_verify": true,
             "enable_sasl": true,
             "sasl_username": "user",
             "sasl_password": "pwd"
@@ -69,10 +71,7 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
             "kafka-server3:9092": 1
         },
         "type": "none",
-        "scheme": "kafka",
-        "tls": {
-            "verify": true
-        }
+        "scheme": "kafka"
     }
 }'
 ```
