@@ -24,6 +24,7 @@ local profile = require("apisix.core.profile")
 local template = require("resty.template")
 local argparse = require("argparse")
 local pl_path = require("pl.path")
+local signal = require("posix.signal")
 
 local stderr = io.stderr
 local ipairs = ipairs
@@ -728,14 +729,16 @@ local function start(env, ...)
     local pid = util.read_file(pid_path)
     pid = tonumber(pid)
     if pid then
-        local lsof_cmd = "lsof -p " .. pid
-        local res, err = util.execute_cmd(lsof_cmd)
-        if not (res and res == "") then
-            if not res then
-                print(err)
-            else
-                print("APISIX is running...")
-            end
+        local signone = 0
+        local errno_noproc = 3
+
+        local ok, err, errno = signal.kill(pid, signone)
+        if ok then
+            print("APISIX is running...")
+
+            return
+        elseif errno ~= errno_noproc then
+            print(err)
 
             return
         end
