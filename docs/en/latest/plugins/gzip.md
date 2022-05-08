@@ -32,7 +32,7 @@ The `gzip` Plugin dynamically sets the behavior of [gzip in Nginx](https://docs.
 
 :::info IMPORTANT
 
-This Plugin requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#step-6-build-openresty-for-apache-apisix).
+This Plugin requires APISIX to run on [APISIX-Base](../how-to-build.md#step-6-build-openresty-for-apache-apisix).
 
 :::
 
