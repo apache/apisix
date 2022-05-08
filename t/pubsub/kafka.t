@@ -54,19 +54,6 @@ __DATA__
                         "uri": "/kafka"
                     }]],
                 },
-                {
-                    url = "/apisix/admin/upstreams/kafka-tls",
-                    data = [[{
-                        "nodes": {
-                            "127.0.0.1:9092": 1
-                        },
-                        "tls": {
-                            "verify": true
-                        },
-                        "type": "none",
-                        "scheme": "kafka"
-                    }]],
-                },
             }
 
             local t = require("lib.test_admin").test
