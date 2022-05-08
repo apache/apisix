@@ -214,6 +214,14 @@
           ]
         },
         {
+          "type": "category",
+          "label": "Pub-Sub",
+          "items": [
+            "pubsub",
+            "pubsub/kafka"
+          ]
+        },
+        {
           "type": "doc",
           "id": "health-check"
         },
