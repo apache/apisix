@@ -161,6 +161,7 @@ fi
 
 echo "passed: apisix test(failure scenario)"
 
+# apisix plugin batch-requests real_ip_from invalid - failure scenario
 echo '
 plugins:
 - batch-requests
@@ -176,8 +177,9 @@ if ! echo "$out" | grep "missing loopback or unspecified in the nginx_config.htt
     exit 1
 fi
 
-echo "passed: check the realip configuration for batch-requests"
+echo "passed: apisix plugin batch-requests real_ip_from(failure scenario)"
 
+# apisix plugin batch-requests real_ip_from valid
 echo '
 plugins:
 - batch-requests
@@ -185,57 +187,11 @@ nginx_config:
     http:
         real_ip_from:
         - "127.0.0.1"
-' > conf/config.yaml
-
-out=$(make init 2>&1 || true)
-if echo "$out" | grep "missing loopback or unspecified in the nginx_config.http.real_ip_from for plugin batch-requests"; then
-    echo "failed: should check the realip configuration for batch-requests"
-    exit 1
-fi
-
-echo "passed: check the realip configuration for batch-requests"
-
-echo '
-plugins:
-- batch-requests
-nginx_config:
-    http:
-        real_ip_from:
-        - "127.0.0.1/8"
-' > conf/config.yaml
-
-out=$(make init 2>&1 || true)
-if echo "$out" | grep "missing loopback or unspecified in the nginx_config.http.real_ip_from for plugin batch-requests"; then
-    echo "failed: should check the realip configuration for batch-requests"
-    exit 1
-fi
-
-echo "passed: check the realip configuration for batch-requests"
-
-echo '
-plugins:
-- batch-requests
-nginx_config:
-    http:
-        real_ip_from:
+        - "127.0.0.2/8"
+        - "0.0.0.0"
         - "0.0.0.0/0"
-' > conf/config.yaml
-
-out=$(make init 2>&1 || true)
-if echo "$out" | grep "missing loopback or unspecified in the nginx_config.http.real_ip_from for plugin batch-requests"; then
-    echo "failed: should check the realip configuration for batch-requests"
-    exit 1
-fi
-
-echo "passed: check the realip configuration for batch-requests"
-
-echo '
-plugins:
-- batch-requests
-nginx_config:
-    http:
-        real_ip_from:
         - "::"
+        - "::/0"
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
