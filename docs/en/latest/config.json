@@ -227,7 +227,7 @@
           "items": [
             "xrpc"
           ]
-        }
+        },
         {
           "type": "doc",
           "id": "health-check"
