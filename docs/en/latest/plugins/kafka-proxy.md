@@ -39,7 +39,7 @@ The `kafka-proxy` plugin can be used to configure advanced parameters for the ka
 | ssl_verify        | boolean | False    | true    |               | Enable TLS certificate validation |
 | enable_sasl       | boolean | False    | false   |               | Enable SASL authentication        |
 | sasl_username     | string  | False    | ""      |               | SASL authentication username      |
-| sasl_password     | string  | False    | ""      |               | SASL authentication passwrod      |
+| sasl_password     | string  | False    | ""      |               | SASL authentication password      |
 
 :::note
 If SASL authentication is enabled, the `sasl_username` and `sasl_password` must be set.
