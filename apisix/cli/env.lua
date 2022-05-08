@@ -33,7 +33,8 @@ return function (apisix_home, pkg_cpath_org, pkg_path_org)
     if not res then
         error("failed to exec ulimit cmd \'ulimit -n \', err: " .. err)
     end
-    local ulimit = tonumber(util.trim(res))
+    local trimed_res = util.trim(res)
+    local ulimit = trimed_res == "unlimited" and trimed_res or tonumber(trimed_res)
     if not ulimit then
         error("failed to fetch current maximum number of open file descriptors")
     end

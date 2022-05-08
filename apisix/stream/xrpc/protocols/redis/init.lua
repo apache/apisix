@@ -40,6 +40,8 @@ local PREFIX_ERR = str_byte("-")
 
 
 function _M.init_downstream(session)
+    session.req_id_seq = 0
+    session.resp_id_seq = 0
     return xrpc_socket.downstream.socket()
 end
 
@@ -73,13 +75,13 @@ local function read_len(sk)
 end
 
 
-local function read_req(sk, ctx)
+local function read_req(session, sk)
     local narg, err = read_len(sk)
     if not narg then
         return nil, err
     end
 
-    ctx.cmd_line = core.table.new(narg, 0)
+    local cmd_line = core.tablepool.fetch("xrpc_redis_cmd_line", narg, 0)
 
     for i = 1, narg do
         local n, err = read_len(sk)
@@ -110,11 +112,16 @@ local function read_req(sk, ctx)
             s = ffi_str(p, n)
         end
 
-        ctx.cmd_line[i] = s
+        cmd_line[i] = s
     end
 
+    session.req_id_seq = session.req_id_seq + 1
+    local ctx = sdk.get_req_ctx(session, session.req_id_seq)
+    ctx.cmd_line = cmd_line
     ctx.cmd = ctx.cmd_line[1]
-    return true
+
+    local pipelined = sk:has_pending_data()
+    return true, nil, pipelined
 end
 
 
@@ -131,7 +138,6 @@ local function read_reply(sk)
 
         local size = tonumber(ffi_str(line + 1, n - 1))
         if size < 0 then
-            -- return null
             return true
         end
 
@@ -144,7 +150,6 @@ local function read_reply(sk)
 
     elseif prefix == PREFIX_STA then    -- char '+'
         -- print("status reply")
-        -- return sub(line, 2)
         return true
 
     elseif prefix == PREFIX_ARR then -- char '*'
@@ -152,38 +157,23 @@ local function read_reply(sk)
 
         -- print("multi-bulk reply: ", narr)
         if narr < 0 then
-            -- return null
             return true
         end
 
-        local vals = core.table.new(n, 0)
-        local nvals = 0
         for i = 1, narr do
             local res, err = read_reply(sk)
-            if res then
-                nvals = nvals + 1
-                vals[nvals] = res
-
-            elseif res == nil then
+            if res == nil then
                 return nil, err
-
-            else
-                -- be a valid redis error value
-                nvals = nvals + 1
-                vals[nvals] = {false, err}
             end
         end
-
-        return vals
+        return true
 
     elseif prefix == PREFIX_INT then    -- char ':'
         -- print("integer reply")
-        -- return tonumber(str_sub(line, 2))
         return true
 
     elseif prefix == PREFIX_ERR then    -- char '-'
         -- print("error reply: ", n)
-        -- return false, str_sub(line, 2)
         return true
 
     else
@@ -192,17 +182,53 @@ local function read_reply(sk)
 end
 
 
-function _M.from_downstream(session, downstream)
-    local ctx = sdk.get_req_ctx(session, 0)
-    local ok, err = read_req(downstream, ctx)
+local function handle_reply(session, sk)
+    local ok, err = read_reply(sk)
     if not ok then
-        if err ~= "timeout" and err ~= "closed" then
-            core.log.error("failed to read request: ", err)
-        end
-        return DECLINED
+        return nil, err
     end
 
-    return OK, ctx
+    -- TODO: don't update resp_id_seq if the reply is subscribed msg
+    session.resp_id_seq = session.resp_id_seq + 1
+    local ctx = sdk.get_req_ctx(session, session.resp_id_seq)
+
+    return ctx
+end
+
+
+function _M.from_downstream(session, downstream)
+    local read_pipeline = false
+    while true do
+        local ok, err, pipelined = read_req(session, downstream)
+        if not ok then
+            if err ~= "timeout" and err ~= "closed" then
+                core.log.error("failed to read request: ", err)
+            end
+
+            if read_pipeline and err == "timeout" then
+                break
+            end
+
+            return DECLINED
+        end
+
+        if not pipelined then
+            break
+        end
+
+        if not read_pipeline then
+            read_pipeline = true
+            -- set minimal read timeout to read pipelined data
+            downstream:settimeouts(0, 0, 1)
+        end
+    end
+
+    if read_pipeline then
+        -- set timeout back
+        downstream:settimeouts(0, 0, 0)
+    end
+
+    return OK
 end
 
 
@@ -236,8 +262,13 @@ function _M.to_upstream(session, ctx, downstream, upstream)
         return DECLINED
     end
 
-    local p, err = read_reply(upstream)
-    if p == nil then
+    return OK
+end
+
+
+function _M.from_upstream(session, downstream, upstream)
+    local ctx, err = handle_reply(session, upstream)
+    if ctx == nil then
         core.log.error("failed to handle upstream: ", err)
         return DECLINED
     end
@@ -248,12 +279,13 @@ function _M.to_upstream(session, ctx, downstream, upstream)
         return DECLINED
     end
 
-    return DONE
+    return DONE, ctx
 end
 
 
 function _M.log(session, ctx)
-    -- TODO
+    core.tablepool.release("xrpc_redis_cmd_line", ctx.cmd_line)
+    ctx.cmd_line = nil
 end
 
 

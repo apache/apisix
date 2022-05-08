@@ -108,7 +108,7 @@ local delay_tab = setmetatable({data = "", force = false}, {
 --
 -- @function core.json.delay_encode
 -- @tparam string|table data The data to be encoded.
--- @tparam boolean force Whether to clear the log buffer.
+-- @tparam boolean force encode data can't be encoded as JSON with tostring
 -- @treturn table The table with the __tostring function overridden.
 -- @usage
 -- core.log.info("conf  : ", core.json.delay_encode(conf))

@@ -22,6 +22,13 @@ worker_connections(256);
 no_root_location();
 no_shuffle();
 
+our $servlet_yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    admin_key: null
+    normalize_uri_like_servlet: true
+_EOC_
+
 run_tests();
 
 __DATA__
@@ -295,3 +302,98 @@ GET /hello/
 --- error_code: 404
 --- no_error_log
 [error]
+--- response_body
+{"error_msg":"404 Route Not Found"}
+
+
+
+=== TEST 16: match route like servlet
+--- yaml_config eval: $::servlet_yaml_config
+--- request
+GET /hello;world
+--- response_body eval
+qr/404 Not Found/
+--- error_code: 404
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: plugin should work on the normalized url
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*",
+                        "plugins": {
+                            "uri-blocker": {
+                                "block_rules": ["/hello/world"]
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: hit
+--- yaml_config eval: $::servlet_yaml_config
+--- request
+GET /hello;a=b/world;a/;
+--- error_code: 403
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: reject bad uri
+--- yaml_config eval: $::servlet_yaml_config
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+            for _, path in ipairs({
+                "/;/a", "/%2e;", "/%2E%2E;", "/.;", "/..;",
+                "/%2E%2e;", "/b/;/c"
+            }) do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri .. path)
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+
+                if res.status ~= 400 then
+                    ngx.say(path, " ", res.status)
+                end
+            end
+
+            ngx.say("ok")
+        }
+    }
+--- request
+GET /t
+--- response_body
+ok

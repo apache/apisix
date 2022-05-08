@@ -25,7 +25,7 @@ title: proxy-control
 
 The `proxy-control` plugin dynamically controls the behavior of Nginx to proxy.
 
-**This plugin requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#step-6-build-openresty-for-apache-apisix).**
+**This plugin requires APISIX to run on [APISIX-Base](../how-to-build.md#step-6-build-openresty-for-apache-apisix).**
 
 ## Attributes
 

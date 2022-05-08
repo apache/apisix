@@ -40,7 +40,7 @@ _EOC_
     }
 
     if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
+        $block->set_value("no_error_log", "[error]\nRPC is not finished");
     }
 
     if (!defined $block->request) {
@@ -50,6 +50,7 @@ _EOC_
     $block;
 });
 
+worker_connections(1024);
 run_tests;
 
 __DATA__
@@ -203,4 +204,56 @@ hget animals: bark
     }
 --- response_body eval
 "\r\n" x 16777216
+--- stream_conf_enable
+
+
+
+=== TEST 5: pipeline
+--- config
+    location /t {
+        content_by_lua_block {
+            local cjson = require("cjson")
+            local redis = require "resty.redis"
+
+            local t = {}
+            for i = 1, 180 do
+                local th = assert(ngx.thread.spawn(function(i)
+                    local red = redis:new()
+                    local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+                    if not ok then
+                        ngx.say("failed to connect: ", err)
+                        return
+                    end
+
+                    red:init_pipeline()
+
+                    red:set("mark_" .. i, i)
+                    red:get("mark_" .. i)
+                    red:get("counter")
+                    for j = 1, 4 do
+                        red:incr("counter")
+                    end
+
+                    local results, err = red:commit_pipeline()
+                    if not results then
+                        ngx.say("failed to commit: ", err)
+                        return
+                    end
+
+                    local begin = tonumber(results[3])
+                    for j = 1, 4 do
+                        local incred = results[3 + j]
+                        if incred ~= results[2 + j] + 1 then
+                            ngx.log(ngx.ERR, cjson.encode(results))
+                        end
+                    end
+                end, i))
+                table.insert(t, th)
+            end
+            for i, th in ipairs(t) do
+                ngx.thread.wait(th)
+            end
+        }
+    }
+--- response_body
 --- stream_conf_enable
