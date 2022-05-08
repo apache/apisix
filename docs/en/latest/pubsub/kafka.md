@@ -49,10 +49,13 @@ The following commands are currently used by Apache Kafka connect：
 
 - CmdKafkaFetch
 - CmdKafkaListOffset
+
 > The `timestamp` field in the `CmdKafkaListOffset` command supports the following value:
+>
 > - `unix timestamp`: Offset of the first message after the specified timestamp
 > - `-1`：Offset of the last message of the current Partition
 > - `-2`：Offset of the first message of current Partition
+>
 > For more information, see [Apache Kafka Protocol Documentation](https://kafka.apache.org/protocol.html#The_Messages_ListOffsets)
 
 Possible response body: When an error occurs, `ErrorResp` will be returned, which includes the error string; the rest of the response will be returned after the execution of the particular command.

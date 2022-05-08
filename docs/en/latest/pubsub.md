@@ -121,7 +121,7 @@ end
 ```lua
 local function kafka_access_phase(api_ctx)
     local pubsub, err = core.pubsub.new()
-    
+
     -- omit kafka client initialization code here
 
     pubsub:on("cmd_kafka_list_offset", function (params)
@@ -150,11 +150,13 @@ end)
 
 :::note Callback function prototype
 The `params` is the data in the protocol definition; the first return value is the data, which needs to contain the fields in the response body definition, and returns the `nil` value when there is an error; the second return value is the error, and returns the error string when there is an error
+
 ```lua
 function (params)
     return data, err
 end
 ```
+
 :::
 
 Finally, it enters the loop to wait for client commands and when an error occurs it returns the error and stops the processing flow.

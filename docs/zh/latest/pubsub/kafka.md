@@ -39,18 +39,21 @@ description: This document contains information about the Apache APISIX kafka pu
 
 ### 准备
 
-首先，需要使用`protoc`将[通信协议](../../../../apisix/pubsub.proto)编译为特定语言SDK，它提供指令和响应定义，即可通过 APISIX 以 WebSocket 连接至 Kafka。
+首先，需要使用`protoc`将[通信协议](../../../../apisix/pubsub.proto)编译为特定语言 SDK，它提供指令和响应定义，即可通过 APISIX 以 WebSocket 连接至 Kafka。
 
-协议中`sequence`字段用来关联请求与响应，它们将一一对应，客户端可以以自己需要的方式管理它，APISIX将不会对其进行修改，仅通过响应体透传回客户端。
+协议中`sequence`字段用来关联请求与响应，它们将一一对应，客户端可以以自己需要的方式管理它，APISIX 将不会对其进行修改，仅通过响应体透传回客户端。
 
 当前 Apache Kafka 使用以下指令：这些指令都是针对某个特定的 Topic 和 Partition，暂不支持
 
 - CmdKafkaFetch
 - CmdKafkaListOffset
+
 > `CmdKafkaListOffset`指令中的`timestamp`字段支持以下情况：
+>
 > - 时间戳：获取指定时间戳后的首条消息偏移量
 > - `-1`：当前 Partition 最后一条消息偏移量
 > - `-2`：当前 Partition 首条消息偏移量
+>
 > 更多信息参考 [Apache Kafka 协议文档](https://kafka.apache.org/protocol.html#The_Messages_ListOffsets)
 
 可能的响应体：当出现错误时，将返回`ErrorResp`，它包括错误字符串；其余响应将在执行特定命令后返回。
@@ -85,9 +88,9 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/kafka' \
 
 配置路由后，就可以使用这一功能了。
 
-#### 开启TLS和鉴权
+#### 开启 TLS 和鉴权
 
-仅需在创建的路由上开启kafka-proxy插件，通过配置即可开启与 Kafka TLS 握手和 SASL 鉴权，该插件配置可以参考 [插件文档](../../../en/latest/plugins/kafka-proxy.md)。
+仅需在创建的路由上开启`kafka-proxy`插件，通过配置即可开启与 Kafka TLS 握手和 SASL 鉴权，该插件配置可以参考 [插件文档](../../../en/latest/plugins/kafka-proxy.md)。
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/kafka' \

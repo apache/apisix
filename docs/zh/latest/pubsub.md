@@ -121,7 +121,7 @@ end
 ```lua
 local function kafka_access_phase(api_ctx)
     local pubsub, err = core.pubsub.new()
-    
+
     -- omit kafka client initialization code here
 
     pubsub:on("cmd_kafka_list_offset", function (params)
@@ -149,11 +149,13 @@ end)
 
 :::note 回调函数原型
 params为协议定义中的数据；第一个返回值为数据，它需要包含响应体定义中的字段，当出现错误时则返回`nil`值；第二个返回值为错误，当出现错误时返回错误字符串
+
 ```lua
 function (params)
     return data, err
 end
 ```
+
 :::
 
 最终，进入循环等待客户端指令，当出现错误时它将返回错误并停止处理流程。
