@@ -3,8 +3,7 @@ title: kafka-proxy
 keywords:
   - APISIX
   - Plugin
-  - Kafka
-  - consumer
+  - Kafka proxy
 description: This document contains information about the Apache APISIX kafka-proxy Plugin.
 ---
 
