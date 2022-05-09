@@ -30,7 +30,7 @@ description: This document contains information about the Apache APISIX kafka pu
 
 在 Apache APISIX 中连接 Apache Kafka 非常简单。
 
-当前我们实现的功能较为简单，可以实现获取偏移量（ListOffsets）、获取消息（Fetch）的功能，暂不支持 Apache Kafka 的消费者组功能，无法由 Kafka 管理偏移量。
+当前我们提供一种较为简单的方式来进行集成，通过获取偏移量（ListOffsets）与获取消息（Fetch）这两个 API 结合，可以快速实现拉取 Kafka 消息的功能，但暂不支持 Apache Kafka 的消费者组功能，无法由 Kafka 管理偏移量。
 
 ### 局限性
 
