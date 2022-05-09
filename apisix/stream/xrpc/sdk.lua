@@ -72,19 +72,13 @@ end
 
 
 ---
--- Returns disconnected xRPC upstream socket according to the configuration
+-- Disconnect xRPC upstream socket according to the configuration
 --
 -- @function xrpc.sdk.disconnect_upstream
 -- @tparam table upstream xRPC upstream socket
 -- @tparam table up_conf upstream configuration
--- @tparam boolean upstream_broken whether the upstream is already broken
-function _M.disconnect_upstream(upstream, up_conf, upstream_broken)
-    if upstream_broken then
-        upstream:close()
-    else
-        -- TODO: support keepalive according to the up_conf
-        upstream:setkeepalive()
-    end
+function _M.disconnect_upstream(upstream, up_conf)
+    return upstream:close()
 end
 
 
