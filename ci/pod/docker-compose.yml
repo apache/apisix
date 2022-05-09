@@ -92,6 +92,8 @@ services:
     restart: unless-stopped
     ports:
       - "19092:9092"
+      - "19093:9093"
+      - "19094:9094"
     depends_on:
       - zookeeper-server1
       - zookeeper-server2
