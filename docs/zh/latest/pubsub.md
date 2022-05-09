@@ -47,19 +47,19 @@ Apache APISIX 中为此实现了一个可扩展的 pubsub 模块，它负责启�
 
 ### 基本步骤
 
-- 向`pubsub.proto`中添加新的指令和响应体定义
-- 向上游中`scheme`配置项添加新的选项
-- 向`http_access_phase`中添加新的`scheme`判断分支
+- 向 `pubsub.proto` 中添加新的指令和响应体定义
+- 向上游中 `scheme` 配置项添加新的选项
+- 向 `http_access_phase` 中添加新的 `scheme` 判断分支
 - 实现所需消息系统指令处理函数
 - 可选：创建插件以支持该消息系统的高级配置
 
 ### 以 Apache Kafka 为例
 
-#### 向`pubsub.proto`中添加新的指令和响应体定义
+#### 向 `pubsub.proto` 中添加新的指令和响应体定义
 
-`pubsub.proto`中协议定义的核心为`PubSubReq`和`PubSubResp`这两个部分。
+`pubsub.proto` 中协议定义的核心为 `PubSubReq` 和 `PubSubResp` 这两个部分。
 
-首先，创建`CmdKafkaFetch`指令，添加所需的参数。而后，在`PubSubReq`中 req 的指令列表中注册这条指令，其命名为`cmd_kafka_fetch`。
+首先，创建 `CmdKafkaFetch` 指令，添加所需的参数。而后，在 `PubSubReq` 中 req 的指令列表中注册这条指令，其命名为 `cmd_kafka_fetch`。
 
 ```protobuf
 message CmdKafkaFetch {
@@ -77,7 +77,7 @@ message PubSubReq {
 }
 ```
 
-接着创建对应的响应体`KafkaFetchResp`并在`PubSubResp`的 resp 中注册它，其命名为`kafka_fetch_resp`。
+接着创建对应的响应体 `KafkaFetchResp` 并在 `PubSubResp` 的 resp 中注册它，其命名为 `kafka_fetch_resp`。
 
 ```protobuf
 message KafkaFetchResp {
@@ -94,9 +94,9 @@ message PubSubResp {
 }
 ```
 
-#### 向上游中`scheme`配置项添加新的选项
+#### 向上游中 `scheme` 配置项添加新的选项
 
-在`apisix/schema_def.lua`的`upstream`中`scheme`字段枚举中添加新的选项`kafka`。
+在 `apisix/schema_def.lua` 的 `upstream` 中 `scheme` 字段枚举中添加新的选项 `kafka`。
 
 ```lua
 scheme = {
@@ -105,9 +105,9 @@ scheme = {
 }
 ```
 
-#### 向`http_access_phase`中添加新的`scheme`判断分支
+#### 向 `http_access_phase` 中添加新的 `scheme` 判断分支
 
-在`apisix/init.lua`的`http_access_phase`函数中添加`scheme`的判断分支，以支持`kafka`类型的上游的处理。因为 Apache Kafka 有其自己的集群与分片方案，我们不需要使用 Apache APISIX 内置的负载均衡算法，因此在选择上游节点前拦截并接管处理流程，此处使用`kafka_access_phase`函数。
+在 `apisix/init.lua` 的 `http_access_phase` 函数中添加 `scheme` 的判断分支，以支持 `kafka` 类型的上游的处理。因为 Apache Kafka 有其自己的集群与分片方案，我们不需要使用 Apache APISIX 内置的负载均衡算法，因此在选择上游节点前拦截并接管处理流程，此处使用 `kafka_access_phase` 函数。
 
 ```lua
 -- load balancer is not required by kafka upstream
@@ -132,7 +132,7 @@ local function kafka_access_phase(api_ctx)
 end
 ```
 
-首先，创建`pubsub`模块实例，它在`core`包中提供。
+首先，创建 `pubsub` 模块实例，它在 `core` 包中提供。
 
 ```lua
 local pubsub, err = core.pubsub.new()
@@ -140,7 +140,7 @@ local pubsub, err = core.pubsub.new()
 
 创建需要的 Apache Kafka 客户端实例，此处省略这部分代码。
 
-接着，在`pubsub`实例中添加在上面协议定义中注册的指令，其中将提供一个回调函数，它的提供从通信协议中解析出的参数，开发者需要在这个回调函数中调用 kafka 客户端获取数据，并作为函数返回值返回至`pubsub`模块。
+接着，在 `pubsub` 实例中添加在上面协议定义中注册的指令，其中将提供一个回调函数，它的提供从通信协议中解析出的参数，开发者需要在这个回调函数中调用 kafka 客户端获取数据，并作为函数返回值返回至 `pubsub` 模块。
 
 ```lua
 pubsub:on("cmd_kafka_list_offset", function (params)
@@ -148,7 +148,7 @@ end)
 ```
 
 :::note 回调函数原型
-params为协议定义中的数据；第一个返回值为数据，它需要包含响应体定义中的字段，当出现错误时则返回`nil`值；第二个返回值为错误，当出现错误时返回错误字符串
+params为协议定义中的数据；第一个返回值为数据，它需要包含响应体定义中的字段，当出现错误时则返回 `nil` 值；第二个返回值为错误，当出现错误时返回错误字符串
 
 ```lua
 function (params)
@@ -164,7 +164,7 @@ end
 local err = pubsub:wait()
 ```
 
-#### 可选：创建`kafka-proxy`插件以支持其鉴权配置
+#### 可选：创建 `kafka-proxy` 插件以支持其鉴权配置
 
 在插件 schema 定义中添加所需的字段，而后在 `access` 处理函数中将它们写入当前请求的上下文中。
 
