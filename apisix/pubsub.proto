@@ -42,15 +42,15 @@ message CmdKafkaFetch {
 
 /**
  * Client request definition for pubsub scenarios
- * 
+ *
  * The sequence field is used to associate requests and responses.
  * Apache APISIX will set a consistent sequence for the associated
- * requests and responses, and the client can explicitly know the 
+ * requests and responses, and the client can explicitly know the
  * response corresponding to any of the requests.
  *
  * The req field is the command data sent by the client, and its
  * type will be chosen from any of the lists in the definition.
- * 
+ *
  * Field numbers 1 to 30 in the definition are used to define basic
  * information and future extensions, and numbers after 30 are used
  * to define commands.
@@ -99,9 +99,9 @@ message KafkaListOffsetResp {
 
 /**
  * Server response definition for pubsub scenarios
- * 
+ *
  * The sequence field will be the same as the value in the
- * request, which is used to associate the associated request 
+ * request, which is used to associate the associated request
  * and response.
  *
  * The resp field is the response data sent by the server, and
