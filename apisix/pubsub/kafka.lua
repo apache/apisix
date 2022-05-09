@@ -21,6 +21,7 @@ local ffi       = require("ffi")
 local C         = ffi.C
 local tostring  = tostring
 local type      = type
+local ipairs    = ipairs
 local str_sub   = string.sub
 
 ffi.cdef[[
