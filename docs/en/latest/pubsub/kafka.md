@@ -30,8 +30,6 @@ description: This document contains information about the Apache APISIX kafka pu
 
 Connecting to Apache Kafka in Apache APISIX is very simple.
 
-当前我们提供一种较为简单的方式来进行集成，通过获取偏移量（ListOffsets）与获取消息（Fetch）这两个 API 结合，可以快速实现拉取 Kafka 消息的功能，但暂不支持 Apache Kafka 的消费者组功能，无法由 Kafka 管理偏移量。
-
 Currently we provide a simpler way to integrate by combining two APIs, ListOffsets and Fetch, to quickly implement the ability to pull Kafka messages, but do not support Apache Kafka's consumer group feature for now, and cannot be managed by Kafka for offsets.
 
 ### Limitations
