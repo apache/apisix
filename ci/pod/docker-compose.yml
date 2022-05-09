@@ -97,6 +97,8 @@ services:
       - zookeeper-server2
     networks:
       kafka_net:
+    volumes:
+      - ci/pod/kafka/kafka-server/selfsigned.jks:/opt/bitnami/kafka/config/certs/kafka.keystore.jks:ro
 
 
   ## Eureka
