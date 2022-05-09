@@ -42,8 +42,7 @@ local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
 local ngx_balancer    = require("ngx.balancer")
 local debug           = require("apisix.debug")
-local kafka_bconsumer = require("resty.kafka.basic-consumer")
-local ffi             = require("ffi")
+local pubsub_kafka    = require("apisix.pubsub.kafka")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -56,10 +55,7 @@ local re_split        = require("ngx.re").split
 local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
-local tostring        = tostring
-local type            = type
 local pairs           = pairs
-local C               = ffi.C
 local control_api_router
 
 local is_http = false
@@ -323,111 +319,6 @@ local function common_phase(phase_name)
 end
 
 
-ffi.cdef[[
-    int64_t atoll(const char *num);
-]]
-local function kafka_access_phase(api_ctx)
-    local pubsub, err = core.pubsub.new()
-    if not pubsub then
-        core.log.error("failed to initialize pub-sub module, err: ", err)
-        core.response.exit(400)
-        return
-    end
-
-    local up_nodes = api_ctx.matched_upstream.nodes
-
-    -- kafka client broker-related configuration
-    local broker_list = {}
-    for i, node in ipairs(up_nodes) do
-        broker_list[i] = {
-            host = node.host,
-            port = node.port,
-        }
-
-        if api_ctx.kafka_consumer_enable_sasl then
-            broker_list[i].sasl_config = {
-                mechanism = "PLAIN",
-                user = api_ctx.kafka_consumer_sasl_username,
-                password = api_ctx.kafka_consumer_sasl_password,
-            }
-        end
-    end
-
-    -- kafka client socket-related configuration
-    local client_config = {refresh_interval = 30 * 60 * 1000}
-    if api_ctx.kafka_consumer_enable_tls then
-        client_config = {
-            ssl = api_ctx.kafka_consumer_enable_tls,
-            ssl_verify = api_ctx.kafka_consumer_ssl_verify,
-        }
-    end
-
-    -- load and create the consumer instance when it is determined
-    -- that the websocket connection was created successfully
-    local consumer = kafka_bconsumer:new(broker_list, client_config)
-
-    pubsub:on("cmd_kafka_list_offset", function (params)
-        -- The timestamp parameter uses a 64-bit integer, which is difficult
-        -- for luajit to handle well, so the int64_as_string option in
-        -- lua-protobuf is used here. Smaller numbers will be decoded as
-        -- lua number, while overly larger numbers will be decoded as strings
-        -- in the format #number, where the # symbol at the beginning of the
-        -- string will be removed and converted to int64_t with the atoll function.
-        local timestamp = type(params.timestamp) == "string" and
-            C.atoll(str_sub(params.timestamp, 2, #params.timestamp)) or params.timestamp
-
-        local offset, err = consumer:list_offset(params.topic, params.partition, timestamp)
-
-        if not offset then
-            return nil, "failed to list offset, topic: " .. params.topic ..
-                ", partition: " .. params.partition .. ", err: " .. err
-        end
-
-        offset = tostring(offset)
-        return {
-            kafka_list_offset_resp = {
-                offset = str_sub(offset, 1, #offset - 2)
-            }
-        }
-    end)
-
-    pubsub:on("cmd_kafka_fetch", function (params)
-        local offset = type(params.offset) == "string" and
-            C.atoll(str_sub(params.offset, 2, #params.offset)) or params.offset
-
-        local ret, err = consumer:fetch(params.topic, params.partition, offset)
-        if not ret then
-            return nil, "failed to fetch message, topic: " .. params.topic ..
-                ", partition: " .. params.partition .. ", err: " .. err
-        end
-
-        -- split into multiple messages when the amount of data in
-        -- a single batch is too large
-        local messages = ret.records
-
-        -- special handling of int64 for luajit compatibility
-        for _, message in ipairs(messages) do
-            local timestamp = tostring(message.timestamp)
-            message.timestamp = str_sub(timestamp, 1, #timestamp - 2)
-            local offset = tostring(message.offset)
-            message.offset = str_sub(offset, 1, #offset - 2)
-        end
-
-        return {
-            kafka_fetch_resp = {
-                messages = messages,
-            },
-        }
-    end)
-
-    -- start processing client commands
-    local err = pubsub:wait()
-    if err then
-        core.log.error("failed to handle pub-sub command, err: ", err)
-    end
-end
-
-
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
 
@@ -616,7 +507,7 @@ function _M.http_access_phase()
 
     -- load balancer is not required by kafka upstream
     if api_ctx.matched_upstream and api_ctx.matched_upstream.scheme == "kafka" then
-        return kafka_access_phase(api_ctx)
+        return pubsub_kafka.access(api_ctx)
     end
 
     local code, err = set_upstream(route, api_ctx)
