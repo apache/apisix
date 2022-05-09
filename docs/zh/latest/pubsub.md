@@ -35,7 +35,7 @@ description: This document contains information about the Apache APISIX pub-sub 
 
 ![pub-sub architecture](../../assets/images/pubsub-architecture.svg)
 
-当前，Apache APISIX 支持以 WebSocket 与客户端通信，客户端可以是任何支持 WebSocket 的程序，以自定义 Protocol Buffer 为应用层通信协议，查看[协议定义](../../../apisix/pubsub.proto)。
+当前，Apache APISIX 支持以 WebSocket 与客户端通信，客户端可以是任何支持 WebSocket 的程序，以 Protocol Buffer 作为序列化机制，查看[协议定义](../../../apisix/pubsub.proto)。
 
 ## 当前支持的消息系统
 

@@ -35,7 +35,7 @@ In Apache APISIX, the most common scenario is for handling north-south traffic f
 
 ![pub-sub architecture](../../assets/images/pubsub-architecture.svg)
 
-Currently, Apache APISIX supports WebSocket communication with the client, which can be any application that supports WebSocket, with a custom Protocol Buffer as the application layer communication protocol, see the [protocol definition](../../../apisix/pubsub.proto).
+Currently, Apache APISIX supports WebSocket communication with the client, which can be any application that supports WebSocket, with Protocol Buffer as the serialization mechanism, see the [protocol definition](../../../apisix/pubsub.proto).
 
 ## Supported messaging systems
 
