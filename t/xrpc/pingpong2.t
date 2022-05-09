@@ -254,7 +254,7 @@ passed
 "pp\x02\x00\x00\x00\x00\x00\x00\x03ABC"
 --- stream_conf_enable
 --- error_log
-call pingpong's log
+log filter: syslog filter result: true
 
 
 
@@ -359,7 +359,7 @@ passed
 "pp\x02\x00\x00\x00\x00\x00\x00\x03ABC"
 --- stream_conf_enable
 --- error_log
-call pingpong's log
+log filter: syslog filter result: true
 
 
 

@@ -76,6 +76,12 @@ local function to_int32(p, idx)
 end
 
 
+local function init_ctx_fileds(ctx)
+    -- init some ctx fields
+    core.ctx.set_vars_meta(ctx)
+end
+
+
 function _M.from_downstream(session, downstream)
     -- read a request from downstream
     -- return status and the new ctx
@@ -160,6 +166,8 @@ function _M.from_downstream(session, downstream)
     if typ == TYPE_UNARY_DYN_UP then
         ctx.len = ctx.len + 4
     end
+
+    init_ctx_fileds(ctx)
     return OK, ctx
 end
 

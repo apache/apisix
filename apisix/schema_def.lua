@@ -815,7 +815,7 @@ local xrpc_protocol_schema = {
                         type = "string",
                     },
                     filter = {
-                        description = "log filter rules",
+                        description = "logger filter rules",
                         type = "array",
                     },
                     conf = {

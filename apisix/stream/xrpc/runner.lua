@@ -23,9 +23,9 @@ local ngx_now = ngx.now
 local OK = ngx.OK
 local DECLINED = ngx.DECLINED
 local DONE = ngx.DONE
-local tostring = tostring
 local pcall = pcall
 local ipairs = ipairs
+local tostring = tostring
 
 
 local _M = {}
@@ -93,11 +93,13 @@ local function run_log_plugin(ctx, logger)
     local pkg_name = "apisix.stream.plugins." .. logger.name
     local ok, plugin = pcall(require, pkg_name)
     if not ok then
-        core.log.error("failed to load plugin [", plugin, "] err: ", plugin)
+        core.log.error("failed to load plugin [", logger.name, "] err: ", plugin)
         return
     end
 
-    core.ctx.set_vars_meta(ctx)
+    -- we choose to initialize conf_id and conf_type here
+    -- because conf here refers specifically to the conf in the log phase,
+    -- to avoid overwriting the conf in other parts of the protocol
     ctx.conf_id = tostring(logger.conf)
     ctx.conf_type = "xrpc-logger"
 
