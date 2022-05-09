@@ -25,7 +25,6 @@ local DECLINED = ngx.DECLINED
 local DONE = ngx.DONE
 local pcall = pcall
 local ipairs = ipairs
-local tostring = tostring
 
 
 local _M = {}
@@ -96,12 +95,6 @@ local function run_log_plugin(ctx, logger)
         core.log.error("failed to load plugin [", logger.name, "] err: ", plugin)
         return
     end
-
-    -- we choose to initialize conf_id and conf_type here
-    -- because conf here refers specifically to the conf in the log phase,
-    -- to avoid overwriting the conf in other parts of the protocol
-    ctx.conf_id = tostring(logger.conf)
-    ctx.conf_type = "xrpc-logger"
 
     local log_func = plugin.log
     if log_func then

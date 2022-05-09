@@ -574,8 +574,8 @@ GET /t
 "pp\x02\x00\x00\x00\x00\x00\x00\x03ABC"
 --- timeout: 5
 --- error_log
-try to lock with key xrpc-logger#table
-unlock with key xrpc-logger#table
+try to lock with key xrpc-pingpong#table
+unlock with key xrpc-pingpong#table
 
 
 
