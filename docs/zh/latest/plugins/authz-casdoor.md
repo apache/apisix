@@ -5,7 +5,7 @@ keywords:
   - Plugin
   - Authz Casdoor
   - authz-casdoor
-description: This document contains information about the Apache APISIX authz-casdoor Plugin.
+description: 本篇文档介绍了 Apache APISIX auth-casdoor 插件的相关信息。
 ---
 
 <!--
@@ -27,34 +27,30 @@ description: This document contains information about the Apache APISIX authz-ca
 #
 -->
 
-## Description
+## 描述
 
-The `authz-casdoor` Plugin can be used to add centralized authentication with [Casdoor](https://casdoor.org/).
+使用 `authz-casdoor` 插件可添加 [Casdoor](https://casdoor.org/) 集中认证方式。
 
-## Attributes
+## 属性
 
-| Name          | Type   | Required | Description                                  |
+| 名称          | 类型   | 必选项 | 描述                                  |
 |---------------|--------|----------|----------------------------------------------|
-| endpoint_addr | string | True     | URL of Casdoor.                              |
-| client_id     | string | True     | Client ID in Casdoor.                        |
-| client_secret | string | True     | Client secret in Casdoor.                    |
-| callback_url  | string | True     | Callback URL used to receive state and code. |
+| endpoint_addr | string | 是     | Casdoor 的 URL。                           |
+| client_id     | string | 是     | Casdoor 的客户端 id。                      |
+| client_secret | string | 是     | Casdoor 的客户端密钥。                 |
+| callback_url  | string | 是     | 用于接收 code 与 state 的回调地址。 |
 
 :::info IMPORTANT
 
-`endpoint_addr` and `callback_url` should not end with '/'.
+指定 `endpoint_addr` 和 `callback_url` 属性时不要以 “/” 来结尾。
+
+`callback_url` 必须是路由的 URI。具体细节可查看下方示例内容，了解相关配置。
 
 :::
 
-:::info IMPORTANT
+## 启用插件
 
-The `callback_url` must belong to the URI of your Route. See the code snippet below for an example configuration.
-
-:::
-
-## Enabling the Plugin
-
-You can enable the Plugin on a specific Route as shown below:
+以下示例展示了如何在指定路由上启用 `auth-casdoor` 插件：
 
 ```shell
 curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
@@ -78,17 +74,17 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
 }'
 ```
 
-## Example usage
+## 测试插件
 
-Once you have enabled the Plugin, a new user visiting this Route would first be processed by the `authz-casdoor` Plugin. They would be redirected to the login page of Casdoor.
+一旦启用了该插件，访问该路由的新用户首先会经过 `authz-casdoor` 插件的处理，然后被重定向到 Casdoor 登录页面。
 
-After successfully logging in, Casdoor will redirect this user to the `callback_url` with GET parameters `code` and `state` specified. The Plugin will also request for an access token and confirm whether the user is really logged in. This process is only done once and subsequent requests are left uninterrupted.
+成功登录后，Casdoor 会将该用户重定向到 `callback_url`，并指定 GET 参数的 `code` 和 `state`。该插件还会向 Casdoor 请求一个访问 Token，并确认用户是否已登录。在成功认证后，该流程只出现一次并且后续请求不会被打断。
 
-Once this is done, the user is redirected to the original URL they wanted to visit.
+上述操作完成后，用户就会被重定向到目标 URL。
 
-## Disable Plugin
+## 禁用插件
 
-To disable the `authz-casdoor` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+当需要禁用 `authz-casdoor` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
