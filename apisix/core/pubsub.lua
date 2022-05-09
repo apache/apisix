@@ -31,8 +31,7 @@ protoc.reload()
 pb.option("int64_as_string")
 local pubsub_protoc = protoc.new()
 
--- This module is used to handle ws server command
--- processing in pub-sub scenarios.
+
 local _M = { version = 0.1 }
 local mt = { __index = _M }
 
