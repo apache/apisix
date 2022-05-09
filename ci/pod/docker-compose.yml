@@ -73,11 +73,15 @@ services:
     restart: unless-stopped
     ports:
       - "9092:9092"
+      - "9093:9093"
+      - "9094:9094"
     depends_on:
       - zookeeper-server1
       - zookeeper-server2
     networks:
       kafka_net:
+    volumes:
+      - ci/pod/kafka/kafka-server/selfsigned.jks:/opt/bitnami/kafka/config/certs/kafka.keystore.jks:ro
 
   kafka-server2:
     image: bitnami/kafka:2.8.1
