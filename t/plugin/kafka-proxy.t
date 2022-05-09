@@ -45,12 +45,11 @@ __DATA__
                 {enable_tls = true, ssl_verify = true},
                 {enable_tls = "none"},
                 {enable_tls = true, ssl_verify = "none"},
-                {enable_sasl = true, sasl_username = "user", sasl_password = "pwd"},
+                {enable_sasl = true, sasl = {username = "user", password = "pwd"}},
                 {enable_sasl = false},
                 {enable_sasl = true},
-                {enable_sasl = true, sasl_username = "user"},
-                {enable_sasl = true, sasl_username = 123, sasl_password = "123"},
-                {enable_sasl = true, sasl_username = "123", sasl_password = 123},
+                {enable_sasl = true, sasl = {username = "user"}},
+                {enable_sasl = true, sasl = {username = 1234}},
             }
             local plugin = require("apisix.plugins.kafka-proxy")
 
@@ -67,7 +66,6 @@ property "enable_tls" validation failed: wrong type: expected boolean, got strin
 property "ssl_verify" validation failed: wrong type: expected boolean, got string
 done
 done
-need to set sasl username when enabling kafka sasl authentication
-need to set sasl password when enabling kafka sasl authentication
-property "sasl_username" validation failed: wrong type: expected string, got number
-property "sasl_password" validation failed: wrong type: expected string, got number
+need to set sasl configuration when enabling kafka sasl authentication
+property "sasl" validation failed: property "password" is required
+property "sasl" validation failed: property "username" validation failed: wrong type: expected string, got number

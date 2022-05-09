@@ -32,13 +32,19 @@ local schema = {
             type = "boolean",
             default = false,
         },
-        sasl_username = {
-            type = "string",
-            default = "",
-        },
-        sasl_password = {
-            type = "string",
-            default = "",
+        sasl = {
+            type = "object",
+            properties = {
+                username = {
+                    type = "string",
+                    default = "",
+                },
+                password = {
+                    type = "string",
+                    default = "",
+                },
+            },
+            required = {"username", "password"},
         },
     },
 }
@@ -53,13 +59,8 @@ local _M = {
 
 
 function _M.check_schema(conf)
-    if conf.enable_sasl then
-        if not conf.sasl_username or conf.sasl_username == "" then
-            return false, "need to set sasl username when enabling kafka sasl authentication"
-        end
-        if not conf.sasl_password or conf.sasl_password == "" then
-            return false, "need to set sasl password when enabling kafka sasl authentication"
-        end
+    if conf.enable_sasl and not conf.sasl then
+        return false, "need to set sasl configuration when enabling kafka sasl authentication"
     end
 
     return core.schema.check(schema, conf)
@@ -70,8 +71,10 @@ function _M.access(conf, ctx)
     ctx.kafka_consumer_enable_tls = conf.enable_tls
     ctx.kafka_consumer_ssl_verify = conf.ssl_verify
     ctx.kafka_consumer_enable_sasl = conf.enable_sasl
-    ctx.kafka_consumer_sasl_username = conf.sasl_username
-    ctx.kafka_consumer_sasl_password = conf.sasl_password
+    if conf.enable_sasl then
+        ctx.kafka_consumer_sasl_username = conf.sasl.username
+        ctx.kafka_consumer_sasl_password = conf.sasl.password
+    end
 end
 
 
