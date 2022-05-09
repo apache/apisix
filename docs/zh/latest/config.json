@@ -68,6 +68,7 @@
           "label": "Authentication",
           "items": [
             "plugins/authz-keycloak",
+            "plugins/authz-casdoor",
             "plugins/wolf-rbac",
             "plugins/key-auth",
             "plugins/jwt-auth",
@@ -75,6 +76,8 @@
             "plugins/openid-connect",
             "plugins/hmac-auth",
             "plugins/authz-casbin",
+            "plugins/ldap-auth",
+            "plugins/opa",
             "plugins/forward-auth"
           ]
         },
