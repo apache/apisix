@@ -42,4 +42,4 @@ jobs:
 
       - name: Run eclint
         run: |
-          eclint check
+          eclint check [!]ci/pod/kafka/kafka-server/selfsigned.jks
