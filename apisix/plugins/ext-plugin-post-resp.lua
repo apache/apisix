@@ -162,7 +162,7 @@ function _M.before_proxy(conf, ctx)
 
     if err then
         core.log.error(err)
-        return not ngx.headers_sent and 502
+        return not ngx.headers_sent and 502 or nil
     end
 
     core.log.info("ext-plugin send response succefully")
