@@ -15,6 +15,10 @@
 -- limitations under the License.
 --
 
+--- Extensible framework to support publish-and-subscribe scenarios
+--
+-- @module core.pubsub
+
 local core         = require("apisix.core")
 local ws_server    = require("resty.websocket.server")
 local protoc       = require("protoc")
@@ -33,6 +37,14 @@ local _M = { version = 0.1 }
 local mt = { __index = _M }
 
 
+---
+-- Create pubsub module instance
+--
+-- @function core.pubsub.new
+-- @treturn pubsub module instance
+-- @treturn string|nil error message if present
+-- @usage
+-- local pubsub, err = core.pubsub.new()
 function _M.new()
     -- compile the protobuf file on initial load module
     -- ensure that each worker is loaded once
@@ -59,15 +71,33 @@ function _M.new()
 end
 
 
--- add command callback function
--- handler is function(params)
--- return value is resp, err
+---
+-- Add command callbacks to pubsub module instances
+--
+-- The callback function prototype: function (params)
+-- The params in the parameters contain the data defined in the requested command.
+-- Its first return value is the data, which needs to contain the data needed for
+-- the particular resp, returns nil if an error exists.
+-- Its second return value is a string type error message, no need to return when
+-- no error exists.
+--
+-- @function core.pubsub.on
+-- @usage
+-- pubsub:on(command, function (params)
+--     return data, err
+-- end)
 function _M.on(self, command, handler)
     self.cmd_handler[command] = handler
 end
 
 
--- enter the message receiving loop and wait for client data
+---
+-- Put the pubsub instance into an event loop, waiting to process client commands
+--
+-- @function core.pubsub.wait
+-- @treturn string|nil error message if present, will terminate the event loop
+-- @usage
+-- local err = pubsub:wait()
 function _M.wait(self)
     local ws = self.ws_server
     while true do
