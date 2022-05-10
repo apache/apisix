@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,8 +16,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+set -euo pipefail
 
-wget https://github.com/etcd-io/etcd/releases/download/v3.4.18/etcd-v3.4.18-linux-amd64.tar.gz
-tar xf etcd-v3.4.18-linux-amd64.tar.gz
-sudo cp etcd-v3.4.18-linux-amd64/etcdctl /usr/local/bin/
-rm -rf etcd-v3.4.18-linux-amd64
+ETCD_ARCH="amd64"
+ARCH=${ARCH:-`(uname -m | tr '[:upper:]' '[:lower:]')`}
+
+if [[ $ARCH == "arm64" ]] || [[ $ARCH == "aarch64" ]]; then
+    ETCD_ARCH="arm64"
+fi
+
+wget https://github.com/etcd-io/etcd/releases/download/v3.4.18/etcd-v3.4.18-linux-${ETCD_ARCH}.tar.gz
+tar xf etcd-v3.4.18-linux-${ETCD_ARCH}.tar.gz
+sudo cp etcd-v3.4.18-linux-${ETCD_ARCH}/etcdctl /usr/local/bin/
+rm -rf etcd-v3.4.18-linux-${ETCD_ARCH}
