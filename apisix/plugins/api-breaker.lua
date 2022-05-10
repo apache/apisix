@@ -40,7 +40,7 @@ local schema = {
         break_response_body = {
             type = "string"
         },
-        headers = {
+        break_response_headers = {
             type = "array",
             items = {
                 type = "object",
