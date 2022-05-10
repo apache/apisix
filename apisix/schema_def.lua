@@ -410,6 +410,7 @@ local upstream_schema = {
                     type = "boolean",
                     description = "Turn on server certificate verification, "..
                         "currently only kafka upstream is supported",
+                    default = false,
                 },
             },
             anyOf = {
