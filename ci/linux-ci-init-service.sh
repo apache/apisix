@@ -25,7 +25,9 @@ docker exec -i apache-apisix_kafka-server1_1 /opt/bitnami/kafka/bin/kafka-topics
 for i in `seq 30`
 do
     docker exec -i apache-apisix_kafka-server1_1 bash -c "echo "testmsg$i" | /opt/bitnami/kafka/bin/kafka-console-producer.sh --bootstrap-server 127.0.0.1:9092 --topic test-consumer"
+    echo "Produces messages to the test-consumer topic, msg: testmsg$i"
 done
+echo "Kafka service initialization completed"
 
 # prepare openwhisk env
 docker pull openwhisk/action-nodejs-v14:nightly
