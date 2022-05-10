@@ -103,8 +103,15 @@ function _M.wait(self)
         -- read raw data frames from websocket connection
         local raw_data, raw_type, err = ws:recv_frame()
         if err then
-            ws:send_close()
-            return "websocket server: "..err
+            -- terminate the event loop when a fatal error occurs
+            if ws.fatal then
+                ws:send_close()
+                return "websocket server: "..err
+            end
+
+            -- skip this loop for non-fatal errors
+            log.error("failed to receive websocket frame: "..err)
+            goto continue
         end
 
         -- handle client close connection
@@ -129,8 +136,8 @@ function _M.wait(self)
             if key ~= "sequence" then
                 local handler = self.cmd_handler[key]
                 if not handler then
-                    log.error("handler not registered for the",
-                        " current command, command: ", key)
+                    log.error("callback handler not registered for the",
+                        " this command, command: ", key)
                     goto continue
                 end
 
