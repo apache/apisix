@@ -119,7 +119,7 @@ end
 local function finish_req(protocol, session, ctx)
     ctx._rpc_end_time = ngx_now()
 
-    local loggers = session._route.protocol.logger
+    local loggers = session.route.protocol.logger
     if loggers and #loggers > 0 then
         for _, logger in ipairs(loggers) do
             ctx.conf_id = tostring(logger.conf)
