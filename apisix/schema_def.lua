@@ -408,10 +408,14 @@ local upstream_schema = {
                 client_key = private_key_schema,
                 verify = {
                     type = "boolean",
-                    description = "Turn on server certificate verification",
+                    description = "Turn on server certificate verification, "..
+                        "currently only kafka upstream is supported",
                 },
             },
-            required = {"client_cert", "client_key"}
+            anyOf = {
+                {required = {"client_cert", "client_key"}},
+                {required = {"verify"}}
+            }
         },
         keepalive_pool = {
             type = "object",
