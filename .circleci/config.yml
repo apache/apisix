@@ -96,4 +96,4 @@ workflows:
                   - "t/node t/router t/script t/stream-node t/utils t/xds-library t/xrpc"
           filters:
             branches:
-              only: feat/arm64ci_test
+              only: master
