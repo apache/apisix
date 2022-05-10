@@ -125,8 +125,8 @@ end
 -- @treturn table the new router under the specific protocol
 -- @treturn string the new router version
 function _M.get_router(session, version)
-    local protocol_name = session._route.protocol.name
-    local id = session._route.id
+    local protocol_name = session.route.protocol.name
+    local id = session.route.id
 
     local items, conf_version = router.routes()
     if version == conf_version then
