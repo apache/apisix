@@ -824,7 +824,7 @@ local xrpc_protocol_schema = {
                     },
                 },
                 dependencies = {
-                    name = {"filter", "conf"},
+                    name = {"conf"},
                 },
             },
         },

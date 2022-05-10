@@ -25,7 +25,11 @@ local DECLINED = ngx.DECLINED
 local DONE = ngx.DONE
 local pcall = pcall
 local ipairs = ipairs
+local tostring = tostring
 
+local logger_expr_cache = core.lrucache.new({
+    ttl = 300, count = 32
+})
 
 local _M = {}
 
@@ -75,16 +79,24 @@ end
 
 
 local function filter_logger(ctx, logger)
-    if not logger or not logger.filter or #logger.filter == 0 then
-        return false
+    if not logger then
+       return false
     end
 
-    local expr, err = expr.new(logger.filter)
-    if err then
+    if not logger.filter or #logger.filter == 0 then
+        -- no valid filter, default execution plugin
+        return true
+    end
+
+    -- key and version are divided by per-logger level
+    local key = "xrpc-logger" .. ctx.conf_id
+    local version = tostring(logger.filter)
+    local filter_expr, err = logger_expr_cache(key, version, expr.new, logger.filter)
+    if not filter_expr or err then
         core.log.error("failed to validate the 'filter' expression: ", err)
         return false
     end
-    return expr:eval(ctx)
+    return filter_expr:eval(ctx)
 end
 
 
@@ -109,6 +121,7 @@ local function finish_req(protocol, session, ctx)
     local loggers = session._route.protocol.logger
     if loggers and #loggers > 0 then
         for _, logger in ipairs(loggers) do
+            ctx.conf_id = tostring(logger.conf)
             local matched = filter_logger(ctx, logger)
             core.log.info("log filter: ", logger.name, " filter result: ", matched)
             if matched then

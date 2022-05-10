@@ -109,8 +109,7 @@ function _M.get_req_ctx(session, id)
     -- fields start with '_' should not be accessed by the protocol implementation
     ctx._id = id
     core.ctx.set_vars_meta(ctx)
-    ctx.conf_id = tostring(session._route.protocol)
-    ctx.conf_type = "xrpc-" .. session._route.protocol.name
+    ctx.conf_type = "xrpc-" .. session._route.protocol.name .. "-logger"
 
     session._ctxs[id] = ctx
 

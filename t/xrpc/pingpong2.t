@@ -446,7 +446,63 @@ passed
 
 
 
-=== TEST 14: set loggger conf
+=== TEST 14: no loggger filter, defaulte executed logger plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                {
+                    protocol = {
+                        name = "pingpong",
+                        logger = {
+                            {
+                                name = "syslog",
+                                conf = {
+                                    host = "127.0.0.1",
+                                    port = 8125,
+                                    sock_type = "udp",
+                                    batch_max_size = 1,
+                                    flush_limit = 1
+                                }
+                            }
+                        }
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:1995"] = 1
+                        },
+                        type = "roundrobin"
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 15: verify the data received by the log server
+--- request eval
+"POST /t
+" .
+"pp\x02\x00\x00\x00\x00\x00\x00\x03ABC"
+--- stream_conf_enable
+--- wait: 0.5
+--- error_log eval
+qr/message received:.*\"client_ip\\"\:\\"127.0.0.1\\"/
+
+
+
+=== TEST 16: set loggger filter
 --- config
     location /t {
         content_by_lua_block {
@@ -493,7 +549,7 @@ passed
 
 
 
-=== TEST 15: verify the data received by the log server
+=== TEST 17: verify the data received by the log server
 --- request eval
 "POST /t
 " .
@@ -505,7 +561,7 @@ qr/message received:.*\"client_ip\\"\:\\"127.0.0.1\\"/
 
 
 
-=== TEST 16: small flush_limit, instant flush
+=== TEST 18: small flush_limit, instant flush
 --- stream_conf_enable
 --- config
     location /t {
@@ -574,12 +630,12 @@ GET /t
 "pp\x02\x00\x00\x00\x00\x00\x00\x03ABC"
 --- timeout: 5
 --- error_log
-try to lock with key xrpc-pingpong#table
-unlock with key xrpc-pingpong#table
+try to lock with key xrpc-pingpong-logger#table
+unlock with key xrpc-pingpong-logger#table
 
 
 
-=== TEST 17: check plugin configuration updating
+=== TEST 19: check plugin configuration updating
 --- stream_conf_enable
 --- config
     location /t {
