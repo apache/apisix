@@ -459,7 +459,7 @@ breaker_time: 2
                         "api-breaker": {
                             "break_response_code": 502,
                             "break_response_body": "{\"message\":\"breaker opened.\"}",
-                            "headers": [{"key":"Content-Type","value":"application/json"},{"key":"Content-Type","value":"application/json+v1"}],
+                            "break_response_headers": [{"key":"Content-Type","value":"application/json"},{"key":"Content-Type","value":"application/json+v1"}],
                             "unhealthy": {
                                 "failures": 3
                             },

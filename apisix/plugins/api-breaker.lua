@@ -46,10 +46,12 @@ local schema = {
                 type = "object",
                 properties = {
                     key = {
-                        type = "string"
+                        type = "string",
+                        minLength = 1
                     },
                     value = {
-                        type = "string"
+                        type = "string",
+                        minLength = 1
                     }
                 }
             }
@@ -178,8 +180,8 @@ function _M.access(conf, ctx)
     -- breaker
     if lasttime + breaker_time >= ngx.time() then
         if conf.break_response_body then
-            if conf.headers then
-                for _, value in ipairs(conf.headers) do
+            if conf.break_response_headers then
+                for _, value in ipairs(conf.break_response_headers) do
                     local val = core.utils.resolve_var(value.value, ctx.var)
                     core.response.add_header(value.key, val)
                 end
