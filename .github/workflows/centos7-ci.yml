@@ -79,6 +79,8 @@ jobs:
 
     - name: Run other docker containers for test
       run: |
+        # generating SSL certificates for Kafka
+        keytool -genkeypair -keyalg RSA -dname "CN=127.0.0.1" -alias 127.0.0.1 -keystore ./ci/pod/kafka/kafka-server/selfsigned.jks -validity 365 -keysize 2048 -storepass changeit
         make ci-env-up
         ./ci/linux-ci-init-service.sh
 
