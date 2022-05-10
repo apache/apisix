@@ -50,6 +50,7 @@ local error           = error
 local ipairs          = ipairs
 local ngx_now         = ngx.now
 local ngx_var         = ngx.var
+local re_split        = require("ngx.re").split
 local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
@@ -60,6 +61,11 @@ local is_http = false
 if ngx.config.subsystem == "http" then
     is_http = true
     control_api_router = require("apisix.control.router")
+end
+
+local ok, apisix_base_flags = pcall(require, "resty.apisix.patch")
+if not ok then
+    apisix_base_flags = {}
 end
 
 local load_balancer
@@ -228,6 +234,12 @@ end
 
 
 local function verify_tls_client(ctx)
+    if apisix_base_flags.client_cert_verified_in_handshake then
+        -- For apisix-base, there is no need to rematch SSL rules as the invalid
+        -- connections are already rejected in the handshake
+        return true
+    end
+
     local matched = router.router_ssl.match_and_set(ctx, true)
     if not matched then
         return true
@@ -248,6 +260,44 @@ local function verify_tls_client(ctx)
     end
 
     return true
+end
+
+
+local function normalize_uri_like_servlet(uri)
+    local found = core.string.find(uri, ';')
+    if not found then
+        return uri
+    end
+
+    local segs, err = re_split(uri, "/", "jo")
+    if not segs then
+        return nil, err
+    end
+
+    local len = #segs
+    for i = 1, len do
+        local seg = segs[i]
+        local pos = core.string.find(seg, ';')
+        if pos then
+            seg = seg:sub(1, pos - 1)
+            -- reject bad uri which bypasses with ';'
+            if seg == "." or seg == ".." then
+                return nil, "dot segment with parameter"
+            end
+            if seg == "" and i < len then
+                return nil, "empty segment with parameters"
+            end
+
+            segs[i] = seg
+
+            seg = seg:lower()
+            if seg == "%2e" or seg == "%2e%2e" then
+                return nil, "encoded dot segment"
+            end
+        end
+    end
+
+    return core.table.concat(segs, '/')
 end
 
 
@@ -284,11 +334,25 @@ function _M.http_access_phase()
     debug.dynamic_debug(api_ctx)
 
     local uri = api_ctx.var.uri
-    if local_conf.apisix and local_conf.apisix.delete_uri_tail_slash then
-        if str_byte(uri, #uri) == str_byte("/") then
-            api_ctx.var.uri = str_sub(api_ctx.var.uri, 1, #uri - 1)
-            core.log.info("remove the end of uri '/', current uri: ",
-                          api_ctx.var.uri)
+    if local_conf.apisix then
+        if local_conf.apisix.delete_uri_tail_slash then
+            if str_byte(uri, #uri) == str_byte("/") then
+                api_ctx.var.uri = str_sub(api_ctx.var.uri, 1, #uri - 1)
+                core.log.info("remove the end of uri '/', current uri: ", api_ctx.var.uri)
+            end
+        end
+
+        if local_conf.apisix.normalize_uri_like_servlet then
+            local new_uri, err = normalize_uri_like_servlet(uri)
+            if not new_uri then
+                core.log.error("failed to normalize: ", err)
+                return core.response.exit(400)
+            end
+
+            api_ctx.var.uri = new_uri
+            -- forward the original uri so the servlet upstream
+            -- can consume the param after ';'
+            api_ctx.var.upstream_uri = uri
         end
     end
 

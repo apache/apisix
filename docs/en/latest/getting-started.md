@@ -202,7 +202,7 @@ This response indicates that APISIX is running successfully:
 
 From the previous step, we have a running instance of APISIX in Docker. Now let's create a Route.
 
-APISIX provides a powerful [Admin API](./admin-api.md) and [APISIX Dashboard](https://github.com/apache/apisix-dashboard). Here, we will use the Admin API to create a Route and connect it to an [Upstream](./architecture-design/upstream.md) service. When a request arrives, APISIX will forward the request to the specified Upstream service.
+APISIX provides a powerful [Admin API](./admin-api.md) and [APISIX Dashboard](https://github.com/apache/apisix-dashboard). Here, we will use the Admin API to create a Route and connect it to an [Upstream](./terminology/upstream.md) service. When a request arrives, APISIX will forward the request to the specified Upstream service.
 
 We will configure the Route so that APISIX can forward the request to the corresponding Upstream service:
 

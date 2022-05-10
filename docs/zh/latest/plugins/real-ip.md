@@ -35,7 +35,7 @@ description: 本文介绍了关于 Apache APISIX `real-ip` 插件的基本信息
 
 :::info IMPORTANT
 
-该插件要求 APISIX  运行在 [APISIX-OpenResty](../how-to-build.md#步骤-6-为-apache-apisix-构建-openresty) 上。
+该插件要求 APISIX  运行在 [APISIX-Base](../how-to-build.md#步骤-6-为-apache-apisix-构建-openresty) 上。
 
 :::
 

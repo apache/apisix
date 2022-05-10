@@ -44,6 +44,8 @@ In an unhealthy state, when a request is forwarded to an upstream service and th
 | Name                    | Type          | Requirement | Default | Valid            | Description                                                                 |
 | ----------------------- | ------------- | ----------- | -------- | --------------- | --------------------------------------------------------------------------- |
 | break_response_code     | integer        | required |            | [200, ..., 599] | Return error code when unhealthy |
+| break_response_body     | string         | optional |            |                 | Return response body when unhealthy |
+| break_response_headers  | array[object]  | optional |            |                 | New headers for the response. The values in the header can contain Nginx variables like `$remote_addr` and `$balancer_ip`. This field is in effective only if `break_response_body` is configured. |
 | max_breaker_sec         | integer        | optional | 300        | >=3             | Maximum breaker time(seconds) |
 | unhealthy.http_statuses | array[integer] | optional | {500}      | [500, ..., 599] | Status codes when unhealthy |
 | unhealthy.failures      | integer        | optional | 3          | >=1             | Number of consecutive error requests that triggered an unhealthy state |

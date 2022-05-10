@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local sdk = require("apisix.stream.xrpc.sdk")
+local commands = require("apisix.stream.xrpc.protocols.redis.commands")
 local xrpc_socket = require("resty.apisix.stream.xrpc.socket")
 local ffi = require("ffi")
 local ffi_str = ffi.string
@@ -23,8 +24,10 @@ local math_random = math.random
 local OK = ngx.OK
 local DECLINED = ngx.DECLINED
 local DONE = ngx.DONE
+local sleep = ngx.sleep
 local str_byte = string.byte
 local str_fmt = string.format
+local ipairs = ipairs
 local tonumber = tonumber
 
 
@@ -32,6 +35,7 @@ local tonumber = tonumber
 -- There is no plan to support inline command format
 local _M = {}
 local MAX_LINE_LEN = 128
+local MAX_VALUE_LEN = 128
 local PREFIX_ARR = str_byte("*")
 local PREFIX_STR = str_byte("$")
 local PREFIX_STA = str_byte("+")
@@ -39,7 +43,62 @@ local PREFIX_INT = str_byte(":")
 local PREFIX_ERR = str_byte("-")
 
 
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
+
+
+local function create_matcher(conf)
+    local matcher = {}
+    --[[
+        {"delay": 5, "key":"x", "commands":["GET", "MGET"]}
+        {"delay": 5, "commands":["GET"]}
+        => {
+            get = {keys = {x = {delay = 5}, * = {delay = 5}}}
+            mget = {keys = {x = {delay = 5}}}
+        }
+    ]]--
+    for _, rule in ipairs(conf.faults) do
+        for _, cmd in ipairs(rule.commands) do
+            cmd = cmd:lower()
+            local key = rule.key
+            local kf = commands.cmd_to_key_finder[cmd]
+            local key_matcher = matcher[cmd]
+            if not key_matcher then
+                key_matcher = {
+                    keys = {}
+                }
+                matcher[cmd] = key_matcher
+            end
+
+            if not key or kf == false then
+                key = "*"
+            end
+
+            if key_matcher.keys[key] then
+                core.log.warn("override existent fault rule of cmd: ", cmd, ", key: ", key)
+            end
+
+            key_matcher.keys[key] = rule
+        end
+    end
+
+    return matcher
+end
+
+
+local function get_matcher(conf, ctx)
+    return core.lrucache.plugin_ctx(lrucache, ctx, nil, create_matcher, conf)
+end
+
+
 function _M.init_downstream(session)
+    local conf = session.route.protocol.conf
+    if conf and conf.faults then
+        local matcher = get_matcher(conf, session.conn_ctx)
+        session.matcher = matcher
+    end
+
     session.req_id_seq = 0
     session.resp_id_seq = 0
     return xrpc_socket.downstream.socket()
@@ -83,26 +142,53 @@ local function read_req(session, sk)
 
     local cmd_line = core.tablepool.fetch("xrpc_redis_cmd_line", narg, 0)
 
-    for i = 1, narg do
+    local n, err = read_len(sk)
+    if not n then
+        return nil, err
+    end
+
+    local p, err = sk:read(n + 2)
+    if not p then
+        return nil, err
+    end
+
+    local s = ffi_str(p, n)
+    cmd_line[1] = s
+
+    local key_finder
+    local matcher = session.matcher
+    if matcher then
+        matcher = matcher[s:lower()]
+        if matcher then
+            key_finder = commands.cmd_to_key_finder[s] or commands.default_key_finder
+        end
+    end
+
+    for i = 2, narg do
+        local is_key = false
+        if key_finder then
+            is_key = key_finder(i, narg)
+        end
+
         local n, err = read_len(sk)
         if not n then
             return nil, err
         end
 
         local s
-        if n > 1024 then
+        if not is_key and n > MAX_VALUE_LEN then
             -- avoid recording big value
-            local p, err = sk:read(1024)
+            local p, err = sk:read(MAX_VALUE_LEN)
             if not p then
                 return nil, err
             end
 
-            local ok, err = sk:drain(n - 1024 + 2)
+            local ok, err = sk:drain(n - MAX_VALUE_LEN + 2)
             if not ok then
                 return nil, err
             end
 
-            s = ffi_str(p, 1024) .. "..."
+            s = ffi_str(p, MAX_VALUE_LEN) .. "...(" .. n .. " bytes)"
         else
             local p, err = sk:read(n + 2)
             if not p then
@@ -110,6 +196,11 @@ local function read_req(session, sk)
             end
 
             s = ffi_str(p, n)
+
+            if is_key and matcher.keys[s] then
+                matcher = matcher.keys[s]
+                key_finder = nil
+            end
         end
 
         cmd_line[i] = s
@@ -121,6 +212,18 @@ local function read_req(session, sk)
     ctx.cmd = ctx.cmd_line[1]
 
     local pipelined = sk:has_pending_data()
+
+    if matcher then
+        if matcher.keys then
+            -- try to match any key of this command
+            matcher = matcher.keys["*"]
+        end
+
+        if matcher then
+            sleep(matcher.delay)
+        end
+    end
+
     return true, nil, pipelined
 end
 

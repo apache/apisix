@@ -148,7 +148,7 @@ end
 
 function _M.require(attrs)
     if not support_wasm then
-        return nil, "need to build APISIX-OpenResty to support wasm"
+        return nil, "need to build APISIX-Base to support wasm"
     end
 
     local name = attrs.name
