@@ -32,16 +32,15 @@ The `kafka-proxy` plugin can be used to configure advanced parameters for the ka
 
 ## Attributes
 
-| Name              | Type    | Required | Default | Valid values  | Description                       |
-|-------------------|---------|----------|---------|---------------|-----------------------------------|
-| enable_tls        | boolean | False    | false   |               | Enable TLS for Kafka client       |
-| ssl_verify        | boolean | False    | true    |               | Enable TLS certificate validation |
-| enable_sasl       | boolean | False    | false   |               | Enable SASL authentication        |
-| sasl_username     | string  | False    | ""      |               | SASL authentication username      |
-| sasl_password     | string  | False    | ""      |               | SASL authentication password      |
+| Name              | Type    | Required | Default | Valid values  | Description                        |
+|-------------------|---------|----------|---------|---------------|------------------------------------|
+| enable_sasl       | boolean | False    | false   |               | Enable SASL authentication         |
+| sasl_username     | string  | False    | ""      |               | SASL/PLAIN authentication username |
+| sasl_password     | string  | False    | ""      |               | SASL/PLAIN authentication password |
 
 :::note
 If SASL authentication is enabled, the `sasl_username` and `sasl_password` must be set.
+The current SASL authentication only supports PLAIN mode, which is the username password login method.
 :::
 
 ## Example usage
