@@ -72,7 +72,7 @@ local attr_schema = {
             type = "object",
             description = "opentelemetry collector",
             properties = {
-                address = {type = "string", description = "host:port", default = "127.0.0.1:4317"},
+                address = {type = "string", description = "host:port", default = "127.0.0.1:4318"},
                 request_timeout = {type = "integer", description = "second uint", default = 3},
                 request_headers = {
                     type = "object",
@@ -82,7 +82,7 @@ local attr_schema = {
                    },
                 }
             },
-            default = {address = "127.0.0.1:4317", request_timeout = 3}
+            default = {address = "127.0.0.1:4318", request_timeout = 3}
         },
         batch_span_processor = {
             type = "object",
