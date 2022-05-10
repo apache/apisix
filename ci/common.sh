@@ -17,6 +17,17 @@
 
 set -ex
 
+GRPCCURL_ARCH="x86-64"
+VAULT_ARCH="amd64"
+NODEJS_ARCH="x64"
+ARCH=${ARCH:-`(uname -m | tr '[:upper:]' '[:lower:]')`}
+
+if [[ $ARCH == "arm64" ]] || [[ $ARCH == "aarch64" ]]; then
+    GRPCCURL_ARCH="arm64"
+    VAULT_ARCH="arm64"
+    NODEJS_ARCH="arm64"
+fi
+
 export_or_prefix() {
     export OPENRESTY_PREFIX="/usr/local/openresty-debug"
     export APISIX_MAIN="https://raw.githubusercontent.com/apache/incubator-apisix/master/rockspec/apisix-master-0.rockspec"
@@ -57,24 +68,24 @@ rerun_flaky_tests() {
 install_grpcurl () {
     # For more versions, visit https://github.com/fullstorydev/grpcurl/releases
     GRPCURL_VERSION="1.8.5"
-    wget https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL_VERSION}/grpcurl_${GRPCURL_VERSION}_linux_x86_64.tar.gz
-    tar -xvf grpcurl_${GRPCURL_VERSION}_linux_x86_64.tar.gz -C /usr/local/bin
+    wget https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL_VERSION}/grpcurl_${GRPCURL_VERSION}_linux_${GRPCCURL_ARCH}.tar.gz
+    tar -xvf grpcurl_${GRPCURL_VERSION}_linux_${GRPCCURL_ARCH}.tar.gz -C /usr/local/bin
 }
 
 install_vault_cli () {
     VAULT_VERSION="1.9.0"
-    wget https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip
-    unzip vault_${VAULT_VERSION}_linux_amd64.zip && mv ./vault /usr/local/bin
+    wget https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_${VAULT_ARCH}.zip
+    unzip vault_${VAULT_VERSION}_linux_${VAULT_ARCH}.zip && mv ./vault /usr/local/bin
 }
 
 install_nodejs () {
     NODEJS_PREFIX="/usr/local/node"
     NODEJS_VERSION="16.13.1"
-    wget https://nodejs.org/dist/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.xz
-    tar -xvf node-v${NODEJS_VERSION}-linux-x64.tar.xz
+    wget https://nodejs.org/dist/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-${NODEJS_ARCH}.tar.xz
+    tar -xvf node-v${NODEJS_VERSION}-linux-${NODEJS_ARCH}.tar.xz
     rm -f /usr/local/bin/node
     rm -f /usr/local/bin/npm
-    mv node-v${NODEJS_VERSION}-linux-x64 ${NODEJS_PREFIX}
+    mv node-v${NODEJS_VERSION}-linux-${NODEJS_ARCH} ${NODEJS_PREFIX}
     ln -s ${NODEJS_PREFIX}/bin/node /usr/local/bin/node
     ln -s ${NODEJS_PREFIX}/bin/npm /usr/local/bin/npm
 }

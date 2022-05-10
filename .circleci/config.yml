@@ -1,0 +1,80 @@
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/2.0/configuration-reference
+version: 2.1
+
+orbs:
+  go: circleci/go@1.7.1
+# Define a job to be invoked later in a workflow.
+# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
+jobs:
+  test:
+    parameters:
+      test_dir:
+        type: string
+    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
+    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+    machine:
+      image: ubuntu-2004:202101-01
+    resource_class: arm.medium
+        
+    steps:
+      - checkout
+
+      - run: git submodule sync
+      - run: git submodule update --init
+
+      - run:
+          name: Linux launch common services
+          command: |
+            make ci-env-up project_compose_ci=ci/pod/docker-compose.common-arm64.yml
+
+      - run:
+          name: Linux Get dependencies
+          command: |
+            sudo apt-get update
+            sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
+
+      - run:
+          name: Build xDS library
+          command: |
+            cd t/xds-library
+            go build -o libxds.so -buildmode=c-shared main.go
+
+      - run:
+          name: Linux Before install
+          command: |
+            sudo -E project_compose_ci=./ci/pod/docker-compose-arm64.yml ARCH=arm64 ./ci/linux_openresty_common_runner.sh before_install
+
+      - run:
+          name: Start Dubbo Backend
+          command: |
+            sudo apt install -y maven
+            cd t/lib/dubbo-backend
+            mvn package
+            cd dubbo-backend-provider/target
+            java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java.log &
+
+      - run:
+          name: Linux Install
+          command: |
+            sudo -E env PATH=$PATH OPENRESTY_VERSION=source ARCH=arm64 ./ci/linux_openresty_common_runner.sh do_install
+
+      - run:
+          name: Linux Script
+          environment:
+            - TEST_FILE_SUB_DIR: << parameters.test_dir >>
+          command: |
+            sudo -E ARCH=arm64 ./ci/linux_openresty_common_runner.sh script
+
+workflows:
+  test-apisx:
+    jobs:
+      - test:
+          matrix:
+              parameters:
+                test_dir:
+                  - "t/admin t/cli t/config-center-yaml t/control t/core t/debug t/error_page t/misc"
+                  - "t/node t/router t/script t/stream-node t/utils t/xds-library t/xrpc"
+          filters:
+            branches:
+              only: feat/arm64ci_test
