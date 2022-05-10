@@ -17,7 +17,7 @@
 
 set -ex
 
-GRPCCURL_ARCH="x86-64"
+GRPCCURL_ARCH="x86_64"
 VAULT_ARCH="amd64"
 NODEJS_ARCH="x64"
 ARCH=${ARCH:-`(uname -m | tr '[:upper:]' '[:lower:]')`}
