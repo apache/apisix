@@ -19,24 +19,26 @@ use t::APISIX 'no_plan';
 repeat_each(1);
 no_long_string();
 no_root_location();
+no_shuffle();
+log_level("info");
 
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
     }
 
-    if (!defined $block->request) {
-        $block->set_value("request", "GET /t");
+    if (!$block->no_error_log && !$block->error_log) {
+        $block->set_value("no_error_log", "[error]\n[alert]");
     }
 });
 
-run_tests();
+run_tests;
 
 __DATA__
 
-=== TEST 1: success
+=== TEST 1: set upstream(kafka scheme)
 --- config
     location /t {
         content_by_lua_block {
@@ -49,8 +51,12 @@ __DATA__
                 "scheme": "kafka"
             }]])
 
-            ngx.say(code..body)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
         }
     }
+--- error_code: 200
 --- response_body
-201passed
+passed
