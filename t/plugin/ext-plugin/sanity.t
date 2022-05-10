@@ -82,7 +82,8 @@ __DATA__
                     "uri": "/hello",
                     "plugins": {
                         "ext-plugin-pre-req": {"a":"b"},
-                        "ext-plugin-post-req": {"c":"d"}
+                        "ext-plugin-post-req": {"c":"d"},
+                        "ext-plugin-post-resp": {"e":"f"}
                     },
                     "upstream": {
                         "nodes": {
@@ -136,6 +137,14 @@ sending rpc type: 2 data length:
 receiving rpc type: 2 data length:
 sending rpc type: 2 data length:
 receiving rpc type: 2 data length:
+sending rpc type: 1 data length:
+receiving rpc type: 1 data length:
+sending rpc type: 1 data length:
+receiving rpc type: 1 data length:
+sending rpc type: 4 data length:
+receiving rpc type: 4 data length:
+sending rpc type: 4 data length:
+receiving rpc type: 4 data length:
 
 
 
@@ -252,6 +261,14 @@ hello world
 --- grep_error_log eval
 qr/(sending|receiving) rpc type: 1 data length:/
 --- grep_error_log_out
+sending rpc type: 1 data length:
+receiving rpc type: 1 data length:
+sending rpc type: 1 data length:
+receiving rpc type: 1 data length:
+sending rpc type: 1 data length:
+receiving rpc type: 1 data length:
+sending rpc type: 1 data length:
+receiving rpc type: 1 data length:
 sending rpc type: 1 data length:
 receiving rpc type: 1 data length:
 sending rpc type: 1 data length:
