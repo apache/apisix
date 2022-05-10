@@ -42,9 +42,6 @@ __DATA__
         content_by_lua_block {
             local test_cases = {
                 {},
-                {enable_tls = true, ssl_verify = true},
-                {enable_tls = "none"},
-                {enable_tls = true, ssl_verify = "none"},
                 {enable_sasl = true, sasl = {username = "user", password = "pwd"}},
                 {enable_sasl = false},
                 {enable_sasl = true},
@@ -61,9 +58,6 @@ __DATA__
     }
 --- response_body
 done
-done
-property "enable_tls" validation failed: wrong type: expected boolean, got string
-property "ssl_verify" validation failed: wrong type: expected boolean, got string
 done
 done
 need to set sasl configuration when enabling kafka sasl authentication

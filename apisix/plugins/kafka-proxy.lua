@@ -20,14 +20,6 @@ local core = require("apisix.core")
 local schema = {
     type = "object",
     properties = {
-        enable_tls = {
-            type = "boolean",
-            default = false,
-        },
-        ssl_verify = {
-            type = "boolean",
-            default = true,
-        },
         enable_sasl = {
             type = "boolean",
             default = false,
@@ -68,8 +60,6 @@ end
 
 
 function _M.access(conf, ctx)
-    ctx.kafka_consumer_enable_tls = conf.enable_tls
-    ctx.kafka_consumer_ssl_verify = conf.ssl_verify
     ctx.kafka_consumer_enable_sasl = conf.enable_sasl
     if conf.enable_sasl then
         ctx.kafka_consumer_sasl_username = conf.sasl.username
