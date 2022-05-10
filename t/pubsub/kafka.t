@@ -101,8 +101,8 @@ __DATA__
                             "kafka-proxy": {
                                 "enable_sasl": true,
                                 "sasl": {
-                                    "username": "testuser",
-                                    "password": "testpwd"
+                                    "username": "admin",
+                                    "password": "admin-secret"
                                 }
                             }
                         }
@@ -236,7 +236,68 @@ failed to initialize pub-sub module, err: bad "upgrade" request header: nil
 
 
 
-=== TEST 4: hit route (TLS with ssl verify Kafka)
+=== TEST 4: hit route (Kafka with TLS)
+--- config
+    location /t {
+        content_by_lua_block {
+            local protoc = require("protoc")
+            local pb = require("pb")
+            protoc.reload()
+            pb.option("int64_as_string")
+            local pubsub_protoc = protoc.new()
+            pubsub_protoc:addpath("apisix")
+            local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
+            if not ok then
+                ngx.say("failed to load protocol: " .. err)
+                return
+            end
+
+            local client = require "resty.websocket.client"
+            local ws, err = client:new()
+            local ok, err = ws:connect("ws://127.0.0.1:1984/kafka-tls")
+            if not ok then
+                ngx.say("failed to connect: " .. err)
+                return
+            end
+
+            local data = {
+                {
+                    sequence = 0,
+                    cmd_kafka_list_offset = {
+                        topic = "test-consumer",
+                        partition = 0,
+                        timestamp = -1,
+                    },
+                },
+            }
+
+            for i = 1, #data do
+                local _, err = ws:send_binary(pb.encode("PubSubReq", data[i]))
+                local raw_data, raw_type, err = ws:recv_frame()
+                if not raw_data then
+                    ngx.say("failed to receive the frame: ", err)
+                    return
+                end
+                local data, err = pb.decode("PubSubResp", raw_data)
+                if not data then
+                    ngx.say("failed to decode the frame: ", err)
+                    return
+                end
+
+                if data.kafka_list_offset_resp then
+                    ngx.say(data.sequence.."offset: "..data.kafka_list_offset_resp.offset)
+                end
+            end
+
+            ws:send_close()
+        }
+    }
+--- response_body
+0offset: 30
+
+
+
+=== TEST 5: hit route (Kafka with TLS + ssl verify)
 --- config
     location /t {
         content_by_lua_block {
@@ -266,7 +327,68 @@ failed to initialize pub-sub module, err: bad "upgrade" request header: nil
                     cmd_kafka_list_offset = {
                         topic = "test-consumer",
                         partition = 0,
-                        timestamp = -2,
+                        timestamp = -1,
+                    },
+                },
+            }
+
+            for i = 1, #data do
+                local _, err = ws:send_binary(pb.encode("PubSubReq", data[i]))
+                local raw_data, raw_type, err = ws:recv_frame()
+                if not raw_data then
+                    ngx.say("failed to receive the frame: ", err)
+                    return
+                end
+                local data, err = pb.decode("PubSubResp", raw_data)
+                if not data then
+                    ngx.say("failed to decode the frame: ", err)
+                    return
+                end
+
+                if data.kafka_list_offset_resp then
+                    ngx.say(data.sequence.."offset: "..data.kafka_list_offset_resp.offset)
+                end
+            end
+
+            ws:send_close()
+        }
+    }
+--- error_log
+self signed certificate
+
+
+
+=== TEST 6: hit route (Kafka with SASL)
+--- config
+    location /t {
+        content_by_lua_block {
+            local protoc = require("protoc")
+            local pb = require("pb")
+            protoc.reload()
+            pb.option("int64_as_string")
+            local pubsub_protoc = protoc.new()
+            pubsub_protoc:addpath("apisix")
+            local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
+            if not ok then
+                ngx.say("failed to load protocol: " .. err)
+                return
+            end
+
+            local client = require "resty.websocket.client"
+            local ws, err = client:new()
+            local ok, err = ws:connect("ws://127.0.0.1:1984/kafka-sasl")
+            if not ok then
+                ngx.say("failed to connect: " .. err)
+                return
+            end
+
+            local data = {
+                {
+                    sequence = 0,
+                    cmd_kafka_list_offset = {
+                        topic = "test-consumer",
+                        partition = 0,
+                        timestamp = -1,
                     },
                 }
             }
@@ -293,8 +415,4 @@ failed to initialize pub-sub module, err: bad "upgrade" request header: nil
         }
     }
 --- response_body
-0failed to list offset, topic: not-exist, partition: 0, err: not found topic
-1failed to fetch message, topic: not-exist, partition: 0, err: not found topic
-2offset: 0
-3offset: 30
-4offset: 14 msg: testmsg15
+0offset: 30
