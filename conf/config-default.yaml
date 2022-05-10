@@ -402,6 +402,7 @@ plugins:                          # plugin list (sorted by priority)
   - openwhisk                      # priority: -1901
   - serverless-post-function       # priority: -2000
   - ext-plugin-post-req            # priority: -3000
+  - ext-plugin-post-resp           # priority: -4000
 
 stream_plugins: # sorted by priority
   - ip-restriction                 # priority: 3000
