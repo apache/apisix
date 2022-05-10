@@ -20,6 +20,31 @@ local core = require("apisix.core")
 local schema = {
     type = "object",
     properties = {
+        faults = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "object",
+                properties = {
+                    commands = {
+                        type = "array",
+                        minItems = 1,
+                        items = {
+                            type = "string"
+                        },
+                    },
+                    key = {
+                        type = "string",
+                        minLength = 1,
+                    },
+                    delay = {
+                        type = "number",
+                        description = "additional delay in seconds",
+                    }
+                },
+                required = {"commands", "delay"}
+            },
+        },
     },
 }
 
