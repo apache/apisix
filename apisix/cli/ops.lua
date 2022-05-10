@@ -25,6 +25,7 @@ local template = require("resty.template")
 local argparse = require("argparse")
 local pl_path = require("pl.path")
 local signal = require("posix.signal")
+local errno = require("posix.errno")
 
 local stderr = io.stderr
 local ipairs = ipairs
@@ -730,14 +731,14 @@ local function start(env, ...)
     pid = tonumber(pid)
     if pid then
         local signone = 0
-        local errno_noproc = 3
 
-        local ok, err, errno = signal.kill(pid, signone)
+        local ok, err, err_no = signal.kill(pid, signone)
         if ok then
             print("APISIX is running...")
 
             return
-        elseif errno ~= errno_noproc then
+        -- no such process
+        elseif err_no ~= errno.ESRCH then
             print(err)
 
             return
