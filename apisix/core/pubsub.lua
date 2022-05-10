@@ -19,7 +19,7 @@
 --
 -- @module core.pubsub
 
-local core         = require("apisix.core")
+local log          = require("apisix.core.log")
 local ws_server    = require("resty.websocket.server")
 local protoc       = require("protoc")
 local pb           = require("pb")
@@ -48,7 +48,7 @@ function _M.new()
     -- compile the protobuf file on initial load module
     -- ensure that each worker is loaded once
     if not pubsub_protoc.loaded["pubsub.proto"] then
-        pubsub_protoc:addpath("apisix")
+        pubsub_protoc:addpath("apisix/include/apisix/model")
         local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
         if not ok then
             pubsub_protoc:reset()
@@ -129,7 +129,7 @@ function _M.wait(self)
             if key ~= "sequence" then
                 local handler = self.cmd_handler[key]
                 if not handler then
-                    core.log.error("handler not registered for the",
+                    log.error("handler not registered for the",
                         " current command, command: ", key)
                     goto continue
                 end

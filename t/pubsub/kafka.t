@@ -141,8 +141,8 @@ failed to initialize pub-sub module, err: bad "upgrade" request header: nil
             protoc.reload()
             pb.option("int64_as_string")
             local pubsub_protoc = protoc.new()
-            pubsub_protoc:addpath("apisix")
-            local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
+            pubsub_protoc:addpath("apisix/include/apisix/model")
+        local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
             if not ok then
                 ngx.say("failed to load protocol: " .. err)
                 return
@@ -245,8 +245,8 @@ failed to initialize pub-sub module, err: bad "upgrade" request header: nil
             protoc.reload()
             pb.option("int64_as_string")
             local pubsub_protoc = protoc.new()
-            pubsub_protoc:addpath("apisix")
-            local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
+            pubsub_protoc:addpath("apisix/include/apisix/model")
+        local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
             if not ok then
                 ngx.say("failed to load protocol: " .. err)
                 return
@@ -306,7 +306,7 @@ failed to initialize pub-sub module, err: bad "upgrade" request header: nil
             protoc.reload()
             pb.option("int64_as_string")
             local pubsub_protoc = protoc.new()
-            pubsub_protoc:addpath("apisix")
+            pubsub_protoc:addpath("apisix/include/apisix/model")
             local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
             if not ok then
                 ngx.say("failed to load protocol: " .. err)
@@ -367,7 +367,7 @@ self signed certificate
             protoc.reload()
             pb.option("int64_as_string")
             local pubsub_protoc = protoc.new()
-            pubsub_protoc:addpath("apisix")
+            pubsub_protoc:addpath("apisix/include/apisix/model")
             local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
             if not ok then
                 ngx.say("failed to load protocol: " .. err)
