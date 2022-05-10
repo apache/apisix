@@ -59,12 +59,12 @@ function _M.access(api_ctx)
         end
     end
 
-    -- kafka client socket-related configuration
+    -- kafka client socket-related configuration (TLS, ssl verify)
     local client_config = {refresh_interval = 30 * 60 * 1000}
-    if api_ctx.kafka_consumer_enable_tls then
+    if api_ctx.matched_upstream.tls then
         client_config = {
-            ssl = api_ctx.kafka_consumer_enable_tls,
-            ssl_verify = api_ctx.kafka_consumer_ssl_verify,
+            ssl = true,
+            ssl_verify = api_ctx.matched_upstream.tls.verify,
         }
     end
 
