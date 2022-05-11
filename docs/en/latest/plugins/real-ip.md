@@ -35,7 +35,7 @@ This is more flexible but functions similarly to Nginx's [ngx_http_realip_module
 
 :::info IMPORTANT
 
-This Plugin requires APISIX to run on [APISIX-OpenResty](../how-to-build.md#step-6-build-openresty-for-apache-apisix).
+This Plugin requires APISIX to run on [APISIX-Base](../how-to-build.md#step-6-build-openresty-for-apache-apisix).
 
 :::
 

@@ -7,6 +7,9 @@ on:
       - 'docs/**'
       - '**/*.md'
 
+permissions:
+  contents: read
+
 jobs:
   performance:
     if: github.event_name == 'pull_request' && github.event.label.name == 'performance'

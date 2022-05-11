@@ -28,9 +28,10 @@ local _M = {}
 
 local function open_session(conn_ctx)
     conn_ctx.xrpc_session = {
-        _upstream_conf = conn_ctx.matched_upstream,
+        conn_ctx = conn_ctx,
+        route = conn_ctx.matched_route.value,
         -- fields start with '_' should not be accessed by the protocol implementation
-        _route = conn_ctx.matched_route.value,
+        _upstream_conf = conn_ctx.matched_upstream,
         _ctxs = {},
     }
     return conn_ctx.xrpc_session

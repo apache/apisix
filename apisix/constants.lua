@@ -19,6 +19,7 @@ return {
     RPC_PREPARE_CONF = 1,
     RPC_HTTP_REQ_CALL = 2,
     RPC_EXTRA_INFO = 3,
+    RPC_HTTP_RESP_CALL = 4,
     HTTP_ETCD_DIRECTORY = {
         ["/upstreams"] = true,
         ["/plugins"] = true,

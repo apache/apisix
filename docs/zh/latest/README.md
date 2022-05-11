@@ -83,7 +83,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 
 - **全动态能力**
 
-    - [热更新和热插件](architecture-design/plugin.md)：无需重启服务，就可以持续更新配置和插件。
+    - [热更新和热插件](terminology/plugin.md)：无需重启服务，就可以持续更新配置和插件。
     - [代理请求重写](plugins/proxy-rewrite.md)：支持重写请求上游的`host`、`uri`、`schema`、`enable_websocket`、`headers`信息。
     - [输出内容重写](plugins/response-rewrite.md)：支持自定义修改返回内容的 `status code`、`body`、`headers`。
     - [Serverless](plugins/serverless.md)：在 APISIX 的每一个阶段，你都可以添加并调用自己编写的函数。
@@ -139,7 +139,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
     - 版本控制：支持操作的多次回滚。
     - CLI：使用命令行来启动、关闭和重启 APISIX。
     - [单机模式](stand-alone.md)：支持从本地配置文件中加载路由规则，在 kubernetes(k8s) 等环境下更友好。
-    - [全局规则](architecture-design/global-rule.md)：允许对所有请求执行插件，比如黑白名单、限流限速等。
+    - [全局规则](terminology/global-rule.md)：允许对所有请求执行插件，比如黑白名单、限流限速等。
     - 高性能：在单核上 QPS 可以达到 18k，同时延迟只有 0.2 毫秒。
     - [故障注入](plugins/fault-injection.md)
     - [REST Admin API](admin-api.md)：使用 REST Admin API 来控制 Apache APISIX，默认只允许 127.0.0.1 访问，你可以修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许调用 Admin API 的 IP 列表。同时需要注意的是，Admin API 使用 key auth 来校验调用者身份，**在部署前需要修改 `conf/config.yaml` 中的 `admin_key` 字段，来保证安全。**
@@ -182,7 +182,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 4. 插件二次开发
 
    可以参考[插件开发指南](plugin-develop.md)，以及示例插件 `example-plugin` 的代码实现。
-   阅读[插件概念](architecture-design/plugin.md) 会帮助你学到更多关于插件的知识。
+   阅读[插件概念](terminology/plugin.md) 会帮助你学到更多关于插件的知识。
 
 更多文档请参考 [Apache APISIX 文档站](https://apisix.apache.org/docs/apisix/getting-started/)。
 

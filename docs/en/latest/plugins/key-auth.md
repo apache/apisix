@@ -31,7 +31,7 @@ description: This document contains information about the Apache APISIX key-auth
 
 The `key-auth` Plugin is used to add an authentication key (API key) to a Route or a Service.
 
-This works well with a [Consumer](../architecture-design/consumer.md). Consumers of the API can then add their key to the query string or the header to authenticate their requests.
+This works well with a [Consumer](../terminology/consumer.md). Consumers of the API can then add their key to the query string or the header to authenticate their requests.
 
 ## Attributes
 
@@ -43,11 +43,11 @@ For Consumer:
 
 For Route:
 
-| Name   | Type   | Requirement | Default | Valid | Description                                                       |
-|--------|--------|-------------|---------|-------|-------------------------------------------------------------------|
-| header | string | optional    | apikey  |       | The header to get the key from.                                   |
-| query  | string | optional    | apikey  |       | The query string to get the key from. Lower priority than header. |
-| hide_credentials   | bool | optional    | false        |       | When set to `false` passes the request header containing authentication information to the Upstream. |
+| Name   | Type   | Requirement | Default | Valid | Description                                                                                                                                                                                                                                                                   |
+|--------|--------|-------------|---------|-------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| header | string | optional    | apikey  |       | The header to get the key from.                                                                                                                                                                                                                                               |
+| query  | string | optional    | apikey  |       | The query string to get the key from. Lower priority than header.                                                                                                                                                                                                             |
+| hide_credentials   | bool | optional    | false        |       | Apache APISIX will pass the request header or query string that contains the authentication information to the Upstream if `hide_credentials` is `false`. Otherwise the authentication information will be removed before proxying.|
 
 ## Enabling the Plugin
 

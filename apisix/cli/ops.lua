@@ -20,6 +20,7 @@ local util = require("apisix.cli.util")
 local file = require("apisix.cli.file")
 local schema = require("apisix.cli.schema")
 local ngx_tpl = require("apisix.cli.ngx_tpl")
+local cli_ip = require("apisix.cli.ip")
 local profile = require("apisix.core.profile")
 local template = require("resty.template")
 local argparse = require("argparse")
@@ -277,16 +278,16 @@ Please modify "admin_key" in conf/config.yaml .
         -- not disabled by the users
         if real_ip_from then
             for _, ip in ipairs(real_ip_from) do
-                -- TODO: handle cidr
-                if ip == "127.0.0.1" or ip == "0.0.0.0/0" then
+                local _ip = cli_ip:new(ip)
+                if _ip:is_loopback() or _ip:is_unspecified() then
                     pass_real_client_ip = true
                 end
             end
         end
 
         if not pass_real_client_ip then
-            util.die("missing '127.0.0.1' in the nginx_config.http.real_ip_from for plugin " ..
-                     "batch-requests\n")
+            util.die("missing loopback or unspecified in the nginx_config.http.real_ip_from" ..
+                     " for plugin batch-requests\n")
         end
     end
 

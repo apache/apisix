@@ -90,8 +90,8 @@ You can set the collecting by specifying the configuration in `conf/config.yaml`
 | ------------ | ------ | -------- | ----------------------------------------------------- |
 | trace_id_source | enum | random | the source of trace id, the valid value is `random` or `x-request-id`. If `x-request-id` is set, the value of `x-request-id` request header will be used as trace id. Please make sure it match regex pattern `[0-9a-f]{32}` |
 | resource | object |   | additional [resource](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/sdk.md) append to trace |
-| collector | object | {address = "127.0.0.1:4317", request_timeout = 3} | otlp collector |
-| collector.address | string | 127.0.0.1:4317 | collector address |
+| collector | object | {address = "127.0.0.1:4318", request_timeout = 3} | otlp collector |
+| collector.address | string | 127.0.0.1:4318 | collector address |
 | collector.request_timeout | integer | 3 | report request timeout(second) |
 | collector.request_headers | object |  | report request http headers |
 | batch_span_processor | object |  | trace span processor |
@@ -110,7 +110,7 @@ plugin_attr:
       service.name: APISIX
       tenant.id: business_id
     collector:
-      address: 192.168.8.211:4317
+      address: 192.168.8.211:4318
       request_timeout: 3
       request_headers:
         foo: bar

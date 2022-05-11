@@ -89,11 +89,13 @@ end
 
 
 function _M.rewrite(conf, ctx)
+    local from_header = true
     local key = core.request.header(ctx, conf.header)
 
     if not key then
         local uri_args = core.request.get_uri_args(ctx) or {}
         key = uri_args[conf.query]
+        from_header = false
     end
 
     if not key then
@@ -115,10 +117,13 @@ function _M.rewrite(conf, ctx)
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     if conf.hide_credentials then
-        core.request.set_header(ctx, conf.header, nil)
-        local args = core.request.get_uri_args(ctx)
-        args[conf.query] = nil
-        core.request.set_uri_args(ctx, args)
+        if from_header then
+            core.request.set_header(ctx, conf.header, nil)
+        else
+            local args = core.request.get_uri_args(ctx)
+            args[conf.query] = nil
+            core.request.set_uri_args(ctx, args)
+        end
     end
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
