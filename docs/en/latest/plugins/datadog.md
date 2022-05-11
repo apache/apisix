@@ -58,7 +58,7 @@ Apache APISIX agent, for every request response cycle, export the following metr
 
 | Metric Name               | StatsD Type   | Description               |
 | -----------               | -----------   | -------                   |
-| Request Counter           | Counter       | No of requests received.   |
+| Request Counter           | Counter       | Number of requests received.   |
 | Request Latency           | Histogram     | Time taken to process the request (in milliseconds). |
 | Upstream latency          | Histogram     | Time taken to proxy the request to the upstream server till a response is received (in milliseconds). |
 | APISIX Latency            | Histogram     | Time taken by APISIX agent to process the request (in milliseconds). |
