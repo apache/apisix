@@ -27,10 +27,6 @@ local setmetatable = setmetatable
 local pcall        = pcall
 local pairs        = pairs
 
-protoc.reload()
-pb.option("int64_as_string")
-local pubsub_protoc = protoc.new()
-
 
 local _M = { version = 0.1 }
 local mt = { __index = _M }
@@ -45,6 +41,16 @@ local mt = { __index = _M }
 -- @usage
 -- local pubsub, err = core.pubsub.new()
 function _M.new()
+    -- clear current pb state
+    pb.state(nil)
+
+    -- set int64 rule for pubsub
+    pb.option("int64_as_string")
+
+    -- initialize protoc compiler
+    protoc.reload()
+    local pubsub_protoc = protoc.new()
+
     -- compile the protobuf file on initial load module
     -- ensure that each worker is loaded once
     if not pubsub_protoc.loaded["pubsub.proto"] then
@@ -62,6 +68,7 @@ function _M.new()
     end
 
     local obj = setmetatable({
+        pb_state = pb.state(nil), -- save current pb_state
         ws_server = ws,
         cmd_handler = {},
     }, mt)
@@ -130,6 +137,9 @@ function _M.wait(self)
                 raw_type, ",data: ", raw_data)
             goto continue
         end
+
+        -- recovery of stored pb_store
+        pb.state(self.pb_state)
 
         local data, err = pb.decode("PubSubReq", raw_data)
         if not data then
