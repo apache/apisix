@@ -96,10 +96,10 @@ end
 -- Put the pubsub instance into an event loop, waiting to process client commands
 --
 -- @function core.pubsub.wait
--- @treturn string|nil error message if present, will terminate the event loop
 -- @usage
 -- local err = pubsub:wait()
 function _M.wait(self)
+    local fatal_err
     local ws = self.ws_server
     while true do
         -- read raw data frames from websocket connection
@@ -108,11 +108,12 @@ function _M.wait(self)
             -- terminate the event loop when a fatal error occurs
             if ws.fatal then
                 ws:send_close()
-                return "websocket server: "..err
+                fatal_err = err
+                break
             end
 
             -- skip this loop for non-fatal errors
-            log.error("failed to receive websocket frame: "..err)
+            log.error("failed to receive websocket frame: ", err)
             goto continue
         end
 
@@ -125,6 +126,8 @@ function _M.wait(self)
         -- the pub-sub messages use binary, if the message is not
         -- binary, skip this message
         if raw_type ~= "binary" then
+            log.warn("pubsub server receives non-binary data, type: ",
+                raw_type, ",data: ", raw_data)
             goto continue
         end
 
@@ -138,7 +141,7 @@ function _M.wait(self)
             if key ~= "sequence" then
                 local handler = self.cmd_handler[key]
                 if not handler then
-                    log.error("callback handler not registered for the",
+                    log.error("pubsub callback handler not registered for the",
                         " this command, command: ", key)
                     goto continue
                 end
@@ -163,6 +166,8 @@ function _M.wait(self)
 
         ::continue::
     end
+
+    log.error("failed to handle pub-sub command, err: websocket server: ", fatal_err)
 end
 
 
