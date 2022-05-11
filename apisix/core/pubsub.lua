@@ -81,6 +81,8 @@ end
 -- no error exists.
 --
 -- @function core.pubsub.on
+-- @tparam string command to add callback
+-- @tparam function  func (params) callback on receipt of command
 -- @usage
 -- pubsub:on(command, function (params)
 --     return data, err
