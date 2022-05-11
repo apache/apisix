@@ -18,10 +18,10 @@ local core = require("apisix.core")
 local is_apisix_or, client = pcall(require, "resty.apisix.client")
 local str_byte = string.byte
 local str_sub = string.sub
-local str_gmatch = string.gmatch
 local tb_insert = table.insert
 local ipairs = ipairs
 local type = type
+local ngx = ngx
 
 local matcher
 
@@ -106,7 +106,7 @@ local function get_addr(conf, ctx)
 
         if conf.recursive and conf.trusted_addresses then
             local split_addrs = {}
-            local match_itr = str_gmatch(addrs, "[^,%s*]+")
+            local match_itr = ngx.re.gmatch(addrs, "[^,%s*]+", "jo")
             for itr in match_itr do
                 tb_insert(split_addrs, itr)
             end
