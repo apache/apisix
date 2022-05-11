@@ -126,12 +126,18 @@ function _M.wait(self)
         -- the pub-sub messages use binary, if the message is not
         -- binary, skip this message
         if raw_type ~= "binary" then
-            log.warn("pubsub server receives non-binary data, type: ",
+            log.warn("pubsub server receive non-binary data, type: ",
                 raw_type, ",data: ", raw_data)
             goto continue
         end
 
-        local data = pb.decode("PubSubReq", raw_data)
+        local data, err = pb.decode("PubSubReq", raw_data)
+        if not data then
+            log.error("pubsub server receives undecodable data, err: ", err)
+            goto continue
+        end
+
+        -- command sequence code
         local sequence = data.sequence
 
         -- call command handler to generate response data
