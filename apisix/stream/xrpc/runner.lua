@@ -28,7 +28,7 @@ local ipairs = ipairs
 local tostring = tostring
 
 local logger_expr_cache = core.lrucache.new({
-    ttl = 300, count = 32
+    ttl = 300, count = 1024
 })
 
 local _M = {}
@@ -90,7 +90,7 @@ local function filter_logger(ctx, logger)
     end
 
     -- key and version are divided by per-logger level
-    local key = "xrpc-logger" .. ctx.conf_id
+    local key = tostring(ctx.conf_id)
     local version = tostring(logger.filter)
     local filter_expr, err = logger_expr_cache(key, version, expr.new, logger.filter)
     if not filter_expr or err then
