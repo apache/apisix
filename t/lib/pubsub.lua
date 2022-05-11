@@ -76,7 +76,7 @@ function _M.send_recv_ws(self, data)
     if err then
         return nil, err
     end
-    local raw_data, raw_type, err = ws:recv_frame()
+    local raw_data, _, err = ws:recv_frame()
     if not raw_data then
         ngx.log(ngx.ERR, "failed to receive the frame: ", err)
         return nil, err
