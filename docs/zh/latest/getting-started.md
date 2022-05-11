@@ -29,20 +29,20 @@ description: 本文档将引导你了解如何开始使用 Apache APISIX。
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-本文档将引导你了解 Apache APISIX 的概念、功能以及如何开始使用 APISIX。
+本文将为你介绍 Apache APISIX 的概念、功能以及如何使用 APISIX。
 
-通过本文档你可以了解到以下内容：
+通过本文你可以了解到以下内容：
 
 - Apache APISIX 是什么？
 - APISIX 的架构及主要概念。
 - 如何使用 Docker 安装并运行 APISIX。
 - 如何使用 Admin API 创建第一个路由并配置上游。
-- 如何使用 APISIX dashboard。
+- 如何使用 APISIX Dashboard。
 - 如何寻求帮助。
 
 ## Apache APISIX 是什么？
 
-Apache APISIX 是一个开源的云原生 API 网关，作为 API 网关，它兼具动态、实时、高性能等特点，提供了负载均衡、动态上游、灰度发布、服务熔断、身份认证、可观测性等丰富的流量管理功能。你可以使用 Apache APISIX 来处理传统的南北向流量，以及服务间的东西向流量， 也可以当做 K8s Ingress controller 来使用。
+Apache APISIX 是一个开源的云原生 API 网关，作为 API 网关，它兼具动态、实时、高性能等特点，提供了负载均衡、动态上游、灰度发布、服务熔断、身份认证、可观测性等丰富的流量管理功能。你可以使用 Apache APISIX 来处理传统的南北向流量，以及服务间的东西向流量，也可以当做 K8s Ingress controller 来使用。
 
 ### APISIX 的功能
 
@@ -58,7 +58,7 @@ Apache APISIX 是一个开源的云原生 API 网关，作为 API 网关，它�
 
 ![flow-software-architecture](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/flow-software-architecture.png)
 
-下表是本指南使用的 APISIX 的关键概念和组件：
+下表是本文涉及到的 APISIX 的主要概念和组件：
 
 | 概念/组件    | 描述                                                                                             |
 |-------------|--------------------------------------------------------------------------------------------------|
@@ -68,7 +68,7 @@ Apache APISIX 是一个开源的云原生 API 网关，作为 API 网关，它�
 
 ## 前提条件
 
-在开始使用 APISIX 之前，请确保你已安装以下应用：
+在开始使用 APISIX 之前，请确保你已经安装以下应用：
 
 - [Docker](https://www.docker.com/) 和 [Docker Compose](https://docs.docker.com/compose/)。
 - [curl](https://curl.se/docs/manpage.html) 用于测试 API。你也可以使用 [Hoppscotch](https://hoppscotch.io/) 之类的工具。
@@ -80,7 +80,7 @@ Apache APISIX 是一个开源的云原生 API 网关，作为 API 网关，它�
 
 - Protocol：即网络传输协议，在示例中，我们使用的是 `HTTP` 协议。
 - Port：即端口，示例中使用的 `80` 端口。
-- Host：即宿主机，示例中使用的上游服务是 `httpbin.org`。
+- Host：即主机地址，示例中使用的是 `httpbin.org`。
 - Path：即路径，示例中的路径是 `/get`。
 - Query Parameters：即查询字符串，这里有两个字符串，分别是 `foo1` 和 `foo2`。
 
@@ -148,7 +148,7 @@ docker-compose -p docker-apisix -f docker-compose-arm64.yml up -d
 
 :::note
 
-你可以参考 [APISIX 安装指南](./how-to-build.md)了解不同的安装方法。
+你也可以参考 [APISIX 安装指南](./how-to-build.md)了解不同的安装方法。
 
 :::
 
@@ -156,7 +156,7 @@ docker-compose -p docker-apisix -f docker-compose-arm64.yml up -d
 
 请确保其他系统进程没有占用 **9080、9443 和 2379** 端口。
 
-在基于 UNIX 的系统中，可以运行以下命令来终止监听指定端口的进行：
+在基于 UNIX 的系统中，可以使用以下命令来终止指定监听端口的运行：
 
 ```bash
 sudo fuser -k 9443/tcp
@@ -193,7 +193,7 @@ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335
 
 ## 创建路由
 
-现在你已经拥有一个正在运行的 APISIX 实例了！接下来，让我们来创建一个路由（Route）。
+现在你已经拥有一个正在运行的 APISIX 实例了！接下来，让我们来创建一个路由。
 
 APISIX 提供了强大的 [Admin API](./admin-api.md) 和 [Dashboard](https://github.com/apache/apisix-dashboard) 供用户使用。在下述示例中，我们将使用 Admin API 创建一个 [Route](./terminology/route.md) 并与 [Upstream](./terminology/upstream.md) 绑定，当一个请求到达 APISIX 时，APISIX 会将请求转发到指定的上游服务中。
 
@@ -242,7 +242,7 @@ curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f0343
 }'
 ```
 
-该上游配置与上一节配置在路由中的上游相同。同样使用了 `roundrobin` 作为负载均衡机制，设置了 `httpbin.org:80` 为上游服务。为了将该上游绑定到路由我们把 `upstream_id` 设置为 `1`。更多字段信息，请参考 [Admin API](./admin-api.md)。
+该上游配置与上一节配置在路由中的上游相同。同样使用了 `roundrobin` 作为负载均衡机制以及设置了 `httpbin.org:80` 为上游服务。为了将该上游绑定到路由我们把 `upstream_id` 设置为 `1`。更多字段信息，请参考 [Admin API](./admin-api.md)。
 
 上游服务创建完成后，可以通过以下命令绑定到指定路由：
 
