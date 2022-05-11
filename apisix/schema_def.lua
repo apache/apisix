@@ -415,7 +415,7 @@ local upstream_schema = {
             },
             anyOf = {
                 {required = {"client_cert", "client_key"}},
-                {required = {"verify"}}
+                {required = {"verify"}},
             }
         },
         keepalive_pool = {
