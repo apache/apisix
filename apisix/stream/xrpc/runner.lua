@@ -89,10 +89,8 @@ local function filter_logger(ctx, logger)
         return true
     end
 
-    -- key and version are divided by per-logger level
-    local key = tostring(ctx.conf_id)
     local version = tostring(logger.filter)
-    local filter_expr, err = logger_expr_cache(key, version, expr.new, logger.filter)
+    local filter_expr, err = logger_expr_cache(ctx.conf_id, version, expr.new, logger.filter)
     if not filter_expr or err then
         core.log.error("failed to validate the 'filter' expression: ", err)
         return false
