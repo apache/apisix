@@ -31,20 +31,12 @@ local pairs        = pairs
 local _M = { version = 0.1 }
 local mt = { __index = _M }
 
-
----
--- Create pubsub module instance
---
--- @function core.pubsub.new
--- @treturn pubsub module instance
--- @treturn string|nil error message if present
--- @usage
--- local pubsub, err = core.pubsub.new()
-function _M.new()
+local pb_state
+local function init_pb_state()
     -- clear current pb state
     pb.state(nil)
 
-    -- set int64 rule for pubsub
+    -- set int64 rule for pubsub module
     pb.option("int64_as_string")
 
     -- initialize protoc compiler
@@ -58,7 +50,26 @@ function _M.new()
         local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
         if not ok then
             pubsub_protoc:reset()
-            return nil, "failed to load pubsub protocol: "..err
+            return "failed to load pubsub protocol: "..err
+        end
+    end
+
+    pb_state = pb.state(nil)
+end
+
+---
+-- Create pubsub module instance
+--
+-- @function core.pubsub.new
+-- @treturn pubsub module instance
+-- @treturn string|nil error message if present
+-- @usage
+-- local pubsub, err = core.pubsub.new()
+function _M.new()
+    if not pb_state then
+        local err = init_pb_state()
+        if err then
+            return nil, err
         end
     end
 
@@ -68,7 +79,6 @@ function _M.new()
     end
 
     local obj = setmetatable({
-        pb_state = pb.state(nil), -- save current pb_state
         ws_server = ws,
         cmd_handler = {},
     }, mt)
@@ -139,7 +149,7 @@ function _M.wait(self)
         end
 
         -- recovery of stored pb_store
-        pb.state(self.pb_state)
+        pb.state(pb_state)
 
         local data, err = pb.decode("PubSubReq", raw_data)
         if not data then
