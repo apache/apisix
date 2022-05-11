@@ -23,7 +23,9 @@ local _M = {}
 local mt = { __index = _M }
 
 
+local pb_state
 local function load_proto()
+    pb.state(nil)
     protoc.reload()
     pb.option("int64_as_string")
     local pubsub_protoc = protoc.new()
@@ -33,6 +35,7 @@ local function load_proto()
         ngx.log(ngx.ERR, "failed to load protocol: "..err)
         return err
     end
+    pb_state = pb.state(nil)
 end
 
 
@@ -71,6 +74,7 @@ end
 
 
 function _M.send_recv_ws(self, data)
+    pb.state(pb_state)
     local ws = self.ws_client
     local _, err = ws:send_binary(pb.encode("PubSubReq", data))
     if err then
