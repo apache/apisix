@@ -206,6 +206,13 @@
           ]
         },
         {
+          "type": "category",
+          "label": "发布订阅",
+          "items": [
+            "pubsub"
+          ]
+        },
+        {
           "type": "doc",
           "id": "external-plugin"
         },
