@@ -156,7 +156,7 @@ function _M.wait(self)
         -- binary, skip this message
         if raw_type ~= "binary" then
             log.warn("pubsub server receive non-binary data, type: ",
-                raw_type, ",data: ", raw_data)
+                raw_type, ", data: ", raw_data)
             goto continue
         end
 
@@ -166,6 +166,7 @@ function _M.wait(self)
         local data, err = pb.decode("PubSubReq", raw_data)
         if not data then
             log.error("pubsub server receives undecodable data, err: ", err)
+            send_error_resp(ws, 0, "wrong command")
             goto continue
         end
 
@@ -182,19 +183,21 @@ function _M.wait(self)
                     log.error("pubsub callback handler not registered for the",
                         " command, command: ", key)
                     send_error_resp(ws, sequence, "unknown command: " .. key)
-                    goto continue
+                    break
                 end
 
                 local resp, err = handler(value)
                 if not resp then
                     send_error_resp(ws, sequence, err)
-                    goto continue
+                    break
                 end
 
                 -- write back the sequence
                 resp.sequence = sequence
                 ws:send_binary(pb.encode("PubSubResp", resp))
+                break
             end
+            log.warn("pubsub server receives empty command")
         end
 
         ::continue::
