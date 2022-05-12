@@ -42,19 +42,19 @@ import TabItem from '@theme/TabItem';
 
 ## Apache APISIX 是什么？
 
-Apache APISIX 是一个开源的云原生 API 网关，作为 API 网关，它兼具动态、实时、高性能等特点，提供了负载均衡、动态上游、灰度发布、服务熔断、身份认证、可观测性等丰富的流量管理功能。你可以使用 Apache APISIX 来处理传统的南北向流量，以及服务间的东西向流量，也可以当做 K8s Ingress controller 来使用。
+Apache APISIX 是 Apache 软件基金会下的云原生 API 网关，它兼具动态、实时、高性能等特点，提供了负载均衡、动态上游、灰度发布（金丝雀发布）、服务熔断、身份认证、可观测性等丰富的流量管理功能。我们可以使用 Apache APISIX 来处理传统的南北向流量，也可以处理服务间的东西向流量。同时，它也支持作为 [K8s Ingress Controller](https://github.com/apache/apisix-ingress-controller) 来使用。
 
-### APISIX 的功能
+### 主要特性
 
 - 多平台支持：APISIX 提供了多平台解决方案，它不但支持裸机运行，也支持在 Kubernetes 中使用，还支持与 AWS Lambda、Azure Function、Lua 函数和 Apache OpenWhisk 等云服务集成。
-- 全动态能力：APISIX 支持热加载，这意味着你不需要重启服务就可以更新 APISIX 的配置。
-- 精细化路由：APISIX 支持使用 NGINX 所有的内置变量做为路由的条件，你可以自定义匹配函数来过滤路由。
-- 运维友好：APISIX 因其对 DevOps 团队的操作友好而闻名。它可以与以下工具和平台集成：[HashiCorp Vault](./plugins/jwt-auth.md#usage-with-hashicorp-vault)、[Zipkin](./plugins/zipkin.md)、[Apache SkyWalking](./plugins/skywalking.md)、[Consul](./discovery/consul_kv.md)、[Nacos](./discovery/nacos.md)、[Eureka](./discovery.md)。通过 [APISIX Dashboard](/docs/dashboard/USER_GUIDE)，运维人员可以通过友好且直观的 UI 配置 APISIX。
+- 全动态能力：APISIX 支持热加载，这意味着你不需要重启服务就可以更新 APISIX 的配置。请访问[为什么 Apache APISIX 选择 Nginx + Lua 这个技术栈？](https://apisix.apache.org/zh/blog/2021/08/25/why-apache-apisix-chose-nginx-and-lua/)以了解实现原理。
+- 精细化路由：APISIX 支持使用 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)做为路由的匹配条件，你可以自定义匹配函数来过滤路由。
+- 运维友好：APISIX 支持与以下工具和平台集成：[HashiCorp Vault](./plugins/jwt-auth.md#usage-with-hashicorp-vault)、[Zipkin](./plugins/zipkin.md)、[Apache SkyWalking](./plugins/skywalking.md)、[Consul](./discovery/consul_kv.md)、[Nacos](./discovery/nacos.md)、[Eureka](./discovery.md)。通过 [APISIX Dashboard](/docs/dashboard/USER_GUIDE)，运维人员可以通过友好且直观的 UI 配置 APISIX。
 - 多语言插件支持：APISIX 支持多种开发语言进行插件开发，开发人员可以选择擅长语言的 SDK 开发自定义插件。
 
 ## 主要概念
 
-下图为 APISIX 的架构：
+下图为 Apache APISIX 的架构：
 
 ![flow-software-architecture](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/flow-software-architecture.png)
 
@@ -64,7 +64,7 @@ Apache APISIX 是一个开源的云原生 API 网关，作为 API 网关，它�
 |-------------|--------------------------------------------------------------------------------------------------|
 | Route       | 通过路由定义规则来匹配客户端请求，根据匹配结果加载并执行相应的插件，最后把请求转发给到指定的上游应用。  |
 | Upstream    | 上游的作用是按照配置规则对服务节点进行负载均衡，它的地址信息可以直接配置到路由或服务上。               |
-| Admin API   | 用户通过该组件可以控制 APISIX 实例的 API。                                                         |
+| Admin API   | 用户可以通过 Admin API 控制 APISIX 实例。                                                         |
 
 ## 前提条件
 
@@ -76,7 +76,7 @@ Apache APISIX 是一个开源的云原生 API 网关，作为 API 网关，它�
 
 **请求内容：**
 
-请求 URL 由以下这些参数构成：
+请求 URL 由以下参数构成：
 
 - Protocol：即网络传输协议，在示例中，我们使用的是 `HTTP` 协议。
 - Port：即端口，示例中使用的 `80` 端口。
@@ -111,7 +111,7 @@ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 
 ## 安装 APISIX
 
-在本文中我们将使用 Docker 安装 APISIX 并启用 [Admin API](./admin-api.md)。
+我们将使用 Docker 安装 APISIX 并启用 [Admin API](./admin-api.md)。
 
 首先，通过 `git` 命令克隆 [apisix-docker](https://github.com/apache/apisix-docker) 仓库：
 
@@ -120,7 +120,7 @@ git clone https://github.com/apache/apisix-docker.git
 cd apisix-docker/example
 ```
 
-现在你可以 `docker-compose` 启动 APISIX。
+现在你可以通过 `docker-compose` 启动 APISIX。
 
 <Tabs
   groupId="cpu-arch"
@@ -242,7 +242,7 @@ curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f0343
 }'
 ```
 
-该上游配置与上一节配置在路由中的上游相同。同样使用了 `roundrobin` 作为负载均衡机制，并设置了 `httpbin.org:80` 为上游服务。为了将该上游绑定到路由，这里需要把 `upstream_id` 设置为 `1`。更多字段信息，请参考 [Admin API](./admin-api.md)。
+该上游配置与上一节配置在路由中的上游相同。同样使用了 `roundrobin` 作为负载均衡机制，并设置了 `httpbin.org:80` 为上游服务。为了将该上游绑定到路由，此处需要把 `upstream_id` 设置为 `"1"`。更多字段信息，请参考 [Admin API](./admin-api.md)。
 
 上游服务创建完成后，可以通过以下命令绑定到指定路由：
 
@@ -269,9 +269,9 @@ curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin
 
 如果你已经完成上述操作步骤，就可以通过 [`localhost:9000`](http://localhost:9000/) 访问 APISIX Dashboard。
 
-单击侧边栏中的 [Route](http://localhost:9000/routes/list)，可以查看已经配置的路由列表。你也可以看到在上述步骤中使用 Admin API 创建的路由。
+单击侧边栏中的 [`Route`](http://localhost:9000/routes/list)，可以查看已经配置的路由列表。你也可以看到在上述步骤中使用 Admin API 创建的路由。
 
-你也可以通过单击 [Create](http://localhost:9000/routes/create) 按钮并按照提示创建新路由：
+你也可以通过单击 [`Create`](http://localhost:9000/routes/create) 按钮并按照提示创建新路由：
 
 ![Creating a Route with APISIX Dashboard](../../assets/images/create-a-route.png)
 
