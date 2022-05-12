@@ -276,7 +276,7 @@ end
 
 
 function _M.log(session, ctx)
-    core.log.info("call pingpong's log")
+    core.log.info("call pingpong's log, ctx unfinished: ", ctx.unfinished == true)
 end
 
 
