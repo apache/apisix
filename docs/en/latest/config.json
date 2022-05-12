@@ -214,6 +214,13 @@
         },
         {
           "type": "category",
+          "label": "PubSub",
+          "items": [
+            "pubsub"
+          ]
+        },
+        {
+          "type": "category",
           "label": "xRPC",
           "items": [
             "xrpc"
