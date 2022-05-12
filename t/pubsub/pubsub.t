@@ -117,7 +117,7 @@ ret: test
 
 
 
-=== TEST 4: send unregisted command
+=== TEST 4: send unregistered command
 --- config
     location /t {
         content_by_lua_block {
