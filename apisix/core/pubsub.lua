@@ -58,14 +58,23 @@ local function init_pb_state()
 end
 
 
-local function send_error_resp(ws, sequence, err_msg)
-    ws:send_binary(pb.encode("PubSubResp", {
+-- send error response to client
+local function send_error(ws, sequence, err_msg)
+    local ok, data = pcall(pb.encode, "PubSubResp", {
         sequence = sequence,
         error_resp = {
             code = 0,
             message = err_msg,
         },
-    }))
+    })
+    if not ok or not data then
+        log.error("failed to encode error response message, err", data)
+    end
+
+    local _, err = ws:send_binary(data)
+    if err then
+        log.error("failed to send response to client, err", data)
+    end
 end
 
 
@@ -164,7 +173,7 @@ function _M.wait(self)
         local data, err = pb.decode("PubSubReq", raw_data)
         if not data then
             log.error("pubsub server receives undecodable data, err: ", err)
-            send_error_resp(ws, 0, "wrong command")
+            send_error(ws, 0, "wrong command")
             goto continue
         end
 
@@ -180,19 +189,27 @@ function _M.wait(self)
                 if not handler then
                     log.error("pubsub callback handler not registered for the",
                         " command, command: ", key)
-                    send_error_resp(ws, sequence, "unknown command: " .. key)
+                    send_error(ws, sequence, "unknown command: " .. key)
                     break
                 end
 
                 local resp, err = handler(value)
                 if not resp then
-                    send_error_resp(ws, sequence, err)
+                    send_error(ws, sequence, err)
                     break
                 end
 
                 -- write back the sequence
                 resp.sequence = sequence
-                ws:send_binary(pb.encode("PubSubResp", resp))
+                local ok, data = pcall(pb.encode, "PubSubResp", resp)
+                if not ok or not data then
+                    log.error("failed to encode response message")
+                    break
+                end
+                local _, err = ws:send_binary(data)
+                if err then
+                    log.error("failed to send response to client, err", data)
+                end
                 break
             end
             log.warn("pubsub server receives empty command")
@@ -202,7 +219,7 @@ function _M.wait(self)
     end
 
     if fatal_err then
-        log.error("fatal error in pubsub, err: ", fatal_err)
+        log.error("fatal error in pubsub websocket server, err: ", fatal_err)
     end
     ws:send_close()
 end

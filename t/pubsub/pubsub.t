@@ -177,7 +177,7 @@ pubsub callback handler not registered for the command, command: cmd_empty
 --- error_log
 pubsub server receive non-binary data, type: text, data: test
 text command is skipped, and close connection
-fatal error in pubsub, err: failed to receive the first 2 bytes: closed
+fatal error in pubsub websocket server, err: failed to receive the first 2 bytes: closed
 
 
 
@@ -201,7 +201,7 @@ fatal error in pubsub, err: failed to receive the first 2 bytes: closed
 --- error_log
 pubsub server receives empty command
 empty command is skipped, and close connection
-fatal error in pubsub, err: failed to receive the first 2 bytes: closed
+fatal error in pubsub websocket server, err: failed to receive the first 2 bytes: closed
 
 
 
@@ -225,4 +225,4 @@ fatal error in pubsub, err: failed to receive the first 2 bytes: closed
 --- error_log
 pubsub server receives empty command
 empty command is skipped, and close connection
-fatal error in pubsub, err: failed to receive the first 2 bytes: closed
+fatal error in pubsub websocket server, err: failed to receive the first 2 bytes: closed
