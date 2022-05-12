@@ -33,6 +33,11 @@ message CmdPing {
 }
 
 /**
+ * An empty command, a placeholder for testing purposes only
+ */
+message CmdEmpty {}
+
+/**
  * Client request definition for pubsub scenarios
  *
  * The sequence field is used to associate requests and responses.
@@ -50,7 +55,8 @@ message CmdPing {
 message PubSubReq {
     int64 sequence = 1;
     oneof req {
-        CmdPing cmd_ping = 31;
+        CmdEmpty cmd_empty = 31;
+        CmdPing cmd_ping = 32;
     };
 }
 
@@ -84,7 +90,7 @@ message PongResp {
 message PubSubResp {
     int64 sequence = 1;
     oneof resp {
-        ErrorResp resp_error = 31;
-        PongResp resp_pong = 32;
+        ErrorResp error_resp = 31;
+        PongResp pong_resp = 32;
     };
 }
