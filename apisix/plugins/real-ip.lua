@@ -136,8 +136,7 @@ function _M.rewrite(conf, ctx)
 
     if conf.trusted_addresses then
         local remote_addr = ctx.var.remote_addr
-        local trusted = addr_match(conf, remote_addr)
-        if not trusted then
+        if not addr_match(conf, remote_addr) then
             return
         end
     end
