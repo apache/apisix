@@ -98,7 +98,7 @@ failed to initialize pubsub module, err: bad "upgrade" request header: nil
         content_by_lua_block {
             local lib_pubsub = require("lib.pubsub")
             local test_pubsub = lib_pubsub.new_ws("ws://127.0.0.1:1984/pubsub")
-            local data = test_pubsub:send_recv_ws({
+            local data = test_pubsub:send_recv_ws_binary({
                 sequence = 0,
                 cmd_kafka_list_offset = {
                     topic = "test",
@@ -123,7 +123,7 @@ ret: test
         content_by_lua_block {
             local lib_pubsub = require("lib.pubsub")
             local test_pubsub = lib_pubsub.new_ws("ws://127.0.0.1:1984/pubsub")
-            local data = test_pubsub:send_recv_ws({
+            local data = test_pubsub:send_recv_ws_binary({
                 sequence = 0,
                 cmd_kafka_fetch = {
                     topic = "test",
@@ -179,7 +179,31 @@ fatal error in pubsub, err: failed to receive the first 2 bytes: closed
             end)
             local lib_pubsub = require("lib.pubsub")
             local test_pubsub = lib_pubsub.new_ws("ws://127.0.0.1:1984/pubsub")
-            test_pubsub:send_recv_ws({})
+            test_pubsub:send_recv_ws_binary({})
+            test_pubsub:close_ws()
+        }
+    }
+--- abort
+--- ignore_response
+--- error_log
+pubsub server receives empty command
+empty command is skipped, and close connection
+fatal error in pubsub, err: failed to receive the first 2 bytes: closed
+
+
+
+=== TEST 7: send wrong command: undecodable (server skip command, keep connection)
+--- config
+    location /t {
+        lua_check_client_abort on;
+        content_by_lua_block {
+            ngx.on_abort(function ()
+                ngx.log(ngx.ERR, "empty command is skipped, and close connection")
+                ngx.exit(444)
+            end)
+            local lib_pubsub = require("lib.pubsub")
+            local test_pubsub = lib_pubsub.new_ws("ws://127.0.0.1:1984/pubsub")
+            test_pubsub:send_recv_ws_binary("!@#$%^&*", true)
             test_pubsub:close_ws()
         }
     }

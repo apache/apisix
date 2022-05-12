@@ -73,10 +73,13 @@ function _M.new_ws(server)
 end
 
 
-function _M.send_recv_ws(self, data)
+function _M.send_recv_ws_binary(self, data, is_raw)
     pb.state(pb_state)
     local ws = self.ws_client
-    local _, err = ws:send_binary(pb.encode("PubSubReq", data))
+    if not is_raw then
+        data = pb.encode("PubSubReq", data)
+    end
+    local _, err = ws:send_binary(data)
     if err then
         return nil, err
     end
