@@ -23,21 +23,13 @@ option java_multiple_files = true;
 option go_package = "github.com/apache/apisix/api/pubsub;pubsub";
 
 /**
- * Get the offset of the specified topic partition from Apache Kafka.
+ * Ping command, used to keep the websocket connection alive
+ *
+ * The state field is used to pass some non-specific information,
+ * which will be returned in the pong response as is.
  */
-message CmdKafkaListOffset {
-    string topic = 1;
-    int32 partition = 2;
-    int64 timestamp = 3;
-}
-
-/**
- * Fetch messages of the specified topic partition from Apache Kafka.
- */
-message CmdKafkaFetch {
-    string topic = 1;
-    int32 partition = 2;
-    int64 offset = 3;
+message CmdPing {
+    bytes state = 1;
 }
 
 /**
@@ -58,43 +50,25 @@ message CmdKafkaFetch {
 message PubSubReq {
     int64 sequence = 1;
     oneof req {
-        CmdKafkaFetch      cmd_kafka_fetch       = 31;
-        CmdKafkaListOffset cmd_kafka_list_offset = 32;
+        CmdPing cmd_ping = 31;
     };
-}
-
-/**
- * The definition of a message in Kafka with the current message
- * offset, production timestamp, Key, and message content.
- */
-message KafkaMessage {
-    int64 offset = 1;
-    int64 timestamp = 2;
-    bytes key = 3;
-    bytes value = 4;
 }
 
 /**
  * The response body of the service when an error occurs,
  * containing the error code and the error message.
  */
-message ErrorResp {
+ message ErrorResp {
     int32 code = 1;
     string message = 2;
 }
 
 /**
- * The response of Fetch messages from Apache Kafka.
+ * Pong response, the state field will pass through the
+ * value in the Ping command field.
  */
-message KafkaFetchResp {
-    repeated KafkaMessage messages = 1;
-}
-
-/**
- * The response of list offset from Apache Kafka.
- */
-message KafkaListOffsetResp {
-    int64 offset = 1;
+message PongResp {
+    bytes state = 1;
 }
 
 /**
@@ -110,8 +84,7 @@ message KafkaListOffsetResp {
 message PubSubResp {
     int64 sequence = 1;
     oneof resp {
-        ErrorResp error_resp = 31;
-        KafkaFetchResp kafka_fetch_resp = 32;
-        KafkaListOffsetResp kafka_list_offset_resp = 33;
+        ErrorResp resp_error = 31;
+        PongResp resp_pong = 32;
     };
 }
