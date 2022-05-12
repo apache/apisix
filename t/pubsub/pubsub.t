@@ -133,6 +133,7 @@ ret: test
 ret: error
 
 
+
 === TEST 5: send unregistered command
 --- config
     location /t {
