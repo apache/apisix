@@ -353,8 +353,8 @@ function _M.connect_upstream(session, ctx)
 end
 
 
-function _M.disconnect_upstream(session, upstream, upstream_broken)
-    sdk.disconnect_upstream(upstream, session.upstream_conf, upstream_broken)
+function _M.disconnect_upstream(session, upstream)
+    sdk.disconnect_upstream(upstream, session.upstream_conf)
 end
 
 

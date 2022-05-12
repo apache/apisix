@@ -152,6 +152,9 @@ pp\x01\x00\x00\x00\x00\x00\x00\x00"
 "pp\x02\x00\x00\x00\x00\x00\x00\x03ABC" x 3
 --- response_body eval
 "pp\x02\x00\x00\x00\x00\x00\x00\x03ABC" x 3
+--- log_level: debug
+--- no_error_log
+stream lua tcp socket set keepalive
 --- stream_conf_enable
 
 
