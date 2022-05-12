@@ -1,5 +1,10 @@
 ---
 title: 快速入门指南
+keywords:
+  - APISIX
+  - APISIX 入门指南
+  - APISIX docker 安装教程
+description: 本文档将引导你了解如何开始使用 Apache APISIX。
 ---
 
 <!--
@@ -21,25 +26,61 @@ title: 快速入门指南
 #
 -->
 
-## 概述
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-本文是 Apache APISIX 的快速入门指南。快速入门分为三个步骤：
+本文将为你介绍 Apache APISIX 的概念、功能以及如何使用 APISIX。
 
-1. 通过 [Docker Compose](https://docs.docker.com/compose/) 安装 Apache APISIX。
-1. 创建路由并绑定上游。
-1. 使用命令行语句 `curl` 验证绑定之后返回的结果是否符合预期。
+通过本文你可以了解到以下内容：
 
-除此之外，本文也提供了 Apache APISIX 的一些进阶操作技巧，包括：添加身份验证、为路由添加前缀、使用 APISIX Dashboard 以及常见问题排查。
+- Apache APISIX 是什么？
+- APISIX 的架构及主要概念。
+- 如何使用 Docker 安装并运行 APISIX。
+- 如何使用 Admin API 创建第一个路由并配置上游。
+- 如何使用 APISIX Dashboard。
+- 如何寻求帮助。
 
-我们将以下面的 `echo` 端点为例，它将返回我们传递的参数。
+## Apache APISIX 是什么？
 
-**请求内容**
+Apache APISIX 是 Apache 软件基金会下的云原生 API 网关，它兼具动态、实时、高性能等特点，提供了负载均衡、动态上游、灰度发布（金丝雀发布）、服务熔断、身份认证、可观测性等丰富的流量管理功能。我们可以使用 Apache APISIX 来处理传统的南北向流量，也可以处理服务间的东西向流量。同时，它也支持作为 [K8s Ingress Controller](https://github.com/apache/apisix-ingress-controller) 来使用。
 
-请求 URL 由以下这些参数构成：
+### 主要特性
 
-- Protocol：即网络传输协议，示例中使用的是最常见的 `HTTP` 协议。
+- 多平台支持：APISIX 提供了多平台解决方案，它不但支持裸机运行，也支持在 Kubernetes 中使用，还支持与 AWS Lambda、Azure Function、Lua 函数和 Apache OpenWhisk 等云服务集成。
+- 全动态能力：APISIX 支持热加载，这意味着你不需要重启服务就可以更新 APISIX 的配置。请访问[为什么 Apache APISIX 选择 Nginx + Lua 这个技术栈？](https://apisix.apache.org/zh/blog/2021/08/25/why-apache-apisix-chose-nginx-and-lua/)以了解实现原理。
+- 精细化路由：APISIX 支持使用 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)做为路由的匹配条件，你可以自定义匹配函数来过滤请求，匹配路由。
+- 运维友好：APISIX 支持与以下工具和平台集成：[HashiCorp Vault](./plugins/jwt-auth.md#usage-with-hashicorp-vault)、[Zipkin](./plugins/zipkin.md)、[Apache SkyWalking](./plugins/skywalking.md)、[Consul](./discovery/consul_kv.md)、[Nacos](./discovery/nacos.md)、[Eureka](./discovery.md)。通过 [APISIX Dashboard](/docs/dashboard/USER_GUIDE)，运维人员可以通过友好且直观的 UI 配置 APISIX。
+- 多语言插件支持：APISIX 支持多种开发语言进行插件开发，开发人员可以选择擅长语言的 SDK 开发自定义插件。
+
+## 主要概念
+
+下图为 Apache APISIX 的架构：
+
+![flow-software-architecture](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/flow-software-architecture.png)
+
+下表是本文涉及到的 APISIX 的主要概念和组件：
+
+| 概念/组件    | 描述                                                                                             |
+|-------------|--------------------------------------------------------------------------------------------------|
+| Route       | 通过路由定义规则来匹配客户端请求，根据匹配结果加载并执行相应的插件，最后把请求转发给到指定的上游应用。  |
+| Upstream    | 上游的作用是按照配置规则对服务节点进行负载均衡，它的地址信息可以直接配置到路由或服务上。               |
+| Admin API   | 用户可以通过 Admin API 控制 APISIX 实例。                                                         |
+
+## 前提条件
+
+在开始使用 APISIX 之前，请确保你已经安装以下应用：
+
+- [Docker](https://www.docker.com/) 和 [Docker Compose](https://docs.docker.com/compose/)。
+- [curl](https://curl.se/docs/manpage.html) 用于测试 API。你也可以使用 [Hoppscotch](https://hoppscotch.io/) 之类的工具。
+- 本文使用的上游服务是 [httpbin.org](https://httpbin.org)，你可以使用它进行测试。这是一个返回服务，它将返回我们在请求中传递的参数。
+
+**请求内容：**
+
+请求 URL 由以下参数构成：
+
+- Protocol：即网络传输协议，在示例中，我们使用的是 `HTTP` 协议。
 - Port：即端口，示例中使用的 `80` 端口。
-- Host：即宿主机，示例中的主机是 `httpbin.org`。
+- Host：即主机地址，示例中使用的是 `httpbin.org`。
 - Path：即路径，示例中的路径是 `/get`。
 - Query Parameters：即查询字符串，这里有两个字符串，分别是 `foo1` 和 `foo2`。
 
@@ -49,7 +90,7 @@ title: 快速入门指南
 curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 ```
 
-**响应内容**
+**响应内容：**
 
 ```json
 {
@@ -68,51 +109,75 @@ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 }
 ```
 
-## 前提条件
+## 安装 APISIX
 
-- 已安装 [Docker Compose 组件](https://docs.docker.com/compose/)。
+我们将使用 Docker 安装 APISIX 并启用 [Admin API](./admin-api.md)。
 
-- 本文使用 [curl](https://curl.se/docs/manpage.html) 命令行进行 API 测试。您也可以使用其他工具例如 [Postman](https://www.postman.com/) 等，进行测试。
-
-<!--
-#
-#    In addition to the basic Markdown syntax, we use remark-admonitions
-#    alongside MDX to add support for admonitions. Admonitions are wrapped
-#    by a set of 3 colons.
-#    Please refer to https://docusaurus.io/docs/next/markdown-features/admonitions
-#    for more detail.
-#
--->
-
-:::note 说明
-如果您已经安装了 Apache APISIX，请直接阅读 [第二步](getting-started.md#第二步：创建路由)
-:::
-
-## 第一步：安装 Apache APISIX
-
-得益于 Docker，我们可以通过执行以下命令来启动 Apache APISIX 并启用 [Admin API](./admin-api.md)。
+首先，通过 `git` 命令克隆 [apisix-docker](https://github.com/apache/apisix-docker) 仓库：
 
 ```bash
-#将 Apache APISIX 的 Docker 镜像下载到本地
 git clone https://github.com/apache/apisix-docker.git
-# 将当前的目录切换到 apisix-docker/example 路径下
 cd apisix-docker/example
-# 运行 docker-compose 命令，安装 Apache APISIX
+```
+
+现在你可以通过 `docker-compose` 启动 APISIX。
+
+<Tabs
+  groupId="cpu-arch"
+  defaultValue="x86"
+  values={[
+    {label: 'x86', value: 'x86'},
+    {label: 'ARM/M1', value: 'arm'},
+  ]}>
+<TabItem value="x86">
+
+```shell
 docker-compose -p docker-apisix up -d
 ```
 
-> Apache APISIX 已支持 ARM64 架构。如果您正在使用 ARM64，请在最后一步执行 `docker-compose -p docker-apisix -f docker-compose-arm64.yml up -d`。
+</TabItem>
 
-下载所需的所有文件将花费一些时间，这取决于您的网络，请耐心等待。
+<TabItem value="arm">
 
-下载完成后，在运行 Docker 的宿主机上执行 `curl` 命令访问 Admin API，根据返回数据判断 Apache APISIX 是否成功启动。
+```shell
+docker-compose -p docker-apisix -f docker-compose-arm64.yml up -d
+```
+
+</TabItem>
+</Tabs>
+
+:::note
+
+你也可以参考 [APISIX 安装指南](./how-to-build.md)了解不同的安装方法。
+
+:::
+
+:::info IMPORTANT
+
+请确保其他系统进程没有占用 **9080、9443 和 2379** 端口。
+
+在基于 UNIX 的系统中，可以使用以下命令来终止指定监听端口的运行：
+
+```bash
+sudo fuser -k 9443/tcp
+```
+
+如果 Docker 容器不能正常运行，你可以通过以下命令检查日志进行问题诊断：
+
+```bash
+docker logs -f --tail $<container_id>
+```
+
+:::
+
+安装完成后，你可以在运行 Docker 的宿主机上执行 `curl` 命令访问 Admin API，根据返回数据判断 APISIX 是否成功启动。
 
 ```bash
 # 注意：请在运行 Docker 的宿主机上执行 curl 命令。
 curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```
 
-返回数据如下所示，表示 Apache APISIX 成功启动：
+如果返回数据如下所示，则表示 APISIX 成功启动：
 
 ```json
 {
@@ -126,17 +191,13 @@ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335
 }
 ```
 
-## 第二步：创建路由
+完成上述步骤后，你就已经拥有了一个正在运行的 APISIX 的实例了，现在你可以从之后的小节中学习如何创建路由以及了解 APISIX Dashboard 的操作。
 
-您现在已经拥有一个运行中的 Apache APISIX 实例了！接下来，让我们来创建一个路由（Route）。
+## 创建路由
 
-### 工作原理
+APISIX 提供了强大的 [Admin API](./admin-api.md) 和 [Dashboard](https://github.com/apache/apisix-dashboard) 供用户使用。在下述示例中，我们将使用 Admin API 创建一个 [Route](./terminology/route.md) 并与 [Upstream](./terminology/upstream.md) 绑定，当一个请求到达 APISIX 时，APISIX 会将请求转发到指定的上游服务中。
 
-Apache APISIX 提供了强大的 [Admin API](./admin-api.md) 和 [Dashboard](https://github.com/apache/apisix-dashboard) 可供我们使用。在本文中，我们使用 Admin API 来做演示。
-
-我们可以创建一个 [Route](./terminology/route.md) 并与上游服务（通常也被称为 [Upstream](./terminology/upstream.md) 或后端服务）绑定，当一个 `请求（Request）` 到达 Apache APISIX 时，Apache APISIX 就会明白这个请求应该转发到哪个上游服务中。
-
-因为我们为 Route 对象配置了匹配规则，所以 Apache APISIX 可以将请求转发到对应的上游服务。以下代码会创建一个示例 Route 配置：
+以下示例代码中，我们将为路由配置匹配规则，以便 APISIX 可以将请求转发到对应的上游服务：
 
 ```bash
 curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
@@ -153,23 +214,23 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
 }'
 ```
 
-这条路由配置意味着，当它们满足下述的 **所有** 规则时，所有匹配的入站请求都将被转发到 `httpbin.org:80` 这个上游服务：
+该配置意味着，当请求满足下述的**所有**规则时，请求将被转发到上游服务（`httpbin.org:80`）：
 
 - 请求的 HTTP 方法为 `GET`。
 - 请求头包含 `host` 字段，且它的值为 `example.com`。
 - 请求路径匹配 `/anything/*`，`*` 意味着任意的子路径，例如 `/anything/foo?arg=10`。
 
-当这条路由创建后，我们可以使用 Apache APISIX 对外暴露的地址去访问上游服务：
+当路由创建完成后，可以通过以下命令访问上游服务：
 
 ```bash
 curl -i -X GET "http://127.0.0.1:9080/anything/foo?arg=10" -H "Host: example.com"
 ```
 
-这将会被 Apache APISIX 转发到 `http://httpbin.org:80/anything/foo?arg=10`。
+该请求将被 APISIX 转发到 `http://httpbin.org:80/anything/foo?arg=10`。
 
-### 创建上游服务（Upstream）
+## 使用上游服务创建路由
 
-读完上一节，我们知道必须为 `Route` 设置 `Upstream`。只需执行下面的命令即可创建一个上游服务：
+你可以通过以下命令创建一个上游，并在路由中使用它，而不是直接将其配置在路由中：
 
 ```bash
 curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
@@ -181,25 +242,9 @@ curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f0343
 }'
 ```
 
-我们使用 `roundrobin` 作为负载均衡机制，并将 `httpbin.org:80` 设置为我们的上游服务，其 ID 为 `1`。更多字段信息，请参阅 [Admin API](./admin-api.md)。
+该上游配置与上一节配置在路由中的上游相同。同样使用了 `roundrobin` 作为负载均衡机制，并设置了 `httpbin.org:80` 为上游服务。为了将该上游绑定到路由，此处需要把 `upstream_id` 设置为 `"1"`。更多字段信息，请参考 [Admin API](./admin-api.md)。
 
-<!--
-#
-#    In addition to the basic Markdown syntax, we use remark-admonitions
-#    alongside MDX to add support for admonitions. Admonitions are wrapped
-#    by a set of 3 colons.
-#    Please refer to https://docusaurus.io/docs/next/markdown-features/admonitions
-#    for more detail.
-#
--->
-
-:::note 注意
-创建上游服务实际上并不是必需的，因为我们可以使用 [插件](./terminology/plugin.md) 拦截请求，然后直接响应。但在本指南中，我们假设需要设置至少一个上游服务。
-:::
-
-### 绑定路由与上游服务
-
-我们刚刚创建了一个上游服务，现在让我们为它绑定一个路由！
+上游服务创建完成后，可以通过以下命令绑定到指定路由：
 
 ```bash
 curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
@@ -210,114 +255,34 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
 }'
 ```
 
-## 第三步：验证
-
-我们已创建了路由与上游服务，并将它们进行了绑定。现在让我们访问 Apache APISIX 来测试这条路由：
+我们已经创建了路由与上游服务，现在可以通过以下命令访问上游服务：
 
 ```bash
 curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin.org"
 ```
 
-它从我们的上游服务（实际是 `httpbin.org`）返回数据，并且结果符合预期。
+该请求将被 APISIX 转发到 `http://httpbin.org:80/anything/foo?arg=10`。
 
-## 进阶操作
+## 使用 APISIX Dashboard
 
-本节提供了 Apache APISIX 的一些进阶操作技巧，包括：添加身份验证、为路由添加前缀、使用 APISIX Dashboard 以及常见问题排查。
+你还可以使用 APISIX Dashboard 创建和配置类似于上述步骤中所创建的路由。
 
-### 添加身份验证
+如果你已经完成上述操作步骤，就可以通过 [`localhost:9000`](http://localhost:9000/) 访问 APISIX Dashboard。
 
-我们在第二步中创建的路由是公共的，只要知道 Apache APISIX 对外暴露的地址，**任何人** 都可以访问这个上游服务，这种访问方式没有保护措施，存在一定的安全隐患。在实际应用场景中，我们需要为路由添加身份验证。
+单击侧边栏中的 [`Route`](http://localhost:9000/routes/list)，可以查看已经配置的路由列表。你也可以看到在上述步骤中使用 Admin API 创建的路由。
 
-现在我们希望只有特定的用户 `John` 可以访问这个上游服务，需要使用 [消费者（Consumer）](./terminology/consumer.md) 和 [插件（Plugin）](./terminology/plugin.md) 来实现身份验证。
+你也可以通过单击 [`Create`](http://localhost:9000/routes/create) 按钮并按照提示创建新路由：
 
-首先，让我们用 [key-auth](./plugins/key-auth.md) 插件创建一个 [消费者（Consumer）](./terminology/consumer.md) `John`，我们需要提供一个指定的密钥：
+![Creating a Route with APISIX Dashboard](../../assets/images/create-a-route.png)
 
-```bash
-curl "http://127.0.0.1:9080/apisix/admin/consumers" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
-{
-  "username": "john",
-  "plugins": {
-    "key-auth": {
-      "key": "key-of-john"
-    }
-  }
-}'
-```
+新创建的路由将被添加到路由列表中：
 
-接下来，让我们绑定 `消费者（John）` 到路由上，我们只需要为路由 **启用** [key-auth](./plugins/key-auth.md) 插件即可。
+![Creating a Route with APISIX Dashboard](../../assets/images/list-of-routes.png)
 
-```bash
-curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
-{
-  "uri": "/get",
-  "host": "httpbin.org",
-  "plugins": {
-    "key-auth": {}
-  },
-  "upstream_id": "1"
-}'
-```
+想要了解更多关于 APISIX Dashboard 的信息，请参考 [APISIX Dashboard 文档](/docs/dashboard/USER_GUIDE)。
 
-现在当我们访问第二步创建的路由时，会触发 **Unauthorized Error（未经授权的错误）**。
+## 总结
 
-访问那个路由的正确方式是添加一个带有正确密钥的名为 `apikey` 的 `Header`，如下方代码所示。
+完成上述步骤后，APISIX 就可以正常运行了。如果想利用 APISIX 实现身份验证、安全性、限流限速和可观测性等功能，可通过添加插件实现。各类插件的详细信息请参考[插件市场](/plugins)。
 
-```bash
-curl -i -X GET http://127.0.0.1:9080/get -H "Host: httpbin.org" -H "apikey: key-of-john"
-```
-
-### 为路由添加前缀
-
-现在，假设您要向路由添加前缀（例如：samplePrefix），并且不想使用 `host` 头， 则可以使用 `proxy-rewrite` 插件来完成。
-
-```bash
-curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
-{
-  "uri": "/samplePrefix/get",
-  "plugins": {
-    "proxy-rewrite": {
-      "regex_uri": ["^/samplePrefix/get(.*)", "/get$1"]
-    },
-    "key-auth": {}
-  },
-  "upstream_id": "1"
-}'
-```
-
-现在您可以使用以下命令来调用路由：
-
-```bash
-curl -i -X GET "http://127.0.0.1:9080/samplePrefix/get?param1=foo&param2=bar" -H "apikey: key-of-john"
-```
-
-### APISIX Dashboard
-
-Apache APISIX 提供了一个 [Dashboard](https://github.com/apache/apisix-dashboard)，让我们的操作更直观更轻松。
-
-![Dashboard](../../assets/images/dashboard.jpeg)
-
-<!--
-#
-#    In addition to the basic Markdown syntax, we use remark-admonitions
-#    alongside MDX to add support for admonitions. Admonitions are wrapped
-#    by a set of 3 colons.
-#    Please refer to https://docusaurus.io/docs/next/markdown-features/admonitions
-#    for more detail.
-#
--->
-
-### 常见问题排查
-
-- 确保所需的所有端口（**默认的 9080/9443/2379**）未被其他系统/进程使用。
-
-    下面是终止正在侦听特定端口（基于 unix 的系统）的进程的命令。
-
-    ```bash
-    sudo fuser -k 9443/tcp
-    ```
-
-- 如果 Docker 容器持续不断地重启或失败，请登录容器并观察日志以诊断问题。
-
-    ```bash
-    docker logs -f --tail container_id
-    ```
+如果你在使用当中遇到困难，可以通过 [APISIX 社区频道](/docs/general/join)或者在 GitHub 上[提交一个 issue](/docs/general/submit-issue) 寻求帮助。
