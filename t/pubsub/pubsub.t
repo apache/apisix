@@ -114,3 +114,30 @@ failed to initialize pub-sub module, err: bad "upgrade" request header: nil
     }
 --- response_body
 ret: test
+
+
+
+=== TEST 4: send unregisted command
+--- config
+    location /t {
+        content_by_lua_block {
+            local lib_pubsub = require("lib.pubsub")
+            local test_pubsub = lib_pubsub.new_ws("ws://127.0.0.1:1984/pubsub")
+            local data = test_pubsub:send_recv_ws({
+                sequence = 0,
+                cmd_kafka_fetch = {
+                    topic = "test",
+                    partition = 0,
+                    offset = 0,
+                },
+            })
+            if data and data.error_resp then
+                ngx.say(data.error_resp.message)
+            end
+            test_pubsub:close_ws()
+        }
+    }
+--- response_body
+unknown command: cmd_kafka_fetch
+--- error_log
+pubsub callback handler not registered for the command, command: cmd_kafka_fetch

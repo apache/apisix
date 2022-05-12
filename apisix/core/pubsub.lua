@@ -57,6 +57,18 @@ local function init_pb_state()
     pb_state = pb.state(nil)
 end
 
+
+local function send_error_resp(ws, sequence, err_msg)
+    ws:send_binary(pb.encode("PubSubResp", {
+        sequence = sequence,
+        error_resp = {
+            code = 0,
+            message = err_msg,
+        },
+    }))
+end
+
+
 ---
 -- Create pubsub module instance
 --
@@ -169,18 +181,13 @@ function _M.wait(self)
                 if not handler then
                     log.error("pubsub callback handler not registered for the",
                         " command, command: ", key)
+                    send_error_resp(ws, sequence, "unknown command: " .. key)
                     goto continue
                 end
 
                 local resp, err = handler(value)
                 if not resp then
-                    ws:send_binary(pb.encode("PubSubResp", {
-                        sequence = sequence,
-                        error_resp = {
-                            code = 0,
-                            message = err,
-                        },
-                    }))
+                    send_error_resp(ws, sequence, err)
                     goto continue
                 end
 
