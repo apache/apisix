@@ -72,7 +72,7 @@ Apache APISIX 是一个开源的云原生 API 网关，作为 API 网关，它�
 
 - [Docker](https://www.docker.com/) 和 [Docker Compose](https://docs.docker.com/compose/)。
 - [curl](https://curl.se/docs/manpage.html) 用于测试 API。你也可以使用 [Hoppscotch](https://hoppscotch.io/) 之类的工具。
-- 本文使用的上游服务是 [httpbin.org](https://httpbin.org)，你可以使用它进行测试。它是一个返回服务，这意味着它将返回我们在请求中传递的参数。
+- 本文使用的上游服务是 [httpbin.org](https://httpbin.org)，你可以使用它进行测试。这是一个返回服务，它将返回我们在请求中传递的参数。
 
 **请求内容：**
 
@@ -162,7 +162,7 @@ docker-compose -p docker-apisix -f docker-compose-arm64.yml up -d
 sudo fuser -k 9443/tcp
 ```
 
-如果 Docker 容器不能正常运行，你可以通过以下命令检查日志以诊断问题：
+如果 Docker 容器不能正常运行，你可以通过以下命令检查日志进行问题诊断：
 
 ```bash
 docker logs -f --tail $<container_id>
@@ -191,9 +191,9 @@ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335
 }
 ```
 
-## 创建路由
+完成上述步骤后，你就已经拥有了一个正在运行的 APISIX 的实例了，现在你可以从之后的小节中学习如何创建路由以及了解 APISIX Dashboard 的操作。
 
-现在你已经拥有一个正在运行的 APISIX 实例了！接下来，让我们来创建一个路由。
+## 创建路由
 
 APISIX 提供了强大的 [Admin API](./admin-api.md) 和 [Dashboard](https://github.com/apache/apisix-dashboard) 供用户使用。在下述示例中，我们将使用 Admin API 创建一个 [Route](./terminology/route.md) 并与 [Upstream](./terminology/upstream.md) 绑定，当一个请求到达 APISIX 时，APISIX 会将请求转发到指定的上游服务中。
 
@@ -242,7 +242,7 @@ curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f0343
 }'
 ```
 
-该上游配置与上一节配置在路由中的上游相同。同样使用了 `roundrobin` 作为负载均衡机制以及设置了 `httpbin.org:80` 为上游服务。为了将该上游绑定到路由我们把 `upstream_id` 设置为 `1`。更多字段信息，请参考 [Admin API](./admin-api.md)。
+该上游配置与上一节配置在路由中的上游相同。同样使用了 `roundrobin` 作为负载均衡机制，并设置了 `httpbin.org:80` 为上游服务。为了将该上游绑定到路由，这里需要把 `upstream_id` 设置为 `1`。更多字段信息，请参考 [Admin API](./admin-api.md)。
 
 上游服务创建完成后，可以通过以下命令绑定到指定路由：
 
@@ -263,7 +263,7 @@ curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin
 
 该请求将被 APISIX 转发到 `http://httpbin.org:80/anything/foo?arg=10`。
 
-## APISIX Dashboard
+## 使用 APISIX Dashboard
 
 你还可以使用 APISIX Dashboard 创建和配置类似于上述步骤中所创建的路由。
 
@@ -281,8 +281,8 @@ curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin
 
 想要了解更多关于 APISIX Dashboard 的信息，请参考 [APISIX Dashboard 文档](/docs/dashboard/USER_GUIDE)。
 
-## 后续步骤
+## 总结
 
-完成上述步骤后，APISIX 就可以正常运行了。现在你可以为 APISIX 添加一些插件，来实现身份验证、安全性、限流限速和可观测性等功能。详细信息请参考[插件市场](/plugins)。
+完成上述步骤后，APISIX 就可以正常运行了。如果想利用 APISIX 实现身份验证、安全性、限流限速和可观测性等功能，可通过添加插件实现。各类插件的详细信息请参考[插件市场](/plugins)。
 
 如果你在使用当中遇到困难，可以通过 [APISIX 社区频道](/docs/general/join)或者在 GitHub 上[提交一个 issue](/docs/general/submit-issue) 寻求帮助。
