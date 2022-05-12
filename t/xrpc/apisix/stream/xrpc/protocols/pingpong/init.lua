@@ -29,6 +29,18 @@ local DONE = ngx.DONE
 local str_byte = string.byte
 
 
+core.ctx.register_var("rpc_len", function(ctx)
+    local session = ctx.xrpc_session
+    local curr_ctx_id = session._currr_ctx_id
+    local curr_ctx = session._ctxs[curr_ctx_id]
+
+    if not curr_ctx then
+        core.log.warn("can't find current context by id: ", curr_ctx_id)
+        return nil
+    end
+    return curr_ctx.len
+end)
+
 local _M = {}
 local router_version
 local router
