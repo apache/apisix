@@ -30,7 +30,7 @@ description: This document contains information about the Apache APISIX pubsub f
 Publish-subscribe is a messaging paradigm:
 
 - Producers send messages to specific brokers rather than directly to consumers.
-- Brokers cache messages sent by producers and then actively push them to subscribed consumers or pull them. 
+- Brokers cache messages sent by producers and then actively push them to subscribed consumers or pull them.
 
 The system architectures use this pattern to decouple or handle high traffic scenarios.
 
@@ -48,7 +48,7 @@ Currently, Apache APISIX supports WebSocket communication with the client, which
 
 ## How to support other messaging systems
 
-Apache APISIX implemente an extensible pubsub module, which is responsible for starting the WebSocket server, coding and decoding communication protocols, handling client commands, and adding support for the new messaging system.
+Apache APISIX implement an extensible pubsub module, which is responsible for starting the WebSocket server, coding and decoding communication protocols, handling client commands, and adding support for the new messaging system.
 
 ### Basic Steps
 
