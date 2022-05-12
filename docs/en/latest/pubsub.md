@@ -42,10 +42,6 @@ In Apache APISIX, the most common scenario is handling north-south traffic from 
 
 Currently, Apache APISIX supports WebSocket communication with the client, which can be any application that supports WebSocket, with Protocol Buffer as the serialization mechanism, see the [protocol definition](../../../apisix/pubsub.proto).
 
-## Supported messaging systems
-
-- [Aapche Kafka](pubsub/kafka.md)
-
 ## How to support other messaging systems
 
 Apache APISIX implement an extensible pubsub module, which is responsible for starting the WebSocket server, coding and decoding communication protocols, handling client commands, and adding support for the new messaging system.
