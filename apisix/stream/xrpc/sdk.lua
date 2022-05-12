@@ -108,6 +108,9 @@ function _M.get_req_ctx(session, id)
     local ctx = core.tablepool.fetch("xrpc_ctxs", 4, 4)
     -- fields start with '_' should not be accessed by the protocol implementation
     ctx._id = id
+    core.ctx.set_vars_meta(ctx)
+    ctx.conf_type = "xrpc-" .. session.route.protocol.name .. "-logger"
+
     session._ctxs[id] = ctx
 
     ctx._rpc_start_time = ngx_now()

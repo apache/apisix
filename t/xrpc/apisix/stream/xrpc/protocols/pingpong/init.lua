@@ -160,6 +160,7 @@ function _M.from_downstream(session, downstream)
     if typ == TYPE_UNARY_DYN_UP then
         ctx.len = ctx.len + 4
     end
+
     return OK, ctx
 end
 
