@@ -190,11 +190,9 @@ function _M.connect_upstream(session, ctx)
 end
 
 
-function _M.disconnect_upstream(session, upstream, upstream_broken)
+function _M.disconnect_upstream(session, upstream)
     -- disconnect upstream created by connect_upstream
-    -- the upstream_broken flag is used to indicate whether the upstream is
-    -- already broken
-    sdk.disconnect_upstream(upstream, session.upstream_conf, upstream_broken)
+    sdk.disconnect_upstream(upstream, session.upstream_conf)
 end
 
 

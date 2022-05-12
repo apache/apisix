@@ -52,7 +52,7 @@ local function close_session(session, protocol)
         upstream_ctx.closed = true
 
         local up = upstream_ctx.upstream
-        protocol.disconnect_upstream(session, up, upstream_ctx.broken)
+        protocol.disconnect_upstream(session, up)
     end
 
     local upstream_ctxs = session._upstream_ctxs
@@ -61,7 +61,7 @@ local function close_session(session, protocol)
             upstream_ctx.closed = true
 
             local up = upstream_ctx.upstream
-            protocol.disconnect_upstream(session, up, upstream_ctx.broken)
+            protocol.disconnect_upstream(session, up)
         end
     end
 
@@ -162,7 +162,6 @@ local function open_upstream(protocol, session, ctx)
 
     local up_ctx = {
         upstream = upstream,
-        broken = false,
         closed = false,
     }
     if key then
@@ -239,7 +238,6 @@ function _M.run(protocol, conn_ctx)
             end
 
             if status == DECLINED then
-                up_ctx.broken = true
                 break
             end
 
