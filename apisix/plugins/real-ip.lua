@@ -104,7 +104,7 @@ local function get_addr(conf, ctx)
         end
 
         if conf.recursive and conf.trusted_addresses then
-            local split_addrs, _ = ngx_re_split(addrs, ",\\s*", "jo")
+            local split_addrs = ngx_re_split(addrs, ",\\s*", "jo")
             for i = #split_addrs, 2, -1 do
                 if not addr_match(conf, split_addrs[i]) then
                     return split_addrs[i]
