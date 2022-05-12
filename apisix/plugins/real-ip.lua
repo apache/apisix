@@ -15,13 +15,12 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local ngx_re_split = require("ngx.re").split
 local is_apisix_or, client = pcall(require, "resty.apisix.client")
 local str_byte = string.byte
 local str_sub = string.sub
-local tb_insert = table.insert
 local ipairs = ipairs
 local type = type
-local ngx = ngx
 
 local matcher
 
@@ -105,12 +104,7 @@ local function get_addr(conf, ctx)
         end
 
         if conf.recursive and conf.trusted_addresses then
-            local split_addrs = {}
-            local match_itr = ngx.re.gmatch(addrs, "[^,%s*]+", "jo")
-            for itr in match_itr do
-                tb_insert(split_addrs, itr)
-            end
-
+            local split_addrs, _ = ngx_re_split(addrs, ",\\s*", "jo")
             for i = #split_addrs, 2, -1 do
                 if not addr_match(conf, split_addrs[i]) then
                     return split_addrs[i]
