@@ -68,12 +68,12 @@ local function send_error(ws, sequence, err_msg)
         },
     })
     if not ok or not data then
-        log.error("failed to encode error response message, err", data)
+        log.error("failed to encode error response message, err: ", data)
     end
 
     local _, err = ws:send_binary(data)
     if err then
-        log.error("failed to send response to client, err", data)
+        log.error("failed to send response to client, err: ", err)
     end
 end
 
@@ -203,12 +203,12 @@ function _M.wait(self)
                 resp.sequence = sequence
                 local ok, data = pcall(pb.encode, "PubSubResp", resp)
                 if not ok or not data then
-                    log.error("failed to encode response message")
+                    log.error("failed to encode response message, err: ", data)
                     break
                 end
                 local _, err = ws:send_binary(data)
                 if err then
-                    log.error("failed to send response to client, err", data)
+                    log.error("failed to send response to client, err: ", err)
                 end
                 break
             end
