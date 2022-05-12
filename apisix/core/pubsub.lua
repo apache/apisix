@@ -152,7 +152,7 @@ function _M.wait(self)
             return
         end
 
-        -- the pub-sub messages use binary, if the message is not
+        -- the pubsub messages use binary, if the message is not
         -- binary, skip this message
         if raw_type ~= "binary" then
             log.warn("pubsub server receive non-binary data, type: ",

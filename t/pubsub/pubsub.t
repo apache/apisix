@@ -52,7 +52,7 @@ __DATA__
                                         local core = require("apisix.core");
                                         local pubsub, err = core.pubsub.new()
                                         if not pubsub then
-                                            core.log.error("failed to initialize pub-sub module, err: ", err)
+                                            core.log.error("failed to initialize pubsub module, err: ", err)
                                             core.response.exit(400)
                                             return
                                         end
@@ -88,7 +88,7 @@ __DATA__
 GET /pubsub
 --- error_code: 400
 --- error_log
-failed to initialize pub-sub module, err: bad "upgrade" request header: nil
+failed to initialize pubsub module, err: bad "upgrade" request header: nil
 
 
 
