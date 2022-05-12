@@ -136,7 +136,6 @@ function _M.wait(self)
         if err then
             -- terminate the event loop when a fatal error occurs
             if ws.fatal then
-                ws:send_close()
                 fatal_err = err
                 break
             end
@@ -148,8 +147,7 @@ function _M.wait(self)
 
         -- handle client close connection
         if raw_type == "close" then
-            ws:send_close()
-            return
+            break
         end
 
         -- the pubsub messages use binary, if the message is not
@@ -203,7 +201,10 @@ function _M.wait(self)
         ::continue::
     end
 
-    log.error("fatal error in pubsub, err: ", fatal_err)
+    if fatal_err then
+        log.error("fatal error in pubsub, err: ", fatal_err)
+    end
+    ws:send_close()
 end
 
 
