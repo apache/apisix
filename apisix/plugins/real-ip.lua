@@ -22,7 +22,9 @@ local str_sub = string.sub
 local ipairs = ipairs
 local type = type
 
-local matcher
+local lrucache = core.lrucache.new({
+    ttl = 300, count = 512
+})
 
 local schema = {
     type = "object",
@@ -78,8 +80,11 @@ local function addr_match(conf, addr)
         return false
     end
 
+    local matcher, err = lrucache(conf.trusted_addresses, nil,
+                                  core.ip.create_ip_matcher, conf.trusted_addresses)
     if not matcher then
-        matcher = core.ip.create_ip_matcher(conf.trusted_addresses)
+        core.log.error("failed to create ip matcher: ", err)
+        return false
     end
 
     return matcher:match(addr)
