@@ -46,31 +46,6 @@ local function open_session(conn_ctx)
 end
 
 
-local function close_session(session, protocol)
-    local upstream_ctx = session._upstream_ctx
-    if upstream_ctx then
-        upstream_ctx.closed = true
-
-        local up = upstream_ctx.upstream
-        protocol.disconnect_upstream(session, up)
-    end
-
-    local upstream_ctxs = session._upstream_ctxs
-    if upstream_ctxs then
-        for _, upstream_ctx in pairs(upstream_ctxs) do
-            upstream_ctx.closed = true
-
-            local up = upstream_ctx.upstream
-            protocol.disconnect_upstream(session, up)
-        end
-    end
-
-    for id in pairs(session._ctxs) do
-        core.log.notice("RPC is not finished, id: ", id)
-    end
-end
-
-
 local function put_req_ctx(session, ctx)
     local id = ctx._id
     session._ctxs[id] = nil
@@ -114,7 +89,7 @@ local function run_log_plugin(ctx, logger)
 end
 
 
-local function finish_req(protocol, session, ctx)
+local function finialize_req(protocol, session, ctx)
     ctx._rpc_end_time = ngx_now()
 
     local loggers = session.route.protocol.logger
@@ -131,6 +106,33 @@ local function finish_req(protocol, session, ctx)
 
     protocol.log(session, ctx)
     put_req_ctx(session, ctx)
+end
+
+
+local function close_session(session, protocol)
+    local upstream_ctx = session._upstream_ctx
+    if upstream_ctx then
+        upstream_ctx.closed = true
+
+        local up = upstream_ctx.upstream
+        protocol.disconnect_upstream(session, up)
+    end
+
+    local upstream_ctxs = session._upstream_ctxs
+    if upstream_ctxs then
+        for _, upstream_ctx in pairs(upstream_ctxs) do
+            upstream_ctx.closed = true
+
+            local up = upstream_ctx.upstream
+            protocol.disconnect_upstream(session, up)
+        end
+    end
+
+    for id, ctx in pairs(session._ctxs) do
+        core.log.notice("RPC is not finished, id: ", id)
+        ctx.unfinished = true
+        finialize_req(protocol, session, ctx)
+    end
 end
 
 
@@ -180,7 +182,7 @@ local function start_upstream_coroutine(session, protocol, downstream, up_ctx)
         local status, ctx = protocol.from_upstream(session, downstream, upstream)
         if status ~= OK then
             if ctx ~= nil then
-                finish_req(protocol, session, ctx)
+                finialize_req(protocol, session, ctx)
             end
 
             if status == DECLINED then
@@ -207,7 +209,7 @@ function _M.run(protocol, conn_ctx)
         local status, ctx = protocol.from_downstream(session, downstream)
         if status ~= OK then
             if ctx ~= nil then
-                finish_req(protocol, session, ctx)
+                finialize_req(protocol, session, ctx)
             end
 
             if status == DECLINED then
@@ -225,7 +227,7 @@ function _M.run(protocol, conn_ctx)
         local status, up_ctx = open_upstream(protocol, session, ctx)
         if status ~= OK then
             if ctx ~= nil then
-                finish_req(protocol, session, ctx)
+                finialize_req(protocol, session, ctx)
             end
 
             break
@@ -234,7 +236,7 @@ function _M.run(protocol, conn_ctx)
         status = protocol.to_upstream(session, ctx, downstream, up_ctx.upstream)
         if status ~= OK then
             if ctx ~= nil then
-                finish_req(protocol, session, ctx)
+                finialize_req(protocol, session, ctx)
             end
 
             if status == DECLINED then
