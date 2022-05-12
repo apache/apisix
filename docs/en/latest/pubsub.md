@@ -27,9 +27,14 @@ description: This document contains information about the Apache APISIX pubsub f
 
 ## What is Pub-Sub
 
-Publish-subscribe is a messaging paradigm in which message producers do not send messages directly to message consumers, but are relayed by a specific broker that caches messages sent by producers and then actively pushes them to subscribed consumers or pulls them by consumers. This pattern is often used in system architectures for system decoupling or to handle high traffic scenarios.
+Publish-subscribe is a messaging paradigm:
 
-In Apache APISIX, the most common scenario is for handling north-south traffic from the server to the client. If we can combine it with a publish-subscribe scenario, we can achieve more powerful features, such as real-time collaboration on online documents, online games, etc.
+- Producers send messages to specific brokers rather than directly to consumers.
+- Brokers cache messages sent by producers and then actively push them to subscribed consumers or pull them. 
+
+The system architectures use this pattern to decouple or handle high traffic scenarios.
+
+In Apache APISIX, the most common scenario is handling north-south traffic from the server to the client. Combining it with a publish-subscribe system, we can achieve more robust features, such as real-time collaboration on online documents, online games, etc.
 
 ## Architecture
 
@@ -43,7 +48,7 @@ Currently, Apache APISIX supports WebSocket communication with the client, which
 
 ## How to support other messaging systems
 
-An extensible pubsub module is implemented in Apache APISIX, which is responsible for starting the WebSocket server, coding and decoding communication protocols, handling client commands, and through which new messaging system support can be simply added.
+Apache APISIX implemente an extensible pubsub module, which is responsible for starting the WebSocket server, coding and decoding communication protocols, handling client commands, and adding support for the new messaging system.
 
 ### Basic Steps
 
@@ -107,7 +112,7 @@ scheme = {
 
 #### Add a new `scheme` judgment branch to `http_access_phase`
 
-Add a `scheme` judgment branch to the `http_access_phase` function in `apisix/init.lua` to support the processing of `kafka` type upstreams. Because of Apache Kafka has its own clustering and partition scheme, we do not need to use the Apache APISIX built-in load balancing algorithm, so we intercept and take over the processing flow before selecting the upstream node, here using the `kafka_access_phase` function.
+Add a `scheme` judgment branch to the `http_access_phase` function in `apisix/init.lua` to support the processing of `kafka` type upstreams. Because Apache Kafka has its own clustering and partition scheme, we do not need to use the Apache APISIX built-in load balancing algorithm, so we intercept and take over the processing flow before selecting the upstream node, here using the `kafka_access_phase` function.
 
 ```lua
 -- load balancer is not required by kafka upstream

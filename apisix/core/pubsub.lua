@@ -50,7 +50,7 @@ local function init_pb_state()
         local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
         if not ok then
             pubsub_protoc:reset()
-            return "failed to load pubsub protocol: "..err
+            return "failed to load pubsub protocol: " .. err
         end
     end
 
@@ -168,7 +168,7 @@ function _M.wait(self)
                 local handler = self.cmd_handler[key]
                 if not handler then
                     log.error("pubsub callback handler not registered for the",
-                        " this command, command: ", key)
+                        " command, command: ", key)
                     goto continue
                 end
 
@@ -193,7 +193,7 @@ function _M.wait(self)
         ::continue::
     end
 
-    log.error("failed to handle pub-sub command, err: websocket server: ", fatal_err)
+    log.error("fatal error in pubsub, err: ", fatal_err)
 end
 
 
