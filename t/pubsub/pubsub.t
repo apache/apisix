@@ -40,49 +40,42 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local data = {
-                {
-                    url = "/apisix/admin/routes/pubsub",
-                    data = {
-                        plugins = {
-                            ["serverless-pre-function"] = {
-                                phase = "access",
-                                functions =  {
-                                    [[return function(conf, ctx)
-                                        local core = require("apisix.core");
-                                        local pubsub, err = core.pubsub.new()
-                                        if not pubsub then
-                                            core.log.error("failed to initialize pubsub module, err: ", err)
-                                            core.response.exit(400)
-                                            return
-                                        end
-                                        pubsub:on("cmd_ping", function (params)
-                                            if params.state == "test" then
-                                                return {pong_resp = {state = "test"}}
-                                            end
-                                            return nil, "error"
-                                        end)
-                                        pubsub:wait()
-                                        ngx.exit(0)
-                                    end]],
-                                }
-                            }
-                        },
-                        uri = "/pubsub"
-                    },
-                },
-            }
-
             local t = require("lib.test_admin").test
-
-            for _, data in ipairs(data) do
-                local code, body = t(data.url, ngx.HTTP_PUT, data.data)
-                ngx.say(code..body)
+            local code, body = t("/apisix/admin/routes/pubsub", ngx.HTTP_PUT, {
+                plugins = {
+                    ["serverless-pre-function"] = {
+                        phase = "access",
+                        functions =  {
+                            [[return function(conf, ctx)
+                                local core = require("apisix.core");
+                                local pubsub, err = core.pubsub.new()
+                                if not pubsub then
+                                    core.log.error("failed to initialize pubsub module, err: ", err)
+                                    core.response.exit(400)
+                                    return
+                                end
+                                pubsub:on("cmd_ping", function (params)
+                                    if params.state == "test" then
+                                        return {pong_resp = {state = "test"}}
+                                    end
+                                    return nil, "error"
+                                end)
+                                pubsub:wait()
+                                ngx.exit(0)
+                            end]],
+                        }
+                    }
+                },
+                uri = "/pubsub"
+            })
+            if code >= 300 then
+                ngx.status = code
             end
+            ngx.say(body)
         }
     }
 --- response_body
-201passed
+passed
 
 
 
