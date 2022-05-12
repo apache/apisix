@@ -56,8 +56,11 @@ __DATA__
                                             core.response.exit(400)
                                             return
                                         end
-                                        pubsub:on("cmd_kafka_list_offset", function (params)
-                                            return nil, "test"
+                                        pubsub:on("cmd_ping", function (params)
+                                            if params.state == "test" then
+                                                return {pong_resp = {state = "test"}}
+                                            end
+                                            return nil, "error"
                                         end)
                                         pubsub:wait()
                                         ngx.exit(0)
@@ -100,14 +103,12 @@ failed to initialize pubsub module, err: bad "upgrade" request header: nil
             local test_pubsub = lib_pubsub.new_ws("ws://127.0.0.1:1984/pubsub")
             local data = test_pubsub:send_recv_ws_binary({
                 sequence = 0,
-                cmd_kafka_list_offset = {
-                    topic = "test",
-                    partition = 0,
-                    timestamp = -2,
+                cmd_ping = {
+                    state = "test"
                 },
             })
-            if data and data.error_resp then
-                ngx.say("ret: ", data.error_resp.message)
+            if data and data.pong_resp then
+                ngx.say("ret: ", data.pong_resp.state)
             end
             test_pubsub:close_ws()
         }
@@ -117,7 +118,7 @@ ret: test
 
 
 
-=== TEST 4: send unregistered command
+=== TEST 4: connect websocket service (return error)
 --- config
     location /t {
         content_by_lua_block {
@@ -125,11 +126,29 @@ ret: test
             local test_pubsub = lib_pubsub.new_ws("ws://127.0.0.1:1984/pubsub")
             local data = test_pubsub:send_recv_ws_binary({
                 sequence = 0,
-                cmd_kafka_fetch = {
-                    topic = "test",
-                    partition = 0,
-                    offset = 0,
+                cmd_ping = {
+                    state = "non-test"
                 },
+            })
+            if data and data.error_resp then
+                ngx.say("ret: ", data.error_resp.message)
+            end
+            test_pubsub:close_ws()
+        }
+    }
+--- response_body
+ret: error
+
+
+=== TEST 5: send unregistered command
+--- config
+    location /t {
+        content_by_lua_block {
+            local lib_pubsub = require("lib.pubsub")
+            local test_pubsub = lib_pubsub.new_ws("ws://127.0.0.1:1984/pubsub")
+            local data = test_pubsub:send_recv_ws_binary({
+                sequence = 0,
+                cmd_empty = {},
             })
             if data and data.error_resp then
                 ngx.say(data.error_resp.message)
@@ -138,13 +157,13 @@ ret: test
         }
     }
 --- response_body
-unknown command: cmd_kafka_fetch
+unknown command: cmd_empty
 --- error_log
-pubsub callback handler not registered for the command, command: cmd_kafka_fetch
+pubsub callback handler not registered for the command, command: cmd_empty
 
 
 
-=== TEST 5: send text command (server skip command, keep connection)
+=== TEST 6: send text command (server skip command, keep connection)
 --- config
     location /t {
         lua_check_client_abort on;
@@ -168,7 +187,7 @@ fatal error in pubsub, err: failed to receive the first 2 bytes: closed
 
 
 
-=== TEST 6: send wrong command: empty (server skip command, keep connection)
+=== TEST 7: send wrong command: empty (server skip command, keep connection)
 --- config
     location /t {
         lua_check_client_abort on;
@@ -192,7 +211,7 @@ fatal error in pubsub, err: failed to receive the first 2 bytes: closed
 
 
 
-=== TEST 7: send wrong command: undecodable (server skip command, keep connection)
+=== TEST 8: send wrong command: undecodable (server skip command, keep connection)
 --- config
     location /t {
         lua_check_client_abort on;
@@ -203,7 +222,7 @@ fatal error in pubsub, err: failed to receive the first 2 bytes: closed
             end)
             local lib_pubsub = require("lib.pubsub")
             local test_pubsub = lib_pubsub.new_ws("ws://127.0.0.1:1984/pubsub")
-            test_pubsub:send_recv_ws_binary("!@#$%^&*", true)
+            test_pubsub:send_recv_ws_binary("!@#$%^&*中文", true)
             test_pubsub:close_ws()
         }
     }
