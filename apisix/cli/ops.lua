@@ -735,12 +735,10 @@ local function start(env, ...)
         local ok, err, err_no = signal.kill(pid, signone)
         if ok then
             print("APISIX is running...")
-
             return
         -- no such process
         elseif err_no ~= errno.ESRCH then
             print(err)
-
             return
         end
 
