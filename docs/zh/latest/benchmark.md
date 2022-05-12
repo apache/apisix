@@ -49,6 +49,29 @@ title: 压力测试
 
 ![flamegraph-1](../../assets/images/flamegraph-1.jpg)
 
+如果想在机器上运行基准测试，你应该同时运行另一个 NGINX 来监听 80 端口：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/hello",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:80": 1,
+            "127.0.0.2:80": 1
+        }
+    }
+}'
+```
+
+然后运行 wrk：
+
+```shell
+wrk -d 60 --latency http://127.0.0.1:9080/hello
+```
+
 ### 测试反向代理，开启 2 个插件
 
 我们把 APISIX 当做反向代理来使用，开启限速和 prometheus 插件，响应体的大小为 1KB。
@@ -69,3 +92,35 @@ title: 压力测试
 
 火焰图的采样结果：
 ![火焰图采样结果](../../assets/images/flamegraph-2.jpg)
+
+如果想在机器上运行基准测试，你应该同时运行另一个 NGINX 来监听 80 端口：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/hello",
+    "plugins": {
+        "limit-count": {
+            "count": 999999999,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr"
+        },
+        "prometheus":{}
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:80": 1,
+            "127.0.0.2:80": 1
+        }
+    }
+}'
+```
+
+然后运行 wrk：
+
+```shell
+wrk -d 60 --latency http://127.0.0.1:9080/hello
+```
