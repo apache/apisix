@@ -141,3 +141,51 @@ ret: test
 unknown command: cmd_kafka_fetch
 --- error_log
 pubsub callback handler not registered for the command, command: cmd_kafka_fetch
+
+
+
+=== TEST 5: send text command (server skip command, keep connection)
+--- config
+    location /t {
+        lua_check_client_abort on;
+        content_by_lua_block {
+            ngx.on_abort(function ()
+                ngx.log(ngx.ERR, "text command is skipped, and close connection")
+                ngx.exit(444)
+            end)
+            local lib_pubsub = require("lib.pubsub")
+            local test_pubsub = lib_pubsub.new_ws("ws://127.0.0.1:1984/pubsub")
+            test_pubsub:send_recv_ws_text("test")
+            test_pubsub:close_ws()
+        }
+    }
+--- abort
+--- ignore_response
+--- error_log
+pubsub server receive non-binary data, type: text, data: test
+text command is skipped, and close connection
+fatal error in pubsub, err: failed to receive the first 2 bytes: closed
+
+
+
+=== TEST 6: send wrong command: empty (server skip command, keep connection)
+--- config
+    location /t {
+        lua_check_client_abort on;
+        content_by_lua_block {
+            ngx.on_abort(function ()
+                ngx.log(ngx.ERR, "empty command is skipped, and close connection")
+                ngx.exit(444)
+            end)
+            local lib_pubsub = require("lib.pubsub")
+            local test_pubsub = lib_pubsub.new_ws("ws://127.0.0.1:1984/pubsub")
+            test_pubsub:send_recv_ws({})
+            test_pubsub:close_ws()
+        }
+    }
+--- abort
+--- ignore_response
+--- error_log
+pubsub server receives empty command
+empty command is skipped, and close connection
+fatal error in pubsub, err: failed to receive the first 2 bytes: closed
