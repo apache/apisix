@@ -14,14 +14,22 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
+local expr = require("resty.expr.v1")
 local pairs = pairs
 local ngx = ngx
 local ngx_now = ngx.now
 local OK = ngx.OK
 local DECLINED = ngx.DECLINED
 local DONE = ngx.DONE
+local pcall = pcall
+local ipairs = ipairs
+local tostring = tostring
 
+local logger_expr_cache = core.lrucache.new({
+    ttl = 300, count = 1024
+})
 
 local _M = {}
 
@@ -71,8 +79,55 @@ local function put_req_ctx(session, ctx)
 end
 
 
+local function filter_logger(ctx, logger)
+    if not logger then
+       return false
+    end
+
+    if not logger.filter or #logger.filter == 0 then
+        -- no valid filter, default execution plugin
+        return true
+    end
+
+    local version = tostring(logger.filter)
+    local filter_expr, err = logger_expr_cache(ctx.conf_id, version, expr.new, logger.filter)
+    if not filter_expr or err then
+        core.log.error("failed to validate the 'filter' expression: ", err)
+        return false
+    end
+    return filter_expr:eval(ctx)
+end
+
+
+local function run_log_plugin(ctx, logger)
+    local pkg_name = "apisix.stream.plugins." .. logger.name
+    local ok, plugin = pcall(require, pkg_name)
+    if not ok then
+        core.log.error("failed to load plugin [", logger.name, "] err: ", plugin)
+        return
+    end
+
+    local log_func = plugin.log
+    if log_func then
+        log_func(logger.conf, ctx)
+    end
+end
+
+
 local function finish_req(protocol, session, ctx)
     ctx._rpc_end_time = ngx_now()
+
+    local loggers = session.route.protocol.logger
+    if loggers and #loggers > 0 then
+        for _, logger in ipairs(loggers) do
+            ctx.conf_id = tostring(logger.conf)
+            local matched = filter_logger(ctx, logger)
+            core.log.info("log filter: ", logger.name, " filter result: ", matched)
+            if matched then
+                run_log_plugin(ctx, logger)
+            end
+        end
+    end
 
     protocol.log(session, ctx)
     put_req_ctx(session, ctx)

@@ -205,8 +205,6 @@ decode the conf of [/routes/3] failed, err: Expected object key string but found
                 }
             }
             local data_str = core.json.encode(data)
-            ngx.log(ngx.WARN, "data_str : ", require("inspect")(data_str))
-
             ngx.shared["xds-config"]:set("/routes/3", data_str)
             ngx.update_time()
             ngx.shared["xds-config-version"]:set("version", ngx.now())

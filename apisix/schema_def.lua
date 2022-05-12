@@ -807,6 +807,28 @@ local xrpc_protocol_schema = {
             description = "protocol-specific configuration",
             type = "object",
         },
+        logger = {
+            type = "array",
+            items = {
+                properties = {
+                    name = {
+                        type = "string",
+                    },
+                    filter = {
+                        description = "logger filter rules",
+                        type = "array",
+                    },
+                    conf = {
+                        description = "logger plugin configuration",
+                        type = "object",
+                    },
+                },
+                dependencies = {
+                    name = {"conf"},
+                },
+            },
+        },
+
     },
     required = {"name"}
 }
