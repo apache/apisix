@@ -95,6 +95,28 @@ function _M.send_recv_ws(self, data)
 end
 
 
+function _M.send_recv_ws_text(self, text)
+    pb.state(pb_state)
+    local ws = self.ws_client
+    local _, err = ws:send_text(text)
+    if err then
+        return nil, err
+    end
+    local raw_data, _, err = ws:recv_frame()
+    if not raw_data then
+        ngx.log(ngx.ERR, "failed to receive the frame: ", err)
+        return nil, err
+    end
+    local data, err = pb.decode("PubSubResp", raw_data)
+    if not data then
+        ngx.log(ngx.ERR, "failed to decode the frame: ", err)
+        return nil, err
+    end
+
+    return data
+end
+
+
 function _M.close_ws(self)
     self.ws_client:send_close()
 end
