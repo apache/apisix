@@ -76,10 +76,6 @@ end
 
 
 local function addr_match(conf, ctx, addr)
-    if not conf.trusted_addresses then
-        return false
-    end
-
     local matcher, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
                                                   core.ip.create_ip_matcher, conf.trusted_addresses)
     if not matcher then
