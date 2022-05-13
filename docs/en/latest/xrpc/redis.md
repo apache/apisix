@@ -40,6 +40,14 @@ This feature requires APISIX to be run on [APISIX-Base](./how-to-build.md#step-6
 It also requires the data sent from clients are well-formed and sane. Therefore, it should only be used in deployments where both the downstream and upstream are trusted.
 :::
 
+## Granularity of the request
+
+Like other protocols based on the xRPC framework, the Redis implementation here also has the concept of `request`.
+
+Each Redis command is considered a request. However, the message subscribed from the server won't be considered a request.
+
+For example, when a Redis client subscribes to channel "foo" and receives the message "bar", then it unsubscribes the "foo" channel, there are two requests: `subscribe foo` and `unsubscribe foo`.
+
 ## Attributes
 
 | Name | Type          | Required | Default                                       | Valid values                                                       | Description                                                                                                                                                                                                                                           |
