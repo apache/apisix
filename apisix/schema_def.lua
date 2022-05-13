@@ -413,6 +413,10 @@ local upstream_schema = {
                     default = false,
                 },
             },
+            dependencies = {
+                client_cert = {"client_key"},
+                client_key = {"client_cert"},
+            }
         },
         keepalive_pool = {
             type = "object",
