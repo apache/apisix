@@ -124,3 +124,15 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```shell
 wrk -d 60 --latency http://127.0.0.1:9080/hello
 ```
+
+有关如何运行基准测试的更多参考，你可以查看此[PR](https://github.com/apache/apisix/pull/6136)和此[脚本](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)。
+
+**注意**: 如果你想运行大量连接的基准测试，例如：
+
+```shell
+./wrk -t200 -c5000 -d30s http://127.0.0.1:9080/hello
+```
+
+你可能需要更新 [conf/config-default.yaml](https://github.com/apache/apisix/blob/master/conf/config-default.yaml#L242) 中的 **keepalive** 配置项。
+
+超过配置数量的连接将成为短连接。更多文档可以参考：[ngx_http_upstream_module](http://nginx.org/en/docs/http/ngx_http_upstream_module.html)
