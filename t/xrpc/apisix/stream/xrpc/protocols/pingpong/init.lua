@@ -30,12 +30,7 @@ local str_byte = string.byte
 
 
 core.ctx.register_var("rpc_len", function(ctx)
-    local curr_ctx = ctx.xrpc_session and ctx.xrpc_session._curr_ctx
-    if not curr_ctx then
-        core.log.warn("can't find current context")
-        return nil
-    end
-    return curr_ctx.len
+    return ctx.len
 end)
 
 local _M = {}

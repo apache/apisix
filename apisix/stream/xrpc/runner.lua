@@ -29,15 +29,7 @@ local tostring = tostring
 
 
 core.ctx.register_var("rpc_time", function(ctx)
-    local curr_ctx = ctx.xrpc_session and ctx.xrpc_session._curr_ctx
-
-    if not curr_ctx then
-        core.log.warn("can't find current context")
-        return nil
-    end
-    --use second as the unit, like the request_time
-    local time = curr_ctx._rpc_end_time - curr_ctx._rpc_start_time
-    return time
+    return ctx._rpc_end_time - ctx._rpc_start_time
 end)
 
 local logger_expr_cache = core.lrucache.new({
