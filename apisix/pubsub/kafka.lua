@@ -68,6 +68,10 @@ function _M.access(api_ctx)
     end
 
     local client_config = {refresh_interval = 30 * 60 * 1000}
+    if api_ctx.matched_upstream.tls then
+        client_config.ssl = true
+        client_config.ssl_verify = api_ctx.matched_upstream.tls.verify
+    end
 
     -- load and create the consumer instance when it is determined
     -- that the websocket connection was created successfully
