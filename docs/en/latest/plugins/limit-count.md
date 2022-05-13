@@ -34,7 +34,7 @@ The `limit-count` Plugin limits the number of requests to your service by a give
 ## Attributes
 
 | Name                    | Type    | Required                                  | Default       | Valid values                           | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-|-------------------------|---------|-------------------------------------------|---------------|----------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ----------------------- | ------- | ----------------------------------------- | ------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | count                   | integer | True                                      |               | count > 0                              | Maximum number of requests to allow.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | time_window             | integer | True                                      |               | time_window > 0                        | Time in seconds before `count` is reset.                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | key_type                | string  | False                                     | "var"         | ["var", "var_combination", "constant"] | Type of user specified key to use.                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -42,12 +42,12 @@ The `limit-count` Plugin limits the number of requests to your service by a give
 | rejected_code           | integer | False                                     | 503           | [200,...,599]                          | HTTP status code returned when the requests exceeding the threshold are rejected.                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | rejected_msg            | string  | False                                     |               | non-empty                              | Body of the response returned when the requests exceeding the threshold are rejected.                                                                                                                                                                                                                                                                                                                                                                                                                |
 | policy                  | string  | False                                     | "local"       | ["local", "redis", "redis-cluster"]    | Rate-limiting policies to use for retrieving and increment the limit count. When set to `local` the counters will be locally stored in memory on the node. When set to `redis` counters are stored on a Redis server and will be shared across the nodes. It is done usually for global speed limiting, and setting to `redis-cluster` uses a Redis cluster instead of a single instance.                                                                                                            |
-| allow_degradation       | boolean | False                                     | false         |                                        | When set to true enables Plugin degradation when the Plugin is temporarily unavailable (for example, a Redis timeout) and allows requests to continue.                                                                                                                                                                                                                                                                                                                                               |
+| allow_degradation       | boolean | False                                     | false         |                                        | When set to `true` enables Plugin degradation when the Plugin is temporarily unavailable (for example, a Redis timeout) and allows requests to continue.                                                                                                                                                                                                                                                                                                                                             |
 | show_limit_quota_header | boolean | False                                     | true          |                                        | When set to `true`, adds `X-RateLimit-Limit` (total number of requests) and `X-RateLimit-Remaining` (remaining number of requests) to the response header.                                                                                                                                                                                                                                                                                                                                           |
 | group                   | string  | False                                     |               | non-empty                              | Group to share the counter with. Routes configured with the same group will share the counter.                                                                                                                                                                                                                                                                                                                                                                                                       |
 | redis_host              | string  | required when `policy` is `redis`         |               |                                        | Address of the Redis server. Used when the `policy` attribute is set to `redis`.                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | redis_port              | integer | False                                     | 6379          | [1,...]                                | Port of the Redis server. Used when the `policy` attribute is set to `redis`.                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| redis_password         | string  | False                                     |               |                                        | Password of the Redis server. Used when the `policy` is set to `redis` or `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                           |
+| redis_password          | string  | False                                     |               |                                        | Password of the Redis server. Used when the `policy` is set to `redis` or `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                           |
 | redis_database          | integer | False                                     | 0             | redis_database >= 0                    | Selected database of the Redis server (for single instance operation or when using Redis cloud with a single entrypoint). Used when the `policy` attribute is set to `redis`.                                                                                                                                                                                                                                                                                                                        |
 | redis_timeout           | integer | False                                     | 1000          | [1,...]                                | Timeout in milliseconds for any command submitted to the Redis server. Used when the `policy` attribute is set to `redis` or `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                        |
 | redis_cluster_nodes     | array   | required when `policy` is `redis-cluster` |               |                                        | Addresses of Redis cluster nodes. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -57,7 +57,7 @@ The `limit-count` Plugin limits the number of requests to your service by a give
 
 You can enable the Plugin on a Route as shown below:
 
-```shell
+```bash
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
@@ -81,7 +81,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 
 You can also configure the `key_type` to `var_combination` as shown:
 
-```shell
+```bash
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
@@ -107,7 +107,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 
 You can also create a group to share the same counter across multiple Routes:
 
-```shell
+```bash
 curl -i http://127.0.0.1:9080/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -130,7 +130,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f0343
 
 Now every Route which belongs to group `services_1#1640140620` (or the service with ID `1`) will share the same counter.
 
-```shell
+```bash
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "service_id": "1",
@@ -138,7 +138,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-```shell
+```bash
 curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "service_id": "1",
@@ -146,17 +146,17 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-```shell
+```bash
 curl -i http://127.0.0.1:9080/hello
 ```
 
-```shell
+```bash
 HTTP/1.1 200 ...
 ```
 
 You can also share the same limit counter for all your requests by setting the `key_type` to `constant`:
 
-```shell
+```bash
 curl -i http://127.0.0.1:9080/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -184,7 +184,7 @@ For cluster-level traffic limiting, you can use a Redis server. The counter will
 
 The example below shows how you can use the `redis` policy:
 
-```shell
+```bash
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
@@ -213,7 +213,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 
 Similarly you can also configure the `redis-cluster` policy:
 
-```shell
+```bash
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
@@ -245,11 +245,11 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 
 The above configuration limits to 2 requests in 60 seconds. The first two requests will work and the response headers will contain the headers `X-RateLimit-Limit` and `X-RateLimit-Remaining`:
 
-```shell
+```bash
 curl -i http://127.0.0.1:9080/index.html
 ```
 
-```shell
+```bash
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
@@ -261,7 +261,7 @@ Server: APISIX web server
 
 When you visit for a third time in the 60 seconds, you will receive a response with 503 code:
 
-```shell
+```bash
 HTTP/1.1 503 Service Temporarily Unavailable
 Content-Type: text/html
 Content-Length: 194
@@ -279,7 +279,7 @@ Server: APISIX web server
 
 You can also set a custom response by configuring the `rejected_msg` attribute:
 
-```shell
+```bash
 HTTP/1.1 503 Service Temporarily Unavailable
 Content-Type: text/html
 Content-Length: 194
@@ -293,7 +293,7 @@ Server: APISIX web server
 
 To disable the `limit-count` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
-```shell
+```bash
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],

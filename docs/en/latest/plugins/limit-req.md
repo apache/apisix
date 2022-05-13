@@ -48,7 +48,7 @@ The `limit-req` Plugin limits the number of requests to your service using the [
 
 You can enable the Plugin on a Route as shown below:
 
-```shell
+```bash
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -99,7 +99,7 @@ You can also configure the Plugin on specific consumers to limit their requests.
 
 First, you can create a Consumer and enable the `limit-req` Plugin on it:
 
-```shell
+```bash
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "consumer_jack",
@@ -121,7 +121,7 @@ In this example, the [key-auth](./key-auth.md) Plugin is used to authenticate th
 
 Next, create a Route and enable the `key-auth` Plugin:
 
-```shell
+```bash
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -146,13 +146,13 @@ Once you have configured the Plugin as shown above, you can test it out. The abo
 
 Now if you send a request:
 
-```shell
+```bash
 curl -i http://127.0.0.1:9080/index.html
 ```
 
 For authenticated requests:
 
-```shell
+```bash
 curl -i http://127.0.0.1:9080/index.html -H 'apikey: auth-jack'
 ```
 
@@ -176,7 +176,7 @@ Server: APISIX web server
 
 You can set a custom rejected message by configuring the `rejected_msg` attribute. You will then receive a response like:
 
-```shell
+```bash
 HTTP/1.1 503 Service Temporarily Unavailable
 Content-Type: text/html
 Content-Length: 194
@@ -190,7 +190,7 @@ Server: APISIX web server
 
 To disable the `limit-req` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
-```shell
+```bash
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -209,7 +209,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 Similarly for removing the Plugin from a Consumer:
 
-```shell
+```bash
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "consumer_jack",

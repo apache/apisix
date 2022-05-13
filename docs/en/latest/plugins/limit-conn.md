@@ -34,7 +34,7 @@ The `limit-con` Plugin limits the number of concurrent requests to your services
 ## Attributes
 
 | Name                   | Type    | Required | Default | Valid values               | Description                                                                                                                                                                                                                                                                                                                                                                                           |
-|------------------------|---------|----------|---------|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ---------------------- | ------- | -------- | ------- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | conn                   | integer | True     |         | conn > 0                   | Maximum number of concurrent requests allowed. Requests exceeding this ratio (and below `conn` + `burst`) will be delayed (configured by `default_conn_delay`).                                                                                                                                                                                                                                       |
 | burst                  | integer | True     |         | burst >= 0                 | Number of additional concurrent requests allowed to be delayed per second. If the number exceeds this hard limit, they will get rejected immediately.                                                                                                                                                                                                                                                 |
 | default_conn_delay     | number  | True     |         | default_conn_delay > 0     | Delay in seconds to process the concurrent requests exceeding `conn` (and `conn` + `burst`).                                                                                                                                                                                                                                                                                                          |
@@ -43,13 +43,13 @@ The `limit-con` Plugin limits the number of concurrent requests to your services
 | key                    | string  | True     |         |                            | User specified key to base the request limiting on. If the `key_type` attribute is set to `var`, the key will be treated as a name of variable, like `remote_addr` or `consumer_name`. If the `key_type` is set to `var_combination`, the key will be a combination of variables, like `$remote_addr $consumer_name`. If the value of the key is empty, `remote_addr` will be set as the default key. |
 | rejected_code          | string  | False    | 503     | [200,...,599]              | HTTP status code returned when the requests exceeding the threshold are rejected.                                                                                                                                                                                                                                                                                                                     |
 | rejected_msg           | string  | False    |         | non-empty                  | Body of the response returned when the requests exceeding the threshold are rejected.                                                                                                                                                                                                                                                                                                                 |
-| allow_degradation      | boolean | False    | false   |                            | When set to true enables Plugin degradation when the Plugin is temporarily unavailable and allows requests to continue.                                                                                                                                                                                                                                                                               |
+| allow_degradation      | boolean | False    | false   |                            | When set to `true` enables Plugin degradation when the Plugin is temporarily unavailable and allows requests to continue.                                                                                                                                                                                                                                                                             |
 
 ## Enabling the Plugin
 
 You can enable the Plugin on a Route as shown below:
 
-```shell
+```bash
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -75,7 +75,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 You can also configure the `key_type` to `var_combination` as shown:
 
-```shell
+```bash
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -103,15 +103,15 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Example usage
 
-The example above configures the Plugin to only allow one concurrent request. When more that one request is received, the Plugin will respond with a 503 status code:
+The example above configures the Plugin to only allow one concurrent request. When more than one request is received, the Plugin will respond with a 503 status code:
 
-```shell
+```bash
 curl -i http://127.0.0.1:9080/index.html?sleep=20 &
 
 curl -i http://127.0.0.1:9080/index.html?sleep=20
 ```
 
-```shell
+```bash
 <html>
 <head><title>503 Service Temporarily Unavailable</title></head>
 <body>
@@ -125,7 +125,7 @@ curl -i http://127.0.0.1:9080/index.html?sleep=20
 
 To disable the `limit-conn` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
-```shell
+```bash
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
