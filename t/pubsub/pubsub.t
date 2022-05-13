@@ -151,7 +151,7 @@ ret: error
         }
     }
 --- response_body
-unknown command: cmd_empty
+unknown command
 --- error_log
 pubsub callback handler not registered for the command, command: cmd_empty
 
