@@ -65,7 +65,7 @@ Fields under an entry of `faults`:
 
 ## Example usage
 
-Assumed the APISIX is proxying TCP on port 9101, and the Redis is listening on port 6379.
+Assumed the APISIX is proxying TCP on port `9101`, and the Redis is listening on port `6379`.
 
 Let's create a Stream Route:
 
@@ -94,7 +94,10 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 Once you have configured the stream route, as shown above, you can make a request to it:
 
 ```shell
-$ redis-cli -p 9101
+redis-cli -p 9101
+```
+
+```
 127.0.0.1:9101> ping
 PONG
 (5.00s)
