@@ -138,8 +138,8 @@ end
 -- no error exists.
 --
 -- @function core.pubsub.on
--- @tparam string command to add callback
--- @tparam function handler callback on receipt of command
+-- @tparam string The command to add callback.
+-- @tparam func handler The callback function on receipt of command.
 -- @usage
 -- pubsub:on(command, function (params)
 --     return data, err
