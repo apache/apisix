@@ -152,7 +152,7 @@ Each logger item configuration parameter will contain
             {
                 "name": "syslog",
                 "filter": [
-                    ["rpc_time", ">=", 10]
+                    ["rpc_time", ">=", 0.01]
                 ],
                 "conf": {
                     "host": "127.0.0.1",
@@ -164,18 +164,13 @@ Each logger item configuration parameter will contain
 }
 ```
 
-This configuration means that when the `rpc_time` is greater than 10 ms, xPRC reports the request log to the log server via the `syslog` plugin. `conf` is the configuration of the logging server required by the `syslog` plugin.
+This configuration means that when the `rpc_time` is greater than 0.01 seconds, xPRC reports the request log to the log server via the `syslog` plugin. `conf` is the configuration of the logging server required by the `syslog` plugin.
 
-Unlike standard TCP proxies, which only execute a logger when the connection is broken, xRPC's executed logger at the end of each 'request'.
+Unlike standard TCP proxies, which only execute a logger when the connection is closed, xRPC's executed logger at the end of each 'request'.
 
 The protocol itself defines the granularity of the specific request, and the xRPC extension code implements the request's granularity.
 
 For example, in the Redis protocol, the execution of a command is considered a request.
-
-### Exposes variables
-
-- `rpc_time`: Exposed by xRPC framework, indicates the time spent by each request.
-- `redis_cmd_line`: Exposed by Redis protocol, indicates the type of Redis command, such as `get`, `set` etc.
 
 ## How to write your own protocol
 

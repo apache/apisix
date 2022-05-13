@@ -632,7 +632,7 @@ passed
                                 name = "syslog",
                                 filter = {
                                     {"redis_cmd_line", "in", {"hmset", "hmget"}},
-                                    {"rpc_time", ">=", 10},
+                                    {"rpc_time", ">=", 0.01},
                                 },
                                 conf = {
                                     host = "127.0.0.1",

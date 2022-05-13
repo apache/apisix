@@ -29,15 +29,15 @@ local tostring = tostring
 
 
 core.ctx.register_var("rpc_time", function(ctx)
-    local session = ctx.xrpc_session
-    local curr_ctx_id = session._currr_ctx_id
-    local curr_ctx = session._ctxs[curr_ctx_id]
+    local curr_ctx = ctx.xrpc_session and ctx.xrpc_session._curr_ctx
 
     if not curr_ctx then
         core.log.warn("can't find current context by id: ", curr_ctx_id)
         return nil
     end
-    return curr_ctx._rpc_end_time * 1000 - curr_ctx._rpc_start_time * 1000
+    --use second as the unit, like the request_time
+    local time = (curr_ctx._rpc_end_time * 1000 - curr_ctx._rpc_start_time * 1000) / 1000
+    return time
 end)
 
 local logger_expr_cache = core.lrucache.new({
@@ -129,8 +129,7 @@ end
 
 local function finish_req(protocol, session, ctx)
     ctx._rpc_end_time = ngx_now()
-    session._currr_ctx_id = ctx._id
-
+    session._curr_ctx = ctx
     local loggers = session.route.protocol.logger
     if loggers and #loggers > 0 then
         for _, logger in ipairs(loggers) do

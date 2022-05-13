@@ -32,9 +32,7 @@ local tonumber = tonumber
 
 
 core.ctx.register_var("redis_cmd_line", function(ctx)
-    local session = ctx.xrpc_session
-    local curr_ctx_id = session._currr_ctx_id
-    local curr_ctx = session._ctxs[curr_ctx_id]
+    local curr_ctx = ctx.xrpc_session and ctx.xrpc_session._curr_ctx
     if not curr_ctx then
         core.log.warn("can't find current context by id: ", curr_ctx_id)
         return nil
