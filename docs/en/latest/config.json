@@ -216,7 +216,8 @@
           "type": "category",
           "label": "PubSub",
           "items": [
-            "pubsub"
+            "pubsub",
+            "pubsub/kafka"
           ]
         },
         {
