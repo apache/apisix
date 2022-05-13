@@ -27,6 +27,19 @@ local pcall = pcall
 local ipairs = ipairs
 local tostring = tostring
 
+
+core.ctx.register_var("rpc_time", function(ctx)
+    local curr_ctx = ctx.xrpc_session and ctx.xrpc_session._curr_ctx
+
+    if not curr_ctx then
+        core.log.warn("can't find current context by id: ", curr_ctx_id)
+        return nil
+    end
+    --use second as the unit, like the request_time
+    local time = (curr_ctx._rpc_end_time * 1000 - curr_ctx._rpc_start_time * 1000) / 1000
+    return time
+end)
+
 local logger_expr_cache = core.lrucache.new({
     ttl = 300, count = 1024
 })
@@ -70,7 +83,7 @@ local function filter_logger(ctx, logger)
         core.log.error("failed to validate the 'filter' expression: ", err)
         return false
     end
-    return filter_expr:eval(ctx)
+    return filter_expr:eval(ctx.var)
 end
 
 
@@ -91,7 +104,7 @@ end
 
 local function finialize_req(protocol, session, ctx)
     ctx._rpc_end_time = ngx_now()
-
+    session._curr_ctx = ctx
     local loggers = session.route.protocol.logger
     if loggers and #loggers > 0 then
         for _, logger in ipairs(loggers) do
