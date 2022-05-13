@@ -74,7 +74,7 @@ end
 local function send_resp(ws, sequence, data)
     data.sequence = sequence
     local ok, encoded = pcall(pb.encode, "PubSubResp", data)
-    if not ok or not data then
+    if not ok or not encoded then
         log.error("failed to encode response message, err: ", encoded)
         return
     end
