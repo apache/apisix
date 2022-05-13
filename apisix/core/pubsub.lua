@@ -200,7 +200,7 @@ function _M.wait(self)
         local sequence = data.sequence
 
         local cmd, params = get_cmd(data)
-        if not cmd or not params then
+        if not cmd and not params then
             log.warn("pubsub server receives empty command")
             goto continue
         end
