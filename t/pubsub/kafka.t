@@ -67,6 +67,59 @@ __DATA__
                         "uri": "/kafka-invalid"
                     }]],
                 },
+                {
+                    url = "/apisix/admin/routes/kafka-tlsv",
+                    data = [[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:9093": 1
+                            },
+                            "type": "none",
+                            "scheme": "kafka",
+                            "tls": {
+                                "verify": true
+                            }
+                        },
+                        "uri": "/kafka-tlsv"
+                    }]],
+                },
+                {
+                    url = "/apisix/admin/routes/kafka-tls",
+                    data = [[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:9093": 1
+                            },
+                            "type": "none",
+                            "scheme": "kafka",
+                            "tls": {
+                                "verify": false
+                            }
+                        },
+                        "uri": "/kafka-tls"
+                    }]],
+                },
+                {
+                    url = "/apisix/admin/routes/kafka-sasl",
+                    data = [[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:9094": 1
+                            },
+                            "type": "none",
+                            "scheme": "kafka"
+                        },
+                        "uri": "/kafka-sasl",
+                        "plugins": {
+                            "kafka-proxy": {
+                                "sasl": {
+                                    "username": "admin",
+                                    "password": "admin-secret"
+                                }
+                            }
+                        }
+                    }]],
+                },
             }
 
             local t = require("lib.test_admin").test
@@ -78,7 +131,7 @@ __DATA__
         }
     }
 --- response_body eval
-"passed\n"x2
+"passed\n"x5
 
 
 
@@ -227,3 +280,81 @@ failed to initialize pubsub module, err: bad "upgrade" request header: nil
 0failed to list offset, topic: test-consumer, partition: 0, err: not found topic
 --- error_log
 all brokers failed in fetch topic metadata
+
+
+
+=== TEST 5: hit route (Kafka with TLS)
+--- config
+    location /t {
+        content_by_lua_block {
+            local lib_pubsub = require("lib.pubsub")
+            local test_pubsub = lib_pubsub.new_ws("ws://127.0.0.1:1984/kafka-tls")
+
+            local data = test_pubsub:send_recv_ws_binary({
+                sequence = 0,
+                cmd_kafka_list_offset = {
+                    topic = "test-consumer",
+                    partition = 0,
+                    timestamp = -1,
+                },
+            })
+            if data.kafka_list_offset_resp then
+                ngx.say(data.sequence.."offset: "..data.kafka_list_offset_resp.offset)
+            end
+            test_pubsub:close_ws()
+        }
+    }
+--- response_body
+0offset: 30
+
+
+
+=== TEST 6: hit route (Kafka with TLS + ssl verify)
+--- config
+    location /t {
+        content_by_lua_block {
+            local lib_pubsub = require("lib.pubsub")
+            local test_pubsub = lib_pubsub.new_ws("ws://127.0.0.1:1984/kafka-tlsv")
+
+            local data = test_pubsub:send_recv_ws_binary({
+                sequence = 0,
+                cmd_kafka_list_offset = {
+                    topic = "test-consumer",
+                    partition = 0,
+                    timestamp = -1,
+                },
+            })
+            if data.kafka_list_offset_resp then
+                ngx.say(data.sequence.."offset: "..data.kafka_list_offset_resp.offset)
+            end
+            test_pubsub:close_ws()
+        }
+    }
+--- error_log
+self signed certificate
+
+
+
+=== TEST 7: hit route (Kafka with SASL)
+--- config
+    location /t {
+        content_by_lua_block {
+            local lib_pubsub = require("lib.pubsub")
+            local test_pubsub = lib_pubsub.new_ws("ws://127.0.0.1:1984/kafka-sasl")
+
+            local data = test_pubsub:send_recv_ws_binary({
+                sequence = 0,
+                cmd_kafka_list_offset = {
+                    topic = "test-consumer",
+                    partition = 0,
+                    timestamp = -1,
+                },
+            })
+            if data.kafka_list_offset_resp then
+                ngx.say(data.sequence.."offset: "..data.kafka_list_offset_resp.offset)
+            end
+            test_pubsub:close_ws()
+        }
+    }
+--- response_body
+0offset: 30
