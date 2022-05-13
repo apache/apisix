@@ -74,7 +74,7 @@ __DATA__
 GET /kafka
 --- error_code: 400
 --- error_log
-failed to initialize pub-sub module, err: bad "upgrade" request header: nil
+failed to initialize pubsub module, err: bad "upgrade" request header: nil
 
 
 
