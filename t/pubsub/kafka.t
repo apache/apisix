@@ -145,7 +145,7 @@ failed to initialize pubsub module, err: bad "upgrade" request header: nil
                     },
                 },
                 {
-                    -- Query by timestamp, 1500000000000 ms earlier than the 
+                    -- Query by timestamp, 1500000000000 ms earlier than the
                     -- production time of any message
                     sequence = 5,
                     cmd_kafka_list_offset = {
