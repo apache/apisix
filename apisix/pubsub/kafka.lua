@@ -65,6 +65,14 @@ function _M.access(api_ctx)
             host = node.host,
             port = node.port,
         }
+
+        if api_ctx.kafka_consumer_enable_sasl then
+            broker_list[i].sasl_config = {
+                mechanism = "PLAIN",
+                user = api_ctx.kafka_consumer_sasl_username,
+                password = api_ctx.kafka_consumer_sasl_password,
+            }
+        end
     end
 
     local client_config = {refresh_interval = 30 * 60 * 1000}
