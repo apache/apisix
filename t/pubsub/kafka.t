@@ -54,6 +54,19 @@ __DATA__
                         "uri": "/kafka"
                     }]],
                 },
+                {
+                    url = "/apisix/admin/routes/kafka-invalid",
+                    data = [[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:59092": 1
+                            },
+                            "type": "none",
+                            "scheme": "kafka"
+                        },
+                        "uri": "/kafka-invalid"
+                    }]],
+                },
             }
 
             local t = require("lib.test_admin").test
@@ -65,7 +78,7 @@ __DATA__
         }
     }
 --- response_body eval
-"passed\n"x1
+"passed\n"x2
 
 
 
@@ -80,6 +93,8 @@ failed to initialize pubsub module, err: bad "upgrade" request header: nil
 
 === TEST 3: hit route (Kafka)
 --- config
+    # The messages used in this test are produced in the linux-ci-init-service.sh
+    # script that prepares the CI environment
     location /t {
         content_by_lua_block {
             local lib_pubsub = require("lib.pubsub")
@@ -102,6 +117,7 @@ failed to initialize pubsub module, err: bad "upgrade" request header: nil
                     },
                 },
                 {
+                    -- Query first message offset
                     sequence = 2,
                     cmd_kafka_list_offset = {
                         topic = "test-consumer",
@@ -110,6 +126,7 @@ failed to initialize pubsub module, err: bad "upgrade" request header: nil
                     },
                 },
                 {
+                    -- Query last message offset
                     sequence = 3,
                     cmd_kafka_list_offset = {
                         topic = "test-consumer",
@@ -118,13 +135,41 @@ failed to initialize pubsub module, err: bad "upgrade" request header: nil
                     },
                 },
                 {
+                    -- Query by timestamp, 9999999999999 later than the
+                    -- production time of any message
                     sequence = 4,
+                    cmd_kafka_list_offset = {
+                        topic = "test-consumer",
+                        partition = 0,
+                        timestamp = "9999999999999",
+                    },
+                },
+                {
+                    -- Query by timestamp, 1500000000000 ms earlier than the 
+                    -- production time of any message
+                    sequence = 5,
+                    cmd_kafka_list_offset = {
+                        topic = "test-consumer",
+                        partition = 0,
+                        timestamp = "1500000000000",
+                    },
+                },
+                {
+                    sequence = 6,
                     cmd_kafka_fetch = {
                         topic = "test-consumer",
                         partition = 0,
                         offset = 14,
                     },
-                }
+                },
+                {
+                    sequence = 7,
+                    cmd_kafka_fetch = {
+                        topic = "test-consumer",
+                        partition = 0,
+                        offset = 999,
+                    },
+                },
             }
 
             for i = 1, #data do
@@ -148,4 +193,37 @@ failed to initialize pubsub module, err: bad "upgrade" request header: nil
 1failed to fetch message, topic: not-exist, partition: 0, err: not found topic
 2offset: 0
 3offset: 30
-4offset: 14 msg: testmsg15
+4offset: -1
+5offset: 0
+6offset: 14 msg: testmsg15
+7failed to fetch message, topic: test-consumer, partition: 0, err: OFFSET_OUT_OF_RANGE
+
+
+
+=== TEST 4: hit route (Kafka with invalid node ip)
+--- config
+    # The messages used in this test are produced in the linux-ci-init-service.sh
+    # script that prepares the CI environment
+    location /t {
+        content_by_lua_block {
+            local lib_pubsub = require("lib.pubsub")
+            local test_pubsub = lib_pubsub.new_ws("ws://127.0.0.1:1984/kafka-invalid")
+
+            local data = test_pubsub:send_recv_ws_binary({
+                sequence = 0,
+                cmd_kafka_list_offset = {
+                    topic = "test-consumer",
+                    partition = 0,
+                    timestamp = -2,
+                },
+            })
+            if data.error_resp then
+                ngx.say(data.sequence..data.error_resp.message)
+            end
+            test_pubsub:close_ws()
+        }
+    }
+--- response_body
+0failed to list offset, topic: test-consumer, partition: 0, err: not found topic
+--- error_log
+all brokers failed in fetch topic metadata
