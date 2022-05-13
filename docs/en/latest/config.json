@@ -223,6 +223,7 @@
           "type": "category",
           "label": "xRPC",
           "items": [
+            "xrpc/redis",
             "xrpc"
           ]
         },
