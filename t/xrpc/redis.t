@@ -565,3 +565,223 @@ passed
 --- response_body
 ok
 --- stream_conf_enable
+
+
+
+=== TEST 12: publish & subscribe
+--- stream_extra_init_by_lua
+            local cjson = require "cjson"
+            local redis_proto = require("apisix.stream.xrpc.protocols.redis")
+            redis_proto.log = function(sess, ctx)
+                ngx.log(ngx.WARN, "log redis request ", cjson.encode(ctx.cmd_line))
+            end
+
+--- config
+    location /t {
+        content_by_lua_block {
+            local cjson = require "cjson"
+            local redis = require "resty.redis"
+
+            local red = redis:new()
+            local red2 = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+            red2:set_timeout(1000) -- 1 sec
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("1: failed to connect: ", err)
+                return
+            end
+
+            ok, err = red2:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("2: failed to connect: ", err)
+                return
+            end
+
+            local res, err = red:subscribe("dog")
+            if not res then
+                ngx.say("1: failed to subscribe: ", err)
+                return
+            end
+
+            ngx.say("1: subscribe dog: ", cjson.encode(res))
+
+            res, err = red:subscribe("cat")
+            if not res then
+                ngx.say("1: failed to subscribe: ", err)
+                return
+            end
+
+            ngx.say("1: subscribe cat: ", cjson.encode(res))
+
+            res, err = red2:publish("dog", "Hello")
+            if not res then
+                ngx.say("2: failed to publish: ", err)
+                return
+            end
+
+            ngx.say("2: publish: ", cjson.encode(res))
+
+            res, err = red:read_reply()
+            if not res then
+                ngx.say("1: failed to read reply: ", err)
+            else
+                ngx.say("1: receive: ", cjson.encode(res))
+            end
+
+            red:set_timeout(10) -- 10ms
+            res, err = red:read_reply()
+            if not res then
+                ngx.say("1: failed to read reply: ", err)
+            else
+                ngx.say("1: receive: ", cjson.encode(res))
+            end
+            red:set_timeout(1000) -- 1s
+
+            res, err = red:unsubscribe()
+            if not res then
+                ngx.say("1: failed to unscribe: ", err)
+            else
+                ngx.say("1: unsubscribe: ", cjson.encode(res))
+            end
+
+            res, err = red:read_reply()
+            if not res then
+                ngx.say("1: failed to read reply: ", err)
+            else
+                ngx.say("1: receive: ", cjson.encode(res))
+            end
+
+            red:set_timeout(10) -- 10ms
+            res, err = red:read_reply()
+            if not res then
+                ngx.say("1: failed to read reply: ", err)
+            else
+                ngx.say("1: receive: ", cjson.encode(res))
+            end
+            red:set_timeout(1000) -- 1s
+
+            res, err = red:set("dog", 1)
+            if not res then
+                ngx.say("1: failed to set: ", err)
+            else
+                ngx.say("1: receive: ", cjson.encode(res))
+            end
+
+            red:close()
+            red2:close()
+        }
+    }
+--- response_body_like chop
+^1: subscribe dog: \["subscribe","dog",1\]
+1: subscribe cat: \["subscribe","cat",2\]
+2: publish: 1
+1: receive: \["message","dog","Hello"\]
+1: failed to read reply: timeout
+1: unsubscribe: \[\["unsubscribe","(?:dog|cat)",1\],\["unsubscribe","(?:dog|cat)",0\]\]
+1: failed to read reply: not subscribed
+1: failed to read reply: not subscribed
+1: receive: "OK"
+$
+--- stream_conf_enable
+--- grep_error_log eval
+qr/log redis request \[[^]]+\]/
+--- grep_error_log_out
+log redis request ["subscribe","dog"]
+log redis request ["subscribe","cat"]
+log redis request ["publish","dog","Hello"]
+log redis request ["unsubscribe"]
+log redis request ["set","dog","1"]
+
+
+
+=== TEST 13: psubscribe & punsubscribe
+--- stream_extra_init_by_lua
+            local cjson = require "cjson"
+            local redis_proto = require("apisix.stream.xrpc.protocols.redis")
+            redis_proto.log = function(sess, ctx)
+                ngx.log(ngx.WARN, "log redis request ", cjson.encode(ctx.cmd_line))
+            end
+
+--- config
+    location /t {
+        content_by_lua_block {
+            local cjson = require "cjson"
+            local redis = require "resty.redis"
+
+            local red = redis:new()
+            local red2 = redis:new()
+
+            red:set_timeout(1000) -- 1 sec
+            red2:set_timeout(1000) -- 1 sec
+
+            local ok, err = red:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("1: failed to connect: ", err)
+                return
+            end
+
+            ok, err = red2:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
+            if not ok then
+                ngx.say("2: failed to connect: ", err)
+                return
+            end
+
+            local res, err = red:psubscribe("dog*", "cat*")
+            if not res then
+                ngx.say("1: failed to subscribe: ", err)
+                return
+            end
+
+            ngx.say("1: psubscribe: ", cjson.encode(res))
+
+            res, err = red2:publish("dog1", "Hello")
+            if not res then
+                ngx.say("2: failed to publish: ", err)
+                return
+            end
+
+            ngx.say("2: publish: ", cjson.encode(res))
+
+            res, err = red:read_reply()
+            if not res then
+                ngx.say("1: failed to read reply: ", err)
+            else
+                ngx.say("1: receive: ", cjson.encode(res))
+            end
+
+            res, err = red:punsubscribe("cat*", "dog*")
+            if not res then
+                ngx.say("1: failed to unscribe: ", err)
+            else
+                ngx.say("1: punsubscribe: ", cjson.encode(res))
+            end
+
+            res, err = red:set("dog", 1)
+            if not res then
+                ngx.say("1: failed to set: ", err)
+            else
+                ngx.say("1: receive: ", cjson.encode(res))
+            end
+
+            red:close()
+            red2:close()
+        }
+    }
+--- response_body_like chop
+^1: psubscribe: \[\["psubscribe","dog\*",1\],\["psubscribe","cat\*",2\]\]
+2: publish: 1
+1: receive: \["pmessage","dog\*","dog1","Hello"\]
+1: punsubscribe: \[\["punsubscribe","cat\*",1\],\["punsubscribe","dog\*",0\]\]
+1: receive: "OK"
+$
+--- stream_conf_enable
+--- grep_error_log eval
+qr/log redis request \[[^]]+\]/
+--- grep_error_log_out
+log redis request ["psubscribe","dog*","cat*"]
+log redis request ["publish","dog1","Hello"]
+log redis request ["punsubscribe","cat*","dog*"]
+log redis request ["set","dog","1"]
