@@ -23,7 +23,7 @@ local ipairs = ipairs
 local type = type
 
 local lrucache = core.lrucache.new({
-    ttl = 300, count = 512
+    type = "plugin",
 })
 
 local schema = {
@@ -75,13 +75,13 @@ function _M.check_schema(conf)
 end
 
 
-local function addr_match(conf, addr)
+local function addr_match(conf, ctx, addr)
     if not conf.trusted_addresses then
         return false
     end
 
-    local matcher, err = lrucache(conf.trusted_addresses, nil,
-                                  core.ip.create_ip_matcher, conf.trusted_addresses)
+    local matcher, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
+                                                  core.ip.create_ip_matcher, conf.trusted_addresses)
     if not matcher then
         core.log.error("failed to create ip matcher: ", err)
         return false
@@ -111,7 +111,7 @@ local function get_addr(conf, ctx)
         if conf.recursive and conf.trusted_addresses then
             local split_addrs = ngx_re_split(addrs, ",\\s*", "jo")
             for i = #split_addrs, 2, -1 do
-                if not addr_match(conf, split_addrs[i]) then
+                if not addr_match(conf, ctx, split_addrs[i]) then
                     return split_addrs[i]
                 end
             end
@@ -141,7 +141,7 @@ function _M.rewrite(conf, ctx)
 
     if conf.trusted_addresses then
         local remote_addr = ctx.var.remote_addr
-        if not addr_match(conf, remote_addr) then
+        if not addr_match(conf, ctx, remote_addr) then
             return
         end
     end
