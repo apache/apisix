@@ -28,7 +28,7 @@ description: This document contains information about the Apache APISIX xRPC imp
 
 ## Description
 
-The Redis protocol support allows Apache APISIX to proxy Redis commands, and provide various features according to the content of the commands, including:
+The Redis protocol support allows APISIX to proxy Redis commands, and provide various features according to the content of the commands, including:
 
 * [Redis protocol](https://redis.io/docs/reference/protocol-spec/) codec
 * Fault injection according to the commands and key
@@ -38,6 +38,7 @@ The Redis protocol support allows Apache APISIX to proxy Redis commands, and pro
 This feature requires APISIX to be run on [APISIX-Base](./how-to-build.md#step-6-build-openresty-for-apache-apisix).
 
 It also requires the data sent from clients are well-formed and sane. Therefore, it should only be used in deployments where both the downstream and upstream are trusted.
+
 :::
 
 ## Granularity of the request
@@ -46,7 +47,7 @@ Like other protocols based on the xRPC framework, the Redis implementation here 
 
 Each Redis command is considered a request. However, the message subscribed from the server won't be considered a request.
 
-For example, when a Redis client subscribes to channel "foo" and receives the message "bar", then it unsubscribes the "foo" channel, there are two requests: `subscribe foo` and `unsubscribe foo`.
+For example, when a Redis client subscribes to channel `foo` and receives the message `bar`, then it unsubscribes the `foo` channel, there are two requests: `subscribe foo` and `unsubscribe foo`.
 
 ## Attributes
 
@@ -66,7 +67,7 @@ Fields under an entry of `faults`:
 
 Assumed the APISIX is proxying TCP on port 9101, and the Redis is listening on port 6379.
 
-Let's create a stream route:
+Let's create a Stream Route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
