@@ -36,7 +36,7 @@ core.ctx.register_var("rpc_time", function(ctx)
         return nil
     end
     --use second as the unit, like the request_time
-    local time = (curr_ctx._rpc_end_time * 1000 - curr_ctx._rpc_start_time * 1000) / 1000
+    local time = curr_ctx._rpc_end_time - curr_ctx._rpc_start_time
     return time
 end)
 
