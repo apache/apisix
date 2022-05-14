@@ -730,6 +730,11 @@ local function start(env, ...)
     local pid = util.read_file(pid_path)
     pid = tonumber(pid)
     if pid then
+        if pid < 0 then
+            print("invalid pid")
+            return
+        end
+
         local signone = 0
 
         local ok, err, err_no = signal.kill(pid, signone)
