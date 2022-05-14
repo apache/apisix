@@ -695,7 +695,7 @@ fi
 echo "passed: hook can take effect"
 
 # check restart with old nginx.pid exist
-echo "66666" > logs/nginx.pid
+echo "-1" > logs/nginx.pid
 out=$(./bin/apisix start 2>&1 || true)
 if echo "$out" | grep "APISIX is running"; then
     rm logs/nginx.pid
