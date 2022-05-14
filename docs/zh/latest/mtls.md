@@ -66,7 +66,7 @@ curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /
 
 ### 如何配置
 
-你需要构建  [APISIX-Base](./FAQ.md#如何构建-APISIX-Base-环境？)，并且需要在配置文件中设定 `etcd.tls` 来使 ETCD 的双向认证功能正常工作。
+你需要构建 [APISIX-Base](./FAQ.md#如何构建-APISIX-Base-环境？)，并且需要在配置文件中设定 `etcd.tls` 来使 ETCD 的双向认证功能正常工作。
 
 ```yaml
 etcd:
