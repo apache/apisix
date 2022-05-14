@@ -252,10 +252,9 @@ Custom rejection message:
 }
 ```
 
-
 ## Example usage
 
-Once you have configured the Plugin, it will only allow requests that are valid based on the configuration to reach the Upstream service. If not, the requests are rejected wih a 400 or a custom status code you configured.
+Once you have configured the Plugin, it will only allow requests that are valid based on the configuration to reach the Upstream service. If not, the requests are rejected with a 400 or a custom status code you configured.
 
 A valid request for the above configuration could look like this:
 
