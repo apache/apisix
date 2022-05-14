@@ -49,9 +49,9 @@ title: 压力测试
 
 ![flamegraph-1](../../assets/images/flamegraph-1.jpg)
 
-如果想在机器上运行基准测试，你应该同时运行另一个 NGINX 来监听 80 端口：
+如果你需要在本地服务器上运行基准测试，你需要同时运行另一个 NGINX 实例来监听 80 端口：
 
-```shell
+```bash
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -66,9 +66,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-然后运行 wrk：
+在完成配置并安装 [wrk](https://github.com/wg/wrk/) 之后，可以使用以下命令进行测试：
 
-```shell
+```bash
 wrk -d 60 --latency http://127.0.0.1:9080/hello
 ```
 
@@ -93,9 +93,9 @@ wrk -d 60 --latency http://127.0.0.1:9080/hello
 火焰图的采样结果：
 ![火焰图采样结果](../../assets/images/flamegraph-2.jpg)
 
-如果想在机器上运行基准测试，你应该同时运行另一个 NGINX 来监听 80 端口：
+如果你需要在本地服务器上运行基准测试，你需要同时运行另一个 NGINX 实例来监听 80 端口：
 
-```shell
+```bash
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -119,20 +119,22 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-然后运行 wrk：
+在完成配置并安装 [wrk](https://github.com/wg/wrk/) 之后，可以使用以下命令进行测试：
 
-```shell
+```bash
 wrk -d 60 --latency http://127.0.0.1:9080/hello
 ```
 
 有关如何运行基准测试的更多参考，你可以查看此[PR](https://github.com/apache/apisix/pull/6136)和此[脚本](https://gist.github.com/membphis/137db97a4bf64d3653aa42f3e016bd01)。
 
-**注意**: 如果你想运行大量连接的基准测试，例如：
+:::tip
 
-```shell
-./wrk -t200 -c5000 -d30s http://127.0.0.1:9080/hello
+如果你想测试大量连接的基准测试，你可能需要更新 [`./conf/config-default.yaml`](https://github.com/apache/apisix/blob/master/conf/config-default.yaml#L242) 中的 **keepalive** 配置项，否则超过配置数量的连接将成为短连接。你可以使用以下命令运行大量连接的基准测试：
+
+```bash
+wrk -t200 -c5000 -d30s http://127.0.0.1:9080/hello
 ```
 
-你可能需要更新 [conf/config-default.yaml](https://github.com/apache/apisix/blob/master/conf/config-default.yaml#L242) 中的 **keepalive** 配置项。
+如果你需要了解更多信息，请参考：[ngx_http_upstream_module](http://nginx.org/en/docs/http/ngx_http_upstream_module.html)。
 
-超过配置数量的连接将成为短连接。更多文档可以参考：[ngx_http_upstream_module](http://nginx.org/en/docs/http/ngx_http_upstream_module.html)
+:::
