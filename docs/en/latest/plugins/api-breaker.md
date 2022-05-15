@@ -88,6 +88,9 @@ Once you have configured the Plugin as shown above, you can test it out by sendi
 
 ```shell
 curl -i -X POST "http://127.0.0.1:9080/hello"
+```
+
+```shell
 HTTP/1.1 502 Bad Gateway
 Content-Type: application/octet-stream
 Connection: keep-alive
