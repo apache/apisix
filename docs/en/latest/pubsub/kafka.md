@@ -35,9 +35,11 @@ Currently we provide a simpler way to integrate by combining two APIs, ListOffse
 ### Limitations
 
 - Offsets need to be managed manually
+
 They can be stored by a custom backend service or obtained via the list_offset command before starting to fetch the message, which can use timestamp to get the starting offset, or to get the initial and end offsets.
 
 - Unsupported batch data acquisition
+
 A single instruction can only obtain the data of a Topic Partition, does not support batch data acquisition through a single instruction
 
 ### Prepare
