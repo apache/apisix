@@ -40,6 +40,10 @@ local _M = {}
 -- string to int64 cdata numbers.
 local function pb_convert_to_int64(src)
     if type(src) == "string" then
+        -- the format is #1234, so there is a small minimum length of 2
+        if #src < 2 then
+            return 0
+        end
         return C.atoll(ffi.cast("char *", src) + 1)
     else
         return src
