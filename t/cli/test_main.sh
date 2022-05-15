@@ -706,6 +706,16 @@ fi
 ./bin/apisix stop
 echo "pass: ignore stale nginx.pid"
 
+# check running when run repeatedly
+out=$(make run; make run || true)
+if ! echo "$out" | grep "APISIX is running"; then
+    echo "failed: should find APISIX running"
+    exit 1
+fi
+
+make stop
+echo "pass: check APISIX running"
+
 # check the keepalive related parameter settings in the upstream
 git checkout conf/config.yaml
 
