@@ -114,6 +114,48 @@ fi
 
 echo "
 apisix:
+    allow_admin:
+        - 127.0.0.0/8
+" > conf/config.yaml
+
+make init
+
+count=`grep -c "allow 127.0.0.0/8" conf/nginx.conf`
+if [ $count -eq 0 ]; then
+    echo "failed: not found 'allow 127.0.0.0/8;' in conf/nginx.conf"
+    exit 1
+fi
+
+echo "
+apisix:
+    allow_admin:
+        - ::1
+" > conf/config.yaml
+
+make init
+
+count=`grep -c "allow ::1" conf/nginx.conf`
+if [ $count -eq 0 ]; then
+    echo "failed: not found 'allow ::1;' in conf/nginx.conf"
+    exit 1
+fi
+
+echo "
+apisix:
+    allow_admin:
+        - ::1/128
+" > conf/config.yaml
+
+make init
+
+count=`grep -c "allow ::1/128" conf/nginx.conf`
+if [ $count -eq 0 ]; then
+    echo "failed: not found 'allow ::1/128;' in conf/nginx.conf"
+    exit 1
+fi
+
+echo "
+apisix:
     allow_admin: ~
 " > conf/config.yaml
 
