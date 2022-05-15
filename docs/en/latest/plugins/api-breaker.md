@@ -45,9 +45,9 @@ In an unhealthy state, if the Upstream service responds with a status code from 
 | break_response_body     | string         | False    |         |                 | Body of the response message to return when Upstream is unhealthy.                                                                                                                                                                           |
 | break_response_headers  | array[object]  | False    |         |                 | Headers of the response message to return when Upstream is unhealthy. Can only be configured when the `break_response_body` attribute is configured. The values can contain Nginx variables. For example, `$remote_addr` and `$balancer_ip`. |
 | max_breaker_sec         | integer        | False    | 300     | >=3             | Maximum time in seconds for circuit breaking.                                                                                                                                                                                                |
-| unhealthy.http_statuses | array[integer] | False    | {500}   | [500, ..., 599] | Status codes of Upstream to be considered unhealthy.                                                                                                                                                                                         |
+| unhealthy.http_statuses | array[integer] | False    | [500]   | [500, ..., 599] | Status codes of Upstream to be considered unhealthy.                                                                                                                                                                                         |
 | unhealthy.failures      | integer        | False    | 3       | >=1             | Number of consecutive failures for the Upstream service to be considered unhealthy.                                                                                                                                                          |
-| healthy.http_statuses   | array[integer] | False    | {200}   | [200, ..., 499] | Status codes of Upstream to be considered healthy.                                                                                                                                                                                           |
+| healthy.http_statuses   | array[integer] | False    | [200]   | [200, ..., 499] | Status codes of Upstream to be considered healthy.                                                                                                                                                                                           |
 | healthy.successes       | integer        | False    | 3       | >=1             | Number of consecutive healthy requests for the Upstream service to be considered healthy.                                                                                                                                                    |
 
 ## Enabling the Plugin
@@ -84,7 +84,7 @@ In this configuration, a response code of 500 or 503 three times in a row trigge
 
 ## Example usage
 
-Once you have configured the Plugin as show above, you can test it out by sending a request. If the Upstream service responds with an unhealthy response code, you will receive the configured response code (`break_response_code`).
+Once you have configured the Plugin as shown above, you can test it out by sending a request. If the Upstream service responds with an unhealthy response code, you will receive the configured response code (`break_response_code`).
 
 ```shell
 curl -i -X POST "http://127.0.0.1:9080/hello"
