@@ -36,12 +36,13 @@ Currently we provide a simpler way to integrate by combining two APIs, ListOffse
 
 - Offsets need to be managed manually
 They can be stored by a custom backend service or obtained via the list_offset command before starting to fetch the message, which can use timestamp to get the starting offset, or to get the initial and end offsets.
+
 - Unsupported batch data acquisition
 A single instruction can only obtain the data of a Topic Partition, does not support batch data acquisition through a single instruction
 
 ### Prepare
 
-First, it is necessary to compile the [communication protocol](../../../../apisix/pubsub.proto) as a language-specific SDK using the `protoc`, which provides the command and response definitions to connect to Kafka via APISIX using the WebSocket.
+First, it is necessary to compile the [communication protocol](https://github.com/apache/apisix/blob/master/apisix/include/apisix/model/pubsub.proto) as a language-specific SDK using the `protoc`, which provides the command and response definitions to connect to Kafka via APISIX using the WebSocket.
 
 The `sequence` field in the protocol is used to associate the request with the response, they will correspond one to one, the client can manage it in the way they want, APISIX will not modify it, only pass it back to the client through the response body.
 
