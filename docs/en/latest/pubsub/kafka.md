@@ -2,9 +2,9 @@
 title: Apache Kafka
 keywords:
   - APISIX
-  - Pub-Sub
+  - PubSub
   - Kafka
-description: This document contains information about the Apache APISIX kafka pub-sub scenario.
+description: This document contains information about the Apache APISIX kafka pubsub scenario.
 ---
 
 <!--
