@@ -469,9 +469,8 @@ Please modify "admin_key" in conf/config.yaml .
         -- Therefore we need to check the absolute version instead
         cert_path = pl_path.abspath(cert_path)
 
-        local ok, err = util.is_file_exist(cert_path)
-        if not ok then
-            util.die(err, "\n")
+        if not pl_path.exists(cert_path) then
+            util.die("certificate path", cert_path, "isn't exist\n")
         end
 
         yaml_conf.apisix.ssl.ssl_trusted_certificate = cert_path
