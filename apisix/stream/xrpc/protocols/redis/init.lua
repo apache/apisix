@@ -32,12 +32,11 @@ local tonumber = tonumber
 
 
 core.ctx.register_var("redis_cmd_line", function(ctx)
-    local curr_ctx = ctx.xrpc_session and ctx.xrpc_session._curr_ctx
-    if not curr_ctx then
-        core.log.warn("can't find current context")
-        return nil
+    local cmd_line = ctx.cmd_line
+    if cmd_line and #cmd_line > 1 then
+        return core.table.concat(cmd_line, " ")
     end
-    return curr_ctx.cmd
+    return ctx.cmd_line
 end)
 
 -- redis protocol spec: https://redis.io/docs/reference/protocol-spec/

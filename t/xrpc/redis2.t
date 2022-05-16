@@ -118,7 +118,6 @@ passed
                             {
                                 name = "syslog",
                                 filter = {
-                                    {"redis_cmd_line", "in", {"hmset", "hmget"}},
                                     {"rpc_time", ">=", 0.01},
                                 },
                                 conf = {
