@@ -96,7 +96,6 @@ end
 
 local function finialize_req(protocol, session, ctx)
     ctx._rpc_end_time = ngx_now()
-    session._curr_ctx = ctx
     local loggers = session.route.protocol.logger
     if loggers and #loggers > 0 then
         for _, logger in ipairs(loggers) do
