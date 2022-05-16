@@ -617,7 +617,7 @@ GET /t
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
             local data = {
-              uri = "/server_port",
+              uri = "/",
               plugins = {
                 ["traffic-split"] = {
                   rules = { {
@@ -625,8 +625,10 @@ GET /t
                       upstream = {
                         name = "upstream_A",
                         type = "roundrobin",
+                        pass_host = "rewrite",
+                        upstream_host = "www.apiseven.com",
                         nodes = {
-                          ["apiseven.com:80"] = 0
+                          ["www.apiseven.com:80"] = 0
                         }
                       },
                       weight = 100000
@@ -664,10 +666,10 @@ passed
 
 === TEST 19: domain name resolved successfully
 --- request
-GET /server_port
---- error_code: 502
+GET /
+--- error_code: 200
 --- error_log eval
-qr/dns resolver domain: apiseven.com to \d+.\d+.\d+.\d+/
+qr/dns resolver domain: www.apiseven.com to \d+.\d+.\d+.\d+/
 
 
 
