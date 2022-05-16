@@ -42,6 +42,7 @@ local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
 local ngx_balancer    = require("ngx.balancer")
 local debug           = require("apisix.debug")
+local pubsub_kafka    = require("apisix.pubsub.kafka")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -502,6 +503,13 @@ function _M.http_access_phase()
 
     if route.value.service_protocol == "grpc" then
         api_ctx.upstream_scheme = "grpc"
+    end
+
+    -- load balancer is not required by kafka upstream, so the upstream
+    -- node selection process is intercepted and left to kafka to
+    -- handle on its own
+    if api_ctx.matched_upstream and api_ctx.matched_upstream.scheme == "kafka" then
+        return pubsub_kafka.access(api_ctx)
     end
 
     local code, err = set_upstream(route, api_ctx)
