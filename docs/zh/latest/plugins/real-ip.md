@@ -35,16 +35,17 @@ description: 本文介绍了关于 Apache APISIX `real-ip` 插件的基本信息
 
 :::info IMPORTANT
 
-该插件要求 APISIX  运行在 [APISIX-Base](../how-to-build.md#步骤-6-为-apache-apisix-构建-openresty) 上。
+该插件要求 APISIX  运行在 [APISIX-Base](../FAQ.md#如何构建-APISIX-Base-环境？) 上。
 
 :::
 
 ## 属性
 
 | 名称              | 类型          | 必选项 | 有效值                                                       | 描述                                                                                     |
-|-------------------|---------------|-------|-------------------------------------------------------------|----------------------------------------------------------------------|
-| source            | string        | 是    | 任何 NGINX 变量，如 `arg_realip` 或 `http_x_forwarded_for` 。 | 动态设置客户端的 IP 地址和端口。如果该值不包含端口，则不会更改客户端的端口。|
-| trusted_addresses | array[string] | 否    | IP 或 CIDR 范围列表。                                         | 动态设置 `set_real_ip_from` 字段。                                    |
+|-------------------|---------------|--|-------------------------------------------------------------|----------------------------------------------------------------------|
+| source            | string        | 是 | 任何 NGINX 变量，如 `arg_realip` 或 `http_x_forwarded_for` 。 | 动态设置客户端的 IP 地址和端口。如果该值不包含端口，则不会更改客户端的端口。|
+| trusted_addresses | array[string] | 否 | IP 或 CIDR 范围列表。                                         | 动态设置 `set_real_ip_from` 字段。                                    |
+| recursive         | boolean       | 否 | true 或者 false，默认是 false                                | 如果禁用递归搜索，则与受信任地址之一匹配的原始客户端地址将替换为配置的`source`中发送的最后一个地址。如果启用递归搜索，则与受信任地址之一匹配的原始客户端地址将替换为配置的`source`中发送的最后一个非受信任地址。 |
 
 :::note
 
