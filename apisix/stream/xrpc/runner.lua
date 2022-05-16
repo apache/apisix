@@ -14,26 +14,100 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
+local expr = require("resty.expr.v1")
 local pairs = pairs
 local ngx = ngx
 local ngx_now = ngx.now
 local OK = ngx.OK
 local DECLINED = ngx.DECLINED
 local DONE = ngx.DONE
+local pcall = pcall
+local ipairs = ipairs
+local tostring = tostring
 
+local logger_expr_cache = core.lrucache.new({
+    ttl = 300, count = 1024
+})
 
 local _M = {}
 
 
 local function open_session(conn_ctx)
     conn_ctx.xrpc_session = {
-        _upstream_conf = conn_ctx.matched_upstream,
+        conn_ctx = conn_ctx,
+        route = conn_ctx.matched_route.value,
         -- fields start with '_' should not be accessed by the protocol implementation
-        _route = conn_ctx.matched_route.value,
+        _upstream_conf = conn_ctx.matched_upstream,
         _ctxs = {},
     }
     return conn_ctx.xrpc_session
+end
+
+
+local function put_req_ctx(session, ctx)
+    local id = ctx._id
+    session._ctxs[id] = nil
+
+    core.ctx.release_vars(ctx)
+
+    core.tablepool.release("xrpc_ctxs", ctx)
+end
+
+
+local function filter_logger(ctx, logger)
+    if not logger then
+       return false
+    end
+
+    if not logger.filter or #logger.filter == 0 then
+        -- no valid filter, default execution plugin
+        return true
+    end
+
+    local version = tostring(logger.filter)
+    local filter_expr, err = logger_expr_cache(ctx.conf_id, version, expr.new, logger.filter)
+    if not filter_expr or err then
+        core.log.error("failed to validate the 'filter' expression: ", err)
+        return false
+    end
+    return filter_expr:eval(ctx)
+end
+
+
+local function run_log_plugin(ctx, logger)
+    local pkg_name = "apisix.stream.plugins." .. logger.name
+    local ok, plugin = pcall(require, pkg_name)
+    if not ok then
+        core.log.error("failed to load plugin [", logger.name, "] err: ", plugin)
+        return
+    end
+
+    local log_func = plugin.log
+    if log_func then
+        log_func(logger.conf, ctx)
+    end
+end
+
+
+local function finialize_req(protocol, session, ctx)
+    ctx._rpc_end_time = ngx_now()
+
+    local loggers = session.route.protocol.logger
+    if loggers and #loggers > 0 then
+        for _, logger in ipairs(loggers) do
+            ctx.conf_id = tostring(logger.conf)
+            local matched = filter_logger(ctx, logger)
+            core.log.info("log filter: ", logger.name, " filter result: ", matched)
+            if matched then
+                run_log_plugin(ctx, logger)
+            end
+        end
+    end
+
+    protocol.log(session, ctx)
+    put_req_ctx(session, ctx)
 end
 
 
@@ -43,7 +117,7 @@ local function close_session(session, protocol)
         upstream_ctx.closed = true
 
         local up = upstream_ctx.upstream
-        protocol.disconnect_upstream(session, up, upstream_ctx.broken)
+        protocol.disconnect_upstream(session, up)
     end
 
     local upstream_ctxs = session._upstream_ctxs
@@ -52,29 +126,15 @@ local function close_session(session, protocol)
             upstream_ctx.closed = true
 
             local up = upstream_ctx.upstream
-            protocol.disconnect_upstream(session, up, upstream_ctx.broken)
+            protocol.disconnect_upstream(session, up)
         end
     end
 
-    for id in pairs(session._ctxs) do
+    for id, ctx in pairs(session._ctxs) do
         core.log.notice("RPC is not finished, id: ", id)
+        ctx.unfinished = true
+        finialize_req(protocol, session, ctx)
     end
-end
-
-
-local function put_req_ctx(session, ctx)
-    local id = ctx._id
-    session._ctxs[id] = nil
-
-    core.tablepool.release("xrpc_ctxs", ctx)
-end
-
-
-local function finish_req(protocol, session, ctx)
-    ctx._rpc_end_time = ngx_now()
-
-    protocol.log(session, ctx)
-    put_req_ctx(session, ctx)
 end
 
 
@@ -106,7 +166,6 @@ local function open_upstream(protocol, session, ctx)
 
     local up_ctx = {
         upstream = upstream,
-        broken = false,
         closed = false,
     }
     if key then
@@ -125,7 +184,7 @@ local function start_upstream_coroutine(session, protocol, downstream, up_ctx)
         local status, ctx = protocol.from_upstream(session, downstream, upstream)
         if status ~= OK then
             if ctx ~= nil then
-                finish_req(protocol, session, ctx)
+                finialize_req(protocol, session, ctx)
             end
 
             if status == DECLINED then
@@ -152,7 +211,7 @@ function _M.run(protocol, conn_ctx)
         local status, ctx = protocol.from_downstream(session, downstream)
         if status ~= OK then
             if ctx ~= nil then
-                finish_req(protocol, session, ctx)
+                finialize_req(protocol, session, ctx)
             end
 
             if status == DECLINED then
@@ -170,7 +229,7 @@ function _M.run(protocol, conn_ctx)
         local status, up_ctx = open_upstream(protocol, session, ctx)
         if status ~= OK then
             if ctx ~= nil then
-                finish_req(protocol, session, ctx)
+                finialize_req(protocol, session, ctx)
             end
 
             break
@@ -179,11 +238,10 @@ function _M.run(protocol, conn_ctx)
         status = protocol.to_upstream(session, ctx, downstream, up_ctx.upstream)
         if status ~= OK then
             if ctx ~= nil then
-                finish_req(protocol, session, ctx)
+                finialize_req(protocol, session, ctx)
             end
 
             if status == DECLINED then
-                up_ctx.broken = true
                 break
             end
 

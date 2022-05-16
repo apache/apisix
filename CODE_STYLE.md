@@ -122,7 +122,7 @@ end
 if a == 1 then
     foo()
 
-elseif a== 2 then
+elseif a == 2 then
     bar()
 
 elseif a == 3 then

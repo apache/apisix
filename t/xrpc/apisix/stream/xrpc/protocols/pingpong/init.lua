@@ -160,6 +160,7 @@ function _M.from_downstream(session, downstream)
     if typ == TYPE_UNARY_DYN_UP then
         ctx.len = ctx.len + 4
     end
+
     return OK, ctx
 end
 
@@ -189,11 +190,9 @@ function _M.connect_upstream(session, ctx)
 end
 
 
-function _M.disconnect_upstream(session, upstream, upstream_broken)
+function _M.disconnect_upstream(session, upstream)
     -- disconnect upstream created by connect_upstream
-    -- the upstream_broken flag is used to indicate whether the upstream is
-    -- already broken
-    sdk.disconnect_upstream(upstream, session.upstream_conf, upstream_broken)
+    sdk.disconnect_upstream(upstream, session.upstream_conf)
 end
 
 
@@ -277,7 +276,7 @@ end
 
 
 function _M.log(session, ctx)
-    core.log.info("call pingpong's log")
+    core.log.info("call pingpong's log, ctx unfinished: ", ctx.unfinished == true)
 end
 
 

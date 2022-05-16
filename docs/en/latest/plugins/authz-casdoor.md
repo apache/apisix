@@ -85,3 +85,22 @@ Once you have enabled the Plugin, a new user visiting this Route would first be 
 After successfully logging in, Casdoor will redirect this user to the `callback_url` with GET parameters `code` and `state` specified. The Plugin will also request for an access token and confirm whether the user is really logged in. This process is only done once and subsequent requests are left uninterrupted.
 
 Once this is done, the user is redirected to the original URL they wanted to visit.
+
+## Disable Plugin
+
+To disable the `authz-casdoor` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/anything/*",
+    "plugins": {},
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.org:80": 1
+        }
+    }
+}'
+```

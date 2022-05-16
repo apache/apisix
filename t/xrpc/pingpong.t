@@ -152,6 +152,9 @@ pp\x01\x00\x00\x00\x00\x00\x00\x00"
 "pp\x02\x00\x00\x00\x00\x00\x00\x03ABC" x 3
 --- response_body eval
 "pp\x02\x00\x00\x00\x00\x00\x00\x03ABC" x 3
+--- log_level: debug
+--- no_error_log
+stream lua tcp socket set keepalive
 --- stream_conf_enable
 
 
@@ -356,6 +359,7 @@ passed
 "pp\x03\x00\x02\x00\x00\x00\x00\x04ABCD"
 --- error_log
 RPC is not finished
+call pingpong's log, ctx unfinished: true
 --- no_error_log
 [error]
 
@@ -407,6 +411,12 @@ RPC is not finished
 "pp\x03\x00\x03\x00\x00\x00\x00\x03ABC" .
 "pp\x03\x00\x02\x00\x00\x00\x00\x02AB" .
 "pp\x03\x00\x01\x00\x00\x00\x00\x01A"
+--- grep_error_log eval
+qr/call pingpong's log, ctx unfinished: \w+/
+--- grep_error_log_out
+call pingpong's log, ctx unfinished: false
+call pingpong's log, ctx unfinished: false
+call pingpong's log, ctx unfinished: false
 
 
 

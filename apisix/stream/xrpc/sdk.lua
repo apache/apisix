@@ -72,19 +72,13 @@ end
 
 
 ---
--- Returns disconnected xRPC upstream socket according to the configuration
+-- Disconnect xRPC upstream socket according to the configuration
 --
 -- @function xrpc.sdk.disconnect_upstream
 -- @tparam table upstream xRPC upstream socket
 -- @tparam table up_conf upstream configuration
--- @tparam boolean upstream_broken whether the upstream is already broken
-function _M.disconnect_upstream(upstream, up_conf, upstream_broken)
-    if upstream_broken then
-        upstream:close()
-    else
-        -- TODO: support keepalive according to the up_conf
-        upstream:setkeepalive()
-    end
+function _M.disconnect_upstream(upstream, up_conf)
+    return upstream:close()
 end
 
 
@@ -108,6 +102,9 @@ function _M.get_req_ctx(session, id)
     local ctx = core.tablepool.fetch("xrpc_ctxs", 4, 4)
     -- fields start with '_' should not be accessed by the protocol implementation
     ctx._id = id
+    core.ctx.set_vars_meta(ctx)
+    ctx.conf_type = "xrpc-" .. session.route.protocol.name .. "-logger"
+
     session._ctxs[id] = ctx
 
     ctx._rpc_start_time = ngx_now()
@@ -125,8 +122,8 @@ end
 -- @treturn table the new router under the specific protocol
 -- @treturn string the new router version
 function _M.get_router(session, version)
-    local protocol_name = session._route.protocol.name
-    local id = session._route.id
+    local protocol_name = session.route.protocol.name
+    local id = session.route.id
 
     local items, conf_version = router.routes()
     if version == conf_version then

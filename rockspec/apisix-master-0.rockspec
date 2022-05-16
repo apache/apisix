@@ -54,7 +54,7 @@ dependencies = {
     "jsonschema = 0.9.8",
     "lua-resty-ipmatcher = 0.6.1",
     "lua-resty-kafka = 0.07",
-    "lua-resty-logger-socket = 2.0-0",
+    "lua-resty-logger-socket = 2.0.1-0",
     "skywalking-nginx-lua = 0.6.0",
     "base64 = 1.5-2",
     "binaryheap = 0.4",
@@ -67,7 +67,7 @@ dependencies = {
     "luasec = 0.9-1",
     "lua-resty-consul = 0.3-2",
     "penlight = 1.9.2-1",
-    "ext-plugin-proto = 0.4.0",
+    "ext-plugin-proto = 0.5.0",
     "casbin = 1.26.0",
     "api7-snowflake = 2.0-1",
     "inspect == 3.1.1",
@@ -76,7 +76,8 @@ dependencies = {
     "opentelemetry-lua = 0.1-3",
     "net-url = 0.9-1",
     "xml2lua = 1.5-2",
-    "nanoid = 0.1-1"
+    "nanoid = 0.1-1",
+    "lua-resty-mediador = 0.1.2-1"
 }
 
 build = {

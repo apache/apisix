@@ -285,7 +285,7 @@ etcd:
   #password: 5tHkHhYkjr6cQY       # root password for etcd
   tls:
     # To enable etcd client certificate you need to build APISIX-Base, see
-    # https://apisix.apache.org/docs/apisix/how-to-build/#step-6-build-openresty-for-apache-apisix
+    # https://apisix.apache.org/docs/apisix/FAQ#how-do-i-build-the-apisix-base-environment?
     #cert: /path/to/cert          # path of certificate used by the etcd client
     #key: /path/to/key            # path of key used by the etcd client
 
@@ -402,6 +402,7 @@ plugins:                          # plugin list (sorted by priority)
   - openwhisk                      # priority: -1901
   - serverless-post-function       # priority: -2000
   - ext-plugin-post-req            # priority: -3000
+  - ext-plugin-post-resp           # priority: -4000
 
 stream_plugins: # sorted by priority
   - ip-restriction                 # priority: 3000
@@ -434,7 +435,7 @@ plugin_attr:
     resource:
       service.name: APISIX
     collector:
-      address: 127.0.0.1:4317
+      address: 127.0.0.1:4318
       request_timeout: 3
       request_headers:
         Authorization: token
