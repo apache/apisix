@@ -38,6 +38,24 @@ message CmdPing {
 message CmdEmpty {}
 
 /**
+ * Get the offset of the specified topic partition from Apache Kafka.
+ */
+message CmdKafkaListOffset {
+    string topic = 1;
+    int32 partition = 2;
+    int64 timestamp = 3;
+}
+
+/**
+ * Fetch messages of the specified topic partition from Apache Kafka.
+ */
+message CmdKafkaFetch {
+    string topic = 1;
+    int32 partition = 2;
+    int64 offset = 3;
+}
+
+/**
  * Client request definition for pubsub scenarios
  *
  * The sequence field is used to associate requests and responses.
@@ -55,8 +73,10 @@ message CmdEmpty {}
 message PubSubReq {
     int64 sequence = 1;
     oneof req {
-        CmdEmpty cmd_empty = 31;
-        CmdPing cmd_ping = 32;
+        CmdEmpty cmd_empty                       = 31;
+        CmdPing cmd_ping                         = 32;
+        CmdKafkaFetch      cmd_kafka_fetch       = 33;
+        CmdKafkaListOffset cmd_kafka_list_offset = 34;
     };
 }
 
@@ -64,7 +84,7 @@ message PubSubReq {
  * The response body of the service when an error occurs,
  * containing the error code and the error message.
  */
- message ErrorResp {
+message ErrorResp {
     int32 code = 1;
     string message = 2;
 }
@@ -75,6 +95,31 @@ message PubSubReq {
  */
 message PongResp {
     bytes state = 1;
+}
+
+/**
+ * The definition of a message in Kafka with the current message
+ * offset, production timestamp, Key, and message content.
+ */
+message KafkaMessage {
+    int64 offset = 1;
+    int64 timestamp = 2;
+    bytes key = 3;
+    bytes value = 4;
+}
+
+/**
+ * The response of Fetch messages from Apache Kafka.
+ */
+message KafkaFetchResp {
+    repeated KafkaMessage messages = 1;
+}
+
+/**
+ * The response of list offset from Apache Kafka.
+ */
+message KafkaListOffsetResp {
+    int64 offset = 1;
 }
 
 /**
@@ -90,7 +135,9 @@ message PongResp {
 message PubSubResp {
     int64 sequence = 1;
     oneof resp {
-        ErrorResp error_resp = 31;
-        PongResp pong_resp = 32;
+        ErrorResp error_resp                       = 31;
+        PongResp pong_resp                         = 32;
+        KafkaFetchResp kafka_fetch_resp            = 33;
+        KafkaListOffsetResp kafka_list_offset_resp = 34;
     };
 }
