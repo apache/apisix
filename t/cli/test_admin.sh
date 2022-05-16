@@ -100,6 +100,7 @@ echo "passed: rollback to the default admin config"
 
 echo "
 apisix:
+    enable_admin: true
     allow_admin:
         - 127.0.0.9
 " > conf/config.yaml
@@ -114,6 +115,7 @@ fi
 
 echo "
 apisix:
+    enable_admin: true
     allow_admin:
         - 127.0.0.0/8
 " > conf/config.yaml
@@ -128,6 +130,7 @@ fi
 
 echo "
 apisix:
+    enable_admin: true
     allow_admin:
         - ::1
 " > conf/config.yaml
@@ -142,6 +145,7 @@ fi
 
 echo "
 apisix:
+    enable_admin: true
     allow_admin:
         - ::1/128
 " > conf/config.yaml
