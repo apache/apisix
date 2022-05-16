@@ -111,7 +111,7 @@ passed
                         name = "redis",
                         conf = {
                             faults = {
-                                {delay = 0.01, commands = {"hmset", "hmget"}},
+                                {delay = 0.01, commands = {"hmset", "hmget", "ping"}},
                             }
                         },
                         logger = {
@@ -176,13 +176,26 @@ passed
             end
 
             ngx.say("hmget animals: ", res)
+
+            -- test for only one command in cmd_line
+            local res, err = red:ping()
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            ngx.say("ping: ", string.lower(res))
         }
     }
 --- response_body
 hmset animals: OK
 hmget animals: barkmeow
+ping: pong
 --- stream_conf_enable
 --- wait: 1
---- error_log eval
-[qr/message received:.*\"redis_cmd_line\\"\:\\\"hmset/,
-qr/message received:.*\"redis_cmd_line\\"\:\\\"hmget/]
+--- grep_error_log eval
+qr/message received:.*\"redis_cmd_line\\"\:[^,]+/
+--- grep_error_log_out eval
+[qr/message received:.*\"redis_cmd_line\\"\:\\\"hmset animals dog bark cat meow\\\"/,
+qr/message received:.*\"redis_cmd_line\\"\:\\\"hmget animals dog cat\\\"/,
+qr/message received:.*\"redis_cmd_line\\"\:\\\"ping\\\"/]
