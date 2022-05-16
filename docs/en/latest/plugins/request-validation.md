@@ -1,5 +1,11 @@
 ---
 title: request-validation
+keywords:
+  - APISIX
+  - Plugin
+  - Request Validation
+  - proxy-cache
+description: This document contains information about the Apache APISIX request-validation Plugin.
 ---
 
 <!--
@@ -23,25 +29,26 @@ title: request-validation
 
 ## Description
 
-`request-validation` plugin validates the requests before forwarding to an upstream service. The validation plugin uses
-json-schema to validate the schema. The plugin can be used to validate the headers and body data.
-
-For more information on schema, refer to [JSON schema](https://github.com/api7/jsonschema) for more information.
+The `request-validation` Plugin can be used to validate the requests before forwarding them to an Upstream service. This Plugin uses [JSON Schema](https://github.com/api7/jsonschema) for validation and can be used to validate the headers and body of the request.
 
 ## Attributes
 
-> Note that at least one of `header_schema` and `body_schema` must be filled in.
+| Name          | Type    | Required | Default | Valid values  | Description                                       |
+|---------------|---------|----------|---------|---------------|---------------------------------------------------|
+| header_schema | object  | False    |         |               | Schema for the request header data.               |
+| body_schema   | object  | False    |         |               | Schema for the request body data.                 |
+| rejected_code | integer | False    | 400     | [200,...,599] | Status code to show when the request is rejected. |
+| rejected_msg  | string  | False    |         |               | Message to show when the request is rejected.     |
 
-| Name             | Type   | Requirement | Default | Valid | Description                |
-| ---------------- | ------ | ----------- | ------- | ----- | -------------------------- |
-| header_schema    | object | optional    |         |       | schema for the header data |
-| body_schema      | object | optional    |         |       | schema for the body data   |
-| rejected_code | integer | optional    |   400      |    [200,...,599]   | the custom rejected code |
-| rejected_msg | string | optional    |         |       | the custom rejected message |
+:::note
 
-## How To Enable
+At least one of `header_schema` or `body_schema` should be filled in.
 
-Create a route and enable the request-validation plugin on the route:
+:::
+
+## Enabling the Plugin
+
+You can configure the Plugin on a specific Route as shown below:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -55,9 +62,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
                 "properties": {
                     "required_payload": {"type": "string"},
                     "boolean_payload": {"type": "boolean"}
-                }
-            },
-            "rejected_msg": "customize reject message"
+                },
+                "rejected_msg": "customize reject message"
+            }
         }
     },
     "upstream": {
@@ -69,40 +76,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+The examples below shows how you can configure this Plugin for different validation scenarios:
 
-```shell
-curl --header "Content-Type: application/json" \
-  --request POST \
-  --data '{"boolean-payload":true,"required_payload":"hello"}' \
-  http://127.0.0.1:9080/get
-```
-
-If the schema is violated the plugin will yield a `400` bad request with the reject response.
-
-## Disable Plugin
-
-Remove the corresponding json configuration in the plugin configuration to disable the `request-validation`.
-APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "uri": "/get",
-    "plugins": {
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:8080": 1
-        }
-    }
-}'
-```
-
-## Examples:
-
-**`Enum` validate:**
+Enum validation:
 
 ```json
 {
@@ -120,7 +96,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-**`Boolean` validate:**
+Boolean validation:
 
 ```json
 {
@@ -137,7 +113,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-**`Number` or `Integer` validate:**
+Number or Integer validation:
 
 ```json
 {
@@ -155,7 +131,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-**`String` validate:**
+String validation:
 
 ```json
 {
@@ -173,7 +149,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-**`Regex` validate:**
+Regular expression validation:
 
 ```json
 {
@@ -192,7 +168,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-**`Array` validate:**
+Array validation:
 
 ```json
 {
@@ -216,7 +192,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-**Multi-field combination verification:**
+Combined validation:
 
 ```json
 {
@@ -249,7 +225,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-**Custom rejected message:**
+Custom rejection message:
 
 ```json
 {
@@ -262,9 +238,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
         "properties": {
           "required_payload": {"type": "string"},
           "boolean_payload": {"type": "boolean"}
-        }
-      },
-      "rejected_msg": "customize reject message"
+        },
+        "rejected_msg": "customize reject message"
+      }
     }
   },
   "upstream": {
@@ -274,4 +250,36 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
     }
   }
 }
+```
+
+## Example usage
+
+Once you have configured the Plugin, it will only allow requests that are valid based on the configuration to reach the Upstream service. If not, the requests are rejected with a 400 or a custom status code you configured.
+
+A valid request for the above configuration could look like this:
+
+```shell
+curl --header "Content-Type: application/json" \
+  --request POST \
+  --data '{"boolean-payload":true,"required_payload":"hello"}' \
+  http://127.0.0.1:9080/get
+```
+
+## Disable Plugin
+
+To disable the `request-validation` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/get",
+    "plugins": {
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:8080": 1
+        }
+    }
+}'
 ```
