@@ -39,5 +39,6 @@ List in alphabetical order:
 | route_name       | core    | name of `route`        |   |
 | service_id       | core    | id of `service`        |   |
 | service_name     | core    | name of `service`      |   |
+| rpc_time         | xRPC    | time spent at the rpc request level |   |
 
 You can also [register your own variable](./plugin-develop.md#register-custom-variable).

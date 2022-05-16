@@ -220,7 +220,7 @@ failed to validate the 'filter' expression: rule too short
                             {
                                 name = "syslog",
                                 filter = {
-                                    {"len", ">", 10}
+                                    {"rpc_len", ">", 10}
                                 },
                                 conf = {}
                             }
@@ -272,7 +272,7 @@ log filter: syslog filter result: true
                             {
                                 name = "syslog",
                                 filter = {
-                                    {"len", "<", 10}
+                                    {"rpc_len", "<", 10}
                                 },
                                 conf = {}
                             }
@@ -324,8 +324,8 @@ log filter: syslog filter result: false
                             {
                                 name = "syslog",
                                 filter = {
-                                    {"len", ">", 12},
-                                    {"len", "<", 14}
+                                    {"rpc_len", ">", 12},
+                                    {"rpc_len", "<", 14}
                                 },
                                 conf = {}
                             }
@@ -377,8 +377,8 @@ log filter: syslog filter result: true
                             {
                                 name = "syslog",
                                 filter = {
-                                    {"len", "<", 10},
-                                    {"len", ">", 12}
+                                    {"rpc_len", "<", 10},
+                                    {"rpc_len", ">", 12}
                                 },
                                 conf = {}
                             }
@@ -516,7 +516,7 @@ qr/message received:.*\"client_ip\\"\:\\"127.0.0.1\\"/
                             {
                                 name = "syslog",
                                 filter = {
-                                    {"len", ">", 10}
+                                    {"rpc_len", ">", 10}
                                 },
                                 conf = {
                                     host = "127.0.0.1",
@@ -576,7 +576,7 @@ qr/message received:.*\"client_ip\\"\:\\"127.0.0.1\\"/
                             {
                                 name = "syslog",
                                 filter = {
-                                    {"len", ">", 10}
+                                    {"rpc_len", ">", 10}
                                 },
                                 conf = {
                                     host = "127.0.0.1",
@@ -650,7 +650,7 @@ unlock with key xrpc-pingpong-logger#table
                             {
                                 name = "syslog",
                                 filter = {
-                                    {"len", ">", 10}
+                                    {"rpc_len", ">", 10}
                                 },
                                 conf = {
                                     host = "127.0.0.1",
@@ -698,7 +698,7 @@ unlock with key xrpc-pingpong-logger#table
                             {
                                 name = "syslog",
                                 filter = {
-                                    {"len", ">", 10}
+                                    {"rpc_len", ">", 10}
                                 },
                                 conf = {
                                     host = "127.0.0.1",
