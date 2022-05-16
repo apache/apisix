@@ -30,14 +30,16 @@ description: This document contains information about the Apache APISIX kafka pu
 
 Connecting to Apache Kafka in Apache APISIX is very simple.
 
-Currently we provide a simpler way to integrate by combining two APIs, ListOffsets and Fetch, to quickly implement the ability to pull Kafka messages, but do not support Apache Kafka's consumer group feature for now, and cannot be managed by Kafka for offsets.
+Currently, we provide a simpler way to integrate by combining two APIs, ListOffsets and Fetch, to quickly implement the ability to pull Kafka messages. Still, they do not support Apache Kafka's consumer group feature for now and cannot be managed for offsets by Apache Kafka.
 
 ### Limitations
 
 - Offsets need to be managed manually
+
 They can be stored by a custom backend service or obtained via the list_offset command before starting to fetch the message, which can use timestamp to get the starting offset, or to get the initial and end offsets.
 
 - Unsupported batch data acquisition
+
 A single instruction can only obtain the data of a Topic Partition, does not support batch data acquisition through a single instruction
 
 ### Prepare
