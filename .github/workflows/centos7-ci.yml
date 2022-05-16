@@ -29,8 +29,8 @@ jobs:
       matrix:
         test_dir:
           - t/plugin
-          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc t/pubsub
-          - t/node t/router t/script t/stream-node t/utils t/wasm t/xds-library
+          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc
+          - t/node t/pubsub t/router t/script t/stream-node t/utils t/wasm t/xds-library
 
     steps:
     - name: Check out code

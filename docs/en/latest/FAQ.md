@@ -102,6 +102,10 @@ make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 
 If this does not solve your problem, you can try getting a detailed log by using the `--verbose` flag to diagnose the problem.
 
+## How do I build the APISIX-Base environment?
+
+Some functions need to introduce additional NGINX modules, which requires APISIX to run on APISIX-Base. If you need these functions, you can refer to the code in [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) to build your own APISIX-Base environment.
+
 ## How can I make a gray release with Apache APISIX?
 
 Let's take an example query `foo.com/product/index.html?id=204&page=2` and consider that you need to make a gray release based on the `id` in the query string with this condition:

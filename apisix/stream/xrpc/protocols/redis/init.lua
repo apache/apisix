@@ -153,7 +153,12 @@ local function read_req(session, sk)
     end
 
     local s = ffi_str(p, n)
-    cmd_line[1] = s
+    local cmd = s:lower()
+    cmd_line[1] = cmd
+
+    if cmd == "subscribe" or cmd == "psubscribe" then
+        session.in_pub_sub = true
+    end
 
     local key_finder
     local matcher = session.matcher
@@ -209,7 +214,7 @@ local function read_req(session, sk)
     session.req_id_seq = session.req_id_seq + 1
     local ctx = sdk.get_req_ctx(session, session.req_id_seq)
     ctx.cmd_line = cmd_line
-    ctx.cmd = ctx.cmd_line[1]
+    ctx.cmd = cmd
 
     local pipelined = sk:has_pending_data()
 
@@ -228,7 +233,37 @@ local function read_req(session, sk)
 end
 
 
-local function read_reply(sk)
+local function read_subscribe_reply(sk)
+    local line, err, n = read_line(sk)
+    if not line then
+        return nil, err
+    end
+
+    local prefix = line[0]
+
+    if prefix == PREFIX_STR then    -- char '$'
+        local size = tonumber(ffi_str(line + 1, n - 1))
+        if size < 0 then
+            return true
+        end
+
+        local p, err = sk:read(size + 2)
+        if not p then
+            return nil, err
+        end
+
+        return ffi_str(p, size)
+
+    elseif prefix == PREFIX_INT then    -- char ':'
+        return tonumber(ffi_str(line + 1, n - 1))
+
+    else
+        return nil, str_fmt("unknown prefix: \"%s\"", prefix)
+    end
+end
+
+
+local function read_reply(sk, session)
     local line, err, n = read_line(sk)
     if not line then
         return nil, err
@@ -263,12 +298,49 @@ local function read_reply(sk)
             return true
         end
 
-        for i = 1, narr do
+        if session and session.in_pub_sub and (narr == 3 or narr == 4) then
+            local msg_type, err = read_subscribe_reply(sk)
+            if msg_type == nil then
+                return nil, err
+            end
+
+            session.pub_sub_msg_type = msg_type
+
             local res, err = read_reply(sk)
             if res == nil then
                 return nil, err
             end
+
+            if msg_type == "unsubscribe" or msg_type == "punsubscribe" then
+                local n_ch, err = read_subscribe_reply(sk)
+                if n_ch == nil then
+                    return nil, err
+                end
+
+                if n_ch == 0 then
+                    session.in_pub_sub = -1
+                    -- clear this flag later at the end of `handle_reply`
+                end
+
+            else
+                local n = msg_type == "pmessage" and 2 or 1
+                for i = 1, n do
+                    local res, err = read_reply(sk)
+                    if res == nil then
+                        return nil, err
+                    end
+                end
+            end
+
+        else
+            for i = 1, narr do
+                local res, err = read_reply(sk)
+                if res == nil then
+                    return nil, err
+                end
+            end
         end
+
         return true
 
     elseif prefix == PREFIX_INT then    -- char ':'
@@ -286,14 +358,31 @@ end
 
 
 local function handle_reply(session, sk)
-    local ok, err = read_reply(sk)
+    local ok, err = read_reply(sk, session)
     if not ok then
         return nil, err
     end
 
-    -- TODO: don't update resp_id_seq if the reply is subscribed msg
-    session.resp_id_seq = session.resp_id_seq + 1
-    local ctx = sdk.get_req_ctx(session, session.resp_id_seq)
+    local ctx
+    if session.in_pub_sub and session.pub_sub_msg_type then
+        local msg_type = session.pub_sub_msg_type
+        session.pub_sub_msg_type = nil
+        if session.resp_id_seq < session.req_id_seq then
+            local cur_ctx = sdk.get_req_ctx(session, session.resp_id_seq + 1)
+            local cmd = cur_ctx.cmd
+            if cmd == msg_type then
+                ctx = cur_ctx
+                session.resp_id_seq = session.resp_id_seq + 1
+            end
+        end
+
+        if session.in_pub_sub == -1 then
+            session.in_pub_sub = nil
+        end
+    else
+        session.resp_id_seq = session.resp_id_seq + 1
+        ctx = sdk.get_req_ctx(session, session.resp_id_seq)
+    end
 
     return ctx
 end
@@ -371,7 +460,7 @@ end
 
 function _M.from_upstream(session, downstream, upstream)
     local ctx, err = handle_reply(session, upstream)
-    if ctx == nil then
+    if err then
         core.log.error("failed to handle upstream: ", err)
         return DECLINED
     end

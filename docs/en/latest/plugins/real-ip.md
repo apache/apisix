@@ -35,16 +35,17 @@ This is more flexible but functions similarly to Nginx's [ngx_http_realip_module
 
 :::info IMPORTANT
 
-This Plugin requires APISIX to run on [APISIX-Base](../how-to-build.md#step-6-build-openresty-for-apache-apisix).
+This Plugin requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-the-apisix-base-environment?).
 
 :::
 
 ## Attributes
 
-| Name              | Type          | Required | Valid values                                                    | Description                                                                       |
-|-------------------|---------------|----------|-----------------------------------------------------------------|-----------------------------------------------------------------------------------|
-| source            | string        | True     | Any Nginx variable like `arg_realip` or `http_x_forwarded_for`. | Dynamically sets the client's IP address and an optional port from APISIX's view. |
-| trusted_addresses | array[string] | False    | List of IPs or CIDR ranges.                                     | Dynamically sets the `set_real_ip_from` field.                                    |
+| Name              | Type          | Required | Valid values                                                    | Description                                                                                                                                                                                                                                                                                                                                                |
+|-------------------|---------------|----------|-----------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| source            | string        | True     | Any Nginx variable like `arg_realip` or `http_x_forwarded_for`. | Dynamically sets the client's IP address and an optional port from APISIX's view.                                                                                                                                                                                                                                                                          |
+| trusted_addresses | array[string] | False    | List of IPs or CIDR ranges.                                     | Dynamically sets the `set_real_ip_from` field.                                                                                                                                                                                                                                                                                                             |
+| recursive         | boolean       | False    | True to enable, false to disable, default is false              | If recursive search is disabled, the original client address that matches one of the trusted addresses is replaced by the last address sent in the configured `source`. If recursive search is enabled, the original client address that matches one of the trusted addresses is replaced by the last non-trusted address sent in the configured `source`. |
 
 :::note
 

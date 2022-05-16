@@ -427,3 +427,50 @@ passed
 GET /hello
 --- more_headers
 X-Forwarded-For: 1.1.1.1
+
+
+
+=== TEST 22: X-Forwarded-For and recursive
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "real-ip": {
+                            "trusted_addresses": ["192.128.0.0/16", "127.0.0.0/24"],
+                            "source": "http_x_forwarded_for",
+                            "recursive": true
+                        },
+                        "ip-restriction": {
+                            "whitelist": ["1.1.1.1"]
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 23: hit
+--- request
+GET /hello
+--- more_headers
+X-Forwarded-For: 1.1.1.1, 192.128.1.1, 127.0.0.1
