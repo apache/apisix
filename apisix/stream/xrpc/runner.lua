@@ -50,6 +50,8 @@ local function put_req_ctx(session, ctx)
     local id = ctx._id
     session._ctxs[id] = nil
 
+    core.ctx.release_vars(ctx)
+
     core.tablepool.release("xrpc_ctxs", ctx)
 end
 
