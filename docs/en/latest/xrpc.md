@@ -131,6 +131,47 @@ One specifies the `superior_id`, whose corresponding value is the ID of another 
 
 For example, for the Dubbo RPC protocol, the subordinate route is matched based on the service_name and other parameters configured in the route and the actual service_name brought in the request. If the match is successful, the configuration above the subordinate route is used, otherwise the configuration of the superior route is still used. In the above example, if the match for route 2 is successful, it will be forwarded to upstream 2; otherwise, it will still be forwarded to upstream 1.
 
+### Log Reporting
+
+xRPC supports logging-related functions. You can use this feature to filter requests that require attention, such as high latency, excessive transfer content, etc.
+
+Each logger item configuration parameter will contain
+
+- name: the Logger plugin name,
+- filter: the prerequisites for the execution of the logger plugin(e.g., request processing time exceeding a given value),
+- conf: the configuration of the logger plugin itself.
+
+ The following configuration is an example:
+
+```json
+{
+    ...
+    "protocol": {
+        "name": "redis",
+        "logger": {
+            {
+                "name": "syslog",
+                "filter": [
+                    ["rpc_time", ">=", 0.01]
+                ],
+                "conf": {
+                    "host": "127.0.0.1",
+                    "port": 8125,
+                }
+            }
+        }
+    }
+}
+```
+
+This configuration means that when the `rpc_time` is greater than 0.01 seconds, xPRC reports the request log to the log server via the `syslog` plugin. `conf` is the configuration of the logging server required by the `syslog` plugin.
+
+Unlike standard TCP proxies, which only execute a logger when the connection is closed, xRPC's executed logger at the end of each 'request'.
+
+The protocol itself defines the granularity of the specific request, and the xRPC extension code implements the request's granularity.
+
+For example, in the Redis protocol, the execution of a command is considered a request.
+
 ## How to write your own protocol
 
 Assuming that your protocol is named `my_proto`, you need to create a directory that can be introduced by `require "apisix.stream.xrpc.protocols.my_proto"`.
