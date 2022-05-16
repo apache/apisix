@@ -303,6 +303,21 @@ do
             local requests = keepalive_pool.requests
 
             pool_opt.pool_size = size
+
+            local scheme = up_conf.scheme
+            -- other TLS schemes don't use http balancer keepalive
+            if (scheme == "https" or scheme == "grpcs") then
+                local pool = server.host .. "#" .. server.port
+                local sni = ctx.var.upstream_host
+                pool = pool .. "#" .. sni
+
+                if up_conf.tls and up_conf.tls.client_cert then
+                    pool = pool .. "#" .. up_conf.tls.client_cert
+                end
+
+                pool_opt.pool = pool
+            end
+
             local ok, err = balancer.set_current_peer(server.host, server.port,
                                                       pool_opt)
             if not ok then
