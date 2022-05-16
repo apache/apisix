@@ -32,7 +32,7 @@ description: 本文介绍了关于 Apache APISIX `gzip` 插件的基本信息及
 
 :::info IMPORTANT
 
-该插件要求 Apache APISIX 运行在 [APISIX-Base](../how-to-build.md#步骤-6-为-apache-apisix-构建-openresty) 上。
+该插件要求 Apache APISIX 运行在 [APISIX-Base](../FAQ.md#如何构建-APISIX-Base-环境？) 上。
 
 :::
 

@@ -376,9 +376,12 @@ _EOC_
         apisix.stream_init(args)
 _EOC_
 
+    my $stream_extra_init_by_lua = $block->stream_extra_init_by_lua // "";
+
     $stream_config .= <<_EOC_;
     init_by_lua_block {
         $stream_init_by_lua_block
+        $stream_extra_init_by_lua
     }
     init_worker_by_lua_block {
         apisix.stream_init_worker()

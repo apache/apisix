@@ -40,5 +40,6 @@ List in alphabetical order:
 | service_id       | core    | id of `service`        |   |
 | service_name     | core    | name of `service`      |   |
 | redis_cmd_line   | Redis   | the content of Redis command |   |
+| rpc_time         | xRPC    | time spent at the rpc request level |   |
 
 You can also [register your own variable](./plugin-develop.md#register-custom-variable).
