@@ -278,11 +278,12 @@ do
             else
                 local getter = apisix_var_names[key]
                 if getter then
+                    local ctx = t._ctx
                     if getter == true then
-                        val = ngx.ctx.api_ctx and ngx.ctx.api_ctx[key]
+                        val = ctx and ctx[key]
                     else
                         -- the getter is registered by ctx.register_var
-                        val = getter(ngx.ctx.api_ctx)
+                        val = getter(ctx)
                     end
 
                 else
@@ -341,6 +342,7 @@ function _M.set_vars_meta(ctx)
     end
 
     var._request = get_request()
+    var._ctx = ctx
     setmetatable(var, mt)
     ctx.var = var
 end

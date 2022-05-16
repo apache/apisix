@@ -29,6 +29,10 @@ local DONE = ngx.DONE
 local str_byte = string.byte
 
 
+core.ctx.register_var("rpc_len", function(ctx)
+    return ctx.len
+end)
+
 local _M = {}
 local router_version
 local router
