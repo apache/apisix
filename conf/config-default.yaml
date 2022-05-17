@@ -470,3 +470,4 @@ plugin_attr:
       connect: 60s
       read: 60s
       send: 60s
+  redirect_https_port: 8443   # the default port for use by HTTP redirects to HTTPS

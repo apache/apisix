@@ -24,7 +24,8 @@ local ipairs = ipairs
 local ngx = ngx
 local str_find = core.string.find
 local str_sub  = string.sub
-local tonumber = tonumber
+local type = type
+local math_random = math.random
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 100
@@ -148,7 +149,30 @@ function _M.rewrite(conf, ctx)
     core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
     local ret_code = conf.ret_code
-    local ret_port = tonumber(ctx.var["var_x_forwarded_port"])
+    local local_conf = core.config.local_conf()
+    local ret_port = core.table.try_read_attr(local_conf,
+            "plugin_attr",
+            "redirect_https_port")
+
+    if not ret_port then
+        local ssl = core.table.try_read_attr(local_conf,
+                "apisix",
+                "ssl")
+        if ssl and ssl["enable"] then
+            ret_port = ssl["listen_port"]
+            if not ret_port then
+                local ret_ports = ssl["listen"]
+                if ret_ports and #ret_ports > 0 then
+                    local idx = math_random(1, #ret_ports)
+                    ret_port = ret_ports[idx]
+                    if type(ret_port) == "table" then
+                        ret_port = ret_port.port
+                    end
+                end
+            end
+        end
+    end
+
     local uri = conf.uri
     local regex_uri = conf.regex_uri
 
