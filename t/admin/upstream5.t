@@ -59,3 +59,55 @@ __DATA__
     }
 --- response_body
 passed
+
+
+
+=== TEST 2: set upstream(empty tls)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local code, body = t.test("/apisix/admin/upstreams/kafka", ngx.HTTP_PUT, [[{
+                "nodes": {
+                    "127.0.0.1:9092": 1
+                },
+                "type": "none",
+                "scheme": "kafka",
+                "tls": {}
+            }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 3: set upstream(tls without verify)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local code, body = t.test("/apisix/admin/upstreams/kafka", ngx.HTTP_PUT, [[{
+                "nodes": {
+                    "127.0.0.1:9092": 1
+                },
+                "type": "none",
+                "scheme": "kafka",
+                "tls": {
+                    "verify": false
+                }
+            }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
