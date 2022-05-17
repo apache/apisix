@@ -179,7 +179,7 @@ local function init(env)
     if yaml_conf.apisix.enable_admin and yaml_conf.apisix.allow_admin then
         for _, allow_ip in ipairs(yaml_conf.apisix.allow_admin) do
             local _ip = cli_ip:new(allow_ip)
-            if _ip:is_loopback() then
+            if _ip and _ip:is_loopback() then
                 checked_admin_key = true
             end
         end

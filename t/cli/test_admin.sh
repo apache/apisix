@@ -160,6 +160,21 @@ fi
 
 echo "
 apisix:
+    enable_admin: true
+    allow_admin:
+        - all
+" > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "Please modify \"admin_key\" in conf/config.yaml"; then
+    echo "failed: should find tips modify \"admin_key\" in conf/config.yaml"
+    exit 1
+fi
+
+echo "passed: enable_admin and allow_admin in conf/config.yaml"
+
+echo "
+apisix:
     allow_admin: ~
 " > conf/config.yaml
 
