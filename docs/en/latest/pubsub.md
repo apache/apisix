@@ -2,7 +2,7 @@
 title: PubSub
 keywords:
   - APISIX
-  - Pub-Sub
+  - PubSub
 description: This document contains information about the Apache APISIX pubsub framework.
 ---
 
@@ -25,7 +25,7 @@ description: This document contains information about the Apache APISIX pubsub f
 #
 -->
 
-## What is Pub-Sub
+## What is PubSub
 
 Publish-subscribe is a messaging paradigm:
 
@@ -38,9 +38,13 @@ In Apache APISIX, the most common scenario is handling north-south traffic from 
 
 ## Architecture
 
-![pub-sub architecture](../../assets/images/pubsub-architecture.svg)
+![pubsub architecture](../../assets/images/pubsub-architecture.svg)
 
-Currently, Apache APISIX supports WebSocket communication with the client, which can be any application that supports WebSocket, with Protocol Buffer as the serialization mechanism, see the [protocol definition](../../../apisix/pubsub.proto).
+Currently, Apache APISIX supports WebSocket communication with the client, which can be any application that supports WebSocket, with Protocol Buffer as the serialization mechanism, see the [protocol definition](https://github.com/apache/apisix/blob/master/apisix/include/apisix/model/pubsub.proto).
+
+## Supported messaging systems
+
+- [Aapche Kafka](pubsub/kafka.md)
 
 ## How to support other messaging systems
 
