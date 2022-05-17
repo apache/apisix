@@ -27,6 +27,11 @@ local pcall = pcall
 local ipairs = ipairs
 local tostring = tostring
 
+
+core.ctx.register_var("rpc_time", function(ctx)
+    return ctx._rpc_end_time - ctx._rpc_start_time
+end)
+
 local logger_expr_cache = core.lrucache.new({
     ttl = 300, count = 1024
 })
@@ -50,6 +55,8 @@ local function put_req_ctx(session, ctx)
     local id = ctx._id
     session._ctxs[id] = nil
 
+    core.ctx.release_vars(ctx)
+
     core.tablepool.release("xrpc_ctxs", ctx)
 end
 
@@ -70,7 +77,7 @@ local function filter_logger(ctx, logger)
         core.log.error("failed to validate the 'filter' expression: ", err)
         return false
     end
-    return filter_expr:eval(ctx)
+    return filter_expr:eval(ctx.var)
 end
 
 
@@ -91,7 +98,6 @@ end
 
 local function finialize_req(protocol, session, ctx)
     ctx._rpc_end_time = ngx_now()
-
     local loggers = session.route.protocol.logger
     if loggers and #loggers > 0 then
         for _, logger in ipairs(loggers) do

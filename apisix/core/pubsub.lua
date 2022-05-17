@@ -123,6 +123,11 @@ function _M.new()
         cmd_handler = {},
     }, mt)
 
+    -- add default ping handler
+    obj:on("cmd_ping", function (params)
+        return { pong_resp = params }
+    end)
+
     return obj
 end
 
