@@ -173,7 +173,7 @@
           "items": [
             "plugins/dubbo-proxy",
             "plugins/mqtt-proxy",
-            "plugins/kafka-logger"
+            "plugins/kafka-proxy"
           ]
         }
       ]
