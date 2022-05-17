@@ -77,7 +77,7 @@ __DATA__
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: property \"upstream\" validation failed: property \"tls\" validation failed: property \"client_key\" is required"}
+{"error_msg":"invalid configuration: property \"upstream\" validation failed: property \"tls\" validation failed: property \"client_key\" is required when \"client_cert\" is set"}
 
 
 

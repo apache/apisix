@@ -92,3 +92,36 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/kafka' \
 ```
 
 After configuring the route, you can use this feature.
+
+#### Enabling TLS and SASL/PLAIN authentication
+
+Simply turn on the `kafka-proxy` plugin on the created route and enable the Kafka TLS handshake and SASL authentication through the configuration, which can be found in the [plugin documentation](../../../en/latest/plugins/kafka-proxy.md).
+
+```shell
+curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/kafka' \
+    -H 'X-API-KEY: <api-key>' \
+    -H 'Content-Type: application/json' \
+    -d '{
+    "uri": "/kafka",
+    "plugins": {
+        "kafka-proxy": {
+            "sasl": {
+                "username": "user",
+                "password": "pwd"
+            }
+        }
+    },
+    "upstream": {
+        "nodes": {
+            "kafka-server1:9092": 1,
+            "kafka-server2:9092": 1,
+            "kafka-server3:9092": 1
+        },
+        "type": "none",
+        "scheme": "kafka",
+        "tls": {
+            "verify": true
+        }
+    }
+}'
+```
