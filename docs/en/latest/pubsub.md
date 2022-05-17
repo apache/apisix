@@ -102,11 +102,11 @@ The kafka pubsub implementation [kafka.lua](https://github.com/apache/apisix/blo
 
 Add the required fields to the plugin schema definition and write them to the context of the current request in the `access` function.
 
-The `kafka-proxy` plugin [kafka-proxy.lua](https://github.com/apache/apisix/blob/master/apisix/plugins/kafka-proxy.lua). 
+The `kafka-proxy` plugin [kafka-proxy.lua](https://github.com/apache/apisix/blob/master/apisix/plugins/kafka-proxy.lua).
 
 Add this plugin to the list of plugins in the APISIX configuration file.
 
-The plugins list [config-default.yaml](https://github.com/apache/apisix/blob/master/conf/config-default.yaml). 
+The plugins list [config-default.yaml](https://github.com/apache/apisix/blob/master/conf/config-default.yaml).
 
 #### Results
 
