@@ -172,7 +172,8 @@
           "label": "Other Protocols",
           "items": [
             "plugins/dubbo-proxy",
-            "plugins/mqtt-proxy"
+            "plugins/mqtt-proxy",
+            "plugins/kafka-proxy"
           ]
         }
       ]
