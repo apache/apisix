@@ -25,11 +25,9 @@ local schema = {
             properties = {
                 username = {
                     type = "string",
-                    default = "",
                 },
                 password = {
                     type = "string",
-                    default = "",
                 },
             },
             required = {"username", "password"},
