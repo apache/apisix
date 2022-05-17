@@ -32,7 +32,7 @@ The `traffic-split` Plugin can be used to dynamically direct portions of traffic
 
 This is done by configuring `match`, which are custom rules for splitting traffic, and `weighted_upstreams` which is a set of Upstreams to direct traffic to.
 
-When a request is matched based on the `match` attribute configuration, it will be directed to the Upstreams based on their configured `weights`. You can also omit using the `match` attribute and direct all traffic based on `weighted_upstreams`. 
+When a request is matched based on the `match` attribute configuration, it will be directed to the Upstreams based on their configured `weights`. You can also omit using the `match` attribute and direct all traffic based on `weighted_upstreams`.
 
 :::note
 
