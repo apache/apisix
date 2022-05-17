@@ -46,7 +46,7 @@ The `redirect` Plugin can be used to configure redirects.
 Only one of `http_to_https`, `uri` and `regex_uri` can be configured.
 
 * When enabling `http_to_https`, the ports in the redirect URL will pick a value in the following order (in descending order of priority)
-  * Read `plugin_attr.redirect_https_port` from the configuration file.
+  * Read `plugin_attr.redirect_https_port` from the configuration file (`conf/config.yaml`).
   * If `apisix.ssl` is enabling, read `apisix.ssl.listen_port` first, and if it does not exist, read `apisix.ssl.listen` and select a random port from it.
   * Use 443 as the default https port.
 
