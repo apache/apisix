@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local plugin = require("apisix.plugin")
 local tab_insert = table.insert
 local tab_concat = table.concat
 local string_format = string.format
@@ -149,12 +150,14 @@ function _M.rewrite(conf, ctx)
     core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
     local ret_code = conf.ret_code
-    local local_conf = core.config.local_conf()
-    local ret_port = core.table.try_read_attr(local_conf,
-            "plugin_attr",
-            "redirect_https_port")
+    local ret_port = nil
+    local attr = plugin.plugin_attr("redirect")
+    if attr then
+        ret_port = attr.https_port
+    end
 
     if not ret_port then
+        local local_conf = core.config.local_conf()
         local ssl = core.table.try_read_attr(local_conf,
                 "apisix",
                 "ssl")
