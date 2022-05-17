@@ -208,7 +208,24 @@
             "discovery/consul_kv",
             "discovery/nacos",
             "discovery/eureka",
+            "discovery/zookeeper",
             "discovery/kubernetes"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "PubSub",
+          "items": [
+            "pubsub",
+            "pubsub/kafka"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "xRPC",
+          "items": [
+            "xrpc/redis",
+            "xrpc"
           ]
         },
         {

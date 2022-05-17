@@ -7,6 +7,9 @@ on:
       - 'docs/**'
       - '**/*.md'
 
+permissions:
+  contents: read
+
 jobs:
   performance:
     if: github.event_name == 'pull_request' && github.event.label.name == 'performance'
@@ -40,7 +43,7 @@ jobs:
         run: ./ci/performance_test.sh run_performance_test
 
       - name: Upload Performance Test Result
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: perf.txt
           path: |
@@ -48,7 +51,7 @@ jobs:
           retention-days: 3
 
       - name: Upload flamegrpah
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: flamegraph.svg
           path: |

@@ -1,5 +1,11 @@
 ---
 title: limit-req
+keywords:
+  - APISIX
+  - Plugin
+  - Limit Request
+  - limit-req
+description: This document contains information about the Apache APISIX limit-req Plugin.
 ---
 
 <!--
@@ -23,28 +29,26 @@ title: limit-req
 
 ## Description
 
-limit request rate using the "leaky bucket" method.
+The `limit-req` Plugin limits the number of requests to your service using the [leaky bucket](https://en.wikipedia.org/wiki/Leaky_bucket) algorithm.
 
 ## Attributes
 
-| Name          | Type    | Requirement | Default | Valid                                                                    | Description                                                                                                                                                               |
-| ------------- | ------- | ----------- | ------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| rate          | integer | required    |         | rate > 0                                                                 | the specified request rate (number per second) threshold. Requests exceeding this rate (and below `burst`) will get delayed to conform to the rate.                       |
-| burst         | integer | required    |         | burst >= 0                                                               | the number of excessive requests per second allowed to be delayed. Requests exceeding this hard limit will get rejected immediately.                                      |
-| key_type      | string  | optional    |   "var"   | ["var", "var_combination"] | the type of key. |
-| key           | string  | required    |         |  | the user specified key to limit the rate. If the `key_type` is "var", the key will be treated as a name of variable, like "remote_addr" or "consumer_name". If the `key_type` is "var_combination", the key will be a combination of variables, like "$remote_addr $consumer_name". If the value of the key is empty, `remote_addr` will be set as the default key.|
-| rejected_code | integer | optional    | 503     | [200,...,599]                                                            | The HTTP status code returned when the request exceeds the threshold is rejected.                                                                      |
-| rejected_msg       | string | optional                                |            | non-empty                                | The response body returned when the request exceeds the threshold is rejected.                                                                                                                                                                                                             |
-| nodelay       | boolean | optional    | false   |                                                                          | If nodelay flag is true, bursted requests will not get delayed  |
-| allow_degradation              | boolean  | optional                                | false       |                                                                     | Whether to enable plugin degradation when the limit-req function is temporarily unavailable. Allow requests to continue when the value is set to true, default false. |
+| Name              | Type    | Required | Default | Valid values               | Description                                                                                                                                                                                                                                                                                                                                                                                           |
+|-------------------|---------|----------|---------|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| rate              | integer | True     |         | rate > 0                   | Threshold for number of requests per second. Requests exceeding this rate (and below `burst`) will be delayed to match this rate.                                                                                                                                                                                                                                                                     |
+| burst             | integer | True     |         | burst >= 0                 | Number of additional requests allowed to be delayed per second. If the number of requests exceeds this hard limit, they will get rejected immediately.                                                                                                                                                                                                                                                |
+| key_type          | string  | False    | "var"   | ["var", "var_combination"] | Type of user specified key to use.                                                                                                                                                                                                                                                                                                                                                                    |
+| key               | string  | True     |         |                            | User specified key to base the request limiting on. If the `key_type` attribute is set to `var`, the key will be treated as a name of variable, like `remote_addr` or `consumer_name`. If the `key_type` is set to `var_combination`, the key will be a combination of variables, like `$remote_addr $consumer_name`. If the value of the key is empty, `remote_addr` will be set as the default key. |
+| rejected_code     | integer | False    | 503     | [200,...,599]              | HTTP status code returned when the requests exceeding the threshold are rejected.                                                                                                                                                                                                                                                                                                                     |
+| rejected_msg      | string  | False    |         | non-empty                  | Body of the response returned when the requests exceeding the threshold are rejected.                                                                                                                                                                                                                                                                                                                 |
+| nodelay           | boolean | False    | false   |                            | If set to `true`, requests within the burst threshold would not be delayed.                                                                                                                                                                                                                                                                                                                           |
+| allow_degradation | boolean | False    | false   |                            | When set to `true` enables Plugin degradation when the Plugin is temporarily unavailable and allows requests to continue.                                                                                                                                                                                                                                                                             |
 
-## Example
+## Enabling the Plugin
 
-### How to enable on the `route` or `service`
+You can enable the Plugin on a Route as shown below:
 
-Take `route` as an example (the use of `service` is the same method), enable the `limit-req` plugin on the specified route when setting `key_type` to `var` .
-
-```shell
+```bash
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -67,10 +71,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-Take `route` as an example (the use of `service` is the same method), enable the `limit-req` plugin on the specified route when setting `key_type` to `var_combination` .
+You can also configure the `key_type` to `var_combination` as shown:
 
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```json
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -89,21 +92,71 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
             "127.0.0.1:9001": 1
         }
     }
+}
+```
+
+You can also configure the Plugin on specific consumers to limit their requests.
+
+First, you can create a Consumer and enable the `limit-req` Plugin on it:
+
+```bash
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "username": "consumer_jack",
+    "plugins": {
+        "key-auth": {
+            "key": "auth-jack"
+        },
+        "limit-req": {
+            "rate": 1,
+            "burst": 3,
+            "rejected_code": 403,
+            "key": "consumer_name"
+        }
+    }
 }'
 ```
 
-You also can complete the above operation through the web interface, first add a route, then add limit-req plugin:
-![add plugin](../../../assets/images/plugin/limit-req-1.png)
+In this example, the [key-auth](./key-auth.md) Plugin is used to authenticate the Consumer.
 
-**Test Plugin**
+Next, create a Route and enable the `key-auth` Plugin:
 
-The above configuration limits the request rate to 1 per second. If it is greater than 1 and less than 3, the delay will be added. If the rate exceeds 3, it will be rejected:
+```bash
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "key-auth": {
+            "key": "auth-jack"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
 
-```shell
+## Example usage
+
+Once you have configured the Plugin as shown above, you can test it out. The above configuration limits to 1 request per second. If the number of requests is greater than 1 but less than 3, a delay will be added. And if the number of requests per second exceeds 3, it will be rejected.
+
+Now if you send a request:
+
+```bash
 curl -i http://127.0.0.1:9080/index.html
 ```
 
-When you exceed, you will receive a response header with a 503 return code:
+For authenticated requests:
+
+```bash
+curl -i http://127.0.0.1:9080/index.html -H 'apikey: auth-jack'
+```
+
+If you exceed the limit, you will receive a response with a 503 code:
 
 ```html
 HTTP/1.1 503 Service Temporarily Unavailable
@@ -121,9 +174,9 @@ Server: APISIX web server
 </html>
 ```
 
-At the same time, you set the property `rejected_msg` to `"Requests are too frequent, please try again later."` , when you exceed, you will receive a response body like below:
+You can set a custom rejected message by configuring the `rejected_msg` attribute. You will then receive a response like:
 
-```shell
+```bash
 HTTP/1.1 503 Service Temporarily Unavailable
 Content-Type: text/html
 Content-Length: 194
@@ -133,87 +186,11 @@ Server: APISIX web server
 {"error_msg":"Requests are too frequent, please try again later."}
 ```
 
-This means that the limit req plugin is in effect.
-
-### How to enable on the `consumer`
-
-To enable the `limit-req` plugin on the consumer, it needs to be used together with the authorization plugin. Here, the key-auth authorization plugin is taken as an example.
-
-1. Bind the `limit-req` plugin to the consumer
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "username": "consumer_jack",
-    "plugins": {
-        "key-auth": {
-            "key": "auth-jack"
-        },
-        "limit-req": {
-            "rate": 1,
-            "burst": 1,
-            "rejected_code": 403,
-            "key": "consumer_name"
-        }
-    }
-}'
-```
-
-2. Create a `route` and enable the `key-auth` plugin
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "plugins": {
-        "key-auth": {
-            "key": "auth-jack"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
-
-**Test Plugin**
-
-The value of `rate + burst` is not exceeded.
-
-```shell
-curl -i http://127.0.0.1:9080/index.html -H 'apikey: auth-jack'
-HTTP/1.1 200 OK
-......
-```
-
-When the value of `rate + burst` is exceeded.
-
-```shell
-curl -i http://127.0.0.1:9080/index.html -H 'apikey: auth-jack'
-HTTP/1.1 403 Forbidden
-.....
-<html>
-<head><title>403 Forbidden</title></head>
-<body>
-<center><h1>403 Forbidden</h1></center>
-<hr><center>openresty</center>
-</body>
-</html>
-```
-
-Explains that the `limit-req` plugin tied to `consumer` has taken effect.
-
 ## Disable Plugin
 
-When you want to disable the limit req plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+To disable the `limit-req` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
-```shell
+```bash
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -230,9 +207,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-Remove the `limit-req` plugin on `consumer`.
+Similarly for removing the Plugin from a Consumer:
 
-```shell
+```bash
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "consumer_jack",
@@ -243,5 +220,3 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
-
-The limit req plugin has been disabled now. It works for other plugins.

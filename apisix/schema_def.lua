@@ -37,7 +37,7 @@ local id_schema = {
     }
 }
 
-local host_def_pat = "^\\*?[0-9a-zA-Z-._]+$"
+local host_def_pat = "^\\*?[0-9a-zA-Z-._\\[\\]:]+$"
 local host_def = {
     type = "string",
     pattern = host_def_pat,
@@ -451,10 +451,12 @@ local upstream_schema = {
         },
         scheme = {
             default = "http",
-            enum = {"grpc", "grpcs", "http", "https", "tcp", "tls", "udp"},
+            enum = {"grpc", "grpcs", "http", "https", "tcp", "tls", "udp",
+                "kafka"},
             description = "The scheme of the upstream." ..
                 " For L7 proxy, it can be one of grpc/grpcs/http/https." ..
-                " For L4 proxy, it can be one of tcp/tls/udp."
+                " For L4 proxy, it can be one of tcp/tls/udp." ..
+                " For specific protocols, it can be kafka."
         },
         labels = labels_def,
         discovery_type = {
@@ -523,7 +525,7 @@ local method_schema = {
     description = "HTTP method",
     type = "string",
     enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-        "OPTIONS", "CONNECT", "TRACE"},
+        "OPTIONS", "CONNECT", "TRACE", "PURGE"},
 }
 _M.method_schema = method_schema
 
@@ -796,6 +798,44 @@ _M.global_rule = {
 }
 
 
+local xrpc_protocol_schema = {
+    type = "object",
+    properties = {
+        name = {
+            type = "string",
+        },
+        superior_id = id_schema,
+        conf = {
+            description = "protocol-specific configuration",
+            type = "object",
+        },
+        logger = {
+            type = "array",
+            items = {
+                properties = {
+                    name = {
+                        type = "string",
+                    },
+                    filter = {
+                        description = "logger filter rules",
+                        type = "array",
+                    },
+                    conf = {
+                        description = "logger plugin configuration",
+                        type = "object",
+                    },
+                },
+                dependencies = {
+                    name = {"conf"},
+                },
+            },
+        },
+
+    },
+    required = {"name"}
+}
+
+
 _M.stream_route = {
     type = "object",
     properties = {
@@ -821,6 +861,7 @@ _M.stream_route = {
         upstream = upstream_schema,
         upstream_id = id_schema,
         plugins = plugins_schema,
+        protocol = xrpc_protocol_schema,
     }
 }
 

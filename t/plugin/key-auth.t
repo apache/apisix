@@ -334,3 +334,254 @@ GET /hello?auth=auth-one
 hello world
 --- no_error_log
 [error]
+
+
+
+=== TEST 14: enable key auth plugin using admin api, set hide_credentials = false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {
+                            "hide_credentials": false
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: verify apikey request header should not hidden
+--- request
+GET /echo
+--- more_headers
+apikey: auth-one
+--- response_headers
+apikey: auth-one
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: add key auth plugin using admin api, set hide_credentials = true
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {
+                            "hide_credentials": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: verify apikey request header is hidden
+--- request
+GET /echo
+--- more_headers
+apikey: auth-one
+--- response_headers
+!apikey
+--- no_error_log
+[error]
+
+
+
+=== TEST 18: verify that only the keys in the title are deleted
+--- request
+GET /echo
+--- more_headers
+apikey: auth-one
+test: auth-two
+--- response_headers
+!apikey
+test: auth-two
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: when apikey both in header and query string, verify apikey request header is hidden but request args is not hidden
+--- request
+GET /echo?apikey=auth-one
+--- more_headers
+apikey: auth-one
+--- response_headers
+!apikey
+--- response_args
+apikey: auth-one
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: customize query string, set hide_credentials = true
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {
+                            "query": "auth",
+                            "hide_credentials": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: verify auth request args is hidden
+--- request
+GET /echo?auth=auth-one
+--- response_args
+!auth
+--- no_error_log
+[error]
+
+
+
+=== TEST 22: verify that only the keys in the query parameters are deleted
+--- request
+GET /echo?auth=auth-one&test=auth-two
+--- response_args
+!auth
+test: auth-two
+--- no_error_log
+[error]
+
+
+
+=== TEST 23: when auth both in header and query string, verify auth request args is hidden but request header is not hidden
+--- request
+GET /echo?auth=auth-one
+--- more_headers
+auth: auth-one
+--- response_headers
+auth: auth-one
+--- response_args
+!auth
+--- no_error_log
+[error]
+
+
+
+=== TEST 24: customize query string, set hide_credentials = false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {
+                            "query": "auth",
+                            "hide_credentials": false
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 25: verify auth request args should not hidden
+--- request
+GET /hello?auth=auth-one
+--- response_args
+auth: auth-one
+--- no_error_log
+[error]

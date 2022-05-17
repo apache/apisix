@@ -1,5 +1,11 @@
 ---
 title: wolf-rbac
+keywords:
+  - APISIX
+  - Plugin
+  - wolf RBAC
+  - wolf-rbac
+description: 本文介绍了关于 Apache APISIX `wolf-rbac` 插件的基本信息及使用方法。
 ---
 
 <!--
@@ -23,43 +29,43 @@ title: wolf-rbac
 
 ## 描述
 
-`wolf-rbac` 是一个认证及授权 (rbac) 插件，它需要与 `consumer` 一起配合才能工作。同时需要添加 `wolf-rbac` 到一个 `service` 或 `route` 中。
-rbac 功能由 [wolf](https://github.com/iGeeky/wolf) 提供，有关 `wolf` 的更多信息，请参考 [wolf 文档](https://github.com/iGeeky/wolf)。
+`wolf-rbac` 插件为 [role-based access control](https://en.wikipedia.org/wiki/Role-based_access_control) 系统提供了添加 [wolf](https://github.com/iGeeky/wolf) 到 Route 或 Service 的功能。此插件需要与 [Consumer](../terminology/consumer.md) 一起使用。
 
 ## 属性
 
-| 名称          | 类型   | 必选项 | 默认值                   | 有效值 | 描述                                                                                                                                               |
-| ------------- | ------ | ------ | ------------------------ | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| server        | string | 可选   | "http://127.0.0.1:12180" |        | 设置 `wolf-server` 的访问地址                                                                                                                      |
-| appid         | string | 可选   | "unset"                  |        | 设置应用 id，该应用 id，需要是在 `wolf-console` 中已经添加的应用 id                                                                                |
-| header_prefix | string | 可选   | "X-"                     |        | 自定义 http 头的前缀。`wolf-rbac`在鉴权成功后，会在请求头 (用于传给后端) 及响应头 (用于传给前端) 中添加 3 个头：`X-UserId`, `X-Username`, `X-Nickname` |
+| 名称          | 类型   | 必选项  | 默认值                    | 描述                                                                                                                                               |
+| ------------- | ------ | ------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| server        | string | 否     | "http://127.0.0.1:12180" |  `wolf-server` 的服务地址。                                                                                                                          |
+| appid         | string | 否     | "unset"                  | 在 `wolf-console` 中已经添加的应用 id。                                                                                                               |
+| header_prefix | string | 否     | "X-"                     | 自定义 HTTP 头的前缀。`wolf-rbac` 在鉴权成功后，会在请求头 (用于传给后端) 及响应头 (用于传给前端) 中添加 3 个 header：`X-UserId`, `X-Username`, `X-Nickname`。|
 
 ## 接口
 
-插件会增加这些接口：
+该插件在启用时将会增加以下接口：
 
 * /apisix/plugin/wolf-rbac/login
 * /apisix/plugin/wolf-rbac/change_pwd
 * /apisix/plugin/wolf-rbac/user_info
 
-需要通过 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露它。
+:::note
 
-## 依赖项
+以上接口需要通过 [public-api](../../../en/latest/plugins/public-api.md) 插件暴露。
 
-### 安装 wolf，并启动服务
+:::
 
-[Wolf 快速起步](https://github.com/iGeeky/wolf/blob/master/quick-start-with-docker/README-CN.md)
+## 前提条件
 
-### 添加应用，管理员，普通用户，权限，资源 及给用户授权
+如果要使用这个插件，你必须要[安装 wolf](https://github.com/iGeeky/wolf/blob/master/quick-start-with-docker/README.md) 并启动它。
 
-[Wolf 管理使用](https://github.com/iGeeky/wolf/blob/master/docs/usage.md)
+完成后，你需要添加`application`、`admin`、`regular user`、`permission`、`resource` 等字段，并将用户授权到 [wolf-console](https://github.com/iGeeky/wolf/blob/master/docs/usage.md)。
 
-## 如何启用
+## 启用插件
 
-1. 创建一个 consumer 对象，并设置插件 `wolf-rbac` 的值。
+首先需要创建一个 Consumer 并配置该插件，如下所示：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/consumers  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "username":"wolf_rbac",
   "plugins":{
@@ -72,18 +78,17 @@ curl http://127.0.0.1:9080/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-你也可以通过 web 界面来完成上面的操作，先增加一个 consumer：
-![add a consumer](../../../assets/images/plugin/wolf-rbac-1.png)
+:::note
 
-然后在 consumer 页面中添加 wolf-rbac 插件：
-![enable wolf-rbac plugin](../../../assets/images/plugin/wolf-rbac-2.png)
+示例中填写的 `appid`，必须是已经在 wolf 控制台中存在的。
 
-注意：上面填写的 `appid` 需要在 wolf 控制台中已经存在的。
+:::
 
-2. 创建 Route 或 Service 对象，并开启 `wolf-rbac` 插件。
+然后你需要添加 `wolf-rbac` 插件到 Route 或 Service 中。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/*",
@@ -99,14 +104,21 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
+你还可以通过 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 的 Web 界面完成上述操作。
+
+<!--
+![add a consumer](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/wolf-rbac-1.png)
+
+![enable wolf-rbac plugin](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/wolf-rbac-2.png)
+-->
+
 ## 测试插件
 
-#### 为 API 设置路由
-
-我们使用 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露这些 public API.
+你可以使用 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露 API.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/wal -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/wal \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/apisix/plugin/wolf-rbac/login",
     "plugins": {
@@ -115,20 +127,17 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/wal -H 'X-API-KEY: edd1c9f03433
 }'
 ```
 
-你也需要为 `change_pwd` 和 `user_info` 两个 API 配置路由。
+同样，你需要参考上述命令为 `change_pwd` 和 `user_info` 两个 API 配置路由。
 
-#### 首先进行登录获取 `wolf-rbac` token:
-
-下面的 `appid`, `username`, `password` 必须为 wolf 系统中真实存在的。
-`authType` 为认证类型，`1` 为密码认证，`2` 为 `LDAP` 认证。默认为 `1`. `wolf` 从 0.5.0 版本开始支持了 `LDAP` 认证。
-
-* 以 POST application/json 方式登陆。
+现在你可以登录并获取 wolf `rbac_token`：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/login -i \
 -H "Content-Type: application/json" \
 -d '{"appid": "restful", "username":"test", "password":"user-password", "authType":1}'
+```
 
+```
 HTTP/1.1 200 OK
 Date: Wed, 24 Jul 2019 10:33:31 GMT
 Content-Type: text/plain
@@ -138,7 +147,15 @@ Server: APISIX web server
 {"rbac_token":"V1#restful#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts","user_info":{"nickname":"test","username":"test","id":"749"}}
 ```
 
-* 以 POST x-www-form-urlencoded 方式登陆
+:::note
+
+上述示例中，`appid`、`username` 和 `password` 必须为 wolf 系统中真实存在的。
+
+`authType` 为认证类型，`1` 为密码认证（默认），`2` 为 LDAP 认证。`wolf` 从 0.5.0 版本开始支持了 LDAP 认证。
+
+:::
+
+也可以使用 x-www-form-urlencoded 方式登陆：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/login -i \
@@ -146,71 +163,79 @@ curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/login -i \
 -d 'appid=restful&username=test&password=user-password'
 ```
 
-#### 使用获取到的 token 进行请求尝试
+现在开始测试 Route：
 
-* 缺少 token
+- 缺少 token
 
 ```shell
 curl http://127.0.0.1:9080/ -H"Host: www.baidu.com" -i
+```
 
+```shell
 HTTP/1.1 401 Unauthorized
 ...
 {"message":"Missing rbac token in request"}
 ```
 
-* token 放到请求头 (Authorization) 中：
+- token 放到请求头 (Authorization) 中：
 
 ```shell
 curl http://127.0.0.1:9080/ -H"Host: www.baidu.com" \
 -H 'Authorization: V1#restful#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts' -i
+```
 
+```shell
 HTTP/1.1 200 OK
 
 <!DOCTYPE html>
 ```
 
-* token 放到请求头 (x-rbac-token) 中：
+- token 放到请求头 (x-rbac-token) 中：
 
 ```shell
 curl http://127.0.0.1:9080/ -H"Host: www.baidu.com" \
 -H 'x-rbac-token: V1#restful#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts' -i
+```
 
-
+```shell
 HTTP/1.1 200 OK
 
 <!DOCTYPE html>
 ```
 
-* token 放到请求参数中：
+- token 放到请求参数中：
 
 ```shell
 curl 'http://127.0.0.1:9080?rbac_token=V1%23restful%23eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts' -H"Host: www.baidu.com" -i
+```
 
-
+```shell
 HTTP/1.1 200 OK
 
 <!DOCTYPE html>
 ```
 
-* token 放到 cookie 中：
+- token 放到 `cookie` 中：
 
 ```shell
 curl http://127.0.0.1:9080 -H"Host: www.baidu.com" \
 --cookie x-rbac-token=V1#restful#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts -i
+```
 
-
+```shell
 HTTP/1.1 200 OK
 
 <!DOCTYPE html>
 ```
 
-#### 获取 `RBAC` 用户信息
+- 获取用户信息：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/user_info \
 --cookie x-rbac-token=V1#restful#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts -i
+```
 
-
+```shell
 HTTP/1.1 200 OK
 {
     "user_info":{
@@ -229,25 +254,27 @@ HTTP/1.1 200 OK
 }
 ```
 
-#### 修改 `RBAC` 用户密码
+- 更改用户的密码：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/change_pwd \
 -H "Content-Type: application/json" \
 --cookie x-rbac-token=V1#restful#eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NzQ5LCJ1c2VybmFtZSI6InRlc3QiLCJtYW5hZ2VyIjoiIiwiYXBwaWQiOiJyZXN0ZnVsIiwiaWF0IjoxNTc5NDQ5ODQxLCJleHAiOjE1ODAwNTQ2NDF9.n2-830zbhrEh6OAxn4K_yYtg5pqfmjpZAjoQXgtcuts -i \
 -X PUT -d '{"oldPassword": "old password", "newPassword": "new password"}'
+```
 
-
+```shell
 HTTP/1.1 200 OK
 {"message":"success to change password"}
 ```
 
 ## 禁用插件
 
-当你想去掉 `rbac-wolf` 插件的时候，很简单，在 routes 中的插件配置中把对应的 `插件` 配置删除即可，无须重启服务，即刻生效：
+当你需要禁用 `wolf-rbac` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/*",

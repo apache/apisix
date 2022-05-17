@@ -40,7 +40,7 @@ Apache APISIX 的技术架构如下图所示：
 
 - 邮件列表 - 发送任意内容到 dev-subscribe@apisix.apache.org 后，根据回复以订阅邮件列表。
 - QQ 群 - 781365357
-- Slack - 请 [订阅邮件列表](https://apisix.apache.org/docs/general/subscribe-guide) 后发送邮件获取邀请链接
+- Slack - [查看加入方式](https://apisix.apache.org/docs/general/join/#join-the-slack-channel)
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - 使用标签 `#ApacheAPISIX` 关注我们并与我们互动。
 - [哔哩哔哩](https://space.bilibili.com/551921247)
 - **新手任务列表**
@@ -83,7 +83,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 
 - **全动态能力**
 
-    - [热更新和热插件](architecture-design/plugin.md)：无需重启服务，就可以持续更新配置和插件。
+    - [热更新和热插件](terminology/plugin.md)：无需重启服务，就可以持续更新配置和插件。
     - [代理请求重写](plugins/proxy-rewrite.md)：支持重写请求上游的`host`、`uri`、`schema`、`enable_websocket`、`headers`信息。
     - [输出内容重写](plugins/response-rewrite.md)：支持自定义修改返回内容的 `status code`、`body`、`headers`。
     - [Serverless](plugins/serverless.md)：在 APISIX 的每一个阶段，你都可以添加并调用自己编写的函数。
@@ -108,10 +108,17 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 
 - **安全防护**
 
-    - 多种身份认证方式：[key-auth](plugins/key-auth.md)、[JWT](plugins/jwt-auth.md)、[basic-auth](plugins/basic-auth.md)、[wolf-rbac](plugins/wolf-rbac.md)、[casbin](plugins/authz-casbin.md)、[keycloak](plugins/authz-keycloak.md)。
+    - 丰富的认证、鉴权支持：
+        * [key-auth](plugins/key-auth.md)
+        * [JWT](plugins/jwt-auth.md)
+        * [basic-auth](plugins/basic-auth.md)
+        * [wolf-rbac](plugins/wolf-rbac.md)
+        * [casbin](plugins/authz-casbin.md)
+        * [keycloak](plugins/authz-keycloak.md)
+        * [casdoor](../../en/latest/plugins/authz-casdoor.md)
     - [IP 黑白名单](plugins/ip-restriction.md)
     - [Referer 黑白名单](plugins/referer-restriction.md)
-    - [IdP 支持](plugins/openid-connect.md)：支持外部的身份认证服务，比如 Auth0，Okta，Authing 等，用户可以借此来对接 Oauth2.0 等认证方式。
+    - [IdP 支持](plugins/openid-connect.md)：支持外部的身份认证平台，比如 Auth0，Okta，Authing 等。
     - [限制速率](plugins/limit-req.md)
     - [限制请求数](plugins/limit-count.md)
     - [限制并发](plugins/limit-conn.md)
@@ -124,7 +131,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 - **运维友好**
 
     - OpenTracing 可观测性：支持 [Apache Skywalking](plugins/skywalking.md) 和 [Zipkin](plugins/zipkin.md)。
-    - 对接外部服务发现：除了内置的 etcd 外，还支持 [Consul](../../en/latest/discovery/consul_kv.md) 和 [Nacos](../../en/latest/discovery/nacos.md)，以及 [Eureka](discovery.md)。
+    - 对接外部服务发现：除了内置的 etcd 外，还支持 [Consul](../../en/latest/discovery/consul_kv.md)、[Nacos](discovery/nacos.md)、[Eureka](discovery/eureka.md) 和 [Zookeeper（CP）](../../en/latest/discovery/zookeeper.md)。
     - 监控和指标：[Prometheus](plugins/prometheus.md)
     - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://etcd.io/docs/v3.5/op-guide/clustering/)。
     - 高可用：支持配置同一个集群内的多个 etcd 地址。
@@ -132,7 +139,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
     - 版本控制：支持操作的多次回滚。
     - CLI：使用命令行来启动、关闭和重启 APISIX。
     - [单机模式](stand-alone.md)：支持从本地配置文件中加载路由规则，在 kubernetes(k8s) 等环境下更友好。
-    - [全局规则](architecture-design/global-rule.md)：允许对所有请求执行插件，比如黑白名单、限流限速等。
+    - [全局规则](terminology/global-rule.md)：允许对所有请求执行插件，比如黑白名单、限流限速等。
     - 高性能：在单核上 QPS 可以达到 18k，同时延迟只有 0.2 毫秒。
     - [故障注入](plugins/fault-injection.md)
     - [REST Admin API](admin-api.md)：使用 REST Admin API 来控制 Apache APISIX，默认只允许 127.0.0.1 访问，你可以修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许调用 Admin API 的 IP 列表。同时需要注意的是，Admin API 使用 key auth 来校验调用者身份，**在部署前需要修改 `conf/config.yaml` 中的 `admin_key` 字段，来保证安全。**
@@ -160,10 +167,6 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 
 1. 安装
 
-   APISIX 在以下操作系统中可顺利安装并做过测试：
-
-   CentOS 7, Ubuntu 16.04, Ubuntu 18.04, Debian 9, Debian 10, macOS, **ARM64** Ubuntu 18.04
-
    请参考[安装文档](./how-to-build.md)。
 
 2. 入门指南
@@ -179,7 +182,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 4. 插件二次开发
 
    可以参考[插件开发指南](plugin-develop.md)，以及示例插件 `example-plugin` 的代码实现。
-   阅读[插件概念](architecture-design/plugin.md) 会帮助你学到更多关于插件的知识。
+   阅读[插件概念](terminology/plugin.md) 会帮助你学到更多关于插件的知识。
 
 更多文档请参考 [Apache APISIX 文档站](https://apisix.apache.org/docs/apisix/getting-started/)。
 

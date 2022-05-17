@@ -1,5 +1,11 @@
 ---
 title: forward-auth
+keywords:
+  - APISIX
+  - Plugin
+  - Forward Authentication
+  - forward-auth
+description: This document contains information about the Apache APISIX forward-auth Plugin.
 ---
 
 <!--
@@ -23,36 +29,36 @@ title: forward-auth
 
 ## Description
 
-The `forward-auth` plugin implements a classic external authentication model. We can implement a custom error return or user redirection to the authentication page if the authentication fails.
+The `forward-auth` Plugin implements a classic external authentication model. When authentication fails, you can have a custom error message or redirect the user to an authentication page.
 
-Forward Auth cleverly moves the authentication and authorization logic to a dedicated external service, where the gateway forwards the user's request to the authentication service and blocks the original request, and replaces the result when the authentication service responds with a non-2xx status.
+This Plugin moves the authentication and authorization logic to a dedicated external service. APISIX forwards the user's requests to the external service, blocks the original request, and replaces the result when the external service responds with a non 2xx status code.
 
 ## Attributes
 
-| Name | Type | Requirement | Default | Valid | Description |
-| -- | -- | -- | -- | -- | -- |
-| uri | string | required |  |  | Authorization service uri (eg. https://localhost/auth) |
-| ssl_verify | boolean | optional | true |   | Whether to verify the certificate |
-| request_method | string | optional | GET | ["GET","POST"] | The method for `client` to request the `authorization` service. When it is `POST`, the request body will be send to the `authorization` service. |
-| request_headers | array[string] | optional |  |  | `client` request header that will be sent to the `authorization` service. When it is not set, no `client` request headers are sent to the `authorization` service, except for those provided by APISIX (X-Forwarded-XXX). |
-| upstream_headers | array[string] | optional |  |  | `authorization` service response header that will be sent to the `upstream`. When it is not set, will not forward the `authorization` service response header to the `upstream`. |
-| client_headers | array[string] | optional |  |  | `authorization` response header that will be sent to the `client` when authorize failure. When it is not set, will not forward the `authorization` service response header to the `client`. |
-| timeout | integer | optional | 3000ms | [1, 60000]ms | Authorization service HTTP call timeout |
-| keepalive | boolean | optional | true |  | HTTP keepalive |
-| keepalive_timeout | integer | optional | 60000ms | [1000, ...]ms | keepalive idle timeout |
-| keepalive_pool | integer | optional | 5 | [1, ...]ms | Connection pool limit |
+| Name              | Type          | Required | Default | Valid values   | Description                                                                                                                                                |
+| ----------------- | ------------- | -------- | ------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| uri               | string        | True     |         |                | URI of the authorization service.                                                                                                                          |
+| ssl_verify        | boolean       | False    | true    |                | When set to `true`, verifies the SSL certificate.                                                                                                          |
+| request_method    | string        | False    | GET     | ["GET","POST"] | HTTP method for a client to send requests to the authorization service. When set to `POST` the request body is send to the authorization service.          |
+| request_headers   | array[string] | False    |         |                | Client request headers to be sent to the authorization service. If not set, only the headers provided by APISIX are sent (for example, `X-Forwarded-XXX`). |
+| upstream_headers  | array[string] | False    |         |                | Authorization service response headers to be forwarded to the Upstream. If not set, no headers are forwarded to the Upstream service.                      |
+| client_headers    | array[string] | False    |         |                | Authorization service response headers to be sent to the client when authorization fails. If not set, no headers will be sent to the client.               |
+| timeout           | integer       | False    | 3000ms  | [1, 60000]ms   | Timeout for the authorization service HTTP call.                                                                                                           |
+| keepalive         | boolean       | False    | true    |                | When set to `true`, keeps the connection alive for multiple requests.                                                                                      |
+| keepalive_timeout | integer       | False    | 60000ms | [1000, ...]ms  | Idle time after which the connection is closed.                                                                                                            |
+| keepalive_pool    | integer       | False    | 5       | [1, ...]ms     | Connection pool limit.                                                                                                                                     |
 
-## Data Definition
+## Data definition
 
-The request headers in the following list will have APISIX generated and sent to the `authorization` service.
+APISIX will generate and the send the request headers listed below to the authorization service:
 
-| Scheme | HTTP Method | Host | URI | Source IP |
-| -- | -- | -- | -- | -- |
+| Scheme            | HTTP Method        | Host             | URI             | Source IP       |
+| ----------------- | ------------------ | ---------------- | --------------- | --------------- |
 | X-Forwarded-Proto | X-Forwarded-Method | X-Forwarded-Host | X-Forwarded-Uri | X-Forwarded-For |
 
-## Example
+## Example usage
 
-First, you need to setup an external authorization service. Here is an example of using Apache APISIX's serverless plugin to mock.
+First, you need to setup your external authorization service. The example below uses Apache APISIX's [serverless](./serverless.md) Plugin to mock the service:
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
@@ -82,7 +88,7 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
 }'
 ```
 
-Next, we create a route for testing.
+Now you can configure the `forward-auth` Plugin to a specific Route:
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/1' \
@@ -106,9 +112,7 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/1' \
 }'
 ```
 
-We can perform the following three tests.
-
-1. **request_headers** Send Authorization header from `client` to `authorization` service
+Now if we send the authorization details in the request header:
 
 ```shell
 curl http://127.0.0.1:9080/headers -H 'Authorization: 123'
@@ -123,7 +127,7 @@ curl http://127.0.0.1:9080/headers -H 'Authorization: 123'
 }
 ```
 
-2. **upstream_headers** Send `authorization` service response header to the `upstream`
+The authorization service response can also be forwarded to the Upstream:
 
 ```shell
 curl http://127.0.0.1:9080/headers -H 'Authorization: 321'
@@ -139,7 +143,7 @@ curl http://127.0.0.1:9080/headers -H 'Authorization: 321'
 }
 ```
 
-3. **client_headers** Send `authorization` service response header to `client` when authorizing failed
+When authorization fails, the authorization service can send custom response back to the user:
 
 ```shell
 curl -i http://127.0.0.1:9080/headers
@@ -150,4 +154,21 @@ HTTP/1.1 403 Forbidden
 Location: http://example.com/auth
 ```
 
-Finally, you can disable the `forward-auth` plugin by removing it from the route.
+## Disable Plugin
+
+To disable the `forward-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+
+```shell
+curl http://127.0.0.1:2379/apisix/admin/routes/1 -X PUT -d value='
+{
+    "methods": ["GET"],
+    "uri": "/hello",
+    "plugins": {},
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```

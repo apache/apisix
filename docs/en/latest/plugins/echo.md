@@ -1,5 +1,10 @@
 ---
 title: echo
+keywords:
+  - APISIX
+  - Plugin
+  - Echo
+description: This document contains information about the Apache APISIX echo Plugin.
 ---
 
 <!--
@@ -23,26 +28,30 @@ title: echo
 
 ## Description
 
-`echo` is a useful plugin to help users understand as fully as possible how to develop an APISIX plugin.
+The `echo` Plugin is to help users understand how they can develop an APISIX Plugin.
 
-This plugin addresses the corresponding functionality in the common phases such as init, rewrite, access, balancer, header filter, body filter and log.
+This Plugin addresses common functionalities in phases like init, rewrite, access, balancer, header filter, body filter and log.
 
-**NOTE: `echo` plugin is written as an example. There are some unhandled cases and you should not use it in the production!**
+:::caution WARNING
+
+The `echo` Plugin is built as an example. It has missing cases and should **not** be used in production environments.
+
+:::
 
 ## Attributes
 
-| Name        | Type   | Requirement | Default | Valid | Description                                  |
-| ----------- | ------ | ----------- | ------- | ----- | -------------------------------------------- |
-| before_body | string | optional    |         |       | Body before the filter phase.                |
-| body        | string | optional    |         |       | Body to replace upstream response.           |
-| after_body  | string | optional    |         |       | Body after the modification of filter phase. |
-| headers     | object | optional    |         |       | New headers for response                     |
+| Name        | Type   | Requirement | Default | Valid | Description                               |
+| ----------- | ------ | ----------- | ------- | ----- | ----------------------------------------- |
+| before_body | string | optional    |         |       | Body to use before the filter phase.      |
+| body        | string | optional    |         |       | Body that replaces the Upstream response. |
+| after_body  | string | optional    |         |       | Body to use after the modification phase. |
+| headers     | object | optional    |         |       | New headers to use for the response.      |
 
 At least one of `before_body`, `body`, and `after_body` must be specified.
 
-## How To Enable
+## Enabling the Plugin
 
-The following is an example on how to enable the echo plugin for a specific route.
+The example below shows how you can enable the `echo` Plugin for a specific Route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -62,12 +71,15 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+## Example usage
 
-* success:
+First, we configure the Plugin as mentioned above. We can then make a request as shown below:
 
 ```shell
-$ curl -i http://127.0.0.1:9080/hello
+curl -i http://127.0.0.1:9080/hello
+```
+
+```
 HTTP/1.1 200 OK
 ...
 before the body modification hello world
@@ -75,11 +87,11 @@ before the body modification hello world
 
 ## Disable Plugin
 
-Remove the corresponding json configuration in the plugin configuration to disable the `echo`.
-APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
+To disable the `echo` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

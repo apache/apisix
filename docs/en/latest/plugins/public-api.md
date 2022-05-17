@@ -1,5 +1,11 @@
 ---
 title: public-api
+keywords:
+  - APISIX
+  - Plugin
+  - Public API
+  - public-api
+description: This document contains information about the Apache APISIX public-api Plugin.
 ---
 
 <!--
@@ -23,31 +29,28 @@ title: public-api
 
 ## Description
 
-The `public-api` plugin is used to enhance the plugin public API access control.
-When current users develop custom plugins, they can register some public APIs for fixed functionality, such as the `/apisix/plugin/jwt/sign` API in `jwt-auth`. These APIs can only apply limited plugins for access control (currently only `ip-restriction`) by way of plugin interceptors.
+The `public-api` is used for exposing an API endpoint through a general HTTP API router.
 
-With the `public-api` plugin, we put all public APIs into the general HTTP API router, which is consistent with the normal Route registered by the user and can apply any plugin. The public API added in the user plugin is no longer expose by default by APISIX, and the user has to manually configure the Route for it, the user can configure any uri and plugin.
+When you are using custom Plugins, you can use the `public-api` Plugin to define a fixed, public API for a particular functionality. For example, you can create a public API endpoint `/apisix/plugin/jwt/sign` for JWT authentication using the [jwt-auth](./jwt-auth.md) Plugin.
+
+The public API added in a custom Plugin is not exposed by default and the user should manually configure a Route and enable the `public-api` Plugin on it.
 
 ## Attributes
 
-| Name | Type | Requirement | Default | Valid | Description |
-| -- | -- | -- | -- | -- | -- |
-| uri | string | optional | "" |   | The uri of the public API. When you set up the route, you can use this to configure the original API uri if it is used in a way that is inconsistent with the original public API uri. |
+| Name | Type   | Required | Default | Description                                                                                                                                                  |
+|------|--------|----------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| uri  | string | False    | ""      | URI of the public API. When setting up a Route, use this attribute to configure the original public API URI. |
 
-## Example
+## Example usage
 
-We take the `jwt-auth` token sign API as an example to show how to configure the `public-api` plugin. Also, the `key-auth` will be used to show how to configure the protection plugin for the public API.
+The example below uses the [jwt-auth](./jwt-auth.md) Plugin and the [key-auth](./key-auth.md) Plugin along with the `public-api` Plugin. Refer to their documentation for it configuration. This step is omitted below and only explains the configuration of the `public-api` Plugin.
 
-### Prerequisites
+### Basic usage
 
-The use of key-auth and jwt-auth requires the configuration of a consumer that contains the configuration of these plugins, and you need to create one in advance, the process will be omitted here.
-
-### Basic Use Case
-
-First we will setup a route.
+You can enable the Plugin on a specific Route as shown below:
 
 ```shell
-$ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
+curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -58,20 +61,18 @@ $ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
 }'
 ```
 
-Let's test it.
+Now, if you make a request to the configured URI, you will receive a JWT response:
 
 ```shell
-$ curl 'http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key'
+curl 'http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key'
 ```
 
-It will respond to a text JWT.
+### Using custom URI
 
-### Customize URI
-
-Let's setup another route.
+You can also use a custom URI for exposing the API as shown below:
 
 ```shell
-$ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r2' \
+curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r2' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -84,20 +85,18 @@ $ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r2' \
 }'
 ```
 
-Let's test it.
+Now you can make requests to this new endpoint:
 
 ```shell
-$ curl 'http://127.0.0.1:9080/gen_token?key=user-key'
+curl 'http://127.0.0.1:9080/gen_token?key=user-key'
 ```
 
-It will still respond to a text JWT. We can see that users are free to configure URI for the public API to match.
+### Securing the Route
 
-### Protect Route
-
-Let's modify the last route and add `key-auth` authentication to it.
+You can use the `key-auth` Plugin to add authentication and secure the Route:
 
 ```shell
-$ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r2' \
+curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r2' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -111,16 +110,40 @@ $ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r2' \
 }'
 ```
 
-Let's test it.
+Now, only authenticated requests are allowed:
 
 ```shell
-$ curl -i 'http://127.0.0.1:9080/gen_token?key=user-key'
+curl -i 'http://127.0.0.1:9080/gen_token?key=user-key'
     -H "apikey: test-apikey"
-HTTP/1.1 200 OK
+```
 
-# Failed request
-$ curl -i 'http://127.0.0.1:9080/gen_token?key=user-key'
+```shell
+HTTP/1.1 200 OK
+```
+
+The below request will fail:
+
+```shell
+curl -i 'http://127.0.0.1:9080/gen_token?key=user-key'
+```
+
+```shell
 HTTP/1.1 401 UNAUTHORIZED
 ```
 
-It will still respond to a text JWT. If we don't add `apikey` to the request header, it will respond with a 401 block request. In this way, we have implemented a plugin approach to protect the public API.
+## Disable Plugin
+
+To disable the `public-api` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+  "uri": "/hello",
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "127.0.0.1:1980": 1
+    }
+  }
+}'
+```

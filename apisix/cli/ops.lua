@@ -20,6 +20,7 @@ local util = require("apisix.cli.util")
 local file = require("apisix.cli.file")
 local schema = require("apisix.cli.schema")
 local ngx_tpl = require("apisix.cli.ngx_tpl")
+local cli_ip = require("apisix.cli.ip")
 local profile = require("apisix.core.profile")
 local template = require("resty.template")
 local argparse = require("argparse")
@@ -155,7 +156,7 @@ local function init(env)
     end
 
     local min_ulimit = 1024
-    if env.ulimit <= min_ulimit then
+    if env.ulimit ~= "unlimited" and env.ulimit <= min_ulimit then
         print(str_format("Warning! Current maximum number of open file "
                 .. "descriptors [%d] is not greater than %d, please increase user limits by "
                 .. "execute \'ulimit -n <new user limits>\' , otherwise the performance"
@@ -277,16 +278,16 @@ Please modify "admin_key" in conf/config.yaml .
         -- not disabled by the users
         if real_ip_from then
             for _, ip in ipairs(real_ip_from) do
-                -- TODO: handle cidr
-                if ip == "127.0.0.1" or ip == "0.0.0.0/0" then
+                local _ip = cli_ip:new(ip)
+                if _ip:is_loopback() or _ip:is_unspecified() then
                     pass_real_client_ip = true
                 end
             end
         end
 
         if not pass_real_client_ip then
-            util.die("missing '127.0.0.1' in the nginx_config.http.real_ip_from for plugin " ..
-                     "batch-requests\n")
+            util.die("missing loopback or unspecified in the nginx_config.http.real_ip_from" ..
+                     " for plugin batch-requests\n")
         end
     end
 
@@ -644,6 +645,47 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
+    -- inject kubernetes discovery environment variable
+    if enabled_discoveries["kubernetes"] then
+
+        local kubernetes_conf = yaml_conf.discovery["kubernetes"]
+
+        local keys = {
+            kubernetes_conf.service.host,
+            kubernetes_conf.service.port,
+        }
+
+        if kubernetes_conf.client.token then
+            table_insert(keys, kubernetes_conf.client.token)
+        end
+
+        if kubernetes_conf.client.token_file then
+            table_insert(keys, kubernetes_conf.client.token_file)
+        end
+
+        local envs = {}
+
+        for _, key in ipairs(keys) do
+            if #key > 3 then
+                local first, second = str_byte(key, 1, 2)
+                if first == str_byte('$') and second == str_byte('{') then
+                    local last = str_byte(key, #key)
+                    if last == str_byte('}') then
+                        envs[str_sub(key, 3, #key - 1)] = ""
+                    end
+                end
+            end
+        end
+
+        if not sys_conf["envs"] then
+            sys_conf["envs"] = {}
+        end
+
+        for item in pairs(envs) do
+            table_insert(sys_conf["envs"], item)
+        end
+    end
+
     -- fix up lua path
     sys_conf["extra_lua_path"] = get_lua_path(yaml_conf.apisix.extra_lua_path)
     sys_conf["extra_lua_cpath"] = get_lua_path(yaml_conf.apisix.extra_lua_cpath)
@@ -672,8 +714,15 @@ local function start(env, ...)
         util.die("Error: It is forbidden to run APISIX in the /root directory.\n")
     end
 
-    local cmd_logs = "mkdir -p " .. env.apisix_home .. "/logs"
-    util.execute_cmd(cmd_logs)
+    local logs_path = env.apisix_home .. "/logs"
+    if not pl_path.exists(logs_path) then
+        local _, err = pl_path.mkdir(logs_path)
+        if err ~= nil then
+            util.die("failed to mkdir ", logs_path, ", error: ", err)
+        end
+    elseif not pl_path.isdir(logs_path) and not pl_path.islink(logs_path) then
+        util.die(logs_path, " is not directory nor symbol link")
+    end
 
     -- check running
     local pid_path = env.apisix_home .. "/logs/nginx.pid"

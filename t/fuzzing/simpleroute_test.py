@@ -41,7 +41,7 @@ def run():
 
     s_initialize(name="Request")
     with s_block("Request-Line"):
-        s_group("Method", ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE'])
+        s_group("Method", ['GET', 'HEAD', 'POST', 'PUT', 'DELETE', 'CONNECT', 'OPTIONS', 'TRACE', "PURGE"])
         s_delim(" ", name='space-1')
         s_string("/get", name='Request-URI')
         s_delim(" ", name='space-2')

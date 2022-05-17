@@ -361,7 +361,8 @@ function _M.rewrite(conf, ctx)
     local jwt_obj = jwt:load_jwt(jwt_token)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
     if not jwt_obj.valid then
-        return 401, {message = jwt_obj.reason}
+        core.log.warn("JWT token invalid: ", jwt_obj.reason)
+        return 401, {message = "JWT token invalid"}
     end
 
     local user_key = jwt_obj.payload and jwt_obj.payload.key
@@ -392,7 +393,8 @@ function _M.rewrite(conf, ctx)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
 
     if not jwt_obj.verified then
-        return 401, {message = jwt_obj.reason}
+        core.log.warn("failed to verify jwt: ", jwt_obj.reason)
+        return 401, {message = "failed to verify jwt"}
     end
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
@@ -401,7 +403,7 @@ end
 
 
 local function gen_token()
-    local args = ngx.req.get_uri_args()
+    local args = core.request.get_uri_args()
     if not args or not args.key then
         return core.response.exit(400)
     end

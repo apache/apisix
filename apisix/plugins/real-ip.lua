@@ -15,12 +15,16 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local ngx_re_split = require("ngx.re").split
 local is_apisix_or, client = pcall(require, "resty.apisix.client")
 local str_byte = string.byte
 local str_sub = string.sub
 local ipairs = ipairs
 local type = type
 
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
 
 local schema = {
     type = "object",
@@ -33,6 +37,10 @@ local schema = {
         source = {
             type = "string",
             minLength = 1
+        },
+        recursive = {
+            type = "boolean",
+            default = false
         }
     },
     required = {"source"},
@@ -67,6 +75,18 @@ function _M.check_schema(conf)
 end
 
 
+local function addr_match(conf, ctx, addr)
+    local matcher, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
+                                                  core.ip.create_ip_matcher, conf.trusted_addresses)
+    if not matcher then
+        core.log.error("failed to create ip matcher: ", err)
+        return false
+    end
+
+    return matcher:match(addr)
+end
+
+
 local function get_addr(conf, ctx)
     if conf.source == "http_x_forwarded_for" then
         -- use the last address from X-Forwarded-For header
@@ -82,6 +102,17 @@ local function get_addr(conf, ctx)
         local idx = core.string.rfind_char(addrs, ",")
         if not idx then
             return addrs
+        end
+
+        if conf.recursive and conf.trusted_addresses then
+            local split_addrs = ngx_re_split(addrs, ",\\s*", "jo")
+            for i = #split_addrs, 2, -1 do
+                if not addr_match(conf, ctx, split_addrs[i]) then
+                    return split_addrs[i]
+                end
+            end
+
+            return split_addrs[1]
         end
 
         for i = idx + 1, #addrs do
@@ -100,18 +131,13 @@ end
 
 function _M.rewrite(conf, ctx)
     if not is_apisix_or then
-        core.log.error("need to build APISIX-OpenResty to support setting real ip")
+        core.log.error("need to build APISIX-Base to support setting real ip")
         return 501
     end
 
     if conf.trusted_addresses then
-        if not conf.matcher then
-            conf.matcher = core.ip.create_ip_matcher(conf.trusted_addresses)
-        end
-
         local remote_addr = ctx.var.remote_addr
-        local trusted = conf.matcher:match(remote_addr)
-        if not trusted then
+        if not addr_match(conf, ctx, remote_addr) then
             return
         end
     end

@@ -102,6 +102,10 @@ make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 
 If this does not solve your problem, you can try getting a detailed log by using the `--verbose` flag to diagnose the problem.
 
+## How do I build the APISIX-Base environment?
+
+Some functions need to introduce additional NGINX modules, which requires APISIX to run on APISIX-Base. If you need these functions, you can refer to the code in [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) to build your own APISIX-Base environment.
+
 ## How can I make a gray release with Apache APISIX?
 
 Let's take an example query `foo.com/product/index.html?id=204&page=2` and consider that you need to make a gray release based on the `id` in the query string with this condition:
@@ -111,7 +115,7 @@ Let's take an example query `foo.com/product/index.html?id=204&page=2` and consi
 
 There are two different ways to achieve this in Apache APISIX:
 
-1. Using the `vars` field in a [Route](architecture-design/route.md):
+1. Using the `vars` field in a [Route](terminology/route.md):
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -245,7 +249,7 @@ nginx_config:
 
 All Plugins in Apache APISIX are hot reloaded.
 
-You can learn more about hot reloading of Plugins [here](https://apisix.apache.org/docs/apisix/next/plugins/#hot-reload).
+You can learn more about hot reloading of Plugins [here](https://apisix.apache.org/docs/apisix/architecture-design/plugin/#hot-reload).
 
 ## How do I configure Apache APISIX to listen on multiple ports when handling HTTP or HTTPS requests?
 
@@ -302,7 +306,7 @@ apisix:
 Please follow the troubleshooting steps described below:
 
 1. Make sure that there aren't any networking issues between Apache APISIX and your etcd deployment in your cluster.
-2. If your network is healthy, check whether you have enabled the [gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/) for etcd. The default state depends on whether you used command line options or a configuration file to start the etcd server.
+2. If your network is healthy, check whether you have enabled the [gRPC gateway](https://etcd.io/docs/v3.4/dev-guide/api_grpc_gateway/) for etcd. The default state depends on whether you used command line options or a configuration file to start the etcd server.
 
    - If you used command line options, gRPC gateway is enabled by default. You can enable it manually as shown below:
 
