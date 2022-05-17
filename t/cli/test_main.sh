@@ -706,6 +706,16 @@ fi
 ./bin/apisix stop
 echo "pass: ignore stale nginx.pid"
 
+# check operation not permitted
+sudo make run
+out=$(make run || true)
+if ! echo "$out" | grep "Operation not permitted"; then
+    echo "failed: should find operation not permitted"
+    exit 1
+fi
+sudo make stop
+echo "pass: operation not permitted"
+
 # check running when run repeatedly
 out=$(make run; make run || true)
 if ! echo "$out" | grep "APISIX is running"; then
