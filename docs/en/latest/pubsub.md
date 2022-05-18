@@ -78,7 +78,7 @@ The schema definition [schema_def.lua](https://github.com/apache/apisix/blob/mas
 
 #### Add a new `scheme` judgment branch to `http_access_phase`
 
-Add a `scheme` judgment branch to the `http_access_phase` function in `apisix/init.lua` to support the processing of `kafka` type upstreams. Because of Apache Kafka has its own clustering and partition scheme, we do not need to use the Apache APISIX built-in load balancing algorithm, so we intercept and take over the processing flow before selecting the upstream node, here using the `kafka_access_phase` function.
+Add a `scheme` judgment branch to the `http_access_phase` function in `apisix/init.lua` to support the processing of `kafka` type upstreams. Because Apache Kafka has its clustering and partition scheme, we do not need to use the Apache APISIX built-in load balancing algorithm, so we intercept and take over the processing flow before selecting the upstream node, using the `kafka_access_phase` function.
 
 The APISIX init file [init.lua](https://github.com/apache/apisix/blob/master/apisix/init.lua).
 
@@ -86,15 +86,17 @@ The APISIX init file [init.lua](https://github.com/apache/apisix/blob/master/api
 
 First, create an instance of the `pubsub` module, which is provided in the `core` package.
 
-Then, an instance of the Apache Kafka client is created, and this code is omitted here.
+Then, an instance of the Apache Kafka client is created and omitted code here.
 
 Next, add the command registered in the protocol definition above to the `pubsub` instance, which will provide a callback function that provides the parameters parsed from the communication protocol, in which the developer needs to call the kafka client to get the data and return it to the `pubsub` module as the function return value.
 
 :::note Callback function prototype
+
 The `params` is the data in the protocol definition; the first return value is the data, which needs to contain the fields in the response body definition, and returns the `nil` value when there is an error; the second return value is the error, and returns the error string when there is an error
+
 :::
 
-Finally, it enters the loop to wait for client commands and when an error occurs it returns the error and stops the processing flow.
+Finally, it enters the loop to wait for client commands, and when an error occurs, it returns the error and stops the processing flow.
 
 The kafka pubsub implementation [kafka.lua](https://github.com/apache/apisix/blob/master/apisix/pubsub/kafka.lua).
 
@@ -114,7 +116,7 @@ After this is done, create a route like the one below to connect to this messagi
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/kafka' \
-    -H 'X-API-KEY: <api-key>' \
+    -H 'X-API-KEY: ${api-key}' \
     -H 'Content-Type: application/json' \
     -d '{
     "uri": "/kafka",
