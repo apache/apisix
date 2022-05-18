@@ -29,8 +29,8 @@ rm -f v"$LUAROCKS_VER".tar.gz
 cd luarocks-"$LUAROCKS_VER" || exit
 
 OR_BIN="$OPENRESTY_PREFIX/bin/openresty"
-OR_VER=$($OR_BIN -v 2>&1 | awk -F '/' '{print $2}' | awk -F '.' '{print $1"."$2}')
-if [[ -e $OR_BIN && "$OR_VER" == 1.19 ]]; then
+OR_VER=$($OR_BIN -v 2>&1 | awk -F '/' '{print $2}' | awk -F '.' '{print $1 * 100 + $2}')
+if [[ -e $OR_BIN && "$OR_VER" -ge 119 ]]; then
     WITH_LUA_OPT="--with-lua=${OPENRESTY_PREFIX}/luajit"
 else
     # For old version OpenResty, we still need to install LuaRocks with Lua
