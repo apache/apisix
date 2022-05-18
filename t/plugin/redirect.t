@@ -449,9 +449,6 @@ apisix:
     ssl:
         enable: true
         listen_port: 9445
---- extra_yaml_config
-plugin_attr:
-    redirect_https_port: null
 --- request
 GET /hello
 --- more_headers
