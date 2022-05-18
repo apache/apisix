@@ -59,11 +59,11 @@ title: CHANGELOG
 
 ## 2.14.0
 
-### 改变
+### Change
 
 - 为了适应 OpenTelemetry 规范的变化，OTLP/HTTP 的默认端口改为 4318: [#7007](https://github.com/apache/apisix/pull/7007)
 
-### 核心
+### Core
 
 - 引入一个实验性功能，允许通过 APISIX 订阅 Kafka 消息。这个功能是基于 websocket 上面运行的 pubsub 框架。
     - [#7028](https://github.com/apache/apisix/pull/7028)
@@ -83,7 +83,7 @@ title: CHANGELOG
 - 增加一个选项，像 servlet 一样规范化 URI。[#6984](https://github.com/apache/apisix/pull/6984)
 - 通过 apisix-seed 实现 Zookeeper 服务发现：[#6751](https://github.com/apache/apisix/pull/6751)
 
-### 插件
+### Plugin
 
 - real-ip 插件支持像`real_ip_recursive`那样的递归 IP 搜索。[#6988](https://github.com/apache/apisix/pull/6988)
 - api-breaker 插件允许配置响应。[#6949](https://github.com/apache/apisix/pull/6949)
@@ -109,6 +109,7 @@ title: CHANGELOG
 - 修复 authz-keycloak 插件的 `access_denied_redirect_uri` 的设置有时不生效的问题。[#6794](https://github.com/apache/apisix/pull/6794)
 - 正确处理`USR2`信号。[#6758](https://github.com/apache/apisix/pull/6758)
 - 重定向插件在将 HTTP 重定向到 HTTPS 时设置了正确的端口。
+    - [#7065](https://github.com/apache/apisix/pull/7065)
     - [#6686](https://github.com/apache/apisix/pull/6686)
 - Admin API 拒绝未知的 stream 插件。[#6813](https://github.com/apache/apisix/pull/6813)
 

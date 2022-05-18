@@ -109,6 +109,7 @@ title: Changelog
 - The authz-keycloak plugin's `access_denied_redirect_uri` was bypassed sometimes: [#6794](https://github.com/apache/apisix/pull/6794)
 - Handle `USR2` signal properly: [#6758](https://github.com/apache/apisix/pull/6758)
 - The redirect plugin set a correct port during redirecting HTTP to HTTPS:
+    - [#7065](https://github.com/apache/apisix/pull/7065)
     - [#6686](https://github.com/apache/apisix/pull/6686)
 - Admin API rejects unknown stream plugin: [#6813](https://github.com/apache/apisix/pull/6813)
 
