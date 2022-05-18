@@ -151,7 +151,7 @@ function _M.rewrite(conf, ctx)
 
     local ret_code = conf.ret_code
     local ret_port = nil
-    local attr = plugin.plugin_attr("redirect")
+    local attr = plugin.plugin_attr(plugin_name)
     if attr then
         ret_port = attr.https_port
     end
