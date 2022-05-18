@@ -158,7 +158,6 @@ Configure via `upstream_id` to reuse Upstream's health detection, retires, and o
 
 :::
 
-
 :::note
 
 You can use both `upstream` configuration and `upstream_id` configuration together.
