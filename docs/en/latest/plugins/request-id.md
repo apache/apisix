@@ -63,9 +63,9 @@ plugin_attr:
       data_machine_interval: 10
 ```
 
-:::warning
+:::caution WARNING
 
-Please read this documentation before deciding to use the snowflake algorithm. Once it is configured, you cannot arbitrarily change the configuration. Failure to do so may result in duplicate ID being generated.
+Please read this documentation before deciding to use the snowflake algorithm. Once it is configured, you cannot arbitrarily change the configuration. Failure to do so may result in duplicate IDs.
 
 :::
 

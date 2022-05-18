@@ -39,9 +39,9 @@ This Plugin requires APISIX to run on APISIX-Base. See [apisix-build-tools](http
 
 ## Attributes
 
-| Name              | Type    | Required | Default | Description                                                                                                                                                   |
-| ----------------- | ------- | -------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| request_buffering | boolean | False    | true    | When set to true, dynamically sets the [proxy_request_buffering](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_request_buffering) directive. |
+| Name              | Type    | Required | Default | Description                                                                                                                                                                 |
+| ----------------- | ------- | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| request_buffering | boolean | False    | true    | When set to `true`, the Plugin dynamically sets the [proxy_request_buffering](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_request_buffering) directive. |
 
 ## Enabling the Plugin
 
