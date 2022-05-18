@@ -158,9 +158,7 @@ function _M.rewrite(conf, ctx)
 
     if not ret_port then
         local local_conf = core.config.local_conf()
-        local ssl = core.table.try_read_attr(local_conf,
-                "apisix",
-                "ssl")
+        local ssl = core.table.try_read_attr(local_conf, "apisix", "ssl")
         if ssl and ssl["enable"] then
             ret_port = ssl["listen_port"]
             if not ret_port then
