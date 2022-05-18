@@ -45,7 +45,10 @@ description: 本文介绍了关于 Apache APISIX `redirect` 插件的基本信�
 
 `http_to_https`、`uri` 和 `regex_uri` 只能配置其中一个属性。
 
-* 当开启 `http_to_https` 时，重定向 URL 中的端口将是 `X-Forwarded-Port` 请求头的值或服务器的端口。
+* 当开启 `http_to_https` 时，重定向 URL 中的端口将按如下顺序选取一个值（按优先级从高到低排列）
+  * 从配置文件（`conf/config.yaml`）中读取 `plugin_attr.redirect.https_port`。
+  * 如果 `apisix.ssl` 处于开启状态，先读取 `apisix.ssl.listen_port`，如果没有，再读取 `apisix.ssl.listen` 并从中随机选一个 `port`。
+  * 使用 443 作为默认 `https port`。
 
 :::
 
