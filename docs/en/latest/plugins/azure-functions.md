@@ -61,7 +61,7 @@ The relative order priority is as follows:
 2. If not found, the Plugin checks the configured attributes for authorization details. If present, it adds the respective header to the request sent to the Azure Functions.
 3. If authorization details are not configured in the Plugin's attributes, APISIX fetches the metadata and uses the master keys.
 
-To add a new master API key, you acn make a request to `/apisix/admin/plugin_metadata` with the required metadata as shown below:
+To add a new master API key, you can make a request to `/apisix/admin/plugin_metadata` with the required metadata as shown below:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/azure-functions -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
