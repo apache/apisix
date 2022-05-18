@@ -470,7 +470,7 @@ Please modify "admin_key" in conf/config.yaml .
         cert_path = pl_path.abspath(cert_path)
 
         if not pl_path.exists(cert_path) then
-            util.die("certificate path", cert_path, "isn't exist\n")
+            util.die("certificate path", cert_path, "doesn't exist\n")
         end
 
         yaml_conf.apisix.ssl.ssl_trusted_certificate = cert_path
