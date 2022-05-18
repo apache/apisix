@@ -428,59 +428,80 @@ passed
 
 
 
-=== TEST 18: redirect
+=== TEST 18: redirect(port using `plugin_attr.redirect.https_port`)
+--- extra_yaml_config
+plugin_attr:
+    redirect:
+        https_port: 8443
 --- request
 GET /hello
 --- more_headers
 Host: foo.com
 --- error_code: 301
 --- response_headers
-Location: https://foo.com:1984/hello
+Location: https://foo.com:8443/hello
 
 
 
-=== TEST 19: redirect(pass well-known port 443 to x-forwarded-port)
+=== TEST 19: redirect(port using `apisix.ssl.listen_port`)
+--- yaml_config
+apisix:
+    ssl:
+        enable: true
+        listen_port: 9445
 --- request
 GET /hello
 --- more_headers
 Host: foo.com
-x-forwarded-port: 443
 --- error_code: 301
 --- response_headers
-Location: https://foo.com/hello
+Location: https://foo.com:9445/hello
 
 
 
-=== TEST 20: redirect(pass negative number to x-forwarded-port)
+=== TEST 20: redirect(port using `apisix.ssl.listen` when listen length is one)
 --- request
 GET /hello
 --- more_headers
 Host: foo.com
-x-forwarded-port: -443
 --- error_code: 301
 --- response_headers
-Location: https://foo.com/hello
+Location: https://foo.com:9443/hello
 
 
 
-=== TEST 21: redirect(pass number more than 65535 to x-forwarded-port)
+=== TEST 21: redirect(port using `apisix.ssl.listen` when listen length more than one)
+--- yaml_config
+apisix:
+    ssl:
+        enable: true
+        listen:
+            - 6443
+            - 7443
+            - port: 8443
+            - port: 9443
 --- request
 GET /hello
 --- more_headers
 Host: foo.com
-x-forwarded-port: 65536
 --- error_code: 301
---- response_headers
-Location: https://foo.com/hello
+--- response_headers_like
+Location: https://foo.com:[6-9]443/hello
 
 
 
-=== TEST 22: redirect(pass invalid non-number to x-forwarded-port)
+=== TEST 22: redirect(port using `https default port`)
+--- yaml_config
+apisix:
+    ssl:
+        enable: null
+--- extra_yaml_config
+plugin_attr:
+    redirect: null
 --- request
 GET /hello
 --- more_headers
 Host: foo.com
-x-forwarded-port: ok
 --- error_code: 301
 --- response_headers
 Location: https://foo.com/hello
@@ -528,7 +549,7 @@ GET /hello
 Host: foo.com
 --- error_code: 301
 --- response_headers
-Location: https://foo.com:1984/hello
+Location: https://foo.com:9443/hello
 
 
 
@@ -613,7 +634,7 @@ GET /hello
 Host: test.com
 --- error_code: 301
 --- response_headers
-Location: https://test.com:1984/hello
+Location: https://test.com:9443/hello
 
 
 
@@ -763,7 +784,7 @@ POST /hello-https
 --- more_headers
 Host: test.com
 --- response_headers
-Location: https://test.com:1984/hello-https
+Location: https://test.com:9443/hello-https
 --- error_code: 308
 --- no_error_log
 [error]
@@ -776,7 +797,7 @@ GET /hello-https
 --- more_headers
 Host: test.com
 --- response_headers
-Location: https://test.com:1984/hello-https
+Location: https://test.com:9443/hello-https
 --- error_code: 301
 --- no_error_log
 [error]
@@ -789,7 +810,7 @@ HEAD /hello-https
 --- more_headers
 Host: test.com
 --- response_headers
-Location: https://test.com:1984/hello-https
+Location: https://test.com:9443/hello-https
 --- error_code: 301
 --- no_error_log
 [error]
@@ -1092,4 +1113,4 @@ Host: foo.com
 X-Forwarded-Proto: http
 --- error_code: 301
 --- response_headers
-Location: https://foo.com:1984/hello
+Location: https://foo.com:9443/hello

@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local plugin = require("apisix.plugin")
 local tab_insert = table.insert
 local tab_concat = table.concat
 local string_format = string.format
@@ -24,7 +25,8 @@ local ipairs = ipairs
 local ngx = ngx
 local str_find = core.string.find
 local str_sub  = string.sub
-local tonumber = tonumber
+local type = type
+local math_random = math.random
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 100
@@ -143,12 +145,47 @@ local function concat_new_uri(uri, ctx)
     return tab_concat(tmp, "")
 end
 
+local function get_port(attr)
+    local port
+    if attr then
+        port = attr.https_port
+    end
+
+    if port then
+        return port
+    end
+
+    local local_conf = core.config.local_conf()
+    local ssl = core.table.try_read_attr(local_conf, "apisix", "ssl")
+    if not ssl or not ssl["enable"] then
+        return port
+    end
+
+    port = ssl["listen_port"]
+    if port then
+        return port
+    end
+
+    local ports = ssl["listen"]
+    if ports and #ports > 0 then
+        local idx = math_random(1, #ports)
+        port = ports[idx]
+        if type(port) == "table" then
+            port = port.port
+        end
+    end
+
+    return port
+end
 
 function _M.rewrite(conf, ctx)
     core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
     local ret_code = conf.ret_code
-    local ret_port = tonumber(ctx.var["var_x_forwarded_port"])
+
+    local attr = plugin.plugin_attr(plugin_name)
+    local ret_port = get_port(attr)
+
     local uri = conf.uri
     local regex_uri = conf.regex_uri
 
