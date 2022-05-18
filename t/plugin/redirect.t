@@ -428,7 +428,7 @@ passed
 
 
 
-=== TEST 18: redirect(port using `plugin_attr.redirect_https_port`)
+=== TEST 18: redirect(port using `plugin_attr.redirect.https_port`)
 --- extra_yaml_config
 plugin_attr:
     redirect:
