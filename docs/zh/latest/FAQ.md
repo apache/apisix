@@ -42,7 +42,7 @@ Apache APISIX 在以下方面有所不同：
 
 如果您想获取性能基准测试的具体结果，请查看 [benchmark](benchmark.md)。
 
-## Apache APISIX 支持哪些平台?
+## Apache APISIX 支持哪些平台？
 
 Apache APISIX 是一个开源的云原生 API 网关，它支持在裸金属服务器上运行，也支持在 Kubernetes 上使用，甚至也可以运行在 Apple Silicon ARM 芯片上。
 
@@ -258,7 +258,7 @@ nginx_config:
 
 默认情况下，APISIX 在处理 HTTP 请求时只监听 9080 端口。
 
-要配置 Apache APISIX 监听多个端口，你可以:
+要配置 Apache APISIX 监听多个端口，你可以：
 
 1. 修改 `conf/config.yaml` 中 HTTP 端口监听的参数 `node_listen`，示例：
 
@@ -306,12 +306,12 @@ apisix:
 
 ## 为什么 `error.log` 中会出现 "failed to fetch data from etcd, failed to read etcd dir, etcd key: xxxxxx" 的错误？
 
-请按照以下步骤进行故障排除:
+请按照以下步骤进行故障排除：
 
 1. 确保 Apache APISIX 和集群中的 etcd 部署之间没有任何网络问题。
 2. 如果网络正常，请检查是否为 etcd 启用了[gRPC gateway](https://etcd.io/docs/v3.4.0/dev-guide/api_grpc_gateway/)。默认状态取决于你是使用命令行还是配置文件来启动 etcd 服务器。
 
-- 如果使用命令行选项，默认启用 gRPC 网关。可以手动启用，如下所示:
+- 如果使用命令行选项，默认启用 gRPC 网关。可以手动启用，如下所示：
 
 ```shell
 etcd --enable-grpc-gateway --data-dir=/path/to/data
@@ -362,7 +362,7 @@ make: *** [deps] Error 1
 
 ## 我如何通过 APISIX 代理访问 APISIX Dashboard？
 
-你可以按照以下步骤进行配置:
+你可以按照以下步骤进行配置：
 
 1. 为 Apache APISIX 代理和 Admin API 配置不同的端口，或者禁用 Admin API。
 
@@ -508,7 +508,7 @@ apisix:
 
 ## 如何基于 acme.sh 自动更新 APISIX SSL 证书？
 
-你可以运行以下命令来实现这一点:
+你可以运行以下命令来实现这一点：
 
 ```bash
 curl --output /root/.acme.sh/renew-hook-update-apisix.sh --silent https://gist.githubusercontent.com/anjia0532/9ebf8011322f43e3f5037bc2af3aeaa6/raw/65b359a4eed0ae990f9188c2afa22bacd8471652/renew-hook-update-apisix.sh
@@ -582,9 +582,9 @@ apisix:
 
 解决办法是改变 APISIX 的安装目录，推荐安装在 `/usr/local` 目录下。
 
-## 在Apache APISIX中，`plugin-metadata` 和 `plugin-configs` 有什么区别？
+## 在 Apache APISIX 中，`plugin-metadata` 和 `plugin-configs` 有什么区别？
 
-两者之间的差异如下:
+两者之间的差异如下：
 
 | `plugin-metadata`                                                                                                | `plugin-config`                                                                                                                                     |
 | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
