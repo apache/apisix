@@ -61,7 +61,6 @@ plugin_attr:
     endpoint_addr: http://127.0.0.1:12800
 ```
 
-
 ### Sample code for upstream configuration
 
 ```java title="Java with Spring Boot"
