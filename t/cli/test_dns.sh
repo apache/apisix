@@ -111,4 +111,9 @@ if ! echo "$out" | grep "invalid dns resolver address"; then
     exit 1
 fi
 
+if ! grep "resolver 127.0.0.1 ipv6=on;" conf/nginx.conf > /dev/null; then
+    echo "failed: should skip invalid dns resolver address"
+    exit 1
+fi
+
 echo "passed: check dns resolver address"
