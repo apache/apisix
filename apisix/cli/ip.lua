@@ -63,4 +63,20 @@ function _M.is_unspecified(self)
 end
 
 
+---
+-- Whether the given address is a valid IPV4 or IPV6 address
+--
+-- @function cli.ip.valid
+-- @tparam string addr ipv4 or ipv6 address to be verified.
+-- @treturn boolean True if the given address is valid, false otherwise.
+-- @usage
+-- local res, err = cli_ip.valid(addr)
+function _M.valid(addr)
+    local res, _ = mediador_ip.valid(addr)
+    if not res then
+        return false, "the address has neither IPv6 nor IPv4 format"
+    end
+    return res, nil
+end
+
 return _M

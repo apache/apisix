@@ -96,3 +96,19 @@ if ! grep "resolver 127.0.0.1 valid=30 ipv6=off;" conf/nginx.conf > /dev/null; t
     echo "failed: ipv6 config doesn't take effect"
     exit 1
 fi
+
+# check dns resolver address
+echo '
+apisix:
+  dns_resolver:
+    - "fe80::21c:42ff:fe00:18%eth0"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+
+if ! echo "$out" | grep "invalid dns resolver address"; then
+    echo "failed: should check dns resolver address is valid"
+    exit 1
+fi
+
+echo "passed: check dns resolver address"
