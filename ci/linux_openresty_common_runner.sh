@@ -19,6 +19,8 @@
 . ./ci/common.sh
 
 before_install() {
+    linux_get_dependencies
+
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
 
     # generating SSL certificates for Kafka
@@ -30,6 +32,8 @@ before_install() {
 }
 
 do_install() {
+    linux_get_dependencies
+
     export_or_prefix
 
     ./utils/linux-install-openresty.sh
@@ -101,10 +105,6 @@ after_success() {
     echo "done"
 }
 
-linux_get_dependencies() {
-    install_dependencies
-}
-
 case_opt=$1
 shift
 
@@ -120,8 +120,5 @@ script)
     ;;
 after_success)
     after_success "$@"
-    ;;
-linux_get_dependencies)
-    linux_get_dependencies "$@"
     ;;
 esac

@@ -54,9 +54,6 @@ jobs:
         run: |
           project_compose_ci=ci/pod/docker-compose.common.yml make ci-env-up
 
-      - name: Linux Get dependencies
-        run: sudo ./ci/linux_openresty_common_runner.sh linux_get_dependencies
-
       - name: Linux Before install
         run: sudo ./ci/${{ matrix.job_name }}_runner.sh before_install
 
