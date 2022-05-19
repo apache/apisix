@@ -102,7 +102,7 @@ after_success() {
 }
 
 linux_get_dependencies() {
-    linux_get_dependencies
+    install_dependencies
 }
 
 case_opt=$1
