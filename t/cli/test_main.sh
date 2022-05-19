@@ -706,15 +706,19 @@ fi
 ./bin/apisix stop
 echo "pass: ignore stale nginx.pid"
 
-# check operation not permitted
-sudo make run
+# check no corresponding process
+make run
+oldpid=`cat logs/nginx.pid`
+make stop
+sleep 0.5
+echo $oldpid > logs/nginx.pid
 out=$(make run || true)
-if ! echo "$out" | grep "Operation not permitted"; then
-    echo "failed: should find operation not permitted"
+if ! echo "$out" | grep "nginx.pid exists but there's no corresponding process with pid"; then
+    echo "failed: should find no corresponding process"
     exit 1
 fi
-sudo make stop
-echo "pass: operation not permitted"
+make stop
+echo "pass: no corresponding process"
 
 # check running when run repeatedly
 out=$(make run; make run || true)
