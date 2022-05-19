@@ -50,7 +50,9 @@ jobs:
           project_compose_ci=ci/pod/docker-compose.common.yml make ci-env-up
 
       - name: Linux Get dependencies
-        run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
+        run: |
+          sudo apt update
+          sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
 
       - name: Linux Install
         run: |
