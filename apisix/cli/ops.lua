@@ -604,7 +604,10 @@ Please modify "admin_key" in conf/config.yaml .
     for i, r in ipairs(sys_conf["dns_resolver"]) do
         local res, err = cli_ip.valid(r)
         if not res then
-            util.die("invalid dns resolver address: ", r,  ", err: ", err)
+            print("invalid dns resolver address: " .. r .. ", err: " .. err ..
+                         ", would ignore this item")
+            sys_conf["dns_resolver"][i] = nil
+            goto continue
         end
         if r:match(":[^:]*:") then
             -- more than one colon, is IPv6
@@ -613,6 +616,7 @@ Please modify "admin_key" in conf/config.yaml .
                 sys_conf["dns_resolver"][i] = "[" .. r .. "]"
             end
         end
+        ::continue::
     end
 
     local env_worker_processes = getenv("APISIX_WORKER_PROCESSES")
