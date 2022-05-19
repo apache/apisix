@@ -82,9 +82,6 @@ jobs:
           rm -rf $(ls -1 --ignore=*.tgz --ignore=ci --ignore=t --ignore=utils --ignore=.github)
           tar zxvf ${{ steps.branch_env.outputs.fullname }}
 
-      - name: Linux Get dependencies
-        run: sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
-
       - name: Build wasm code
         if: matrix.os_name == 'linux_openresty'
         run: |
@@ -100,6 +97,14 @@ jobs:
 
       - name: Linux Before install
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
+
+      - name: Start CI env
+        run: |
+          # generating SSL certificates for Kafka
+          sudo keytool -genkeypair -keyalg RSA -dname "CN=127.0.0.1" -alias 127.0.0.1 -keystore ./ci/pod/kafka/kafka-server/selfsigned.jks -validity 365 -keysize 2048 -storepass changeit
+          # launch deps env
+          make ci-env-up
+          sudo ./ci/linux-ci-init-service.sh
 
       - name: Start Dubbo Backend
         if: matrix.os_name == 'linux_openresty'

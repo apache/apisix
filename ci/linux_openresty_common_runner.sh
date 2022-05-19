@@ -19,14 +19,9 @@
 . ./ci/common.sh
 
 before_install() {
+    linux_get_dependencies
+
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
-
-    # generating SSL certificates for Kafka
-    keytool -genkeypair -keyalg RSA -dname "CN=127.0.0.1" -alias 127.0.0.1 -keystore ./ci/pod/kafka/kafka-server/selfsigned.jks -validity 365 -keysize 2048 -storepass changeit
-
-    # launch deps env
-    make ci-env-up
-    ./ci/linux-ci-init-service.sh
 }
 
 do_install() {
