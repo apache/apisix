@@ -19,11 +19,9 @@
 . ./ci/common.sh
 
 before_install() {
-    sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
+    linux_get_dependencies
 
-    # launch deps env
-    make ci-env-up
-    ./ci/linux-ci-init-service.sh
+    sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
 }
 
 do_install() {
