@@ -148,7 +148,7 @@ docker-compose -p docker-apisix -f docker-compose-arm64.yml up -d
 
 :::note
 
-你也可以参考 [APISIX 安装指南](./how-to-build.md)了解不同的安装方法。
+你也可以参考 [APISIX 安装指南](./installation-guide.md)了解不同的安装方法。
 
 :::
 
