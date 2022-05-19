@@ -1,5 +1,11 @@
 ---
 title: Zipkin
+keywords:
+  - APISIX
+  - Plugin
+  - Zipkin
+  - zipkin
+description: This document contains information about the Apache zipkin Plugin.
 ---
 
 <!--
@@ -23,21 +29,21 @@ title: Zipkin
 
 ## Description
 
-[Zipkin](https://github.com/openzipkin/zipkin) an open source distributed tracing system. This plugin is supported to collect tracing and report to Zipkin Collector based on [Zipkin API specification](https://zipkin.io/pages/instrumenting.html).
+[Zipkin](https://github.com/openzipkin/zipkin) is an open source distributed tracing system. The `zipkin` Plugin supports collecting and reporting traces to Zipkin collector based on the [Zipkin API specification](https://zipkin.io/pages/instrumenting.html).
 
-It's also works with [Apache SkyWalking](https://skywalking.apache.org/docs/main/latest/en/setup/backend/zipkin-trace/#zipkin-receiver) and [Jaeger](https://www.jaegertracing.io/docs/1.31/getting-started/#migrating-from-zipkin), which are support Zipkin [v1](https://zipkin.io/zipkin-api/zipkin-api.yaml)/[v2](https://zipkin.io/zipkin-api/zipkin2-api.yaml) format. And of course, it can integrate other tracing systems adapted to Zipkin v1/v2 format as well.
+It also works with [Apache SkyWalking](https://skywalking.apache.org/docs/main/latest/en/setup/backend/zipkin-trace/#zipkin-receiver) and [Jaeger](https://www.jaegertracing.io/docs/1.31/getting-started/#migrating-from-zipkin), both of which support Zipkin [v1](https://zipkin.io/zipkin-api/zipkin-api.yaml) and [v2](https://zipkin.io/zipkin-api/zipkin2-api.yaml) APIs. It can also work with other tracing systems adapted to Zipkin v1/v2 API format.
 
 ## Attributes
 
-| Name         | Type   | Requirement | Default  | Valid        | Description                                                                     |
-| ------------ | ------ | ----------- | -------- | ------------ | ------------------------------------------------------------------------------- |
-| endpoint     | string | required    |          |              | the http endpoint of Ziplin, for example: `http://127.0.0.1:9411/api/v2/spans`. |
-| sample_ratio | number | required    |          | [0.00001, 1] | the ratio of sample                                                             |
-| service_name | string | optional    | "APISIX" |              | service name for zipkin reporter                                                |
-| server_addr  | string | optional    |          |              | IPv4 address for zipkin reporter, default is nginx built-in variables $server_addr, here you can specify your external ip address. |
-| span_version | integer| optional    | 2        | [1, 2]       | the version of span type |
-
-Currently each traced request will create spans below:
+| Name         | Type    | Required | Default        | Valid values | Description                                                                     |
+|--------------|---------|----------|----------------|--------------|---------------------------------------------------------------------------------|
+| endpoint     | string  | True     |                |              | Zipkin HTTP endpoint. For example, `http://127.0.0.1:9411/api/v2/spans`.        |
+| sample_ratio | number  | True     |                | [0.00001, 1] | How often to sample the requests. Setting to `1` will sample all requests.      |
+| service_name | string  | False    | "APISIX"       |              | Service name for the Zipkin reporter to be displayed in Zipkin.                 |
+| server_addr  | string  | False    | `$server_addr` |              | IPv4 address for the Zipkin reporter. You can specify your external IP address. |
+| span_version | integer | False    | 2              | [1, 2]       | Version of the span type.                                                       |
+a
+Each traced request will create the spans shown below:
 
 ```
 request
@@ -45,7 +51,7 @@ request
 └── response: from the beginning of header filter to the beginning of log
 ```
 
-Previously we created spans below:
+For older versions (set `span_version` attribute to `1`), these spans are created:
 
 ```
 request
@@ -55,142 +61,15 @@ request
     └── body_filter
 ```
 
-Note: the name of span doesn't represent the corresponding Nginx's phase.
+:::note
 
-If you need to be compatible with old style, we can set `span_version` to 1.
+The span name doesn't represent the corresponding Nginx phase.
 
-## How To Enable
+:::
 
-Here's an example, enable the zipkin plugin on the specified route:
+### Sample code for upstream configuration
 
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "plugins": {
-        "zipkin": {
-            "endpoint": "http://127.0.0.1:9411/api/v2/spans",
-            "sample_ratio": 1,
-            "service_name": "APISIX-IN-SG",
-            "server_addr": "192.168.3.50"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
-
-You also can complete the above operation through the web interface, first add a route, then add zipkin plugin:
-
-![enable zipkin plugin](../../../assets/images/plugin/zipkin-1.png)
-
-## Test Plugin
-
-### Run the Zipkin instance
-
-e.g. using docker:
-
-```
-docker run -d -p 9411:9411 openzipkin/zipkin
-```
-
-Here is a test example:
-
-```shell
-curl http://127.0.0.1:9080/index.html
-HTTP/1.1 200 OK
-...
-```
-
-Then you can use a browser to access `http://127.0.0.1:9411/zipkin`, the webUI of Zipkin:
-
-![zipkin web-ui](../../../assets/images/plugin/zipkin-1.jpg)
-
-![zipkin web-ui list view](../../../assets/images/plugin/zipkin-2.jpg)
-
-### Run the Jaeger instance
-
-Besides Zipkin, this plugin supports reporting the traces to Jaeger as well. Here is a sample run on docker.
-Run Jaeger backend on docker first:
-
-```
-docker run -d --name jaeger \
-  -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
-  -p 16686:16686 \
-  -p 9411:9411 \
-  jaegertracing/all-in-one:1.31
-```
-
-Create a route with Zipkin plugin like Zipkin's example:
-
-```
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "plugins": {
-        "zipkin": {
-            "endpoint": "http://127.0.0.1:9411/api/v2/spans",
-            "sample_ratio": 1,
-            "service_name": "APISIX-IN-SG",
-            "server_addr": "192.168.3.50"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
-
-Access the service:
-
-```shell
-curl http://127.0.0.1:9080/index.html
-HTTP/1.1 200 OK
-...
-```
-
-Then you can access `http://127.0.0.1:16686`, the WebUI of Jaeger, to view traceson browser:
-
-![jaeger web-ui](../../../assets/images/plugin/jaeger-1.png)
-
-![jaeger web-ui trace](../../../assets/images/plugin/jaeger-2.png)
-
-## Disable Plugin
-
-When you want to disable the zipkin plugin, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
-
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "plugins": {
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
-
-The zipkin plugin has been disabled now. It works for other plugins.
-
-## example code for upstream ( golang with Gin )
-
-```golang
+```go title="Go with Gin"
 func GetTracer(serviceName string, port int, enpoitUrl string, rate float64) *zipkin.Tracer {
     // create a reporter to be used by the tracer
     reporter := httpreporter.NewReporter(enpoitUrl)
@@ -225,4 +104,134 @@ func main(){
     })
 
 }
+```
+
+## Enabling the Plugin
+
+The example below enables the Plugin on a specific Route:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "zipkin": {
+            "endpoint": "http://127.0.0.1:9411/api/v2/spans",
+            "sample_ratio": 1,
+            "service_name": "APISIX-IN-SG",
+            "server_addr": "192.168.3.50"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+<!-- You also can complete the above operation through the web interface, first add a route, then add zipkin plugin:
+
+![enable zipkin plugin](../../../assets/images/plugin/zipkin-1.png) -->
+
+## Example usage
+
+You need to have your Zipkin instance running. You can run Zipkin on Docker by running:
+
+```shell
+docker run -d -p 9411:9411 openzipkin/zipkin
+```
+
+Now, when you make requests, it will be updated in Zipkin:
+
+```shell
+curl http://127.0.0.1:9080/index.html
+```
+
+```shell
+HTTP/1.1 200 OK
+...
+```
+
+You can then open up the Zipkin UI on your browser at [http://127.0.0.1:9411/zipkin](http://127.0.0.1:9411/zipkin):
+
+![zipkin web-ui](../../../assets/images/plugin/zipkin-1.jpg)
+
+![zipkin web-ui list view](../../../assets/images/plugin/zipkin-2.jpg)
+
+### Reporting traces to Jaeger
+
+The Plugin also supports reporting traces to Jaeger. First, you have to have Jaeger running.
+
+To run it on Docker:
+
+```shell
+docker run -d --name jaeger \
+  -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
+  -p 16686:16686 \
+  -p 9411:9411 \
+  jaegertracing/all-in-one:1.31
+```
+
+Similar to configuring for Zipkin, create a Route and enable the Plugin:
+
+```
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+        "zipkin": {
+            "endpoint": "http://127.0.0.1:9411/api/v2/spans",
+            "sample_ratio": 1,
+            "service_name": "APISIX-IN-SG",
+            "server_addr": "192.168.3.50"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+Now, when you make requests, it will be updated on Jaeger:
+
+```shell
+curl http://127.0.0.1:9080/index.html
+```
+
+```shell
+HTTP/1.1 200 OK
+...
+```
+
+You can access the Jaeger UI to view the traces in endpoint [http://127.0.0.1:16686](http://127.0.0.1:16686):
+
+![jaeger web-ui](../../../assets/images/plugin/jaeger-1.png)
+
+![jaeger web-ui trace](../../../assets/images/plugin/jaeger-2.png)
+
+## Disable Plugin
+
+To disable the `zipkin` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/index.html",
+    "plugins": {
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
 ```

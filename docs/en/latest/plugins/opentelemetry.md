@@ -1,7 +1,12 @@
 ---
 title: opentelemetry
+keywords:
+  - APISIX
+  - Plugin
+  - OpenTelemetry
+  - opentelemetry
+description: This document contains information about the Apache opentelemetry Plugin.
 ---
-
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,41 +28,76 @@ title: opentelemetry
 
 ## Description
 
-[OpenTelemetry](https://opentelemetry.io) report Tracing data according to [OpenTelemetry specification](https://opentelemetry.io/docs/reference/specification/).
+The `opentelemetry` Plugin can be used to report tracing data according to the [OpenTelemetry specification](https://opentelemetry.io/docs/reference/specification/).
 
-The plugin currently only supports binary-encoded OTLP over HTTP. For details, see [OTLP/HTTP].
-
-[OTLP/HTTP]: https://opentelemetry.io/docs/reference/specification/protocol/otlp/#otlphttp
+The Plugin only supports binary-encoded [OLTP over HTTP](https://opentelemetry.io/docs/reference/specification/protocol/otlp/#otlphttp).
 
 ## Attributes
 
-| Name         | Type   | Requirement | Default  | Valid        | Description                                                          |
-| ------------ | ------ | ------ | -------- | ------------ | ----------------------------------------------------- |
-| sampler | object | optional | | | sampling config
-| sampler.name | string | optional | always_off | ["always_on", "always_off", "trace_id_ratio", "parent_base"] | sampling strategy，always_on：sampling all；always_off：sampling nothing；trace_id_ratio：base trace id percentage；parent_base：use parent decision, otherwise determined by root
-| sampler.options | object | optional | | {fraction = 0, root = {name = "always_off"}} | sampling strategy parameters
-| sampler.options.fraction | number | optional | 0 | [0, 1] | trace_id_ratio fraction
-| sampler.options.root | object | optional | {name = "always_off", options = {fraction = 0}} | | parent_base root sampler
-| sampler.options.root.name | string | optional | always_off | ["always_on", "always_off", "trace_id_ratio"] | sampling strategy
-| sampler.options.root.options | object | optional | {fraction = 0} | | sampling strategy parameters
-| sampler.options.root.options.fraction | number | optional | 0 | [0, 1] | trace_id_ratio fraction
-| additional_attributes | array[string] | optional | | | attributes (variable and its value) which will be appended to the trace span
-| additional_attributes[0] | string | required | | | APISIX or Nginx variable, like `http_header` or `route_id`
+| Name                                  | Type          | Required | Default                                         | Valid values                                                 | Description                                                                                                                                                                                                                                  |
+|---------------------------------------|---------------|----------|-------------------------------------------------|--------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| sampler                               | object        | False    |                                                 |                                                              | Sampling configuration.                                                                                                                                                                                                                      |
+| sampler.name                          | string        | False    | always_off                                      | ["always_on", "always_off", "trace_id_ratio", "parent_base"] | Sampling strategy. `always_on`: always samples, `always_off`: never samples, `trace_id_ratio`: random sampling result based on given sampling probability, `parent_base`: use parent decision if given, else determined by the root sampler. |
+| sampler.options                       | object        | False    |                                                 | {fraction = 0, root = {name = "always_off"}}                 | Parameters for sampling strategy.                                                                                                                                                                                                            |
+| sampler.options.fraction              | number        | False    | 0                                               | [0, 1]                                                       | Sampling probability for `trace_id_ratio`.                                                                                                                                                                                                   |
+| sampler.options.root                  | object        | False    | {name = "always_off", options = {fraction = 0}} |                                                              | Root sampler for `parent_base` strategy.                                                                                                                                                                                                     |
+| sampler.options.root.name             | string        | False    | always_off                                      | ["always_on", "always_off", "trace_id_ratio"]                | Root sampling strategy.                                                                                                                                                                                                                      |
+| sampler.options.root.options          | object        | False    | {fraction = 0}                                  |                                                              | Root sampling strategy parameters.                                                                                                                                                                                                           |
+| sampler.options.root.options.fraction | number        | False    | 0                                               | [0, 1]                                                       | Root sampling probability for `trace_id_ratio`.                                                                                                                                                                                              |
+| additional_attributes                 | array[string] | False    |                                                 |                                                              | Variables and its values which will be appended to the trace span.                                                                                                                                                                           |
+| additional_attributes[0]              | string        | True     |                                                 |                                                              | APISIX or Nginx variables. For example, `http_header` or `route_id`.                                                                                                                                                                         |
 
-## How To Enable
+### Configuring the collector
 
-First of all, enable the opentelemetry plugin in the `config.yaml`:
+You can set up the collector by configuring it in you configuration file (`conf/config.yaml`):
 
-```yaml
-# Add this in config.yaml
+| Name                                       | Type    | Default                                           | Description                                                                                                                                                                                                                   |
+|--------------------------------------------|---------|---------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| trace_id_source                            | enum    | random                                            | Source of the trace ID. Valid values are `random` or `x-request-id`. When set to `x-request-id`, the value of the `x-request-id` header will be used as trace ID. Make sure that is matches the regex pattern `[0-9a-f]{32}`. |
+| resource                                   | object  |                                                   | Additional [resource](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/sdk.md) appended to the trace.                                                                           |
+| collector                                  | object  | {address = "127.0.0.1:4318", request_timeout = 3} | OpenTelemetry Collector configuration.                                                                                                                                                                                        |
+| collector.address                          | string  | 127.0.0.1:4318                                    | Collector address.                                                                                                                                                                                                            |
+| collector.request_timeout                  | integer | 3                                                 | Report request timeout in seconds.                                                                                                                                                                                            |
+| collector.request_headers                  | object  |                                                   | Report request HTTP headers.                                                                                                                                                                                                  |
+| batch_span_processor                       | object  |                                                   | Trace span processor.                                                                                                                                                                                                         |
+| batch_span_processor.drop_on_queue_full    | boolean | true                                              | When set to `true`, drops the span when queue is full. Otherwise, force process batches.                                                                                                                                      |
+| batch_span_processor.max_queue_size        | integer | 2048                                              | Maximum queue size for buffering spans for delayed processing.                                                                                                                                                                |
+| batch_span_processor.batch_timeout         | number  | 5                                                 | Maximum time in seconds for constructing a batch.                                                                                                                                                                             |
+| batch_span_processor.max_export_batch_size | integer | 256                                               | Maximum number of spans to process in a single batch.                                                                                                                                                                         |
+| batch_span_processor.inactive_timeout      | number  | 2                                                 | Time interval in seconds between processing batches.                                                                                                                                                                          |
+
+You can configure these as shown below:
+
+```yaml title="conf/config.yaml"
+plugin_attr:
+  opentelemetry:
+    resource:
+      service.name: APISIX
+      tenant.id: business_id
+    collector:
+      address: 192.168.8.211:4318
+      request_timeout: 3
+      request_headers:
+        foo: bar
+    batch_span_processor:
+      drop_on_queue_full: false
+      max_queue_size: 6
+      batch_timeout: 2
+      inactive_timeout: 1
+      max_export_batch_size: 2
+```
+
+## Enabling the Plugin
+
+To enable the Plugin, you have to add it to your configuration file (`conf/config.yaml`):
+
+```yaml title="conf/config.yaml"
 plugins:
-  - ... # plugin you need
+  - ...
   - opentelemetry
 ```
 
-Then reload APISIX.
-
-Here's an example, enable the opentelemetry plugin on the specified route:
+Now, you can enable the Plugin on a specific Route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -82,54 +122,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-## How to set collecting
-
-You can set the collecting by specifying the configuration in `conf/config.yaml`.
-
-| Name         | Type   | Default  | Description                                                          |
-| ------------ | ------ | -------- | ----------------------------------------------------- |
-| trace_id_source | enum | random | the source of trace id, the valid value is `random` or `x-request-id`. If `x-request-id` is set, the value of `x-request-id` request header will be used as trace id. Please make sure it match regex pattern `[0-9a-f]{32}` |
-| resource | object |   | additional [resource](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/sdk.md) append to trace |
-| collector | object | {address = "127.0.0.1:4318", request_timeout = 3} | otlp collector |
-| collector.address | string | 127.0.0.1:4318 | collector address |
-| collector.request_timeout | integer | 3 | report request timeout(second) |
-| collector.request_headers | object |  | report request http headers |
-| batch_span_processor | object |  | trace span processor |
-| batch_span_processor.drop_on_queue_full | boolean | true | drop span when queue is full, otherwise force process batches |
-| batch_span_processor.max_queue_size | integer | 2048 | maximum queue size to buffer spans for delayed processing |
-| batch_span_processor.batch_timeout | number | 5 | maximum duration(second) for constructing a batch |
-| batch_span_processor.max_export_batch_size | integer | 256 | maximum number of spans to process in a single batch |
-| batch_span_processor.inactive_timeout | number | 2 | timer interval(second) for processing batches |
-
-Here is an example:
-
-```yaml
-plugin_attr:
-  opentelemetry:
-    resource:
-      service.name: APISIX
-      tenant.id: business_id
-    collector:
-      address: 192.168.8.211:4318
-      request_timeout: 3
-      request_headers:
-        foo: bar
-    batch_span_processor:
-      drop_on_queue_full: false
-      max_queue_size: 6
-      batch_timeout: 2
-      inactive_timeout: 1
-      max_export_batch_size: 2
-```
-
 ## Disable Plugin
 
-When you want to disable the opentelemetry plugin on a route/service, it is very simple,
-you can delete the corresponding JSON configuration in the plugin configuration,
-no need to restart the service, it will take effect immediately:
+To disable the `opentelemetry` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```console
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uris": [
