@@ -101,6 +101,10 @@ after_success() {
     echo "done"
 }
 
+linux_get_dependencies() {
+    linux_get_dependencies
+}
+
 case_opt=$1
 shift
 
@@ -116,5 +120,8 @@ script)
     ;;
 after_success)
     after_success "$@"
+    ;;
+linux_get_dependencies)
+    linux_get_dependencies "$@"
     ;;
 esac

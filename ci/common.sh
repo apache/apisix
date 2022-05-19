@@ -85,10 +85,3 @@ linux_get_dependencies () {
     apt update
     apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
 }
-
-case_opt=$1
-case $case_opt in
-    (linux_get_dependencies)
-        linux_get_dependencies
-        ;;
-esac
