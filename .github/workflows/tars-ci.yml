@@ -48,8 +48,7 @@ jobs:
 
       - name: Linux Install
         run: |
-          sudo apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
-          sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
+          sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
           sudo --preserve-env=OPENRESTY_VERSION ./ci/${{ matrix.os_name }}_runner.sh do_install
 
       - name: Run test cases

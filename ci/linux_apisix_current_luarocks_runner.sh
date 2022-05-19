@@ -19,6 +19,8 @@
 . ./ci/common.sh
 
 do_install() {
+    linux_get_dependencies
+
     export_or_prefix
 
     ./utils/linux-install-openresty.sh
