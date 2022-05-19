@@ -87,10 +87,8 @@ linux_get_dependencies () {
 }
 
 case_opt=$1
-shift
-
-case ${case_opt} in
-linux_get_dependencies)
-    linux_get_dependencies "$@"
-    ;;
+case $case_opt in
+    (linux_get_dependencies)
+        linux_get_dependencies
+        ;;
 esac
