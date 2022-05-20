@@ -60,7 +60,7 @@ script() {
     cd ..
 
     # apisix cli test
-    ./utils/set-dns.sh
+    set_coredns
 
     # install test dependencies
     sudo pip install requests
