@@ -73,7 +73,7 @@ tar zxvf apache-apisix-$VERSION-src.tgz
 
 4. Build Apache APISIX:
 
-https://github.com/apache/apisix/blob/release/$BLOB_VERSION/docs/en/latest/how-to-build.md#installation-via-source-release-package
+https://github.com/apache/apisix/blob/release/$BLOB_VERSION/docs/en/latest/installation-guide.md#installation-via-source-release-package
 
 The vote will be open for at least 72 hours or until necessary number of
 votes are reached.
