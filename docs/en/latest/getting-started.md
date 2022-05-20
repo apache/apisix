@@ -156,7 +156,7 @@ docker-compose -p docker-apisix -f docker-compose-arm64.yml up -d
 
 :::note
 
-You can check out [Installing Apache APISIX](./how-to-build.md) for different installation methods.
+You can check out [Installing Apache APISIX](./installation-guide.md) for different installation methods.
 
 :::
 
