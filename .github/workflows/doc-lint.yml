@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: 🚀 Use Node.js
-        uses: actions/setup-node@v3.1.1
+        uses: actions/setup-node@v3.2.0
         with:
           node-version: '12.x'
       - run: npm install -g markdownlint-cli@0.25.0
@@ -50,4 +50,4 @@ jobs:
           wget -O- "https://github.com/huacnlee/autocorrect/releases/download/$version/autocorrect-linux-amd64.tar.gz" | tar -xzv
           mv -v autocorrect /usr/local/bin/
           autocorrect --version
-          git ls-files -- "docs/zh/latest/**/*.md" | xargs -t autocorrect --lint
+          git ls-files -- "docs/zh/latest/**.md" | xargs -t autocorrect --lint

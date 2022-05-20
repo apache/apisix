@@ -26,6 +26,8 @@ local template = require("resty.template")
 local argparse = require("argparse")
 local pl_path = require("pl.path")
 local lfs = require("lfs")
+local signal = require("posix.signal")
+local errno = require("posix.errno")
 
 local stderr = io.stderr
 local ipairs = ipairs
@@ -730,15 +732,20 @@ local function start(env, ...)
     local pid = util.read_file(pid_path)
     pid = tonumber(pid)
     if pid then
-        local lsof_cmd = "lsof -p " .. pid
-        local res, err = util.execute_cmd(lsof_cmd)
-        if not (res and res == "") then
-            if not res then
-                print(err)
-            else
-                print("APISIX is running...")
-            end
+        if pid <= 0 then
+            print("invalid pid")
+            return
+        end
 
+        local signone = 0
+
+        local ok, err, err_no = signal.kill(pid, signone)
+        if ok then
+            print("APISIX is running...")
+            return
+        -- no such process
+        elseif err_no ~= errno.ESRCH then
+            print(err)
             return
         end
 

@@ -435,7 +435,7 @@ local function check_upstream_conf(in_dp, conf)
         end
     end
 
-    if conf.tls then
+    if conf.tls and conf.tls.client_cert then
         local cert = conf.tls.client_cert
         local key = conf.tls.client_key
         local ok, err = apisix_ssl.validate(cert, key)

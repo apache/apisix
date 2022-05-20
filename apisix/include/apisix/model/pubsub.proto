@@ -73,8 +73,8 @@ message CmdKafkaFetch {
 message PubSubReq {
     int64 sequence = 1;
     oneof req {
-        CmdEmpty cmd_empty                       = 31;
-        CmdPing cmd_ping                         = 32;
+        CmdEmpty           cmd_empty             = 31;
+        CmdPing            cmd_ping              = 32;
         CmdKafkaFetch      cmd_kafka_fetch       = 33;
         CmdKafkaListOffset cmd_kafka_list_offset = 34;
     };
@@ -135,9 +135,9 @@ message KafkaListOffsetResp {
 message PubSubResp {
     int64 sequence = 1;
     oneof resp {
-        ErrorResp error_resp                       = 31;
-        PongResp pong_resp                         = 32;
-        KafkaFetchResp kafka_fetch_resp            = 33;
+        ErrorResp           error_resp             = 31;
+        PongResp            pong_resp              = 32;
+        KafkaFetchResp      kafka_fetch_resp       = 33;
         KafkaListOffsetResp kafka_list_offset_resp = 34;
     };
 }

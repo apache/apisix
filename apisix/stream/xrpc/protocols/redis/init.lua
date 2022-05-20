@@ -31,6 +31,12 @@ local ipairs = ipairs
 local tonumber = tonumber
 
 
+-- this variable is only used to log the redis command line in log_format
+-- and is not used for filter in the logger phase.
+core.ctx.register_var("redis_cmd_line", function(ctx)
+    return core.table.concat(ctx.cmd_line, " ")
+end)
+
 -- redis protocol spec: https://redis.io/docs/reference/protocol-spec/
 -- There is no plan to support inline command format
 local _M = {}

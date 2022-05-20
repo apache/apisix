@@ -169,7 +169,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 1. Installation
 
-   Please refer to [install documentation](docs/en/latest/how-to-build.md).
+   Please refer to [install documentation](docs/en/latest/installation-guide.md).
 
 2. Getting started
 
