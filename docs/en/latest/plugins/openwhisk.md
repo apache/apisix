@@ -7,6 +7,7 @@ keywords:
   - openwhisk
 description: This document contains information about the Apache openwhisk Plugin.
 ---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -35,21 +36,21 @@ This Plugin can be configured on a Route and requests will be send to the config
 ## Attributes
 
 | Name              | Type    | Required | Default | Valid values | Description                                                                                                |
-|-------------------|---------|----------|---------|--------------|------------------------------------------------------------------------------------------------------------|
+| ----------------- | ------- | -------- | ------- | ------------ | ---------------------------------------------------------------------------------------------------------- |
 | api_host          | string  | True     |         |              | OpenWhisk API host address. For example, `https://localhost:3233`.                                         |
 | ssl_verify        | boolean | False    | true    |              | When set to `true` verifies the SSL certificate.                                                           |
 | service_token     | string  | True     |         |              | OpenWhisk service token. The format is `xxx:xxx` and it is passed through basic auth when calling the API. |
-| namespace         | string  | True     |         |              | OpenWhisk  namespace. For example `guest`.                                                                 |
+| namespace         | string  | True     |         |              | OpenWhisk namespace. For example `guest`.                                                                  |
 | action            | string  | True     |         |              | OpenWhisk action. For example `hello`.                                                                     |
 | result            | boolean | False    | true    |              | When set to `true` gets the action metadata (executes the function and gets response).                     |
 | timeout           | integer | False    | 60000ms | [1, 60000]ms | OpenWhisk action and HTTP call timeout in ms.                                                              |
 | keepalive         | boolean | False    | true    |              | When set to `true` keeps the connection alive for reuse.                                                   |
-| keepalive_timeout | integer | False    | 60000ms | [1000,...]   | Time is ms for connection to remain idle without closing.                                                  |
+| keepalive_timeout | integer | False    | 60000ms | [1000,...]ms | Time is ms for connection to remain idle without closing.                                                  |
 | keepalive_pool    | integer | False    | 5       | [1,...]      | Maximum number of requests that can be sent on this connection before closing it.                          |
 
 :::note
 
-The `timeout` attribute sets the time taken by the OpenWhisk action to execute and also the timeout for the HTTP client in APISIX. OpenWhisk action calls may take time to pull the runtime image and start the container. So, if the value is set too small, it may cause a large number of requests to fail.
+The `timeout` attribute sets the time taken by the OpenWhisk action to execute, and the timeout for the HTTP client in APISIX. OpenWhisk action calls may take time to pull the runtime image and start the container. So, if the value is set too small, it may cause a large number of requests to fail.
 
 OpenWhisk supports timeouts in the range 1ms to 60000ms and it is recommended to set it to at least 1000ms.
 
@@ -103,7 +104,7 @@ curl -i http://127.0.0.1:9080/hello
 This will give back the response from the action:
 
 ```json
-{"ready": true}
+{ "ready": true }
 ```
 
 ## Disable Plugin
