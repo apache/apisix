@@ -1,7 +1,12 @@
 ---
 title: traffic-split
+keywords:
+  - APISIX
+  - Plugin
+  - Traffic Split
+  - traffic-split
+description: This document contains information about the Apache APISIX traffic-split Plugin.
 ---
-
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,50 +28,56 @@ title: traffic-split
 
 ## Description
 
-The traffic split plugin allows users to incrementally direct percentages of traffic between various upstreams.
+The `traffic-split` Plugin can be used to dynamically direct portions of traffic to various Upstream services.
 
-Note: The ratio between each upstream may not so accurate since the drawback of weighted round robin algorithm (especially when the wrr state is reset).
+This is done by configuring `match`, which are custom rules for splitting traffic, and `weighted_upstreams` which is a set of Upstreams to direct traffic to.
+
+When a request is matched based on the `match` attribute configuration, it will be directed to the Upstreams based on their configured `weights`. You can also omit using the `match` attribute and direct all traffic based on `weighted_upstreams`.
+
+:::note
+
+The traffic ratio between Upstream services may be less accurate since round robin algorithm is used to direct traffic (especially when the state is reset).
+
+:::
 
 ## Attributes
 
-|               Name             |       Type    | Requirement | Default | Valid   | Description                                                                              |
-| ------------------------------ | ------------- | ----------- | ------- | ------- | ---------------------------------------------------------------------------------------- |
-| rules.match                    | array[object] | optional    |         |  | List of matching rules, by default the list is empty and the rule will be executed unconditionally. |
-| rules.match.vars               | array[array]  | optional    |     |  | A list consisting of one or more {var, operator, val} elements, like this: {{var, operator, val}, {var, operator, val}, ...}}. For example: {"arg_name", "==", "json"}, which means that the current request parameter name is json. The var here is consistent with the naming of Nginx internal variables, so request_uri, host, etc. can also be used; for the operator part, the currently supported operators are ==, ~=, ~~, >, <, in, has and !. For specific usage of operators, please see the `operator-list` part of [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
-| rules.weighted_upstreams       | array[object] | optional    |    |         | List of upstream configuration rules.                                                   |
-| weighted_upstreams.upstream_id | string/integer| optional    |         |         | The upstream id is bound to the corresponding upstream.            |
-| weighted_upstreams.upstream    | object        | optional    |     |      | Upstream configuration information.                                                    |
-| upstream.type                  | enum          | optional    | roundrobin  | [roundrobin, chash] | roundrobin supports weighted load, chash consistent hashing, the two are alternatives.   |
-| upstream.hash_on               | enum   | optional   | vars | | This option is only valid if the `type` is `chash`. Supported types `vars`(Nginx variables), `header`(custom header), `cookie`, `consumer`, `vars_combinations`, the default value is `vars`. For more details, please refer to [upstream](../admin-api.md#upstream) usage.|
-| upstream.key                   | string | optional   |      |    | This option is only valid if the `type` is `chash`. Find the corresponding node `id` according to `hash_on` and `key`. For more details, please refer to [upstream](../admin-api.md#upstream) usage.|
-| upstream.nodes                 | object        | optional    |       |  | In the hash table, the key of the internal element is the list of upstream machine addresses, in the format of address + Port, where the address part can be an IP or a domain name, such as 192.168.1.100:80, foo.com:80, etc. value is the weight of the node. In particular, when the weight value is 0, it has special meaning, which usually means that the upstream node is invalid and never wants to be selected. |
-| upstream.timeout               | object        | optional    |  15     |   | Set the timeout period for connecting, sending and receiving messages (time unit: second, all default to 15 seconds).  |
-| upstream.pass_host             | enum          | optional    | "pass"  | ["pass", "node", "rewrite"]  | `pass`: Pass the client's host transparently to the upstream; `node`: Use the host configured in the node of `upstream`; `rewrite`: Use the value of the configuration `upstream_host`. |
-| upstream.name                | string        | optional    |        |   | Identify the upstream service name, usage scenario, etc.  |
-| upstream.upstream_host         | string        | optional    |    |   | Only valid when pass_host is configured as rewrite.    |
-| weighted_upstreams.weight      | integer       | optional    | weight = 1   |  | The traffic is divided according to the `weight` value, and the roundrobin algorithm is used to divide multiple `weight`. |
+| Name                           | Type           | Required | Default    | Valid values                | Description                                                                                                                                                                                                                                                                                                                                               |
+|--------------------------------|----------------|----------|------------|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| rules.match                    | array[object]  | False    |            |                             | Rules to match for conditional traffic split. By default the list is empty and the traffic will be split unconditionally.                                                                                                                                                                                                                                 |
+| rules.match.vars               | array[array]   | False    |            |                             | List of variables to match for filtering requests for conditional traffic split. It is in the format `{variable operator value}`. For example, `{"arg_name", "==", "json"}`. The variables here are consistent with Nginx internal variables. For details on supported operators, [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
+| rules.weighted_upstreams       | array[object]  | False    |            |                             | List of Upstream configurations.                                                                                                                                                                                                                                                                                                                          |
+| weighted_upstreams.upstream_id | string/integer | False    |            |                             | ID of the configured Upstream object.                                                                                                                                                                                                                                                                                                                     |
+| weighted_upstreams.upstream    | object         | False    |            |                             | Configuration of the Upstream.                                                                                                                                                                                                                                                                                                                            |
+| upstream.type                  | enum           | False    | roundrobin | [roundrobin, chash]         | Type of mechanism to use for traffic splitting. `roundobin` supports weighted load and `chash` does consistent hashing.                                                                                                                                                                                                                                   |
+| upstream.hash_on               | enum           | False    | vars       |                             | Only valid if the `type` is `chash`. Supported `vars` (Nginx variables), `header` (custom header), `cookie`, `consumer`, and `vars_combinations`. For more details, refer [Upstream](../admin-api.md#upstream).                                                                                                                                           |
+| upstream.key                   | string         | False    |            |                             | Only valid if the `type` is `chash`. Finds the corresponding node `id` according to `hash_on` and `key` values. For more details, refer [Upstream](../admin-api.md#upstream).                                                                                                                                                                             |
+| upstream.nodes                 | object         | False    |            |                             | IP addresses (with optional ports) of the Upstream nodes represented as a hash table. In the hash table, the key is the IP address and the value is the weight of the node. Setting `weight` to `0` means that a request is never forwarded to that node.                                                                                                 |
+| upstream.timeout               | object         | False    | 15         |                             | Timeout in seconds for connecting, sending and receiving messages.                                                                                                                                                                                                                                                                                        |
+| upstream.pass_host             | enum           | False    | "pass"     | ["pass", "node", "rewrite"] | Configures the host when the request is forwarded to the upstream. Can be one of `pass`, `node` or `rewrite`. `pass`- transparently passes the client's host to the Upstream. `node`- uses the host configured in the node of the Upstream. `rewrite`- Uses the value configured in `upstream_host`.                                                      |
+| upstream.name                  | string         | False    |            |                             | Identifier for the Upstream for specifying service name, usage scenarios etc.                                                                                                                                                                                                                                                                             |
+| upstream.upstream_host         | string         | False    |            |                             | Host of the Upstream request. Only valid when `pass_host` attribute is set to `rewrite`.                                                                                                                                                                                                                                                                  |
+| weighted_upstreams.weight      | integer        | False    | weight = 1 |                             | Weight to give to each Upstream node for splitting traffic.                                                                                                                                                                                                                                                                                               |
 
-Currently, in the configuration of `weighted_upstreams.upstream`, the unsupported fields are:
-service_name, discovery_type, checks, retries, retry_timeout, desc, scheme, labels, create_time and update_time. But you can use `weighted_upstreams.upstream_id` to bind the `upstream` object to achieve their functions.
+:::note
 
-The traffic-split plugin is mainly composed of two parts: `match` and `weighted_upstreams`. `match` is a custom conditional rule, and `weighted_upstreams` is upstream configuration information. If you configure `match` and `weighted_upstreams` information, then after the `match` rule is verified, it will be based on the `weight` value in `weighted_upstreams`; the ratio of traffic between each upstream in the plugin will be guided, otherwise, all traffic will be directly Reach the `upstream` configured on `route` or `service`. Of course, you can also configure only the `weighted_upstreams` part, which will directly guide the traffic ratio between each upstream in the plugin based on the `weight` value in `weighted_upstreams`.
+Some of the configuration fields supported in Upstream are not supported in weighted_upstreams.upstream. These fields are `service_name`, `discovery_type`, `checks`, `retries`, `retry_timeout`, `desc`, `scheme`, `labels`, `create_time`, and `update_time`.
 
-Note: 1. In `match`, the expression in vars is the relationship of `and`, and the relationship between multiple `vars` is the relationship of `or`.  2. In the weighted_upstreams field of the plugin, if there is a structure with only `weight`, it means the upstream traffic weight value on `route` or `service`. Such as:
+As a workaround, you can create an Upstream object and configure it in `weighted_upstreams.upstream_id` to achieve these functionalities.
 
-```json
-"weighted_upstreams": [
-    ......
-    {
-        "weight": 2
-    }
-]
-```
+:::
 
-## How To Enable
+:::info IMPORTANT
 
-Create a route and enable the `traffic-split` plugin. When configuring the upstream information of the plugin, there are two ways:
+In the `match` attribute configuration, the expression in variable is related as AND whereas multiple variables are related by OR.
 
-1. Configure upstream information through the `upstream` attribute in the plugin.
+If only the `weight` attribute is configured, it corresponds to the weight of the Upstream service configured on the Route or Service. You can see this in action below.
+
+:::
+
+## Enabling the Plugin
+
+You can configure the Plugin on a Route as shown below:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -109,7 +120,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-2. Use the `upstream_id` attribute in the plugin to bind upstream.
+Alternatively, you can configure `upstream_id` if you have already configured an Upstream object:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -141,13 +152,27 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
->Note: **1.** Use the `upstream_id` to bind the defined upstream, it can reuse upstream health detection, retry and other functions. **2.** Support the two configuration methods of `upstream` and `upstream_id` to be used together.
+:::tip
 
-## Example
+Configure via `upstream_id` to reuse Upstream's health detection, retires, and other functions.
 
-### Grayscale Release
+:::
 
-The `match` rule part is missing, and the traffic is split according to the `weight` value configured by the `weighted_upstreams` in the plugin. Divide `plugin's upstream` and `route's upstream` according to the traffic ratio of 3:2, of which 60% of the traffic reaches the upstream of the `1981` port in the plugin, and 40% of the traffic reaches the default `1980` port on the route Upstream.
+:::note
+
+You can use both `upstream` configuration and `upstream_id` configuration together.
+
+:::
+
+## Example usage
+
+The examples below shows different use cases for using the `traffic-split` Plugin.
+
+### Canary release
+
+This is the process of gradually rolling out a release by splitting an increasing percentage of traffic to the new release until all traffic is directed to the new release.
+
+To set this up, you can configure the `weight` attribute of your `weighted_upstreams` as shown below:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -190,29 +215,37 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-**Test plugin:**
+Here, the weights are in the ratio 3:2 which means that 60% of the traffic reaches the Upstream service running on `:1981` (Plugin's Upstream) and 40% reaches the service running on `:1980` which is the Route's Upstream service.
 
-There are 5 requests, 3 requests hit the upstream of port 1981 of the plugin, and 2 requests hit the upstream of port 1980 of `route`.
+Now to test this configuration, if you make 5 requests, 3 will hit one service and 2 will hit the other:
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -i
+curl http://127.0.0.1:9080/index.html -i
+```
+
+```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 
 hello 1980
+```
 
-$ curl http://127.0.0.1:9080/index.html -i
+```shell
+curl http://127.0.0.1:9080/index.html -i
+```
+
+```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 
 world 1981
-
-......
 ```
 
-### Blue-green Release
+### Blue-green release
 
-Get the `match` rule parameter through the request header (you can also get it through the request parameter or NGINX variable). After the `match` rule is matched, it means that all requests hit the upstream configured by the plugin, otherwise the request only hits the `route` configured upstream.
+In this setup, user traffic is shifted from the "green" (production) environment to the "blue" (staging) environment once the new changes have been tested and accepted within the blue environment.
+
+To set this up, you can configure `match` rules based on the request headers as shown below:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -253,12 +286,15 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-**Test plugin:**
+Here, if the request comes with a `release` header with value `new_release` it is directed to the new Upstream.
 
-The rule of `match` is matched, and all requests hit the upstream port 1981 configured by the plugin:
+Now if you send a request with `new_release` as the value for the `release` header, it will be directed to one Upstream and other requests will be directed to another Upstream.
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'release: new_release' -i
+curl http://127.0.0.1:9080/index.html -H 'release: new_release' -i
+```
+
+```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 ......
@@ -266,10 +302,11 @@ Content-Type: text/html; charset=utf-8
 world 1981
 ```
 
-The `match` rule fails to match, and all requests hit the 1980 port upstream configured on the `route`:
+```shell
+curl http://127.0.0.1:9080/index.html -H 'release: old_release' -i
+```
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'release: old_release' -i
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 ......
@@ -277,11 +314,11 @@ Content-Type: text/html; charset=utf-8
 hello 1980
 ```
 
-### Custom Release
+### Custom release
 
-Multiple `vars` rules can be set in `match`. Multiple expressions in `vars` have an `and` relationship, and multiple `vars` rules have an `or` relationship; as long as one of the vars is required If the rule passes, the entire `match` passes.
+You can also make custom releases by configuring rules and setting weights.
 
-**Example 1: Only one `vars` rule is configured, and multiple expressions in `vars` are in the relationship of `and`. In `weighted_upstreams`, the traffic is divided into 3:2 according to the value of `weight`, of which only the part of the `weight` value represents the proportion of upstream on the `route`. When `match` fails to pass, all traffic will only hit the upstream on the route.**
+In the example below, only one `vars` rule is configured and the multiple expressions in the rule have an AND relationship. The weights are configured in 3:2 ratio and traffic not matching the `vars` will be redirected to the Upstream configured on the Route.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -328,16 +365,13 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-The plugin sets the requested `match` rule and upstream with port `1981`, and the route has upstream with port `1980`.
-
-**Test plugin:**
-
->1. After the verification of the `match` rule is passed, 60% of the requests hit the upstream of the plugin port 1981, and 40% of the requests hit the upstream of the 1980 port of the `route`.
-
-The match rule is successfully verified, and the upstream port of `1981` is hit.
+After the rules are matched, 60% of the traffic hit the Upstream on port `1981` and 40% hit the one on `1980`.
 
 ```shell
-$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'apisix-key: hello' -i
+curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'apisix-key: hello' -i
+```
+
+```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 ......
@@ -345,10 +379,13 @@ Content-Type: text/html; charset=utf-8
 world 1981
 ```
 
-The match rule fails to verify, and it hits the upstream of the default port of `1980`.
+If the rule fails to match, then the request is directed to the service on `1980`:
 
 ```shell
-$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'apisix-key: hello' -i
+curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'apisix-key: hello' -i
+```
+
+```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 ......
@@ -356,9 +393,7 @@ Content-Type: text/html; charset=utf-8
 hello 1980
 ```
 
-After 5 requests, the service of port `1981` was hit 3 times, and the service of port `1980` was hit 2 times.
-
-**Example 2: Configure multiple `vars` rules. Multiple expressions in `vars` are `and` relationships, and multiple `vars` are `or` relationships. According to the `weight` value in `weighted_upstreams`, the traffic is divided into 3:2, where only the part of the `weight` value represents the proportion of upstream on the route. When `match` fails to pass, all traffic will only hit the upstream on the route.**
+In the example below, multiple `vars` rules are configured and they have an OR relationship.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -412,14 +447,13 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-The plugin sets the requested `match` rule and the upstream port of `1981`, and the route has upstream port of `1980`.
-
-**Test plugin:**
-
->1. The expressions of the two `vars` are matched successfully. After the `match` rule is verified, 60% of the requests hit the 1981 port upstream of the plugin, and 40% of the requests hit the 1980 port upstream of the `route`.
+In the example below, both the `vars` rules are matched. After the rules are matched, 60% of the traffic is directed to the service on `1981` and 40% to the service on `1980`:
 
 ```shell
-$ curl 'http://127.0.0.1:9080/index.html?name=jack&name2=rose' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+curl 'http://127.0.0.1:9080/index.html?name=jack&name2=rose' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+```
+
+```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 ......
@@ -428,7 +462,10 @@ world 1981
 ```
 
 ```shell
-$ curl 'http://127.0.0.1:9080/index.html?name=jack&name2=rose' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+curl 'http://127.0.0.1:9080/index.html?name=jack&name2=rose' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+```
+
+```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 ......
@@ -436,12 +473,13 @@ Content-Type: text/html; charset=utf-8
 hello 1980
 ```
 
-After 5 requests, the service of port `1981` was hit 3 times, and the service of port `1980` was hit 2 times.
-
->2. The second expression of `vars` failed to match (missing the `name2` request parameter). After the `match` rule was verified, 60% of the requests hit the plugin's 1981 port upstream, and 40% of the request traffic hits Go upstream to the 1980 port of `route`.
+In the example below, the second `vars` rule fail to match. But since it is an OR relationship, the rules are matched and traffic is directed as configured:
 
 ```shell
-$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+```
+
+```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 ......
@@ -450,20 +488,10 @@ world 1981
 ```
 
 ```shell
-$ curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
-HTTP/1.1 200 OK
-Content-Type: text/html; charset=utf-8
-......
-
-hello 1980
+curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
 ```
-
-After 5 requests, the service of port `1981` was hit 3 times, and the service of port `1980` was hit 2 times.
-
->3. The expression verification of two `vars` failed (missing the request parameters of `name` and `name2`), the `match` rule verification failed, and the response is the upstream data `hello 1980` of the default `route`.
 
 ```shell
-$ curl 'http://127.0.0.1:9080/index.html?name=jack' -i
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 ......
@@ -471,13 +499,25 @@ Content-Type: text/html; charset=utf-8
 hello 1980
 ```
 
-### Matching rules correspond to upstream
+In the example below the required headers are missing and both the `vars` rules fail to match and the request is directed to the default Upstream of the Route (`1980`):
 
-By configuring multiple `rules`, we can achieve one-to-one correspondence between different matching rules and upstream.
+```shell
+curl 'http://127.0.0.1:9080/index.html?name=jack' -i
+```
 
-**Example:**
+```shell
+HTTP/1.1 200 OK
+Content-Type: text/html; charset=utf-8
+......
 
-When the request header `x-api-id` is equal to 1, it hits the upstream with port 1981; when `x-api-id` is equal to 2, it hits the upstream with port 1982; otherwise, it hits the upstream with port 1980 (the upstream response data is the corresponding port number).
+hello 1980
+```
+
+### Multiple rules to correspond to Upstream
+
+You can achieve one-to-one correspondence between rules and Upstream by configuring multiple `rules`:
+
+For example, when the request header `x-api-id` is equal to `1` it should be directed to Upstream on port `1981` and if it is equal to `2` it should be directed to Upstream on port `1982`. And in other cases, it should default to the Upstream on port `1980`. You can configure this as shown below:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -540,35 +580,42 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-**Test plugin:**
-
-The request header `x-api-id` is equal to 1, hitting the upstream with the 1981 port.
+Now, when the request header `x-api-id` is equal to `1`, it will hit the Upstream on `1981`:
 
 ```shell
-$ curl http://127.0.0.1:9080/hello -H 'x-api-id: 1'
+curl http://127.0.0.1:9080/hello -H 'x-api-id: 1'
+```
+
+```shell
 1981
 ```
 
-The request header `x-api-id` is equal to 2, hitting the upstream with the 1982 port.
+If request header `x-api-id` is equal to `2`, it will hit the Upstream on `1982`:
 
 ```shell
-$ curl http://127.0.0.1:9080/hello -H 'x-api-id: 2'
+curl http://127.0.0.1:9080/hello -H 'x-api-id: 2'
+```
+
+```shell
 1982
 ```
 
-The request header `x-api-id` is equal to 3, the rule does not match, and it hits the upstream with port 1980.
+If request header `x-api-id` is equal to `3`, the rules do not match, and it will hit the Upstream on `1980`:
 
 ```shell
-$ curl http://127.0.0.1:9080/hello -H 'x-api-id: 3'
+curl http://127.0.0.1:9080/hello -H 'x-api-id: 3'
+```
+
+```shell
 1980
 ```
 
 ## Disable Plugin
 
-When you want to remove the traffic-split plugin, it's very simple, just delete the corresponding json configuration in the plugin configuration, no need to restart the service, it will take effect immediately:
+To disable the `traffic-split` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},
