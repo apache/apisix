@@ -191,7 +191,7 @@ OK
 
 You should be able to see the topology of all services in your SkyWalking UI:
 
-![ ](../../../assets/images/plugin/skywalking-4.png)\
+![ ](../../../assets/images/plugin/skywalking-4.png)
 
 You should also be able to see traces from all services:
 
