@@ -168,7 +168,7 @@ You can use both `upstream` configuration and `upstream_id` configuration togeth
 
 The examples below shows different use cases for using the `traffic-split` Plugin.
 
-### Grayscale/Canary release
+### Canary release
 
 This is the process of gradually rolling out a release by splitting an increasing percentage of traffic to the new release until all traffic is directed to the new release.
 
