@@ -162,6 +162,7 @@ echo "
 apisix:
     enable_admin: true
     allow_admin:
+        - 10.0.0.1
         - all
 " > conf/config.yaml
 
