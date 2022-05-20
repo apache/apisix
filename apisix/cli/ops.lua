@@ -602,6 +602,14 @@ Please modify "admin_key" in conf/config.yaml .
     end
 
     for i, r in ipairs(sys_conf["dns_resolver"]) do
+        if r:match(":[^:]*:") then
+            -- more than one colon, is IPv6
+            if r:byte(1) ~= str_byte('[') then
+                -- ensure IPv6 address is always wrapped in []
+                sys_conf["dns_resolver"][i] = "[" .. r .. "]"
+            end
+        end
+
         -- check if the dns_resolver is ipv6 address with zone_id
         -- Nnginx does not support this form
         if r:find("%%") then
@@ -611,13 +619,6 @@ Please modify "admin_key" in conf/config.yaml .
             goto continue
         end
 
-        if r:match(":[^:]*:") then
-            -- more than one colon, is IPv6
-            if r:byte(1) ~= str_byte('[') then
-                -- ensure IPv6 address is always wrapped in []
-                sys_conf["dns_resolver"][i] = "[" .. r .. "]"
-            end
-        end
         ::continue::
     end
 
