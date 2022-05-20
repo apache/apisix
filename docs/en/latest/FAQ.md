@@ -33,7 +33,7 @@ Apache APISIX differs in the following ways:
 
 - It uses etcd to save and synchronize configurations rather than relational databases like PostgreSQL or MySQL. The real-time event notification system in etcd is easier to scale than in these alternatives. This allows APISIX to synchronize the configuration in real-time, makes the code concise and avoids a single point of failure.
 - Fully dynamic.
-- Supports [hot loading of Plugins](/docs/apisix/plugins/#hot-reload).
+- Supports [hot loading of Plugins](./terminology/plugin.md#hot-reload).
 
 ## What is the performance impact of using Apache APISIX?
 
@@ -249,7 +249,7 @@ nginx_config:
 
 All Plugins in Apache APISIX are hot reloaded.
 
-You can learn more about hot reloading of Plugins [here](https://apisix.apache.org/docs/apisix/architecture-design/plugin/#hot-reload).
+You can learn more about hot reloading of Plugins [here](./terminology/plugin.md#hot-reload).
 
 ## How do I configure Apache APISIX to listen on multiple ports when handling HTTP or HTTPS requests?
 
