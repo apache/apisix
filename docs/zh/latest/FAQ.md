@@ -34,7 +34,7 @@ Apache APISIX 在以下方面有所不同：
 — 它使用 etcd 来保存和同步配置，而不是使用如 PostgreSQL 或 MySQL 这类的关系数据库。etcd 中的实时事件通知系统比这些替代方案更容易扩展。这允许 APISIX 实时同步配置，使代码简洁，并避免单点故障。
 
 - 完全动态
-- 支持[热加载插件](/docs/apisix/terminology/plugin#热加载)。
+- 支持[热加载插件](./terminology/plugin.md#热加载)。
 
 ## APISIX 所展现出的性能如何？
 
@@ -252,7 +252,7 @@ nginx_config:
 
 所有的 Apache APISIX 的插件都支持热加载的方式。
 
-如果你想了解更多关于热加载的内容，请参考[热加载](../terminology/plugin#热加载)。
+如果你想了解更多关于热加载的内容，请参考[热加载](./terminology/plugin.md#热加载)。
 
 ## 在处理 HTTP 或 HTTPS 请求时，我该如何配置 Apache APISIX 来监听多个端口？
 
