@@ -37,6 +37,7 @@ local io_open = io.open
 local execute = os.execute
 local os_rename = os.rename
 local table_insert = table.insert
+local table_remove = table.remove
 local getenv = os.getenv
 local max = math.max
 local floor = math.floor
@@ -615,11 +616,8 @@ Please modify "admin_key" in conf/config.yaml .
         if r:find("%%") then
             print("invalid dns resolver address: " .. r ..
                          ", would ignore this item")
-            sys_conf["dns_resolver"][i] = nil
-            goto continue
+            table_remove(sys_conf["dns_resolver"], i)
         end
-
-        ::continue::
     end
 
     local env_worker_processes = getenv("APISIX_WORKER_PROCESSES")
