@@ -101,6 +101,7 @@ fi
 echo '
 apisix:
   dns_resolver:
+    - 127.0.0.1
     - "fe80::21c:42ff:fe00:18%eth0"
 ' > conf/config.yaml
 

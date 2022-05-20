@@ -602,13 +602,15 @@ Please modify "admin_key" in conf/config.yaml .
     end
 
     for i, r in ipairs(sys_conf["dns_resolver"]) do
-        local res, err = cli_ip.valid(r)
-        if not res then
-            print("invalid dns resolver address: " .. r .. ", err: " .. err ..
+        -- check if the dns_resolver is ipv6 address with zone_id
+        -- Nnginx does not support this form
+        if r:find("%%") then
+            print("invalid dns resolver address: " .. r ..
                          ", would ignore this item")
             sys_conf["dns_resolver"][i] = nil
             goto continue
         end
+
         if r:match(":[^:]*:") then
             -- more than one colon, is IPv6
             if r:byte(1) ~= str_byte('[') then
