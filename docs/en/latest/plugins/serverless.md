@@ -1,5 +1,11 @@
 ---
 title: serverless
+keywords:
+  - APISIX
+  - Plugin
+  - Serverless
+  - serverless
+description: This document contains information about the Apache APISIX serverless Plugin.
 ---
 
 <!--
@@ -23,20 +29,22 @@ title: serverless
 
 ## Description
 
-There are two plug-ins for serverless, namely `serverless-pre-function` and `serverless-post-function`.
+There are two `serverless` Plugins in APISIX: `serverless-pre-function` and `serverless-post-function`. The former runs at the beginning of the specified phase, while the latter runs at the end of the specified phase.
 
-The former runs at the beginning of the specified phase, while the latter runs at the end of the specified phase.
-
-Both plug-ins receive the same parameters.
+Both Plugins have the same attributes.
 
 ## Attributes
 
-| Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
-| --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| phase     | string        | optional    | ["access"] | ["rewrite", "access", "header_filter", "body_filter", "log", "before_proxy"] |                                                                                                                                                     |
-| functions | array[string] | required    |            |                                                                          | A list of functions that are specified to run is an array type, which can contain either one function or multiple functions, executed sequentially. |
+| Name      | Type          | Required | Default    | Valid values                                                                 | Description                                                      |
+|-----------|---------------|----------|------------|------------------------------------------------------------------------------|------------------------------------------------------------------|
+| phase     | string        | False    | ["access"] | ["rewrite", "access", "header_filter", "body_filter", "log", "before_proxy"] | Phase before or after which the serverless function is executed. |
+| functions | array[string] | True     |            |                                                                              | List of functions that are executed sequentially.                |
 
-Note that only function is accepted here, not other types of Lua code. For example, anonymous functions are legal:<br />
+:::info IMPORTANT
+
+Only Lua functions are allowed here and not other Lua code.
+
+For example, anonymous functions are legal:
 
 ```lua
 return function()
@@ -44,7 +52,7 @@ return function()
 end
 ```
 
-Closure is also legal:
+Closures are also legal:
 
 ```lua
 local count = 1
@@ -54,20 +62,26 @@ return function()
 end
 ```
 
-But code that is not a function type is illegal:
+But code other than functions are illegal:
 
 ```lua
 local count = 1
 ngx.say(count)
 ```
 
-Since `v2.6`, we pass the `conf` and `ctx` as the first two arguments to the servelss function, like a regular plugin.
+:::
 
-Prior to `v2.12.0`, the phase `before_proxy` used to be called `balancer`. Considering that this method actually runs after `access` and before the request goes upstream, and has nothing to do with `balancer`, the new naming would be more appropriate.
+:::note
 
-## How To Enable
+From v2.6, `conf` and `ctx` are passed as the first two arguments to a serverless function like regular Plugins.
 
-Here's an example, enable the serverless plugin on the specified route:
+Prior to v2.12.0, the phase `before_proxy` was called `balancer`. This was updated considering that this method would run after `access` and before the request goes Upstream and is unrelated to `balancer`.
+
+:::
+
+## Enabling the Plugin
+
+The example below enables the Plugin on a specific Route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -92,22 +106,19 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-## Test Plugin
+## Example usage
 
-Use curl to access:
+Once you have configured the Plugin as shown above, you can make a request as shown below:
 
 ```shell
 curl -i http://127.0.0.1:9080/index.html
 ```
 
-Then you will find the message 'serverless pre-function' and 'match uri /index.html' in the error.log,
-which indicates that the specified function is in effect.
+You will find a message "serverless pre-function" and "match uri /index.html" in the error.log.
 
 ## Disable Plugin
 
-When you want to disable the serverless plugin, it is very simple,
-you can delete the corresponding json configuration in the plugin configuration,
-no need to restart the service, it will take effect immediately:
+To disable the `serverless` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -122,5 +133,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
-
-The serverless plugin has been disabled now. It works for other plugins.

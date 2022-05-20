@@ -1,5 +1,11 @@
 ---
 title: aws-lambda
+keywords:
+  - APISIX
+  - Plugin
+  - AWS Lambda
+  - aws-lambda
+description: This document contains information about the Apache APISIX aws-lambda Plugin.
 ---
 
 <!--
@@ -23,38 +29,40 @@ title: aws-lambda
 
 ## Description
 
-`aws-lambda` is a serverless plugin built into Apache APISIX for seamless integration with [AWS Lambda](https://aws.amazon.com/lambda/), a widely used serverless solution, as a dynamic upstream to proxy all requests for a particular URI to the AWS cloud - one of the highly used public cloud platforms for production environment. If enabled, this plugin terminates the ongoing request to that particular URI and initiates a new request to the AWS lambda gateway uri (the new upstream) on behalf of the client with the suitable authorization details set by the users, request headers, request body, params (all these three components are passed from the original request) and returns the response body, status code and the headers back to the original client that has invoked the request to the APISIX agent.
-At present, the plugin supports authorization via AWS api key and AWS IAM Secrets.
+The `aws-lambda` Plugin is used for integrating APISIX with [AWS Lambda](https://aws.amazon.com/lambda/) as a dynamic upstream to proxy all requests for a particular URI to the AWS Cloud.
+
+When enabled, the Plugin terminates the ongoing request to the configured URI and initiates a new request to the AWS Lambda Gateway URI on behalf of the client with configured authorization details, request headers, body and parameters (all three passed from the original request). It returns back the response with headers, status code and the body to the client that initiated the request with APISIX.
+
+This Plugin supports authorization via AWS API key and AWS IAM secrets.
 
 ## Attributes
 
-| Name             | Type   | Requirement  | Default      | Valid       | Description                                                                                |
-| -----------      | ------ | -----------  | -------      | -----       | ------------------------------------------------------------                               |
-| function_uri      | string | required    |          |   | The AWS api gateway endpoint which triggers the lambda serverless function code.   |
-| authorization   | object | optional    |         |     |  Authorization credentials to access the cloud function.                                                             |
-| authorization.apikey | string | optional    |             |     | Field inside _authorization_. The generate API Key to authorize requests to that endpoint of the AWS gateway. |                         |
-| authorization.iam | object | optional    |             |     | Field inside _authorization_. AWS IAM role based authorization, performed via AWS v4 request signing. See schema details below ([here](#iam-authorization-schema)). |                         |
-| timeout  | integer | optional    | 3000           | [100,...]     | Proxy request timeout in milliseconds.   |
-| ssl_verify  | boolean | optional    | true           | true/false     | If enabled performs SSL verification of the server.                     |
-| keepalive  | boolean | optional    | true           | true/false     | To reuse the same proxy connection in near future. Set to false to disable keepalives and immediately close the connection.                    |
-| keepalive_pool  | integer | optional    | 5          | [1,...]     | The maximum number of connections in the pool.              |
-| keepalive_timeout  | integer | optional    | 60000           | [1000,...]     |  The maximal idle timeout (ms).                     |
+| Name                 | Type    | Required | Default | Valid values | Description                                                                                                                                |
+|----------------------|---------|----------|---------|--------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| function_uri         | string  | True     |         |              | AWS API Gateway endpoint which triggers the lambda serverless function.                                                                    |
+| authorization        | object  | False    |         |              | Authorization credentials to access the cloud function.                                                                                    |
+| authorization.apikey | string  | False    |         |              | Generated API Key to authorize requests to the AWS Gateway endpoint.                                                                       |
+| authorization.iam    | object  | False    |         |              | Used for AWS IAM role based authorization performed via AWS v4 request signing. See [IAM authorization schema](#iam-authorization-schema). |
+| timeout              | integer | False    | 3000    | [100,...]    | Proxy request timeout in milliseconds.                                                                                                     |
+| ssl_verify           | boolean | False    | true    | true/false   | When set to `true` performs SSL verification.                                                                                              |
+| keepalive            | boolean | False    | true    | true/false   | When set to `true` keeps the connection alive for reuse.                                                                                   |
+| keepalive_pool       | integer | False    | 5       | [1,...]      | Maximum number of requests that can be sent on this connection before closing it.                                                          |
+| keepalive_timeout    | integer | False    | 60000   | [1000,...]   | Maximum number of requests that can be sent on this connection before closing it.                                                          |
 
 ### IAM Authorization Schema
 
-| Name             | Type   | Requirement  | Default        | Valid       | Description                                                                                |
-| -----------      | ------ | -----------  | -------        | -----       | ------------------------------------------------------------                               |
-| accesskey        | string | required     |                |             | Generated access key ID from AWS IAM console.                                            |
-| secret_key       | string | required     |                |             | Generated access key secret from AWS IAM console.                                         |
-| aws_region       | string | optional     | "us-east-1"    |             | The AWS region where the request is being sent.                                            |
-| service          | string | optional     | "execute-api"  |             | The service that is receiving the request (In case of Http Trigger it is "execute-api").   |
+| Name       | Type   | Required | Default       | Description                                                                         |
+|------------|--------|----------|---------------|-------------------------------------------------------------------------------------|
+| accesskey  | string | True     |               | Generated access key ID from AWS IAM console.                                       |
+| secret_key | string | True     |               | Generated access key secret from AWS IAM console.                                   |
+| aws_region | string | False    | "us-east-1"   | AWS region where the request is being sent.                                         |
+| service    | string | False    | "execute-api" | The service that is receiving the request. For HTTP trigger, it is `"execute-api"`. |
 
-## How To Enable
+## Enabling the Plugin
 
-The following is an example of how to enable the aws-lambda faas plugin for a specific route URI. Calling the APISIX route uri will make an invocation to the lambda function uri (the new upstream). We are assuming your cloud function is already up and running.
+The example below shows how you can configure the Plugin on a specific Route:
 
 ```shell
-# enable aws lambda for a route via api key authorization
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -70,10 +78,15 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-Now any requests (HTTP/1.1, HTTPS, HTTP2) to URI `/aws` will trigger an HTTP invocation to the aforesaid function URI and response body along with the response headers and response code will be proxied back to the client. For example (here AWS lambda function just take the `name` query param and returns `Hello $name`) :
+Now, any requests (HTTP/1.1, HTTPS, HTTP2) to the endpoint `/aws` will invoke the configured AWS Functions URI and the response will be proxied back to the client.
+
+In the example below, AWS Lambda takes in name from the query and returns a message "Hello $name":
 
 ```shell
-$ curl -i -XGET localhost:9080/aws\?name=APISIX
+curl -i -XGET localhost:9080/aws\?name=APISIX
+```
+
+```shell
 HTTP/1.1 200 OK
 Content-Type: application/json
 Connection: keep-alive
@@ -87,10 +100,13 @@ Server: APISIX/2.10.2
 "Hello, APISIX!"
 ```
 
-For requests where the mode of communication between the client and the Apache APISIX gateway is HTTP/2, the example looks like ( make sure you are running APISIX agent with `enable_http2: true` for a port in `config-default.yaml`. You can do it by uncommenting the port 9081 from `apisix.node_listen` field ) :
+Another example of a request where the client communicates with APISIX via HTTP/2 is shown below (make sure you have configured `enable_http2: true` for a in your default configuration file (`config-default.yaml`). You can do this by uncommenting the port `9081` from the field `apisix.node_listen`):
 
 ```shell
-$ curl -i -XGET --http2 --http2-prior-knowledge localhost:9081/aws\?name=APISIX
+curl -i -XGET --http2 --http2-prior-knowledge localhost:9081/aws\?name=APISIX
+```
+
+```shell
 HTTP/2 200
 content-type: application/json
 content-length: 16
@@ -103,10 +119,9 @@ server: APISIX/2.10.2
 "Hello, APISIX!"
 ```
 
-Similarly, the lambda can be triggered via AWS API Gateway by using AWS `IAM` permissions to authorize access to your API via APISIX aws-lambda plugin. Plugin includes authentication signatures in their HTTP calls via AWS v4 request signing. Here is an example:
+Similarly the function can be triggered via AWS API Gateway by using AWS IAM permissions for authorization. The Plugin includes authentication signatures in HTTP calls via AWS v4 request signing. The example below shows this method:
 
 ```shell
-# enable aws lambda for a route via iam authorization
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -125,15 +140,23 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-**Note**: This approach assumes you already have an iam user with the programmatic access enabled and required permissions (`AmazonAPIGatewayInvokeFullAccess`) to access the endpoint.
+:::note
 
-### Plugin with Path Forwarding
+This approach assumes that you have already an IAM user with programmatic access enabled with the required permissions (`AmazonAPIGatewayInvokeFullAccess`) to access the endpoint.
 
-AWS Lambda plugin supports url path forwarding while proxying request to the modified upstream (AWS Gateway URI endpoint). With that being said, any extension to the path of the base request APISIX gateway URI gets "appended" (path join) to the `function_uri` specified in the plugin configuration.
+:::
 
-**Note**: APISIX route uri must be ended with an asterisk (`*`) for this feature to work properly. APISIX routes are strictly matched and the extra asterisk at the suffix means any subpath appended to the original parent path will use the same route object configurations.
+### Configuring path forwarding
 
-Here is an example:
+The `aws-lambda` Plugins also supports URL path forwarding while proxying requests to the AWS upstream. Extensions to the base request path gets appended to the `function_uri` specified in the Plugin configuration.
+
+:::info IMPORTANT
+
+The `uri` configured on a Route must end with `*` for this feature to work properly. APISIX Routes are matched strictly and the `*` implies that any subpath to this URI would be matched to the same Route.
+
+:::
+
+The example below configures this feature:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -151,10 +174,13 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-Now any request with path `aws/default/test-apisix` will invoke the aws api gateway endpoint. Here the extra path (where the magic character `*` has been used) up to the query params have been forwarded.
+Now, any requests to the path `aws/default/test-apisix` will invoke the AWS Lambda Function and the added path is forwarded:
 
 ```shell
 curl -i -XGET http://127.0.0.1:9080/aws/default/test-apisix\?name\=APISIX
+```
+
+```shell
 HTTP/1.1 200 OK
 Content-Type: application/json
 Connection: keep-alive
@@ -170,11 +196,10 @@ Server: APISIX/2.11.0
 
 ## Disable Plugin
 
-Remove the corresponding JSON configuration in the plugin configuration to disable the `aws-lambda` plugin and add the suitable upstream configuration.
-APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
+To disable the `aws-lambda` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/aws",
     "plugins": {},
