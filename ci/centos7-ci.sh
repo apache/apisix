@@ -21,9 +21,9 @@
 install_dependencies() {
     export_or_prefix
 
-    # install development tools
+    # install build & runtime deps
     yum install -y wget tar gcc automake autoconf libtool make unzip \
-        git sudo openldap-devel
+        git sudo openldap-devel which
 
     # curl with http2
     wget https://github.com/moparisthebest/static-curl/releases/download/v7.79.1/curl-amd64 -O /usr/bin/curl

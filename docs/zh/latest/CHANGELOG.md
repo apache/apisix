@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.14.0](#2140)
 - [2.13.1](#2131)
 - [2.13.0](#2130)
 - [2.12.1](#2121)
@@ -55,6 +56,62 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.14.0
+
+### Change
+
+- 为了适应 OpenTelemetry 规范的变化，OTLP/HTTP 的默认端口改为 4318: [#7007](https://github.com/apache/apisix/pull/7007)
+
+### Core
+
+- 引入一个实验性功能，允许通过 APISIX 订阅 Kafka 消息。这个功能是基于 websocket 上面运行的 pubsub 框架。
+    - [#7028](https://github.com/apache/apisix/pull/7028)
+    - [#7032](https://github.com/apache/apisix/pull/7032)
+- 引入一个名为 xRPC 的实验性框架来管理非 HTTP 的 L7 流量。
+    - [#6885](https://github.com/apache/apisix/pull/6885)
+    - [#6901](https://github.com/apache/apisix/pull/6901)
+    - [#6919](https://github.com/apache/apisix/pull/6919)
+    - [#6960](https://github.com/apache/apisix/pull/6960)
+    - [#6965](https://github.com/apache/apisix/pull/6965)
+    - [#7040](https://github.com/apache/apisix/pull/7040)
+- 现在我们支持在代理 Redis traffic 过程中根据命令和键添加延迟，它建立在 xRPC 之上。
+    - [#6999](https://github.com/apache/apisix/pull/6999)
+- 引入实验性支持，通过 xDS 配置 APISIX。
+    - [#6614](https://github.com/apache/apisix/pull/6614)
+    - [#6759](https://github.com/apache/apisix/pull/6759)
+- 增加 `normalize_uri_like_servlet` 配置选项，像 servlet 一样规范化 URI。[#6984](https://github.com/apache/apisix/pull/6984)
+- 通过 apisix-seed 实现 Zookeeper 服务发现：[#6751](https://github.com/apache/apisix/pull/6751)
+
+### Plugin
+
+- real-ip 插件支持像 `real_ip_recursive` 那样的递归 IP 搜索。[#6988](https://github.com/apache/apisix/pull/6988)
+- api-breaker 插件允许配置响应。[#6949](https://github.com/apache/apisix/pull/6949)
+- response-rewrite 插件支持正文过滤器。[#6750](https://github.com/apache/apisix/pull/6750)
+- request-id 插件增加了 nanoid 算法来生成 ID：[#6779](https://github.com/apache/apisix/pull/6779)
+- file-logger 插件可以缓存和重开 file handler。[#6721](https://github.com/apache/apisix/pull/6721)
+- 增加 casdoor 插件。[#6382](https://github.com/apache/apisix/pull/6382)
+- authz-keycloak 插件支持 password grant：[#6586](https://github.com/apache/apisix/pull/6586)
+
+### Bugfix
+
+- 上游 keepalive 应考虑 TLS 参数：[#7054](https://github.com/apache/apisix/pull/7054)
+- 不要将内部错误信息暴露给客户端。
+    - [#6982](https://github.com/apache/apisix/pull/6982)
+    - [#6859](https://github.com/apache/apisix/pull/6859)
+    - [#6854](https://github.com/apache/apisix/pull/6854)
+    - [#6853](https://github.com/apache/apisix/pull/6853)
+    - [#6846](https://github.com/apache/apisix/pull/6846)
+- DNS 支持端口为 0 的 SRV 记录：[#6739](https://github.com/apache/apisix/pull/6739)
+- 修复客户端 mTLS 在 TLS 会话重用中有时不生效的问题：[#6906](https://github.com/apache/apisix/pull/6906)
+- grpc-web 插件不会在响应中覆盖 Access-Control-Allow-Origin 头。[#6842](https://github.com/apache/apisix/pull/6842)
+- syslog 插件的默认超时已被纠正。[#6807](https://github.com/apache/apisix/pull/6807)
+- 修复 authz-keycloak 插件的 `access_denied_redirect_uri` 的设置有时不生效的问题。[#6794](https://github.com/apache/apisix/pull/6794)
+- 正确处理 `USR2` 信号。[#6758](https://github.com/apache/apisix/pull/6758)
+- 重定向插件在将 HTTP 重定向到 HTTPS 时设置了正确的端口。
+    - [#7065](https://github.com/apache/apisix/pull/7065)
+    - [#6686](https://github.com/apache/apisix/pull/6686)
+- Admin API 拒绝未知的 stream 插件。[#6813](https://github.com/apache/apisix/pull/6813)
 
 ## 2.13.1
 
