@@ -75,17 +75,17 @@ title: CHANGELOG
     - [#6960](https://github.com/apache/apisix/pull/6960)
     - [#6965](https://github.com/apache/apisix/pull/6965)
     - [#7040](https://github.com/apache/apisix/pull/7040)
-- 现在我们支持在代理 Redistraffic 过程中根据命令和键添加延迟，它建立在 xRPC 之上。
+- 现在我们支持在代理 Redis traffic 过程中根据命令和键添加延迟，它建立在 xRPC 之上。
     - [#6999](https://github.com/apache/apisix/pull/6999)
 - 引入实验性支持，通过 xDS 配置 APISIX。
     - [#6614](https://github.com/apache/apisix/pull/6614)
     - [#6759](https://github.com/apache/apisix/pull/6759)
-- 增加一个选项，像 servlet 一样规范化 URI。[#6984](https://github.com/apache/apisix/pull/6984)
+- 增加 `normalize_uri_like_servlet` 配置选项，像 servlet 一样规范化 URI。[#6984](https://github.com/apache/apisix/pull/6984)
 - 通过 apisix-seed 实现 Zookeeper 服务发现：[#6751](https://github.com/apache/apisix/pull/6751)
 
 ### Plugin
 
-- real-ip 插件支持像`real_ip_recursive`那样的递归 IP 搜索。[#6988](https://github.com/apache/apisix/pull/6988)
+- real-ip 插件支持像 `real_ip_recursive` 那样的递归 IP 搜索。[#6988](https://github.com/apache/apisix/pull/6988)
 - api-breaker 插件允许配置响应。[#6949](https://github.com/apache/apisix/pull/6949)
 - response-rewrite 插件支持正文过滤器。[#6750](https://github.com/apache/apisix/pull/6750)
 - request-id 插件增加了 nanoid 算法来生成 ID：[#6779](https://github.com/apache/apisix/pull/6779)
@@ -107,7 +107,7 @@ title: CHANGELOG
 - grpc-web 插件不会在响应中覆盖 Access-Control-Allow-Origin 头。[#6842](https://github.com/apache/apisix/pull/6842)
 - syslog 插件的默认超时已被纠正。[#6807](https://github.com/apache/apisix/pull/6807)
 - 修复 authz-keycloak 插件的 `access_denied_redirect_uri` 的设置有时不生效的问题。[#6794](https://github.com/apache/apisix/pull/6794)
-- 正确处理`USR2`信号。[#6758](https://github.com/apache/apisix/pull/6758)
+- 正确处理 `USR2` 信号。[#6758](https://github.com/apache/apisix/pull/6758)
 - 重定向插件在将 HTTP 重定向到 HTTPS 时设置了正确的端口。
     - [#7065](https://github.com/apache/apisix/pull/7065)
     - [#6686](https://github.com/apache/apisix/pull/6686)

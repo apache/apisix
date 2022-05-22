@@ -75,12 +75,12 @@ title: Changelog
     - [#6960](https://github.com/apache/apisix/pull/6960)
     - [#6965](https://github.com/apache/apisix/pull/6965)
     - [#7040](https://github.com/apache/apisix/pull/7040)
-- Now we support adding delay according to the command & key during proxying Redistraffic, which is built above xRPC:
+- Now we support adding delay according to the command & key during proxying Redis traffic, which is built above xRPC:
     - [#6999](https://github.com/apache/apisix/pull/6999)
 - Introduce an experimental support to configure APISIX via xDS:
     - [#6614](https://github.com/apache/apisix/pull/6614)
     - [#6759](https://github.com/apache/apisix/pull/6759)
-- Add an option to normalize uri like servlet: [#6984](https://github.com/apache/apisix/pull/6984)
+- Add `normalize_uri_like_servlet` option to normalize uri like servlet: [#6984](https://github.com/apache/apisix/pull/6984)
 - Zookeeper service discovery via apisix-seed: [#6751](https://github.com/apache/apisix/pull/6751)
 
 ### Plugin
