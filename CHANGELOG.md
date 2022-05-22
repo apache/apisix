@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.14.0](#2140)
 - [2.13.1](#2131)
 - [2.13.0](#2130)
 - [2.12.1](#2121)
@@ -55,6 +56,62 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.14.0
+
+### Change
+
+- To adapt the change of OpenTelemetry spec, the default port of OTLP/HTTP is changed to 4318: [#7007](https://github.com/apache/apisix/pull/7007)
+
+### Core
+
+- Introduce an experimental feature to allow subscribing Kafka message via APISIX. This feature is based on the pubsub framework running above websocket:
+    - [#7028](https://github.com/apache/apisix/pull/7028)
+    - [#7032](https://github.com/apache/apisix/pull/7032)
+- Introduce an experimental framework called xRPC to manage non-HTTP L7 traffic:
+    - [#6885](https://github.com/apache/apisix/pull/6885)
+    - [#6901](https://github.com/apache/apisix/pull/6901)
+    - [#6919](https://github.com/apache/apisix/pull/6919)
+    - [#6960](https://github.com/apache/apisix/pull/6960)
+    - [#6965](https://github.com/apache/apisix/pull/6965)
+    - [#7040](https://github.com/apache/apisix/pull/7040)
+- Now we support adding delay according to the command & key during proxying Redis traffic, which is built above xRPC:
+    - [#6999](https://github.com/apache/apisix/pull/6999)
+- Introduce an experimental support to configure APISIX via xDS:
+    - [#6614](https://github.com/apache/apisix/pull/6614)
+    - [#6759](https://github.com/apache/apisix/pull/6759)
+- Add `normalize_uri_like_servlet` option to normalize uri like servlet: [#6984](https://github.com/apache/apisix/pull/6984)
+- Zookeeper service discovery via apisix-seed: [#6751](https://github.com/apache/apisix/pull/6751)
+
+### Plugin
+
+- The real-ip plugin supports recursive IP search like `real_ip_recursive`: [#6988](https://github.com/apache/apisix/pull/6988)
+- The api-breaker plugin allows configuring response: [#6949](https://github.com/apache/apisix/pull/6949)
+- The response-rewrite plugin supports body filters: [#6750](https://github.com/apache/apisix/pull/6750)
+- The request-id plugin adds nanoid algorithm to generate ID: [#6779](https://github.com/apache/apisix/pull/6779)
+- The file-logger plugin can cache & reopen file handler: [#6721](https://github.com/apache/apisix/pull/6721)
+- Add casdoor plugin: [#6382](https://github.com/apache/apisix/pull/6382)
+- The authz-keycloak plugin supports password grant: [#6586](https://github.com/apache/apisix/pull/6586)
+
+### Bugfix
+
+- Upstream keepalive should consider TLS param: [#7054](https://github.com/apache/apisix/pull/7054)
+- Do not expose internal error message to the client:
+    - [#6982](https://github.com/apache/apisix/pull/6982)
+    - [#6859](https://github.com/apache/apisix/pull/6859)
+    - [#6854](https://github.com/apache/apisix/pull/6854)
+    - [#6853](https://github.com/apache/apisix/pull/6853)
+    - [#6846](https://github.com/apache/apisix/pull/6846)
+- DNS supports SRV record with port 0: [#6739](https://github.com/apache/apisix/pull/6739)
+- client mTLS was ignored sometimes in TLS session reuse: [#6906](https://github.com/apache/apisix/pull/6906)
+- The grpc-web plugin doesn't override Access-Control-Allow-Origin header in response: [#6842](https://github.com/apache/apisix/pull/6842)
+- The syslog plugin's default timeout is corrected: [#6807](https://github.com/apache/apisix/pull/6807)
+- The authz-keycloak plugin's `access_denied_redirect_uri` was bypassed sometimes: [#6794](https://github.com/apache/apisix/pull/6794)
+- Handle `USR2` signal properly: [#6758](https://github.com/apache/apisix/pull/6758)
+- The redirect plugin set a correct port during redirecting HTTP to HTTPS:
+    - [#7065](https://github.com/apache/apisix/pull/7065)
+    - [#6686](https://github.com/apache/apisix/pull/6686)
+- Admin API rejects unknown stream plugin: [#6813](https://github.com/apache/apisix/pull/6813)
 
 ## 2.13.1
 
