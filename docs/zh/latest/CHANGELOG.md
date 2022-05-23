@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.14.1](#2141)
 - [2.14.0](#2140)
 - [2.13.1](#2131)
 - [2.13.0](#2130)
@@ -56,6 +57,12 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.14.1
+
+### Bugfix
+
+- `real_ip_from` 中配置 "unix: " 不应该导致 batch-requests 插件无法使用 [#7106](https://github.com/apache/apisix/pull/7106)
 
 ## 2.14.0
 
