@@ -616,8 +616,8 @@ Please modify "admin_key" in conf/config.yaml .
         -- check if the dns_resolver is ipv6 address with zone_id
         -- Nnginx does not support this form
         if r:find("%%") then
-            print("invalid dns resolver address: " .. r ..
-                         ", would ignore this item")
+            stderr:write("unsupported DNS resolver: " .. r ..
+                         ", would ignore this item\n")
             table_remove(sys_conf["dns_resolver"], i)
         end
     end
