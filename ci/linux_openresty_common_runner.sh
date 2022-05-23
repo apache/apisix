@@ -68,7 +68,7 @@ script() {
     export_or_prefix
     openresty -V
 
-    ./utils/set-dns.sh
+    set_coredns
 
     ./t/grpc_server_example/grpc_server_example \
         -grpc-address :50051 -grpcs-address :50052 -grpcs-mtls-address :50053 \

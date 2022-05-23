@@ -79,6 +79,48 @@ install_nodejs () {
     ln -s ${NODEJS_PREFIX}/bin/npm /usr/local/bin/npm
 }
 
+set_coredns() {
+    # test a domain name is configured as upstream
+    echo "127.0.0.1 test.com" | sudo tee -a /etc/hosts
+    echo "::1 ipv6.local" | sudo tee -a /etc/hosts
+    # test certificate verification
+    echo "127.0.0.1 admin.apisix.dev" | sudo tee -a /etc/hosts
+    cat /etc/hosts # check GitHub Action's configuration
+
+    # override DNS configures
+    if [ -f "/etc/netplan/50-cloud-init.yaml" ]; then
+        sudo pip3 install yq
+
+        tmp=$(mktemp)
+        yq -y '.network.ethernets.eth0."dhcp4-overrides"."use-dns"=false' /etc/netplan/50-cloud-init.yaml | \
+        yq -y '.network.ethernets.eth0."dhcp4-overrides"."use-domains"=false' | \
+        yq -y '.network.ethernets.eth0.nameservers.addresses[0]="8.8.8.8"' | \
+        yq -y '.network.ethernets.eth0.nameservers.search[0]="apache.org"' > $tmp
+        mv $tmp /etc/netplan/50-cloud-init.yaml
+        cat /etc/netplan/50-cloud-init.yaml
+        sudo netplan apply
+        sleep 3
+
+        sudo mv /etc/resolv.conf /etc/resolv.conf.bak
+        sudo ln -s /run/systemd/resolve/resolv.conf /etc/
+    fi
+    cat /etc/resolv.conf
+
+    mkdir -p build-cache
+
+    if [ ! -f "build-cache/coredns_1_8_1" ]; then
+        wget https://github.com/coredns/coredns/releases/download/v1.8.1/coredns_1.8.1_linux_amd64.tgz
+        tar -xvf coredns_1.8.1_linux_amd64.tgz
+        mv coredns build-cache/
+
+        touch build-cache/coredns_1_8_1
+    fi
+
+    pushd t/coredns || exit 1
+    ../../build-cache/coredns -dns.port=1053 &
+    popd || exit 1
+}
+
 GRPC_SERVER_EXAMPLE_VER=20210819
 
 linux_get_dependencies () {
