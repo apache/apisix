@@ -21,7 +21,7 @@
 
 exit_if_not_customed_nginx
 
-# The 'admin.apisix.dev' is injected by utils/set-dns.sh
+# The 'admin.apisix.dev' is injected by ci/common.sh@set_coredns
 
 # etcd mTLS verify
 echo '

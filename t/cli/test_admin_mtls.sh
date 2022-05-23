@@ -19,7 +19,7 @@
 
 . ./t/cli/common.sh
 
-# The 'admin.apisix.dev' is injected by utils/set-dns.sh
+# The 'admin.apisix.dev' is injected by ci/common.sh@set_coredns
 
 echo '
 apisix:
