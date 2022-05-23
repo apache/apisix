@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.14.1](#2141)
 - [2.14.0](#2140)
 - [2.13.1](#2131)
 - [2.13.0](#2130)
@@ -56,6 +57,12 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.14.1
+
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.14` branch.**
+
+[https://github.com/apache/apisix/blob/release/2.14/CHANGELOG.md#2141](https://github.com/apache/apisix/blob/release/2.14/CHANGELOG.md#2141)
 
 ## 2.14.0
 
