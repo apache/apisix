@@ -55,10 +55,8 @@ fi
 
 FOUND_PATH=$(echo "${PATH}" | grep -oP '(?<=:|)/usr/local/bin(?=:|)') || true
 if [[ "${FOUND_PATH}" == "" ]]; then
-   echo "the path /usr/local/bin is not included in the system default PATH variable, add PATH variable in ~/.bashrc."
-   echo "export PATH=$PATH:/usr/local/bin" >> ~/.bashrc
-   # shellcheck disable=SC1090
-   source ~/.bashrc
+   echo "Warning: the path /usr/local/bin is not included in the system default PATH variable."
+   export PATH=$PATH:/usr/local/bin
 fi
 
 luarocks config variables.OPENSSL_LIBDIR ${OPENSSL_PREFIX}/lib
