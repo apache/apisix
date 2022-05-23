@@ -26,6 +26,7 @@ local get_var         = require("resty.ngxvar").fetch
 local router          = require("apisix.router")
 local apisix_upstream = require("apisix.upstream")
 local set_upstream    = apisix_upstream.set_by_route
+local apisix_ssl      = require("apisix.ssl")
 local upstream_util   = require("apisix.utils.upstream")
 local ctxdump         = require("resty.ctxdump")
 local ipmatcher       = require("resty.ipmatcher")
@@ -50,6 +51,11 @@ local is_http = false
 if ngx.config.subsystem == "http" then
     is_http = true
     control_api_router = require("apisix.control.router")
+end
+
+local ok, apisix_base_flags = pcall(require, "resty.apisix.patch")
+if not ok then
+    apisix_base_flags = {}
 end
 
 local load_balancer
@@ -309,7 +315,19 @@ end
 
 
 local function verify_tls_client(ctx)
-    if ctx and ctx.ssl_client_verified then
+    if apisix_base_flags.client_cert_verified_in_handshake then
+        -- For apisix-base, there is no need to rematch SSL rules as the invalid
+        -- connections are already rejected in the handshake
+        return true
+    end
+
+    local matched = router.router_ssl.match_and_set(ctx, true)
+    if not matched then
+        return true
+    end
+
+    local matched_ssl = ctx.matched_ssl
+    if matched_ssl.value.client and apisix_ssl.support_client_verification() then
         local res = ngx_var.ssl_client_verify
         if res ~= "SUCCESS" then
             if res == "NONE" then
@@ -346,13 +364,13 @@ end
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
 
-    if not verify_tls_client(ngx_ctx.api_ctx) then
-        return core.response.exit(400)
-    end
-
     -- always fetch table from the table pool, we don't need a reused api_ctx
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
+
+    if not verify_tls_client(api_ctx) then
+        return core.response.exit(400)
+    end
 
     core.ctx.set_vars_meta(api_ctx)
 
@@ -870,13 +888,13 @@ function _M.stream_preread_phase()
     local ngx_ctx = ngx.ctx
     local api_ctx = ngx_ctx.api_ctx
 
-    if not verify_tls_client(ngx_ctx.api_ctx) then
-        return ngx_exit(1)
-    end
-
     if not api_ctx then
         api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
         ngx_ctx.api_ctx = api_ctx
+    end
+
+    if not verify_tls_client(api_ctx) then
+        return ngx_exit(1)
     end
 
     core.ctx.set_vars_meta(api_ctx)
