@@ -26,31 +26,29 @@ description: 本篇文档介绍了如何使用 Zookeeper 做服务发现
 #
 -->
 
-## 基于 [Zookeeper](https://zookeeper.apache.org/) 的服务发现
+目前，想在 APISIX 中基于 Zookeeper 进行服务发现，需要依赖 [apisix-seed](https://github.com/api7/apisix-seed) 项目进行。
 
-`Zookeeper` 服务发现需要依赖 [apisix-seed](https://github.com/api7/apisix-seed) 项目
-
-### `apisix-seed` 工作原理
+## `apisix-seed` 工作原理
 
 ![APISIX-SEED](../../../assets/images/apisix-seed.svg)
 
-`apisix-seed` 通过同时监听 `etcd` 和 `zookeeper` 的变化来完成数据交换。
+`apisix-seed` 通过同时监听 etcd 和 Zookeeper 的变化来完成数据交换。
 
 流程如下：
 
-1. `APISIX` 注册一个上游服务，并将服务类型设置为 `zookeeper` 并保存到 `etcd`。
-2. `apisix-seed` 监听  `etcd` 中 `APISIX` 的资源变更并过滤服务发现类型获得服务名称。
-3. `apisix-seed` 将服务绑定到 `etcd` 资源，并开始在 `zookeeper` 监听此服务。
-4. 客户端向 `zookeeper` 注册该服务。
-5. `apisix-seed` 获得 `zookeeper` 中的服务变更。
-6. `apisix-seed` 通过服务名称查询绑定的 `etcd` 资源，并将更新的服务节点写回 `etcd`。
-7. `APISIX` 工作节点监听 `etcd` 资源变更并在内存中刷新服务节点信息。
+1. 使用 APISIX 注册一个上游服务，并将服务类型设置为 `zookeeper` 并保存到 etcd。
+2. `apisix-seed` 监听 etcd 中 APISIX 的资源变更，并过滤服务发现类型获得服务名称。
+3. `apisix-seed` 将服务绑定到 etcd 资源，并开始在 Zookeeper 中监控此服务。
+4. 客户端向 Zookeeper 注册该服务。
+5. `apisix-seed` 获取 Zookeeper 中的服务变更。
+6. `apisix-seed` 通过服务名称查询绑定的 etcd 资源，并将更新后的服务节点写入 etcd。
+7. APISIX Worker 监控 etcd 资源变更，并在内存中刷新服务节点信息。
 
-### 配置 `apisix-seed` 和 `Zookeeper`
+## 如何使用
 
-配置步骤如下：
+### 环境准备：配置 `apisix-seed` 和 Zookeeper
 
-1. 启动 `Zookeeper` 服务
+1. 启动 Zookeeper
 
 ```bash
 docker run -itd --rm --name=dev-zookeeper -p 2181:2181 zookeeper:3.7.0
@@ -67,19 +65,19 @@ go build
 3. 修改 `apisix-seed` 配置文件，路径设为 `conf/conf.yaml`
 
 ```bash
-etcd:                            # APISIX ETCD Configure
+etcd:                            # APISIX etcd 配置
   host:
     - "http://127.0.0.1:2379"
   prefix: /apisix
   timeout: 30
 
 discovery:
-  zookeeper:                     # Zookeeper Service Discovery
+  zookeeper:                     # 配置 Zookeeper 进行服务发现
     hosts:
-      - "127.0.0.1:2181"         # Zookeeper service address
+      - "127.0.0.1:2181"         # Zookeeper 服务器地址
     prefix: /zookeeper
-    weight: 100                  # default weight for node
-    timeout: 10                  # default 10s
+    weight: 100                  # Zookeeper 节点默认权重设为 100
+    timeout: 10                  # Zookeeper 会话超时时间默认设为 10 秒
 ```
 
 4. 启动 `apisix-seed` 以监听服务变更
@@ -90,7 +88,7 @@ discovery:
 
 ### 设置 `APISIX` 路由和上游
 
-设置一个路由，请求路径为 `/zk/*`，上游使用 `zookeeper` 作为服务发现，服务名称是 `APISIX-ZK`
+通过以下命令设置路由，请求路径设置为 `/zk/*`，上游使用 ZooKeeper 作为服务发现，服务名称为 `APISIX-ZK`。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 \
@@ -105,11 +103,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 }'
 ```
 
-### 注册服务和请求验证
+### 注册服务
 
 1. 使用 `Zookeeper CLI` 注册服务
 
-- 注册服务
+登录 Zookeeper 容器，使用 CLI 程序进行服务注册。具体命令如下：
 
 ```bash
 # 登陆容器
@@ -120,21 +118,21 @@ oot@ae2f093337c1:/apache-zookeeper-3.7.0-bin# ./bin/zkCli.sh
 [zk: localhost:2181(CONNECTED) 0] create /zookeeper/APISIX-ZK '{"host":"127.0.0.1:1980","weight":100}'
 ```
 
-- 响应成功
+返回结果如下：
 
 ```bash
 Created /zookeeper/APISIX-ZK
 ```
 
-2. 请求验证
+### 请求验证
 
-- 请求
+通过以下命令请求路由：
 
 ```bash
 curl -i http://127.0.0.1:9080/zk/hello
 ```
 
-- 响应
+进行请求响应：
 
 ```bash
 HTTP/1.1 200 OK
