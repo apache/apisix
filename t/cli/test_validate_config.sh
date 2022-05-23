@@ -192,6 +192,7 @@ nginx_config:
         - "0.0.0.0/0"
         - "::"
         - "::/0"
+        - "unix:"
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
