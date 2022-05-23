@@ -86,7 +86,7 @@ install_dependencies() {
 run_case() {
     export_or_prefix
     make init
-    ./utils/set-dns.sh
+    set_coredns
     # run test cases
     FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r ${TEST_FILE_SUB_DIR} | tee /tmp/test.result
     rerun_flaky_tests /tmp/test.result
