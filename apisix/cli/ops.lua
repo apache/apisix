@@ -283,7 +283,7 @@ Please modify "admin_key" in conf/config.yaml .
         if real_ip_from then
             for _, ip in ipairs(real_ip_from) do
                 local _ip = cli_ip:new(ip)
-                if _ip:is_loopback() or _ip:is_unspecified() then
+                if _ip and _ip:is_loopback() or _ip:is_unspecified() then
                     pass_real_client_ip = true
                 end
             end
