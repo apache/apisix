@@ -45,7 +45,7 @@ rerun_flaky_tests() {
     local n_test
     tests="$(awk '/^t\/.*.t\s+\(.+ Failed: .+\)/{ print $1 }' "$1")"
     n_test="$(echo "$tests" | wc -l)"
-    if [ "$n_test" -gt 3 ]; then
+    if [ "$n_test" -gt 10 ]; then
         # too many tests failed
         exit 1
     fi

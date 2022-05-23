@@ -472,9 +472,9 @@ ok
                         name = "redis",
                         conf = {
                             faults = {
-                                {delay = 0.03, key = "b", commands = {"del"}},
-                                {delay = 0.02, key = "a", commands = {"mset"}},
-                                {delay = 0.01, key = "b", commands = {"mset"}},
+                                {delay = 0.06, key = "b", commands = {"del"}},
+                                {delay = 0.04, key = "a", commands = {"mset"}},
+                                {delay = 0.02, key = "b", commands = {"mset"}},
                             }
                         }
                     },
@@ -517,8 +517,8 @@ passed
                 return
             end
             local now = ngx.now()
-            if math.ceil((now - start) * 1000) < 20 then
-                ngx.say(now, " ", start)
+            if math.ceil((now - start) * 1000) < 40 then
+                ngx.say("mset a ", now, " ", start)
                 return
             end
             start = now
@@ -529,8 +529,8 @@ passed
                 return
             end
             local now = ngx.now()
-            if math.ceil((now - start) * 1000) < 10 or math.ceil((now - start) * 1000) > 15 then
-                ngx.say(now, " ", start)
+            if math.ceil((now - start) * 1000) < 20 or math.ceil((now - start) * 1000) > 35 then
+                ngx.say("mset b ", now, " ", start)
                 return
             end
             start = now
@@ -541,8 +541,8 @@ passed
                 return
             end
             local now = ngx.now()
-            if math.ceil((now - start) * 1000) > 5 then
-                ngx.say(now, " ", start)
+            if math.ceil((now - start) * 1000) > 20 then
+                ngx.say("mset mismatch ", now, " ", start)
                 return
             end
             start = now
@@ -553,8 +553,8 @@ passed
                 return
             end
             local now = ngx.now()
-            if math.ceil((now - start) * 1000) < 30 then
-                ngx.say(now, " ", start)
+            if math.ceil((now - start) * 1000) < 60 then
+                ngx.say("del b ", now, " ", start)
                 return
             end
             start = now
