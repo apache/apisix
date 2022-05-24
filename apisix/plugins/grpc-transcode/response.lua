@@ -19,7 +19,6 @@ local core   = require("apisix.core")
 local pb     = require("pb")
 local ngx    = ngx
 local string = string
-local ipairs = ipairs
 
 return function(ctx, proto, service, method, pb_option)
     local buffer = core.response.hold_body_chunk(ctx)
@@ -43,11 +42,7 @@ return function(ctx, proto, service, method, pb_option)
         buffer = string.sub(buffer, 6)
     end
 
-    if pb_option then
-        for _, opt in ipairs(pb_option) do
-            pb.option(opt)
-        end
-    end
+    util.set_options(proto, pb_option)
 
     local decoded = pb.decode(m.output_type, buffer)
     if not decoded then

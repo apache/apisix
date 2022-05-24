@@ -567,3 +567,104 @@ GET /grpc_plus?a=1&b=2
 qr/\{"result":3\}/
 --- error_log eval
 qr/request log: \{.*body":\"\{\\"result\\":3}/
+
+
+
+=== TEST 17: pb_option should be be set on the route level
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/proto/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "content" : "syntax = \"proto3\";
+                      package helloworld;
+                      service Greeter {
+                          rpc Plus (PlusRequest) returns (PlusReply) {}
+                      }
+
+                      message PlusRequest {
+                          int64 a = 1;
+                          int64 b = 2;
+                      }
+                      message PlusReply {
+                          int64 result = 1;
+                      }"
+                   }]]
+                )
+
+            if code >= 300 then
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "uri": "/grpc_plus2",
+                    "plugins": {
+                        "grpc-transcode": {
+                            "proto_id": "1",
+                            "service": "helloworld.Greeter",
+                            "method": "Plus"
+                        }
+                    },
+                    "upstream": {
+                        "scheme": "grpc",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:50051": 1
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "uri": "/grpc_plus",
+                    "plugins": {
+                        "grpc-transcode": {
+                            "proto_id": "1",
+                            "service": "helloworld.Greeter",
+                            "method": "Plus",
+                            "pb_option":["int64_as_string", "enum_as_name"]
+                        }
+                    },
+                    "upstream": {
+                        "scheme": "grpc",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:50051": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.say(body)
+                return
+            end
+
+            for i = 1, 3 do
+                local uri = "http://127.0.0.1:" .. ngx.var.server_port ..
+                    (i == 2 and "/grpc_plus2" or "/grpc_plus") ..
+                    "?a=1&b=2251799813685260"
+                local httpc = http.new()
+                local res = assert(httpc:request_uri(uri, {keepalive = false}))
+                ngx.say(res.body)
+            end
+        }
+    }
+--- response_body
+{"result":"#2251799813685261"}
+{"result":2.2517998136853e+15}
+{"result":"#2251799813685261"}
