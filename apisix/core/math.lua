@@ -22,7 +22,7 @@ local _M = {}
 
 
 ---
--- Calculate the GCD of two numbers
+-- Calculate the greatest common divisor (GCD) of two numbers
 --
 -- @function core.math.gcd
 -- @tparam number a
