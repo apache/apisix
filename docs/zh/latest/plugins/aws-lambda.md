@@ -29,11 +29,11 @@ description: 本文介绍了关于 Apache APISIX `aws-lambda` 插件的基本信
 
 ## 描述
 
-`aws-lambda` 插件用于将 [AWS Lambda](https://aws.amazon.com/lambda/) 作为动态上游集成至 APISIX，从而实现将对某一特定 URI 的所有请求代理到 AWS 云。
+`aws-lambda` 插件用于将 [AWS Lambda](https://aws.amazon.com/lambda/) 作为动态上游集成至 APISIX，从而实现将访问指定 URI 的请求代理到 AWS 云。
 
-`aws-lambda` 插件启用后会终止对已配置 URI 的请求，并代表客户端向 AWS Lambda Gateway URI 发起一个新的请求。这个新请求中包括配置的授权详细信息、请求头、请求体和参数（三个参数都是从原始请求中传递的）。然后插件会将带有响应头、状态码和响应体的响应返回给使用 APISIX 发起请求的客户端。
+启用 `aws-lambda` 插件后，该插件会终止对已配置 URI 的请求，并代表客户端向 AWS Lambda Gateway URI 发起一个新的请求。这个新请求中携带了之前配置的授权详细信息，包括请求头、请求体和参数（以上参数都是从原始请求中传递的），然后 `aws-lambda` 插件会将带有响应头、状态码和响应体的响应信息返回给使用 APISIX 发起请求的客户端。
 
-本插件支持通过 AWS API key 和 AWS IAM secrets 进行授权。
+该插件支持通过 AWS API key 和 AWS IAM secrets 进行授权。
 
 ## 属性
 
@@ -42,7 +42,7 @@ description: 本文介绍了关于 Apache APISIX `aws-lambda` 插件的基本信
 | function_uri         | string  | 是       |         |              | 触发 lambda serverless 函数的 AWS API Gateway 端点。        |
 | authorization        | object  | 否       |         |              | 访问云函数的授权凭证。                                       |
 | authorization.apikey | string  | 否       |         |              | 生成的 API 密钥，用于授权对 AWS Gateway 端点的请求。         |
-| authorization.iam    | object  | 否       |         |              | 用于通过 AWS v4 请求签名执行的基于 AWS IAM 角色的授权。 请参阅 [IAM 授权方案](#IAM授权方案)。 |
+| authorization.iam    | object  | 否       |         |              | 用于通过 AWS v4 请求签名执行的基于 AWS IAM 角色的授权。 请参考 [IAM 授权方案](#IAM授权方案)。 |
 | timeout              | integer | 否       | 3000    | [100,...]    | 代理请求超时（以毫秒为单位）。                                 |
 | ssl_verify           | boolean | 否       | true    | true/false   | 当设置为 `true` 时执行 SSL 验证。                          |
 | keepalive            | boolean | 否       | true    | true/false   | 当设置为 `true` 时，保持连接的活动状态以便重复使用。         |
@@ -60,7 +60,7 @@ description: 本文介绍了关于 Apache APISIX `aws-lambda` 插件的基本信
 
 ## 启用插件
 
-以下示例展示了如何在一个特定的路由上配置 `aws-lambda` 插件：
+以下示例展示了如何在指定路由上启用 `aws-lambda` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -78,33 +78,36 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-通过上述示例配置插件后，任何对端点 `/aws` 的请求（`HTTP/1.1`、`HTTPS`、`HTTP2`）都将调用已配置的 AWS 函数的 URI，响应进而被代理回客户端。
+通过上述示例配置插件后，任何对 `/aws` URI 的请求（`HTTP/1.1`、`HTTPS`、`HTTP2`）都将调用已配置的 AWS 函数的 URI，并且会将响应信息返回给客户端。
 
-下面的例子中，AWS Lambda 从查询中接收 `name` 参数，并返回一条 `"Hello $name"` 消息：
+下述命令的含义是：AWS Lambda 从请求中获取 `name` 参数，并返回一条 `"Hello $name"` 消息：
 
 ```shell
 curl -i -XGET localhost:9080/aws\?name=APISIX
 ```
 
-预期的返回结果：
+正常返回结果：
 
 ```shell
 HTTP/1.1 200 OK
 Content-Type: application/json
-Connection: keep-alive
-Date: Sat, 27 Nov 2021 13:08:27 GMT
-x-amz-apigw-id: JdwXuEVxIAMFtKw=
-x-amzn-RequestId: 471289ab-d3b7-4819-9e1a-cb59cac611e0
-Content-Length: 16
-X-Amzn-Trace-Id: Root=1-61a22dca-600c552d1c05fec747fd6db0;Sampled=0
-Server: APISIX/2.10.2
 ...
 "Hello, APISIX!"
 ```
 
-下面是另一个请求的例子，客户端通过 HTTP/2 协议与 APISIX 进行通信。
+以下示例是客户端通过 HTTP/2 协议与 APISIX 进行通信。
 
-在进行测试之前，请确保默认配置文件（`config-default.yaml`）中配置了 `enable_http2: true`。你可以通过取消对 `apisix.node_listen` 字段中端口 `9081` 的注释来配置此项。
+在进行测试之前，由于该 `enable_http2: true` 默认是禁用状态，你可以通过在 `./conf/config.yaml` 中添加 `apisix.node_listen` 下的 `- port: 9081` 和 `enable_http2: true` 字段启用。示例如下
+
+```yaml
+apisix:
+  admin_key:
+...
+  node_listen:                      # 支持监听多个端口
+    - 9080
+    - port: 9081
+      enable_http2: true            # 该字段如果不设置，默认值为 `false`
+```
 
 使用 `curl` 命令测试：
 
@@ -112,17 +115,11 @@ Server: APISIX/2.10.2
 curl -i -XGET --http2 --http2-prior-knowledge localhost:9081/aws\?name=APISIX
 ```
 
-预期的返回结果：
+正常返回结果：
 
 ```shell
 HTTP/2 200
 content-type: application/json
-content-length: 16
-x-amz-apigw-id: JdwulHHrIAMFoFg=
-date: Sat, 27 Nov 2021 13:10:53 GMT
-x-amzn-trace-id: Root=1-61a22e5d-342eb64077dc9877644860dd;Sampled=0
-x-amzn-requestid: a2c2b799-ecc6-44ec-b586-38c0e3b11fe4
-server: APISIX/2.10.2
 ...
 "Hello, APISIX!"
 ```
@@ -152,17 +149,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 :::note
 
-此方法假设你已经有一个启用了程序化访问的 IAM 用户，并具有访问端点的必要权限（AmazonAPIGatewayInvokeFullAccess）。
+使用该方法时已经假设你有一个启用了程序化访问的 IAM 用户，并具有访问端点的必要权限（AmazonAPIGatewayInvokeFullAccess）。
 
 :::
 
 ### 配置路径转发
 
-`aws-lambda` 插件在代理请求到 AWS 上游的时候也支持 URL 路径转发。基本请求路径的扩展被附加到插件配置中指定的 `function_uri` 字段上。
+`aws-lambda` 插件在代理请求到 AWS 上游时也支持 URL 路径转发。基本请求路径的扩展被附加到插件配置中指定的 `function_uri` 字段上。
 
 :::info IMPORTANT
 
-为了使 `aws-lambda` 插件正常工作，在路由上配置的 `uri` 字段必须以 `*` 结尾。这是因为 APISIX 路由是严格匹配的，`*` 意味着这个 URI 的任何子路径都会被匹配到同一个路由。
+因为 APISIX 路由是严格匹配的，所以为了使 `aws-lambda` 插件正常工作，在路由上配置的 `uri` 字段必须以 `*` 结尾，`*` 意味着这个 URI 的任何子路径都会被匹配到同一个路由。
 
 :::
 
@@ -184,7 +181,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-通过上述示例配置插件后，任何对 `aws/default/test-apisix` 路径的请求都会调用 AWS Lambda 函数，并转发添加的路径。
+通过上述示例配置插件后，任何访问 `aws/default/test-apisix` 的请求都会调用 AWS Lambda 函数，并转发附加的参数。
 
 使用 `curl` 命令测试：
 
@@ -192,18 +189,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 curl -i -XGET http://127.0.0.1:9080/aws/default/test-apisix\?name\=APISIX
 ```
 
-预期的返回结果：
+正常返回结果：
 
 ```shell
 HTTP/1.1 200 OK
 Content-Type: application/json
-Connection: keep-alive
-Date: Wed, 01 Dec 2021 14:23:27 GMT
-X-Amzn-Trace-Id: Root=1-61a7855f-0addc03e0cf54ddc683de505;Sampled=0
-x-amzn-RequestId: f5f4e197-9cdd-49f9-9b41-48f0d269885b
-Content-Length: 16
-x-amz-apigw-id: JrHG8GC4IAMFaGA=
-Server: APISIX/2.11.0
 ...
 "Hello, APISIX!"
 ```
