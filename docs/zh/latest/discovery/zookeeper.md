@@ -86,7 +86,7 @@ discovery:
 ./apisix-seed
 ```
 
-### 设置 `APISIX` 路由和上游
+### 设置 APISIX 路由和上游
 
 通过以下命令设置路由，请求路径设置为 `/zk/*`，上游使用 ZooKeeper 作为服务发现，服务名称为 `APISIX-ZK`。
 
@@ -115,7 +115,7 @@ docker exec -it ${CONTAINERID} /bin/bash
 # 登陆 Zookeeper 客户端
 oot@ae2f093337c1:/apache-zookeeper-3.7.0-bin# ./bin/zkCli.sh
 # 注册服务
-[zk: localhost:2181(CONNECTED) 0] create /zookeeper/APISIX-ZK '{"host":"127.0.0.1:1980","weight":100}'
+[zk: localhost:2181(CONNECTED) 0] create /zookeeper/APISIX-ZK '{"host":"127.0.0.1","port":1980,"weight":100}'
 ```
 
 返回结果如下：
