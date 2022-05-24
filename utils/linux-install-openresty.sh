@@ -24,9 +24,11 @@ sudo add-apt-repository -y "deb https://openresty.org/package/ubuntu $(lsb_relea
 
 sudo apt-get update
 
+abt_branch=${abt_branch:="master"}
+
 if [ "$OPENRESTY_VERSION" == "source" ]; then
     cd ..
-    wget https://raw.githubusercontent.com/api7/apisix-build-tools/v2.7.0/build-apisix-base.sh
+    wget https://raw.githubusercontent.com/api7/apisix-build-tools/$abt_branch/build-apisix-base.sh
     chmod +x build-apisix-base.sh
     ./build-apisix-base.sh latest
 
