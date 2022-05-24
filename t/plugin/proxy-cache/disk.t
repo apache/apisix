@@ -451,21 +451,22 @@ Apisix-Cache-Status: MISS
 
 
 
-=== TEST 17: hit route (HEAD method)
+=== TEST 17: hit route (will be cached)
 --- request
-HEAD /hello-world
+GET /hello
+--- response_body chop
+hello world!
+--- response_headers
+Apisix-Cache-Status: HIT
+
+
+
+=== TEST 18: hit route (HEAD method mismatch cache_method)
+--- request
+HEAD /hello
 --- error_code: 200
 --- response_headers
-Apisix-Cache-Status: MISS
-
-
-
-=== TEST 18: hit route (HEAD method there's no cache)
---- request
-HEAD /hello-world
---- error_code: 200
---- response_headers
-Apisix-Cache-Status: MISS
+Apisix-Cache-Status: BYPASS
 
 
 
