@@ -29,9 +29,9 @@ description: 本文介绍了关于 Apache APISIX `openwhisk` 插件的基本信�
 
 ## 描述
 
-`openwhisk` 插件用于将 [Apache OpenWhisk](https://openwhisk.apache.org) 这款开源的分布式无服务器平台作为动态上游集成至 APISIX。
+`openwhisk` 插件用于将开源的分布式无服务器平台 [Apache OpenWhisk](https://openwhisk.apache.org) 作为动态上游集成至 APISIX。
 
-启用 `openwhisk` 插件后，该插件会终止对已配置 URI 的请求，并代表客户端向 OpenWhisk 的 API Host 端点发起一个新的请求，然后  `openwhisk` 插件会将响应信息返回至客户端。
+启用 `openwhisk` 插件后，该插件会终止对已配置 URI 的请求，并代表客户端向 OpenWhisk 的 API Host 端点发起一个新的请求，然后 `openwhisk` 插件会将响应信息返回至客户端。
 
 ## 属性
 
@@ -39,13 +39,13 @@ description: 本文介绍了关于 Apache APISIX `openwhisk` 插件的基本信�
 | ----------------- | ------- | ------ | ------- | ------------ | ------------------------------------------------------------ |
 | api_host          | string  | 是     |         |              | OpenWhisk API Host 地址，例如 `https://localhost:3233`。     |
 | ssl_verify        | boolean | 否     | true    |              | 当设置为 `true` 时执行 SSL 验证。                            |
-| service_token     | string  | 是     |         |              | OpenWhisk service token，其格式为 `xxx:xxx` ，用于 API 调用时的身份认证 |
+| service_token     | string  | 是     |         |              | OpenWhisk service token，其格式为 `xxx:xxx` ，用于 API 调用时的身份认证。 |
 | namespace         | string  | 是     |         |              | OpenWhisk namespace，例如 `guest`。                          |
 | action            | string  | 是     |         |              | OpenWhisk action，例如 `hello`.                              |
 | result            | boolean | 否     | true    |              | 当设置为 `true` 时，获得 action 元数据（执行函数并获得响应结果）。 |
-| timeout           | integer | 否     | 60000ms | [1,60000]ms  | OpenWhisk action 和 HTTP 调用超时（以毫秒为单位）。          |
+| timeout           | integer | 否     | 60000ms | [1,60000]ms  | OpenWhisk action 和 HTTP 调用超时时间（以毫秒为单位）。          |
 | keepalive         | boolean | 否     | true    |              | 当设置为 `true` 时，保持连接的活动状态以便重复使用。         |
-| keepalive_timeout | integer | 否     | 60000ms | [1000,...]ms | 连接保持空闲而没被断开的时间（以毫秒为单位）。               |
+| keepalive_timeout | integer | 否     | 60000ms | [1000,...]ms | 当连接空闲时，保持该连接处于活动状态的时间（以毫秒为单位）。               |
 | keepalive_pool    | integer | 否     | 5       | [1,...]      | 连接断开之前，可接收的最大请求数。                           |
 
 :::note
@@ -54,7 +54,7 @@ description: 本文介绍了关于 Apache APISIX `openwhisk` 插件的基本信�
 
 因为 OpenWhisk action 调用可能会耗费很长时间来拉取容器镜像和启动容器，所以如果 `timeout` 字段值设置太小，可能会导致大量的失败请求。
 
-在 OpenWhisk 中 `timeout` 字段的值设置范围从 1ms 到 60000ms，历史使用经验建议大家将 `timeout` 字段的值至少设置为 1000ms。
+在 OpenWhisk 中 `timeout` 字段的值设置范围从 1 ms 到 60000 ms，历史使用经验建议大家将 `timeout` 字段的值至少设置为 1000ms。
 
 :::
 
@@ -62,7 +62,7 @@ description: 本文介绍了关于 Apache APISIX `openwhisk` 插件的基本信�
 
 ### 搭建 Apache OpenWhisk 测试环境
 
-1.你可以通过以下 docker 命令搭建 OpenWhisk 独立集群模式，但前提是你的 Linux 系统已经安装了 Docker 软件：
+1. 在使用 `openwhisk` 插件之前，你需要通过以下命令运行 OpenWhisk 独立集群模式。请确保当前环境中已经安装 Docker 软件。
 
 ```shell
 docker run --rm -d \
@@ -73,14 +73,14 @@ docker run --rm -d \
 docker exec openwhisk waitready
 ```
 
-2.安装 [openwhisk-cli](https://github.com/apache/openwhisk-cli) 工具：
+2. 安装 [openwhisk-cli](https://github.com/apache/openwhisk-cli) 工具：
 
 你可以在 [openwhisk-cli](https://github.com/apache/openwhisk-cli) 仓库下载已发布的适用于 Linux 系统的可执行二进制文件 wsk。
 
-3.在 OpenWhisk 中注册函数：
+3. 在 OpenWhisk 中注册函数：
 
 ```shell
-wsk property set --apihost "http://localhost:3233" --auth "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP"
+wsk property set --apihost "http://localhost:3233" --auth "${service_token}"
 wsk action update test <(echo 'function main(){return {"ready":true}}') --kind nodejs:14
 ```
 
@@ -95,7 +95,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "plugins": {
         "openwhisk": {
             "api_host": "http://localhost:3233",
-            "service_token": "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
+            "service_token": "${service_token}",
             "namespace": "guest",
             "action": "test"
         }
@@ -125,7 +125,7 @@ curl -i http://127.0.0.1:9080/hello
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
-    "uri": "/index.html",
+    "uri": "/hello",
     "upstream": {
         "type": "roundrobin",
         "nodes": {
