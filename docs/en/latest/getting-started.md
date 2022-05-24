@@ -181,7 +181,7 @@ docker logs -f --tail <container_id>
 Once APISIX is running, you can use `curl` to access the Admin API. You can also check if APISIX is running properly by running this command and checking the response.
 
 ```bash
-curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+curl "http://127.0.0.1:9180/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```
 
 This response indicates that APISIX is running successfully:
@@ -207,7 +207,7 @@ APISIX provides a powerful [Admin API](./admin-api.md) and [APISIX Dashboard](ht
 We will configure the Route so that APISIX can forward the request to the corresponding Upstream service:
 
 ```bash
-curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "methods": ["GET"],
   "host": "example.com",
@@ -242,7 +242,7 @@ Instead of configuring the Upstream directly to the Route, you can create an Ups
 To create an Upstream object:
 
 ```bash
-curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "type": "roundrobin",
   "nodes": {
@@ -256,7 +256,7 @@ This is the same as the Upstream service we configured directly into the Route o
 To bind this Upstream to the Route, we can use the `upstream_id` as `1`:
 
 ```bash
-curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "methods": ["GET"],
   "host": "example.com",

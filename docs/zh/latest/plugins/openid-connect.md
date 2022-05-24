@@ -80,7 +80,7 @@ description: 本文介绍了关于 Apache APISIX `openid-connect` 插件的基�
 以下示例是在 Route 上启用插件。该 Route 将通过自省请求头中提供的令牌来保护上游：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri":"/get",
@@ -128,7 +128,7 @@ curl -i -X GET http://127.0.0.1:9080/get \
 以下示例展示了如何将公钥添加到 Route 中：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri":"/get",
@@ -166,7 +166,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 以下示例是将此操作模式添加到 Route：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/get",

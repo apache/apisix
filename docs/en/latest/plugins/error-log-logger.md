@@ -96,7 +96,7 @@ plugins:                          # plugin list
 Step: update the attributes of the plugin
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "tcp": {
     "host": "127.0.0.1",
@@ -111,7 +111,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-A
 Step: update the attributes of the plugin
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "skywalking": {
     "endpoint_addr":"http://127.0.0.1:12800/v3/logs"
@@ -129,7 +129,7 @@ The plugin sends the error log as a string to the `data` field of the clickhouse
 Step: update the attributes of the plugin
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "clickhouse": {
       "user": "default",

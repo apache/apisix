@@ -42,7 +42,7 @@ title: csrf
 1. 创建一条路由并启用该插件。
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/hello",
   "plugins": {
@@ -115,7 +115,7 @@ HTTP/1.1 200 OK
 发送一个更新路由的请求，以停用该插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/hello",
   "upstream": {

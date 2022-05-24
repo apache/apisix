@@ -36,7 +36,7 @@ title: file-logger
 This is an example of how to enable the `file-logger` plugin for a specific route.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "plugins": {
     "file-logger": {
@@ -75,7 +75,7 @@ You can then find the `file.log` file in the corresponding `logs` directory.
 ### Example
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/file-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/file-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "log_format": {
     "host": "$host",
@@ -98,7 +98,7 @@ Remove the corresponding json configuration in the plugin configuration to disab
 APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "methods": ["GET"],
   "uri": "/hello",

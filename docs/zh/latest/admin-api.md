@@ -118,7 +118,7 @@ route 对象 json 配置内容：
 
 ```shell
 # 创建一个路由
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/index.html",
     "hosts": ["foo.com", "*.bar.com"],
@@ -138,7 +138,7 @@ Date: Sat, 31 Aug 2019 01:17:15 GMT
 ...
 
 # 创建一个有效期为 60 秒的路由，过期后自动删除
-$ curl http://127.0.0.1:9080/apisix/admin/routes/2?ttl=60 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/2?ttl=60 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/aa/index.html",
     "upstream": {
@@ -155,7 +155,7 @@ Date: Sat, 31 Aug 2019 01:17:15 GMT
 
 
 # 给路由增加一个 upstream node
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -174,7 +174,7 @@ HTTP/1.1 200 OK
 
 
 # 给路由更新一个 upstream node 的权重
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -193,7 +193,7 @@ HTTP/1.1 200 OK
 
 
 # 给路由删除一个 upstream node
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -211,7 +211,7 @@ HTTP/1.1 200 OK
 
 
 # 替换路由的 methods -- 数组
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '{
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '{
     "methods": ["GET", "POST"]
 }'
 HTTP/1.1 200 OK
@@ -222,7 +222,7 @@ HTTP/1.1 200 OK
 
 
 # 替换路由的 upstream nodes -- sub path
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1/upstream/nodes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1/upstream/nodes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "127.0.0.1:1982": 1
 }'
@@ -236,7 +236,7 @@ HTTP/1.1 200 OK
 
 
 # 替换路由的 methods  -- sub path
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1/methods -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '["POST", "DELETE", "PATCH"]'
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1/methods -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '["POST", "DELETE", "PATCH"]'
 HTTP/1.1 200 OK
 ...
 
@@ -245,7 +245,7 @@ HTTP/1.1 200 OK
 
 
 # 禁用路由
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "status": 0
 }'
@@ -259,7 +259,7 @@ HTTP/1.1 200 OK
 
 
 # 启用路由
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "status": 1
 }'
@@ -333,7 +333,7 @@ service 对象 json 配置内容：
 
 ```shell
 # 创建一个 Service
-$ curl http://127.0.0.1:9080/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "plugins": {
         "limit-count": {
@@ -359,7 +359,7 @@ HTTP/1.1 201 Created
 
 
 # 给 Service 增加一个 upstream node
-$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -378,7 +378,7 @@ HTTP/1.1 200 OK
 
 
 # 给 Service 更新一个 upstream node 的权重
-$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -397,7 +397,7 @@ HTTP/1.1 200 OK
 
 
 # 给 Service 删除一个 upstream node
-$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -415,7 +415,7 @@ HTTP/1.1 200 OK
 
 
 # 替换 Service 的 upstream nodes
-$ curl http://127.0.0.1:9080/apisix/admin/services/201/upstream/nodes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201/upstream/nodes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "127.0.0.1:1982": 1
 }'
@@ -477,7 +477,7 @@ consumer 对象 json 配置内容：
 
 ```shell
 # 创建 Consumer ，指定认证插件 key-auth ，并开启特定插件 limit-count
-$ curl http://127.0.0.1:9080/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "username": "jack",
     "plugins": {
@@ -611,7 +611,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 
 ```shell
 # 创建一个 upstream
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
     "type":"roundrobin",
     "nodes":{
@@ -623,7 +623,7 @@ HTTP/1.1 201 Created
 
 
 # 给 Upstream 增加一个 node
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "nodes": {
         "127.0.0.1:1981": 1
@@ -640,7 +640,7 @@ HTTP/1.1 200 OK
 
 
 # 给 Upstream 更新一个 node 的权重
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "nodes": {
         "127.0.0.1:1981": 10
@@ -657,7 +657,7 @@ HTTP/1.1 200 OK
 
 
 # 给 Upstream 删除一个 node
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "nodes": {
         "127.0.0.1:1980": null
@@ -673,7 +673,7 @@ HTTP/1.1 200 OK
 
 
 # 替换 Upstream 的  nodes
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100/nodes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100/nodes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "127.0.0.1:1982": 1
 }'
@@ -692,7 +692,7 @@ HTTP/1.1 200 OK
 1、创建 route 并配置 upstream 的 scheme 为 `https`。
 
 ```shell
-$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
     "upstream": {
@@ -893,7 +893,7 @@ ssl 对象 json 配置内容：
 例子：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/example-plugin  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/example-plugin  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
     "skey": "val",
     "ikey": 1
@@ -926,10 +926,10 @@ Content-Type: text/plain
 例子：
 
 ```shell
-$ curl "http://127.0.0.1:9080/apisix/admin/plugins/list" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+$ curl "http://127.0.0.1:9180/apisix/admin/plugins/list" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ["zipkin","request-id",...]
 
-$ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+$ curl "http://127.0.0.1:9180/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 {"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
 ```
 

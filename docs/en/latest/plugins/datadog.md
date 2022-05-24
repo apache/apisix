@@ -81,7 +81,7 @@ The metrics will be sent to the DogStatsD agent with the following tags:
 The following is an example on how to enable the datadog plugin for a specific route. We are assuming your datadog agent is already up an running.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
       "plugins": {
             "datadog": {}
@@ -104,7 +104,7 @@ Remove the corresponding json configuration in the plugin configuration to disab
 APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
@@ -125,7 +125,7 @@ In the default configuration, the plugin expects the dogstatsd service to be ava
 Make a request to _/apisix/admin/plugin_metadata_ endpoint with the updated metadata as following:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "host": "172.168.45.29",
     "port": 8126,
@@ -142,5 +142,5 @@ This HTTP PUT request will update the metadata and subsequent metrics will be pu
 In case, if you wish to revert the datadog metadata schema to the default values, just make another PUT request to the same endpoint with an empty body. For example:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{}'
+$ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{}'
 ```

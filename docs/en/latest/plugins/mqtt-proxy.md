@@ -62,7 +62,7 @@ Then send the MQTT request to port 9100.
 Creates a stream route, and enable plugin `mqtt-proxy`.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "mqtt-proxy": {
@@ -86,7 +86,7 @@ In case Docker is used in combination with MacOS `host.docker.internal` is the r
 This plugin exposes a variable `mqtt_client_id`, and we can use it to load balance via the client id. For example:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "mqtt-proxy": {
@@ -118,7 +118,7 @@ MQTT connections with different client ID will be forwarded to different node vi
 ## Delete Plugin
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+$ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 ```
 
 The `mqtt-proxy` plugin has been deleted now.

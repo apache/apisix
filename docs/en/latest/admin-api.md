@@ -111,7 +111,7 @@ Example API usage:
 
 ```shell
 # Create a route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/index.html",
     "hosts": ["foo.com", "*.bar.com"],
@@ -131,7 +131,7 @@ Date: Sat, 31 Aug 2019 01:17:15 GMT
 ...
 
 # Create a route expires after 60 seconds, then it's deleted automatically
-$ curl http://127.0.0.1:9080/apisix/admin/routes/2?ttl=60 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/2?ttl=60 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/aa/index.html",
     "upstream": {
@@ -148,7 +148,7 @@ Date: Sat, 31 Aug 2019 01:17:15 GMT
 
 
 # Add an upstream node to the Route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -167,7 +167,7 @@ After successful execution, upstream nodes will be updated to:
 
 
 # Update the weight of an upstream node to the Route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -186,7 +186,7 @@ After successful execution, upstream nodes will be updated to:
 
 
 # Delete an upstream node for the Route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -204,7 +204,7 @@ After successful execution, upstream nodes will be updated to:
 
 
 # Replace methods of the Route  --  array
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '{
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '{
     "methods": ["GET", "POST"]
 }'
 HTTP/1.1 200 OK
@@ -215,7 +215,7 @@ After successful execution, methods will not retain the original data, and the e
 
 
 # Replace upstream nodes of the Route -- sub path
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1/upstream/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1/upstream/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "127.0.0.1:1982": 1
 }'
@@ -229,7 +229,7 @@ After successful execution, nodes will not retain the original data, and the ent
 
 
 # Replace methods of the Route -- sub path
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1/methods -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d'["POST", "DELETE", " PATCH"]'
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1/methods -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d'["POST", "DELETE", " PATCH"]'
 HTTP/1.1 200 OK
 ...
 
@@ -238,7 +238,7 @@ After successful execution, methods will not retain the original data, and the e
 
 
 # disable route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "status": 0
 }'
@@ -252,7 +252,7 @@ After successful execution, status nodes will be updated to:
 
 
 # enable route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "status": 1
 }'
@@ -326,7 +326,7 @@ Example configuration:
 Example API usage:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "plugins": {
         "limit-count": {
@@ -350,7 +350,7 @@ HTTP/1.1 201 Created
 
 
 # Add an upstream node to the Service
-$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -369,7 +369,7 @@ After successful execution, upstream nodes will be updated to:
 
 
 # Update the weight of an upstream node to the Service
-$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -388,7 +388,7 @@ After successful execution, upstream nodes will be updated to:
 
 
 # Delete an upstream node for the Service
-$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -406,7 +406,7 @@ After successful execution, upstream nodes will be updated to:
 
 
 # Replace upstream nodes of the Service
-$ curl http://127.0.0.1:9080/apisix/admin/services/201/upstream/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201/upstream/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "127.0.0.1:1982": 1
 }'
@@ -467,7 +467,7 @@ When bound to a Route or Service, the Authentication Plugin infers the Consumer 
 Example API usage:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "username": "jack",
     "plugins": {
@@ -601,7 +601,7 @@ Example 1: Create an Upstream and modify the data in `nodes`
 
 ```shell
 # Create upstream
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
     "type":"roundrobin",
     "nodes":{
@@ -613,7 +613,7 @@ HTTP/1.1 201 Created
 
 
 # Add a node to the Upstream
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "nodes": {
         "127.0.0.1:1981": 1
@@ -630,7 +630,7 @@ After successful execution, nodes will be updated to:
 
 
 # Update the weight of a node to the Upstream
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "nodes": {
         "127.0.0.1:1981": 10
@@ -647,7 +647,7 @@ After successful execution, nodes will be updated to:
 
 
 # Delete a node for the Upstream
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "nodes": {
         "127.0.0.1:1980": null
@@ -663,7 +663,7 @@ After successful execution, nodes will be updated to:
 
 
 # Replace the nodes of the Upstream
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "127.0.0.1:1982": 1
 }'
@@ -682,7 +682,7 @@ Example 2: Proxy client request to `https` Upstream service
 1. Create a route and configure the upstream scheme as `https`.
 
 ```shell
-$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
     "upstream": {
@@ -877,7 +877,7 @@ A JSON object defined according to the `metadata_schema` of the Plugin ({plugin_
 Example Configuration:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/example-plugin  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/example-plugin  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
     "skey": "val",
     "ikey": 1
@@ -907,10 +907,10 @@ The Plugin ({plugin_name}) of the data structure.
 Example API usage:
 
 ```shell
-$ curl "http://127.0.0.1:9080/apisix/admin/plugins/list" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+$ curl "http://127.0.0.1:9180/apisix/admin/plugins/list" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ["zipkin","request-id",...]
 
-$ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+$ curl "http://127.0.0.1:9180/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 {"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
 ```
 

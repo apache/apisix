@@ -151,7 +151,7 @@ rm logs/error.log
 make init
 make run
 
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 make stop
 
 if [ ! $code -eq 200 ]; then
@@ -204,7 +204,7 @@ sleep 2
 curl -k -i https://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d \
     '{"uri":"/apisix/admin/routes/1", "upstream":{"nodes":{"localhost:9180":1},"scheme":"https","type":"roundrobin","pass_host":"node"}}'
 
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1
 sleep 4
 tail -n 2 logs/access.log > output.log
 

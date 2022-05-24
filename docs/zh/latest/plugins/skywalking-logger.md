@@ -45,7 +45,7 @@ title: skywalking-logger
 这是有关如何为特定路由启用 `skywalking-logger` 插件的示例。在此之前，需要有可用的 SkyWalking OAP 可以被访问。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
       "plugins": {
             "skywalking-logger": {
@@ -90,7 +90,7 @@ hello, world
 在插件配置中删除相应的 JSON 配置就可以禁用 `skywalking-logger` 插件。由于 Apache APISIX 插件支持热加载，因此无需重新启动 Apache APISIX：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

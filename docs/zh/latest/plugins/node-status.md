@@ -50,7 +50,7 @@ plugins:                          # plugin list
 2. 为状态 API 配置路由，它将使用 [public-api](../../../en/latest/plugins/public-api.md) 插件。
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/apisix/status",
     "plugins": {
@@ -105,7 +105,7 @@ plugins:                          # plugin list
 2. 删除 route 中的 `node-status` 插件信息
 
 ```sh
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/route1",
     "upstream": {
