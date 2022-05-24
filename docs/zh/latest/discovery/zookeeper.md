@@ -26,7 +26,7 @@ description: 本篇文档介绍了如何使用 Zookeeper 做服务发现
 #
 -->
 
-目前，想在 APISIX 中基于 Zookeeper 进行服务发现，需要依赖 [apisix-seed](https://github.com/api7/apisix-seed) 项目进行。
+目前，如果你想在 APISIX 控制面使用 Zookeeper 实现服务发现功能，需要依赖 [apisix-seed](https://github.com/api7/apisix-seed) 项目。
 
 ## `apisix-seed` 工作原理
 
@@ -62,7 +62,7 @@ cd apisix-seed
 go build
 ```
 
-3. 修改 `apisix-seed` 配置文件，路径设为 `conf/conf.yaml`
+3. 参考以下信息修改 `apisix-seed` 配置文件，路径为 `conf/conf.yaml`
 
 ```bash
 etcd:                            # APISIX etcd 配置
@@ -132,15 +132,11 @@ Created /zookeeper/APISIX-ZK
 curl -i http://127.0.0.1:9080/zk/hello
 ```
 
-进行请求响应：
+正常返回结果：
 
 ```bash
 HTTP/1.1 200 OK
 Connection: keep-alive
-Content-Type: text/html; charset=utf-8
-Date: Tue, 29 Mar 2022 08:51:28 GMT
-Server: APISIX/2.12.0
-Transfer-Encoding: chunked
 ...
 hello
 ```
