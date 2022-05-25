@@ -24,6 +24,7 @@ local config_local = require("apisix.core.config_local")
 local log = require("apisix.core.log")
 local json = require("apisix.core.json")
 local table = require("apisix.core.table")
+local gcd = require("apisix.core.math").gcd
 local insert_tab = table.insert
 local math_random = math.random
 local package_loaded = package.loaded
@@ -36,15 +37,6 @@ local _M = {
     RETURN_RANDOM = 1,
     RETURN_ALL = 2,
 }
-
-
-local function gcd(a, b)
-    if b == 0 then
-        return a
-    end
-
-    return gcd(b, a % b)
-end
 
 
 local function resolve_srv(client, answers)
