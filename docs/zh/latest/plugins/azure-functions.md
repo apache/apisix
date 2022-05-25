@@ -28,15 +28,15 @@ description: 本文介绍了关于 Apache APISIX `azure-functions` 插件的基�
 
 ## 描述
 
-`azure-functions` 插件用于将 [Azure Serverless Function](https://azure.microsoft.com/en-in/services/functions/) 作为动态上游集成至 APISIX，从而实现将访问指定 URI 的请求代理到 Microsoft Azure 云。
+`azure-functions` 插件用于将 [Azure Serverless Function](https://azure.microsoft.com/en-in/services/functions/) 作为动态上游集成至 APISIX，从而实现将访问指定 URI 的请求代理到 Microsoft Azure 云服务。
 
-启用 `azure-functions` 插件后，该插件会终止对已配置 URI 的请求，并代表客户端向 Azure Functions 发起一个新的请求。这个新请求中携带了之前配置的授权详细信息，包括请求头、请求体和参数（以上参数都是从原始请求中传递的），然后 `azure-functions` 插件会将带有响应头、状态码和响应体的响应信息返回给使用 APISIX 发起请求的客户端。
+启用 `azure-functions` 插件后，该插件会终止对已配置 URI 的请求，并代表客户端向 Azure Functions 发起一个新的请求。该新请求中携带了之前配置的授权详细信息，包括请求头、请求体和参数（以上参数都是从原始请求中传递的）。之后便会通过 `azure-functions` 插件，将带有响应头、状态码和响应体的信息返回给使用 APISIX 发起请求的客户端。
 
 ## 属性
 
 | 名称                   | 类型    | 必选项 | 默认值 | 有效值     | 描述                                                         |
 | ---------------------- | ------- | ------ | ------ | ---------- | ------------------------------------------------------------ |
-| function_uri           | string  | 是     |        |            | 触发 Serverless Functions 的 Azure Functions 端点。例如，`http://test-apisix.azurewebsites.net/api/HttpTrigger`。 |
+| function_uri           | string  | 是     |        |            | 触发 Serverless Functions 的 Azure Functions 端点。例如 `http://test-apisix.azurewebsites.net/api/HttpTrigger`。 |
 | authorization          | object  | 否     |        |            | 访问 Azure Functions 的授权凭证。                            |
 | authorization.apikey   | string  | 否     |        |            | 授权凭证内的字段。生成 API 密钥来授权对端点的请求。          |
 | authorization.clientid | string  | 否     |        |            | 授权凭证内的字段。生成客户端 ID（Azure Active Directory）来授权对端点的请求。 |
@@ -53,15 +53,19 @@ description: 本文介绍了关于 Apache APISIX `azure-functions` 插件的基�
 | master_apikey   | string | 否     | ""     | 可用于访问 Azure Functions URI 的 API 密钥。                 |
 | master_clientid | string | 否     | ""     | 可用于授权 Azure Functions URI 的客户 ID（Active Directory）。 |
 
-`azure-functions` 插件的元数据提供了授权回退的功能。它定义了 `master_apikey` 和 `master_clientid` 字段，用户可以为关键任务的应用部署声明主 API 密钥或客户端 ID。因此，如果在 `azure-functions` 插件属性中没有找到授权凭证，元数据中的授权凭证就会发挥作用。
+`azure-functions` 插件的元数据提供了授权回退的功能。它定义了 `master_apikey` 和 `master_clientid` 字段，用户可以为关键任务的应用部署声明 API 密钥或客户端 ID。因此，如果在 `azure-functions` 插件属性中没有找到相关授权凭证，此时元数据中的授权凭证就会发挥作用。
+
+:::note
 
 授权方式优先级排序如下：
 
 - 首先，`azure-functions` 插件在 Apache APISIX 代理的请求头中寻找 `x-functions-key` 或 `x-functions-clientid` 键。
 - 如果没有找到，`azure-functions` 插件会检查插件属性中的授权凭证。如果授权凭证存在，`azure-functions` 插件会将相应的授权标头添加到发送到 Azure cloud function 的请求中。
-- 如果在 `azure-functions` 插件属性中没有找到授权凭证，Apache APISIX 将获取插件元数据配置并使用主密钥。
+- 如果在 `azure-functions` 插件属性中没有找到授权凭证，Apache APISIX 将获取插件元数据配置并使用 API 密钥。
 
-如果你想添加一个新的主 API Key，请向 `/apisix/admin/plugin_metadata` 端点发出请求，并附上所需的元数据。示例如下：
+:::
+
+如果你想添加一个新的 API 密钥，请向 `/apisix/admin/plugin_metadata` 端点发出请求，并附上所需的元数据。示例如下：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/azure-functions -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -72,7 +76,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/azure-functions -H 'X-AP
 
 ## 启用插件
 
-以下示例展示了如何在指定路由上启用 `azure-functions` 插件。请确保你的 Azure Functions 已经部署好并提供服务。
+以下示例展示了如何在指定路由上启用 `azure-functions` 插件。请确保你的 Azure Functions 已提前部署好，并正常提供服务。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -139,7 +143,7 @@ Hello, APISIX
 
 `azure-functions` 插件在代理请求到 Azure Functions 上游时也支持 URL 路径转发。基本请求路径的扩展被附加到插件配置中指定的 `function_uri` 字段上。
 
-:::info IMPORTANT
+:::info 注意
 
 因为 APISIX 路由是严格匹配的，所以为了使 `azure-functions` 插件正常工作，在路由上配置的 `uri` 字段必须以 `*` 结尾，`*` 意味着这个 URI 的任何子路径都会被匹配到同一个路由。
 
