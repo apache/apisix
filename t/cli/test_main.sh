@@ -708,6 +708,7 @@ echo "pass: ignore stale nginx.pid"
 
 # check no corresponding process
 make run
+sleep 0.5
 oldpid=$(< logs/nginx.pid)
 make stop
 sleep 0.5
