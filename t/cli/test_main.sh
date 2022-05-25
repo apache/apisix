@@ -699,12 +699,12 @@ echo "-1" > logs/nginx.pid
 out=$(./bin/apisix start 2>&1 || true)
 if echo "$out" | grep "APISIX is running"; then
     rm logs/nginx.pid
-    echo "failed: should ignore stale nginx.pid"
+    echo "failed: should reject bad nginx.pid"
     exit 1
 fi
 
 ./bin/apisix stop
-echo "pass: ignore stale nginx.pid"
+sleep 0.5
 
 # check no corresponding process
 make run
