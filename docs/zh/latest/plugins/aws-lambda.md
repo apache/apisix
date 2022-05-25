@@ -47,7 +47,7 @@ description: 本文介绍了关于 Apache APISIX `aws-lambda` 插件的基本信
 | ssl_verify           | boolean | 否       | true    | true/false   | 当设置为 `true` 时执行 SSL 验证。                          |
 | keepalive            | boolean | 否       | true    | true/false   | 当设置为 `true` 时，保持连接的活动状态以便重复使用。         |
 | keepalive_pool       | integer | 否       | 5       | [1,...]      | 在关闭该连接之前，可以在该连接上发送的最大请求数。           |
-| keepalive_timeout    | integer | 否       | 60000   | [1000,...]   | 在关闭该连接之前，可以在该连接上发送的最大请求数。           |
+| keepalive_timeout    | integer | 否       | 60000   | [1000,...]   | 当连接空闲时，保持该连接处于活动状态的时间（以毫秒为单位）。           |
 
 ### IAM 授权方案
 
@@ -56,7 +56,7 @@ description: 本文介绍了关于 Apache APISIX `aws-lambda` 插件的基本信
 | accesskey  | string | 是       |               | 从 AWS IAM 控制台生成的访问密钥 ID。                     |
 | secret_key | string | 是       |               | 从 AWS IAM 控制台生成的访问密钥。                          |
 | aws_region | string | 否       | "us-east-1"   | 发出请求的 AWS 区域。                                    |
-| service    | string | 否       | "execute-api" | 接收该请求的服务。特别的，对于 HTTP 触发器是 `"execute-api"`。 |
+| service    | string | 否       | "execute-api" | 接收该请求的服务。请注意，对于 HTTP 触发器是 `"execute-api"`。 |
 
 ## 启用插件
 
