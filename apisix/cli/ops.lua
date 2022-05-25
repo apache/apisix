@@ -614,7 +614,7 @@ Please modify "admin_key" in conf/config.yaml .
         end
 
         -- check if the dns_resolver is ipv6 address with zone_id
-        -- Nnginx does not support this form
+        -- Nginx does not support this form
         if r:find("%%") then
             stderr:write("unsupported DNS resolver: " .. r ..
                          ", would ignore this item\n")
