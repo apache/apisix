@@ -72,6 +72,30 @@ A warning level log as shown below indicates that the request was rejected by th
 ip-restriction exits with http status code 403
 ```
 
+## Plugin Common Configuration
+
+Some common configurations can be applied to the plugin configuration. For example,
+
+```json
+{
+    "jwt-auth": {
+        "_meta": {
+            "error_response": {
+                "message": "Missing credential in request"
+            }
+        }
+    }
+}
+```
+
+the configuration above means customizing the error response from the jwt-auth plugin to '{"message": "Missing credential in request"}'.
+
+### Plugin Common Configuration Under `_meta`
+
+| Name         | Type | Description |
+|--------------|------|-------------|
+| error_response | string/object  | Custom error response |
+
 ## Hot Reload
 
 APISIX Plugins are hot-loaded. This means that there is no need to restart the service if you add, delete, modify plugins, or even if you update the plugin code. To hot-reload, you can send an HTTP request through the [Admin API](../admin-api.md):
