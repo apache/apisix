@@ -65,6 +65,12 @@ local schema = {
             type = "array",
             items = { type="string", anyOf = pb_option_def },
             minItems = 1,
+            default = {
+                "enum_as_name",
+                "int64_as_number",
+                "auto_default_values",
+                "disable_hooks",
+            }
         },
     },
     additionalProperties = true,
