@@ -57,6 +57,7 @@ function _M.set_options(proto, options)
     local cur_opts = proto.options
     if cur_opts then
         if cur_opts == options then
+            -- same route
             return
         end
 
@@ -70,8 +71,13 @@ function _M.set_options(proto, options)
         end
 
         if same then
+            -- Routes have the same configuration, usually the default one.
+            -- As this is a small optimization, we don't care about routes have different
+            -- configuration but have the same effect eventually.
             return
         end
+    else
+        table.sort(options)
     end
 
     for _, opt in ipairs(options) do
