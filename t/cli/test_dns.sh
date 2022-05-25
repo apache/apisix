@@ -96,3 +96,30 @@ if ! grep "resolver 127.0.0.1 valid=30 ipv6=off;" conf/nginx.conf > /dev/null; t
     echo "failed: ipv6 config doesn't take effect"
     exit 1
 fi
+
+# check dns resolver address
+echo '
+apisix:
+  dns_resolver:
+    - 127.0.0.1
+    - "fe80::21c:42ff:fe00:18%eth0"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+
+if ! echo "$out" | grep "unsupported DNS resolver"; then
+    echo "failed: should check dns resolver is unsupported"
+    exit 1
+fi
+
+if ! grep "resolver 127.0.0.1 ipv6=on;" conf/nginx.conf > /dev/null; then
+    echo "failed: should skip unsupported DNS resolver"
+    exit 1
+fi
+
+if grep "fe80::21c:42ff:fe00:18%eth0" conf/nginx.conf > /dev/null; then
+    echo "failed: should skip unsupported DNS resolver"
+    exit 1
+fi
+
+echo "passed: check dns resolver"

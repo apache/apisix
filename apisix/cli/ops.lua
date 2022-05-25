@@ -41,6 +41,7 @@ local execute = os.execute
 local os_rename = os.rename
 local os_remove = os.remove
 local table_insert = table.insert
+local table_remove = table.remove
 local getenv = os.getenv
 local max = math.max
 local floor = math.floor
@@ -611,6 +612,14 @@ Please modify "admin_key" in conf/config.yaml .
                 -- ensure IPv6 address is always wrapped in []
                 sys_conf["dns_resolver"][i] = "[" .. r .. "]"
             end
+        end
+
+        -- check if the dns_resolver is ipv6 address with zone_id
+        -- Nginx does not support this form
+        if r:find("%%") then
+            stderr:write("unsupported DNS resolver: " .. r ..
+                         ", would ignore this item\n")
+            table_remove(sys_conf["dns_resolver"], i)
         end
     end
 
