@@ -195,7 +195,7 @@ nginx_config:
         - "unix:"
 ' > conf/config.yaml
 
-out=$(make init 2>&1 || true)
+out=$(make init 2>&1)
 if echo "$out" | grep "missing loopback or unspecified in the nginx_config.http.real_ip_from for plugin batch-requests"; then
     echo "failed: should check the realip configuration for batch-requests"
     exit 1
