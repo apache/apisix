@@ -219,3 +219,90 @@ GET /apisix/plugin/blah
     }
 --- response_body
 ok
+
+
+
+=== TEST 7: plugin with custom error message
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {
+                            "_meta": {
+                                "error_response": {
+                                    "message":"Missing credential in request"
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: verify, missing token
+--- request
+GET /hello
+--- error_code: 401
+--- response_body
+{"message":"Missing credential in request"}
+
+
+
+=== TEST 9: validate custom error message configuration
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            for _, case in ipairs({
+                {input = true},
+                {input = {
+                    error_response = true
+                }},
+                {input = {
+                    error_response = "OK"
+                }},
+            }) do
+                local code, body = t('/apisix/admin/global_rules/1',
+                    ngx.HTTP_PUT,
+                    {
+                        plugins = {
+                            ["jwt-auth"] = {
+                                _meta = case.input
+                            }
+                        }
+                    }
+                )
+                if code >= 300 then
+                    ngx.print(body)
+                else
+                    ngx.say(body)
+                end
+            end
+        }
+    }
+--- response_body
+{"error_msg":"failed to check the configuration of plugin jwt-auth err: property \"_meta\" validation failed: wrong type: expected object, got boolean"}
+{"error_msg":"failed to check the configuration of plugin jwt-auth err: property \"_meta\" validation failed: property \"error_response\" validation failed: value should match only one schema, but matches none"}
+passed
