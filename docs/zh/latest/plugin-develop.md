@@ -43,7 +43,7 @@ Apache APISIX 提供了两种方式来添加新的功能。
 ```
 :::note
 
-自定义插件根目录下必须存在 `/apisix/plugins` 的子目录。
+如果你需要自定义插件的目录，请在该目录下创建 `/apisix/plugins` 的子目录。
 
 :::
 
