@@ -42,7 +42,11 @@ For example, you can create a directory structure like this:
 │           └── plugins
 │               └── 3rd-party.lua
 ```
-**Note：custom plugin root directory must exists `/apisix/plugins` subdirectory**
+:::note
+
+custom plugin root directory must exists `/apisix/plugins` subdirectory**
+
+:::
 
 Then add this configuration into your `conf/config.yaml`:
 
