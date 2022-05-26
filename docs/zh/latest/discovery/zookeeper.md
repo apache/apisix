@@ -36,12 +36,12 @@ description: 本篇文档介绍了如何使用 Zookeeper 做服务发现
 
 流程如下：
 
-1. 使用 APISIX 注册一个上游服务，并将服务类型设置为 `zookeeper` 并保存到 etcd。
-2. `apisix-seed` 监听 etcd 中 APISIX 的资源变更，并过滤服务发现类型获得服务名称。
-3. `apisix-seed` 将服务绑定到 etcd 资源，并开始在 Zookeeper 中监控此服务。
-4. 客户端向 Zookeeper 注册该服务。
-5. `apisix-seed` 获取 Zookeeper 中的服务变更。
-6. `apisix-seed` 通过服务名称查询绑定的 etcd 资源，并将更新后的服务节点写入 etcd。
+1. 使用 APISIX 注册一个上游服务，并将服务类型设置为 `zookeeper` 并保存到 etcd；
+2. `apisix-seed` 监听 etcd 中 APISIX 的资源变更，并过滤服务发现类型获得服务名称；
+3. `apisix-seed` 将服务绑定到 etcd 资源，并开始在 Zookeeper 中监控此服务；
+4. 客户端向 Zookeeper 注册该服务；
+5. `apisix-seed` 获取 Zookeeper 中的服务变更；
+6. `apisix-seed` 通过服务名称查询绑定的 etcd 资源，并将更新后的服务节点写入 etcd；
 7. APISIX Worker 监控 etcd 资源变更，并在内存中刷新服务节点信息。
 
 ## 如何使用
@@ -88,7 +88,7 @@ discovery:
 
 ### 设置 APISIX 路由和上游
 
-通过以下命令设置路由，请求路径设置为 `/zk/*`，上游使用 ZooKeeper 作为服务发现，服务名称为 `APISIX-ZK`。
+通过以下命令设置路由，请求路径设置为 `/zk/*`，上游使用 Zookeeper 作为服务发现，服务名称为 `APISIX-ZK`。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 \
