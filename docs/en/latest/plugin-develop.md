@@ -44,7 +44,7 @@ For example, you can create a directory structure like this:
 ```
 :::note
 
-custom plugin root directory must exists `/apisix/plugins` subdirectory**
+If you need to customize the directory of plugin, please create a subdirectory of `/apisix/plugins` under this directory.
 
 :::
 
