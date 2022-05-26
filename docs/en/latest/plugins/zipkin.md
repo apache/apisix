@@ -1,5 +1,5 @@
 ---
-title: Zipkin
+title: zipkin
 keywords:
   - APISIX
   - Plugin
@@ -42,7 +42,7 @@ It also works with [Apache SkyWalking](https://skywalking.apache.org/docs/main/l
 | service_name | string  | False    | "APISIX"       |              | Service name for the Zipkin reporter to be displayed in Zipkin.                 |
 | server_addr  | string  | False    | `$server_addr` |              | IPv4 address for the Zipkin reporter. You can specify your external IP address. |
 | span_version | integer | False    | 2              | [1, 2]       | Version of the span type.                                                       |
-a
+
 Each traced request will create the spans shown below:
 
 ```
