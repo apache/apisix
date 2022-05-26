@@ -41,7 +41,11 @@ Apache APISIX 提供了两种方式来添加新的功能。
 │           └── plugins
 │               └── 3rd-party.lua
 ```
-**注意：自定义插件根目录下必须存在 `/apisix/plugins` 的子目录**
+:::note
+
+自定义插件根目录下必须存在 `/apisix/plugins` 的子目录。
+
+:::
 
 接着，在 `conf/config.yaml` 文件中添加如下的配置：
 
