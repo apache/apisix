@@ -376,3 +376,21 @@ fi
 make stop
 
 echo "pass: accept changes to /apisix/plugins successfully"
+
+
+# Skip the write dir operation in init_etcd
+git checkout conf/config.yaml
+
+# Check etcd dir init skip
+echo '
+apisix:
+  enable_admin: false
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep "skip etcd dir init operation as DP enabled"; then
+    echo "failed: unable to skip etcd dir init operation"
+    exit 1
+fi
+
+echo "pass: skip etcd dir init operation"
