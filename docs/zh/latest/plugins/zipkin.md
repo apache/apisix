@@ -155,7 +155,7 @@ HTTP/1.1 200 OK
 ...
 ```
 
-然后你可以在浏览器中输入 `http://127.0.0.1:9411/zipkin` 访问 Zipkin UI 查询 traces：
+最后你可以在浏览器中输入 `http://127.0.0.1:9411/zipkin` 访问 Zipkin UI 查询 traces：
 
 ![zipkin web-ui](../../../assets/images/plugin/zipkin-1.jpg)
 
@@ -175,7 +175,7 @@ docker run -d --name jaeger \
   jaegertracing/all-in-one:1.31
 ```
 
-通过以下命令创建一个路由并启用插件：
+通过以下命令创建路由并启用插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -199,7 +199,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-接下来你可以通过以下命令发起请求，并且这条请求记录将会出现在 Jaeger 中：
+接下来你可以通过以下命令发起请求，该条请求记录将会出现在 Jaeger 中：
 
 ```shell
 curl http://127.0.0.1:9080/index.html
@@ -210,7 +210,7 @@ HTTP/1.1 200 OK
 ...
 ```
 
-然后你可以在浏览器中输入 `http://127.0.0.1:16686` 访问 Jaeger UI 查看 traces：
+最后你可以在浏览器中输入 `http://127.0.0.1:16686` 访问 Jaeger UI 查看 traces：
 
 ![jaeger web-ui](../../../assets/images/plugin/jaeger-1.png)
 
