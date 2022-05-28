@@ -100,6 +100,8 @@ function _M.map_message(field, default_values, request_table)
         if ty ~= "enum" and field_type:sub(1, 1) == "." then
             if request_table[name] == nil then
                 sub = default_values and default_values[name]
+            elseif core.table.isarray(request_table[name]) then
+	            sub = get_from_request(request_table, name, field_type) or (default_values and default_values[name])
             else
                 sub, err = _M.map_message(field_type, default_values and default_values[name],
                                           request_table[name])
