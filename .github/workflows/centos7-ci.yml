@@ -68,7 +68,7 @@ jobs:
     - name: Build xDS library
       run: |
         cd t/xds-library
-        go build -o libxds.so -buildmode=c-shared main.go
+        go build -o libxds.so -buildmode=c-shared main.go export.go
 
     - name: Run centos7 docker and mapping apisix into container
       env:
