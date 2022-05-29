@@ -43,6 +43,12 @@ For example, you can create a directory structure like this:
 │               └── 3rd-party.lua
 ```
 
+:::note
+
+If you need to customize the directory of plugin, please create a subdirectory of `/apisix/plugins` under this directory.
+
+:::
+
 Then add this configuration into your `conf/config.yaml`:
 
 ```yaml
