@@ -5,7 +5,7 @@ keywords:
   - Plugin
   - AWS Lambda
   - aws-lambda
-description: 本文介绍了关于 Apache APISIX `aws-lambda` 插件的基本信息及使用方法。
+description: 本文介绍了关于 Apache APISIX aws-lambda 插件的基本信息及使用方法。
 ---
 
 <!--
@@ -55,7 +55,7 @@ description: 本文介绍了关于 Apache APISIX `aws-lambda` 插件的基本信
 | ---------- | ------ | -------- | ------------- | ------------------------------------------------------------ |
 | accesskey  | string | 是       |               | 从 AWS IAM 控制台生成的访问密钥 ID。                     |
 | secret_key | string | 是       |               | 从 AWS IAM 控制台生成的访问密钥。                          |
-| aws_region | string | 否       | "us-east-1"   | 发出请求的 AWS 区域。                                    |
+| aws_region | string | 否       | "us-east-1"   | 发出请求的 AWS 区域。有关更多 AWS 区域代码的信息请参考 [AWS 区域代码表](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html#region-names-codes)。 |
 | service    | string | 否       | "execute-api" | 接收该请求的服务。请注意，对于 HTTP 触发器是 `"execute-api"`。 |
 
 ## 启用插件
