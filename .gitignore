@@ -45,6 +45,7 @@ luac.out
 *.orig
 *.rej
 t/servroot
+t/xds-library/libxds.h
 conf/apisix.uid
 conf/nginx.conf
 deps

@@ -42,6 +42,12 @@ Apache APISIX 提供了两种方式来添加新的功能。
 │               └── 3rd-party.lua
 ```
 
+:::note
+
+如果你需要自定义插件的目录，请在该目录下创建 `/apisix/plugins` 的子目录。
+
+:::
+
 接着，在 `conf/config.yaml` 文件中添加如下的配置：
 
 ```yaml
