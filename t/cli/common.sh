@@ -39,4 +39,5 @@ exit_if_not_customed_nginx() {
     openresty -V 2>&1 | grep apisix-nginx-module || exit 0
 }
 
+rm logs/error.log || true # clear previous error log
 unset APISIX_PROFILE

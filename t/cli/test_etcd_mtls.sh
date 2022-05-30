@@ -115,7 +115,7 @@ if echo "$out" | grep "ouch"; then
     exit 1
 fi
 
-rm logs/error.log
+rm logs/error.log || true
 make run
 sleep 1
 make stop

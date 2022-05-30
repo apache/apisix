@@ -24,34 +24,24 @@ local schema = {
     properties = {
         prefer_name = {
             type = "boolean",
-            default = false
+            default = false -- stream route doesn't have name yet
         }
     },
 }
 
 
 local _M = {
-    version = 0.2,
+    version = 0.1,
     priority = 500,
     name = plugin_name,
-    log  = exporter.http_log,
+    log  = exporter.stream_log,
     schema = schema,
     run_policy = "prefer_route",
 }
 
 
 function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-    if not ok then
-        return false, err
-    end
-
-    return true
-end
-
-
-function _M.api()
-    return exporter.get_api(true)
+    return core.schema.check(schema, conf)
 end
 
 
