@@ -385,3 +385,51 @@ hello world
 --- no_error_log
 [error]
 --- skip_nginx: 5: < 1.19.0
+
+
+
+=== TEST 16: reuse ctx and more
+--- stream_extra_init_by_lua
+    local ctx = require("apisix.core.ctx")
+    local tablepool = require("apisix.core").tablepool
+
+    local old_set_vars_meta = ctx.set_vars_meta
+    ctx.set_vars_meta = function(...)
+        ngx.log(ngx.WARN, "fetch ctx var")
+        return old_set_vars_meta(...)
+    end
+
+    local old_release_vars = ctx.release_vars
+    ctx.release_vars = function(...)
+        ngx.log(ngx.WARN, "release ctx var")
+        return old_release_vars(...)
+    end
+
+    local old_fetch = tablepool.fetch
+    tablepool.fetch = function(name, ...)
+        ngx.log(ngx.WARN, "fetch table ", name)
+        return old_fetch(name, ...)
+    end
+
+    local old_release = tablepool.release
+    tablepool.release = function(name, ...)
+        ngx.log(ngx.WARN, "release table ", name)
+        return old_release(name, ...)
+    end
+--- stream_request eval
+mmm
+--- stream_response
+hello world
+--- no_error_log
+[error]
+--- grep_error_log eval
+qr/(fetch|release) (ctx var|table \w+)/
+--- grep_error_log_out
+fetch table api_ctx
+fetch ctx var
+fetch table ctx_var
+fetch table plugins
+release ctx var
+release table ctx_var
+release table plugins
+release table api_ctx
