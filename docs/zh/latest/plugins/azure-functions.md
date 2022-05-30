@@ -5,7 +5,7 @@ keywords:
   - Plugin
   - Azure Functions
   - azure-functions
-description: 本文介绍了关于 Apache APISIX `azure-functions` 插件的基本信息及使用方法。
+description: 本文介绍了关于 Apache APISIX azure-functions 插件的基本信息及使用方法。
 ---
 <!--
 #
@@ -51,7 +51,7 @@ description: 本文介绍了关于 Apache APISIX `azure-functions` 插件的基�
 | 名称            | 类型   | 必选项 | 默认值 | 描述                                                         |
 | --------------- | ------ | ------ | ------ | ------------------------------------------------------------ |
 | master_apikey   | string | 否     | ""     | 可用于访问 Azure Functions URI 的 API 密钥。                 |
-| master_clientid | string | 否     | ""     | 可用于授权 Azure Functions URI 的客户 ID（Active Directory）。 |
+| master_clientid | string | 否     | ""     | 可用于授权 Azure Functions URI 的客户端 ID（Active Directory）。 |
 
 `azure-functions` 插件的元数据提供了授权回退的功能。它定义了 `master_apikey` 和 `master_clientid` 字段，用户可以为关键任务的应用部署声明 API 密钥或客户端 ID。因此，如果在 `azure-functions` 插件属性中没有找到相关授权凭证，此时元数据中的授权凭证就会发挥作用。
 
@@ -59,9 +59,9 @@ description: 本文介绍了关于 Apache APISIX `azure-functions` 插件的基�
 
 授权方式优先级排序如下：
 
-- 首先，`azure-functions` 插件在 Apache APISIX 代理的请求头中寻找 `x-functions-key` 或 `x-functions-clientid` 键。
-- 如果没有找到，`azure-functions` 插件会检查插件属性中的授权凭证。如果授权凭证存在，`azure-functions` 插件会将相应的授权标头添加到发送到 Azure cloud function 的请求中。
-- 如果在 `azure-functions` 插件属性中没有找到授权凭证，Apache APISIX 将获取插件元数据配置并使用 API 密钥。
+1. 首先，`azure-functions` 插件在 APISIX 代理的请求头中寻找 `x-functions-key` 或 `x-functions-clientid` 键。
+2. 如果没有找到，`azure-functions` 插件会检查插件属性中的授权凭证。如果授权凭证存在，`azure-functions` 插件会将相应的授权标头添加到发送到 Azure Functions 的请求中。
+3. 如果未配置 `azure-functions` 插件的授权凭证属性，APISIX 将获取插件元数据配置并使用 API 密钥。
 
 :::
 
@@ -85,7 +85,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         "azure-functions": {
             "function_uri": "http://test-apisix.azurewebsites.net/api/HttpTrigger",
             "authorization": {
-                "apikey": "<Generated API key to access the Azure-Function>"
+                "apikey": "${Generated API key to access the Azure-Function}"
             }
         }
     },
@@ -95,7 +95,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 通过上述示例配置插件后，任何对 `/azure` URI 的请求（`HTTP/1.1`、`HTTPS`、`HTTP2`）都将调用已配置的 Azure Functions 的 URI，并且会将响应信息返回给客户端。
 
-下述命令的含义是：Azure Function 从请求中获取 `name` 参数，并返回一条 `"Hello $name"` 消息：
+下述命令的含义是：Azure Functions 从请求中获取 `name` 参数，并返回一条 `"Hello $name"` 消息：
 
 ```shell
 curl -i -XGET http://localhost:9080/azure\?name=APISIX
@@ -158,7 +158,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         "azure-functions": {
             "function_uri": "http://app-bisakh.azurewebsites.net/api",
             "authorization": {
-                "apikey": "<Generated API key to access the Azure-Function>"
+                "apikey": "${Generated API key to access the Azure-Function}"
             }
         }
     },
@@ -166,7 +166,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-通过上述示例配置插件后，任何访问 `azure/HttpTrigger1` 的请求都会调用 Azure Function 并转发附加的参数。
+通过上述示例配置插件后，任何访问 `azure/HttpTrigger1` 的请求都会调用 Azure Functions 并转发附加的参数。
 
 使用 `curl` 命令测试：
 
