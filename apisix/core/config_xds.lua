@@ -58,6 +58,14 @@ if is_http then
     process = require("ngx.process")
 end
 
+local shdict_udata_to_zone
+if not pcall(function() return C.ngx_http_lua_ffi_shdict_udata_to_zone end) then
+    shdict_udata_to_zone = C.ngx_meta_lua_ffi_shdict_udata_to_zone
+else
+    shdict_udata_to_zone = C.ngx_http_lua_ffi_shdict_udata_to_zone
+end
+
+
 ffi.cdef[[
 typedef unsigned int  useconds_t;
 
@@ -127,10 +135,10 @@ local function load_libxds(lib_name)
               table.concat(tried_paths, '\r\n', 1, #tried_paths))
     end
 
-    local config_zone = C.ngx_http_lua_ffi_shdict_udata_to_zone(config[1])
+    local config_zone = shdict_udata_to_zone(config[1])
     local config_shd_cdata = ffi.cast("void*", config_zone)
 
-    local conf_ver_zone = C.ngx_http_lua_ffi_shdict_udata_to_zone(conf_ver[1])
+    local conf_ver_zone = shdict_udata_to_zone(conf_ver[1])
     local conf_ver_shd_cdata = ffi.cast("void*", conf_ver_zone)
 
     xdsagent.initial(config_shd_cdata, conf_ver_shd_cdata)
