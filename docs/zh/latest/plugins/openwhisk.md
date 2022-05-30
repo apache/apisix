@@ -5,7 +5,7 @@ keywords:
   - Plugin
   - OpenWhisk
   - openwhisk
-description: 本文介绍了关于 Apache APISIX `openwhisk` 插件的基本信息及使用方法。
+description: 本文介绍了关于 Apache APISIX openwhisk 插件的基本信息及使用方法。
 ---
 
 <!--
@@ -41,7 +41,7 @@ description: 本文介绍了关于 Apache APISIX `openwhisk` 插件的基本信�
 | ssl_verify        | boolean | 否     | true    |              | 当设置为 `true` 时执行 SSL 验证。                            |
 | service_token     | string  | 是     |         |              | OpenWhisk service token，其格式为 `xxx:xxx` ，用于 API 调用时的身份认证。 |
 | namespace         | string  | 是     |         |              | OpenWhisk namespace，例如 `guest`。                          |
-| action            | string  | 是     |         |              | OpenWhisk action，例如 `hello`.                              |
+| action            | string  | 是     |         |              | OpenWhisk action，例如 `hello`。                              |
 | result            | boolean | 否     | true    |              | 当设置为 `true` 时，获得 action 元数据（执行函数并获得响应结果）。 |
 | timeout           | integer | 否     | 60000ms | [1,60000]ms  | OpenWhisk action 和 HTTP 调用超时时间（以毫秒为单位）。          |
 | keepalive         | boolean | 否     | true    |              | 当设置为 `true` 时，保持连接的活动状态以便重复使用。         |
@@ -54,7 +54,7 @@ description: 本文介绍了关于 Apache APISIX `openwhisk` 插件的基本信�
 
 因为 OpenWhisk action 调用可能会耗费很长时间来拉取容器镜像和启动容器，所以如果 `timeout` 字段值设置太小，可能会导致大量的失败请求。
 
-在 OpenWhisk 中 `timeout` 字段的值设置范围从 1 ms 到 60000 ms，历史使用经验建议大家将 `timeout` 字段的值至少设置为 1000ms。
+在 OpenWhisk 中 `timeout` 字段的值设置范围从 1 ms 到 60000 ms，建议用户将 `timeout` 字段的值至少设置为 1000ms。
 
 :::
 
@@ -62,7 +62,7 @@ description: 本文介绍了关于 Apache APISIX `openwhisk` 插件的基本信�
 
 ### 搭建 Apache OpenWhisk 测试环境
 
-1. 在使用 `openwhisk` 插件之前，你需要通过以下命令运行 OpenWhisk 独立集群模式。请确保当前环境中已经安装 Docker 软件。
+1. 在使用 `openwhisk` 插件之前，你需要通过以下命令运行 OpenWhisk stand-alone 模式。请确保当前环境中已经安装 Docker 软件。
 
 ```shell
 docker run --rm -d \
