@@ -105,9 +105,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 
 ### 注册服务
 
-1. 使用 `Zookeeper CLI` 注册服务
+使用 ZooKeeper-cli 注册服务
 
-登录 Zookeeper 容器，使用 CLI 程序进行服务注册。具体命令如下：
+登录 ZooKeeper 容器，使用 CLI 程序进行服务注册。具体命令如下：
 
 ```bash
 # 登陆容器
