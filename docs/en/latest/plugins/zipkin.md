@@ -1,5 +1,5 @@
 ---
-title: Zipkin
+title: zipkin
 keywords:
   - APISIX
   - Plugin
