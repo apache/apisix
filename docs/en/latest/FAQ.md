@@ -595,6 +595,6 @@ The differences between the two are described in the table below:
 
 You can find more answers on:
 
-- [Apache APISIX Slack Channel](/docs/general/community#joining-the-slack-channel)
-- [Ask questions on APISIX mailing list](/docs/general/community#joining-the-mailing-list)
+- [Apache APISIX Slack Channel](/docs/general/join/#join-the-slack-channel)
+- [Ask questions on APISIX mailing list](/docs/general/join/#subscribe-to-the-mailing-list)
 - [GitHub Issues](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc) and [GitHub Discussions](https://github.com/apache/apisix/discussions)
