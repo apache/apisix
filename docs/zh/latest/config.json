@@ -1,5 +1,5 @@
 {
-  "version": "2.14.0",
+  "version": "2.14.1",
   "sidebar": [
     {
       "type": "category",
@@ -160,7 +160,8 @@
           "label": "Serverless",
           "items": [
             "plugins/serverless",
-            "plugins/azure-functions"
+            "plugins/azure-functions",
+            "plugins/openwhisk"
           ]
         },
         {

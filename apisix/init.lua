@@ -970,8 +970,18 @@ end
 
 function _M.stream_log_phase()
     core.log.info("enter stream_log_phase")
-    -- core.ctx.release_vars(api_ctx)
-    plugin.run_plugin("log")
+
+    local api_ctx = plugin.run_plugin("log")
+    if not api_ctx then
+        return
+    end
+
+    core.ctx.release_vars(api_ctx)
+    if api_ctx.plugins then
+        core.tablepool.release("plugins", api_ctx.plugins)
+    end
+
+    core.tablepool.release("api_ctx", api_ctx)
 end
 
 

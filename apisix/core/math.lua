@@ -15,10 +15,27 @@
 -- limitations under the License.
 --
 
---- Return APISIX current version.
+--- Common library about math
 --
--- @module core.version
+-- @module core.math
+local _M = {}
 
-return {
-    VERSION = "2.14.1"
-}
+
+---
+-- Calculate the greatest common divisor (GCD) of two numbers
+--
+-- @function core.math.gcd
+-- @tparam number a
+-- @tparam number b
+-- @treturn number the GCD of a and b
+local function gcd(a, b)
+    if b == 0 then
+        return a
+    end
+
+    return gcd(b, a % b)
+end
+_M.gcd = gcd
+
+
+return _M

@@ -22,7 +22,6 @@ local bit    = require("bit")
 local ngx    = ngx
 local string = string
 local table  = table
-local ipairs = ipairs
 local pcall = pcall
 local tonumber = tonumber
 local req_read_body = ngx.req.read_body
@@ -37,11 +36,7 @@ return function (proto, service, method, pb_option, deadline, default_values)
 
     req_read_body()
 
-    if pb_option then
-        for _, opt in ipairs(pb_option) do
-            pb.option(opt)
-        end
-    end
+    util.set_options(proto, pb_option)
 
     local map_message = util.map_message(m.input_type, default_values or {})
     local ok, encoded = pcall(pb.encode, m.input_type, map_message)
