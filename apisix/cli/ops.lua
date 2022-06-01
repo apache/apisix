@@ -257,6 +257,13 @@ Please modify "admin_key" in conf/config.yaml .
         use_apisix_openresty = false
     end
 
+    local enable_http = true
+    if not yaml_conf.apisix.enable_admin and yaml_conf.apisix.stream_proxy and
+        yaml_conf.apisix.stream_proxy.only ~= false
+    then
+        enable_http = false
+    end
+
     local enabled_discoveries = {}
     for name in pairs(yaml_conf.discovery or {}) do
         enabled_discoveries[name] = true
@@ -344,6 +351,10 @@ Please modify "admin_key" in conf/config.yaml .
                                              prometheus.export_addr.ip,
                                              9091, prometheus.export_addr.port)
         end
+    end
+
+    if enabled_stream_plugins["prometheus"] and not prometheus_server_addr then
+        util.die("L4 prometheus metric should be exposed via export server\n")
     end
 
     local ip_port_to_check = {}
@@ -540,6 +551,7 @@ Please modify "admin_key" in conf/config.yaml .
         with_module_status = with_module_status,
         use_apisix_openresty = use_apisix_openresty,
         error_log = {level = "warn"},
+        enable_http = enable_http,
         enabled_discoveries = enabled_discoveries,
         enabled_plugins = enabled_plugins,
         enabled_stream_plugins = enabled_stream_plugins,
