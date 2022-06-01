@@ -85,7 +85,7 @@ if ! echo "$out" | grep "apisix_stream_connection_total{route=\"1\"} 1" > /dev/n
     exit 1
 fi
 
-if ! echo "$out" | grep "apisix_nginx_connections{state=\"writing\"} 1" > /dev/null; then
+if ! echo "$out" | grep "apisix_node_info{hostname=" > /dev/null; then
     echo "failed: prometheus can't work in stream subsystem"
     exit 1
 fi

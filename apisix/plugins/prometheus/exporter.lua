@@ -99,22 +99,12 @@ function _M.http_init(prometheus_enabled_in_stream)
 
     prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
 
-    if prometheus_enabled_in_stream then
-        -- rename the metrics as they are not HTTP only now
-        metrics.connections = prometheus:gauge("nginx_connections",
-                "Number of connections",
-                {"state"})
+    metrics.connections = prometheus:gauge("nginx_http_current_connections",
+            "Number of HTTP connections",
+            {"state"})
 
-        metrics.requests = prometheus:gauge("requests_total",
-                "The total number of client requests since APISIX started")
-    else
-        metrics.connections = prometheus:gauge("nginx_http_current_connections",
-                "Number of HTTP connections",
-                {"state"})
-
-        metrics.requests = prometheus:gauge("http_requests_total",
-                "The total number of client requests since APISIX started")
-    end
+    metrics.requests = prometheus:gauge("http_requests_total",
+            "The total number of client requests since APISIX started")
 
     metrics.etcd_reachable = prometheus:gauge("etcd_reachable",
             "Config server etcd reachable from APISIX, 0 is unreachable")
