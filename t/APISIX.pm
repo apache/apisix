@@ -238,6 +238,15 @@ env PATH; # for searching external plugin runner's binary
 env TEST_NGINX_HTML_DIR;
 _EOC_
 
+
+    if ($version =~ m/\/apisix-nginx-module/) {
+        $main_config .= <<_EOC_;
+lua {
+    lua_shared_dict prometheus-metrics 15m;
+}
+_EOC_
+    }
+
     # set default `timeout` to 5sec
     my $timeout = $block->timeout // 5;
     $block->set_value("timeout", $timeout);
@@ -480,7 +489,6 @@ _EOC_
     lua_shared_dict plugin-limit-req 10m;
     lua_shared_dict plugin-limit-count 10m;
     lua_shared_dict plugin-limit-conn 10m;
-    lua_shared_dict prometheus-metrics 10m;
     lua_shared_dict internal-status 10m;
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events 10m;
@@ -526,6 +534,7 @@ _EOC_
         balancer_by_lua_block {
             apisix.http_balancer_phase()
         }
+    }
 _EOC_
     } else {
     $http_config .= <<_EOC_;
@@ -534,11 +543,13 @@ _EOC_
         }
 
         keepalive 32;
+    }
+
+    lua_shared_dict prometheus-metrics 10m;
 _EOC_
     }
 
     $http_config .= <<_EOC_;
-    }
 
     $dubbo_upstream
 
