@@ -135,7 +135,7 @@ plugin_attr:
     export_uri: /apisix/metrics
 ```
 
-### Grafana dashboard
+## Grafana dashboard
 
 Metrics exported by the plugin can be graphed in Grafana using a drop in dashboard.
 
@@ -151,7 +151,7 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
 
 ![Grafana chart-4](../../../assets/images/plugin/grafana-4.png)
 
-### Available metrics
+## Available metrics
 
 * `Status codes`: HTTP status code returned from upstream services. These status code available per service and across all services.
 
@@ -281,4 +281,59 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
         }
     }
 }'
+```
+
+## Gather L4 metrics
+
+:::info IMPORTANT
+
+This feature requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-the-apisix-base-environment?).
+
+:::
+
+We can also enable `prometheus` on the stream route:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "plugins": {
+        "prometheus":{}
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:80": 1
+        }
+    }
+}'
+```
+
+## L4 available metrics
+
+The following metrics are available when using APISIX as an L4 proxy.
+
+* `Stream Connections`: The number of processed connections at the route level.
+
+    Attributes:
+
+    | Name          | Description             |
+    | ------------- | --------------------    |
+    | route         | matched stream route ID |
+* `Connections`: Various Nginx connection metrics like active, reading, writing, and number of accepted connections.
+* `Info`: Information about the current APISIX node.
+
+Here are examples of APISIX metrics:
+
+```shell
+$ curl http://127.0.0.1:9091/apisix/prometheus/metrics
+```
+
+```
+...
+# HELP apisix_node_info Info of APISIX node
+# TYPE apisix_node_info gauge
+apisix_node_info{hostname="desktop-2022q8f-wsl"} 1
+# HELP apisix_stream_connection_total Total number of connections handled per stream route in APISIX
+# TYPE apisix_stream_connection_total counter
+apisix_stream_connection_total{route="1"} 1
 ```

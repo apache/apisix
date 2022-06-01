@@ -134,7 +134,7 @@ plugin_attr:
     export_uri: /apisix/metrics
 ```
 
-### Grafana 面板
+## Grafana 面板
 
 插件导出的指标可以在 Grafana 进行图形化绘制显示。
 
@@ -150,7 +150,7 @@ plugin_attr:
 
 ![Grafana chart-4](../../../assets/images/plugin/grafana-4.png)
 
-### 可有的指标
+## 可用的指标
 
 * `Status codes`: upstream 服务返回的 HTTP 状态码，可以统计到每个服务或所有服务的响应状态码的次数总和。具有的维度：
 
@@ -273,4 +273,57 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
         }
     }
 }'
+```
+
+## 采集 L4 指标
+
+:::info IMPORTANT
+
+该功能要求 Apache APISIX 运行在 [APISIX-Base](../FAQ.md#如何构建-APISIX-Base-环境？) 上。
+
+:::
+
+我们也可以在 stream route 上开启 `prometheus`：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "plugins": {
+        "prometheus":{}
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:80": 1
+        }
+    }
+}'
+```
+
+## L4 可用的指标
+
+以下是把 APISIX 作为 L4 代理时可用的指标：
+
+* `Stream Connections`: 路由级别的已处理连接数。具有的维度：
+
+    | 名称          |    描述             |
+    | -------------| --------------------|
+    | route         | 匹配的 stream route ID|
+* `Connections`: 各种的 Nginx 连接指标，如 active，reading，writing，已建立的连接数。
+* `Info`: 当前 APISIX 节点信息。
+
+这里是 APISIX 指标的范例：
+
+```shell
+$ curl http://127.0.0.1:9091/apisix/prometheus/metrics
+```
+
+```
+...
+# HELP apisix_node_info Info of APISIX node
+# TYPE apisix_node_info gauge
+apisix_node_info{hostname="desktop-2022q8f-wsl"} 1
+# HELP apisix_stream_connection_total Total number of connections handled per stream route in APISIX
+# TYPE apisix_stream_connection_total counter
+apisix_stream_connection_total{route="1"} 1
 ```
