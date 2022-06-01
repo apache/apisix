@@ -285,6 +285,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 ## Gather L4 metrics
 
+:::info IMPORTANT
+
+This feature requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-the-apisix-base-environment?).
+
+:::
+
 We can also enable `prometheus` on the stream route:
 
 ```shell

@@ -277,6 +277,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 ## 采集 L4 指标
 
+:::info IMPORTANT
+
+该功能要求 Apache APISIX 运行在 [APISIX-Base](../FAQ.md#如何构建-APISIX-Base-环境？) 上。
+
+:::
+
 我们也可以在 stream route 上开启 `prometheus`：
 
 ```shell
