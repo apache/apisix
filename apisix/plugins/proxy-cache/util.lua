@@ -37,7 +37,7 @@ function _M.generate_complex_value(data, ctx)
         core.log.info("proxy-cache complex value index-", i, ": ", value)
 
         if string.byte(value, 1, 1) == string.byte('$') then
-            tmp[i] = ctx.var[string.sub(value, 2)]
+            tmp[i] = ctx.var[string.sub(value, 2)] or ""
         else
             tmp[i] = value
         end
