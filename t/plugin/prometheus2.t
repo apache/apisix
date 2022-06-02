@@ -538,7 +538,7 @@ qr/apisix_batch_process_entries\{name="http-logger",route_id="9",server_addr="12
                                 "buffer_duration": 60,
                                 "port": 1000,
                                 "batch_max_size": 1000,
-                                "inactive_timeout": 5,
+                                "inactive_timeout": 60,
                                 "tls": false,
                                 "max_retry_count": 0
                             }

@@ -53,6 +53,10 @@ The cache expiration time cannot be configured dynamically. It can only be set b
 
 If the Upstream service is not available and APISIX returns a 502 or 504 status code, it will be cached for 10s.
 
+Variables (start with `$`) can be specified in `cache_key`, `cache_bypass` and `no_cache`. It's worth mentioning that the variable value will be an empty string if it doesn't exist.
+
+You can also combine a number of variables and strings (constants), by writing them into an array, eventually, variables will be parsed and stitched together with strings.
+
 :::
 
 ## Enabling the Plugin

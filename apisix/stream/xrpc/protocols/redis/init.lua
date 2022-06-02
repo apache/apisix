@@ -39,6 +39,7 @@ end)
 
 -- redis protocol spec: https://redis.io/docs/reference/protocol-spec/
 -- There is no plan to support inline command format
+local protocol_name = "redis"
 local _M = {}
 local MAX_LINE_LEN = 128
 local MAX_VALUE_LEN = 128
@@ -107,6 +108,7 @@ function _M.init_downstream(session)
 
     session.req_id_seq = 0
     session.resp_id_seq = 0
+    session.cmd_labels = {session.route.id, ""}
     return xrpc_socket.downstream.socket()
 end
 
@@ -482,6 +484,13 @@ end
 
 
 function _M.log(session, ctx)
+    local metrics = sdk.get_metrics(session, protocol_name)
+    if metrics then
+        session.cmd_labels[2] = ctx.cmd
+        metrics.commands_total:inc(1, session.cmd_labels)
+        metrics.commands_latency_seconds:observe(ctx.var.rpc_time, session.cmd_labels)
+    end
+
     core.tablepool.release("xrpc_redis_cmd_line", ctx.cmd_line)
     ctx.cmd_line = nil
 end

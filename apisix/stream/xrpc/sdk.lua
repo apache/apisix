@@ -21,6 +21,7 @@
 local core = require("apisix.core")
 local config_util = require("apisix.core.config_util")
 local router = require("apisix.stream.router.ip_port")
+local metrics = require("apisix.stream.xrpc.metrics")
 local apisix_upstream = require("apisix.upstream")
 local xrpc_socket = require("resty.apisix.stream.xrpc.socket")
 local ngx_now = ngx.now
@@ -179,6 +180,22 @@ function _M.set_upstream(session, conf)
     session._upstream_key = key
     session.upstream_conf = up
     return nil
+end
+
+
+---
+-- Returns the protocol specific metrics object
+--
+-- @function xrpc.sdk.get_metrics
+-- @tparam table session xrpc session
+-- @tparam string protocol_name protocol name
+-- @treturn nil|table the metrics under the specific protocol if available
+function _M.get_metrics(session, protocol_name)
+    local metric_conf = session.route.protocol.metric
+    if not (metric_conf and metric_conf.enable) then
+        return nil
+    end
+    return metrics.load(protocol_name)
 end
 
 

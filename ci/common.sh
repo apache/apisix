@@ -45,7 +45,7 @@ rerun_flaky_tests() {
     local n_test
     tests="$(awk '/^t\/.*.t\s+\(.+ Failed: .+\)/{ print $1 }' "$1")"
     n_test="$(echo "$tests" | wc -l)"
-    if [ "$n_test" -gt 3 ]; then
+    if [ "$n_test" -gt 10 ]; then
         # too many tests failed
         exit 1
     fi
@@ -63,7 +63,9 @@ install_grpcurl () {
 
 install_vault_cli () {
     VAULT_VERSION="1.9.0"
-    wget https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip
+    # the certificate can't be verified in CentOS7, see
+    # https://blog.devgenius.io/lets-encrypt-change-affects-openssl-1-0-x-and-centos-7-49bd66016af3
+    wget --no-check-certificate https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip
     unzip vault_${VAULT_VERSION}_linux_amd64.zip && mv ./vault /usr/local/bin
 }
 
@@ -77,6 +79,48 @@ install_nodejs () {
     mv node-v${NODEJS_VERSION}-linux-x64 ${NODEJS_PREFIX}
     ln -s ${NODEJS_PREFIX}/bin/node /usr/local/bin/node
     ln -s ${NODEJS_PREFIX}/bin/npm /usr/local/bin/npm
+}
+
+set_coredns() {
+    # test a domain name is configured as upstream
+    echo "127.0.0.1 test.com" | sudo tee -a /etc/hosts
+    echo "::1 ipv6.local" | sudo tee -a /etc/hosts
+    # test certificate verification
+    echo "127.0.0.1 admin.apisix.dev" | sudo tee -a /etc/hosts
+    cat /etc/hosts # check GitHub Action's configuration
+
+    # override DNS configures
+    if [ -f "/etc/netplan/50-cloud-init.yaml" ]; then
+        sudo pip3 install yq
+
+        tmp=$(mktemp)
+        yq -y '.network.ethernets.eth0."dhcp4-overrides"."use-dns"=false' /etc/netplan/50-cloud-init.yaml | \
+        yq -y '.network.ethernets.eth0."dhcp4-overrides"."use-domains"=false' | \
+        yq -y '.network.ethernets.eth0.nameservers.addresses[0]="8.8.8.8"' | \
+        yq -y '.network.ethernets.eth0.nameservers.search[0]="apache.org"' > $tmp
+        mv $tmp /etc/netplan/50-cloud-init.yaml
+        cat /etc/netplan/50-cloud-init.yaml
+        sudo netplan apply
+        sleep 3
+
+        sudo mv /etc/resolv.conf /etc/resolv.conf.bak
+        sudo ln -s /run/systemd/resolve/resolv.conf /etc/
+    fi
+    cat /etc/resolv.conf
+
+    mkdir -p build-cache
+
+    if [ ! -f "build-cache/coredns_1_8_1" ]; then
+        wget https://github.com/coredns/coredns/releases/download/v1.8.1/coredns_1.8.1_linux_amd64.tgz
+        tar -xvf coredns_1.8.1_linux_amd64.tgz
+        mv coredns build-cache/
+
+        touch build-cache/coredns_1_8_1
+    fi
+
+    pushd t/coredns || exit 1
+    ../../build-cache/coredns -dns.port=1053 &
+    popd || exit 1
 }
 
 GRPC_SERVER_EXAMPLE_VER=20210819

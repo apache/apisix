@@ -121,18 +121,4 @@ function _M.write_file(file_path, data)
 end
 
 
-function _M.is_file_exist(file_path)
-    local file, err = open(file_path)
-    if not file then
-        return false, "failed to open file: "
-                      .. file_path
-                      .. ", error info: "
-                      .. err
-    end
-
-    file:close()
-    return true
-end
-
-
 return _M

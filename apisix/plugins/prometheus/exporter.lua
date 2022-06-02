@@ -19,8 +19,10 @@ local core      = require("apisix.core")
 local plugin    = require("apisix.plugin")
 local ipairs    = ipairs
 local ngx       = ngx
-local ngx_capture = ngx.location.capture
 local re_gmatch = ngx.re.gmatch
+local ffi       = require("ffi")
+local C         = ffi.C
+local pcall = pcall
 local select = select
 local type = type
 local prometheus
@@ -35,9 +37,17 @@ local get_stream_routes = router.stream_routes
 local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
 local service_fetch = require("apisix.http.service").get
 local latency_details = require("apisix.utils.log-util").latency_details_in_ms
+local xrpc = require("apisix.stream.xrpc")
 
 
+local ngx_capture
+if ngx.config.subsystem == "http" then
+    ngx_capture = ngx.location.capture
+end
 
+
+local plugin_name = "prometheus"
+local default_export_uri = "/apisix/prometheus/metrics"
 -- Default set of latency buckets, 1ms to 60s:
 local DEFAULT_BUCKETS = {1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 30000, 60000}
 
@@ -58,7 +68,16 @@ end
 local _M = {}
 
 
-function _M.init()
+local function init_stream_metrics()
+    metrics.stream_connection_total = prometheus:counter("stream_connection_total",
+        "Total number of connections handled per stream route in APISIX",
+        {"route"})
+
+    xrpc.init_metrics(prometheus)
+end
+
+
+function _M.http_init(prometheus_enabled_in_stream)
     -- todo: support hot reload, we may need to update the lua-prometheus
     -- library
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
@@ -83,6 +102,7 @@ function _M.init()
     end
 
     prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
+
     metrics.connections = prometheus:gauge("nginx_http_current_connections",
             "Number of HTTP connections",
             {"state"})
@@ -119,10 +139,37 @@ function _M.init()
             "Total bandwidth in bytes consumed per service in APISIX",
             {"type", "route", "service", "consumer", "node"})
 
+    if prometheus_enabled_in_stream then
+        init_stream_metrics()
+    end
 end
 
 
-function _M.log(conf, ctx)
+function _M.stream_init()
+    if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
+        return
+    end
+
+    if not pcall(function() return C.ngx_meta_lua_ffi_shdict_udata_to_zone end) then
+        core.log.error("need to build APISIX-Base to support L4 metrics")
+        return
+    end
+
+    clear_tab(metrics)
+
+    local metric_prefix = "apisix_"
+    local attr = plugin.plugin_attr("prometheus")
+    if attr and attr.metric_prefix then
+        metric_prefix = attr.metric_prefix
+    end
+
+    prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
+
+    init_stream_metrics()
+end
+
+
+function _M.http_log(conf, ctx)
     local vars = ctx.var
 
     local route_id = ""
@@ -171,6 +218,20 @@ function _M.log(conf, ctx)
 
     metrics.bandwidth:inc(vars.bytes_sent,
         gen_arr("egress", route_id, service_id, consumer_name, balancer_ip))
+end
+
+
+function _M.stream_log(conf, ctx)
+    local route_id = ""
+    local matched_route = ctx.matched_route and ctx.matched_route.value
+    if matched_route then
+        route_id = matched_route.id
+        if conf.prefer_name == true then
+            route_id = matched_route.name or route_id
+        end
+    end
+
+    metrics.stream_connection_total:inc(1, gen_arr(route_id))
 end
 
 
@@ -291,7 +352,7 @@ local function etcd_modify_index()
 end
 
 
-function _M.collect()
+local function collect(ctx, stream_only)
     if not prometheus or not metrics then
         core.log.error("prometheus: plugin is not initialized, please make sure ",
                      " 'prometheus_metrics' shared dict is present in nginx template")
@@ -307,7 +368,8 @@ function _M.collect()
     local vars = ngx.var or {}
     local hostname = vars.hostname or ""
 
-    if config.type == "etcd" then
+    -- we can't get etcd index in metric server if only stream subsystem is enabled
+    if config.type == "etcd" and not stream_only then
         -- etcd modify index
         etcd_modify_index()
 
@@ -337,6 +399,49 @@ function _M.collect()
 
     core.response.set_header("content_type", "text/plain")
     return 200, core.table.concat(prometheus:metric_data())
+end
+_M.collect = collect
+
+
+local function get_api(called_by_api_router)
+    local export_uri = default_export_uri
+    local attr = plugin.plugin_attr(plugin_name)
+    if attr and attr.export_uri then
+        export_uri = attr.export_uri
+    end
+
+    local api = {
+        methods = {"GET"},
+        uri = export_uri,
+        handler = collect
+    }
+
+    if not called_by_api_router then
+        return api
+    end
+
+    if attr.enable_export_server then
+        return {}
+    end
+
+    return {api}
+end
+_M.get_api = get_api
+
+
+function _M.export_metrics(stream_only)
+    local api = get_api(false)
+    local uri = ngx.var.uri
+    local method = ngx.req.get_method()
+
+    if uri == api.uri and method == api.methods[1] then
+        local code, body = api.handler(nil, stream_only)
+        if code or body then
+            core.response.exit(code, body)
+        end
+    end
+
+    return core.response.exit(404)
 end
 
 

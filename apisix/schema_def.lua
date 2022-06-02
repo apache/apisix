@@ -914,6 +914,17 @@ _M.plugin_injected_schema = {
     ["$comment"] = "this is a mark for our injected plugin schema",
     disable = {
         type = "boolean",
+    },
+    _meta = {
+        type = "object",
+        properties = {
+            error_response = {
+                oneOf = {
+                    { type = "string" },
+                    { type = "object" },
+                }
+            },
+        }
     }
 }
 
