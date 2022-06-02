@@ -58,7 +58,6 @@ You can configure the Plugin through the Plugin metadata.
 | namespace     | string  | False    | "apisix"            | Prefix for all custom metrics sent by APISIX agent. Useful for finding entities for metrics graph. For example, `apisix.request.counter`. |
 | constant_tags | array   | False    | [ "source:apisix" ] | Static tags to embed into generated metrics. Useful for grouping metrics over certain signals.                                            |
 
-
 :::tip
 
 See [defining tags](https://docs.datadoghq.com/getting_started/tagging/#defining-tags) to know more about how to effectively use tags.
