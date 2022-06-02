@@ -198,6 +198,8 @@ For example, `GET /v1/healthcheck/upstreams/1` returns:
 }
 ```
 
+Note: If the process hit by the api request does not trigger the health check, the API request will not obtain any health check data.
+
 ### POST /v1/gc
 
 Introduced in [v2.8](https://github.com/apache/apisix/releases/tag/2.8).
