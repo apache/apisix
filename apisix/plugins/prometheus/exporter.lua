@@ -37,6 +37,8 @@ local get_stream_routes = router.stream_routes
 local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
 local service_fetch = require("apisix.http.service").get
 local latency_details = require("apisix.utils.log-util").latency_details_in_ms
+local xrpc = require("apisix.stream.xrpc")
+
 
 local ngx_capture
 if ngx.config.subsystem == "http" then
@@ -70,6 +72,8 @@ local function init_stream_metrics()
     metrics.stream_connection_total = prometheus:counter("stream_connection_total",
         "Total number of connections handled per stream route in APISIX",
         {"route"})
+
+    xrpc.init_metrics(prometheus)
 end
 
 
