@@ -66,6 +66,30 @@ local _M = {
 
 如果一个请求因为某个插件而被拒绝，会有类似这样的 warn 日志：`ip-restriction exits with http status code 403`。
 
+## 插件通用配置
+
+一些通用的配置可以应用于插件配置。比如说。
+
+```json
+{
+    "jwt-auth": {
+        "_meta": {
+            "error_response": {
+                "message": "Missing credential in request"
+            }
+        }
+    }
+}
+```
+
+上面的配置意味着将 jwt-auth 插件的错误响应自定义为 '{"message": "Missing credential in request"}'。
+
+### 在 `_meta` 下的插件通用配置
+
+| 名称         | 类型 | 描述           |
+|--------------|------|----------------|
+| error_response | string/object  | 自定义错误响应 |
+
 ## 热加载
 
 APISIX 的插件是热加载的，不管你是新增、删除还是修改插件，都不需要重启服务。

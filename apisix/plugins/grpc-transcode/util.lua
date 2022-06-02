@@ -20,6 +20,8 @@ local json              = core.json
 local pb                = require("pb")
 local ngx               = ngx
 local string            = string
+local table             = table
+local ipairs            = ipairs
 local tonumber          = tonumber
 local type              = type
 
@@ -48,6 +50,41 @@ function _M.find_method(proto, service, method)
     -- restore pb state
     pb.state(proto.pb_state)
     return res
+end
+
+
+function _M.set_options(proto, options)
+    local cur_opts = proto.options
+    if cur_opts then
+        if cur_opts == options then
+            -- same route
+            return
+        end
+
+        local same = true
+        table.sort(options)
+        for i, v in ipairs(options) do
+            if cur_opts[i] ~= v then
+                same = false
+                break
+            end
+        end
+
+        if same then
+            -- Routes have the same configuration, usually the default one.
+            -- As this is a small optimization, we don't care about routes have different
+            -- configuration but have the same effect eventually.
+            return
+        end
+    else
+        table.sort(options)
+    end
+
+    for _, opt in ipairs(options) do
+        pb.option(opt)
+    end
+
+    proto.options = options
 end
 
 

@@ -17,16 +17,24 @@
 #
 set -euo pipefail
 
+ARCH=${ARCH:-`(uname -m | tr '[:upper:]' '[:lower:]')`}
+arch_path=""
+if [[ $ARCH == "arm64" ]] || [[ $ARCH == "aarch64" ]]; then
+    arch_path="arm64/"
+fi
+
 wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
 sudo apt-get -y update --fix-missing
 sudo apt-get -y install software-properties-common
-sudo add-apt-repository -y "deb https://openresty.org/package/ubuntu $(lsb_release -sc) main"
+sudo add-apt-repository -y "deb https://openresty.org/package/${arch_path}ubuntu $(lsb_release -sc) main"
 
 sudo apt-get update
 
+abt_branch=${abt_branch:="master"}
+
 if [ "$OPENRESTY_VERSION" == "source" ]; then
     cd ..
-    wget https://raw.githubusercontent.com/api7/apisix-build-tools/v2.7.0/build-apisix-base.sh
+    wget https://raw.githubusercontent.com/api7/apisix-build-tools/$abt_branch/build-apisix-base.sh
     chmod +x build-apisix-base.sh
     ./build-apisix-base.sh latest
 

@@ -25,6 +25,7 @@ local profile = require("apisix.core.profile")
 local template = require("resty.template")
 local argparse = require("argparse")
 local pl_path = require("pl.path")
+local lfs = require("lfs")
 local signal = require("posix.signal")
 local errno = require("posix.errno")
 
@@ -38,7 +39,9 @@ local tonumber = tonumber
 local io_open = io.open
 local execute = os.execute
 local os_rename = os.rename
+local os_remove = os.remove
 local table_insert = table.insert
+local table_remove = table.remove
 local getenv = os.getenv
 local max = math.max
 local floor = math.floor
@@ -254,6 +257,13 @@ Please modify "admin_key" in conf/config.yaml .
         use_apisix_openresty = false
     end
 
+    local enable_http = true
+    if not yaml_conf.apisix.enable_admin and yaml_conf.apisix.stream_proxy and
+        yaml_conf.apisix.stream_proxy.only ~= false
+    then
+        enable_http = false
+    end
+
     local enabled_discoveries = {}
     for name in pairs(yaml_conf.discovery or {}) do
         enabled_discoveries[name] = true
@@ -281,8 +291,10 @@ Please modify "admin_key" in conf/config.yaml .
         if real_ip_from then
             for _, ip in ipairs(real_ip_from) do
                 local _ip = cli_ip:new(ip)
-                if _ip:is_loopback() or _ip:is_unspecified() then
-                    pass_real_client_ip = true
+                if _ip then
+                    if _ip:is_loopback() or _ip:is_unspecified() then
+                        pass_real_client_ip = true
+                    end
                 end
             end
         end
@@ -339,6 +351,10 @@ Please modify "admin_key" in conf/config.yaml .
                                              prometheus.export_addr.ip,
                                              9091, prometheus.export_addr.port)
         end
+    end
+
+    if enabled_stream_plugins["prometheus"] and not prometheus_server_addr then
+        util.die("L4 prometheus metric should be exposed via export server\n")
     end
 
     local ip_port_to_check = {}
@@ -469,9 +485,8 @@ Please modify "admin_key" in conf/config.yaml .
         -- Therefore we need to check the absolute version instead
         cert_path = pl_path.abspath(cert_path)
 
-        local ok, err = util.is_file_exist(cert_path)
-        if not ok then
-            util.die(err, "\n")
+        if not pl_path.exists(cert_path) then
+            util.die("certificate path", cert_path, "doesn't exist\n")
         end
 
         yaml_conf.apisix.ssl.ssl_trusted_certificate = cert_path
@@ -536,6 +551,7 @@ Please modify "admin_key" in conf/config.yaml .
         with_module_status = with_module_status,
         use_apisix_openresty = use_apisix_openresty,
         error_log = {level = "warn"},
+        enable_http = enable_http,
         enabled_discoveries = enabled_discoveries,
         enabled_plugins = enabled_plugins,
         enabled_stream_plugins = enabled_stream_plugins,
@@ -610,6 +626,14 @@ Please modify "admin_key" in conf/config.yaml .
                 -- ensure IPv6 address is always wrapped in []
                 sys_conf["dns_resolver"][i] = "[" .. r .. "]"
             end
+        end
+
+        -- check if the dns_resolver is ipv6 address with zone_id
+        -- Nginx does not support this form
+        if r:find("%%") then
+            stderr:write("unsupported DNS resolver: " .. r ..
+                         ", would ignore this item\n")
+            table_remove(sys_conf["dns_resolver"], i)
         end
     end
 
@@ -763,16 +787,19 @@ local function start(env, ...)
     if customized_yaml then
         profile.apisix_home = env.apisix_home .. "/"
         local local_conf_path = profile:yaml_path("config")
+        local local_conf_path_bak = local_conf_path .. ".bak"
 
-        local err = util.execute_cmd_with_error("mv " .. local_conf_path .. " "
-                                                .. local_conf_path .. ".bak")
-        if #err > 0 then
-            util.die("failed to mv config to backup, error: ", err)
+        local ok, err = os_rename(local_conf_path, local_conf_path_bak)
+        if not ok then
+            util.die("failed to backup config, error: ", err)
         end
-        err = util.execute_cmd_with_error("ln " .. customized_yaml .. " " .. local_conf_path)
-        if #err > 0 then
-            util.execute_cmd("mv " .. local_conf_path .. ".bak " .. local_conf_path)
-            util.die("failed to link customized config, error: ", err)
+        local ok, err1 = lfs.link(customized_yaml, local_conf_path)
+        if not ok then
+            ok, err = os_rename(local_conf_path_bak,  local_conf_path)
+            if not ok then
+                util.die("failed to recover original config file, error: ", err)
+            end
+            util.die("failed to link customized config, error: ", err1)
         end
 
         print("Use customized yaml: ", customized_yaml)
@@ -787,15 +814,15 @@ end
 
 local function cleanup()
     local local_conf_path = profile:yaml_path("config")
-    local bak_exist = io_open(local_conf_path .. ".bak")
-    if bak_exist then
-        local err = util.execute_cmd_with_error("rm " .. local_conf_path)
-        if #err > 0 then
+    local local_conf_path_bak = local_conf_path .. ".bak"
+    if pl_path.exists(local_conf_path_bak) then
+        local ok, err = os_remove(local_conf_path)
+        if not ok then
             print("failed to remove customized config, error: ", err)
         end
-        err = util.execute_cmd_with_error("mv " .. local_conf_path .. ".bak " .. local_conf_path)
-        if #err > 0 then
-            util.die("failed to mv original config file, error: ", err)
+        ok, err = os_rename(local_conf_path_bak,  local_conf_path)
+        if not ok then
+            util.die("failed to recover original config file, error: ", err)
         end
     end
 end
@@ -804,9 +831,10 @@ end
 local function test(env, backup_ngx_conf)
     -- backup nginx.conf
     local ngx_conf_path = env.apisix_home .. "/conf/nginx.conf"
-    local ngx_conf_exist = util.is_file_exist(ngx_conf_path)
+    local ngx_conf_path_bak = ngx_conf_path .. ".bak"
+    local ngx_conf_exist = pl_path.exists(ngx_conf_path)
     if ngx_conf_exist then
-        local ok, err = os_rename(ngx_conf_path, ngx_conf_path .. ".bak")
+        local ok, err = os_rename(ngx_conf_path, ngx_conf_path_bak)
         if not ok then
             util.die("failed to backup nginx.conf, error: ", err)
         end
@@ -820,7 +848,7 @@ local function test(env, backup_ngx_conf)
 
     -- restore nginx.conf
     if ngx_conf_exist then
-        local ok, err = os_rename(ngx_conf_path .. ".bak", ngx_conf_path)
+        local ok, err = os_rename(ngx_conf_path_bak, ngx_conf_path)
         if not ok then
             util.die("failed to restore original nginx.conf, error: ", err)
         end

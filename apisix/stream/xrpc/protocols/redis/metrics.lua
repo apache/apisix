@@ -14,11 +14,20 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
---- Return APISIX current version.
---
--- @module core.version
-
-return {
-    VERSION = "2.14.1"
+local _M = {
+    commands_total = {
+        type = "counter",
+        help = "Total number of requests for a specific Redis command",
+        labels = {"route", "command"},
+    },
+    commands_latency_seconds = {
+        type = "histogram",
+        help = "Latency of requests for a specific Redis command",
+        labels = {"route", "command"},
+        -- latency buckets, 1ms to 1s:
+        buckets = {0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1}
+    },
 }
+
+
+return _M

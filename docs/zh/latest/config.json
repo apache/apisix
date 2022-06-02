@@ -1,5 +1,5 @@
 {
-  "version": "2.13.0",
+  "version": "2.14.1",
   "sidebar": [
     {
       "type": "category",
@@ -160,6 +160,8 @@
           "label": "Serverless",
           "items": [
             "plugins/serverless",
+            "plugins/azure-functions",
+            "plugins/openwhisk",
             "plugins/aws-lambda"
           ]
         },

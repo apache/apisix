@@ -14,11 +14,37 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
+local core = require("apisix.core")
+local pairs = pairs
+local pcall = pcall
 
---- Return APISIX current version.
---
--- @module core.version
 
-return {
-    VERSION = "2.14.1"
-}
+local _M = {}
+local hubs = {}
+
+
+function _M.store(prometheus, name)
+    local ok, m = pcall(require, "apisix.stream.xrpc.protocols." .. name .. ".metrics")
+    if not ok then
+        core.log.notice("no metric for protocol ", name)
+        return
+    end
+
+    local hub = {}
+    for metric, conf in pairs(m) do
+        core.log.notice("register metric ", metric, " for protocol ", name)
+        hub[metric] = prometheus[conf.type](prometheus, name .. '_' .. metric,
+                                            conf.help, conf.labels, conf.buckets)
+    end
+
+    hubs[name] = hub
+end
+
+
+function _M.load(name)
+    return hubs[name]
+end
+
+
+return _M

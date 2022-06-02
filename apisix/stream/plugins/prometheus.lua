@@ -14,11 +14,35 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local core = require("apisix.core")
+local exporter = require("apisix.plugins.prometheus.exporter")
 
---- Return APISIX current version.
---
--- @module core.version
 
-return {
-    VERSION = "2.14.1"
+local plugin_name = "prometheus"
+local schema = {
+    type = "object",
+    properties = {
+        prefer_name = {
+            type = "boolean",
+            default = false -- stream route doesn't have name yet
+        }
+    },
 }
+
+
+local _M = {
+    version = 0.1,
+    priority = 500,
+    name = plugin_name,
+    log  = exporter.stream_log,
+    schema = schema,
+    run_policy = "prefer_route",
+}
+
+
+function _M.check_schema(conf)
+    return core.schema.check(schema, conf)
+end
+
+
+return _M

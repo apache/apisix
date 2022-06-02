@@ -16,12 +16,12 @@
 --
 
 package = "apisix"
-version = "master-0"
+version = "2.14.0-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/apache/apisix",
-    branch = "master",
+    branch = "2.14.0",
 }
 
 description = {
@@ -50,7 +50,7 @@ dependencies = {
     "lua-resty-openidc = 1.7.2-1",
     "luafilesystem = 1.7.0-2",
     "api7-lua-tinyyaml = 0.4.2",
-    "nginx-lua-prometheus = 0.20220527",
+    "nginx-lua-prometheus = 0.20220127",
     "jsonschema = 0.9.8",
     "lua-resty-ipmatcher = 0.6.1",
     "lua-resty-kafka = 0.20-0",
@@ -68,7 +68,7 @@ dependencies = {
     "lua-resty-consul = 0.3-2",
     "penlight = 1.9.2-1",
     "ext-plugin-proto = 0.5.0",
-    "casbin = 1.41.1",
+    "casbin = 1.26.0",
     "api7-snowflake = 2.0-1",
     "inspect == 3.1.1",
     "lualdap = 1.2.6-1",

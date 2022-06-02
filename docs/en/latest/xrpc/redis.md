@@ -63,6 +63,22 @@ Fields under an entry of `faults`:
 | key | string        | False    |                                               | "blahblah"  | Key fault is restricted to |
 | delay | number        | True    |                                               | 0.1  | Duration of the delay in seconds |
 
+## Metrics
+
+* `apisix_redis_commands_total`: Total number of requests for a specific Redis command.
+
+    | Labels        | Description             |
+    | ------------- | --------------------    |
+    | route         | matched stream route ID |
+    | command       | the Redis command       |
+
+* `apisix_redis_commands_latency_seconds`: Latency of requests for a specific Redis command.
+
+    | Labels        | Description             |
+    | ------------- | --------------------    |
+    | route         | matched stream route ID |
+    | command       | the Redis command       |
+
 ## Example usage
 
 Assumed the APISIX is proxying TCP on port `9101`, and the Redis is listening on port `6379`.

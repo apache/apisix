@@ -55,6 +55,11 @@ function _M.access(conf, ctx)
         ctx.var.upstream_cache_bypass = value
         core.log.info("proxy-cache cache bypass value:", value)
     end
+
+    if not util.match_method(conf, ctx) then
+        ctx.var.upstream_cache_bypass = "1"
+        core.log.info("proxy-cache cache bypass method: ", ctx.var.request_method)
+    end
 end
 
 

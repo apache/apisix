@@ -43,7 +43,7 @@ The technical architecture of Apache APISIX:
 
 - Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe to the mailing list.
 - QQ Group - 552030619, 781365357
-- Slack Workspace - join [`#apisix` channel](https://apisix.apache.org/docs/general/join/#join-the-slack-channel)
+- Slack Workspace - [invitation link](https://join.slack.com/t/the-asf/shared_invite/zt-vlfbf7ch-HkbNHiU_uDlcH_RvaHv9gQ) (Please open an [issue](https://apisix.apache.org/docs/general/submit-issue) if this link is expired), and then join the #apisix channel (Channels -> Browse channels -> search for "apisix").
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
 - **Good first issues**:
   - [Apache APISIX®](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)

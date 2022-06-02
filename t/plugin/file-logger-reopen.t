@@ -123,6 +123,7 @@ file.log: No such file or directory
             local code = t("/hello", ngx.HTTP_GET)
             assert(io.open("file.log", 'r'))
             os.remove("file.log")
+            ngx.sleep(0.01) -- make sure last reopen file is expired
 
             local process = require "ngx.process"
             local resty_signal = require "resty.signal"
@@ -135,6 +136,7 @@ file.log: No such file or directory
             end
 
             local code = t("/hello", ngx.HTTP_GET)
+            assert(code == 200)
 
             -- file is reopened
             local fd, err = io.open("file.log", 'r')

@@ -142,6 +142,16 @@ local function load_plugin(name, plugins_list, plugin_type)
         end
 
         properties.disable = plugin_injected_schema.disable
+
+        if properties._meta then
+            core.log.error("invalid plugin [", name,
+                           "]: found forbidden '_meta' field in the schema")
+            return
+        end
+
+        properties._meta = plugin_injected_schema._meta
+        -- new injected fields should be added under `_meta`
+
         plugin.schema['$comment'] = plugin_injected_schema['$comment']
     end
 
@@ -557,8 +567,11 @@ function _M.init_worker()
     _M.load()
 
     -- some plugins need to be initialized in init* phases
-    if ngx.config.subsystem == "http" and local_plugins_hash["prometheus"] then
-        require("apisix.plugins.prometheus.exporter").init()
+    if is_http and local_plugins_hash["prometheus"] then
+        local prometheus_enabled_in_stream = stream_local_plugins_hash["prometheus"]
+        require("apisix.plugins.prometheus.exporter").http_init(prometheus_enabled_in_stream)
+    elseif not is_http and stream_local_plugins_hash["prometheus"] then
+        require("apisix.plugins.prometheus.exporter").stream_init()
     end
 
     if local_conf and not local_conf.apisix.enable_admin then
@@ -743,11 +756,19 @@ function _M.run_plugin(phase, plugins, api_ctx)
             local phase_func = plugins[i][phase]
             if phase_func then
                 plugin_run = true
-                local code, body = phase_func(plugins[i + 1], api_ctx)
+                local conf = plugins[i + 1]
+                local code, body = phase_func(conf, api_ctx)
                 if code or body then
                     if is_http then
                         if code >= 400 then
                             core.log.warn(plugins[i].name, " exits with http status code ", code)
+
+                            if conf._meta and conf._meta.error_response then
+                                -- Whether or not the original error message is output,
+                                -- always return the configured message
+                                -- so the caller can't guess the real error
+                                body = conf._meta.error_response
+                            end
                         end
 
                         core.response.exit(code, body)
