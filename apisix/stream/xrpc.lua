@@ -16,6 +16,7 @@
 --
 local require = require
 local core = require("apisix.core")
+local metrics = require("apisix.stream.xrpc.metrics")
 local ipairs = ipairs
 local pairs = pairs
 local ngx_exit = ngx.exit
@@ -45,7 +46,7 @@ end
 
 
 function _M.init()
-    local local_conf = core.config.local_conf(true)
+    local local_conf = core.config.local_conf()
     if not local_conf.xrpc then
         return
     end
@@ -67,9 +68,26 @@ function _M.init()
 end
 
 
+function _M.init_metrics(collector)
+    local local_conf = core.config.local_conf()
+    if not local_conf.xrpc then
+        return
+    end
+
+    local prot_conf = local_conf.xrpc.protocols
+    if not prot_conf then
+        return
+    end
+
+    for _, prot in ipairs(prot_conf) do
+        metrics.store(collector, prot.name)
+    end
+end
+
+
 function _M.init_worker()
-    for _, prot in pairs(registered_protocols) do
-        if prot.init_worker then
+    for name, prot in pairs(registered_protocols) do
+        if not is_http and prot.init_worker then
             prot.init_worker()
         end
     end
