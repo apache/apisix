@@ -198,7 +198,7 @@ For example, `GET /v1/healthcheck/upstreams/1` returns:
 }
 ```
 
-Note: If the process hit by the api request does not trigger the health check, the API request will not obtain any health check data.
+Note: If the process hit by the API request does not trigger the health check, the API request will not obtain any health check data.
 
 ### POST /v1/gc
 
