@@ -21,9 +21,9 @@
 install_dependencies() {
     export_or_prefix
 
-    # install development tools
+    # install build & runtime deps
     yum install -y wget tar gcc automake autoconf libtool make unzip \
-        git sudo openldap-devel
+        git sudo openldap-devel which
 
     # curl with http2
     wget https://github.com/moparisthebest/static-curl/releases/download/v7.79.1/curl-amd64 -O /usr/bin/curl
@@ -86,7 +86,7 @@ install_dependencies() {
 run_case() {
     export_or_prefix
     make init
-    ./utils/set-dns.sh
+    set_coredns
     # run test cases
     FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r ${TEST_FILE_SUB_DIR} | tee /tmp/test.result
     rerun_flaky_tests /tmp/test.result

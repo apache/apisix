@@ -167,7 +167,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 
 1. 安装
 
-   请参考[安装文档](./how-to-build.md)。
+   请参考[APISIX 安装指南](./installation-guide.md)。
 
 2. 入门指南
 

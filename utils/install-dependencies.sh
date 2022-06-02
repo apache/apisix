@@ -46,7 +46,7 @@ function install_dependencies_with_aur() {
 function install_dependencies_with_yum() {
     sudo yum install -y yum-utils
 
-    local common_dep="curl git gcc openresty-openssl111-devel unzip pcre pcre-devel openldap-devel"
+    local common_dep="curl wget git gcc openresty-openssl111-devel unzip pcre pcre-devel openldap-devel"
     if [ "${1}" == "centos" ]; then
         # add APISIX source
         local apisix_pkg=apache-apisix-repo-1.0-1.noarch

@@ -21,7 +21,7 @@
 
 exit_if_not_customed_nginx
 
-# The 'admin.apisix.dev' is injected by utils/set-dns.sh
+# The 'admin.apisix.dev' is injected by ci/common.sh@set_coredns
 
 # etcd mTLS verify
 echo '
@@ -115,7 +115,7 @@ if echo "$out" | grep "ouch"; then
     exit 1
 fi
 
-rm logs/error.log
+rm logs/error.log || true
 make run
 sleep 1
 make stop

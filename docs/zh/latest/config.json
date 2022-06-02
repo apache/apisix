@@ -1,5 +1,5 @@
 {
-  "version": "2.13.0",
+  "version": "2.14.1",
   "sidebar": [
     {
       "type": "category",
@@ -31,7 +31,7 @@
     },
     {
       "type": "doc",
-      "id": "how-to-build"
+      "id": "installation-guide"
     },
     {
       "type": "category",
@@ -159,7 +159,9 @@
           "type": "category",
           "label": "Serverless",
           "items": [
-            "plugins/serverless"
+            "plugins/serverless",
+            "plugins/azure-functions",
+            "plugins/openwhisk"
           ]
         },
         {

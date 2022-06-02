@@ -1,5 +1,11 @@
 ---
 title: client-control
+keywords:
+  - APISIX
+  - Plugin
+  - Client Control
+  - client-control
+description: This document contains information about the Apache APISIX client-control Plugin.
 ---
 
 <!--
@@ -23,20 +29,23 @@ title: client-control
 
 ## Description
 
-The `client-control` plugin dynamically controls the behavior of Nginx to
-handle the client request.
+The `client-control` Plugin can be used to dynamically control the behavior of Nginx to handle a client request.
 
-**This plugin requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-the-apisix-base-environment?).**
+:::info IMPORTANT
+
+This Plugin requires APISIX to run on APISIX-Base. See [apisix-build-tools](https://github.com/api7/apisix-build-tools) for more info.
+
+:::
 
 ## Attributes
 
-| Name      | Type          | Requirement | Default    | Valid                                                                    | Description                                                                                                                                         |
-| --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| max_body_size | integer        | optional    |              | >= 0 | dynamically set the `client_max_body_size` directive |
+| Name          | Type    | Required | Valid values | Description                                                                                                                          |
+| ------------- | ------- | -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| max_body_size | integer | False    | [0,...]      | Dynamically set the [client_max_body_size](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size) directive. |
 
-## How To Enable
+## Enabling the Plugin
 
-Here's an example, enable this plugin on the specified route:
+The example below enables the Plugin on a specific Route:
 
 ```shell
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -56,13 +65,15 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 }'
 ```
 
-## Test Plugin
+## Example usage
 
-Use curl to access:
+Now since you have configured the `max_body_size` to `1` above, you will get the following message when you make a request:
 
 ```shell
 curl -i http://127.0.0.1:9080/index.html -d '123'
+```
 
+```shell
 HTTP/1.1 413 Request Entity Too Large
 ...
 <html>
@@ -76,9 +87,7 @@ HTTP/1.1 413 Request Entity Too Large
 
 ## Disable Plugin
 
-When you want to disable this plugin, it is very simple,
-you can delete the corresponding json configuration in the plugin configuration,
-no need to restart the service, it will take effect immediately:
+To disable the `client-control` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload, and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -92,5 +101,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
-
-This plugin has been disabled now. It works for other plugins.

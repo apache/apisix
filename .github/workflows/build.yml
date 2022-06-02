@@ -93,7 +93,7 @@ jobs:
       - name: Build xDS library
         run: |
           cd t/xds-library
-          go build -o libxds.so -buildmode=c-shared main.go
+          go build -o libxds.so -buildmode=c-shared main.go export.go
 
       - name: Linux Before install
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install

@@ -53,5 +53,11 @@ if [ -d ${OPENRESTY_PREFIX}/openssl111 ]; then
     OPENSSL_PREFIX=${OPENRESTY_PREFIX}/openssl111
 fi
 
+FOUND_PATH=$(echo "${PATH}" | grep -oP '(?<=:|)/usr/local/bin(?=:|)') || true
+if [[ "${FOUND_PATH}" == "" ]]; then
+   echo "Warning: the path /usr/local/bin is not included in the system default PATH variable."
+   export PATH=$PATH:/usr/local/bin
+fi
+
 luarocks config variables.OPENSSL_LIBDIR ${OPENSSL_PREFIX}/lib
 luarocks config variables.OPENSSL_INCDIR ${OPENSSL_PREFIX}/include
