@@ -172,6 +172,31 @@ The protocol itself defines the granularity of the specific request, and the xRP
 
 For example, in the Redis protocol, the execution of a command is considered a request.
 
+### Dynamic metrics
+
+xRPC also supports gathering metrics on the fly and exposing them via Prometheus.
+
+To know how to enable Prometheus metrics for TCP and collect them, please refer to [prometheus](./plugins/prometheus.md).
+
+To get the protocol-specific metrics, you need to:
+
+1. Make sure the Prometheus is enabled for TCP
+2. Add the metric field to the specific route and ensure the `enable` is true:
+
+```json
+{
+    ...
+    "protocol": {
+        "name": "redis",
+        "metric": {
+            "enable": true
+        }
+    }
+}
+```
+
+Different protocols will have different metrics. Please refer to the `Metrics` section of their own documentation.
+
 ## How to write your own protocol
 
 Assuming that your protocol is named `my_proto`, you need to create a directory that can be introduced by `require "apisix.stream.xrpc.protocols.my_proto"`.
