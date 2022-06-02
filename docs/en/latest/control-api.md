@@ -200,7 +200,7 @@ For example, `GET /v1/healthcheck/upstreams/1` returns:
 
 :::note
 
-If the process hit by the API request does not trigger the health check, the API request will not obtain any health check data.
+As APISIX uses multiple-process architecture, if the process never handles the request of a specific upstream, then the upstream's health check information will not appear on the process. This may result in the health check API can't get all data during testing.
 
 :::
 
