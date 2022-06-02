@@ -800,3 +800,92 @@ set protobuf option: auto_default_values
 set protobuf option: disable_hooks
 set protobuf option: enum_as_name
 set protobuf option: int64_as_number
+
+
+=== TEST 19: set rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/proto/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                     "content" : "syntax = \"proto3\";
+                      package helloworld;
+                      service Greeter {
+                          rpc SayMultipleHello(MultipleHelloRequest) returns (MultipleHelloReply) {}
+                      }
+
+                      enum Gender {
+                           GENDER_UNKNOWN = 0;
+                           GENDER_MALE = 1;
+                           GENDER_FEMALE = 2;
+                      }
+
+                       message Person {
+                           string name = 1;
+                           int32 age = 2;
+                       }
+
+                      message MultipleHelloRequest {
+                          string name = 1;
+                          repeated string items = 2;
+                          repeated Gender genders = 3;
+                          repeated Person persons = 4;
+                    }
+
+                    message MultipleHelloReply{
+                          string message = 1;
+                          repeated string items = 2;
+                          repeated Gender genders = 3;
+                    }"
+                   }]]
+                )
+
+            if code >= 300 then
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["POST"],
+                    "uri": "/grpctest",
+                    "plugins": {
+                        "grpc-transcode": {
+                            "proto_id": "1",
+                            "service": "helloworld.Greeter",
+                            "method": "SayMultipleHello"
+                        }
+                    },
+                    "upstream": {
+                        "scheme": "grpc",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:50051": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.say(body)
+                return
+            end
+
+        }
+    }
+--- response_body
+passed
+
+
+=== TEST 2: hit route
+--- request
+POST /grpctest
+{"name":"world","person":[{"name":"Joe","age":1},{"name":"Jake","age":2}]}
+--- more_headers
+Content-Type: application/json
+--- response_body chomp
+{"message":"Hello world, name: Joe, age: 1, name: Jake, age: 2"}
