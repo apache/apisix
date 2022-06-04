@@ -47,7 +47,7 @@ This Plugin supports authorization via AWS API key and AWS IAM secrets.
 | ssl_verify           | boolean | False    | true    | true/false   | When set to `true` performs SSL verification.                                                                                              |
 | keepalive            | boolean | False    | true    | true/false   | When set to `true` keeps the connection alive for reuse.                                                                                   |
 | keepalive_pool       | integer | False    | 5       | [1,...]      | Maximum number of requests that can be sent on this connection before closing it.                                                          |
-| keepalive_timeout    | integer | False    | 60000   | [1000,...]   | Maximum number of requests that can be sent on this connection before closing it.                                                          |
+| keepalive_timeout    | integer | False    | 60000   | [1000,...]   | Time is ms for connection to remain idle without closing.                                                          |
 
 ### IAM Authorization Schema
 
