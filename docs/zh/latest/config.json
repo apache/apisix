@@ -161,7 +161,8 @@
           "items": [
             "plugins/serverless",
             "plugins/azure-functions",
-            "plugins/openwhisk"
+            "plugins/openwhisk",
+            "plugins/aws-lambda"
           ]
         },
         {
