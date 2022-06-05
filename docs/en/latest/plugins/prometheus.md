@@ -58,7 +58,7 @@ plugin_attr:
 
 And expose it by using [public-api](public-api.md) plugin.
 
-## How to enable it
+## How to enable it for HTTP
 
 `prometheus` plugin could be enable with empty table.
 Notice, `name` could be duplicated for multiple routes/services, so when set `prefer_name` to `true`, take care of naming format or it could be misleading.
@@ -151,7 +151,7 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
 
 ![Grafana chart-4](../../../assets/images/plugin/grafana-4.png)
 
-## Available metrics
+## Available HTTP metrics
 
 * `Status codes`: HTTP status code returned from upstream services. These status code available per service and across all services.
 
@@ -283,7 +283,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-## Gather L4 metrics
+## How to enable it for TCP/UDP
 
 :::info IMPORTANT
 
@@ -291,7 +291,17 @@ This feature requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-th
 
 :::
 
-We can also enable `prometheus` on the stream route:
+We can also enable `prometheus` to collect metrics for TCP/UDP.
+
+First of all, ensure `prometheus` plugin is in your configuration file (`conf/config.yaml`):
+
+```yaml title="conf/config.yaml"
+stream_plugins:
+  - ...
+  - prometheus
+```
+
+Then you need to configure the `prometheus` plugin on the stream route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -308,7 +318,7 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 }'
 ```
 
-## L4 available metrics
+## Available TCP/UDP metrics
 
 The following metrics are available when using APISIX as an L4 proxy.
 
