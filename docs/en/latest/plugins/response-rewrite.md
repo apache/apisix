@@ -126,7 +126,7 @@ However, if `ngx.exit` is executed during an access phase, it will only interrup
 
 So, if you have configured the `response-rewrite` Plugin, it do a force overwrite of the response.
 
-![ngx.edit tabular overview](https://cdn.jsdelivr.net/gh/Miss-you/img/picgo/20201113010623.png)
+![ngx.exit tabular overview](https://user-images.githubusercontent.com/2106987/170849580-aa296d3d-b43a-404a-8c88-720afb2b7c08.png)
 
 :::
 
