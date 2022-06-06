@@ -874,14 +874,14 @@ set protobuf option: int64_as_number
                 ngx.say(body)
                 return
             end
-
+            ngx.say(body)
         }
     }
 --- response_body
 passed
 
 
-=== TEST 2: hit route
+=== TEST 20: hit route
 --- request
 POST /grpctest
 {"name":"world","person":[{"name":"Joe","age":1},{"name":"Jake","age":2}]}
