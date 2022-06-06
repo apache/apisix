@@ -20,6 +20,7 @@ local log          = require("apisix.core.log")
 local profile      = require("apisix.core.profile")
 local lfs          = require("lfs")
 local inspect      = require("inspect")
+local jsonschema   = require("jsonschema")
 local io           = io
 local ngx          = ngx
 local re_find      = ngx.re.find
@@ -36,6 +37,70 @@ local debug_yaml_ctime
 
 
 local _M = {version = 0.1}
+
+
+local config_schema = {
+    type = "object",
+    properties = {
+        basic = {
+            properties = {
+                enable = {
+                    type = "boolean",
+                },
+                lua_module_hook = {
+                    pattern = "^[a-zA-Z._-]+$",
+                },
+                proxy_protocol = {
+                    type = "object",
+                    properties = {
+                        listen_http_port = {
+                            type = "integer",
+                        },
+                        listen_https_port = {
+                            type = "integer",
+                        },
+                        enable_tcp_pp = {
+                            type = "boolean",
+                        },
+                        enable_tcp_pp_to_upstream = {
+                            type = "boolean",
+                        },
+                    }
+                },
+            }
+        },
+        http_filter = {
+            properties = {
+                enable = {
+                    type = "boolean",
+                },
+                lua_module_hook = {
+                    type = "string",
+                },
+            }
+        },
+        hook_conf = {
+            properties = {
+                enable = {
+                    type = "boolean",
+                },
+                name = {
+                    type = "string",
+                },
+                log_level = {
+                    enum = {"info", "warn", "error", "debug"},
+                },
+            }
+        },
+        hook_phase = {
+            properties = {
+                apisix = {
+                    type = "array",
+                }
+            },
+        },
+    }
+}
 
 
 local function read_debug_yaml()
@@ -93,6 +158,13 @@ local function read_debug_yaml()
     debug_yaml_new.hooks = debug_yaml_new.hooks or {}
     debug_yaml = debug_yaml_new
     debug_yaml_ctime = last_change_time
+
+    -- validate the yaml config
+    local validator = jsonschema.generate_validator(config_schema)
+    local ok, err = validator(debug_yaml)
+    if not ok then
+        log.error("failed to validate config" .. err)
+    end
 end
 
 
