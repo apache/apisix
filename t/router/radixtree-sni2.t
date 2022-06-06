@@ -528,3 +528,57 @@ GET /t
 [error]
 --- response_body
 ssl handshake: true
+
+
+
+=== TEST 14: ensure table is reused in TLS handshake
+--- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+
+location /t {
+    content_by_lua_block {
+        do
+            local sock = ngx.socket.tcp()
+
+            sock:settimeout(2000)
+
+            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local sess, err = sock:sslhandshake(nil, "TEST2.com", false)
+            if not sess then
+                ngx.say("failed to do SSL handshake: ", err)
+                return
+            end
+            ngx.say("ssl handshake: ", sess ~= nil)
+        end  -- do
+        -- collectgarbage()
+    }
+}
+--- extra_init_by_lua
+    local tablepool = require("apisix.core").tablepool
+    local old_fetch = tablepool.fetch
+    tablepool.fetch = function(name, ...)
+        ngx.log(ngx.WARN, "fetch table ", name)
+        return old_fetch(name, ...)
+    end
+
+    local old_release = tablepool.release
+    tablepool.release = function(name, ...)
+        ngx.log(ngx.WARN, "release table ", name)
+        return old_release(name, ...)
+    end
+--- request
+GET /t
+--- no_error_log
+[error]
+--- response_body
+ssl handshake: true
+--- grep_error_log eval
+qr/(fetch|release) table \w+/
+--- grep_error_log_out
+fetch table api_ctx
+release table api_ctx
