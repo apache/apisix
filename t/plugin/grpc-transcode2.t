@@ -837,8 +837,6 @@ set protobuf option: int64_as_number
 
                     message MultipleHelloReply{
                           string message = 1;
-                          repeated string items = 2;
-                          repeated Gender genders = 3;
                     }"
                    }]]
                 )
@@ -884,7 +882,7 @@ passed
 === TEST 20: hit route
 --- request
 POST /grpctest
-{"name":"world","person":[{"name":"Joe","age":1},{"name":"Jake","age":2}]}
+{"name":"world","persons":[{"name":"Joe","age":1},{"name":"Jake","age":2}]}
 --- more_headers
 Content-Type: application/json
 --- response_body chomp
