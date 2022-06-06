@@ -5,7 +5,7 @@ keywords:
   - Plugin
   - SkyWalking
   - skywalking
-description: 介绍 Apache SkyWalking（一个开源的 APM） 在 API 网关 Apache APISIX 中的使用方法。
+description: 介绍 Apache SkyWalking（一个开源的 APM）在 API 网关 Apache APISIX 中的使用方法。
 ---
 
 <!--
