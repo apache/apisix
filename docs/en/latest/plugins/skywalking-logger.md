@@ -1,7 +1,12 @@
 ---
 title: skywalking-logger
+keywords:
+  - APISIX
+  - Plugin
+  - SkyWalking Logger
+  - skywalking-logger
+description: This document contains information about the Apache APISIX skywalking-logger Plugin.
 ---
-
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,26 +28,60 @@ title: skywalking-logger
 
 ## Description
 
-`skywalking-logger` is a plugin which push Access Log data to `SkyWalking OAP` server over HTTP. If there is tracing context existing, it sets up the trace-log correlation automatically, and relies on [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/latest/en/protocols/skywalking-cross-process-propagation-headers-protocol-v3/).
+The `skywalking-logger` Plugin can be used to push access log data to SkyWalking OAP server of HTTP.
 
-This will provide the ability to send Access Log as JSON objects to `SkyWalking OAP` server.
+If there is an existing tracing context, it sets up the trace-log correlation automatically and relies on [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/latest/en/protocols/skywalking-cross-process-propagation-headers-protocol-v3/). This provides the ability to send access logs as JSON objects to the SkyWalking OAP server.
 
 ## Attributes
 
-| Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
-| ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
-| endpoint_addr    | string  | required    |               |         | The URI of the `SkyWalking OAP` server.                                                  |
-| service_name     | string  | optional    | "APISIX"      |         | service name for SkyWalking reporter.                                                    |
-| service_instance_name | string  | optional   |"APISIX Instance Name" |    | service instance name for SkyWalking reporter，  set it to `$hostname` to get local hostname directly.|
-| timeout          | integer | optional    | 3             | [1,...] | Time to keep the connection alive after sending a request.                               |
-| name             | string  | optional    | "skywalking logger" |         | A unique identifier to identity the logger.                                              |
-| include_req_body | boolean | optional    | false         | [false, true] | Whether to include the request body. false: indicates that the requested body is not included; true: indicates that the requested body is included. |
+| Name                  | Type    | Required | Default                | Valid values  | Description                                                                                                  |
+|-----------------------|---------|----------|------------------------|---------------|--------------------------------------------------------------------------------------------------------------|
+| endpoint_addr         | string  | True     |                        |               | URI of the SkyWalking OAP server.                                                                            |
+| service_name          | string  | False    | "APISIX"               |               | Service name for the SkyWalking reporter.                                                                    |
+| service_instance_name | string  | False    | "APISIX Instance Name" |               | Service instance name for the SkyWalking reporter. Set it to `$hostname` to directly get the local hostname. |
+| timeout               | integer | False    | 3                      | [1,...]       | Time to keep the connection alive for after sending a request.                                               |
+| name                  | string  | False    | "skywalking logger"    |               | Unique identifier to identify the logger.                                                                    |
+| include_req_body      | boolean | False    | false                  | [false, true] | When set to `true` includes the request body in the log.                                                     |
 
-The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
+This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
-## How To Enable
+## Metadata
 
-The following is an example of how to enable the `skywalking-logger` for a specific route. Before that, an available `SkyWalking OAP` server was required and accessible.
+You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
+
+| Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
+| ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+
+:::info IMPORTANT
+
+Configuring the Plugin metadata is global in scope. This means that it will take effect on all Routes and Services which use the `skywalking-logger` Plugin.
+
+:::
+
+The example below shows how you can configure through the Admin API:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/skywalking-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "log_format": {
+        "host": "$host",
+        "@timestamp": "$time_iso8601",
+        "client_ip": "$remote_addr"
+    }
+}'
+```
+
+With this configuration, your logs would be formatted as shown below:
+
+```shell
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+```
+
+## Enabling the Plugin
+
+Once you have set up your SkyWalking OAP server, you can enable the Plugin on a specific Route as shown below:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -62,36 +101,20 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+## Example usage
 
-> success:
+Now, if you make a request to APISIX, it will be logged in your SkyWalking OAP server:
 
 ```shell
-$ curl -i http://127.0.0.1:9080/hello
-HTTP/1.1 200 OK
-...
-hello, world
+curl -i http://127.0.0.1:9080/hello
 ```
-
-Completion of the steps, could find the Log details on `SkyWalking UI`.
-
-## Metadata
-
-`skywalking-logger` also supports to custom log format like [http-logger](./http-logger.md).
-
-| Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
-| ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
-| log_format       | object  | optional    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | Log format declared as key value pair in JSON format. Only string is supported in the `value` part. If the value starts with `$`, it means to get `APISIX` variables or [Nginx variable](http://nginx.org/en/docs/varindex.html). |
-
- Note that **the metadata configuration is applied in global scope**, which means it will take effect on all Route or Service which use `skywalking-logger` plugin.
 
 ## Disable Plugin
 
-Remove the corresponding json configuration in the plugin configuration to disable the `skywalking-logger`.
-APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
+To disable the `skywalking-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},
