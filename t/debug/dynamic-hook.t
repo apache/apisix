@@ -213,6 +213,8 @@ call require("apisix").http_log_phase() return:{}
 
 === TEST 4: plugin filter log
 --- debug_config
+basic:
+  enable: true
 http_filter:
   enable: true         # enable or disable this feature
   enable_header_name: X-APISIX-Dynamic-Debug # the header name of dynamic enable
