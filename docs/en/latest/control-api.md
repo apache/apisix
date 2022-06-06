@@ -198,6 +198,12 @@ For example, `GET /v1/healthcheck/upstreams/1` returns:
 }
 ```
 
+:::note
+
+As APISIX uses multiple-process architecture, if the process never handles the request of a specific upstream, then the upstream's health check information will not appear on the process. This may result in the health check API can't get all data during testing.
+
+:::
+
 ### POST /v1/gc
 
 Introduced in [v2.8](https://github.com/apache/apisix/releases/tag/2.8).
