@@ -86,9 +86,12 @@ local schema = {
                 },
             },
         },
-        oneOf = {"body", "filters"},
     },
     minProperties = 1,
+    oneOf = {
+        {required = {"body"}},
+        {required = {"filters"}},
+    },
 }
 
 
