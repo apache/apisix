@@ -329,16 +329,15 @@ function _M.set_by_route(route, api_ctx)
     end
 
     local scheme = up_conf.scheme
-    if (scheme == "https" or scheme == "grpcs") and
-        (api_ctx.upstream_ssl or up_conf.tls) then
+    if (scheme == "https" or scheme == "grpcs") and up_conf.tls then
 
         local client_cert, client_key
-        if up_conf.tls then
-            client_cert = up_conf.tls.client_cert
-            client_key = up_conf.tls.client_key
-        else
+        if up_conf.tls.client_cert_id then
             client_cert = api_ctx.upstream_ssl.cert
             client_key = api_ctx.upstream_ssl.key
+        else
+            client_cert = up_conf.tls.client_cert
+            client_key = up_conf.tls.client_key
         end
 
         -- the sni here is just for logging
@@ -426,7 +425,7 @@ local function check_upstream_conf(in_dp, conf)
             return false, "invalid configuration: " .. err
         end
 
-        local ssl_id = conf.tls_id
+        local ssl_id = conf.tls and conf.tls.client_cert_id or nil
         if ssl_id then
             local key = "/ssl/" .. ssl_id
             local res, err = core.etcd.get(key)
@@ -441,7 +440,7 @@ local function check_upstream_conf(in_dp, conf)
                                     .. "response code: " .. res.status
             end
             if res.body and res.body.node and
-                res.body.node.value and res.body.node.value.type ~= 1 then
+                res.body.node.value and res.body.node.value.type ~= "client" then
 
                 return nil, "failed to fetch ssl info by "
                                     .. "ssl id [" .. ssl_id .. "], "

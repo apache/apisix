@@ -71,7 +71,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"create","node":{"value":{"cert":"","key":"","sni":"not-unwanted-post.com","status":1}}}
+{"action":"create","node":{"value":{"cert":"","key":"","sni":"not-unwanted-post.com","status":1,"type":"server"}}}
 
 
 
@@ -104,7 +104,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"set","node":{"key":"/apisix/ssl/1","value":{"cert":"","id":"1","key":"","sni":"test.com","status":1}}}
+{"action":"set","node":{"key":"/apisix/ssl/1","value":{"cert":"","id":"1","key":"","sni":"test.com","status":1,"type":"server"}}}
 
 
 
@@ -137,7 +137,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"compareAndSwap","node":{"key":"/apisix/ssl/1","value":{"cert":"","id":"1","key":"","sni":"t.com","status":1}}}
+{"action":"compareAndSwap","node":{"key":"/apisix/ssl/1","value":{"cert":"","id":"1","key":"","sni":"t.com","status":1,"type":"server"}}}
 
 
 
@@ -172,7 +172,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"get","node":{"key":"/apisix/ssl/1","value":{"cert":"","id":"1","sni":"t.com","status":1}}}
+{"action":"get","node":{"key":"/apisix/ssl/1","value":{"cert":"","id":"1","sni":"t.com","status":1,"type":"server"}}}
 
 
 

@@ -630,7 +630,7 @@ GET /t
 
 
 
-=== TEST 19: tls and tls_id cannot appear at the same time
+=== TEST 19: client_cert/client_key and client_cert_id cannot appear at the same time
 --- config
     location /t {
         content_by_lua_block {
@@ -644,8 +644,8 @@ GET /t
                     ["127.0.0.1:8080"] = 1
                 },
                 type = "roundrobin",
-                tls_id = 1,
                 tls = {
+                    client_cert_id = 1,
                     client_cert = ssl_cert,
                     client_key = ssl_key
                 }
@@ -663,13 +663,13 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/{"error_msg":"invalid configuration: failed to validate dependent schema for \\\"tls_id|tls\\\": value wasn't supposed to match schema"}/
+qr/{"error_msg":"invalid configuration: property \\\"tls\\\" validation failed: failed to validate dependent schema for \\\"client_cert|client_key\\\": value wasn't supposed to match schema"}/
 --- no_error_log
 [error]
 
 
 
-=== TEST 20: tls_id does not exist
+=== TEST 20: tls.client_cert_id does not exist
 --- config
     location /t {
         content_by_lua_block {
@@ -681,7 +681,9 @@ qr/{"error_msg":"invalid configuration: failed to validate dependent schema for 
                     ["127.0.0.1:8080"] = 1
                 },
                 type = "roundrobin",
-                tls_id = 9999999
+                tls = {
+                    client_cert_id = 9999999
+                }
             }
             local code, body = t.test('/apisix/admin/upstreams',
                  ngx.HTTP_POST,
@@ -702,7 +704,7 @@ GET /t
 
 
 
-=== TEST 21: tls_id exist with wrong ssl type
+=== TEST 21: tls.client_cert_id exist with wrong ssl type
 --- config
     location /t {
         content_by_lua_block {
@@ -731,9 +733,11 @@ GET /t
                     scheme = "https",
                     type = "roundrobin",
                     nodes = {
-                        ["127.0.0.1:1983"] = 1,
+                        ["127.0.0.1:1983"] = 1
                     },
-                    tls_id = 1
+                    tls = {
+                        client_cert_id = 1
+                    }
                 },
                 uri = "/hello"
             }

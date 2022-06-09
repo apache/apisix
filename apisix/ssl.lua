@@ -197,7 +197,7 @@ function _M.check_ssl_conf(in_dp, conf)
         return nil, err
     end
 
-    if conf.type == 1 then
+    if conf.type == "client" then
         return true
     end
 

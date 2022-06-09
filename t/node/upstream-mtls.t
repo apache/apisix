@@ -548,7 +548,7 @@ hello world
 
 
 
-=== TEST 13: get cert by tls_id
+=== TEST 13: get cert by tls.client_cert_id
 --- config
     location /t {
         content_by_lua_block {
@@ -557,7 +557,7 @@ hello world
             local ssl_cert = t.read_file("t/certs/mtls_client.crt")
             local ssl_key = t.read_file("t/certs/mtls_client.key")
             local data = {
-                type = 1,
+                type = "client",
                 cert = ssl_cert,
                 key = ssl_key
             }
@@ -579,7 +579,9 @@ hello world
                     nodes = {
                         ["127.0.0.1:1983"] = 1,
                     },
-                    tls_id = 1
+                    tls = {
+                        client_cert_id = 1
+                    }
                 },
                 uri = "/hello"
             }

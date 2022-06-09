@@ -810,7 +810,7 @@ GET /t
 
 
 
-=== TEST 21: type 1, missing sni information
+=== TEST 21: type client, missing sni information
 --- config
     location /t {
         content_by_lua_block {
@@ -819,7 +819,7 @@ GET /t
 
             local ssl_cert = t.read_file("t/certs/apisix.crt")
             local ssl_key =  t.read_file("t/certs/apisix.key")
-            local data = {type = 1, cert = ssl_cert, key = ssl_key}
+            local data = {type = "client", cert = ssl_cert, key = ssl_key}
 
             local code, body = t.test('/apisix/admin/ssl/1',
                 ngx.HTTP_PUT,

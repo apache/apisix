@@ -495,6 +495,24 @@ function _M.http_access_phase()
                                    or route_val.upstream
     end
 
+    if api_ctx.matched_upstream and api_ctx.matched_upstream.tls and
+        api_ctx.matched_upstream.tls.client_cert_id then
+
+        local cert_id = api_ctx.matched_upstream.tls.client_cert_id
+        local upstream_ssl = router.router_ssl.get_by_id(cert_id)
+        if not upstream_ssl or upstream_ssl.type ~= "client" then
+            if is_http then
+                return core.response.exit(502)
+            end
+
+            return ngx_exit(1)
+        end
+
+        core.log.info("matched ssl: ",
+                  core.json.delay_encode(upstream_ssl, true))
+        api_ctx.upstream_ssl = upstream_ssl
+    end
+
     if enable_websocket then
         api_ctx.var.upstream_upgrade    = api_ctx.var.http_upgrade
         api_ctx.var.upstream_connection = api_ctx.var.http_connection
@@ -510,22 +528,6 @@ function _M.http_access_phase()
     -- handle on its own
     if api_ctx.matched_upstream and api_ctx.matched_upstream.scheme == "kafka" then
         return pubsub_kafka.access(api_ctx)
-    end
-
-    if api_ctx.matched_upstream and api_ctx.matched_upstream.tls_id then
-        local tls_id = api_ctx.matched_upstream.tls_id
-        local upstream_ssl = router.router_ssl.get_by_id(tls_id)
-        if not upstream_ssl or upstream_ssl.type ~= 1 then
-            if is_http then
-                return core.response.exit(502)
-            end
-
-            return ngx_exit(1)
-        end
-
-        core.log.info("matched ssl: ",
-                  core.json.delay_encode(upstream_ssl, true))
-        api_ctx.upstream_ssl = upstream_ssl
     end
 
     local code, err = set_upstream(route, api_ctx)

@@ -405,6 +405,7 @@ local upstream_schema = {
         tls = {
             type = "object",
             properties = {
+                client_cert_id = id_schema,
                 client_cert = certificate_scheme,
                 client_key = private_key_schema,
                 verify = {
@@ -415,8 +416,17 @@ local upstream_schema = {
                 },
             },
             dependencies = {
-                client_cert = {"client_key"},
-                client_key = {"client_cert"},
+                client_cert = {
+                    required = {"client_key"},
+                    ["not"] = {required = {"client_cert_id"}}
+                },
+                client_key = {
+                    required = {"client_cert"},
+                    ["not"] = {required = {"client_cert_id"}}
+                },
+                client_cert_id = {
+                    ["not"] = {required = {"client_client", "client_key"}}
+                }
             }
         },
         keepalive_pool = {
@@ -505,14 +515,6 @@ local upstream_schema = {
     oneOf = {
         {required = {"type", "nodes"}},
         {required = {"type", "service_name", "discovery_type"}},
-    },
-    dependencies = {
-        tls = {
-            ["not"] = {required = {"tls_id"}}
-        },
-        tls_id = {
-            ["not"] = {required = {"tls"}}
-        }
     }
 }
 
@@ -733,10 +735,11 @@ _M.ssl = {
         id = id_schema,
         type = {
             description = "ssl certificate type, " ..
-                            "0 to server certificate, " ..
-                            "1 to client certificate for upstream",
-            type = "integer",
-            enum = {0, 1}
+                            "server to server certificate, " ..
+                            "client to client certificate for upstream",
+            type = "string",
+            default = "server",
+            enum = {"server", "client"}
         },
         cert = certificate_scheme,
         key = private_key_schema,
@@ -791,7 +794,7 @@ _M.ssl = {
     ["if"] = {
         properties = {
             type = {
-                enum = {0},
+                enum = {"server"},
             },
         },
     },
