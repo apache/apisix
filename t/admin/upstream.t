@@ -702,7 +702,7 @@ GET /t
 
 
 
-=== TEST 20: tls_id exist with wrong ssl type
+=== TEST 21: tls_id exist with wrong ssl type
 --- config
     location /t {
         content_by_lua_block {
