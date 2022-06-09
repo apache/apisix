@@ -3,8 +3,7 @@ id: building-apisix
 title: Building APISIX from source
 keywords:
   - API gateway
-  - APISIX
-  - Apache APISIX Development
+  - Apache APISIX
   - Code Contribution
   - Building APISIX
 description: Guide for building and running APISIX locally for development.
