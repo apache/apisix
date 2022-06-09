@@ -254,13 +254,13 @@ These are some common troubleshooting steps for running APISIX test cases.
 For the error `Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t/servroot/conf/nginx.conf`, ensure that OpenResty is set to the default Nginx and export the path as follows:
 
 - Linux default installation path:
-  
+
   ```shell
   export PATH=/usr/local/openresty/nginx/sbin:$PATH
   ```
 
 - macOS default installation path (view homebrew):
-  
+
   ```shell
   export PATH=/usr/local/opt/openresty/nginx/sbin:$PATH
   ```
