@@ -161,7 +161,8 @@
           "items": [
             "plugins/serverless",
             "plugins/azure-functions",
-            "plugins/openwhisk"
+            "plugins/openwhisk",
+            "plugins/aws-lambda"
           ]
         },
         {
@@ -204,6 +205,7 @@
             "discovery/dns",
             "discovery/nacos",
             "discovery/eureka",
+            "discovery/zookeeper",
             "discovery/kubernetes"
           ]
         },

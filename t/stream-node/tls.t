@@ -104,3 +104,36 @@ failed to find any SSL certificate by SNI: xx.com
 mmm
 --- error_log
 failed to find SNI
+
+
+
+=== TEST 5: ensure table is reused in TLS handshake
+--- stream_extra_init_by_lua
+    local tablepool = require("apisix.core").tablepool
+    local old_fetch = tablepool.fetch
+    tablepool.fetch = function(name, ...)
+        ngx.log(ngx.WARN, "fetch table ", name)
+        return old_fetch(name, ...)
+    end
+
+    local old_release = tablepool.release
+    tablepool.release = function(name, ...)
+        ngx.log(ngx.WARN, "release table ", name)
+        return old_release(name, ...)
+    end
+--- stream_tls_request
+mmm
+--- stream_sni: test.com
+--- response_body
+hello world
+--- grep_error_log eval
+qr/(fetch|release) table \w+/
+--- grep_error_log_out
+fetch table api_ctx
+release table api_ctx
+fetch table api_ctx
+fetch table ctx_var
+fetch table plugins
+release table ctx_var
+release table plugins
+release table api_ctx

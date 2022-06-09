@@ -1,5 +1,11 @@
 ---
 title: tcp-logger
+keywords:
+  - APISIX
+  - Plugin
+  - TCP Logger
+  - tcp-logger
+description: This document contains information about the Apache APISIX tcp-logger Plugin.
 ---
 
 <!--
@@ -23,31 +29,28 @@ title: tcp-logger
 
 ## Description
 
-`tcp-logger` is a plugin which push Log data requests to TCP servers.
+The `tcp-logger` Plugin can be used to push log data requests to TCP servers.
 
-This will provide the ability to send Log data requests as JSON objects to Monitoring tools and other TCP servers.
+This provides the ability to send log data requests as JSON objects to monitoring tools and other TCP servers.
 
-This plugin provides the ability to push Log data as a batch to your external TCP servers. In case if you did not receive the log data don't worry give it some time it will automatically send the logs after the timer function expires in our Batch Processor.
-
-For more info on Batch-Processor in Apache APISIX please refer.
-[Batch-Processor](../batch-processor.md)
+This plugin also allows to push logs as a batch to your external TCP server. It might take some time to receive the log data. It will be automatically sent after the timer function in the [batch processor](../batch-processor.md) expires.
 
 ## Attributes
 
-| Name             | Type    | Requirement | Default | Valid   | Description                                                                              |
-| ---------------- | ------- | ----------- | ------- | ------- | ---------------------------------------------------------------------------------------- |
-| host             | string  | required    |         |         | IP address or the Hostname of the TCP server.                                            |
-| port             | integer | required    |         | [0,...] | Target upstream port.                                                                    |
-| timeout          | integer | optional    | 1000    | [1,...] | Timeout for the upstream to send data.                                                   |
-| tls              | boolean | optional    | false   |         | Control whether to perform SSL verification                                              |
-| tls_options      | string  | optional    |         |         | tls options                                                                              |
-| include_req_body | boolean | optional    | false   |         | Whether to include the request body                                                      |
+| Name             | Type    | Required | Default | Valid values | Description                                              |
+|------------------|---------|----------|---------|--------------|----------------------------------------------------------|
+| host             | string  | True     |         |              | IP address or the hostname of the TCP server.            |
+| port             | integer | True     |         | [0,...]      | Target upstream port.                                    |
+| timeout          | integer | False    | 1000    | [1,...]      | Timeout for the upstream to send data.                   |
+| tls              | boolean | False    | false   |              | When set to `true` performs SSL verification.            |
+| tls_options      | string  | False    |         |              | TLS options.                                             |
+| include_req_body | boolean | False    | false   |              | When set to `true` includes the request body in the log. |
 
-The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
+This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
-## How To Enable
+## Enabling the Plugin
 
-The following is an example on how to enable the tcp-logger for a specific route.
+The example below shows how you can enable the `tcp-logger` Plugin on a specific Route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -71,24 +74,20 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+## Example usage
 
-* success:
+Now, if you make a request to APISIX, it will be logged in your TCP server:
 
 ```shell
-$ curl -i http://127.0.0.1:9080/hello
-HTTP/1.1 200 OK
-...
-hello, world
+curl -i http://127.0.0.1:9080/hello
 ```
 
 ## Disable Plugin
 
-Remove the corresponding json configuration in the plugin configuration to disable the `tcp-logger`.
-APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
+To disable the `tcp-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
