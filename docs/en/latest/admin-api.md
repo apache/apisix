@@ -792,7 +792,7 @@ Currently, the response is returned from etcd.
 | labels       | False    | Match Rules              | Attributes of the resource specified as key-value pairs.                                                       | {"version":"v2","build":"16","env":"production"} |
 | create_time  | False    | Auxiliary                | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.         | 1602883670                                       |
 | update_time  | False    | Auxiliary                | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.         | 1602883670                                       |
-| type         | False    | Certificate type         | Identifies the type of certificate.                                                                             | `1` Indicates that the certificate is a client certificate, which is used when APISIX accesses the upstream; ` 0` Indicates that the certificate is a server-side certificate, which is used by APISIX when verifying client requests.     |
+| type         | False    | Certificate type         | Identifies the type of certificate.                                                                             | `1` Indicates that the certificate is a client certificate, which is used when APISIX accesses the upstream; `0` Indicates that the certificate is a server-side certificate, which is used by APISIX when verifying client requests.     |
 | status       | False    | Auxiliary                | Enables the current SSL. Set to `1` (enabled) by default.                                                      | `1` to enable, `0` to disable                    |
 
 Example Configuration:

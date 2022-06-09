@@ -549,7 +549,6 @@ hello world
 
 
 === 13: get cert by tls_id
---- ONLY
 --- config
     location /t {
         content_by_lua_block {
@@ -602,7 +601,6 @@ GET /t
 
 
 === TEST 14: hit
---- LAST
 --- upstream_server_config
     ssl_client_certificate ../../certs/mtls_ca.crt;
     ssl_verify_client on;
