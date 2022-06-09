@@ -45,6 +45,7 @@ local function create_router(ssl_items)
 
     for _, ssl in config_util.iterate_values(ssl_items) do
         if ssl.value ~= nil and
+            (ssl.value.type == nil or ssl.value.type == 1) and
             (ssl.value.status == nil or ssl.value.status == 1) then  -- compatible with old version
 
             local j = 0
@@ -258,6 +259,22 @@ function _M.init_worker()
         error("failed to create etcd instance for fetching ssl certificates: "
               .. err)
     end
+end
+
+
+function _M.get_by_id(ssl_id)
+    local ssl
+    local ssls = core.config.fetch_created_obj("/ssl")
+    if ssls then
+        ssl = ssls:get(tostring(ssl_id))
+    end
+
+    if not ssl then
+        core.log.error("failed to find ssl by id: ", ssl_id)
+        return nil
+    end
+
+    return ssl.value
 end
 
 

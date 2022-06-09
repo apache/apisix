@@ -401,6 +401,7 @@ local upstream_schema = {
             minimum = 0,
         },
         timeout = timeout_def,
+        tls_id = id_schema,
         tls = {
             type = "object",
             properties = {
@@ -505,6 +506,14 @@ local upstream_schema = {
         {required = {"type", "nodes"}},
         {required = {"type", "service_name", "discovery_type"}},
     },
+    dependencies = {
+        tls = {
+            ["not"] = {required = {"tls_id"}}
+        },
+        tls_id = {
+            ["not"] = {required = {"tls"}}
+        }
+    }
 }
 
 -- TODO: add more nginx variable support
@@ -722,6 +731,13 @@ _M.ssl = {
     type = "object",
     properties = {
         id = id_schema,
+        type = {
+            description = "ssl certificate type, " ..
+                            "0 to server certificate, " ..
+                            "1 to client certificate for upstream",
+            type = "integer",
+            enum = {0, 1}
+        },
         cert = certificate_scheme,
         key = private_key_schema,
         sni = {
@@ -772,10 +788,20 @@ _M.ssl = {
         create_time = timestamp_def,
         update_time = timestamp_def
     },
-    oneOf = {
-        {required = {"sni", "key", "cert"}},
-        {required = {"snis", "key", "cert"}}
+    ["if"] = {
+        properties = {
+            type = {
+                enum = {0},
+            },
+        },
     },
+    ["then"] = {
+        oneOf = {
+            {required = {"sni", "key", "cert"}},
+            {required = {"snis", "key", "cert"}}
+        }
+    },
+    ["else"] = {required = {"key", "cert"}}
 }
 
 

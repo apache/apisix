@@ -512,6 +512,22 @@ function _M.http_access_phase()
         return pubsub_kafka.access(api_ctx)
     end
 
+    if api_ctx.matched_upstream and api_ctx.matched_upstream.tls_id then
+        local tls_id = api_ctx.matched_upstream.tls_id
+        local upstream_ssl = router.router_ssl.get_by_id(tls_id)
+        if not upstream_ssl or upstream_ssl.type ~= 1 then
+            if is_http then
+                return core.response.exit(502)
+            end
+
+            return ngx_exit(1)
+        end
+
+        core.log.info("matched ssl: ",
+                  core.json.delay_encode(upstream_ssl, true))
+        api_ctx.upstream_ssl = upstream_ssl
+    end
+
     local code, err = set_upstream(route, api_ctx)
     if code then
         core.log.error("failed to set upstream: ", err)

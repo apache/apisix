@@ -545,3 +545,68 @@ GET /t
 GET /hello_chunked
 --- response_body
 hello world
+
+
+
+=== 13: get cert by tls_id
+--- ONLY
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+            local ssl_cert = t.read_file("t/certs/mtls_client.crt")
+            local ssl_key = t.read_file("t/certs/mtls_client.key")
+            local data = {
+                type = 1,
+                cert = ssl_cert,
+                key = ssl_key
+            }
+            local code, body = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local data = {
+                upstream = {
+                    scheme = "https",
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1983"] = 1,
+                    },
+                    tls_id = 1
+                },
+                uri = "/hello"
+            }
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 14: hit
+--- LAST
+--- upstream_server_config
+    ssl_client_certificate ../../certs/mtls_ca.crt;
+    ssl_verify_client on;
+--- request
+GET /hello
+--- response_body
+hello world
