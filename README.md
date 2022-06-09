@@ -39,7 +39,6 @@ The technical architecture of Apache APISIX:
 
 ![Technical architecture of Apache APISIX](docs/assets/images/apisix.png)
 
-
 ## Community
 
 - Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe to the mailing list.
@@ -49,7 +48,6 @@ The technical architecture of Apache APISIX:
 - [Documentation](https://apisix.apache.org/docs/)
 - [Discussions](https://github.com/apache/apisix/discussions)
 - [Blog](https://apisix.apache.org/blog)
-
 
 ## Features
 
