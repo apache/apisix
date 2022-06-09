@@ -571,7 +571,7 @@ You can set the `scheme` to `tls`, which means "TLS over TCP".
 
 To use mTLS to communicate with Upstream, you can use the `tls.client_cert/key` in the same format as SSL's `cert` and `key` fields.
 
-Or you can reference SSL object by `tls.client_cert_id` to set SSL cert and key. The SSL object can be referenced only if the `type` field is 1. Only `cert` and `key` will be used in the SSL object.
+Or you can reference SSL object by `tls.client_cert_id` to set SSL cert and key. The SSL object can be referenced only if the `type` field is `client`. Only `cert` and `key` will be used in the SSL object.
 
 To allow Upstream to have a separate connection pool, use `keepalive_pool`. It can be configured by modifying its child fields.
 
