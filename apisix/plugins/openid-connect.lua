@@ -266,7 +266,7 @@ function _M.rewrite(plugin_conf, ctx)
         conf.ssl_verify = "no"
     end
 
-    local response, err, target_url, session
+    local response, err, _, session
 
     if conf.bearer_only or conf.introspection_endpoint or conf.public_key then
         -- An introspection endpoint or a public key has been configured. Try to
