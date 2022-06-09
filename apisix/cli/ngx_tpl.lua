@@ -82,13 +82,11 @@ http {
             }
         }
 
-        {% if with_module_status then %}
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
             deny all;
             stub_status;
         }
-        {% end %}
     }
 }
 {% end %}
@@ -503,13 +501,11 @@ http {
             }
         }
 
-        {% if with_module_status then %}
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
             deny all;
             stub_status;
         }
-        {% end %}
     }
     {% end %}
 
@@ -618,14 +614,12 @@ http {
         {% end %}
         # http server configuration snippet ends
 
-        {% if with_module_status then %}
         location = /apisix/nginx_status {
             allow 127.0.0.0/24;
             deny all;
             access_log off;
             stub_status;
         }
-        {% end %}
 
         {% if enable_admin and not admin_server_addr then %}
         location /apisix/admin {
