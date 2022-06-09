@@ -153,7 +153,6 @@ GET /hello
 Host: foo.com
 --- response_body
 hello world
---- no_error_log
-[error]
 --- error_log
 read_debug_yaml(): failed to validate debug config property "hook_conf" is required
+--- wait: 3

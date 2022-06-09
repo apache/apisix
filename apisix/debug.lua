@@ -260,9 +260,11 @@ local function sync_debug_status(premature)
         return
     end
 
-    if read_debug_yaml() then
-        sync_debug_hooks()
+    if not read_debug_yaml() then
+        return
     end
+
+    sync_debug_hooks()
 end
 
 
