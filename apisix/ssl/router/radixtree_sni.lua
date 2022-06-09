@@ -45,8 +45,7 @@ local function create_router(ssl_items)
     local idx = 0
 
     for _, ssl in config_util.iterate_values(ssl_items) do
-        if ssl.value ~= nil and
-            (ssl.value.type == nil or ssl.value.type == 1) and
+        if ssl.value ~= nil and ssl.value.type == "server" and
             (ssl.value.status == nil or ssl.value.status == 1) then  -- compatible with old version
 
             local j = 0

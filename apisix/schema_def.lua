@@ -401,7 +401,6 @@ local upstream_schema = {
             minimum = 0,
         },
         timeout = timeout_def,
-        tls_id = id_schema,
         tls = {
             type = "object",
             properties = {
