@@ -97,12 +97,12 @@ local schema = {
             type = "boolean",
             default = true
         },
-	    set_refresh_token_header = {
-	        description = "Whether the refresh token should be added in the X-Refresh-Token " ..
+        set_refresh_token_header = {
+            description = "Whether the refresh token should be added in the X-Refresh-Token " ..
                 "header to the request for downstream.",
-	        type = "boolean",
-	        default = false
-	    }
+            type = "boolean",
+            default = false
+        }
     },
     required = {"client_id", "client_secret", "discovery"}
 }
