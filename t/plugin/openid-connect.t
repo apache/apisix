@@ -189,7 +189,8 @@ true
                                 "set_access_token_header": true,
                                 "access_token_in_authorization_header": false,
                                 "set_id_token_header": true,
-                                "set_userinfo_header": true
+                                "set_userinfo_header": true,
+                                "set_refresh_token_header": true
                             }
                         },
                         "upstream": {
