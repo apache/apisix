@@ -29,21 +29,21 @@ description: This document contains information about the Apache APISIX datadog 
 
 ## Description
 
-The `datadog` monitoring Plugin if for seamless integration of APISIX with [Datadog](https://www.datadoghq.com/), one of the most used monitoring and observability platform for cloud applications.
+The `datadog` monitoring Plugin is for seamless integration of APISIX with [Datadog](https://www.datadoghq.com/), one of the most used monitoring and observability platform for cloud applications.
 
 When enabled, the Plugin supports multiple metric capture types for request and response cycles.
 
 This Plugin, pushes its custom metrics to the [DogStatsD](https://docs.datadoghq.com/developers/dogstatsd/?tab=hostagent) server over UDP protocol and comes bundled with [Datadog agent](https://docs.datadoghq.com/agent/).
 
-DogStatsD is basically an implementation of the StatsD protocol which collects the custom metrics for Apache APISIX agent, aggregates it into a single data point, and sends it to the configured Datadog server.
+DogStatsD implements the StatsD protocol which collects the custom metrics for the Apache APISIX agent, aggregates them into a single data point, and sends it to the configured Datadog server.
 
 This Plugin provides the ability to push metrics as a batch to the external Datadog agent, reusing the same datagram socket. It might take some time to receive the log data. It will be automatically sent after the timer function in the [batch processor](../batch-processor.md) expires.
 
 ## Attributes
 
-| Name        | Type    | Required | Default | Valid values | Description                                                                              |
-| ----------- | ------- | -------- | ------- | ------------ | ---------------------------------------------------------------------------------------- |
-| prefer_name | boolean | False    | true    | true/false   | When set to `false`, uses Route/Service ID instead of name (default) with metric tags. |
+| Name        | Type    | Required | Default | Valid values | Description                                                                            |
+| ----------- | ------- | -------- | ------- | ------------ | -------------------------------------------------------------------------------------- |
+| prefer_name | boolean | False    | true    | [true,false] | When set to `false`, uses Route/Service ID instead of name (default) with metric tags. |
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
@@ -52,7 +52,7 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 You can configure the Plugin through the Plugin metadata.
 
 | Name          | Type    | Required | Default             | Description                                                                                                                               |
-|---------------|---------|----------|---------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
+| ------------- | ------- | -------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | host          | string  | False    | "127.0.0.1"         | DogStatsD server host address.                                                                                                            |
 | port          | integer | False    | 8125                | DogStatsD server host port.                                                                                                               |
 | namespace     | string  | False    | "apisix"            | Prefix for all custom metrics sent by APISIX agent. Useful for finding entities for metrics graph. For example, `apisix.request.counter`. |
@@ -87,10 +87,10 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY: e
 
 ## Exported metrics
 
-When the `datadog` Plugin is enabled, APISIX agent exports the following metrics to the DogStatsD server for each request/response cycle:
+When the `datadog` Plugin is enabled, the APISIX agent exports the following metrics to the DogStatsD server for each request/response cycle:
 
 | Metric name      | StatsD type | Description                                                                                           |
-|------------------|-------------|-------------------------------------------------------------------------------------------------------|
+| ---------------- | ----------- | ----------------------------------------------------------------------------------------------------- |
 | Request Counter  | Counter     | Number of requests received.                                                                          |
 | Request Latency  | Histogram   | Time taken to process the request (in milliseconds).                                                  |
 | Upstream latency | Histogram   | Time taken to proxy the request to the upstream server till a response is received (in milliseconds). |
