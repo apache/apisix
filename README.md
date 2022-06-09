@@ -17,7 +17,7 @@
 #
 -->
 
-# The Apache APISIX API Gateway
+# Apache APISIX API Gateway
 
 <img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/apisix.svg" alt="APISIX logo" height="150px" align="right" />
 
