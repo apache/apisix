@@ -548,7 +548,7 @@ hello world
 
 
 
-=== 13: get cert by tls_id
+=== TEST 13: get cert by tls_id
 --- config
     location /t {
         content_by_lua_block {
