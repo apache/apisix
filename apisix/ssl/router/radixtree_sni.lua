@@ -26,6 +26,7 @@ local error            = error
 local str_find         = core.string.find
 local str_gsub         = string.gsub
 local str_lower        = string.lower
+local tostring         = tostring
 local ssl_certificates
 local radixtree_router
 local radixtree_router_ver

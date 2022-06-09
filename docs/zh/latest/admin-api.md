@@ -551,7 +551,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 | update_time    | 可选                               | 辅助           | 单位为秒的 epoch 时间戳，如果不指定则自动创建                                                                                                                                                                                                                                                                                                               | 1602883670                                       |
 | tls.client_cert    | 可选，不能和 `tls_id` 一起使用 | https 证书           | 设置跟上游通信时的客户端证书，细节见下文                                                                          | |
 | tls.client_key	 | 可选，不能和 `tls_id` 一起使用 | https 证书私钥           | 设置跟上游通信时的客户端私钥，细节见下文                                                                                                                                                                                                                                                                                                              | |
-| tls_id	 | 可选，不能和 `tls.client_cert` `tls.client_key` 一起使用  | SSL           | 启用的 ssl id，详见 [SSL](#ssl)                                                                                                                                                                                                                                                                                                              | |
+| tls_id	 | 可选，不能和 `tls.client_cert`、`tls.client_key` 一起使用  | SSL           | 设置引用的 ssl id，详见 [SSL](#ssl)                                                                                                                                                                                                                                                                                                              | |
 |keepalive_pool.size  | 可选 | 辅助 | 动态设置 `keepalive` 指令，细节见下文 |
 |keepalive_pool.idle_timeout  | 可选 | 辅助 | 动态设置 `keepalive_timeout` 指令，细节见下文 |
 |keepalive_pool.requests  | 可选 | 辅助 | 动态设置 `keepalive_requests` 指令，细节见下文 |
@@ -801,7 +801,7 @@ $ curl http://127.0.0.1:9080/get
 | labels      | 可选   | 匹配规则       | 标识附加属性的键值对                                                                                   | {"version":"v2","build":"16","env":"production"} |
 | create_time | 可选   | 辅助           | 单位为秒的 epoch 时间戳，如果不指定则自动创建                                                          | 1602883670                                       |
 | update_time | 可选   | 辅助           | 单位为秒的 epoch 时间戳，如果不指定则自动创建                                                          | 1602883670                                       |
-| type      | 可选   | 辅助           | 标识证书的类型。                                                                             | `1` 表示证书是客户端证书，APISIX 访问上游时使用 ` 0` 表示证书是服务端证书，APISIX 验证客户端请求时使用     |
+| type      | 可选   | 辅助           | 标识证书的类型。                                                                             | `1` 表示证书是客户端证书，APISIX 访问上游时使用；`0` 表示证书是服务端证书，APISIX 验证客户端请求时使用     |
 | status      | 可选   | 辅助           | 是否启用此 SSL，缺省 `1`。                                                                             | `1` 表示启用，`0` 表示禁用                       |
 
 ssl 对象 json 配置内容：
