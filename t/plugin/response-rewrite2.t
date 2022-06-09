@@ -422,55 +422,7 @@ hello *
 
 
 
-=== TEST 15: set body and filters(body no effect)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "plugins": {
-                        "response-rewrite": {
-                            "vars": [
-                                ["status","==",200]
-                            ],
-                            "body": "new body",
-                            "filters": [
-                                {
-                                    "regex": "hello",
-                                    "replace": "HELLO"
-                                }
-                            ]
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uris": ["/hello"]
-                }]]
-                )
-
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 16: check http body that set body and filters
---- request
-GET /hello
---- response_body
-HELLO world
-
-
-
-=== TEST 17: set multiple filters
+=== TEST 15: set multiple filters
 --- config
     location /t {
         content_by_lua_block {
@@ -513,7 +465,7 @@ passed
 
 
 
-=== TEST 18: check http body that set multiple filters
+=== TEST 16: check http body that set multiple filters
 --- request
 GET /hello
 --- response_body
@@ -521,7 +473,7 @@ HETLO world
 
 
 
-=== TEST 19: filters no any match
+=== TEST 17: filters no any match
 --- config
     location /t {
         content_by_lua_block {
@@ -560,7 +512,7 @@ passed
 
 
 
-=== TEST 20: check http body that filters no any match
+=== TEST 18: check http body that filters no any match
 --- request
 GET /hello
 --- response_body
