@@ -46,9 +46,9 @@ The technical architecture of Apache APISIX:
 - QQ Group - 552030619, 781365357
 - Slack Workspace - [invitation link](https://join.slack.com/t/the-asf/shared_invite/zt-vlfbf7ch-HkbNHiU_uDlcH_RvaHv9gQ) (Please open an [issue](https://apisix.apache.org/docs/general/submit-issue) if this link is expired), and then join the #apisix channel (Channels -> Browse channels -> search for "apisix").
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
-- [Documentation](https://apisix.apache.org/docs/) 
-- [Discussions](https://github.com/apache/apisix/discussions) 
-- [Blog](https://apisix.apache.org/blog) 
+- [Documentation](https://apisix.apache.org/docs/)
+- [Discussions](https://github.com/apache/apisix/discussions)
+- [Blog](https://apisix.apache.org/blog)
 
 
 ## Features
