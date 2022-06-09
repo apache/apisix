@@ -65,7 +65,6 @@ __DATA__
                         replace = "m",
                     },
                 }},
-                {},
                 {filters = {}},
                 {filters = {
                     {regex = "l"},
@@ -92,15 +91,14 @@ __DATA__
             end
         }
     }
---- response_body
+--- response_body eval
+qr/done
 done
-done
-value should match only one schema, but matches both schemas 1 and 2
-value should match only one schema, but matches none
+failed to validate dependent schema for "filters|body": value wasn't supposed to match schema
 property "filters" validation failed: expect array to have at least 1 items
 property "filters" validation failed: failed to validate item 1: property "replace" is required
 property "filters" validation failed: failed to validate item 1: property "regex" validation failed: string too short, expected at least 1, got 0
-property "filters" validation failed: failed to validate item 1: property "scope" validation failed: matches none of the enum values
+property "filters" validation failed: failed to validate item 1: property "scope" validation failed: matches none of the enum values/
 
 
 
