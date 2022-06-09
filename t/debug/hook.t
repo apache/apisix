@@ -108,7 +108,7 @@ basic:
   enable: true
 http_filter:
   enable: true         # enable or disable this feature
-  enable_header_name: X-APISIX-Dynamic-Debug # the header name of dynamic enable
+  enable_header_name: foo.com # the header name of dynamic enable
 hook_conf:
   enable: true                  # enable or disable this feature
   name: hook_test               # the name of module and function list
@@ -140,7 +140,7 @@ basic:
   enable: true
 http_filter:
   enable: true         # enable or disable this feature
-  enable_header_name: X-APISIX-Dynamic-Debug # the header name of dynamic enable
+  enable_header_name: foo.com # the header name of dynamic enable
 
 hook_test:                      # module and function list, name: hook_test
     apisix.plugin:              # required module name

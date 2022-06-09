@@ -88,7 +88,7 @@ local function read_debug_yaml()
     local attributes, err = lfs.attributes(debug_yaml_path)
     if not attributes then
         log.notice("failed to fetch ", debug_yaml_path, " attributes: ", err)
-        return false
+        return
     end
 
     -- log.info("change: ", json.encode(attributes))
@@ -100,7 +100,7 @@ local function read_debug_yaml()
     local f, err = io.open(debug_yaml_path, "r")
     if not f then
         log.error("failed to open file ", debug_yaml_path, " : ", err)
-        return false
+        return
     end
 
     local found_end_flag
@@ -123,7 +123,7 @@ local function read_debug_yaml()
         if size > 8 then
             log.warn("missing valid end flag in file ", debug_yaml_path)
         end
-        return false
+        return
     end
 
     f:seek('set')
@@ -133,7 +133,7 @@ local function read_debug_yaml()
     local debug_yaml_new = yaml.parse(yaml_config)
     if not debug_yaml_new then
         log.error("failed to parse the content of file " .. debug_yaml_path)
-        return false
+        return
     end
 
     debug_yaml_new.hooks = debug_yaml_new.hooks or {}
@@ -145,7 +145,7 @@ local function read_debug_yaml()
     local ok, err = validator(debug_yaml)
     if not ok then
         log.error("failed to validate debug config " .. err)
-        return false
+        return
     end
 
     return true

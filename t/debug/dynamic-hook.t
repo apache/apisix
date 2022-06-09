@@ -297,6 +297,8 @@ filter(): call require("apisix.plugin").filter() return:{
 
 === TEST 5: multiple requests, only output logs of the request with enable_header_name
 --- debug_config
+basic:
+  enable: true
 http_filter:
   enable: true
   enable_header_name: X-APISIX-Dynamic-Debug
@@ -376,6 +378,8 @@ qr/call\srequire\(\"apisix.plugin\"\).filter\(\)\sreturn.*GET\s\/mysleep\?second
 
 === TEST 6: hook function with ctx as param
 --- debug_config
+basic:
+  enable: true
 http_filter:
   enable: true         # enable or disable this feature
   enable_header_name: X-APISIX-Dynamic-Debug # the header name of dynamic enable
