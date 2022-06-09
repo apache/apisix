@@ -108,7 +108,7 @@ basic:
   enable: true
 http_filter:
   enable: true         # enable or disable this feature
-  enable_header_name: foo.com # the header name of dynamic enable
+  enable_header_name: X-APISIX-Dynamic-Debug # the header name of dynamic enable
 hook_conf:
   enable: true                  # enable or disable this feature
   name: hook_test               # the name of module and function list
@@ -125,13 +125,13 @@ hook_test:                      # module and function list, name: hook_test
 GET /hello
 --- more_headers
 Host: foo.com
+X-APISIX-Dynamic-Debug: true
 --- response_body
 hello world
---- no_error_log
-[error]
 --- error_log
 filter(): call require("apisix.plugin").filter() args:{
 filter(): call require("apisix.plugin").filter() return:{
+
 
 
 === TEST 5: missing hook_conf
@@ -140,7 +140,7 @@ basic:
   enable: true
 http_filter:
   enable: true         # enable or disable this feature
-  enable_header_name: foo.com # the header name of dynamic enable
+  enable_header_name: X-APISIX-Dynamic-Debug # the header name of dynamic enable
 
 hook_test:                      # module and function list, name: hook_test
     apisix.plugin:              # required module name
@@ -151,6 +151,7 @@ hook_test:                      # module and function list, name: hook_test
 GET /hello
 --- more_headers
 Host: foo.com
+X-APISIX-Dynamic-Debug: true
 --- response_body
 hello world
 --- error_log
