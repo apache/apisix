@@ -98,7 +98,7 @@ local schema = {
             default = true
         },
 	    set_refresh_token_header = {
-	        description = "Whether the refresh token shoud be added in the X-Refresh-Token " ..
+	        description = "Whether the refresh token should be added in the X-Refresh-Token " ..
                 "header to the request for downstream.",
 	        type = "boolean",
 	        default = false
