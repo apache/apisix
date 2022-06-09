@@ -29,9 +29,9 @@
 
 **Apache APISIX** is a dynamic, real-time, high-performance API Gateway.
 
-The APISIX API Gateway provides rich traffic management features such as load balancing, dynamic upstream, canary release, circuit breaking, authentication, observability, and more.
+APISIX API Gateway provides rich traffic management features such as load balancing, dynamic upstream, canary release, circuit breaking, authentication, observability, and more.
 
-You can use the **APISIX API Gateway** to handle traditional north-south traffic,
+You can use **APISIX API Gateway** to handle traditional north-south traffic,
 as well as east-west traffic between services.
 It can also be used as a [k8s ingress controller](https://github.com/apache/apisix-ingress-controller).
 
@@ -51,7 +51,7 @@ The technical architecture of Apache APISIX:
 
 ## Features
 
-You can use the APISIX API Gateway as a traffic entrance to process all business data, including dynamic routing, dynamic upstream, dynamic certificates,
+You can use APISIX API Gateway as a traffic entrance to process all business data, including dynamic routing, dynamic upstream, dynamic certificates,
 A/B testing, canary release, blue-green deployment, limit rate, defense against malicious attacks, metrics, monitoring alarms, service observability, service governance, etc.
 
 - **All platforms**
@@ -201,9 +201,9 @@ Using AWS's eight-core server, APISIX's QPS reaches 140,000 with a latency of on
 - [Copernicus Reference System Software](https://github.com/COPRS/infrastructure/wiki/Networking-trade-off)
 - [More Stories](https://apisix.apache.org/blog/tags/user-case)
 
-## Who Uses the APISIX API Gateway?
+## Who Uses APISIX API Gateway?
 
-A wide variety of companies and organizations use the APISIX API Gateway for research, production and commercial product, below are some of them:
+A wide variety of companies and organizations use APISIX API Gateway for research, production and commercial product, below are some of them:
 
 - Airwallex
 - Bilibili
