@@ -549,7 +549,6 @@ hello world
 
 
 === TEST 13: get cert by tls.client_cert_id
---- FIRST
 --- config
     location /t {
         content_by_lua_block {
