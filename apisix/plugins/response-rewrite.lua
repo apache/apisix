@@ -86,9 +86,15 @@ local schema = {
                 },
             },
         },
-        oneOf = {"body", "filters"},
     },
-    minProperties = 1,
+    dependencies = {
+        body = {
+            ["not"] = {required = {"filters"}}
+        },
+        filters = {
+            ["not"] = {required = {"body"}}
+        }
+    }
 }
 
 
