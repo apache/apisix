@@ -656,6 +656,7 @@ GET /hello
 failed to get ssl cert: ssl type should be 'client'
 
 
+
 === TEST 17: delete ssl object
 --- config
     location /t {
@@ -686,4 +687,3 @@ GET /hello
 --- error_code: 502
 --- error_log
 failed to get ssl cert: ssl id [1] not exits
-
