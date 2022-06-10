@@ -45,7 +45,7 @@ discovery:
       port: ${KUBERNETES_SERVICE_PORT}  #default ${KUBERNETES_SERVICE_PORT}
 
     client:
-      # serviceaccount token or token_file
+      # serviceaccount token or token_file token_file中应注意不要有换行符 请使用echo -n token > token_file 来生成此文件
       token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
 
       #token: |-
@@ -147,6 +147,54 @@ nodes("default/plat-dev:3306") 调用会得到如下的返回值：
        },
    }
   ```
+## kubernetes类型的自动发现 路由创建示例
+
+- 服务、对应名称空间及endpoints信息展示
+```
+[root@ ~]# kubectl get pods -n test |grep test-app
+test-app-6f57f6fffb-gfblz                   1/1     Running            0          6d23h
+
+[root@ ~]# kubectl get endpoints -n test test-app
+NAME          ENDPOINTS             AGE
+test-app   10.223.216.201:8080   1d
+
+[root@ ~]# kubectl describe endpoints -n test test-app
+Name:         test-app
+Namespace:    test
+Labels:       app=test-app
+Annotations:  endpoints.kubernetes.io/last-change-trigger-time: 2022-06-02T19:07:21+08:00
+Subsets:
+  Addresses:          10.223.216.201
+  NotReadyAddresses:  <none>
+  Ports:
+    Name     Port  Protocol
+    ----     ----  --------
+    8080tcp  8080  TCP                        #注意此处的端口名称 创建路由时 service_name字段中需要添加
+
+Events:  <none>
+```
+
+- 通过apisix api创建自动发现类型为kubernetes的路由 示例如下：
+```
+curl http://127.0.0.1:80/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f8sdfcx7ad84b625c8f1sdfagw32' -X PUT -i -d '
+{
+    "uri": "/*",                                                         # location path
+    "name": "test-test-app-for-kubernetes",     #Name a free reason
+    "priority": 100,
+    "host": "test.xxxx.cn",                    #Fill in according to your own domain name
+    "methods": ["PUT", "GET", "POST", "DELETE", "PATCH", "HEAD", "OPTIONS","CONNECT", "TRACE"],
+    "upstream": {
+        "timeout": {
+          "connect": 6,
+          "send": 6,
+          "read": 6
+        },
+        "service_name": "test/test-app:tcp8080",  #Configuration format： namespace/deploy_name:port_name **port_name正如信息展示中提到的8080tcp**
+        "type": "roundrobin",
+        "discovery_type": "kubernetes"                   #type use kubernetes
+    }
+}'
+```
 
 ## Q&A
 
