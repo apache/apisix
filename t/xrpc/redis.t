@@ -60,7 +60,6 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
             local code, body = t('/apisix/admin/stream_routes/1',
                 ngx.HTTP_PUT,
                 {
@@ -265,7 +264,6 @@ hget animals: bark
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
             local code, body = t('/apisix/admin/stream_routes/1',
                 ngx.HTTP_PUT,
                 {
@@ -365,7 +363,6 @@ ok
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
             local code, body = t('/apisix/admin/stream_routes/1',
                 ngx.HTTP_PUT,
                 {
@@ -464,7 +461,6 @@ ok
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
             local code, body = t('/apisix/admin/stream_routes/1',
                 ngx.HTTP_PUT,
                 {
