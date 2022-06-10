@@ -59,7 +59,7 @@ passed
 
 
 
-=== TEST 2: duplicate request: X-Forwarded-Proto
+=== TEST 2: duplicate request header: X-Forwarded-Proto
 --- request
 GET /echo
 --- more_headers
