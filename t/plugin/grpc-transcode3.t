@@ -37,21 +37,21 @@ run_tests;
 __DATA__
 
 === TEST 1: set rule
-    --- config
-        location /t {
-            content_by_lua_block {
-                local http = require "resty.http"
-                local t = require("lib.test_admin").test
-                    local code, body = t('/apisix/admin/proto/1',
-                    ngx.HTTP_PUT,
-                    [[{
-                        "content" : "syntax = \"proto3\";
-                      package helloworld;
-                      service Greeter {
-                          rpc SayMultipleHello(MultipleHelloRequest) returns (MultipleHelloReply) {}
-                      }
+--- config
+    location /t {
+       content_by_lua_block {
+          local http = require "resty.http"
+          local t = require("lib.test_admin").test
+          local code, body = t('/apisix/admin/proto/1',
+                ngx.HTTP_PUT,
+                [[{
+                   "content" : "syntax = \"proto3\";
+                    package helloworld;
+                    service Greeter {
+                         rpc SayMultipleHello(MultipleHelloRequest) returns (MultipleHelloReply) {}
+                     }
 
-                      enum Gender {
+                     enum Gender {
                            GENDER_UNKNOWN = 0;
                            GENDER_MALE = 1;
                            GENDER_FEMALE = 2;
@@ -73,42 +73,42 @@ __DATA__
                           string message = 1;
                     }"
                 }]]
-                )
+              )
 
-                if code >= 300 then
-                    ngx.say(body)
-                    return
-                end
+             if code >= 300 then
+                 ngx.say(body)
+                 return
+              end
 
-                 local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "methods": ["POST"],
+             local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                   "methods": ["POST"],
                     "uri": "/grpctest",
                     "plugins": {
-                    "grpc-transcode": {
-                        "proto_id": "1",
-                        "service": "helloworld.Greeter",
-                        "method": "SayMultipleHello"
-                   }
-            },
-            "upstream": {
-                "scheme": "grpc",
-                    "type": "roundrobin",
-                    "nodes": {
-                    "127.0.0.1:50051": 1
-                }
-            }
-        }]]
-       )
+                        "grpc-transcode": {
+                            "proto_id": "1",
+                            "service": "helloworld.Greeter",
+                            "method": "SayMultipleHello"
+                       }
+                    },
+                    "upstream": {
+                        "scheme": "grpc",
+                            "type": "roundrobin",
+                            "nodes": {
+                            "127.0.0.1:50051": 1
+                        }
+                    }
+                }]]
+             )
 
-        if code >= 300 then
+            if code >= 300 then
+                ngx.say(body)
+                return
+            end
             ngx.say(body)
-            return
-        end
-        ngx.say(body)
-  }
-}
+        }
+    }
 --- response_body
 passed
 
