@@ -705,6 +705,7 @@ fi
 
 ./bin/apisix stop
 sleep 0.5
+rm logs/nginx.pid || true
 
 # check no corresponding process
 make run
