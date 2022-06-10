@@ -30,11 +30,79 @@ repeat_each(1);
 no_long_string();
 no_shuffle();
 no_root_location();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+});
+
 run_tests;
 
 __DATA__
 
-=== TEST 1:  add plugin with valid filters
+=== TEST 1: sanity
+--- config
+    location /t {
+        content_by_lua_block {
+            local test_cases = {
+                {body = "test"},
+                {filters = {
+                    {
+                        regex = "l",
+                        replace = "m",
+                    },
+                }},
+                {body = "test", filters = {
+                    {
+                        regex = "l",
+                        replace = "m",
+                    },
+                }},
+                {filters = {}},
+                {filters = {
+                    {regex = "l"},
+                }},
+                {filters = {
+                    {
+                        regex = "",
+                        replace = "m",
+                    },
+                }},
+                {filters = {
+                    {
+                        regex = "l",
+                        replace = "m",
+                        scope = ""
+                    },
+                }},
+            }
+            local plugin = require("apisix.plugins.response-rewrite")
+
+            for _, case in ipairs(test_cases) do
+                local ok, err = plugin.check_schema(case)
+                ngx.say(ok and "done" or err)
+            end
+        }
+    }
+--- response_body eval
+qr/done
+done
+failed to validate dependent schema for "filters|body": value wasn't supposed to match schema
+property "filters" validation failed: expect array to have at least 1 items
+property "filters" validation failed: failed to validate item 1: property "replace" is required
+property "filters" validation failed: failed to validate item 1: property "regex" validation failed: string too short, expected at least 1, got 0
+property "filters" validation failed: failed to validate item 1: property "scope" validation failed: matches none of the enum values/
+
+
+
+=== TEST 2: add plugin with valid filters
 --- config
     location /t {
         content_by_lua_block {
@@ -56,16 +124,12 @@ __DATA__
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
-=== TEST 2:  add plugin with invalid filter required filed
+=== TEST 3:  add plugin with invalid filter required filed
 --- config
     location /t {
         content_by_lua_block {
@@ -84,16 +148,12 @@ done
             end
         }
     }
---- request
-GET /t
 --- response_body
 property "filters" validation failed: failed to validate item 1: property "replace" is required
---- no_error_log
-[error]
 
 
 
-=== TEST 3:  add plugin with invalid filter scope
+=== TEST 4:  add plugin with invalid filter scope
 --- config
     location /t {
         content_by_lua_block {
@@ -115,16 +175,12 @@ property "filters" validation failed: failed to validate item 1: property "repla
             end
         }
     }
---- request
-GET /t
 --- response_body
 property "filters" validation failed: failed to validate item 1: property "scope" validation failed: matches none of the enum values
---- no_error_log
-[error]
 
 
 
-=== TEST 4:  add plugin with invalid filter empty value
+=== TEST 5:  add plugin with invalid filter empty value
 --- config
     location /t {
         content_by_lua_block {
@@ -144,16 +200,12 @@ property "filters" validation failed: failed to validate item 1: property "scope
             end
         }
     }
---- request
-GET /t
 --- response_body
 property "filters" validation failed: failed to validate item 1: property "regex" validation failed: string too short, expected at least 1, got 0
---- no_error_log
-[error]
 
 
 
-=== TEST 5:  add plugin with invalid filter regex options
+=== TEST 6:  add plugin with invalid filter regex options
 --- config
     location /t {
         content_by_lua_block {
@@ -174,18 +226,14 @@ property "filters" validation failed: failed to validate item 1: property "regex
             end
         }
     }
---- request
-GET /t
 --- error_code eval
 200
 --- response_body
 regex "hello" validation failed: unknown flag "h" (flags "h")
---- no_error_log
-[error]
 
 
 
-=== TEST 6: set route with filters and vars expr
+=== TEST 7: set route with filters and vars expr
 --- config
     location /t {
         content_by_lua_block {
@@ -219,16 +267,12 @@ regex "hello" validation failed: unknown flag "h" (flags "h")
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 7: check http body that matches filters
+=== TEST 8: check http body that matches filters
 --- request
 GET /hello
 --- response_body
@@ -236,7 +280,7 @@ test world
 
 
 
-=== TEST 8: filter substitute global
+=== TEST 9: filter substitute global
 --- config
     location /t {
         content_by_lua_block {
@@ -271,16 +315,12 @@ test world
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 9: check http body that substitute global
+=== TEST 10: check http body that substitute global
 --- request
 GET /hello
 --- response_body
@@ -288,7 +328,7 @@ hetto wortd
 
 
 
-=== TEST 10: filter replace with empty
+=== TEST 11: filter replace with empty
 --- config
     location /t {
         content_by_lua_block {
@@ -322,16 +362,12 @@ hetto wortd
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 11: check http body that replace with empty
+=== TEST 12: check http body that replace with empty
 --- request
 GET /hello
 --- response_body
@@ -339,7 +375,7 @@ GET /hello
 
 
 
-=== TEST 12: filter replace with words
+=== TEST 13: filter replace with words
 --- config
     location /t {
         content_by_lua_block {
@@ -373,16 +409,12 @@ GET /hello
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 13: check http body that replace with words
+=== TEST 14: check http body that replace with words
 --- request
 GET /hello
 --- response_body
@@ -390,59 +422,7 @@ hello *
 
 
 
-=== TEST 14: set body and filters(body no effect)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "plugins": {
-                        "response-rewrite": {
-                            "vars": [
-                                ["status","==",200]
-                            ],
-                            "body": "new body",
-                            "filters": [
-                                {
-                                    "regex": "hello",
-                                    "replace": "HELLO"
-                                }
-                            ]
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uris": ["/hello"]
-                }]]
-                )
-
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 15: check http body that set body and filters
---- request
-GET /hello
---- response_body
-HELLO world
-
-
-
-=== TEST 16: set multiple filters
+=== TEST 15: set multiple filters
 --- config
     location /t {
         content_by_lua_block {
@@ -480,16 +460,12 @@ HELLO world
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 17: check http body that set multiple filters
+=== TEST 16: check http body that set multiple filters
 --- request
 GET /hello
 --- response_body
@@ -497,7 +473,7 @@ HETLO world
 
 
 
-=== TEST 18: filters no any match
+=== TEST 17: filters no any match
 --- config
     location /t {
         content_by_lua_block {
@@ -531,16 +507,12 @@ HETLO world
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 19: check http body that filters no any match
+=== TEST 18: check http body that filters no any match
 --- request
 GET /hello
 --- response_body

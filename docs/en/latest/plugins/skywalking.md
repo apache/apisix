@@ -4,8 +4,7 @@ keywords:
   - APISIX
   - Plugin
   - SkyWalking
-  - skywalking
-description: This document contains information about the Apache skywalking Plugin.
+description: This document will introduce how the API gateway Apache APISIX reports metrics to Apache SkyWalking (an open-source APM) with the skywalking plugin.
 ---
 <!--
 #

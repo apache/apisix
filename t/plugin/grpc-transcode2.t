@@ -41,7 +41,6 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
             local code, body = t('/apisix/admin/proto/1',
                  ngx.HTTP_PUT,
                  [[{
@@ -136,7 +135,6 @@ Content-Type: application/json
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
             local code, body = t('/apisix/admin/proto/2',
                  ngx.HTTP_PUT,
                  [[{

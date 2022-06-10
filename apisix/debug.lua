@@ -20,6 +20,7 @@ local log          = require("apisix.core.log")
 local profile      = require("apisix.core.profile")
 local lfs          = require("lfs")
 local inspect      = require("inspect")
+local jsonschema   = require("jsonschema")
 local io           = io
 local ngx          = ngx
 local re_find      = ngx.re.find
@@ -36,6 +37,51 @@ local debug_yaml_ctime
 
 
 local _M = {version = 0.1}
+
+
+local config_schema = {
+    type = "object",
+    properties = {
+        basic = {
+            properties = {
+                enable = {
+                    type = "boolean",
+                },
+            }
+        },
+        http_filter = {
+            properties = {
+                enable = {
+                    type = "boolean",
+                },
+                enable_header_name = {
+                    type = "string",
+                },
+            }
+        },
+        hook_conf = {
+            properties = {
+                enable = {
+                    type = "boolean",
+                },
+                name = {
+                    type = "string",
+                },
+                log_level = {
+                    enum = {"debug", "info", "notice", "warn", "error",
+                            "crit", "alert","emerg"},
+                },
+                is_print_input_args = {
+                    type = "boolean",
+                },
+                is_print_return_value = {
+                    type = "boolean",
+                },
+            }
+        },
+    },
+    required = {"basic", "http_filter", "hook_conf"},
+}
 
 
 local function read_debug_yaml()
@@ -93,6 +139,16 @@ local function read_debug_yaml()
     debug_yaml_new.hooks = debug_yaml_new.hooks or {}
     debug_yaml = debug_yaml_new
     debug_yaml_ctime = last_change_time
+
+    -- validate the debug yaml config
+    local validator = jsonschema.generate_validator(config_schema)
+    local ok, err = validator(debug_yaml)
+    if not ok then
+        log.error("failed to validate debug config " .. err)
+        return
+    end
+
+    return true
 end
 
 
@@ -204,7 +260,10 @@ local function sync_debug_status(premature)
         return
     end
 
-    read_debug_yaml()
+    if not read_debug_yaml() then
+        return
+    end
+
     sync_debug_hooks()
 end
 
