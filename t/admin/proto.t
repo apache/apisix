@@ -43,7 +43,6 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
             local code, message = t('/apisix/admin/proto/1',
                  ngx.HTTP_PUT,
                  [[{
@@ -89,7 +88,6 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
             local code, message = t('/apisix/admin/proto/1',
                  ngx.HTTP_DELETE,
                  nil,
@@ -117,7 +115,6 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
             local code, message = t('/apisix/admin/proto/2',
                  ngx.HTTP_PUT,
                  [[{
@@ -210,7 +207,6 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
             local code, message = t('/apisix/admin/proto/1',
                  ngx.HTTP_PUT,
                  [[{

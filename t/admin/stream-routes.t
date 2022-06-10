@@ -605,7 +605,6 @@ xrpc:
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
             for _, case in ipairs({
                 {input = {
                     name = "xxx",
