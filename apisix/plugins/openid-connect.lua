@@ -266,7 +266,7 @@ function _M.rewrite(plugin_conf, ctx)
         conf.ssl_verify = "no"
     end
 
-    local response, err, _, session
+    local response, err, session
 
     if conf.bearer_only or conf.introspection_endpoint or conf.public_key then
         -- An introspection endpoint or a public key has been configured. Try to
@@ -304,7 +304,7 @@ function _M.rewrite(plugin_conf, ctx)
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, target_url, session  = openidc.authenticate(conf)
+        response, err, _, session  = openidc.authenticate(conf)
 
         if err then
             core.log.error("OIDC authentication failed: ", err)
