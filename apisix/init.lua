@@ -502,9 +502,9 @@ function _M.http_access_phase()
         local upstream_ssl = router.router_ssl.get_by_id(cert_id)
         if not upstream_ssl or upstream_ssl.type ~= "client" then
             local err  = upstream_ssl and
-                "ssl id [" .. cert_id .. "] not exits" or
-                "ssl type should be 'client'"
-            core.log.error("failed to get ssl cert, ", err)
+                "ssl type should be 'client'" or
+                "ssl id [" .. cert_id .. "] not exits"
+            core.log.error("failed to get ssl cert: ", err)
 
             if is_http then
                 return core.response.exit(502)

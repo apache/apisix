@@ -625,6 +625,7 @@ hello world
             local ssl_key = t.read_file("t/certs/mtls_client.key")
             local data = {
                 type = "server",
+                sni = "test.com",
                 cert = ssl_cert,
                 key = ssl_key
             }
@@ -632,6 +633,11 @@ hello world
                 ngx.HTTP_PUT,
                 json.encode(data)
             )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
         }
     }
 --- request
@@ -646,7 +652,8 @@ GET /t
 --- request
 GET /hello
 --- error_code: 502
-
+--- error_log
+failed to get ssl cert: ssl type should be 'client'
 
 
 === TEST 17: delete ssl object
@@ -677,3 +684,6 @@ GET /t
 --- request
 GET /hello
 --- error_code: 502
+--- error_log
+failed to get ssl cert: ssl id [1] not exits
+
