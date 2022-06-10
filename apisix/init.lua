@@ -229,7 +229,11 @@ local function set_upstream_headers(api_ctx, picked_server)
 
     local hdr = core.request.header(api_ctx, "X-Forwarded-Proto")
     if hdr then
-        api_ctx.var.var_x_forwarded_proto = hdr
+        if type(hdr) == "table" then
+            api_ctx.var.var_x_forwarded_proto = core.table.concat(hdr, ", ")
+        else
+            api_ctx.var.var_x_forwarded_proto = hdr
+        end
     end
 end
 
