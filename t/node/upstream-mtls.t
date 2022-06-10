@@ -549,11 +549,13 @@ hello world
 
 
 === TEST 13: get cert by tls.client_cert_id
+--- FIRST
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin")
             local json = require("toolkit.json")
+
             local ssl_cert = t.read_file("t/certs/mtls_client.crt")
             local ssl_key = t.read_file("t/certs/mtls_client.key")
             local data = {
@@ -610,3 +612,69 @@ GET /t
 GET /hello
 --- response_body
 hello world
+
+
+
+=== TEST 15: change ssl object type
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+
+            local ssl_cert = t.read_file("t/certs/mtls_client.crt")
+            local ssl_key = t.read_file("t/certs/mtls_client.key")
+            local data = {
+                type = "server",
+                cert = ssl_cert,
+                key = ssl_key
+            }
+            local code, body = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 16: hit, ssl object type mismatch
+--- upstream_server_config
+    ssl_client_certificate ../../certs/mtls_ca.crt;
+    ssl_verify_client on;
+--- request
+GET /hello
+--- error_code: 502
+
+
+
+=== TEST 17: delete ssl object
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+
+            local code, body = t.test('/apisix/admin/ssl/1', ngx.HTTP_DELETE)
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 18: hit, ssl object not exits
+--- upstream_server_config
+    ssl_client_certificate ../../certs/mtls_ca.crt;
+    ssl_verify_client on;
+--- request
+GET /hello
+--- error_code: 502

@@ -270,7 +270,6 @@ function _M.get_by_id(ssl_id)
     end
 
     if not ssl then
-        core.log.error("failed to find ssl by id: ", ssl_id)
         return nil
     end
 

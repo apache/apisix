@@ -425,7 +425,7 @@ local function check_upstream_conf(in_dp, conf)
             return false, "invalid configuration: " .. err
         end
 
-        local ssl_id = conf.tls and conf.tls.client_cert_id or nil
+        local ssl_id = conf.tls and conf.tls.client_cert_id
         if ssl_id then
             local key = "/ssl/" .. ssl_id
             local res, err = core.etcd.get(key)
