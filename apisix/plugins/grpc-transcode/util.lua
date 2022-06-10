@@ -152,8 +152,8 @@ function _M.map_message(field, default_values, request_table)
                 for i,value in ipairs(request_table[name]) do
                     local sub_array_obj
                     if type(value) == "table" then
-                        sub_array_obj, err = _M.map_message(field_type, default_values and default_values[name],
-                                value)
+                        sub_array_obj, err = _M.map_message(field_type,
+                                default_values and default_values[name], value)
                         if err then
                             return nil, err
                         end
