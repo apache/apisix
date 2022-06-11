@@ -59,17 +59,14 @@ local schema = {
             enum = {token_type.ACCESS_TOKEN, token_type.JWT},
             minLength = 1, maxLength = 100
         },
-        subject_issuer = {type = "string", minLength = 1, maxLength = 100,
-                          description = "Only subject_issuer or requested_issuer must be defined"},
+        subject_issuer = {type = "string", minLength = 1, maxLength = 100},
         requested_token_type = {
             type = "string",
             default = token_type.ACCESS_TOKEN,
-            enum = {token_type.ACCESS_TOKEN, token_type.REFRESH_TOKEN},
-            description = "Only access_token is supported",
+            enum = {token_type.ACCESS_TOKEN},
             minLength = 1, maxLength = 100
         },
-        requested_issuer = {type = "string", minLength = 1, maxLength = 100,
-                            description = "Only subject_issuer or requested_issuer must be defined"},
+        requested_issuer = {type = "string", minLength = 1, maxLength = 100},
         policy_enforcement_mode = {
             type = "string",
             enum = {"ENFORCING", "PERMISSIVE"},
