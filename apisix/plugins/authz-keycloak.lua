@@ -153,9 +153,9 @@ local schema = {
                             }
                         },
                         {
+                            required = {"subject_issuer"},
                             properties = {
-                                subject_token_type = {const = token_type.ACCESS_TOKEN},
-                                subject_issuer = {minLength = 1}
+                                subject_token_type = {const = token_type.ACCESS_TOKEN}
                             }
                         }
                     }
