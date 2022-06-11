@@ -24,26 +24,18 @@ local plugin_name = "authz-keycloak"
 local log = core.log
 local pairs = pairs
 
+
 local grant_type = {
     UMA_TICKET = "urn:ietf:params:oauth:grant-type:uma-ticket",
     TOKEN_EXCHANGE = "urn:ietf:params:oauth:grant-type:token-exchange",
 }
 
-local grant_type_enum = {}
-for _, v in pairs(grant_type) do
-    core.table.insert(grant_type_enum, v)
-end
-
 local token_type = {
     ACCESS_TOKEN = "urn:ietf:params:oauth:token-type:access_token",
+    REFRESH_TOKEN = "urn:ietf:params:oauth:token-type:refresh_token",
+    ID_TOKEN = "urn:ietf:params:oauth:token-type:id_token",
     JWT = "urn:ietf:params:oauth:token-type:jwt",
 }
-
-local token_type_enum = {}
-for _, v in pairs(token_type) do
-    core.table.insert(token_type_enum, v)
-end
-
 
 local schema = {
     type = "object",
@@ -58,25 +50,25 @@ local schema = {
         grant_type = {
             type = "string",
             default = grant_type.UMA_TICKET,
-            enum = grant_type_enum,
+            enum = {grant_type.UMA_TICKET, grant_type.TOKEN_EXCHANGE},
             minLength = 1, maxLength = 100
         },
         subject_token_type = {
             type = "string",
             default = token_type.ACCESS_TOKEN,
-            enum = token_type_enum,
+            enum = {token_type.ACCESS_TOKEN, token_type.JWT},
             minLength = 1, maxLength = 100
         },
-        subject_issuer = {type = "string", minLength = 1, maxLength = 100, default = nil,
+        subject_issuer = {type = "string", minLength = 1, maxLength = 100,
                           description = "Only subject_issuer or requested_issuer must be defined"},
         requested_token_type = {
             type = "string",
             default = token_type.ACCESS_TOKEN,
-            enum = {token_type.ACCESS_TOKEN},
+            enum = {token_type.ACCESS_TOKEN, token_type.REFRESH_TOKEN},
             description = "Only access_token is supported",
             minLength = 1, maxLength = 100
         },
-        requested_issuer = {type = "string", minLength = 1, maxLength = 100, default = nil,
+        requested_issuer = {type = "string", minLength = 1, maxLength = 100,
                             description = "Only subject_issuer or requested_issuer must be defined"},
         policy_enforcement_mode = {
             type = "string",
@@ -145,7 +137,7 @@ local schema = {
                 }
             }
         },
-        -- If token_type is ACCESS_TOKEN, require subject_issuer or requested_issuer.
+        -- If subject_token_type is ACCESS_TOKEN, require subject_issuer.
         {
             anyOf = {
                 {
@@ -161,26 +153,12 @@ local schema = {
                         {  
                             properties = {
                                 subject_token_type = {const = token_type.JWT},
-                                requested_token_type = {const = nil},
-                                subject_token_type = {cons = nil},
                             }
                         },
                         {
-                            allOf = {
-                                {required = {"subject_issuer", "client_secret"}},
-                                properties = {
-                                    subject_token_type = {const = token_type.ACCESS_TOKEN},
-                                    requested_token_type = {const = nil},
-                                }
-                            }
-                        },
-                        {
-                            allOf = {
-                                {required = {"requested_issuer", "client_secret"}},
-                                properties = {
-                                    requested_token_type = {const = token_type.ACCESS_TOKEN},
-                                    subject_token_type = {const = nil},
-                                }
+                            properties = {
+                                subject_token_type = {const = token_type.ACCESS_TOKEN},
+                                subject_issuer = {minLength = 1}
                             }
                         }
                     }
@@ -729,19 +707,26 @@ local function evaluate_permissions(conf, ctx, token)
         local args = {
             grant_type = conf.grant_type,
             client_id = authz_keycloak_get_client_id(conf),
-            client_secret = conf.client_secret,
-            subject_token = sub_str(token, 8, -1), -- fetch_jwt_token always returns "Bearer ..."
+            subject_token_type = conf.subject_token_type,
+            requested_token_type = conf.requested_token_type,
             response_mode = "decision",
             permission = permission
         }
 
+        if conf.client_secret then
+            args.client_secret = conf.client_secret
+        end
+
+        if token then
+            -- fetch_jwt_token always returns "Bearer ..."
+            args.subject_token = sub_str(token, 8, -1)
+        end
+
         if conf.subject_issuer then
-            -- External to internal token exchange
-            args.subject_token_type = conf.subject_token_type
             args.subject_issuer = conf.subject_issuer
-        elseif conf.requested_issuer then
-            -- Internal to external token exchange
-            args.requested_token_type = conf.requested_token_type
+        end
+        
+        if conf.requested_issuer then
             args.requested_issuer = conf.requested_issuer
         end
 
