@@ -34,11 +34,11 @@ title: opentelemetry
 | sampler                               | object        | 否     |                                                 |                                                              | 采样策略。 |
 | sampler.name                          | string        | 否     | always_off                                      | ["always_on", "always_off", "trace_id_ratio", "parent_base"] | 采样策略。`always_on`：全采样；`always_off`：不采样；`trace_id_ratio`：基于 trace id 的百分比采样；`parent_base`：如果存在 tracing 上游，则使用上游的采样决定，否则使用配置的采样策略决策。 |
 | sampler.options                       | object        | 否     |                                                 | {fraction = 0, root = {name = "always_off"}}                 | 采样策略参数。 |
-| sampler.options.fraction              | number        | 否     | 0                                               | [0, 1]                                                       | `trace_id_ratio` 采样算法的百分比。 |
+| sampler.options.fraction              | number        | 否     | 0                                               | [0, 1]                                                       | `trace_id_ratio` 采样策略的百分比。 |
 | sampler.options.root                  | object        | 否     | {name = "always_off", options = {fraction = 0}} |                                                              | `parent_base` 采样策略在没有上游 tracing 时，会使用 root 采样策略做决策。 |
 | sampler.options.root.name             | string        | 否     | always_off                                      | ["always_on", "always_off", "trace_id_ratio"]                | root 采样策略。 |
 | sampler.options.root.options          | object        | 否     | {fraction = 0}                                  |                                                              | root 采样策略参数。 |
-| sampler.options.root.options.fraction | number        | 否     | 0                                               | [0, 1]                                                       | `trace_id_ratio` root 采样算法的百分比 |
+| sampler.options.root.options.fraction | number        | 否     | 0                                               | [0, 1]                                                       | `trace_id_ratio` root 采样策略的百分比 |
 | additional_attributes                 | array[string] | 否     |                                                 |                                                              | 追加到 trace span 的额外属性（变量名为 `key`，变量值为 `value`）。 |
 | additional_attributes[0]              | string        | 是     |                                                 |                                                              | APISIX 或 NGINX 变量，例如：`http_header` 或者 `route_id`。 |
 
