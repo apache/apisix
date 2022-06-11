@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core      = require("apisix.core")
-local http      = require "resty.http"
+local http      = require("resty.http")
 local sub_str   = string.sub
 local type      = type
 local ngx       = ngx
@@ -23,6 +23,27 @@ local plugin_name = "authz-keycloak"
 
 local log = core.log
 local pairs = pairs
+
+local grant_type = {
+    UMA_TICKET = "urn:ietf:params:oauth:grant-type:uma-ticket",
+    TOKEN_EXCHANGE = "urn:ietf:params:oauth:grant-type:token-exchange",
+}
+
+local grant_type_enum = {}
+for _, v in pairs(grant_type) do
+    core.table.insert(grant_type_enum, v)
+end
+
+local token_type = {
+    ACCESS_TOKEN = "urn:ietf:params:oauth:token-type:access_token",
+    JWT = "urn:ietf:params:oauth:token-type:jwt",
+}
+
+local token_type_enum = {}
+for _, v in pairs(token_type) do
+    core.table.insert(token_type_enum, v)
+end
+
 
 local schema = {
     type = "object",
@@ -36,10 +57,27 @@ local schema = {
         client_secret = {type = "string", minLength = 1, maxLength = 100},
         grant_type = {
             type = "string",
-            default="urn:ietf:params:oauth:grant-type:uma-ticket",
-            enum = {"urn:ietf:params:oauth:grant-type:uma-ticket"},
+            default = grant_type.UMA_TICKET,
+            enum = grant_type_enum,
             minLength = 1, maxLength = 100
         },
+        subject_token_type = {
+            type = "string",
+            default = token_type.ACCESS_TOKEN,
+            enum = token_type_enum,
+            minLength = 1, maxLength = 100
+        },
+        subject_issuer = {type = "string", minLength = 1, maxLength = 100, default = nil,
+                          description = "Only subject_issuer or requested_issuer must be defined"},
+        requested_token_type = {
+            type = "string",
+            default = token_type.ACCESS_TOKEN,
+            enum = {token_type.ACCESS_TOKEN},
+            description = "Only access_token is supported",
+            minLength = 1, maxLength = 100
+        },
+        requested_issuer = {type = "string", minLength = 1, maxLength = 100, default = nil,
+                            description = "Only subject_issuer or requested_issuer must be defined"},
         policy_enforcement_mode = {
             type = "string",
             enum = {"ENFORCING", "PERMISSIVE"},
@@ -93,16 +131,58 @@ local schema = {
             anyOf = {
                 {
                     properties = {
-                        lazy_load_paths = {enum = {false}},
+                        lazy_load_paths = {enum = {false}}
                     }
                 },
                 {
                     properties = {
-                        lazy_load_paths = {enum = {true}},
+                        lazy_load_paths = {enum = {true}}
                     },
                     anyOf = {
                         {required = {"discovery"}},
                         {required = {"resource_registration_endpoint"}}
+                    }
+                }
+            }
+        },
+        -- If token_type is ACCESS_TOKEN, require subject_issuer or requested_issuer.
+        {
+            anyOf = {
+                {
+                    properties = {
+                        grant_type = {const = grant_type.UMA_TICKET}
+                    }
+                },
+                {
+                    properties = {
+                        grant_type = {const = grant_type.TOKEN_EXCHANGE}
+                    },
+                    anyOf = {
+                        {  
+                            properties = {
+                                subject_token_type = {const = token_type.JWT},
+                                requested_token_type = {const = nil},
+                                subject_token_type = {cons = nil},
+                            }
+                        },
+                        {
+                            allOf = {
+                                {required = {"subject_issuer", "client_secret"}},
+                                properties = {
+                                    subject_token_type = {const = token_type.ACCESS_TOKEN},
+                                    requested_token_type = {const = nil},
+                                }
+                            }
+                        },
+                        {
+                            allOf = {
+                                {required = {"requested_issuer", "client_secret"}},
+                                properties = {
+                                    requested_token_type = {const = token_type.ACCESS_TOKEN},
+                                    subject_token_type = {const = nil},
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -644,19 +724,49 @@ local function evaluate_permissions(conf, ctx, token)
 
     local httpc = authz_keycloak_get_http_client(conf)
 
-    local params = {
-        method = "POST",
-        body = ngx.encode_args({
+    local params
+    if conf.grant_type == grant_type.TOKEN_EXCHANGE then
+        local args = {
             grant_type = conf.grant_type,
-            audience = authz_keycloak_get_client_id(conf),
+            client_id = authz_keycloak_get_client_id(conf),
+            client_secret = conf.client_secret,
+            subject_token = sub_str(token, 8, -1), -- fetch_jwt_token always returns "Bearer ..."
             response_mode = "decision",
             permission = permission
-        }),
-        headers = {
-            ["Content-Type"] = "application/x-www-form-urlencoded",
-            ["Authorization"] = token
         }
-    }
+
+        if conf.subject_issuer then
+            -- External to internal token exchange
+            args.subject_token_type = conf.subject_token_type
+            args.subject_issuer = conf.subject_issuer
+        elseif conf.requested_issuer then
+            -- Internal to external token exchange
+            args.requested_token_type = conf.requested_token_type
+            args.requested_issuer = conf.requested_issuer
+        end
+
+        params = {
+            method = "POST",
+            body = ngx.encode_args(args),
+            headers = {
+                ["Content-Type"] = "application/x-www-form-urlencoded",
+            }
+        }
+    else
+        params = {
+            method = "POST",
+            body = ngx.encode_args({
+                grant_type = conf.grant_type,
+                audience = authz_keycloak_get_client_id(conf),
+                response_mode = "decision",
+                permission = permission
+            }),
+            headers = {
+                ["Content-Type"] = "application/x-www-form-urlencoded",
+                ["Authorization"] = token
+            }
+        }
+    end
 
     params = authz_keycloak_configure_params(params, conf)
 
