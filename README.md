@@ -219,7 +219,7 @@ A wide variety of companies and organizations use APISIX API Gateway for researc
 - Tencent Game
 - Travelsky
 - VIVO
-- weibo
+- Sina Weibo
 - WPS
 
 ## Landscape
