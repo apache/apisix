@@ -286,7 +286,6 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
             local code, body = t('/apisix/admin/plugin_configs/1',
                 ngx.HTTP_PUT,
                 [[{
@@ -413,7 +412,6 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
             local code, body = t('/apisix/admin/plugin_configs/1',
                 ngx.HTTP_PUT,
                 [[{

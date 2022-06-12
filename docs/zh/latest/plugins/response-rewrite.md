@@ -129,6 +129,71 @@ X-Server-balancer_addr: 127.0.0.1:80
 
 :::
 
+使用 `filters` 正则匹配将返回 body 的 X-Amzn-Trace-Id 替换为 X-Amzn-Trace-Id-Replace。
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+  "plugins":{
+    "response-rewrite":{
+      "headers":{
+        "X-Server-id":3,
+        "X-Server-status":"on",
+        "X-Server-balancer_addr":"$balancer_ip:$balancer_port"
+      },
+      "filters":[
+        {
+          "regex":"X-Amzn-Trace-Id",
+          "scope":"global",
+          "replace":"X-Amzn-Trace-Id-Replace"
+        }
+      ],
+      "vars":[
+        [
+          "status",
+          "==",
+          200
+        ]
+      ]
+    }
+  },
+  "upstream":{
+    "type":"roundrobin",
+    "scheme":"https",
+    "nodes":{
+      "httpbin.org:443":1
+    }
+  },
+  "uri":"/*"
+}'
+```
+
+```shell
+curl -X GET -i  http://127.0.0.1:9080/get
+```
+
+```shell
+HTTP/1.1 200 OK
+Transfer-Encoding: chunked
+X-Server-status: on
+X-Server-balancer-addr: 34.206.80.189:443
+X-Server-id: 3
+
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/7.29.0",
+    "X-Amzn-Trace-Id-Replace": "Root=1-629e0b89-1e274fdd7c23ca6e64145aa2",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "origin": "127.0.0.1, 117.136.46.203",
+  "url": "https://127.0.0.1/get"
+}
+
+```
+
 ## 禁用插件
 
 当你需要禁用 `response-rewrite` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：

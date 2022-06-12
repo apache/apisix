@@ -486,9 +486,6 @@ function _M.http_access_phase()
         end
 
         local route_val = route.value
-        if route_val.upstream and route_val.upstream.enable_websocket then
-            enable_websocket = true
-        end
 
         api_ctx.matched_upstream = (route.dns_value and
                                     route.dns_value.upstream)
