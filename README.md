@@ -17,7 +17,7 @@
 #
 -->
 
-# Apache APISIX
+# Apache APISIX API Gateway
 
 <img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/apisix.svg" alt="APISIX logo" height="150px" align="right" />
 
@@ -27,11 +27,11 @@
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/apache/apisix.svg)](http://isitmaintained.com/project/apache/apisix "Average time to resolve an issue")
 [![Percentage of issues still open](http://isitmaintained.com/badge/open/apache/apisix.svg)](http://isitmaintained.com/project/apache/apisix "Percentage of issues still open")
 
-**Apache APISIX** is a dynamic, real-time, high-performance API gateway.
+**Apache APISIX** is a dynamic, real-time, high-performance API Gateway.
 
-APISIX provides rich traffic management features such as load balancing, dynamic upstream, canary release, circuit breaking, authentication, observability, and more.
+APISIX API Gateway provides rich traffic management features such as load balancing, dynamic upstream, canary release, circuit breaking, authentication, observability, and more.
 
-You can use Apache APISIX to handle traditional north-south traffic,
+You can use **APISIX API Gateway** to handle traditional north-south traffic,
 as well as east-west traffic between services.
 It can also be used as a [k8s ingress controller](https://github.com/apache/apisix-ingress-controller).
 
@@ -45,25 +45,18 @@ The technical architecture of Apache APISIX:
 - QQ Group - 552030619, 781365357
 - Slack Workspace - [invitation link](https://join.slack.com/t/the-asf/shared_invite/zt-vlfbf7ch-HkbNHiU_uDlcH_RvaHv9gQ) (Please open an [issue](https://apisix.apache.org/docs/general/submit-issue) if this link is expired), and then join the #apisix channel (Channels -> Browse channels -> search for "apisix").
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
-- **Good first issues**:
-  - [Apache APISIX®](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  - [Apache APISIX® Ingress Controller](https://github.com/apache/apisix-ingress-controller/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  - [Apache APISIX® dashboard](https://github.com/apache/apisix-dashboard/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  - [Apache APISIX® Helm Chart](https://github.com/apache/apisix-helm-chart/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  - [Docker distribution for Apache APISIX®](https://github.com/apache/apisix-docker/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  - [Apache APISIX® Website](https://github.com/apache/apisix-website/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-  - [Apache APISIX® Java Plugin Runner](https://github.com/apache/apisix-java-plugin-runner/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
-  - [Apache APISIX® Go Plugin Runner](https://github.com/apache/apisix-go-plugin-runner/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
-  - [Apache APISIX® Python Plugin Runner](https://github.com/apache/apisix-python-plugin-runner/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22)
+- [Documentation](https://apisix.apache.org/docs/)
+- [Discussions](https://github.com/apache/apisix/discussions)
+- [Blog](https://apisix.apache.org/blog)
 
 ## Features
 
-You can use Apache APISIX as a traffic entrance to process all business data, including dynamic routing, dynamic upstream, dynamic certificates,
+You can use APISIX API Gateway as a traffic entrance to process all business data, including dynamic routing, dynamic upstream, dynamic certificates,
 A/B testing, canary release, blue-green deployment, limit rate, defense against malicious attacks, metrics, monitoring alarms, service observability, service governance, etc.
 
 - **All platforms**
 
-  - Cloud-Native: Platform agnostic, No vendor lock-in, APISIX can run from bare-metal to Kubernetes.
+  - Cloud-Native: Platform agnostic, No vendor lock-in, APISIX API Gateway can run from bare-metal to Kubernetes.
   - Supports ARM64: Don't worry about the lock-in of the infra technology.
 
 - **Multi protocols**
@@ -194,6 +187,8 @@ Using AWS's eight-core server, APISIX's QPS reaches 140,000 with a latency of on
 
 [Benchmark script](benchmark/run.sh) has been open sourced, welcome to try and contribute.
 
+[The APISIX APISIX Gateway also works perfectly in AWS graviton3 C7g.](https://apisix.apache.org/blog/2022/06/07/installation-performance-test-of-apigateway-apisix-on-aws-graviton3)
+
 ## Contributor Over Time
 
 > [visit here](https://www.apiseven.com/contributor-graph) to generate Contributor Over Time.
@@ -206,9 +201,9 @@ Using AWS's eight-core server, APISIX's QPS reaches 140,000 with a latency of on
 - [Copernicus Reference System Software](https://github.com/COPRS/infrastructure/wiki/Networking-trade-off)
 - [More Stories](https://apisix.apache.org/blog/tags/user-case)
 
-## Who Uses APISIX?
+## Who Uses APISIX API Gateway?
 
-A wide variety of companies and organizations use APISIX for research, production and commercial product, below are some of them:
+A wide variety of companies and organizations use APISIX API Gateway for research, production and commercial product, below are some of them:
 
 - Airwallex
 - Bilibili
