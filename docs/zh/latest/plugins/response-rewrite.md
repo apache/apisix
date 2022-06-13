@@ -125,7 +125,12 @@ X-Server-balancer_addr: 127.0.0.1:80
 
 如果你在 `access` 阶段执行了 `ngx.exit`，该操作只是中断了请求处理阶段，响应阶段仍然会处理。如果你配置了 `response-rewrite` 插件，它会强制覆盖你的响应信息（如响应代码）。
 
-![ngx.exit tabular overview](https://user-images.githubusercontent.com/2106987/170849580-aa296d3d-b43a-404a-8c88-720afb2b7c08.png)
+| Phase         | rewrite  | access   | header_filter | body_filter |
+|---------------|----------|----------|---------------|-------------|
+| rewrite       | ngx.exit | √        | √             | √           |
+| access        | ×        | ngx.exit | √             | √           |
+| header_filter | √        | √        | ngx.exit      | √           |
+| body_filter   | √        | √        | ×             | ngx.exit    |
 
 :::
 
