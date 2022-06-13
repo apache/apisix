@@ -67,4 +67,4 @@ X-Forwarded-Proto: http
 X-Forwarded-Proto: grpc
 --- error_code: 200
 --- response_headers
-X-Forwarded-Proto: http, grpc
+X-Forwarded-Proto: http
