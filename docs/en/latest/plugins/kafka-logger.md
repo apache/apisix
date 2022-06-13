@@ -36,7 +36,7 @@ It might take some time to receive the log data. It will be automatically sent a
 ## Attributes
 
 | Name                   | Type    | Required | Default        | Valid values          | Description                                                                                                                                                                                                                                                                                                                                      |
-|------------------------|---------|----------|----------------|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ---------------------- | ------- | -------- | -------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | broker_list            | object  | True     |                |                       | List of Kafka brokers (nodes).                                                                                                                                                                                                                                                                                                                   |
 | kafka_topic            | string  | True     |                |                       | Target topic to push the logs for organisation.                                                                                                                                                                                                                                                                                                  |
 | producer_type          | string  | False    | async          | ["async", "sync"]     | Message sending mode of the producer.                                                                                                                                                                                                                                                                                                            |
@@ -44,7 +44,7 @@ It might take some time to receive the log data. It will be automatically sent a
 | key                    | string  | False    |                |                       | Key used for allocating partitions for messages.                                                                                                                                                                                                                                                                                                 |
 | timeout                | integer | False    | 3              | [1,...]               | Timeout for the upstream to send data.                                                                                                                                                                                                                                                                                                           |
 | name                   | string  | False    | "kafka logger" |                       | Unique identifier for the batch processor.                                                                                                                                                                                                                                                                                                       |
-| meta_format            | enum    | False    | "default"      | ["default"，"origin"] | Format to collect the request information. Setting to `default` collects the information in JSON format and `origin` collects the information with the original HTTP request. See [examples](#meta_format-example) below.                                                                                                                    |
+| meta_format            | enum    | False    | "default"      | ["default"，"origin"] | Format to collect the request information. Setting to `default` collects the information in JSON format and `origin` collects the information with the original HTTP request. See [examples](#meta_format-example) below.                                                                                                                        |
 | include_req_body       | boolean | False    | false          | [false, true]         | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations.                                                                                                                                                                                 |
 | include_req_body_expr  | array   | False    |                |                       | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.                                                                                                                          |
 | include_resp_body      | boolean | False    | false          | [false, true]         | When set to `true` includes the response body in the log.                                                                                                                                                                                                                                                                                        |
@@ -53,86 +53,107 @@ It might take some time to receive the log data. It will be automatically sent a
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
+:::info IMPORTANT
+
+The data is first written to a buffer. When the buffer exceeds the `batch_max_size` or `buffer_duration` attribute, the data is sent to the Kafka server and the buffer is flushed.
+
+If the process is successful, it will return `true` and if it fails, returns `nil` with a string with the "buffer overflow" error.
+
+:::
+
 ### meta_format example
 
 - `default`:
 
-    ```json
-    {
-     "upstream": "127.0.0.1:1980",
-     "start_time": 1619414294760,
-     "client_ip": "127.0.0.1",
-     "service_id": "",
-     "route_id": "1",
-     "request": {
-       "querystring": {
-         "ab": "cd"
-       },
-       "size": 90,
-       "uri": "/hello?ab=cd",
-       "url": "http://localhost:1984/hello?ab=cd",
-       "headers": {
-         "host": "localhost",
-         "content-length": "6",
-         "connection": "close"
-       },
-       "body": "abcdef",
-       "method": "GET"
-     },
-     "response": {
-       "headers": {
-         "connection": "close",
-         "content-type": "text/plain; charset=utf-8",
-         "date": "Mon, 26 Apr 2021 05:18:14 GMT",
-         "server": "APISIX/2.5",
-         "transfer-encoding": "chunked"
-       },
-       "size": 190,
-       "status": 200
-     },
-     "server": {
-       "hostname": "localhost",
-       "version": "2.5"
-     },
-     "latency": 0
-    }
-    ```
+  ```json
+  {
+    "upstream": "127.0.0.1:1980",
+    "start_time": 1619414294760,
+    "client_ip": "127.0.0.1",
+    "service_id": "",
+    "route_id": "1",
+    "request": {
+      "querystring": {
+        "ab": "cd"
+      },
+      "size": 90,
+      "uri": "/hello?ab=cd",
+      "url": "http://localhost:1984/hello?ab=cd",
+      "headers": {
+        "host": "localhost",
+        "content-length": "6",
+        "connection": "close"
+      },
+      "body": "abcdef",
+      "method": "GET"
+    },
+    "response": {
+      "headers": {
+        "connection": "close",
+        "content-type": "text/plain; charset=utf-8",
+        "date": "Mon, 26 Apr 2021 05:18:14 GMT",
+        "server": "APISIX/2.5",
+        "transfer-encoding": "chunked"
+      },
+      "size": 190,
+      "status": 200
+    },
+    "server": {
+      "hostname": "localhost",
+      "version": "2.5"
+    },
+    "latency": 0
+  }
+  ```
 
 - `origin`:
 
-    ```http
-    GET /hello?ab=cd HTTP/1.1
-    host: localhost
-    content-length: 6
-    connection: close
+  ```http
+  GET /hello?ab=cd HTTP/1.1
+  host: localhost
+  content-length: 6
+  connection: close
 
-    abcdef
-    ```
+  abcdef
+  ```
 
-## Info
+## Metadata
 
-The `message` will write to the buffer first.
-It will send to the kafka server when the buffer exceed the `batch_max_size`,
-or every `buffer_duration` flush the buffer.
+You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
 
-In case of success, returns `true`.
-In case of errors, returns `nil` with a string describing the error (`buffer overflow`).
+| Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
+| ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| log_format | object | False | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
-### Sample broker list
+:::info IMPORTANT
 
-This plugin supports to push in to more than one broker at a time. Specify the brokers of the external kafka servers as below
-sample to take effect of this functionality.
+Configuring the Plugin metadata is global in scope. This means that it will take effect on all Routes and Services which use the `kafka-logger` Plugin.
 
-```json
+:::
+
+The example below shows how you can configure through the Admin API:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/kafka-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "127.0.0.1":9092,
-    "127.0.0.1":9093
-}
+    "log_format": {
+        "host": "$host",
+        "@timestamp": "$time_iso8601",
+        "client_ip": "$remote_addr"
+    }
+}'
 ```
 
-## How To Enable
+With this configuration, your logs would be formatted as shown below:
 
-The following is an example on how to enable the kafka-logger for a specific route.
+```shell
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+```
+
+## Enabling the Plugin
+
+The example below shows how you can enable the `kafka-logger` Plugin on a specific Route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -159,52 +180,30 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+This Plugin also supports pushing to more than one broker at a time. You can specify multiple brokers in the Plugin configuration as shown below:
 
-success:
-
-```shell
-$ curl -i http://127.0.0.1:9080/hello
-HTTP/1.1 200 OK
-...
-hello, world
+```json
+"broker_list" :
+  {
+    "127.0.0.1":9092,
+    "127.0.0.1":9093
+  },
 ```
 
-## Metadata
+## Example usage
 
-| Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
-| ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
-| log_format       | object  | optional    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | Log format declared as key value pair in JSON format. Only string is supported in the `value` part. If the value starts with `$`, it means to get [APISIX variable](../apisix-variable.md) or [Nginx variable](http://nginx.org/en/docs/varindex.html). |
-
- Note that **the metadata configuration is applied in global scope**, which means it will take effect on all Route or Service which use kafka-logger plugin.
-
-### Example
+Now, if you make a request to APISIX, it will be logged in your Kafka server:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/kafka-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "log_format": {
-        "host": "$host",
-        "@timestamp": "$time_iso8601",
-        "client_ip": "$remote_addr"
-    }
-}'
-```
-
-It is expected to see some logs like that:
-
-```shell
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+curl -i http://127.0.0.1:9080/hello
 ```
 
 ## Disable Plugin
 
-Remove the corresponding json configuration in the plugin configuration to disable the `kafka-logger`.
-APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
+To disable the `kafka-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
