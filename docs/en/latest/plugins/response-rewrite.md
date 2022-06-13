@@ -130,6 +130,71 @@ So, if you have configured the `response-rewrite` Plugin, it do a force overwrit
 
 :::
 
+The example below shows how you can replace a key in the response body. Here, the key X-Amzn-Trace-Id is replaced with X-Amzn-Trace-Id-Replace by configuring the filters attribute using regex:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+  "plugins":{
+    "response-rewrite":{
+      "headers":{
+        "X-Server-id":3,
+        "X-Server-status":"on",
+        "X-Server-balancer_addr":"$balancer_ip:$balancer_port"
+      },
+      "filters":[
+        {
+          "regex":"X-Amzn-Trace-Id",
+          "scope":"global",
+          "replace":"X-Amzn-Trace-Id-Replace"
+        }
+      ],
+      "vars":[
+        [
+          "status",
+          "==",
+          200
+        ]
+      ]
+    }
+  },
+  "upstream":{
+    "type":"roundrobin",
+    "scheme":"https",
+    "nodes":{
+      "httpbin.org:443":1
+    }
+  },
+  "uri":"/*"
+}'
+```
+
+```shell
+curl -X GET -i  http://127.0.0.1:9080/get
+```
+
+```shell
+HTTP/1.1 200 OK
+Transfer-Encoding: chunked
+X-Server-status: on
+X-Server-balancer-addr: 34.206.80.189:443
+X-Server-id: 3
+
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/7.29.0",
+    "X-Amzn-Trace-Id-Replace": "Root=1-629e0b89-1e274fdd7c23ca6e64145aa2",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "origin": "127.0.0.1, 117.136.46.203",
+  "url": "https://127.0.0.1/get"
+}
+
+```
+
 ## Disable Plugin
 
 To disable the `response-rewrite` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.

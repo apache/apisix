@@ -244,12 +244,9 @@ Please modify "admin_key" in conf/config.yaml .
     end
 
     local or_info = util.execute_cmd("openresty -V 2>&1")
-    local with_module_status = true
     if or_info and not or_info:find("http_stub_status_module", 1, true) then
-        stderr:write("'http_stub_status_module' module is missing in ",
-                     "your openresty, please check it out. Without this ",
-                     "module, there will be fewer monitoring indicators.\n")
-        with_module_status = false
+        util.die("'http_stub_status_module' module is missing in ",
+                 "your openresty, please check it out.\n")
     end
 
     local use_apisix_openresty = true
@@ -548,7 +545,6 @@ Please modify "admin_key" in conf/config.yaml .
         lua_cpath = env.pkg_cpath_org,
         os_name = util.trim(util.execute_cmd("uname")),
         apisix_lua_home = env.apisix_home,
-        with_module_status = with_module_status,
         use_apisix_openresty = use_apisix_openresty,
         error_log = {level = "warn"},
         enable_http = enable_http,

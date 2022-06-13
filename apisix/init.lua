@@ -56,6 +56,7 @@ local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
 local pairs           = pairs
+local type            = type
 local control_api_router
 
 local is_http = false
@@ -157,14 +158,14 @@ end
 
 function _M.http_ssl_phase()
     local ngx_ctx = ngx.ctx
-    local api_ctx = ngx_ctx.api_ctx
-
-    if api_ctx == nil then
-        api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-        ngx_ctx.api_ctx = api_ctx
-    end
+    local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+    ngx_ctx.api_ctx = api_ctx
 
     local ok, err = router.router_ssl.match_and_set(api_ctx)
+
+    core.tablepool.release("api_ctx", api_ctx)
+    ngx_ctx.api_ctx = nil
+
     if not ok then
         if err then
             core.log.error("failed to fetch ssl config: ", err)
@@ -229,7 +230,11 @@ local function set_upstream_headers(api_ctx, picked_server)
 
     local hdr = core.request.header(api_ctx, "X-Forwarded-Proto")
     if hdr then
-        api_ctx.var.var_x_forwarded_proto = hdr
+        if type(hdr) == "table" then
+            api_ctx.var.var_x_forwarded_proto = hdr[1]
+        else
+            api_ctx.var.var_x_forwarded_proto = hdr
+        end
     end
 end
 
@@ -486,9 +491,6 @@ function _M.http_access_phase()
         end
 
         local route_val = route.value
-        if route_val.upstream and route_val.upstream.enable_websocket then
-            enable_websocket = true
-        end
 
         api_ctx.matched_upstream = (route.dns_value and
                                     route.dns_value.upstream)
@@ -806,14 +808,14 @@ end
 
 function _M.stream_ssl_phase()
     local ngx_ctx = ngx.ctx
-    local api_ctx = ngx_ctx.api_ctx
-
-    if api_ctx == nil then
-        api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-        ngx_ctx.api_ctx = api_ctx
-    end
+    local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+    ngx_ctx.api_ctx = api_ctx
 
     local ok, err = router.router_ssl.match_and_set(api_ctx)
+
+    core.tablepool.release("api_ctx", api_ctx)
+    ngx_ctx.api_ctx = nil
+
     if not ok then
         if err then
             core.log.error("failed to fetch ssl config: ", err)
