@@ -147,7 +147,7 @@ local schema = {
                         grant_type = {const = grant_type.TOKEN_EXCHANGE}
                     },
                     anyOf = {
-                        {  
+                        {
                             properties = {
                                 subject_token_type = {const = token_type.JWT},
                             }
@@ -722,7 +722,7 @@ local function evaluate_permissions(conf, ctx, token)
         if conf.subject_issuer then
             args.subject_issuer = conf.subject_issuer
         end
-        
+
         if conf.requested_issuer then
             args.requested_issuer = conf.requested_issuer
         end
