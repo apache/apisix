@@ -273,8 +273,8 @@ user-agent: .*
 x-access-token: ey.*
 x-id-token: ey.*
 x-real-ip: 127.0.0.1
-x-userinfo: ey.*
 x-refresh-token: ey.*
+x-userinfo: ey.*
 --- no_error_log
 [error]
 
