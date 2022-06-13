@@ -56,6 +56,7 @@ local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
 local pairs           = pairs
+local type            = type
 local control_api_router
 
 local is_http = false
@@ -229,7 +230,11 @@ local function set_upstream_headers(api_ctx, picked_server)
 
     local hdr = core.request.header(api_ctx, "X-Forwarded-Proto")
     if hdr then
-        api_ctx.var.var_x_forwarded_proto = hdr
+        if type(hdr) == "table" then
+            api_ctx.var.var_x_forwarded_proto = hdr[1]
+        else
+            api_ctx.var.var_x_forwarded_proto = hdr
+        end
     end
 end
 
