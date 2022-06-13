@@ -579,7 +579,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。
 他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
 
-`tls.client_cert_id` 可以用来指定引用的 SSL 对象。只有当 SSL 对象的 `type` 字段为 client 时才能被引用。SSL 对象中只有 `cert`和`key` 会被使用。
+`tls.client_cert_id` 可以用来指定引用的 SSL 对象。只有当 SSL 对象的 `type` 字段为 client 时才能被引用，否则请求会被 APISIX 拒绝。另外，SSL 对象中只有 `cert`和`key` 会被使用。
 
 `keepalive_pool` 允许 upstream 对象有自己单独的连接池。
 它下属的字段，比如 `requests`，可以用了配置上游连接保持的参数。
