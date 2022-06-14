@@ -53,7 +53,8 @@ local schema = {
                         type = "string",
                         minLength = 1
                     }
-                }
+                },
+                required = {"key", "value"},
             }
         },
         max_breaker_sec = {
