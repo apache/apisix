@@ -25,7 +25,7 @@ title: opentelemetry
 
 `opentelemetry` 插件可用于根据 [OpenTelemetry specification](https://opentelemetry.io/docs/reference/specification/) 协议规范上报 Tracing 数据。
 
-该插件仅支持二进制编码的 [OLTP over HTTP](https://opentelemetry.io/docs/reference/specification/protocol/otlp/#otlphttp)。
+该插件仅支持二进制编码的 [OLTP over HTTP](https://opentelemetry.io/docs/reference/specification/protocol/otlp/#otlphttp)，即请求类型为 `application/x-protobuf` 的数据上报。
 
 ## 属性
 
@@ -44,7 +44,7 @@ title: opentelemetry
 
 ## 如何设置数据上报
 
-你可以通过在 `conf/config.yaml` 中通指定配置来设置数据上报：
+你可以通过在 `conf/config.yaml` 中指定配置来设置数据上报：
 
 | 名称                                       | 类型    | 默认值                                             | 描述                                                                                                                                             |
 | ------------------------------------------ | ------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
