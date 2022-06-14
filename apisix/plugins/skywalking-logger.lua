@@ -157,7 +157,6 @@ function _M.log(conf, ctx)
         },
         service = conf.service_name,
         serviceInstance = serviceInstanceName,
-        
         endpoint = ctx.var.uri,
     }
 
