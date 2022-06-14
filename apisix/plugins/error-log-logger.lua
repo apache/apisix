@@ -180,10 +180,15 @@ local function send_to_skywalking(log_message)
     httpc:set_timeout(config.timeout * 1000)
 
     local entries = {}
+    local serviceInstanceName = config.skywalking.service_instance_name
+    if serviceInstanceName == "$hostname" then
+        serviceInstanceName = core.utils.gethostname()
+    end
+
     for i = 1, #log_message, 2 do
         local content = {
             service = config.skywalking.service_name,
-            serviceInstance = config.skywalking.service_instance_name,
+            serviceInstance = serviceInstanceName,
             endpoint = "",
             body = {
                 text = {
