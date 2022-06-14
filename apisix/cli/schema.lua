@@ -212,8 +212,20 @@ local config_schema = {
                             type = "string",
                         },
                     }
+                },
+                prefix = {
+                    type = "string",
+                    pattern = [[^/[^/]+$]]
+                },
+                host = {
+                    type = "array",
+                    items = {
+                        type = "string",
+                        pattern = [[^https?://]]
+                    }
                 }
-            }
+            },
+            required = {"prefix", "host"}
         },
         wasm = {
             type = "object",
