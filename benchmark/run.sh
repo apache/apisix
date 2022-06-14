@@ -58,8 +58,12 @@ do
 done
 
 if [[ "$(uname)" == "Darwin" ]]; then
+    sed  -i "" "s/\- proxy-mirror .*/#\- proxy-mirror/g" conf/config-default.yaml
+    sed  -i "" "s/\- proxy-cache .*/#\- proxy-cache/g" conf/config-default.yaml
     sed  -i "" "s/listen .*;/$nginx_listen/g" benchmark/server/conf/nginx.conf
 else
+    sed  -i "s/\- proxy-mirror/#\- proxy-mirror/g" conf/config-default.yaml
+    sed  -i "s/\- proxy-cache/#\- proxy-cache/g" conf/config-default.yaml
     sed  -i "s/listen .*;/$nginx_listen/g" benchmark/server/conf/nginx.conf
 fi
 
