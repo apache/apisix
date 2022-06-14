@@ -143,6 +143,11 @@ function _M.log(conf, ctx)
         end
     end
 
+    local serviceInstanceName = conf.service_instance_name
+    if serviceInstanceName == "$hostname" then
+        serviceInstanceName = core.utils.gethostname()
+    end
+
     local entry = {
         traceContext = trace_context,
         body = {
@@ -151,7 +156,8 @@ function _M.log(conf, ctx)
             }
         },
         service = conf.service_name,
-        serviceInstance = conf.service_instance_name,
+        serviceInstance = serviceInstanceName,
+        
         endpoint = ctx.var.uri,
     }
 
