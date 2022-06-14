@@ -46,7 +46,7 @@ local function check_conf(id, conf, need_id)
     conf.id = id
 
     core.log.info("schema: ", core.json.delay_encode(core.schema.ssl))
-    core.log.info("conf  : ", core.json.delay_encode(conf))
+    core.log.info("conf: ", core.json.delay_encode(conf))
 
     local ok, err = apisix_ssl.check_ssl_conf(false, conf)
     if not ok then
