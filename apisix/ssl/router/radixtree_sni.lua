@@ -26,6 +26,7 @@ local error            = error
 local str_find         = core.string.find
 local str_gsub         = string.gsub
 local str_lower        = string.lower
+local tostring         = tostring
 local ssl_certificates
 local radixtree_router
 local radixtree_router_ver
@@ -44,7 +45,7 @@ local function create_router(ssl_items)
     local idx = 0
 
     for _, ssl in config_util.iterate_values(ssl_items) do
-        if ssl.value ~= nil and
+        if ssl.value ~= nil and ssl.value.type == "server" and
             (ssl.value.status == nil or ssl.value.status == 1) then  -- compatible with old version
 
             local j = 0
@@ -258,6 +259,21 @@ function _M.init_worker()
         error("failed to create etcd instance for fetching ssl certificates: "
               .. err)
     end
+end
+
+
+function _M.get_by_id(ssl_id)
+    local ssl
+    local ssls = core.config.fetch_created_obj("/ssl")
+    if ssls then
+        ssl = ssls:get(tostring(ssl_id))
+    end
+
+    if not ssl then
+        return nil
+    end
+
+    return ssl.value
 end
 
 
