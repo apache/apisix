@@ -2,9 +2,9 @@
 title: clickhouse-logger
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - ClickHouse Logger
-  - clickhouse-logger
 description: This document contains information about the Apache APISIX clickhouse-logger Plugin.
 ---
 

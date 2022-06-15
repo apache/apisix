@@ -2,6 +2,7 @@
 title: syslog
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - Syslog
 description: This document contains information about the Apache APISIX syslog Plugin.

@@ -2,9 +2,9 @@
 title: log-rotate
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - Log rotate
-  - log-rotate
 description: This document contains information about the Apache APISIX log-rotate Plugin.
 ---
 
