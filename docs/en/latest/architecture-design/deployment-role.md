@@ -23,10 +23,12 @@ title: Deployment Role
 
 ## Concept
 
-Previously, the DP (data plane) and the CP (control plane) are not separate explicitly.
+Previously, the DP (Data Plane) and the CP (Control Plane) are not separate explicitly.
+
 Although we clearly distinguish the different responsibilities of DP and CP in the documentation, not everyone has correctly deployed APISIX in the production environment.
 
 Therefore, we introduce new concepts called deployment modes/roles, to help users deploy APISIX easily and safely.
+
 APISIX under different deployment modes will act differently.
 
 The table below shows the relationship among deployment modes and roles:
@@ -44,7 +46,9 @@ The table below shows the relationship among deployment modes and roles:
 ![traditional](../../../assets/images/deployment-traditional.svg)
 
 In the traditional deployment mode, one instance can be both DP & CP.
-There will be a `conf server` listens on Unix socket and acts as a proxy between APISIX and etcd.
+
+There will be a `conf server` listens on UNIX socket and acts as a proxy between APISIX and etcd.
+
 Both the DP part and CP part of the instance will connect to the `conf server` via HTTP protocol.
 
 Here is the example of configuration:
@@ -67,7 +71,7 @@ deployment:
 
 The instance deployed as data_plane will:
 
-1. Fetch configurations from control plane, the default port is 9280
+1. Fetch configurations from the CP, the default port is 9280
 2. Before the DP service starts, it will perform a health check on all CP addresses
     - If all CP addresses are unavailable, the startup fails and an exception message is output to the screen.
     - If at least one CP address is available, print the unhealthy CP check result log, and then start the APISIX service.
