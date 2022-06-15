@@ -2,9 +2,9 @@
 title: prometheus
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - Prometheus
-  - prometheus
 description: This document contains information about the Apache APISIX prometheus Plugin.
 ---
 
