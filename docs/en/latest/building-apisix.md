@@ -160,7 +160,7 @@ brew services start etcd
 
 ## Running and managing APISIX server
 
-To initialize the configuration file and etcd, within the APISIX directory, run:
+To initialize the configuration file, within the APISIX directory, run:
 
 ```shell
 apisix init
@@ -192,21 +192,21 @@ To stop APISIX, you can use either the `quit` or the `stop` subcommand.
 apisix quit
 ```
 
-Whereas, the `apisix stop` command does a force shutdown and discards all pending requests.
+Where as, the `apisix stop` command does a force shutdown and discards all pending requests.
 
 ```shell
 apisix stop
 ```
 
-## Building OpenResty for APISIX
+## Building runtime for APISIX
 
 Some features of APISIX requires additional Nginx modules to be introduced into OpenResty.
 
-To use these features, you need to build OpenResty. See [apisix-build-tools](https://github.com/api7/apisix-build-tools) for setting up your build environment and building OpenResty.
+To use these features, you need to build a custom distribution of OpenResty (apisix-base). See [apisix-build-tools](https://github.com/api7/apisix-build-tools) for setting up your build environment and building it.
 
 ## Running tests
 
-The steps below show how you can run the test cases for APISIX:
+The steps below show how to run the test cases for APISIX:
 
 1. Install [cpanminus](https://metacpan.org/pod/App::cpanminus#INSTALLATION), the package manager for Perl.
 2. Install the [test-nginx](https://github.com/openresty/test-nginx) dependencies with `cpanm`:
@@ -265,7 +265,7 @@ For the error `Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t
   export PATH=/usr/local/opt/openresty/nginx/sbin:$PATH
   ```
 
-#### Running a single test case
+#### Running a specific test case
 
 To run a specific test case, use the command below:
 
