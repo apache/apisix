@@ -55,6 +55,7 @@ The `openid-connect` Plugin provides authentication and introspection capability
 | access_token_in_authorization_header | boolean | False    | false                 |              | When set to true, sets the access token in the `Authorization` header. Otherwise, set the `X-Access-Token` header. |
 | set_id_token_header                  | boolean | False    | true                  |              | When set to true and the ID token is available, sets the ID token in the `X-ID-Token` request header.              |
 | set_userinfo_header                  | boolean | False    | true                  |              | When set to true and the UserInfo object is available, sets it in the `X-Userinfo` request header.                 |
+| set_refresh_token_header                  | boolean | False    | false                  |              | When set to true and a refresh token object is available, sets it in the `X-Refresh-Token` request header.                 |
 
 ## Modes of operation
 
