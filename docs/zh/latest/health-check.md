@@ -23,7 +23,7 @@ title: 健康检查
 
 ## Upstream 的健康检查
 
-Apache APISIX 的健康检查使用 [lua-resty-healthcheck](https://github.com/Kong/lua-resty-healthcheck) 实现。
+Apache APISIX 的健康检查使用 [lua-resty-healthcheck](https://github.com/api7/lua-resty-healthcheck) 实现。
 
 注意：
 

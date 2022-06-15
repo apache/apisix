@@ -23,7 +23,7 @@ title: Health Check
 
 ## Health Checks for Upstream
 
-Health Check of Apache APISIX is based on [lua-resty-healthcheck](https://github.com/Kong/lua-resty-healthcheck).
+Health Check of Apache APISIX is based on [lua-resty-healthcheck](https://github.com/api7/lua-resty-healthcheck).
 
 Note:
 
