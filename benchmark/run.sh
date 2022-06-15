@@ -35,12 +35,15 @@ mkdir -p benchmark/fake-apisix/logs
 
 make init
 
+fake_apisix_cmd="openresty -p $PWD/benchmark/fake-apisix -c $PWD/benchmark/fake-apisix/conf/nginx.conf"
+server_cmd="openresty -p $PWD/benchmark/server -c $PWD/benchmark/server/conf/nginx.conf"
+
 trap 'onCtrlC' INT
 function onCtrlC () {
     sudo killall wrk
     sudo killall openresty
-    sudo openresty -p $PWD/benchmark/fake-apisix -s stop || exit 1
-    sudo openresty -p $PWD/benchmark/server -s stop || exit 1
+    sudo ${fake_apisix_cmd} -s stop || exit 1
+    sudo ${server_cmd} -s stop || exit 1
 }
 
 for up_cnt in $(seq 1 $upstream_cnt);
@@ -55,14 +58,26 @@ do
 done
 
 if [[ "$(uname)" == "Darwin" ]]; then
-    sed  -i "" "s/worker_processes .*/worker_processes $worker_cnt;/g" conf/nginx.conf
+    sed  -i "" "s/\- proxy-mirror .*/#\- proxy-mirror/g" conf/config-default.yaml
+    sed  -i "" "s/\- proxy-cache .*/#\- proxy-cache/g" conf/config-default.yaml
     sed  -i "" "s/listen .*;/$nginx_listen/g" benchmark/server/conf/nginx.conf
 else
-    sed  -i "s/worker_processes .*/worker_processes $worker_cnt;/g" conf/nginx.conf
+    sed  -i "s/\- proxy-mirror/#\- proxy-mirror/g" conf/config-default.yaml
+    sed  -i "s/\- proxy-cache/#\- proxy-cache/g" conf/config-default.yaml
     sed  -i "s/listen .*;/$nginx_listen/g" benchmark/server/conf/nginx.conf
 fi
 
-sudo openresty -p $PWD/benchmark/server || exit 1
+echo "
+apisix:
+  admin_key:
+    - name: admin
+      key: edd1c9f034335f136f87ad84b625c8f1
+      role: admin
+nginx_config:
+  worker_processes: ${worker_cnt}
+" > conf/config.yaml
+
+sudo ${server_cmd} || exit 1
 
 make run
 
@@ -140,7 +155,7 @@ else
     sed  -i "s/worker_processes [0-9]*/worker_processes $worker_cnt/g" benchmark/fake-apisix/conf/nginx.conf
 fi
 
-sudo openresty -p $PWD/benchmark/fake-apisix || exit 1
+sudo ${fake_apisix_cmd} || exit 1
 
 sleep 1
 
@@ -150,6 +165,6 @@ sleep 1
 
 wrk -d 5 -c 16 http://127.0.0.1:9080/hello
 
-sudo openresty -p $PWD/benchmark/fake-apisix -s stop || exit 1
+sudo ${fake_apisix_cmd} -s stop || exit 1
 
-sudo openresty -p $PWD/benchmark/server -s stop || exit 1
+sudo ${server_cmd} -s stop || exit 1
