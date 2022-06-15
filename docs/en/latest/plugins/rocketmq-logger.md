@@ -2,9 +2,9 @@
 title: rocketmq-logger
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - RocketMQ Logger
-  - rocketmq-logger
 description: This document contains information about the Apache APISIX rocketmq-logger Plugin.
 ---
 <!--

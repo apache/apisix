@@ -2,9 +2,9 @@
 title: udp-logger
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - UDP Logger
-  - udp-logger
 description: This document contains information about the Apache APISIX udp-logger Plugin.
 ---
 
