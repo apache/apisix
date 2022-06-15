@@ -2,10 +2,10 @@
 title: sls-logger
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - SLS Logger
   - Ali Cloud Log Server
-  - sls-logger
 description: This document contains information about the Apache APISIX sls-logger Plugin.
 ---
 <!--
