@@ -156,7 +156,7 @@ To set it up, download [Grafana dashboard meta](https://github.com/apache/apisix
 
 ![Grafana chart-4](../../../assets/images/plugin/grafana-4.png)
 
-## Available metrics
+## Available HTTP metrics
 
 The following metrics are exported by the `prometheus` Plugin:
 
@@ -292,7 +292,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-## Gather L4 metrics
+## How to enable it for TCP/UDP
 
 :::info IMPORTANT
 
@@ -300,7 +300,17 @@ This feature requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-th
 
 :::
 
-We can also enable `prometheus` on the stream route:
+We can also enable `prometheus` to collect metrics for TCP/UDP.
+
+First of all, ensure `prometheus` plugin is in your configuration file (`conf/config.yaml`):
+
+```yaml title="conf/config.yaml"
+stream_plugins:
+  - ...
+  - prometheus
+```
+
+Then you need to configure the `prometheus` plugin on the stream route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -317,7 +327,7 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 }'
 ```
 
-## L4 available metrics
+## Available TCP/UDP metrics
 
 The following metrics are available when using APISIX as an L4 proxy.
 

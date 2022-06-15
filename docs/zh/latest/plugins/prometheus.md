@@ -58,7 +58,7 @@ plugin_attr:
 
 并使用 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露它。
 
-## 如何开启插件
+## 如何启用 HTTP 的指标
 
 `prometheus` 插件可以使用空 {} 开启。
 注意，多个路由/服务可以设置为相同的名称，因此当设置 `prefer_name` 为 `true` 时，注意规范命名否则容易引起误解。
@@ -150,7 +150,7 @@ plugin_attr:
 
 ![Grafana chart-4](../../../assets/images/plugin/grafana-4.png)
 
-## 可用的指标
+## 可用的 HTTP 指标
 
 * `Status codes`: upstream 服务返回的 HTTP 状态码，可以统计到每个服务或所有服务的响应状态码的次数总和。具有的维度：
 
@@ -275,7 +275,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-## 采集 L4 指标
+## 如何启用 TCP/UDP 指标
 
 :::info IMPORTANT
 
@@ -283,7 +283,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 :::
 
-我们也可以在 stream route 上开启 `prometheus`：
+我们也可以通过 `prometheus` 插件采集 TCP/UDP 指标。
+
+首先，确保 `prometheus` 插件已经在你的配置文件（`conf/config.yaml`）中启用：
+
+```yaml title="conf/config.yaml"
+stream_plugins:
+  - ...
+  - prometheus
+```
+
+接着你需要在 stream route 中配置该插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -300,7 +310,7 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 }'
 ```
 
-## L4 可用的指标
+## 可用的 TCP/UDP 指标
 
 以下是把 APISIX 作为 L4 代理时可用的指标：
 
