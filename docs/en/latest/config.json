@@ -40,6 +40,15 @@
     },
     {
       "type": "category",
+      "label": "Configurations",
+      "items": [
+        "configuration/configuration",
+        "configuration/environment-variables",
+        "configuration/config-default"
+      ]
+    },
+    {
+      "type": "category",
       "label": "Plugins",
       "items": [
         {
