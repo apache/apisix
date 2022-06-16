@@ -18,7 +18,7 @@
 #
 
 ETCD_ARCH="amd64"
-ETCD_VERSION=${ETCD_VERSION:-'3.4.18'}
+ETCD_VERSION=${ETCD_VERSION:-'3.5.4'}
 ARCH=${ARCH:-`(uname -m | tr '[:upper:]' '[:lower:]')`}
 
 if [[ $ARCH == "arm64" ]] || [[ $ARCH == "aarch64" ]]; then
