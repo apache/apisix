@@ -22,7 +22,7 @@ title: Batch Processor
 -->
 
 The batch processor can be used to aggregate entries(logs/any data) and process them in a batch.
-When the batch_max_size is set to zero the processor will execute each entry immediately. Setting the batch max size more
+When the batch_max_size is set to 1 the processor will execute each entry immediately. Setting the batch max size more
 than 1 will start aggregating the entries until it reaches the max size or the timeout expires.
 
 ## Configurations
