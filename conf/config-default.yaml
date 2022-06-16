@@ -477,3 +477,14 @@ plugin_attr:
       send: 60s
 #  redirect:
 #    https_port: 8443   # the default port for use by HTTP redirects to HTTPS
+
+#deployment:
+#    role: traditional
+#    role_traditional:
+#        config_provider: etcd
+#    etcd:
+#        host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
+#          - "http://127.0.0.1:2379"     # multiple etcd address, if your etcd cluster enables TLS, please use https scheme,
+#                                        # e.g. https://127.0.0.1:2379.
+#        prefix: /apisix                 # configuration prefix in etcd
+#        timeout: 30                     # 30 seconds
