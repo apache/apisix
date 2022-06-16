@@ -21,6 +21,7 @@ local file = require("apisix.cli.file")
 local schema = require("apisix.cli.schema")
 local ngx_tpl = require("apisix.cli.ngx_tpl")
 local cli_ip = require("apisix.cli.ip")
+local snippet = require("apisix.cli.snippet")
 local profile = require("apisix.core.profile")
 local template = require("resty.template")
 local argparse = require("argparse")
@@ -538,6 +539,8 @@ Please modify "admin_key" in conf/config.yaml .
         proxy_mirror_timeouts = yaml_conf.plugin_attr["proxy-mirror"].timeout
     end
 
+    local conf_server = snippet.generate_conf_server(yaml_conf)
+
     -- Using template.render
     local sys_conf = {
         use_openresty_1_17 = use_openresty_1_17,
@@ -557,6 +560,7 @@ Please modify "admin_key" in conf/config.yaml .
         control_server_addr = control_server_addr,
         prometheus_server_addr = prometheus_server_addr,
         proxy_mirror_timeouts = proxy_mirror_timeouts,
+        conf_server = conf_server,
     }
 
     if not yaml_conf.apisix then

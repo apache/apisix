@@ -64,8 +64,9 @@ lua {
     {% end %}
 }
 
-{% if enabled_stream_plugins["prometheus"] and not enable_http then %}
+{% if (enabled_stream_plugins["prometheus"] or conf_server) and not enable_http then %}
 http {
+    {% if enabled_stream_plugins["prometheus"] then %}
     init_worker_by_lua_block {
         require("apisix.plugins.prometheus.exporter").http_init(true)
     }
@@ -88,6 +89,11 @@ http {
             stub_status;
         }
     }
+    {% end %}
+
+    {% if conf_server then %}
+    {* conf_server *}
+    {% end %}
 }
 {% end %}
 
@@ -568,6 +574,10 @@ http {
             }
         }
     }
+    {% end %}
+
+    {% if conf_server then %}
+    {* conf_server *}
     {% end %}
 
     server {
