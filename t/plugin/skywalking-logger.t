@@ -245,4 +245,3 @@ opentracing
 qr/\\\"serviceInstance\\\":\\\"\$hostname\\\"/
 qr/\\\"serviceInstance\\\":\\\"\\\"/
 --- wait: 0.5
-
