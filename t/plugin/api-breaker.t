@@ -655,3 +655,36 @@ phase_func(): breaker_time: 10
 --- response_body
 {"500":4,"502":16}
 --- timeout: 25
+
+
+
+=== TEST 20: reject invalid schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            for _, case in ipairs({
+                {input = {
+                    break_response_code = 200,
+                    break_response_headers = {{["content-type"] = "application/json"}}
+                }},
+            }) do
+                local code, body = t('/apisix/admin/global_rules/1',
+                    ngx.HTTP_PUT,
+                    {
+                        id = "1",
+                        plugins = {
+                            ["api-breaker"] = case.input
+                        }
+                    }
+                )
+                ngx.print(require("toolkit.json").decode(body).error_msg)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+qr/failed to check the configuration of plugin api-breaker err: property \"break_response_headers\" validation failed: failed to validate item 1: property \"(key|value)\" is required/
+--- no_error_log
+[error]

@@ -208,3 +208,27 @@ X-Forwarded-Proto: grpc
 X-Forwarded-Proto: https-rewrite
 --- error_log
 localhost
+
+
+
+=== TEST 7: pass duplicate  X-Forwarded-Proto
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /echo
+    upstream_id: 1
+upstreams:
+  -
+    id: 1
+    nodes:
+        "127.0.0.1:1980": 1
+    type: roundrobin
+#END
+--- request
+GET /echo
+--- more_headers
+X-Forwarded-Proto: http
+X-Forwarded-Proto: grpc
+--- response_headers
+X-Forwarded-Proto: http

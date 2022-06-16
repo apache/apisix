@@ -56,6 +56,7 @@ local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
 local pairs           = pairs
+local type            = type
 local control_api_router
 
 local is_http = false
@@ -229,7 +230,11 @@ local function set_upstream_headers(api_ctx, picked_server)
 
     local hdr = core.request.header(api_ctx, "X-Forwarded-Proto")
     if hdr then
-        api_ctx.var.var_x_forwarded_proto = hdr
+        if type(hdr) == "table" then
+            api_ctx.var.var_x_forwarded_proto = hdr[1]
+        else
+            api_ctx.var.var_x_forwarded_proto = hdr
+        end
     end
 end
 
@@ -490,6 +495,29 @@ function _M.http_access_phase()
         api_ctx.matched_upstream = (route.dns_value and
                                     route.dns_value.upstream)
                                    or route_val.upstream
+    end
+
+    if api_ctx.matched_upstream and api_ctx.matched_upstream.tls and
+        api_ctx.matched_upstream.tls.client_cert_id then
+
+        local cert_id = api_ctx.matched_upstream.tls.client_cert_id
+        local upstream_ssl = router.router_ssl.get_by_id(cert_id)
+        if not upstream_ssl or upstream_ssl.type ~= "client" then
+            local err  = upstream_ssl and
+                "ssl type should be 'client'" or
+                "ssl id [" .. cert_id .. "] not exits"
+            core.log.error("failed to get ssl cert: ", err)
+
+            if is_http then
+                return core.response.exit(502)
+            end
+
+            return ngx_exit(1)
+        end
+
+        core.log.info("matched ssl: ",
+                  core.json.delay_encode(upstream_ssl, true))
+        api_ctx.upstream_ssl = upstream_ssl
     end
 
     if enable_websocket then

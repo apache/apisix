@@ -189,7 +189,8 @@ true
                                 "set_access_token_header": true,
                                 "access_token_in_authorization_header": false,
                                 "set_id_token_header": true,
-                                "set_userinfo_header": true
+                                "set_userinfo_header": true,
+                                "set_refresh_token_header": true
                             }
                         },
                         "upstream": {
@@ -272,6 +273,7 @@ user-agent: .*
 x-access-token: ey.*
 x-id-token: ey.*
 x-real-ip: 127.0.0.1
+x-refresh-token: ey.*
 x-userinfo: ey.*
 --- no_error_log
 [error]
@@ -916,7 +918,7 @@ OIDC introspection failed: invalid token
 --- request
 GET /t
 --- response_body
-{"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","introspection_endpoint_auth_method":"client_secret_basic","logout_path":"/logout","realm":"apisix","scope":"openid","set_access_token_header":true,"set_id_token_header":true,"set_userinfo_header":true,"ssl_verify":false,"timeout":3}
+{"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","introspection_endpoint_auth_method":"client_secret_basic","logout_path":"/logout","realm":"apisix","scope":"openid","set_access_token_header":true,"set_id_token_header":true,"set_refresh_token_header":false,"set_userinfo_header":true,"ssl_verify":false,"timeout":3}
 --- no_error_log
 [error]
 

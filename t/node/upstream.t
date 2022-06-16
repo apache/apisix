@@ -624,3 +624,73 @@ passed
 GET /uri
 --- error_log
 Host: 127.0.0.1:1979
+
+
+
+=== TEST 25: distinguish different upstreams even they have the same addr
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 {
+                    nodes = {["localhost:1980"] = 1},
+                    type = "roundrobin"
+                 }
+                )
+            assert(code < 300)
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "upstream_id": "1",
+                        "uri": "/server_port"
+                }]]
+                )
+            assert(code < 300)
+
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/server_port"
+
+            local ports_count = {}
+            for i = 1, 24 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri)
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                ports_count[res.body] = (ports_count[res.body] or 0) + 1
+
+                local code, body = t('/apisix/admin/upstreams/1',
+                    ngx.HTTP_PUT,
+                    {
+                        nodes = {["localhost:" .. (1980 + i % 3)] = 1},
+                        type = "roundrobin"
+                    }
+                    )
+                assert(code < 300)
+            end
+
+            local ports_arr = {}
+            for port, count in pairs(ports_count) do
+                table.insert(ports_arr, {port = port, count = count})
+            end
+
+            local function cmd(a, b)
+                return a.port > b.port
+            end
+            table.sort(ports_arr, cmd)
+
+            ngx.say(require("toolkit.json").encode(ports_arr))
+        }
+    }
+--- request
+GET /t
+--- timeout: 5
+--- response_body
+[{"count":8,"port":"1982"},{"count":8,"port":"1981"},{"count":8,"port":"1980"}]
+--- no_error_log
+[error]
