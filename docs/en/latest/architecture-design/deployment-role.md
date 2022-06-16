@@ -43,7 +43,7 @@ The table below shows the relationship among deployment modes and roles:
 
 ### Traditional
 
-![traditional](../../../assets/images/deployment-traditional.svg)
+![traditional](../../../assets/images/deployment-traditional.png)
 
 In the traditional deployment mode, one instance can be both DP & CP.
 
@@ -67,7 +67,7 @@ deployment:
 
 ### Decoupled
 
-![decoupled](../../../assets/images/deployment-cp_and_dp.svg)
+![decoupled](../../../assets/images/deployment-cp_and_dp.png)
 
 The instance deployed as data_plane will:
 
