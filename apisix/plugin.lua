@@ -418,7 +418,7 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
             -- in the rewrite phase, the plugin executes in the following order:
             -- 1. execute the rewrite phase of the plugins on route(including the auth plugins)
             -- 2. merge plugins from consumer and route
-            -- 3.execute the rewrite phase of the plugins on consumer(phase: rewrite_in_consumer)
+            -- 3. execute the rewrite phase of the plugins on consumer(phase: rewrite_in_consumer)
             -- in this case, we need to skip the plugins that was already executed(step 1)
             if phase and phase == "rewrite_in_consumer" and not plugin_conf._from_consumer then
                 plugin_conf._skip_rewrite_in_consumer = true
