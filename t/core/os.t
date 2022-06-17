@@ -70,3 +70,22 @@ A
 false
 false
 false
+
+
+
+=== TEST 3: usleep, bad arguments
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+
+            for _, c in ipairs({
+                {us = 0.1},
+            }) do
+                local ok = pcall(core.os.usleep, c.us)
+                ngx.say(ok)
+            end
+        }
+    }
+--- response_body
+false
