@@ -43,7 +43,7 @@ local etcd_schema = {
                 key = {
                     type = "string",
                 },
-            }
+            },
         },
         prefix = {
             type = "string",
@@ -54,7 +54,8 @@ local etcd_schema = {
             items = {
                 type = "string",
                 pattern = [[^https?://]]
-            }
+            },
+            minItems = 1,
         }
     },
     required = {"prefix", "host"}

@@ -19,15 +19,18 @@
 --
 -- @module core.etcd
 
-local fetch_local_conf = require("apisix.core.config_local").local_conf
-local array_mt         = require("apisix.core.json").array_mt
-local etcd             = require("resty.etcd")
-local clone_tab        = require("table.clone")
-local health_check     = require("resty.etcd.health_check")
-local ipairs           = ipairs
-local setmetatable     = setmetatable
-local string           = string
-local tonumber         = tonumber
+local fetch_local_conf  = require("apisix.core.config_local").local_conf
+local array_mt          = require("apisix.core.json").array_mt
+local etcd              = require("resty.etcd")
+local clone_tab         = require("table.clone")
+local health_check      = require("resty.etcd.health_check")
+local ipairs            = ipairs
+local setmetatable      = setmetatable
+local string            = string
+local tonumber          = tonumber
+local ngx_config_prefix = ngx.config.prefix()
+
+
 local _M = {}
 
 
@@ -38,7 +41,20 @@ local function new()
         return nil, nil, err
     end
 
-    local etcd_conf = clone_tab(local_conf.etcd)
+    local etcd_conf
+
+    if local_conf.deployment
+        and local_conf.deployment.role == "traditional"
+    then
+        local sock_prefix = ngx_config_prefix
+        etcd_conf = clone_tab(local_conf.deployment.etcd)
+        etcd_conf.unix_socket_proxy =
+            "unix:" .. sock_prefix .. "/conf/config_listen.sock"
+        etcd_conf.host = {"http://127.0.0.1:2379"}
+    else
+        etcd_conf = clone_tab(local_conf.etcd)
+    end
+
     local prefix = etcd_conf.prefix
     etcd_conf.http_host = etcd_conf.host
     etcd_conf.host = nil
