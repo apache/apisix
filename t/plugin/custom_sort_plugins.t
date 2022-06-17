@@ -219,7 +219,7 @@ serverless-pre-function
                         }
                     }
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -249,7 +249,7 @@ serverless-pre-function
                     },
                     "uri": "/hello"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -465,7 +465,79 @@ serverless-pre-function
 
 
 
-=== TEST 13: custom plugins sort on global_rule
+=== TEST 13: merge plugins form plugin_configs and route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, err = t('/apisix/admin/plugin_configs/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "serverless-post-function": {
+                            "_meta": {
+                                "priority": 10000
+                            },
+                            "phase": "rewrite",
+                            "functions" : ["return function(conf, ctx)
+                                        ngx.say(\"serverless-post-function\");
+                                        end"]
+                        }
+                    }
+                }]]
+            )
+            if code > 300 then
+                ngx.status = code
+                ngx.say(body)
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "_meta": {
+                                "priority": -2000
+                            },
+                            "phase": "rewrite",
+                            "functions": ["return function(conf, ctx)
+                                        ngx.say(\"serverless-pre-function\");
+                                        end"]
+                        }
+                    },
+                    "plugin_config_id": 1,
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: verify order
+--- request
+GET /hello
+--- response_body
+serverless-post-function
+serverless-pre-function
+
+
+
+=== TEST 15: custom plugins sort on global_rule
 --- config
     location /t {
         content_by_lua_block {
@@ -508,7 +580,7 @@ passed
 
 
 
-=== TEST 14: verify order
+=== TEST 16: verify order
 --- request
 GET /hello
 --- response_body
@@ -519,7 +591,7 @@ serverless-pre-function
 
 
 
-=== TEST 15: delete global rule
+=== TEST 17: delete global rule
 --- config
     location /t {
         content_by_lua_block {
