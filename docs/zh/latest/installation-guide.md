@@ -188,7 +188,7 @@ APISIX 使用 [etcd](https://github.com/etcd-io/etcd) 作为配置中心进行�
 <TabItem value="linux">
 
 ```shell
-ETCD_VERSION='3.4.18'
+ETCD_VERSION='3.5.4'
 wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
 tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
   cd etcd-v${ETCD_VERSION}-linux-amd64 && \
