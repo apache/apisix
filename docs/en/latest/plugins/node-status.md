@@ -1,7 +1,12 @@
 ---
 title: node-status
+keywords:
+  - APISIX
+  - API Gateway
+  - Plugin
+  - Node status
+description: This document contains information about the Apache APISIX node-status Plugin.
 ---
-
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,36 +28,36 @@ title: node-status
 
 ## Description
 
-`node-status` is a plugin which we could get request status information through it's API.
+The `node-status` Plugin can be used get the status of requests to APISIX by exposing an API endpoint.
 
 ## Attributes
 
-None
+None.
 
 ## API
 
-This plugin will add `/apisix/status` to get status information.
-You may need to use [public-api](public-api.md) plugin to expose it.
+This Plugin will add the endpoint `/apisix/status` to expose the status of APISIX.
 
-## How To Enable
+You may need to use the [public-api](public-api.md) Plugin to expose the endpoint.
 
-1. Configure `node-status` in the plugin list of the configuration file `conf/config.yaml`,
-then you can add this plugin in any route.
+## Enabling the Plugin
 
-```
-plugins:                          # plugin list
+To configure the `node-status` Plugin, you have to first enable it in your configuration file (`conf/config.yaml`):
+
+```yaml title="conf/config.yaml"
+plugins:
   - example-plugin
   - limit-req
-  - node-status
   - jwt-auth
   - zipkin
+  - node-status
   ......
 ```
 
-2. Setup the route for the status API, which will use the [public-api](public-api.md) plugin.
+You have to the setup the Route for the status API and expose it using the [public-api](public-api.md) Plugin.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/apisix/status",
     "plugins": {
@@ -61,12 +66,15 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-## Test Plugin
+## Example usage
 
-1. Request with uri `/apisix/status`
+Once you have configured the Plugin, you can make a request to the `apisix/status` endpoint to get the status:
 
-```sh
-$ curl localhost:9080/apisix/status -i
+```shell
+curl localhost:9080/apisix/status -i
+```
+
+```shell
 HTTP/1.1 200 OK
 Date: Tue, 03 Nov 2020 11:12:55 GMT
 Content-Type: text/plain; charset=utf-8
@@ -77,27 +85,26 @@ Server: APISIX web server
 {"status":{"total":"23","waiting":"0","accepted":"22","writing":"1","handled":"22","active":"1","reading":"0"},"id":"6790a064-8f61-44ba-a6d3-5df42f2b1bb3"}
 ```
 
-2. Parameter Description
+The parameters in the response are described below:
 
-| Parameter    | Description                                        |
-| ------------ | -------------------------------------------- |
-| status       | status information                                     |
-| total        | the total number of client requests                               |
-| waiting      | the current number of idle client connections waiting for a request               |
-| accepted     | the total number of accepted client connections                         |
-| writing      | the current number of connections where APISIX is writing the response back to the client               |
-| handled      | the total number of handled connections. Generally, the parameter value is the same as accepted unless some resource limits have been reached          |
-| active       | the current number of active client connections including waiting connections                       |
-| reading      | the current number of connections where APISIX is reading the request header                   |
-| id           | APISIX's uid which is saved in apisix/conf/apisix.uid  |
+| Parameter | Description                                                                                                            |
+|-----------|------------------------------------------------------------------------------------------------------------------------|
+| status    | Status of APISIX.                                                                                                      |
+| total     | Total number of client requests.                                                                                       |
+| waiting   | Number of idle client connections waiting for a request.                                                               |
+| accepted  | Number of accepted client connections.                                                                                 |
+| writing   | Number of connections to which APISIX is writing back a response.                                                      |
+| handled   | Number of handled connections. Generally, this value is the same as `accepted` unless any a resource limit is reached. |
+| active    | Number of active client connections including `waiting` connections.                                                   |
+| reading   | Number of connections where APISIX is reading the request header.                                                      |
+| id        | UID of APISIX instance saved in `apisix/conf/apisix.uid`.                                                              |
 
 ## Disable Plugin
 
-1. You can delete `node-status` in the plugin list of the configuration file `apisix/conf/config.yaml`,
-then you can not add this plugin in any route.
+To remove the Plugin, you can remove it from your configuration file (`conf/config.yaml`):
 
 ```
-plugins:                          # plugin list
+plugins:
   - example-plugin
   - limit-req
   - jwt-auth
@@ -105,12 +112,10 @@ plugins:                          # plugin list
   ......
 ```
 
-2. When you want to disable the `node-status` plugin in the route, it is very simple,
-you can delete the corresponding json configuration in the plugin configuration,
-no need to restart the service, it will take effect immediately.
+To disable the `node-status` Plugin on a Route, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```sh
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/route1",
     "upstream": {
@@ -123,8 +128,8 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-3. You can also remove the route on `/apisix/status`, no one can access the API.
+You can also remove the Route on `/apisix/status`:
 
 ```sh
-$ curl http://127.0.0.1:9080/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+curl http://127.0.0.1:9080/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 ```
