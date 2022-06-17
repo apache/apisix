@@ -172,6 +172,31 @@ func (s *server) SayHelloBidirectionalStream(stream pb.Greeter_SayHelloBidirecti
 	}
 }
 
+// SayMultipleHello implements helloworld.GreeterServer
+func (s *server) SayMultipleHello(ctx context.Context, in *pb.MultipleHelloRequest) (*pb.MultipleHelloReply, error) {
+	log.Printf("Received: %v", in.Name)
+	log.Printf("Enum Gender: %v", in.GetGenders())
+	msg := "Hello " + in.Name
+
+	persons := in.GetPersons()
+	if persons != nil {
+		for _, person := range persons {
+			if person.GetName() != "" {
+				msg += fmt.Sprintf(", name: %v", person.GetName())
+			}
+			if person.GetAge() != 0 {
+				msg += fmt.Sprintf(", age: %v", person.GetAge())
+			}
+		}
+	}
+
+	return &pb.MultipleHelloReply{
+		Message: msg,
+		Items:   in.GetItems(),
+		Genders: in.GetGenders(),
+	}, nil
+}
+
 func (s *server) Run(ctx context.Context, in *pb.Request) (*pb.Response, error) {
 	return &pb.Response{Body: in.User.Name + " " + in.Body}, nil
 }
