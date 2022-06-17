@@ -84,10 +84,10 @@ local schema = {
         -- see https://github.com/doujiang24/lua-resty-kafka#new-1
         cluster_name = {type = "integer", minimum = 1, default = 1},
         -- config for lua-resty-kafka, default value is same as lua-resty-kafka
-        kafka_batch_num = {type = "integer", minimum = 1, default = 200},
-        kafka_batch_size = {type = "integer", minimum = 0, default = 1048576},
-        kafka_max_buffering = {type = "integer", minimum = 1, default = 50000},
-        kafka_time_linger = {type = "integer", minimum = 1, default = 1}
+        producer_batch_num = {type = "integer", minimum = 1, default = 200},
+        producer_batch_size = {type = "integer", minimum = 0, default = 1048576},
+        producer_max_buffering = {type = "integer", minimum = 1, default = 50000},
+        producer_time_linger = {type = "integer", minimum = 1, default = 1}
     },
     required = {"broker_list", "kafka_topic"}
 }
@@ -213,10 +213,10 @@ function _M.log(conf, ctx)
     broker_config["request_timeout"] = conf.timeout * 1000
     broker_config["producer_type"] = conf.producer_type
     broker_config["required_acks"] = conf.required_acks
-    broker_config["batch_num"] = conf.kafka_batch_num
-    broker_config["batch_size"] = conf.kafka_batch_size
-    broker_config["max_buffering"] = conf.kafka_max_buffering
-    broker_config["flush_time"] = conf.kafka_time_linger * 1000
+    broker_config["batch_num"] = conf.producer_batch_num
+    broker_config["batch_size"] = conf.producer_batch_size
+    broker_config["max_buffering"] = conf.producer_max_buffering
+    broker_config["flush_time"] = conf.producer_time_linger * 1000
 
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
                                                broker_list, broker_config, conf.cluster_name)
