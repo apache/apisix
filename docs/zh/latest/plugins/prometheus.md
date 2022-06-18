@@ -59,7 +59,7 @@ plugin_attr:
     export_uri: /apisix/metrics
 ```
 
-# API
+## API
 
 `prometheus` 插件会增加 `/apisix/prometheus/metrics` 接口或者你自定义的 URI 来暴露其指标信息。
 
