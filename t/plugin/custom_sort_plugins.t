@@ -192,7 +192,7 @@ serverless-pre-function
 
 
 
-=== TEST 6: merge plugins form custom and route, execute the rewrite phase
+=== TEST 6: merge plugins from consumer and route, execute the rewrite phase
 # in the rewrite phase, the plugins on the route must be executed first,
 # and then executed the rewrite phase of the plugins on the consumer,
 # and the custom plugin order fails for this case.
@@ -263,12 +263,34 @@ passed
 
 
 
-=== TEST 7: verify order
---- request
-GET /hello
---- more_headers
-apikey: auth-one
+=== TEST 7: verify order(more requests)
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local httpc = http.new()
+            local headers = {}
+            headers["apikey"] = "auth-one"
+            local res, err = httpc:request_uri(uri, {method = "GET", headers = headers})
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.print(res.body)
+
+            local res, err = httpc:request_uri(uri, {method = "GET", headers = headers})
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.print(res.body)
+        }
+    }
 --- response_body
+serverless-pre-function
+serverless-post-function
 serverless-pre-function
 serverless-post-function
 

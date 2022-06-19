@@ -406,7 +406,6 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
 
     trace_plugins_info_for_debug(ctx, plugins)
 
-
     if custom_sort then
         local tmp_plugin_objs = core.tablepool.fetch("tmp_plugin_objs", 0, #plugins / 2)
         local tmp_plugin_confs = core.tablepool.fetch("tmp_plugin_confs", #plugins / 2, 0)
@@ -424,25 +423,28 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
                 plugin_conf._skip_rewrite_in_consumer = true
             end
 
-            tmp_plugin_objs[tostring(plugin_conf)] = plugin_obj
+            tmp_plugin_objs[plugin_conf] = plugin_obj
             core.table.insert(tmp_plugin_confs, plugin_conf)
 
-            if not plugin_conf._meta or not plugin_conf._meta.priority then
+            if not plugin_conf._meta or type(plugin_conf._meta) ~= "table" then
                 plugin_conf._meta = core.table.new(0, 1)
                 plugin_conf._meta.priority = plugin_obj.priority
+            else
+                if not plugin_conf._meta.priority then
+                    plugin_conf._meta.priority = plugin_obj.priority
+                end
             end
-
         end
 
         sort_tab(tmp_plugin_confs, custom_sort_plugin)
 
-        core.table.clear(plugins)
-
+        local index = 0
         for i = 1, #tmp_plugin_confs do
+            index = i * 2 - 1
             local plugin_conf = tmp_plugin_confs[i]
-            local plugin_obj = tmp_plugin_objs[tostring(plugin_conf)]
-            core.table.insert(plugins, plugin_obj)
-            core.table.insert(plugins, plugin_conf)
+            local plugin_obj = tmp_plugin_objs[plugin_conf]
+            plugins[index] = plugin_obj
+            plugins[index + 1] = plugin_conf
         end
 
         core.tablepool.release("tmp_plugin_objs", tmp_plugin_objs)
