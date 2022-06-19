@@ -438,7 +438,7 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
 
         sort_tab(tmp_plugin_confs, custom_sort_plugin)
 
-        local index = 0
+        local index
         for i = 1, #tmp_plugin_confs do
             index = i * 2 - 1
             local plugin_conf = tmp_plugin_confs[i]
