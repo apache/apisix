@@ -31,6 +31,7 @@ local tonumber          = tonumber
 local ngx_config_prefix = ngx.config.prefix()
 
 
+local is_http = ngx.config.subsystem == "http"
 local _M = {}
 
 
@@ -45,6 +46,11 @@ local function new()
 
     if local_conf.deployment
         and local_conf.deployment.role == "traditional"
+        -- we proxy the etcd requests in traditional mode so we can test the CP's behavior in
+        -- daily development. However, a stream proxy can't be the CP.
+        -- Hence, generate a HTTP conf server to proxy etcd requests in stream proxy is
+        -- unnecessary and inefficient.
+        and is_http
     then
         local sock_prefix = ngx_config_prefix
         etcd_conf = clone_tab(local_conf.deployment.etcd)
