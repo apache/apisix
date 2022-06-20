@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - SLS Logger
-  - Ali Cloud Log Server
+  - Alibaba Cloud Log Service
 description: This document contains information about the Apache APISIX sls-logger Plugin.
 ---
 <!--
@@ -29,7 +29,7 @@ description: This document contains information about the Apache APISIX sls-logg
 
 ## Description
 
-The `sls-logger` Plugin is used to push logs to [Ali Cloud log server](https://help.aliyun.com/document_detail/112903.html?spm=a2c4g.11186623.6.763.21321b47wcwt1u) using [RF5424](https://tools.ietf.org/html/rfc5424).
+The `sls-logger` Plugin is used to push logs to [Alibaba Cloud log Service](https://www.alibabacloud.com/help/en/log-service/latest/use-the-syslog-protocol-to-upload-logs) using [RF5424](https://tools.ietf.org/html/rfc5424).
 
 It might take some time to receive the log data. It will be automatically sent after the timer function in the [batch processor](../batch-processor.md) expires.
 
@@ -37,13 +37,13 @@ It might take some time to receive the log data. It will be automatically sent a
 
 | Name              | Required | Description                                                                                                                                                                                                                                     |
 |-------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| host              | True     | IP address or the hostname of the TCP server. See [Ali Cloud log documentation](https://help.aliyun.com/document_detail/29008.html?spm=a2c4g.11186623.2.14.49301b4793uX0z#reference-wgx-pwq-zdb) for details. Use IP address instead of domain. |
+| host              | True     | IP address or the hostname of the TCP server. See [Alibaba Cloud log service documentation](https://www.alibabacloud.com/help/en/log-service/latest/endpoints) for details. Use IP address instead of domain. |
 | port              | True     | Target upstream port. Defaults to `10009`.                                                                                                                                                                                                      |
 | timeout           | False    | Timeout for the upstream to send data.                                                                                                                                                                                                          |
-| project           | True     | Project name in Ali Cloud log service. Create SLS before using this Plugin.                                                                                                                                                                     |
+| project           | True     | Project name in Alibaba Cloud log service. Create SLS before using this Plugin.                                                                                                                                                                     |
 | logstore          | True     | logstore name in Ali Cloud log service. Create SLS before using this Plugin.                                                                                                                                                                    |
-| access_key_id     | True     | AccessKey ID in Ali Cloud. See [Authorization](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry) for more details.                                                                     |
-| access_key_secret | True     | AccessKey Secret in Ali Cloud. See [Authorization](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry) for more details.                                                                 |
+| access_key_id     | True     | AccessKey ID in Alibaba Cloud. See [Authorization](https://www.alibabacloud.com/help/en/log-service/latest/create-a-ram-user-and-authorize-the-ram-user-to-access-log-service) for more details.                                                                     |
+| access_key_secret | True     | AccessKey Secret in Alibaba Cloud. See [Authorization](https://www.alibabacloud.com/help/en/log-service/latest/create-a-ram-user-and-authorize-the-ram-user-to-access-log-service) for more details.                                                                 |
 | include_req_body  | True     | When set to `true`, includes the request body in the log.                                                                                                                                                                                       |
 | name              | False    | Unique identifier for the batch processor.                                                                                                                                                                                                      |
 
