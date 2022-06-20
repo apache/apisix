@@ -52,4 +52,5 @@ return {
     tablepool   = require("tablepool"),
     resolver    = require("apisix.core.resolver"),
     os          = require("apisix.core.os"),
+    math        = require("apisix.core.math"),
 }
