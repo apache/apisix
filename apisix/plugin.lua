@@ -419,14 +419,14 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
             -- 2. merge plugins from consumer and route
             -- 3. execute the rewrite phase of the plugins on consumer(phase: rewrite_in_consumer)
             -- in this case, we need to skip the plugins that was already executed(step 1)
-            if phase and phase == "rewrite_in_consumer" and not plugin_conf._from_consumer then
+            if phase == "rewrite_in_consumer" and not plugin_conf._from_consumer then
                 plugin_conf._skip_rewrite_in_consumer = true
             end
 
             tmp_plugin_objs[plugin_conf] = plugin_obj
             core.table.insert(tmp_plugin_confs, plugin_conf)
 
-            if not plugin_conf._meta or type(plugin_conf._meta) ~= "table" then
+            if not plugin_conf._meta then
                 plugin_conf._meta = core.table.new(0, 1)
                 plugin_conf._meta.priority = plugin_obj.priority
             else

@@ -955,7 +955,6 @@ _M.plugin_injected_schema = {
             priority = {
                 description = "priority of plugins by customized order",
                 type = "integer",
-                default = 0,
             },
         }
     }
