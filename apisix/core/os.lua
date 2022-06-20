@@ -23,6 +23,9 @@ local ffi = require("ffi")
 local ffi_str = ffi.string
 local ffi_errno = ffi.errno
 local C = ffi.C
+local ceil = math.ceil
+local floor = math.floor
+local error = error
 local tostring = tostring
 local type = type
 
@@ -71,6 +74,20 @@ function _M.setenv(name, value)
 end
 
 
+---
+--  sleep blockingly in microseconds
+--
+-- @function core.os.usleep
+-- @tparam number us The number of microseconds.
+local function usleep(us)
+    if ceil(us) ~= floor(us) then
+        error("bad microseconds: " .. us)
+    end
+    C.usleep(us)
+end
+_M.usleep = usleep
+
+
 local function waitpid_nohang(pid)
     local res = C.waitpid(pid, nil, WNOHANG)
     if res == -1 then
@@ -86,7 +103,7 @@ function _M.waitpid(pid, timeout)
     local total = timeout * 1000 * 1000
     while step * count < total do
         count = count + 1
-        C.usleep(step)
+        usleep(step)
         local ok, err = waitpid_nohang(pid)
         if err then
             return nil, err

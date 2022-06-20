@@ -23,6 +23,7 @@ local config_local      = require("apisix.core.config_local")
 local string            = require("apisix.core.string")
 local log               = require("apisix.core.log")
 local json              = require("apisix.core.json")
+local os                = require("apisix.core.os")
 local ngx_sleep         = require("apisix.core.utils").sleep
 local check_schema      = require("apisix.core.schema").check
 local new_tab           = require("table.new")
@@ -67,10 +68,7 @@ end
 
 
 ffi.cdef[[
-typedef unsigned int  useconds_t;
-
 extern void initial(void* config_zone, void* version_zone);
-int usleep(useconds_t usec);
 ]]
 
 local created_obj  = {}
@@ -323,7 +321,7 @@ function _M.new(key, opts)
 
         -- blocking until xds completes initial configuration
         while true do
-            C.usleep(0.1)
+            os.usleep(1000)
             fetch_version()
             if latest_version then
                 break
