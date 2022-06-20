@@ -47,6 +47,10 @@ For more info on Batch-Processor in Apache APISIX please refer.
 | include_resp_body| boolean | optional    | false         | [false, true] | Whether to include the response body. The response body is included if and only if it is `true`. |
 | include_resp_body_expr  | array  | optional    |          |         | When `include_resp_body` is true, control the behavior based on the result of the [lua-resty-expr](https://github.com/api7/lua-resty-expr) expression. If present, only log the response body when the result is true. |
 | cluster_name     | integer | optional    | 1              | [0,...] | the name of the cluster. When there are two or more kafka clusters, you can specify different names. And this only works with async producer_type.|
+| producer_batch_num | integer | optional    | 200 | [1,...] | `batch_num` param in [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka), merge message and batch send to server, unit is message count |
+| producer_batch_size | integer | optional    | 1048576 | [0,...] | `batch_size` param in [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka), unit is byte |
+| producer_max_buffering | integer | optional    | 50000 | [1,...] | `max_buffering` param in [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka), max buffer size, unit is message count |
+| producer_time_linger | integer | optional    | 1 | [1,...] | `flush_time` param in [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka), unit is second |
 
 The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
 
