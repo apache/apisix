@@ -47,6 +47,10 @@ title: kafka-logger
 | include_resp_body| boolean | 可选   | false          | [false, true] | 是否包括响应体。包含响应体，当为`true`。 |
 | include_resp_body_expr | array  | 可选    |           |         | 是否采集响体，基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 该选项需要开启 `include_resp_body`|
 | cluster_name     | integer | 可选   | 1              | [0,...] | kafka 集群的名称。当有两个或多个 kafka 集群时，可以指定不同的名称。只适用于 producer_type 是 async 模式。|
+| producer_batch_num | integer | 可选    | 200 | [1,...] | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的`batch_num`参数，聚合消息批量提交，单位为消息条数 |
+| producer_batch_size | integer | 可选    | 1048576 | [0,...] | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的`batch_size`参数，单位为字节 |
+| producer_max_buffering | integer | 可选    | 50000 | [1,...] | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的`max_buffering`参数，最大缓冲区，单位为条 |
+| producer_time_linger | integer | 可选    | 1 | [1,...] | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的`flush_time`参数，单位为秒 |
 
 本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 

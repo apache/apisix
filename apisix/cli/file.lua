@@ -237,6 +237,14 @@ function _M.read_yaml_conf(apisix_home)
         end
     end
 
+    if default_conf.deployment
+        and default_conf.deployment.role == "traditional"
+        and default_conf.deployment.etcd
+    then
+        default_conf.etcd = default_conf.deployment.etcd
+        default_conf.etcd.unix_socket_proxy = "unix:./conf/config_listen.sock"
+    end
+
     if default_conf.apisix.config_center == "yaml" then
         local apisix_conf_path = profile:yaml_path("apisix")
         local apisix_conf_yaml, _ = util.read_file(apisix_conf_path)

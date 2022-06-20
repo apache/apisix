@@ -549,8 +549,9 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 | labels         | 可选                               | 匹配规则       | 标识附加属性的键值对                                                                                                                                                                                                                                                                                                                                        | {"version":"v2","build":"16","env":"production"} |
 | create_time    | 可选                               | 辅助           | 单位为秒的 epoch 时间戳，如果不指定则自动创建                                                                                                                                                                                                                                                                                                               | 1602883670                                       |
 | update_time    | 可选                               | 辅助           | 单位为秒的 epoch 时间戳，如果不指定则自动创建                                                                                                                                                                                                                                                                                                               | 1602883670                                       |
-| tls.client_cert    | 可选                               | https 证书           | 设置跟上游通信时的客户端证书，细节见下文                                                                          | |
-| tls.client_key	 | 可选                               | https 证书私钥           | 设置跟上游通信时的客户端私钥，细节见下文                                                                                                                                                                                                                                                                                                              | |
+| tls.client_cert    | 可选，不能和 `tls.client_cert_id` 一起使用 | https 证书           | 设置跟上游通信时的客户端证书，细节见下文                                                                          | |
+| tls.client_key	 | 可选，不能和 `tls.client_cert_id` 一起使用 | https 证书私钥           | 设置跟上游通信时的客户端私钥，细节见下文                                                                                                                                                                                                                                                                                                              | |
+| tls.client_cert_id | 可选，不能和 `tls.client_cert`、`tls.client_key` 一起使用  | SSL           | 设置引用的 ssl id，详见 [SSL](#ssl)                                                                                                                                                                                                                                                                                                              | |
 |keepalive_pool.size  | 可选 | 辅助 | 动态设置 `keepalive` 指令，细节见下文 |
 |keepalive_pool.idle_timeout  | 可选 | 辅助 | 动态设置 `keepalive_timeout` 指令，细节见下文 |
 |keepalive_pool.requests  | 可选 | 辅助 | 动态设置 `keepalive_requests` 指令，细节见下文 |
@@ -577,6 +578,8 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 
 `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。
 他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
+
+`tls.client_cert_id` 可以用来指定引用的 SSL 对象。只有当 SSL 对象的 `type` 字段为 client 时才能被引用，否则请求会被 APISIX 拒绝。另外，SSL 对象中只有 `cert`和`key` 会被使用。
 
 `keepalive_pool` 允许 upstream 对象有自己单独的连接池。
 它下属的字段，比如 `requests`，可以用了配置上游连接保持的参数。
@@ -799,6 +802,7 @@ $ curl http://127.0.0.1:9080/get
 | labels      | 可选   | 匹配规则       | 标识附加属性的键值对                                                                                   | {"version":"v2","build":"16","env":"production"} |
 | create_time | 可选   | 辅助           | 单位为秒的 epoch 时间戳，如果不指定则自动创建                                                          | 1602883670                                       |
 | update_time | 可选   | 辅助           | 单位为秒的 epoch 时间戳，如果不指定则自动创建                                                          | 1602883670                                       |
+| type      | 可选   | 辅助           | 标识证书的类型，缺省为 `server`。                                                                             | `client` 表示证书是客户端证书，APISIX 访问上游时使用；`server` 表示证书是服务端证书，APISIX 验证客户端请求时使用     |
 | status      | 可选   | 辅助           | 是否启用此 SSL，缺省 `1`。                                                                             | `1` 表示启用，`0` 表示禁用                       |
 
 ssl 对象 json 配置内容：

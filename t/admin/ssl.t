@@ -236,7 +236,7 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: value should match only one schema, but matches none"}
+{"error_msg":"invalid configuration: then clause did not match"}
 --- no_error_log
 [error]
 
@@ -535,7 +535,7 @@ passed
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: value should match only one schema, but matches none"}
+{"error_msg":"invalid configuration: then clause did not match"}
 --- no_error_log
 [error]
 
@@ -771,3 +771,72 @@ GET /t
 passed
 --- no_error_log
 [error]
+
+
+
+=== TEST 20: missing sni information
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local data = {cert = ssl_cert, key = ssl_key}
+
+            local code, body = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "node": {
+                        "key": "/apisix/ssl/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: then clause did not match"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: type client, missing sni information
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local data = {type = "client", cert = ssl_cert, key = ssl_key}
+
+            local code, body = t.test('/apisix/admin/ssl/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "node": {
+                        "key": "/apisix/ssl/1"
+                    },
+                    "action": "set"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- response_body chomp
+passed

@@ -45,7 +45,7 @@ title: api-breaker
 | ----------------------- | -------------- | ------ | ---------- | --------------- | -------------------------------- |
 | break_response_code     | integer        | 必须   | 无         | [200, ..., 599] | 不健康返回错误码                 |
 | break_response_body     | string         | 可选   | 无         |                 | 不健康返回报文                   |
-| break_response_headers  | array[object]  | 可选   | 无         |                 | 不健康返回报文头，这里可以设置多个。这个值能够以 `$var` 的格式包含 Nginx 变量，比如 `$remote_addr $balancer_ip`。该字段仅在 `break_response_body` 被配置时生效 |
+| break_response_headers  | array[object]  | 可选   | 无         | [{"key":"header_name","value":"can contain Nginx $var"}] | 不健康返回报文头，这里可以设置多个。该字段仅在 `break_response_body` 被配置时生效。这个值能够以 `$var` 的格式包含 APISIX 变量，比如 `{"key":"X-Client-Addr","value":"$remote_addr:$remote_port"}`。 |
 | max_breaker_sec         | integer        | 可选   | 300        | >=3             | 最大熔断持续时间                 |
 | unhealthy.http_statuses | array[integer] | 可选   | {500}      | [500, ..., 599] | 不健康时候的状态码               |
 | unhealthy.failures      | integer        | 可选   | 3          | >=1             | 触发不健康状态的连续错误请求次数 |

@@ -286,8 +286,11 @@ function _M.set_by_route(route, api_ctx)
         end
     end
 
-    set_directly(api_ctx, up_conf.type .. "#upstream_" .. tostring(up_conf),
-                 tostring(up_conf), up_conf)
+    local id = up_conf.parent.value.id
+    local conf_version = up_conf.parent.modifiedIndex
+    -- include the upstream object as part of the version, because the upstream will be changed
+    -- by service discovery or dns resolver.
+    set_directly(api_ctx, id, conf_version .. "#" .. tostring(up_conf), up_conf)
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then
@@ -330,14 +333,24 @@ function _M.set_by_route(route, api_ctx)
 
     local scheme = up_conf.scheme
     if (scheme == "https" or scheme == "grpcs") and up_conf.tls then
+
+        local client_cert, client_key
+        if up_conf.tls.client_cert_id then
+            client_cert = api_ctx.upstream_ssl.cert
+            client_key = api_ctx.upstream_ssl.key
+        else
+            client_cert = up_conf.tls.client_cert
+            client_key = up_conf.tls.client_key
+        end
+
         -- the sni here is just for logging
         local sni = api_ctx.var.upstream_host
-        local cert, err = apisix_ssl.fetch_cert(sni, up_conf.tls.client_cert)
+        local cert, err = apisix_ssl.fetch_cert(sni, client_cert)
         if not ok then
             return 503, err
         end
 
-        local key, err = apisix_ssl.fetch_pkey(sni, up_conf.tls.client_key)
+        local key, err = apisix_ssl.fetch_pkey(sni, client_key)
         if not ok then
             return 503, err
         end
@@ -413,6 +426,29 @@ local function check_upstream_conf(in_dp, conf)
         local ok, err = core.schema.check(core.schema.upstream, conf)
         if not ok then
             return false, "invalid configuration: " .. err
+        end
+
+        local ssl_id = conf.tls and conf.tls.client_cert_id
+        if ssl_id then
+            local key = "/ssl/" .. ssl_id
+            local res, err = core.etcd.get(key)
+            if not res then
+                return nil, "failed to fetch ssl info by "
+                                    .. "ssl id [" .. ssl_id .. "]: " .. err
+            end
+
+            if res.status ~= 200 then
+                return nil, "failed to fetch ssl info by "
+                                    .. "ssl id [" .. ssl_id .. "], "
+                                    .. "response code: " .. res.status
+            end
+            if res.body and res.body.node and
+                res.body.node.value and res.body.node.value.type ~= "client" then
+
+                return nil, "failed to fetch ssl info by "
+                                    .. "ssl id [" .. ssl_id .. "], "
+                                    .. "wrong ssl type"
+            end
         end
 
         -- encrypt the key in the admin

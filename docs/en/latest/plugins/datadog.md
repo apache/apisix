@@ -1,5 +1,11 @@
 ---
 title: datadog
+keywords:
+  - APISIX
+  - API Gateway
+  - Plugin
+  - Datadog
+description: This document contains information about the Apache APISIX datadog Plugin.
 ---
 
 <!--
@@ -23,62 +29,93 @@ title: datadog
 
 ## Description
 
-`datadog` is a monitoring plugin built into Apache APISIX for seamless integration with [Datadog](https://www.datadoghq.com/), one of the most used monitoring and observability platform for cloud applications. If enabled, this plugin supports multiple powerful types of metrics capture for every request and response cycle that essentially reflects the behaviour and health of the system.
+The `datadog` monitoring Plugin is for seamless integration of APISIX with [Datadog](https://www.datadoghq.com/), one of the most used monitoring and observability platform for cloud applications.
 
-This plugin pushes its custom metrics to the DogStatsD server, comes bundled with Datadog agent (to learn more about how to install a datadog agent, please visit [here](https://docs.datadoghq.com/agent/) ), over the UDP protocol. DogStatsD basically is an implementation of StatsD protocol which collects the custom metrics for Apache APISIX agent, aggregates it into a single data point and sends it to the configured Datadog server.
-To learn more about DogStatsD, please visit [DogStatsD](https://docs.datadoghq.com/developers/dogstatsd/?tab=hostagent) documentation.
+When enabled, the Plugin supports multiple metric capture types for request and response cycles.
 
-This plugin provides the ability to push metrics as a batch to the external Datadog agent, reusing the same datagram socket. In case if you did not receive the log data, don't worry give it some time. It will automatically send the logs after the timer function expires in our Batch Processor.
+This Plugin, pushes its custom metrics to the [DogStatsD](https://docs.datadoghq.com/developers/dogstatsd/?tab=hostagent) server over UDP protocol and comes bundled with [Datadog agent](https://docs.datadoghq.com/agent/).
 
-For more info on Batch-Processor in Apache APISIX please refer.
-[Batch-Processor](../batch-processor.md)
+DogStatsD implements the StatsD protocol which collects the custom metrics for the Apache APISIX agent, aggregates them into a single data point, and sends it to the configured Datadog server.
+
+This Plugin provides the ability to push metrics as a batch to the external Datadog agent, reusing the same datagram socket. It might take some time to receive the log data. It will be automatically sent after the timer function in the [batch processor](../batch-processor.md) expires.
 
 ## Attributes
 
-| Name             | Type   | Requirement  | Default      | Valid       | Description                                                                                |
-| -----------      | ------ | -----------  | -------      | -----       | ------------------------------------------------------------                               |
-| prefer_name      | boolean | optional    | true         | true/false  | If set to `false`, would use route/service id instead of name(default) with metric tags.   |
+| Name        | Type    | Required | Default | Valid values | Description                                                                            |
+| ----------- | ------- | -------- | ------- | ------------ | -------------------------------------------------------------------------------------- |
+| prefer_name | boolean | False    | true    | [true,false] | When set to `false`, uses Route/Service ID instead of name (default) with metric tags. |
 
-The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
+This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
 ## Metadata
 
-| Name        | Type    | Requirement |     Default        | Valid         | Description                                                            |
-| ----------- | ------  | ----------- |      -------       | -----         | ---------------------------------------------------------------------- |
-| host        | string  | optional    |  "127.0.0.1"       |               | The DogStatsD server host address                                      |
-| port        | integer | optional    |    8125            |               | The DogStatsD server host port                                         |
-| namespace   | string  | optional    |    "apisix"        |               | Prefix for all the custom metrics sent by APISIX agent. Useful for finding entities for metric graph. e.g. (apisix.request.counter)                                        |
-| constant_tags | array | optional    | [ "source:apisix" ] |              | Static tags embedded into generated metrics. Useful for grouping metric over certain signals. |
+You can configure the Plugin through the Plugin metadata.
 
-To know more about how to effectively write tags, please visit [here](https://docs.datadoghq.com/getting_started/tagging/#defining-tags)
+| Name          | Type    | Required | Default             | Description                                                                                                                               |
+| ------------- | ------- | -------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| host          | string  | False    | "127.0.0.1"         | DogStatsD server host address.                                                                                                            |
+| port          | integer | False    | 8125                | DogStatsD server host port.                                                                                                               |
+| namespace     | string  | False    | "apisix"            | Prefix for all custom metrics sent by APISIX agent. Useful for finding entities for metrics graph. For example, `apisix.request.counter`. |
+| constant_tags | array   | False    | [ "source:apisix" ] | Static tags to embed into generated metrics. Useful for grouping metrics over certain signals.                                            |
 
-## Exported Metrics
+:::tip
 
-Apache APISIX agent, for every request response cycle, export the following metrics to DogStatsD server if the datadog plugin is enabled:
+See [defining tags](https://docs.datadoghq.com/getting_started/tagging/#defining-tags) to know more about how to effectively use tags.
 
-| Metric Name               | StatsD Type   | Description               |
-| -----------               | -----------   | -------                   |
-| Request Counter           | Counter       | Number of requests received.   |
-| Request Latency           | Histogram     | Time taken to process the request (in milliseconds). |
-| Upstream latency          | Histogram     | Time taken to proxy the request to the upstream server till a response is received (in milliseconds). |
-| APISIX Latency            | Histogram     | Time taken by APISIX agent to process the request (in milliseconds). |
-| Ingress Size              | Timer         | Request body size in bytes. |
-| Egress Size               | Timer         | Response body size in bytes. |
+:::
+
+By default, the Plugin expects the DogStatsD service to be available at `127.0.0.1:8125`. If you want to change this, you can update the Plugin metadata as shown below:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "host": "172.168.45.29",
+    "port": 8126,
+    "constant_tags": [
+        "source:apisix",
+        "service:custom"
+    ],
+    "namespace": "apisix"
+}'
+```
+
+To reset to default configuration, make a PUT request with empty body:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{}'
+```
+
+## Exported metrics
+
+When the `datadog` Plugin is enabled, the APISIX agent exports the following metrics to the DogStatsD server for each request/response cycle:
+
+| Metric name      | StatsD type | Description                                                                                           |
+| ---------------- | ----------- | ----------------------------------------------------------------------------------------------------- |
+| Request Counter  | Counter     | Number of requests received.                                                                          |
+| Request Latency  | Histogram   | Time taken to process the request (in milliseconds).                                                  |
+| Upstream latency | Histogram   | Time taken to proxy the request to the upstream server till a response is received (in milliseconds). |
+| APISIX Latency   | Histogram   | Time taken by APISIX agent to process the request (in milliseconds).                                  |
+| Ingress Size     | Timer       | Request body size in bytes.                                                                           |
+| Egress Size      | Timer       | Response body size in bytes.                                                                          |
 
 The metrics will be sent to the DogStatsD agent with the following tags:
 
-> If there is no suitable value for any particular tag, the tag will simply be omitted.
+- `route_name`: Name specified in the Route schema definition. If not present or if the attribute `prefer_name` is set to false, falls back to the Route ID.
+- `service_name`: If a Route has been created with an abstracted Service, the Service name/ID based on the attribute `prefer_name`.
+- `consumer`: If the Route is linked to a Consumer, the username will be added as a tag.
+- `balancer_ip`: IP address of the Upstream balancer that processed the current request.
+- `response_status`: HTTP response status code.
+- `scheme`: Request scheme such as HTTP, gRPC, and gRPCs.
 
-- **route_name**: Name specified in the route schema definition. If not present or plugin attribute `prefer_name` is set to `false`, it will fall back to the route id value.
-- **service_name**: If a route has been created with the abstraction of service, the particular service name/id (based on plugin `prefer_name` attribute) will be used.
-- **consumer**: If the route has a linked consumer, the consumer Username will be added as a tag.
-- **balancer_ip**: IP of the Upstream balancer that has processed the current request.
-- **response_status**: HTTP response status code.
-- **scheme**: Scheme that has been used to make the request, such as HTTP, gRPC, gRPCs etc.
+:::note
 
-## How To Enable
+If there are no suitable values for any particular tag, the tag will be omitted.
 
-The following is an example on how to enable the datadog plugin for a specific route. We are assuming your datadog agent is already up an running.
+:::
+
+## Enabling the Plugin
+
+Once you have your Datadog agent running, you can enable the Plugin as shown below:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -96,15 +133,14 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-Now any requests to uri `/hello` will generate aforesaid metrics and push it to DogStatsD server of the datadog agent.
+Now, requests to the endpoint `/hello` will generate metrics and push it to the DogStatsD server.
 
 ## Disable Plugin
 
-Remove the corresponding json configuration in the plugin configuration to disable the `datadog`.
-APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
+To disable the `datadog` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
@@ -116,31 +152,4 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
         }
     }
 }'
-```
-
-## Custom Configuration
-
-In the default configuration, the plugin expects the dogstatsd service to be available at `127.0.0.1:8125`. If you wish to update the config, please update the plugin metadata. To know more about the fields of the datadog metadata, see [here](#metadata).
-
-Make a request to _/apisix/admin/plugin_metadata_ endpoint with the updated metadata as following:
-
-```shell
-$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "host": "172.168.45.29",
-    "port": 8126,
-    "constant_tags": [
-        "source:apisix",
-        "service:custom"
-    ],
-    "namespace": "apisix"
-}'
-```
-
-This HTTP PUT request will update the metadata and subsequent metrics will be pushed to the `172.168.45.29:8126` endpoint via UDP StatsD. Everything will be hot-loaded, there is no need to restart Apache APISIX instances.
-
-In case, if you wish to revert the datadog metadata schema to the default values, just make another PUT request to the same endpoint with an empty body. For example:
-
-```shell
-$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{}'
 ```

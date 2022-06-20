@@ -147,6 +147,22 @@ function _M.map_message(field, default_values, request_table)
         if ty ~= "enum" and field_type:sub(1, 1) == "." then
             if request_table[name] == nil then
                 sub = default_values and default_values[name]
+            elseif core.table.isarray(request_table[name]) then
+                local sub_array = core.table.new(#request_table[name], 0)
+                for i, value in ipairs(request_table[name]) do
+                    local sub_array_obj
+                    if type(value) == "table" then
+                        sub_array_obj, err = _M.map_message(field_type,
+                                default_values and default_values[name], value)
+                        if err then
+                            return nil, err
+                        end
+                    else
+                        sub_array_obj = value
+                    end
+                    sub_array[i] = sub_array_obj
+                end
+                sub = sub_array
             else
                 sub, err = _M.map_message(field_type, default_values and default_values[name],
                                           request_table[name])
