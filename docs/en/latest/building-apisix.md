@@ -56,7 +56,13 @@ APISIX_VERSION='2.14.1'
 mkdir apisix-${APISIX_VERSION}
 ```
 
-You can now download the APISIX source code by running the command below. You can also download the source package from the [Downloads page](https://apisix.apache.org/downloads/). You will also find source packages for APISIX Dashboard and APISIX Ingress Controller.
+You can now download the APISIX source code by running the command below:
+
+```shell
+wget https://downloads.apache.org/apisix/${APISIX_VERSION}/apache-apisix-${APISIX_VERSION}-src.tgz
+```
+
+You can also download the source package from the [Downloads page](https://apisix.apache.org/downloads/). You will also find source packages for APISIX Dashboard and APISIX Ingress Controller.
 
 After you have downloaded the package, you can extract the files to the folder created previously:
 
