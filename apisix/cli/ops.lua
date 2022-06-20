@@ -66,6 +66,7 @@ stop:       stop the apisix server
 quit:       stop the apisix server gracefully
 restart:    restart the apisix server
 reload:     reload the apisix server
+test:       test the generated nginx.conf
 version:    print the version of apisix
 ]])
 end
