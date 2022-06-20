@@ -20,6 +20,7 @@ local json              = core.json
 local pb                = require("pb")
 local ngx               = ngx
 local string            = string
+local ipairs            = ipairs
 local tonumber          = tonumber
 local type              = type
 
