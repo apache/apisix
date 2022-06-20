@@ -405,3 +405,62 @@ passed
     }
 --- response_body
 1970, 1970, 1971, 1972
+
+
+
+=== TEST 7: set up traffic-split rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local data = {
+                uri = "/server_port",
+                plugins = {
+                    ["traffic-split"] = {
+                        rules = { {
+                            match = { {
+                                vars = { { "arg_name", "==", "jack" } }
+                            } },
+                            weighted_upstreams = { {
+                                upstream = {
+                                    type = "roundrobin",
+                                    nodes = {
+                                        ["127.0.0.1:1979"] = 1
+                                    },
+                                },
+                            } }
+                        } }
+                    }
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                }
+            }
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: hit and check default timeout
+--- http_config
+proxy_connect_timeout 12345s;
+--- request
+GET /server_port?name=jack
+--- log_level: debug
+--- error_log eval
+qr/event timer add: \d+: 12345000:\d+/
+--- error_code: 502
