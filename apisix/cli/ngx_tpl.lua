@@ -64,7 +64,7 @@ lua {
     {% end %}
 }
 
-{% if (enabled_stream_plugins["prometheus"] or conf_server) and not enable_http then %}
+{% if enabled_stream_plugins["prometheus"] and not enable_http then %}
 http {
     {% if enabled_stream_plugins["prometheus"] then %}
     init_worker_by_lua_block {

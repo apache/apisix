@@ -22,19 +22,31 @@ local ipairs = ipairs
 local _M = {}
 
 
-function _M.generate_conf_server(conf)
+function _M.generate_conf_server(env, conf)
     if not (conf.deployment and conf.deployment.role == "traditional") then
-        return nil
+        return nil, nil
     end
 
     -- we use proxy even the role is traditional so that we can test the proxy in daily dev
-    local servers = conf.deployment.etcd.host
+    local etcd = conf.deployment.etcd
+    local servers = etcd.host
+    local enable_https = false
+    local prefix = "https://"
+    if servers[1]:find(prefix, 1, true) then
+        enable_https = true
+    end
+    -- there is not a compatible way to verify upstream TLS like the one we do in cosocket
+    -- so here we just ignore it as the verification is already done in the init phase
     for i, s in ipairs(servers) do
-        local prefix = "http://"
-        -- TODO: support https
-        if s:find(prefix, 1, true) then
-            servers[i] = s:sub(#prefix + 1)
+        if (s:find(prefix, 1, true) ~= nil) ~= enable_https then
+            return nil, "all nodes in the etcd cluster should enable/disable TLS together"
         end
+
+        local _, to = s:find("://", 1, true)
+        if not to then
+            return nil, "bad etcd endpoint format"
+        end
+        servers[i] = s:sub(to + 1)
     end
 
     local conf_render = template.compile([[
@@ -44,12 +56,16 @@ function _M.generate_conf_server(conf)
         {% end %}
     }
     server {
-        listen unix:./conf/config_listen.sock;
+        listen unix:{* home *}/conf/config_listen.sock;
         access_log off;
         location / {
-            set $upstream_scheme             'http';
-
-            proxy_pass $upstream_scheme://apisix_conf_backend;
+            {% if enable_https then %}
+            proxy_pass https://apisix_conf_backend;
+            proxy_ssl_server_name on;
+            proxy_ssl_protocols TLSv1.2 TLSv1.3;
+            {% else %}
+            proxy_pass http://apisix_conf_backend;
+            {% end %}
 
             proxy_http_version 1.1;
             proxy_set_header Connection "";
@@ -57,7 +73,9 @@ function _M.generate_conf_server(conf)
     }
     ]])
     return conf_render({
-        servers = servers
+        servers = servers,
+        enable_https = enable_https,
+        home = env.apisix_home or ".",
     })
 end
 
