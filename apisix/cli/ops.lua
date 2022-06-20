@@ -540,7 +540,10 @@ Please modify "admin_key" in conf/config.yaml .
         proxy_mirror_timeouts = yaml_conf.plugin_attr["proxy-mirror"].timeout
     end
 
-    local conf_server = snippet.generate_conf_server(yaml_conf)
+    local conf_server, err = snippet.generate_conf_server(env, yaml_conf)
+    if err then
+        util.die(err, "\n")
+    end
 
     -- Using template.render
     local sys_conf = {
