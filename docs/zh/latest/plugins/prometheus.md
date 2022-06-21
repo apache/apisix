@@ -1,5 +1,11 @@
 ---
 title: prometheus
+keywords:
+  - APISIX
+  - API Gateway
+  - Plugin
+  - Prometheus
+description:  本文将介绍 API 网关 Apache APISIX 如何通过 prometheus 插件将 metrics 上报到开源的监控软件 Prometheus。
 ---
 
 <!--
@@ -23,22 +29,43 @@ title: prometheus
 
 ## 描述
 
-此插件是提供符合 prometheus 数据格式的监控指标数据。
+`prometheus` 插件以 [Prometheus 文档](https://prometheus.io/docs/instrumenting/exposition_formats/#exposition-formats)规定的格式上报指标到 Prometheus 中。
 
 ## 属性
 
-| 名称         | 类型   | 必选项 | 默认值  | 有效值       | 描述                                                  |
-| ------------ | ------ | ------ | ------ | ------------ | ----------------------------------------------------- |
-| prefer_name  | boolean | 可选 | false   |             | 设置为`true`时，Prometheus 指标中将使用路由和服务的 `name` 而不是 `id`。 |
+| 名称         | 类型     | 必选项 | 默认值 |  描述                                                  |
+| ------------ | --------| ------ | ------ | ----------------------------------------------------- |
+| prefer_name  | boolean | 否     | false  | 当设置为 `true` 时，将使用路由或服务的 `name` 标识请求所命中的路由或服务，否则使用其 `id`。 |
 
-## 接口
+:::note
 
-插件会增加 `/apisix/prometheus/metrics` 这个接口。
+多个路由或服务可以设置为相同的名称，所以当设置 `prefer_name` 为 `true` 时，请规范路由和服务的命名，否则容易引起误解。
 
-指标默认会通过独立的服务地址暴露。
-默认情况下，这个地址是 `127.0.0.1:9091`。你可以在 `conf/config.yaml` 里面修改它，比如：
+:::
 
+## 如何修改暴露指标的 uri
+
+你可以在配置文件 `./conf/config.yaml` 的 `plugin_attr` 列表下修改默认的 URI。
+
+| 名称       | 类型    | 默认值                       | 描述                         |
+| ---------- | ------ | ---------------------------- | --------------------------- |
+| export_uri | string | "/apisix/prometheus/metrics" | 暴露 Prometheus 指标的 URI。 |
+
+配置示例如下：
+
+```yaml title="./conf/config.yaml"
+plugin_attr:
+  prometheus:
+    export_uri: /apisix/metrics
 ```
+
+## API
+
+`prometheus` 插件会增加 `/apisix/prometheus/metrics` 接口或者你自定义的 URI 来暴露其指标信息。
+
+这些指标由独立的 Prometheus 服务器地址公开。默认情况下，地址为 `127.0.0.1:9091`。你可以在配置文件（`./conf/config.yaml`）中修改，示例如下：
+
+```yaml title="./conf/config.yaml"
 plugin_attr:
   prometheus:
     export_addr:
@@ -46,27 +73,27 @@ plugin_attr:
       port: 9092
 ```
 
-假设环境变量 `INTRANET_IP` 是 `172.1.1.1`，现在 APISIX 会在 `172.1.1.1:9092` 上暴露指标。
+假设环境变量 `INTRANET_IP` 是 `172.1.1.1`，那么 APISIX 将会在 `172.1.1.1:9092` 上暴露指标。
 
-如果你依然想要让指标暴露在数据面的端口（默认：9080）上，你可以这么配置：
+如果你仍然想要让指标暴露在数据面的端口（默认：`9080`）上，可参考如下配置：
 
-```
+```yaml title="./conf/config.yaml"
 plugin_attr:
   prometheus:
     enable_export_server: false
 ```
 
-并使用 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露它。
+你可以使用 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露该 URI。
 
-## 如何启用 HTTP 的指标
+## 启用插件
 
-`prometheus` 插件可以使用空 {} 开启。
-注意，多个路由/服务可以设置为相同的名称，因此当设置 `prefer_name` 为 `true` 时，注意规范命名否则容易引起误解。
+`prometheus` 插件可以使用空表 `{}` 开启。
 
-例子如下：
+你可以通过如下命令在指定路由上启用 `prometheus` 插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -75,13 +102,13 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:80": 1
+            "127.0.0.1:1980": 1
         }
     }
 }'
 ```
 
-你可以使用 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 通过 web 界面来完成上面的操作。
+<!-- 你可以使用 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 通过 web 界面来完成上面的操作。
 
 先增加一个 Route：
 
@@ -89,56 +116,38 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 然后在 route 页面中添加 prometheus 插件：
 
-![enable prometheus plugin](../../../assets/images/plugin/prometheus-2.png)
+![enable prometheus plugin](../../../assets/images/plugin/prometheus-2.png) -->
 
-## 如何提取指标数据
+## 提取指标
 
-我们可以从指定的 url 中提取指标数据 `/apisix/prometheus/metrics`:
+你可以从指定的 URL（默认：`/apisix/prometheus/metrics`）中提取指标数据：
 
 ```
 curl -i http://127.0.0.1:9091/apisix/prometheus/metrics
 ```
 
-把该 uri 地址配置到 prometheus 中去，就会自动完成指标数据提取。
+你可以将该 URI 地址添加到 Prometheus 中来提取指标数据，配置示例如下：
 
-例子如下：
-
-```yaml
+```yaml title="./prometheus.yml"
 scrape_configs:
   - job_name: "apisix"
-    scrape_interval: 15s # 这个值会跟 Prometheus QL 中 rate 函数的时间范围有关系，rate 函数中的时间范围应该至少两倍于该值。
+    scrape_interval: 15s # 该值会跟 Prometheus QL 中 rate 函数的时间范围有关系，rate 函数中的时间范围应该至少两倍于该值。
     metrics_path: "/apisix/prometheus/metrics"
     static_configs:
       - targets: ["127.0.0.1:9091"]
 ```
 
-我们也可以在 prometheus 控制台中去检查状态：
+现在你可以在 Prometheus 控制台中检查状态：
 
 ![checking status on prometheus dashboard](../../../assets/images/plugin/prometheus01.png)
 
 ![prometheus apisix in-depth metric view](../../../assets/images/plugin/prometheus02.png)
 
-## 如何修改暴露指标的 uri
+## 使用 Grafana 绘制指标
 
-我们可以在 `conf/config.yaml` 的 `plugin_attr` 修改默认的 uri
+`prometheus` 插件导出的指标可以在 Grafana 进行图形化绘制显示。
 
-| 名称       | 类型   | 默认值                       | 描述           |
-| ---------- | ------ | ---------------------------- | -------------- |
-| export_uri | string | "/apisix/prometheus/metrics" | 暴露指标的 uri |
-
-配置示例：
-
-```yaml
-plugin_attr:
-  prometheus:
-    export_uri: /apisix/metrics
-```
-
-## Grafana 面板
-
-插件导出的指标可以在 Grafana 进行图形化绘制显示。
-
-下载 [Grafana dashboard 元数据](https://github.com/apache/apisix/blob/master/docs/assets/other/json/apisix-grafana-dashboard.json) 并导入到 Grafana 中。
+如果需要进行设置，请下载 [APISIX's Grafana dashboard 元数据](https://github.com/apache/apisix/blob/master/docs/assets/other/json/apisix-grafana-dashboard.json) 并导入到 Grafana 中。
 
 你可以到 [Grafana 官方](https://grafana.com/grafana/dashboards/11719) 下载 `Grafana` 元数据。
 
@@ -152,46 +161,51 @@ plugin_attr:
 
 ## 可用的 HTTP 指标
 
-* `Status codes`: upstream 服务返回的 HTTP 状态码，可以统计到每个服务或所有服务的响应状态码的次数总和。具有的维度：
+`prometheus` 插件可以导出以下指标：
 
-    | 名称          |    描述             |
-    | -------------| --------------------|
-    | code         | upstream 服务返回的 HTTP 状态码。 |
-    | route        | 请求匹配的 route 的 `route_id`，未匹配，则默认为空字符串。 |
-    | matched_uri  | 请求匹配的 route 的 `uri`，未匹配，则默认为空字符串。 |
-    | matched_host | 请求匹配的 route 的 `host`，未匹配，则默认为空字符串。 |
-    | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
-    | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
-    | node         | 命中的 upstream 节点 `ip`。|
+- Status codes: 上游服务返回的 HTTP 状态码，可以统计到每个服务或所有服务的响应状态码的次数总和。属性如下所示：
 
-* `Bandwidth`: 流经 APISIX 的总带宽（可分出口带宽和入口带宽），可以统计到每个服务的带宽总和。具有的维度：
+    | 名称          |    描述                                                                       |
+    | -------------| ----------------------------------------------------------------------------- |
+    | code         | 上游服务返回的 HTTP 状态码。                                                    |
+    | route        | 与请求匹配的路由的 `route_id`，如果未匹配，则默认为空字符串。                     |
+    | matched_uri  | 与请求匹配的路由的 `uri`，如果未匹配，则默认为空字符串。                           |
+    | matched_host | 与请求匹配的路由的 `host`，如果未匹配，则默认为空字符串。                          |
+    | service      | 与请求匹配的路由的 `service_id`。当路由缺少 `service_id` 时，则默认为 `$host`。    |
+    | consumer     | 与请求匹配的消费者的 `consumer_name`。如果未匹配，则默认为空字符串。                |
+    | node         | 上游节点 IP 地址。                                                               |
+
+- Bandwidth: 经过 APISIX 的总带宽（出口带宽和入口带宽），可以统计到每个服务的带宽总和。属性如下所示：
 
     | 名称          |    描述        |
     | -------------| ------------- |
     | type         | 带宽的类型 (`ingress` 或 `egress`)。 |
-    | route        | 请求匹配的 route 的 `route_id`，未匹配，则默认为空字符串。 |
-    | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
-    | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
-    | node         | 命中的 upstream 节点 `ip`。 |
+    | route        | 与请求匹配的路由的 `route_id`，如果未匹配，则默认为空字符串。 |
+    | service      | 与请求匹配的路由的 `service_id`。当路由缺少 `service_id` 时，则默认为 `$host`。 |
+    | consumer     | 与请求匹配的消费者的 `consumer_name`。如果未匹配，则默认为空字符串。 |
+    | node         | 消费者节点 IP 地址。 |
 
-* `etcd reachability`: APISIX 连接 etcd 的可用性，用 0 和 1 来表示，`1` 表示可用，`0` 表示不可用。
-* `Connections`: 各种的 Nginx 连接指标，如 active（正处理的活动连接数），reading（nginx 读取到客户端的 Header 信息数），writing（nginx 返回给客户端的 Header 信息数），已建立的连接数。
-* `Batch process entries`: 批处理未发送数据计数器，当你使用了批处理发送插件，比如：sys logger, http logger, sls logger, tcp logger, udp logger and zipkin，那么你将会在此指标中看到批处理当前尚未发送的数据的数量。
-* `Latency`: 每个服务的请求用时和 APISIX 处理耗时的直方图。具有的维度：
+- etcd reachability: APISIX 连接 etcd 的可用性，用 0 和 1 来表示，`1` 表示可用，`0` 表示不可用。
+- Connections: 各种的 NGINX 连接指标，如 `active`（正处理的活动连接数），`reading`（NGINX 读取到客户端的 Header 信息数），writing（NGINX 返回给客户端的 Header 信息数），已建立的连接数。
+- Batch process entries: 批处理未发送数据计数器，当你使用了批处理发送插件，比如：[syslog](./syslog.md), [http-logger](./http-logger.md), [tcp-logger](./tcp-logger.md), [udp-logger](./udp-logger.md), and [zipkin](./zipkin.md)，那么你将会在此指标中看到批处理当前尚未发送的数据的数量。
+- Latency: 每个服务的请求用时和 APISIX 处理耗时的直方图。属性如下所示：
 
-    | 名称          |    描述        |
-    | -------------| ------------- |
-    | type         | 该值可以为 `apisix`、`upstream` 和 `request`，分别表示耗时的来源为 APISIX、上游及其总和。 |
-    | service      | 与请求匹配的 route 的 `service_id`。当路由缺少 service_id 时，则默认为 `$host`。 |
-    | consumer     | 与请求匹配的 consumer 的 `consumer_name`。未匹配，则默认为空字符串。 |
-    | node         | 命中的 upstream 节点 `ip`。 |
+    | 名称          |    描述                                                                                 |
+    | -------------| --------------------------------------------------------------------------------------- |
+    | type         | 该值可以是 `apisix`、`upstream` 和 `request`，分别表示耗时的来源是 APISIX、上游以及两者总和。 |
+    | service      | 与请求匹配的路由 的 `service_id`。当路由缺少 `service_id` 时，则默认为 `$host`。             |
+    | consumer     | 与请求匹配的消费者的 `consumer_name`。未匹配，则默认为空字符串。                             |
+    | node         | 上游节点的 IP 地址。                                                                      |
 
-* `Info`: 当前 APISIX 节点信息。
+- Info: 当前 APISIX 节点信息。
 
-这里是 APISIX 的原始的指标数据集：
+以下是 APISIX 的原始的指标数据集：
 
 ```shell
-$ curl http://127.0.0.1:9091/apisix/prometheus/metrics
+curl http://127.0.0.1:9091/apisix/prometheus/metrics
+```
+
+```
 # HELP apisix_bandwidth Total bandwidth in bytes consumed per service in Apisix
 # TYPE apisix_bandwidth counter
 apisix_bandwidth{type="egress",route="",service="",consumer="",node=""} 8417
@@ -254,12 +268,12 @@ apisix_http_latency_bucket{type="upstream",route="1",service="",consumer="",node
 ...
 # HELP apisix_node_info Info of APISIX node
 # TYPE apisix_node_info gauge
-apisix_node_info{hostname="desktop-2022q8f-wsl"} 1
+apisix_node_info{hostname="APISIX"} 1
 ```
 
 ## 禁用插件
 
-在插件设置页面中删除相应的 json 配置即可禁用 `prometheus` 插件。APISIX 的插件是热加载的，因此无需重启 APISIX 服务。
+当你需要禁用 `prometheus` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -279,13 +293,13 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 :::info IMPORTANT
 
-该功能要求 Apache APISIX 运行在 [APISIX-Base](../FAQ.md#如何构建-APISIX-Base-环境？) 上。
+该功能要求 APISIX 运行在 [APISIX-Base](../FAQ.md#如何构建-APISIX-Base-环境？) 上。
 
 :::
 
 我们也可以通过 `prometheus` 插件采集 TCP/UDP 指标。
 
-首先，确保 `prometheus` 插件已经在你的配置文件（`conf/config.yaml`）中启用：
+首先，确保 `prometheus` 插件已经在你的配置文件（`./conf/config.yaml`）中启用：
 
 ```yaml title="conf/config.yaml"
 stream_plugins:
@@ -293,7 +307,7 @@ stream_plugins:
   - prometheus
 ```
 
-接着你需要在 stream route 中配置该插件：
+接着你需要在 stream 路由中配置该插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -312,20 +326,20 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 
 ## 可用的 TCP/UDP 指标
 
-以下是把 APISIX 作为 L4 代理时可用的指标：
+以下是将 APISIX 作为 L4 代理时可用的指标：
 
-* `Stream Connections`: 路由级别的已处理连接数。具有的维度：
+* Stream Connections: 路由级别的已处理连接数。具有的维度：
 
-    | 名称          |    描述             |
-    | -------------| --------------------|
-    | route         | 匹配的 stream route ID|
-* `Connections`: 各种的 Nginx 连接指标，如 active，reading，writing，已建立的连接数。
-* `Info`: 当前 APISIX 节点信息。
+    | 名称          |    描述                 |
+    | ------------- | ---------------------- |
+    | route         | 匹配的 stream 路由 ID。 |
+* Connections: 各种的 NGINX 连接指标，如 `active`，`reading`，`writing` 等已建立的连接数。
+* Info: 当前 APISIX 节点信息。
 
-这里是 APISIX 指标的范例：
+以下是 APISIX 指标的示例：
 
 ```shell
-$ curl http://127.0.0.1:9091/apisix/prometheus/metrics
+curl http://127.0.0.1:9091/apisix/prometheus/metrics
 ```
 
 ```
