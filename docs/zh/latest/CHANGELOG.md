@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.13.2](#2132)
 - [2.13.1](#2131)
 - [2.13.0](#2130)
 - [2.12.1](#2121)
@@ -54,6 +55,31 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.13.2
+
+### Bugfix
+
+- 更正 grpc-transcode 插件中对 repeated Message 的处理。 [#7231](https://github.com/apache/apisix/pull/7231)
+- 允许 proxy-cache 插件 cache key 出现缺少的值。 [#7168](https://github.com/apache/apisix/pull/7168)
+- 减少 chash 负载均衡节点权重过大时额外的内存消耗。 [#7103](https://github.com/apache/apisix/pull/7103)
+- proxy-cache 插件 method 不匹配时不应该返回缓存结果。 [#7111](https://github.com/apache/apisix/pull/7111)
+- 上游 keepalive 应考虑 TLS 参数：[#7054](https://github.com/apache/apisix/pull/7054)
+- 不要将内部错误信息暴露给客户端。
+    - [#6982](https://github.com/apache/apisix/pull/6982)
+    - [#6859](https://github.com/apache/apisix/pull/6859)
+    - [#6854](https://github.com/apache/apisix/pull/6854)
+    - [#6853](https://github.com/apache/apisix/pull/6853)
+- DNS 支持端口为 0 的 SRV 记录：[#6739](https://github.com/apache/apisix/pull/6739)
+- 修复客户端 mTLS 在 TLS 会话重用中有时不生效的问题：[#6906](https://github.com/apache/apisix/pull/6906)
+- grpc-web 插件不会在响应中覆盖 Access-Control-Allow-Origin 头。[#6842](https://github.com/apache/apisix/pull/6842)
+- syslog 插件的默认超时已被纠正。[#6807](https://github.com/apache/apisix/pull/6807)
+- 修复 authz-keycloak 插件的 `access_denied_redirect_uri` 的设置有时不生效的问题。[#6794](https://github.com/apache/apisix/pull/6794)
+- 正确处理 `USR2` 信号。[#6758](https://github.com/apache/apisix/pull/6758)
+- 重定向插件在将 HTTP 重定向到 HTTPS 时设置了正确的端口。
+    - [#7065](https://github.com/apache/apisix/pull/7065)
+    - [#6686](https://github.com/apache/apisix/pull/6686)
+- Admin API 拒绝未知的 stream 插件。[#6813](https://github.com/apache/apisix/pull/6813)
 
 ## 2.13.1
 
