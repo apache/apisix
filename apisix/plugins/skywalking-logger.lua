@@ -143,9 +143,9 @@ function _M.log(conf, ctx)
         end
     end
 
-    local serviceInstanceName = conf.service_instance_name
-    if serviceInstanceName == "$hostname" then
-        serviceInstanceName = core.utils.gethostname()
+    local service_instance_name = conf.service_instance_name
+    if service_instance_name == "$hostname" then
+        service_instance_name = core.utils.gethostname()
     end
 
     local entry = {
@@ -156,7 +156,7 @@ function _M.log(conf, ctx)
             }
         },
         service = conf.service_name,
-        serviceInstance = serviceInstanceName,
+        serviceInstance = service_instance_name,
         endpoint = ctx.var.uri,
     }
 
