@@ -545,6 +545,10 @@ Please modify "admin_key" in conf/config.yaml .
         util.die(err, "\n")
     end
 
+    if yaml_conf.deployment and yaml_conf.deployment.role then
+        env.deployment_role = yaml_conf.deployment.role
+    end
+
     -- Using template.render
     local sys_conf = {
         use_openresty_1_17 = use_openresty_1_17,
@@ -810,7 +814,10 @@ local function start(env, ...)
     end
 
     init(env)
-    init_etcd(env, args)
+
+    if env.deployment_role ~= "data_plane" then
+        init_etcd(env, args)
+    end
 
     util.execute_cmd(env.openresty_args)
 end
