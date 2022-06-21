@@ -41,6 +41,8 @@ The information reported by the Plugin is explained below:
 | version      | string  | Version of APISIX instance.                                                                                            |
 | hostname     | string  | Hostname of the machine/pod APISIX is deployed to.                                                                     |
 
+**NOTE：When the APISIX role is set to `data_plane` in deployment mode, unable to use the plugin**
+
 ## Attributes
 
 None.

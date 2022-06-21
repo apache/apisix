@@ -47,6 +47,8 @@ The Plugin will not add a unique ID if the request already has a header with the
 | include_in_response | boolean | False    | true           |                                 | When set to `true`, adds the unique request ID in the response header. |
 | algorithm           | string  | False    | "uuid"         | ["uuid", "snowflake", "nanoid"] | Algorithm to use for generating the unique request ID.                 |
 
+**NOTE：When the APISIX role is set to `data_plane` in deployment mode, the `snowflake` algorithm cannot be used**
+
 ### Using snowflake algorithm to generate unique ID
 
 To use the snowflake algorithm, you have to enable it first on your configuration file (`conf/config.yaml`):
