@@ -25,6 +25,7 @@ title: Changelog
 
 - [2.14.1](#2141)
 - [2.14.0](#2140)
+- [2.13.2](#2132)
 - [2.13.1](#2131)
 - [2.13.0](#2130)
 - [2.12.1](#2121)
@@ -119,6 +120,12 @@ title: Changelog
     - [#7065](https://github.com/apache/apisix/pull/7065)
     - [#6686](https://github.com/apache/apisix/pull/6686)
 - Admin API rejects unknown stream plugin: [#6813](https://github.com/apache/apisix/pull/6813)
+
+## 2.13.2
+
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.13` branch.**
+
+[https://github.com/apache/apisix/blob/release/2.13/CHANGELOG.md#2132](https://github.com/apache/apisix/blob/release/2.13/CHANGELOG.md#2132)
 
 ## 2.13.1
 
