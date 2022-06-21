@@ -20,7 +20,7 @@
 . ./t/cli/common.sh
 
 # clean etcd data
-etcdctl get / --prefix
+etcdctl del / --prefix
 
 # data_plane does not write data to etcd
 echo '
