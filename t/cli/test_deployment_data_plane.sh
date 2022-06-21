@@ -37,6 +37,8 @@ deployment:
 
 make run
 
+sleep 1
+
 res=$(etcdctl get / --prefix | wc -l)
 
 if [ ! $res -eq 0 ]; then

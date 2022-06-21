@@ -261,6 +261,15 @@ function _M.init()
         return
     end
 
+
+    local local_conf = core.config.local_conf()
+    local deployment_role = core.table.try_read_attr(
+                       local_conf, "deployment", "role")
+    if deployment_role == "data_plane" then
+        -- data_plane should not write to etcd
+        return
+    end
+
     local attr = plugin.plugin_attr(plugin_name)
     local ok, err = core.schema.check(attr_schema, attr)
     if not ok then
