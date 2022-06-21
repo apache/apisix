@@ -330,8 +330,6 @@ graphql:
 
 #ext-plugin:
   #cmd: ["ls", "-l"]
-ext-plugin:
-  path_for_test: /tmp/runner.sock
 
 plugins:                          # plugin list (sorted by priority)
   - real-ip                        # priority: 23000
