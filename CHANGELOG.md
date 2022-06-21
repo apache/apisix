@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.13.2](#2132)
 - [2.13.1](#2131)
 - [2.13.0](#2130)
 - [2.12.1](#2121)
@@ -54,6 +55,31 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.13.2
+
+### Bugfix
+
+- correct the transcode of repeated Message in grpc-transcode: [#7231](https://github.com/apache/apisix/pull/7231)
+- var missing in proxy-cache cache key should be ignored: [#7168](https://github.com/apache/apisix/pull/7168)
+- reduce memory usage when abnormal weights are given in chash: [#7103](https://github.com/apache/apisix/pull/7103)
+- cache should be bypassed when the method mismatch in proxy-cache: [#7111](https://github.com/apache/apisix/pull/7111)
+- Upstream keepalive should consider TLS param: [#7054](https://github.com/apache/apisix/pull/7054)
+- Do not expose internal error message to the client:
+    - [#6982](https://github.com/apache/apisix/pull/6982)
+    - [#6859](https://github.com/apache/apisix/pull/6859)
+    - [#6854](https://github.com/apache/apisix/pull/6854)
+    - [#6853](https://github.com/apache/apisix/pull/6853)
+- DNS supports SRV record with port 0: [#6739](https://github.com/apache/apisix/pull/6739)
+- client mTLS was ignored sometimes in TLS session reuse: [#6906](https://github.com/apache/apisix/pull/6906)
+- The grpc-web plugin doesn't override Access-Control-Allow-Origin header in response: [#6842](https://github.com/apache/apisix/pull/6842)
+- The syslog plugin's default timeout is corrected: [#6807](https://github.com/apache/apisix/pull/6807)
+- The authz-keycloak plugin's `access_denied_redirect_uri` was bypassed sometimes: [#6794](https://github.com/apache/apisix/pull/6794)
+- Handle `USR2` signal properly: [#6758](https://github.com/apache/apisix/pull/6758)
+- The redirect plugin set a correct port during redirecting HTTP to HTTPS:
+    - [#7065](https://github.com/apache/apisix/pull/7065)
+    - [#6686](https://github.com/apache/apisix/pull/6686)
+- Admin API rejects unknown stream plugin: [#6813](https://github.com/apache/apisix/pull/6813)
 
 ## 2.13.1
 

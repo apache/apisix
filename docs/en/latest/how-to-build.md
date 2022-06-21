@@ -97,10 +97,10 @@ Follow the steps below to install Apache APISIX via the source release package.
   curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-dependencies.sh -sL | bash -
   ```
 
-2. Create a directory named `apisix-2.13.1`.
+2. Create a directory named `apisix-2.13.2`.
 
   ```shell
-  APISIX_VERSION='2.13.1'
+  APISIX_VERSION='2.13.2'
   mkdir apisix-${APISIX_VERSION}
   ```
 
@@ -162,7 +162,7 @@ Follow the steps below to install Apache APISIX via the source release package.
 
 #### LTS version installation via Source Release Package
 
-The [current LTS version](https://apisix.apache.org/downloads/) of Apache APISIX is `2.13.1`.
+The [current LTS version](https://apisix.apache.org/downloads/) of Apache APISIX is `2.13.2`.
 
 To install this version, set `APISIX_VERSION` in [Installation via Source Release Package](#installation-via-source-release-package) to this version and continue with the other steps.
 
