@@ -151,6 +151,9 @@ local function load_plugin(name, plugins_list, plugin_type)
 
         properties._meta = plugin_injected_schema._meta
         -- new injected fields should be added under `_meta`
+        -- 1. so we won't break user's code when adding any new injected fields
+        -- 2. the semantics is clear, especially in the doc and in the caller side
+        -- TODO: move the `disable` to `_meta` too
 
         plugin.schema['$comment'] = plugin_injected_schema['$comment']
     end
