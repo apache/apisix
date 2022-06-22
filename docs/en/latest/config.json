@@ -49,7 +49,8 @@
             "plugins/real-ip",
             "plugins/server-info",
             "plugins/ext-plugin-pre-req",
-            "plugins/ext-plugin-post-req"
+            "plugins/ext-plugin-post-req",
+            "plugins/ext-plugin-post-resp"
           ]
         },
         {
