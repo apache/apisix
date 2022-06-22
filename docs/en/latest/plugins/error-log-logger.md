@@ -1,7 +1,12 @@
 ---
 title: error-log-logger
+keywords:
+  - APISIX
+  - API Gateway
+  - Plugin
+  - Error log logger
+description: This document contains information about the Apache APISIX error-log-logger Plugin.
 ---
-
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,77 +28,53 @@ title: error-log-logger
 
 ## Description
 
-`error-log-logger` is a plugin which pushes the log data of APISIX's `error.log` to TCP servers or [Apache SkyWalking](https://skywalking.apache.org/).
+The `error-log-logger` Plugin is used to push APISIX's error logs (`error.log`) to TCP, [Apache SkyWalking](https://skywalking.apache.org/), or ClickHouse servers. You can also set the error log level to send the logs to server.
 
-This plugin will provide the ability to send the log data which selected by the level to Monitoring tools and other TCP servers, and SkyWalking over HTTP.
-
-This plugin provides the ability as a batch to push the log data to your external TCP servers or monitoring tools. If not receive the log data, don't worry, it will automatically send the logs after the timer function expires in our Batch Processor.
-
-For more info on Batch-Processor in Apache APISIX please refer.
-[Batch-Processor](../batch-processor.md)
+It might take some time to receive the log data. It will be automatically sent after the timer function in the [batch processor](../batch-processor.md) expires.
 
 ## Attributes
 
-| Name                             | Type    | Requirement | Default                        | Valid   | Description                                                                                          |
-| -------------------------------- | ------- | ----------- | ------------------------------ | ------- | ---------------------------------------------------------------------------------------------------- |
-| tcp.host                         | string  | required    |                                |         | IP address or the Hostname of the TCP server.                                                        |
-| tcp.port                         | integer | required    |                                | [0,...] | Target upstream port.                                                                                |
-| tcp.tls                          | boolean | optional    | false                          |         | Control whether to perform SSL verification.                                                         |
-| tcp.tls_server_name              | string  | optional    |                                |         | The server name for the new TLS extension  SNI.                                                      |
-| skywalking.endpoint_addr         | string  | optional   | http://127.0.0.1:12900/v3/logs |         | the http endpoint of Skywalking.                                                                     |
-| skywalking.service_name          | string  | optional    | APISIX                         |         | service name for skywalking reporter                                                                 |
-| skywalking.service_instance_name | String  | optional    | APISIX Instance Name           |         | Service instance name for skywalking reporter, set it to `$hostname` to get local hostname directly. |
-| clickhouse.endpoint_addr         | String  | optional   | http://127.0.0.1:8213          |          |  clickhouse HTTP endpoint, default http://127.0.0.1:8213                    |
-| clickhouse.user                  | String  | optional   | default                        |          |  clickhouse user                                                           |
-| clickhouse.password              | String  | optional   |                                |          |  clickhouse password                                                          |
-| clickhouse.database              | String  | optional   |                                |          |  clickhouse for error log DB name                                             |
-| clickhouse.logtable              | String  | optional   |                                |          |  clickhouse for error log table name                                            |
-| host                             | string  | optional    |                                |         | (`Deprecated`, use `tcp.host` instead) IP address or the Hostname of the TCP server.               |
-| port                             | integer | optional    |                                | [0,...] | (`Deprecated`, use `tcp.port` instead) Target upstream port.                                       |
-| tls                              | boolean | optional    | false                          |         | (`Deprecated`, use `tcp.tls` instead) Control whether to perform SSL verification.                 |
-| tls_server_name                  | string  | optional    |                                |         | (`Deprecated`, use `tcp.tls_server_name` instead) The server name for the new TLS extension SNI.   |
-| timeout                          | integer | optional    | 3                              | [1,...] | Timeout for the upstream to connect and send, unit: second.                                          |
-| keepalive                        | integer | optional    | 30                             | [1,...] | Time for keeping the cosocket alive, unit: second.                                                   |
-| level                            | string  | optional    | WARN                           |         | The filter's log level, default warn, choose the level in ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"], the value ERR equals ERROR.         |
+| Name                             | Type    | Required | Default                        | Valid values                                                                            | Description                                                                                                  |
+|----------------------------------|---------|----------|--------------------------------|-----------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
+| tcp.host                         | string  | True     |                                |                                                                                         | IP address or the hostname of the TCP server.                                                                |
+| tcp.port                         | integer | True     |                                | [0,...]                                                                                 | Target upstream port.                                                                                        |
+| tcp.tls                          | boolean | False    | false                          |                                                                                         | When set to `true` performs SSL verification.                                                                |
+| tcp.tls_server_name              | string  | False    |                                |                                                                                         | Server name for the new TLS extension SNI.                                                                   |
+| skywalking.endpoint_addr         | string  | False    | http://127.0.0.1:12900/v3/logs |                                                                                         | Apache SkyWalking HTTP endpoint.                                                                             |
+| skywalking.service_name          | string  | False    | APISIX                         |                                                                                         | Service name for the SkyWalking reporter.                                                                    |
+| skywalking.service_instance_name | String  | False    | APISIX Instance Name           |                                                                                         | Service instance name for the SkyWalking reporter. Set it to `$hostname` to directly get the local hostname. |
+| clickhouse.endpoint_addr         | String  | False    | http://127.0.0.1:8213          |                                                                                         | ClickHouse endpoint.                                                                                         |
+| clickhouse.user                  | String  | False    | default                        |                                                                                         | ClickHouse username.                                                                                         |
+| clickhouse.password              | String  | False    |                                |                                                                                         | ClickHouse password.                                                                                         |
+| clickhouse.database              | String  | False    |                                |                                                                                         | Name of the database to store the logs.                                                                      |
+| clickhouse.logtable              | String  | False    |                                |                                                                                         | Table name to store the logs.                                                                                |
+| host                             | string  | False    |                                |                                                                                         | Deprecated. Use `tcp.host` attribute instead. IP address or the hostname of the TCP server.                  |
+| port                             | integer | False    |                                | [0,...]                                                                                 | Deprecated. Use `tcp.port` instead. Target Upstream port.                                                    |
+| tls                              | boolean | False    | false                          |                                                                                         | Deprecated. Use `tcp.tls` instead. When set to `true` performs SSL verification.                             |
+| tls_server_name                  | string  | False    |                                |                                                                                         | Deprecated. Use `tcp.tls_server_name` instead. Server name for the new TLS extension SNI.                    |
+| timeout                          | integer | False    | 3                              | [1,...]                                                                                 | Timeout (in seconds) for the upstream to connect and send data.                                              |
+| keepalive                        | integer | False    | 30                             | [1,...]                                                                                 | Time in seconds to keep the connection alive after sending data.                                             |
+| level                            | string  | False    | WARN                           | ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"] | Log level to filter the error logs. `ERR` is same as `ERROR`.                                                |
 
-The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
+This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
-## How To Enable And Disable
+## Enabling the Plugin
 
-The error-log-logger is a global plugin of APISIX.
+To enable the Plugin, you can add it in your configuration file (`conf/config.yaml`):
 
-### Enable plugin
-
-Enable the plug-in `error-log-logger` in `conf/config.yaml`, then this plugin can work fine.
-It does not need to be bound in any route or service.
-
-Here is an example of `conf/config.yaml`:
-
-```yaml
-plugins:                          # plugin list
-  ... ...
+```yaml title="conf/config.yaml"
+plugins:
   - request-id
   - hmac-auth
   - api-breaker
-  - error-log-logger              # enable plugin `error-log-logger
+  - error-log-logger
 ```
 
-### Disable plugin
+Once you have enabled the Plugin, you can configure it through the Plugin metadata.
 
-Remove or comment out the plugin `error-log-logger` from `conf/config.yaml`.
+### Configuring TCP server address
 
-```yaml
-plugins:                          # plugin list
-  ... ...
-  - request-id
-  - hmac-auth
-  - api-breaker
-  #- error-log-logger              # enable plugin `error-log-logger
-```
-
-## How to set the TCP server address
-
-Step: update the attributes of the plugin
+You can set the TCP server address by configuring the Plugin metadata as shown below:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -106,9 +87,9 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-A
 }'
 ```
 
-## How to set the SkyWalking OAP server address
+### Configuring SkyWalking OAP server address
 
-Step: update the attributes of the plugin
+You can configure the SkyWalking OAP server address as shown below:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -120,13 +101,11 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-A
 }'
 ```
 
-## How to set the clickhouse
+### Configuring ClickHouse server details
 
-The plugin sends the error log as a string to the `data` field of the clickhouse table.
+The Plugin sends the error log as a string to the `data` field of a table in your ClickHouse server.
 
-*TODO Here save error log as a whole string to clickhouse 'data' column. We will add more columns in the future.*
-
-Step: update the attributes of the plugin
+You can configure it as shown below:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -139,4 +118,16 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-A
       "endpoint_addr": "http://127.0.0.1:8123"
   }
 }'
+```
+
+## Disable Plugin
+
+To disable the Plugin, you can remove it from your configuration file (`conf/config.yaml`):
+
+```yaml title="conf/config.yaml"
+plugins:
+  - request-id
+  - hmac-auth
+  - api-breaker
+  # - error-log-logger
 ```
