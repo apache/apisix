@@ -335,11 +335,11 @@ plugins:                          # plugin list (sorted by priority)
   - real-ip                        # priority: 23000
   - client-control                 # priority: 22000
   - proxy-control                  # priority: 21990
+  - request-id                     # priority: 12015
   - zipkin                         # priority: 12011
   #- skywalking                    # priority: 12010
   #- opentelemetry                 # priority: 12009
   - ext-plugin-pre-req             # priority: 12000
-  - request-id                     # priority: 11010
   - fault-injection                # priority: 11000
   - mocking                        # priority: 10900
   - serverless-pre-function        # priority: 10000
