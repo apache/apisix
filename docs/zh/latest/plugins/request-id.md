@@ -33,6 +33,12 @@ title: request-id
 | include_in_response | boolean | 可选 | true          |                       | 是否需要在返回头中包含该唯一 ID |
 | algorithm           | string  | 可选 | "uuid"         | ["uuid", "snowflake", "nanoid"] | ID 生成算法 |
 
+:::warning
+
+当使用 `snowflake` 算法时，请确保 APISIX 有权限写入 etcd。
+
+:::
+
 ## 如何启用
 
 创建一条路由并在该路由上启用 `request-id` 插件：
