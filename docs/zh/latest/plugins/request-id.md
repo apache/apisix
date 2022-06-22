@@ -33,7 +33,11 @@ title: request-id
 | include_in_response | boolean | 可选 | true          |                       | 是否需要在返回头中包含该唯一 ID |
 | algorithm           | string  | 可选 | "uuid"         | ["uuid", "snowflake", "nanoid"] | ID 生成算法 |
 
-**注意：当部署模式中设置 APISIX 角色为 `data_plane` 时，无法使用 `snowflake` 算法**
+:::warning
+
+当部署模式中设置 APISIX 角色为 `data_plane` 时，无法使用 `snowflake` 算法.
+
+:::
 
 ## 如何启用
 

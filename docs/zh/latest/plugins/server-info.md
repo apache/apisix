@@ -43,6 +43,12 @@ description: 本文介绍了关于 Apache APISIX `server-info` 插件的基本�
 
 **注意：当部署模式中设置 APISIX 角色为 `data_plane` 时，无法使用该插件**
 
+:::warning
+
+当部署模式中设置 APISIX 角色为 `data_plane` 时，无法使用该插件.
+
+:::
+
 ## 属性
 
 无。
