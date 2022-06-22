@@ -1,5 +1,11 @@
 ---
 title: splunk-hec-logging
+keywords:
+  - APISIX
+  - Plugin
+  - Splunk HTTP Event Collector
+  - splunk-hec-logging
+description: This document contains information about the Apache APISIX splunk-hec-logging Plugin.
 ---
 
 <!--
@@ -23,29 +29,28 @@ title: splunk-hec-logging
 
 ## Description
 
-The `splunk-hec-logging` plugin is used to forward the request log of `Apache APISIX` to `Splunk HTTP Event Collector (HEC)` for analysis and storage. After the plugin is enabled, `Apache APISIX` will obtain request context information in `Log Phase` serialize it into [Splunk Event Data format](https://docs.splunk.com/Documentation/Splunk/latest/Data/FormateventsforHTTPEventCollector#Event_metadata) and submit it to the batch queue. When the maximum processing capacity of each batch of the batch processing queue or the maximum time to refresh the buffer is triggered, the data in the queue will be submitted to `Splunk HEC`.
+The `splunk-hec-logging` Plugin is used to forward logs to [Splunk HTTP Event Collector (HEC)](https://docs.splunk.com/Documentation/Splunk/8.2.6/Data/UsetheHTTPEventCollector) for analysis and storage.
 
-For more info on Batch-Processor in Apache APISIX please refer to:
-[Batch-Processor](../batch-processor.md)
+When the Plugin is enabled, APISIX will serialize the request context information to [Splunk Event Data format](https://docs.splunk.com/Documentation/Splunk/latest/Data/FormateventsforHTTPEventCollector#Event_metadata) and submit it to the batch queue. When the maximum batch size is exceeded, the data in the queue is pushed to Splunk HEC. See [batch processor](../batch-processor.md) for more details.
 
 ## Attributes
 
-| Name             | Requirement | Default | Description                                                  |
-| ---------------- | ----------- | ------- | ------------------------------------------------------------ |
-| endpoint         | required    |         | Splunk HEC endpoint configuration info                       |
-| endpoint.uri     | required    |         | Splunk HEC event collector API                               |
-| endpoint.token   | required    |         | Splunk HEC authentication token                              |
-| endpoint.channel | optional    |         | Splunk HEC send data channel identifier, refer to: [About HTTP Event Collector Indexer Acknowledgment](https://docs.splunk.com/Documentation/Splunk/8.2.3/Data/AboutHECIDXAck) |
-| endpoint.timeout | optional    | 10      | Splunk HEC send data timeout, time unit: (seconds)           |
-| ssl_verify       | optional    | true    | enable `SSL` verification, option as per [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake) |
+| Name             | Required | Default | Description                                                                                                                                                                      |
+|------------------|----------|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| endpoint         | True     |         | Splunk HEC endpoint configurations.                                                                                                                                              |
+| endpoint.uri     | True     |         | Splunk HEC event collector API endpoint.                                                                                                                                         |
+| endpoint.token   | True     |         | Splunk HEC authentication token.                                                                                                                                                 |
+| endpoint.channel | False    |         | Splunk HEC send data channel identifier. Read more: [About HTTP Event Collector Indexer Acknowledgment](https://docs.splunk.com/Documentation/Splunk/8.2.3/Data/AboutHECIDXAck). |
+| endpoint.timeout | False    | 10      | Splunk HEC send data timeout in seconds.                                                                                                                                         |
+| ssl_verify       | False    | true    | When set to `true` enables SSL verification as per [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake).                                          |
 
-The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
+This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
-## How To Enable
-
-The following is an example of how to enable the `splunk-hec-logging` for a specific route.
+## Enabling the Plugin
 
 ### Full configuration
+
+The example below shows a complete configuration of the Plugin on a specific Route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -75,7 +80,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-### Minimize configuration
+### Minimal configuration
+
+The example below shows a bare minimum configuration of the Plugin on a Route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -98,27 +105,24 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+## Example usage
 
-* Send request to route configured with the `splunk-hec-logging` plugin
+Once you have configured the Route to use the Plugin, when you make a request to APISIX, it will be logged in your Splunk server:
 
 ```shell
-$ curl -i http://127.0.0.1:9080/splunk.do?q=hello
-HTTP/1.1 200 OK
-...
-hello, world
+curl -i http://127.0.0.1:9080/splunk.do?q=hello
 ```
 
-* Login to Splunk Dashboard to search and view
+You should be able to login and search these logs from your Splunk dashboard:
 
 ![splunk hec search view](../../../assets/images/plugin/splunk-hec-admin-en.png)
 
 ## Disable Plugin
 
-Disabling the `splunk-hec-logging` plugin is very simple, just remove the `JSON` configuration corresponding to `splunk-hec-logging`.
+To disable the `splunk-hec-logging` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},
