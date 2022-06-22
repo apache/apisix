@@ -31,6 +31,7 @@ description: This document contains information about the Apache APISIX ext-plug
 The `ext-plugin-post-resp` Plugin is for running specific external Plugins in the Plugin Runner before executing the built-in Lua Plugins.
 
 The `ext-plugin-post-resp` plugin will be executed after the request gets a response from the upstream.
+
 After enabling this plugin, APISIX will use the [lua-resty-http](https://github.com/api7/lua-resty-http) library to make requests to the upstream.
 
 See [External Plugin](../external-plugin.md) to learn more.
