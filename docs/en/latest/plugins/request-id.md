@@ -49,7 +49,7 @@ The Plugin will not add a unique ID if the request already has a header with the
 
 :::warning
 
-The `snowflake` algorithm won't work if the APISIX role is `data_plane`.
+When you need to use `snowflake` algorithm, make sure APISIX has the permission to write to the etcd.
 
 :::
 
