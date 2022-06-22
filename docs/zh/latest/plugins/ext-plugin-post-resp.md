@@ -31,6 +31,7 @@ description: 本文介绍了关于 Apache APISIX `ext-plugin-post-resp` 插件�
 `ext-plugin-post-resp` 插件用于在执行内置 Lua 插件之前和在 Plugin Runner 内运行特定的 External Plugin。
 
 `ext-plugin-post-resp` 插件将在请求获取到上游的响应之后执行。
+
 启用本插件之后，APISIX 将使用 [lua-resty-http](https://github.com/api7/lua-resty-http) 库向上游发起请求。
 
 如果你想了解更多关于 External Plugin 的信息，请参考 [External Plugin](../external-plugin.md) 。
