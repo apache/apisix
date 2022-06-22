@@ -35,7 +35,7 @@ title: request-id
 
 :::warning
 
-当部署模式中设置 APISIX 角色为 `data_plane` 时，无法使用 `snowflake` 算法.
+当部署模式中设置 APISIX 角色为 `data_plane` 时，无法使用 `snowflake` 算法。
 
 :::
 
