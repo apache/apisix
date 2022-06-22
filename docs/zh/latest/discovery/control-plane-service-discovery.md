@@ -45,7 +45,7 @@ Apache APISIX 在早期已经支持了数据面服务发现，现在 APISIX 也�
 
 :::note
 
-引入 APISIX-Seed 后，如果注册中心的服务变化频繁，etcd 中的数据也会频繁变化。因此，需要在启动 etcd 时设置 --auto-compaction 选项，用来定期压缩历史记录，避免耗尽 etcd 存储空间。详细信息请参考：[revisions](https://etcd.io/docs/v3.5/learning/api/#revisions)。
+引入 APISIX-Seed 后，如果注册中心的服务变化频繁，etcd 中的数据也会频繁变化。因此，需要在启动 etcd 时设置 `--auto-compaction` 选项，用来定期压缩历史记录，避免耗尽 etcd 存储空间。详细信息请参考 [revisions](https://etcd.io/docs/v3.5/learning/api/#revisions)。
 
 :::
 
