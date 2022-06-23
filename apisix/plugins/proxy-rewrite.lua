@@ -185,6 +185,7 @@ function _M.rewrite(conf, ctx)
         upstream_uri = core.utils.uri_safe_encode(upstream_uri)
     end
 
+    ctx.var.upstream_uri = nil
     if ctx.var.is_args == "?" then
         if index then
             ctx.var.upstream_uri = upstream_uri .. "&" .. (ctx.var.args or "")
