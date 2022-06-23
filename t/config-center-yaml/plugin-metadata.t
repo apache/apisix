@@ -33,9 +33,6 @@ _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
 
-    if (!$block->no_error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests();
@@ -67,3 +64,25 @@ plugin_metadata:
 GET /hello
 --- error_log
 "remote_addr":"127.0.0.1"
+--- no_error_log
+[error]
+
+=== TEST 2: sanity
+--- apisix_yaml
+upstreams:
+  - id: 1
+    nodes:
+      "127.0.0.1:1980": 1
+    type: roundrobin
+routes:
+  -
+    uri: /hello
+    upstream_id: 1
+plugin_metadata:
+  - id: authz-casbin
+    model: 123
+#END
+--- request
+GET /hello
+--- error_log
+failed to check item data of [plugin_metadata]
