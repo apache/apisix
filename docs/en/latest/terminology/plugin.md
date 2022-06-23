@@ -95,6 +95,43 @@ the configuration above means customizing the error response from the jwt-auth p
 | Name         | Type | Description |
 |--------------|------|-------------|
 | error_response | string/object  | Custom error response |
+| priority       | integer        | Custom plugin priority |
+
+### Custom Plugin Priority
+
+All plugins have a default priority, but it is possible to customize the plugin priority to change the plugin's execution order.
+
+```json
+ {
+    "serverless-post-function": {
+        "_meta": {
+            "priority": 10000
+        },
+        "phase": "rewrite",
+        "functions" : ["return function(conf, ctx)
+                    ngx.say(\"serverless-post-function\");
+                    end"]
+    },
+    "serverless-pre-function": {
+        "_meta": {
+            "priority": -2000
+        },
+        "phase": "rewrite",
+        "functions": ["return function(conf, ctx)
+                    ngx.say(\"serverless-pre-function\");
+                    end"]
+    }
+}
+```
+
+The default priority of serverless-pre-function is 10000, and the default priority of serverless-post-function is -2000. By default, the serverless-pre-function plugin will be executed first, and serverless-post-function plugin will be executed next.
+
+The above configuration means setting the priority of the serverless-pre-function plugin to -2000 and the priority of the serverless-post-function plugin to 10000. The serverless-post-function plugin will be executed first, and serverless-pre-function plugin will be executed next.
+
+Note:
+
+- Custom plugin priority only affects the current object(route, service ...) of the plugin instance binding, not all instances of that plugin. For example, if the above plugin configuration belongs to Route A, the order of execution of the plugins serverless-post-function and serverless-post-function on Route B will not be affected and the default priority will be used.
+- Custom plugin priority does not apply to the rewrite phase of some plugins configured on the consumer. The rewrite phase of plugins configured on the route will be executed first, and then the rewrite phase of plugins (exclude auth plugins) from the consumer will be executed.
 
 ## Hot Reload
 
