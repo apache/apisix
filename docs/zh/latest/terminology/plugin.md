@@ -89,6 +89,43 @@ local _M = {
 | 名称         | 类型 | 描述           |
 |--------------|------|----------------|
 | error_response | string/object  | 自定义错误响应 |
+| priority       | integer        | 自定义插件优先级 |
+
+### 自定义插件优先级
+
+所有插件都有默认优先级，但是可以自定义插件优先级来改变插件执行顺序。
+
+```json
+ {
+    "serverless-post-function": {
+        "_meta": {
+            "priority": 10000
+        },
+        "phase": "rewrite",
+        "functions" : ["return function(conf, ctx)
+                    ngx.say(\"serverless-post-function\");
+                    end"]
+    },
+    "serverless-pre-function": {
+        "_meta": {
+            "priority": -2000
+        },
+        "phase": "rewrite",
+        "functions": ["return function(conf, ctx)
+                    ngx.say(\"serverless-pre-function\");
+                    end"]
+    }
+}
+```
+
+serverless-pre-function 的默认优先级是 10000，serverless-post-function 的默认优先级是 -2000。默认情况下会先执行 serverless-pre-function 插件，再执行 serverless-post-function 插件。
+
+上面的配置意味着将 serverless-pre-function 插件的优先级设置为 -2000，serverless-post-function 插件的优先级设置为 10000。serverless-post-function 插件会先执行，再执行 serverless-pre-function 插件。
+
+注意：
+
+- 自定义插件优先级只会影响插件实例绑定的主体，不会影响该插件的所有实例。比如上面的插件配置属于路由 A ，路由 B 上的插件 serverless-post-function 和 serverless-post-function 插件执行顺序不会受到影响，会使用默认优先级。
+- 自定义插件优先级不适用于 consumer 上配置的插件的 rewrite 阶段。路由上配置的插件的 rewrite 阶段将会优先运行，然后才会运行 consumer 上除 auth 插件之外的其他插件的 rewrite 阶段。
 
 ## 热加载
 

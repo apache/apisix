@@ -952,6 +952,10 @@ _M.plugin_injected_schema = {
                     { type = "object" },
                 }
             },
+            priority = {
+                description = "priority of plugins by customized order",
+                type = "integer",
+            },
         }
     }
 }

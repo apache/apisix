@@ -68,6 +68,10 @@ local function sort_plugin(l, r)
     return l.priority > r.priority
 end
 
+local function custom_sort_plugin(l, r)
+    return l._meta.priority > r._meta.priority
+end
+
 
 local PLUGIN_TYPE_HTTP = 1
 local PLUGIN_TYPE_STREAM = 2
@@ -368,7 +372,7 @@ local function trace_plugins_info_for_debug(ctx, plugins)
 end
 
 
-function _M.filter(ctx, conf, plugins, route_conf)
+function _M.filter(ctx, conf, plugins, route_conf, phase)
     local user_plugin_conf = conf.value.plugins
     if user_plugin_conf == nil or
        core.table.nkeys(user_plugin_conf) == 0 then
@@ -378,6 +382,7 @@ function _M.filter(ctx, conf, plugins, route_conf)
         return plugins or core.tablepool.fetch("plugins", 0, 0)
     end
 
+    local custom_sort = false
     local route_plugin_conf = route_conf and route_conf.value.plugins
     plugins = plugins or core.tablepool.fetch("plugins", 32, 0)
     for _, plugin_obj in ipairs(local_plugins) do
@@ -392,6 +397,9 @@ function _M.filter(ctx, conf, plugins, route_conf)
                 end
             end
 
+            if plugin_conf._meta and plugin_conf._meta.priority then
+                custom_sort = true
+            end
             core.table.insert(plugins, plugin_obj)
             core.table.insert(plugins, plugin_conf)
 
@@ -400,6 +408,51 @@ function _M.filter(ctx, conf, plugins, route_conf)
     end
 
     trace_plugins_info_for_debug(ctx, plugins)
+
+    if custom_sort then
+        local tmp_plugin_objs = core.tablepool.fetch("tmp_plugin_objs", 0, #plugins / 2)
+        local tmp_plugin_confs = core.tablepool.fetch("tmp_plugin_confs", #plugins / 2, 0)
+
+        for i = 1, #plugins, 2 do
+            local plugin_obj = plugins[i]
+            local plugin_conf = plugins[i + 1]
+
+            -- in the rewrite phase, the plugin executes in the following order:
+            -- 1. execute the rewrite phase of the plugins on route(including the auth plugins)
+            -- 2. merge plugins from consumer and route
+            -- 3. execute the rewrite phase of the plugins on consumer(phase: rewrite_in_consumer)
+            -- in this case, we need to skip the plugins that was already executed(step 1)
+            if phase == "rewrite_in_consumer" and not plugin_conf._from_consumer then
+                plugin_conf._skip_rewrite_in_consumer = true
+            end
+
+            tmp_plugin_objs[plugin_conf] = plugin_obj
+            core.table.insert(tmp_plugin_confs, plugin_conf)
+
+            if not plugin_conf._meta then
+                plugin_conf._meta = core.table.new(0, 1)
+                plugin_conf._meta.priority = plugin_obj.priority
+            else
+                if not plugin_conf._meta.priority then
+                    plugin_conf._meta.priority = plugin_obj.priority
+                end
+            end
+        end
+
+        sort_tab(tmp_plugin_confs, custom_sort_plugin)
+
+        local index
+        for i = 1, #tmp_plugin_confs do
+            index = i * 2 - 1
+            local plugin_conf = tmp_plugin_confs[i]
+            local plugin_obj = tmp_plugin_objs[plugin_conf]
+            plugins[index] = plugin_obj
+            plugins[index + 1] = plugin_conf
+        end
+
+        core.tablepool.release("tmp_plugin_objs", tmp_plugin_objs)
+        core.tablepool.release("tmp_plugin_confs", tmp_plugin_confs)
+    end
 
     return plugins
 end
@@ -757,6 +810,11 @@ function _M.run_plugin(phase, plugins, api_ctx)
                 phase = "rewrite"
             end
             local phase_func = plugins[i][phase]
+
+            if phase == "rewrite" and plugins[i + 1]._skip_rewrite_in_consumer then
+                goto CONTINUE
+            end
+
             if phase_func then
                 plugin_run = true
                 local conf = plugins[i + 1]
@@ -784,6 +842,8 @@ function _M.run_plugin(phase, plugins, api_ctx)
                     end
                 end
             end
+
+            ::CONTINUE::
         end
         return api_ctx, plugin_run
     end

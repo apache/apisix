@@ -445,9 +445,10 @@ function _M.http_access_phase()
             if changed then
                 api_ctx.matched_route = route
                 core.table.clear(api_ctx.plugins)
-                api_ctx.plugins = plugin.filter(api_ctx, route, api_ctx.plugins)
+                local phase = "rewrite_in_consumer"
+                api_ctx.plugins = plugin.filter(api_ctx, route, api_ctx.plugins, nil, phase)
                 -- rerun rewrite phase for newly added plugins in consumer
-                plugin.run_plugin("rewrite_in_consumer", api_ctx.plugins, api_ctx)
+                plugin.run_plugin(phase, api_ctx.plugins, api_ctx)
             end
         end
         plugin.run_plugin("access", plugins, api_ctx)
