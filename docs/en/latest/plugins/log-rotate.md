@@ -1,5 +1,11 @@
 ---
 title: log-rotate
+keywords:
+  - APISIX
+  - API Gateway
+  - Plugin
+  - Log rotate
+description: This document contains information about the Apache APISIX log-rotate Plugin.
 ---
 
 <!--
@@ -23,24 +29,44 @@ title: log-rotate
 
 ## Description
 
-The plug-in can automatically rotate access and error log files in the log directory at regular intervals.
+The `log-rotate` Plugin is used to keep rotating access and error log files in the log directory at regular intervals.
 
-Specify how often logs are rotated every interval and how many logs have been kept recently.
-When the number of log files exceeds the remaining number, the old files are automatically deleted.
+You can configure how often the logs are rotated and how many logs to keep. When the number of logs exceeds, older logs are automatically deleted.
 
 ## Attributes
 
-| Name     | Type    | Requirement | Default | Valid | Description                                                                                                          |
-| -------- | ------- | ----------- | ------- | ----- | -------------------------------------------------------------------------------------------------------------------- |
-| interval | integer | required    | 60 * 60 |       | How often to rotate the log in seconds                                                                               |
-| max_kept | integer | required    | 24 * 7  |       | How many historical logs can be kept at most. When this number is exceeded, old files will be deleted automatically. |
-| enable_compression | boolean | optional    | false |       | Whether to enable log file compression(gzip). This feature requires `tar` installed.                                                                              |
+| Name               | Type    | Required | Default | Description                                                                                    |
+|--------------------|---------|----------|---------|------------------------------------------------------------------------------------------------|
+| interval           | integer | True     | 60 * 60 | Time in seconds specifying how often to rotate the logs.                                       |
+| max_kept           | integer | True     | 24 * 7  | Maximum number of historical logs to keep. If this number is exceeded, older logs are deleted. |
+| enable_compression | boolean | False    | false   | When set to `true`, compresses the log file (gzip). Requires `tar` to be installed.            |
 
-After this plug-in is enabled, the log file will be automatically rotated according to the configuration.
-For example, the following example is a sample based on `interval: 10` and `max_kept: 10`.
+## Enabling the Plugin
+
+To enable the Plugin, add it in your configuration file (`conf/config.yaml`):
+
+```yaml title="conf/config.yaml"
+plugins:
+    - log-rotate
+
+plugin_attr:
+    log-rotate:
+        interval: 3600
+        max_kept: 168
+        enable_compression: false
+```
+
+## Example usage
+
+Once you enable the Plugin as shown above, the logs will be stored and rotated based on your configuration.
+
+In the example below the `interval` is set to `10` and `max_kept` is set to `10`. This will create logs as shown:
 
 ```shell
-$ ll logs
+ll logs
+```
+
+```shell
 total 44K
 -rw-r--r--. 1 resty resty    0 Mar 20 20:32 2020-03-20_20-32-40_access.log
 -rw-r--r--. 1 resty resty 2.4K Mar 20 20:32 2020-03-20_20-32-40_error.log
@@ -66,10 +92,9 @@ total 44K
 -rw-r--r--. 1 resty resty 1.5K Mar 20 21:31 error.log
 ```
 
-When enable log file compression, log file will be like below.
+If you have enabled compression, the logs will be as shown below:
 
 ```shell
-$ ll logs
 total 10.5K
 -rw-r--r--. 1 resty resty  1.5K Mar 20 20:33 2020-03-20_20-33-50_access.log.tar.gz
 -rw-r--r--. 1 resty resty  1.5K Mar 20 20:33 2020-03-20_20-33-50_error.log.tar.gz
@@ -81,27 +106,11 @@ total 10.5K
 -rw-r--r--. 1 resty resty 1.5K Mar 20 21:31 error.log
 ```
 
-### Example
+## Disable plugin
 
-#### Enable plugin
+To remove the `log-rotate` Plugin, you can remove it from your configuration file (`conf/config.yaml`):
 
-Enable the plug-in `log-rotate` in `conf/config.yaml`, then this plugin can work fine.
-It does not need to be bound in any route or service.
-
-Here is an example of `conf/config.yaml`:
-
-```yaml
+```yaml title="conf/config.yaml"
 plugins:
-    # the plugins you enabled
-    - log-rotate
-
-plugin_attr:
-    log-rotate:
-        interval: 3600    # rotate interval (unit: second)
-        max_kept: 168     # max number of log files will be kept
-        enable_compression: false    # enable log file compression(gzip) or not, default false
+    # - log-rotate
 ```
-
-#### Disable plugin
-
-Remove the plugin `log-rotate` from `conf/config.yaml`.
