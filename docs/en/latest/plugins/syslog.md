@@ -1,7 +1,12 @@
 ---
 title: syslog
+keywords:
+  - APISIX
+  - API Gateway
+  - Plugin
+  - Syslog
+description: This document contains information about the Apache APISIX syslog Plugin.
 ---
-
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,32 +28,32 @@ title: syslog
 
 ## Description
 
-`sys` is a plugin which push Log data requests to Syslog.
+The `syslog` Plugin is used to push logs to a Syslog server.
 
-This will provide the ability to send Log data requests as JSON objects.
+Logs can be set as JSON objects.
 
 ## Attributes
 
-| Name             | Type    | Requirement | Default      | Valid         | Description                                                                                                                                                                                          |
-| ---------------- | ------- | ----------- | ------------ | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| host             | string  | required    |              |               | IP address or the Hostname.                                                                                                                                                                          |
-| port             | integer | required    |              |               | Target upstream port.                                                                                                                                                                                |
-| name             | string  | optional    | "sys logger" |               |                                                                                                                                                                                                      |
-| timeout          | integer | optional    | 3000         | [1, ...]      | Timeout for the upstream to send data (unit: ms).                                                                                                                                                    |
-| tls              | boolean | optional    | false        |               | Control whether to perform SSL verification                                                                                                                                                          |
-| flush_limit      | integer | optional    | 4096         | [1, ...]      | If the buffered messages' size plus the current message size reaches (>=) this limit (in bytes), the buffered log messages will be written to log server. Default to 4096 (4KB).                     |
-| drop_limit       | integer | optional    | 1048576      |               | If the buffered messages' size plus the current message size is larger than this limit (in bytes), the current log message will be dropped because of limited buffer size. Default to 1048576 (1MB). |
-| sock_type        | string  | optional    | "tcp"        | ["tcp", "udp] | IP protocol type to use for transport layer.                                                                                                                                                         |
-| max_retry_times  | integer | optional    |              | [1, ...]      | Deprecated. Use max_retry_count instead. Max number of retry times after a connect to a log server failed or send log messages to a log server failed.                                                                                        |
-| retry_interval   | integer | optional    |              | [0, ...]      | Deprecated. Use retry_delay instead. The time delay (in ms) before retry to connect to a log server or retry to send log messages to a log server                                                                                         |
-| pool_size        | integer | optional    | 5            | [5, ...]      | Keepalive pool size used by sock:keepalive.                                                                                                                                                          |
-| include_req_body | boolean | optional    | false        |               | Whether to include the request body                                                                                                                                                                  |
+| Name             | Type    | Required | Default      | Valid values  | Description                                                                                                              |
+|------------------|---------|----------|--------------|---------------|--------------------------------------------------------------------------------------------------------------------------|
+| host             | string  | True     |              |               | IP address or the hostname of the Syslog server.                                                                         |
+| port             | integer | True     |              |               | Target port of the Syslog server.                                                                                        |
+| name             | string  | False    | "sys logger" |               | Identifier for the server.                                                                                               |
+| timeout          | integer | False    | 3000         | [1, ...]      | Timeout in ms for the upstream to send data.                                                                             |
+| tls              | boolean | False    | false        |               | When set to `true` performs TLS verification.                                                                            |
+| flush_limit      | integer | False    | 4096         | [1, ...]      | Maximum size of the buffer (KB) and the current message before it is flushed and written to the server.                  |
+| drop_limit       | integer | False    | 1048576      |               | Maximum size of the buffer (KB) and the current message before the current message is dropped because of the size limit. |
+| sock_type        | string  | False    | "tcp"        | ["tcp", "udp] | Transport layer protocol to use.                                                                                         |
+| max_retry_times  | integer | False    |              | [1, ...]      | Deprecated. Use `max_retry_count` instead. Maximum number of retries if a connection to a log server fails.              |
+| retry_interval   | integer | False    |              | [0, ...]      | Deprecated. Use `retry_delay` instead. Time in ms before retrying the connection to the log server.                      |
+| pool_size        | integer | False    | 5            | [5, ...]      | Keep-alive pool size used by `sock:keepalive`.                                                                           |
+| include_req_body | boolean | False    | false        |               | When set to `true` includes the request body in the log.                                                                 |
 
-The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
+This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
-## How To Enable
+## Enabling the Plugin
 
-The following is an example on how to enable the sys-logger for a specific route.
+The example below shows how you can enable the Plugin for a specific Route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -70,24 +75,20 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+## Example usage
 
-* success:
+Now, if you make a request to APISIX, it will be logged in your Syslog server:
 
 ```shell
-$ curl -i http://127.0.0.1:9080/hello
-HTTP/1.1 200 OK
-...
-hello, world
+curl -i http://127.0.0.1:9080/hello
 ```
 
 ## Disable Plugin
 
-Remove the corresponding json configuration in the plugin configuration to disable the `sys-logger`.
-APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
+To disable the `syslog` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
