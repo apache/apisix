@@ -1,7 +1,12 @@
 ---
 title: rocketmq-logger
+keywords:
+  - APISIX
+  - API Gateway
+  - Plugin
+  - RocketMQ Logger
+description: This document contains information about the Apache APISIX rocketmq-logger Plugin.
 ---
-
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,113 +28,132 @@ title: rocketmq-logger
 
 ## Description
 
-`rocketmq-logger` is a plugin which provides the ability to push requests log data as JSON objects to your external rocketmq clusters.
+The `rocketmq-logger` Plugin provides the ability to push logs as JSON objects to your RocketMQ clusters.
 
- In case if you did not receive the log data don't worry give it some time it will automatically send the logs after the timer function expires in our Batch Processor.
-
-For more info on Batch-Processor in Apache APISIX please refer.
-[Batch-Processor](../batch-processor.md)
+It might take some time to receive the log data. It will be automatically sent after the timer function in the [batch processor](../batch-processor.md) expires.
 
 ## Attributes
 
-| Name             | Type    | Requirement | Default        | Valid   | Description                                                                              |
-| ---------------- | ------- | ----------- | -------------- | ------- | ---------------------------------------------------------------------------------------- |
-| nameserver_list  | object  | required    |                |         | An array of rocketmq nameservers.                                                               |
-| topic            | string  | required    |                |         | Target  topic to push data.                                                              |
-| key              | string  | optional    |                |         | Keys of messages to send.                                               |
-| tag              | string  | optional   |                |         | Tags of messages to send.                           |
-| timeout          | integer | optional    | 3              | [1,...] | Timeout for the upstream to send data.                                                   |
-| use_tls          | boolean | optional   | false          |         | Whether to open TLS                          |
-| access_key       | string  | optional   | ""             |         | access key for ACL, empty string means disable ACL.     |
-| secret_key       | string  | optional   | ""             |         | secret key for ACL.                         |
-| name             | string  | optional    | "rocketmq logger" |         | A  unique identifier to identity the batch processor.                                     |
-| meta_format      | enum    | optional    | "default"      | ["default"，"origin"] | `default`: collect the request information with default JSON way. `origin`: collect the request information with original HTTP request. [example](#examples-of-meta_format)|
-| include_req_body | boolean | optional    | false          | [false, true] | Whether to include the request body. false: indicates that the requested body is not included; true: indicates that the requested body is included. Note: if the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitation. |
-| include_req_body_expr  | array  | optional    |          |         | When `include_req_body` is true, control the behavior based on the result of the [lua-resty-expr](https://github.com/api7/lua-resty-expr) expression. If present, only log the request body when the result is true. |
-| include_resp_body| boolean | optional    | false         | [false, true] | Whether to include the response body. The response body is included if and only if it is `true`. |
-| include_resp_body_expr  | array  | optional    |          |         | When `include_resp_body` is true, control the behavior based on the result of the [lua-resty-expr](https://github.com/api7/lua-resty-expr) expression. If present, only log the response body when the result is true. |
+| Name                   | Type    | Required | Default           | Valid values          | Description                                                                                                                                                                                                               |
+|------------------------|---------|----------|-------------------|-----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| nameserver_list        | object  | True     |                   |                       | List of RocketMQ nameservers.                                                                                                                                                                                             |
+| topic                  | string  | True     |                   |                       | Target topic to push the data to.                                                                                                                                                                                         |
+| key                    | string  | False    |                   |                       | Key of the messages.                                                                                                                                                                                                      |
+| tag                    | string  | False    |                   |                       | Tag of the messages.                                                                                                                                                                                                      |
+| timeout                | integer | False    | 3                 | [1,...]               | Timeout for the upstream to send data.                                                                                                                                                                                    |
+| use_tls                | boolean | False    | false             |                       | When set to `true`, uses TLS.                                                                                                                                                                                             |
+| access_key             | string  | False    | ""                |                       | Access key for ACL. Setting to an empty string will disable the ACL.                                                                                                                                                      |
+| secret_key             | string  | False    | ""                |                       | secret key for ACL.                                                                                                                                                                                                       |
+| name                   | string  | False    | "rocketmq logger" |                       | Unique identifier for the batch processor.                                                                                                                                                                                |
+| meta_format            | enum    | False    | "default"         | ["default"，"origin"] | Format to collect the request information. Setting to `default` collects the information in JSON format and `origin` collects the information with the original HTTP request. See [examples](#meta_format-example) below. |
+| include_req_body       | boolean | False    | false             | [false, true]         | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations.                                                          |
+| include_req_body_expr  | array   | False    |                   |                       | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.   |
+| include_resp_body      | boolean | False    | false             | [false, true]         | When set to `true` includes the response body in the log.                                                                                                                                                                 |
+| include_resp_body_expr | array   | False    |                   |                       | Filter for when the `include_resp_body` attribute is set to `true`. Response body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more. |
 
-The plugin supports the use of batch processors to aggregate and process entries(logs/data) in a batch. This avoids frequent data submissions by the plugin, which by default the batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. For information or custom batch processor parameter settings, see [Batch-Processor](../batch-processor.md#configuration) configuration section.
+This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
-### examples of meta_format
+:::info IMPORTANT
 
-- **default**:
+The data is first written to a buffer. When the buffer exceeds the `batch_max_size` or `buffer_duration` attribute, the data is sent to the RocketMQ server and the buffer is flushed.
 
-```json
-    {
-     "upstream": "127.0.0.1:1980",
-     "start_time": 1619414294760,
-     "client_ip": "127.0.0.1",
-     "service_id": "",
-     "route_id": "1",
-     "request": {
-       "querystring": {
-         "ab": "cd"
+If the process is successful, it will return `true` and if it fails, returns `nil` with a string with the "buffer overflow" error.
+
+:::
+
+### meta_format example
+
+- `default`:
+
+  ```json
+      {
+       "upstream": "127.0.0.1:1980",
+       "start_time": 1619414294760,
+       "client_ip": "127.0.0.1",
+       "service_id": "",
+       "route_id": "1",
+       "request": {
+         "querystring": {
+           "ab": "cd"
+         },
+         "size": 90,
+         "uri": "/hello?ab=cd",
+         "url": "http://localhost:1984/hello?ab=cd",
+         "headers": {
+           "host": "localhost",
+           "content-length": "6",
+           "connection": "close"
+         },
+         "body": "abcdef",
+         "method": "GET"
        },
-       "size": 90,
-       "uri": "/hello?ab=cd",
-       "url": "http://localhost:1984/hello?ab=cd",
-       "headers": {
-         "host": "localhost",
-         "content-length": "6",
-         "connection": "close"
+       "response": {
+         "headers": {
+           "connection": "close",
+           "content-type": "text/plain; charset=utf-8",
+           "date": "Mon, 26 Apr 2021 05:18:14 GMT",
+           "server": "APISIX/2.5",
+           "transfer-encoding": "chunked"
+         },
+         "size": 190,
+         "status": 200
        },
-       "body": "abcdef",
-       "method": "GET"
-     },
-     "response": {
-       "headers": {
-         "connection": "close",
-         "content-type": "text/plain; charset=utf-8",
-         "date": "Mon, 26 Apr 2021 05:18:14 GMT",
-         "server": "APISIX/2.5",
-         "transfer-encoding": "chunked"
+       "server": {
+         "hostname": "localhost",
+         "version": "2.5"
        },
-       "size": 190,
-       "status": 200
-     },
-     "server": {
-       "hostname": "localhost",
-       "version": "2.5"
-     },
-     "latency": 0
+       "latency": 0
+      }
+  ```
+
+- `origin`:
+
+  ```http
+      GET /hello?ab=cd HTTP/1.1
+      host: localhost
+      content-length: 6
+      connection: close
+
+      abcdef
+  ```
+
+## Metadata
+
+You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
+
+| Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
+| ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| log_format | object | False | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+
+:::info IMPORTANT
+
+Configuring the Plugin metadata is global in scope. This means that it will take effect on all Routes and Services which use the `rocketmq-logger` Plugin.
+
+:::
+
+The example below shows how you can configure through the Admin API:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/rocketmq-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "log_format": {
+        "host": "$host",
+        "@timestamp": "$time_iso8601",
+        "client_ip": "$remote_addr"
     }
+}'
 ```
 
-- **origin**:
+With this configuration, your logs would be formatted as shown below:
 
-```http
-    GET /hello?ab=cd HTTP/1.1
-    host: localhost
-    content-length: 6
-    connection: close
-
-    abcdef
+```shell
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
 ```
 
-## Info
+## Enabling the Plugin
 
-The `message` will write to the buffer first.
-It will send to the rocketmq server when the buffer exceed the `batch_max_size`,
-or every `buffer_duration` flush the buffer.
-
-In case of success, returns `true`.
-In case of errors, returns `nil` with a string describing the error (`buffer overflow`).
-
-### Sample Nameserver list
-
-Specify the nameservers of the external rocketmq servers as below sample.
-
-```json
-[
-    "127.0.0.1:9876",
-    "127.0.0.2:9876"
-]
-```
-
-## How To Enable
-
-The following is an example on how to enable the rocketmq-logger for a specific route.
+The example below shows how you can enable the `rocketmq-logger` Plugin on a specific Route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -152,52 +176,29 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+This Plugin also supports pushing to more than one nameserver at a time. You can specify multiple nameserver in the Plugin configuration as shown below:
 
-success:
-
-```shell
-$ curl -i http://127.0.0.1:9080/hello
-HTTP/1.1 200 OK
-...
-hello, world
+```json
+"nameserver_list" : [
+    "127.0.0.1:9876",
+    "127.0.0.2:9876"
+]
 ```
 
-## Metadata
+## Example usage
 
-| Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
-| ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
-| log_format       | object  | optional    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | Log format declared as key value pair in JSON format. Only string is supported in the `value` part. If the value starts with `$`, it means to get [APISIX variables](../apisix-variable.md) or [Nginx variable](http://nginx.org/en/docs/varindex.html). |
-
- Note that **the metadata configuration is applied in global scope**, which means it will take effect on all Route or Service which use rocketmq-logger plugin.
-
-### Example
+Now, if you make a request to APISIX, it will be logged in your RocketMQ server:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/rocketmq-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "log_format": {
-        "host": "$host",
-        "@timestamp": "$time_iso8601",
-        "client_ip": "$remote_addr"
-    }
-}'
-```
-
-It is expected to see some logs like that:
-
-```shell
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+curl -i http://127.0.0.1:9080/hello
 ```
 
 ## Disable Plugin
 
-Remove the corresponding json configuration in the plugin configuration to disable the `rocketmq-logger`.
-APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
+To disable the `rocketmq-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
