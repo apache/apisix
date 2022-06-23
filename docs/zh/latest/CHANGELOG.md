@@ -60,7 +60,9 @@ title: CHANGELOG
 
 ## 2.14.1
 
-**这是一个 LTS 维护版本，您可以在 `release/2.14` 分支中看到 CHANGELOG。**
+### Bugfix
+
+- `real_ip_from` 中配置 "unix: " 不应该导致 batch-requests 插件无法使用 [#7106](https://github.com/apache/apisix/pull/7106)
 
 ## 2.14.0
 

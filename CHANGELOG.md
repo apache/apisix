@@ -60,9 +60,9 @@ title: Changelog
 
 ## 2.14.1
 
-**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.14` branch.**
+### Bugfix
 
-[https://github.com/apache/apisix/blob/release/2.14/CHANGELOG.md#2141](https://github.com/apache/apisix/blob/release/2.14/CHANGELOG.md#2141)
+- The "unix:" in the `real_ip_from` configuration should not break the batch-requests plugin: [#7106](https://github.com/apache/apisix/pull/7106)
 
 ## 2.14.0
 
