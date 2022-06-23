@@ -85,10 +85,12 @@ local function new()
         end
     end
 
-    -- enable etcd health check retry for curr worker
+    -- if an unhealthy etcd node is selected in a single admin read/write etcd operation,
+    -- the retry mechanism for health check can select another healthy etcd node
+    -- to complete the read/write etcd operation.
     if not health_check.conf then
         health_check.init({
-            max_fails = #etcd_conf.http_host,
+            max_fails = 1,
             retry = true,
         })
     end
