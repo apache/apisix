@@ -34,7 +34,7 @@ _EOC_
     $block->set_value("yaml_config", $yaml_config);
 
     if (!$block->no_error_log && !$block->error_log) {
-            $block->set_value("no_error_log", "[error]");
+        $block->set_value("no_error_log", "[error]");
     }
 });
 
