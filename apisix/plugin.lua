@@ -722,19 +722,22 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
 
         plugin_conf.disable = disable
     end
+
     return true
 end
 
 
 check_plugin_metadata = function(item)
-    return check_single_plugin_schema(item.id, item, core.schema.TYPE_METADATA, true)
+    return check_single_plugin_schema(item.id, item,
+        core.schema.TYPE_METADATA, true)
 end
 
 
 
 local function check_schema(plugins_conf, schema_type, skip_disabled_plugin)
     for name, plugin_conf in pairs(plugins_conf) do
-        local ok, err = check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin)
+        local ok, err = check_single_plugin_schema(name, plugin_conf,
+            schema_type, skip_disabled_plugin)
         if not ok then
             return false, err
         end
