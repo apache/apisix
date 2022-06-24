@@ -27,6 +27,7 @@ require("jit.opt").start("minstitch=2", "maxtrace=4000",
 
 require("apisix.patch").patch()
 local core            = require("apisix.core")
+local conf_server     = require("apisix.conf_server")
 local plugin          = require("apisix.plugin")
 local plugin_config   = require("apisix.plugin_config")
 local script          = require("apisix.script")
@@ -95,6 +96,7 @@ function _M.http_init(args)
     end
 
     xrpc.init()
+    conf_server.init()
 end
 
 
