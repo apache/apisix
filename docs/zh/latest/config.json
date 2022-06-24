@@ -191,6 +191,16 @@
       ]
     },
     {
+      "type": "category",
+      "label": "Development",
+      "items": [
+        {
+          "type": "doc",
+          "id": "building-apisix"
+        }
+      ]
+    },
+    {
       "type": "doc",
       "id": "FAQ"
     },
