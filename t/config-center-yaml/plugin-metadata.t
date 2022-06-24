@@ -67,6 +67,8 @@ GET /hello
 --- no_error_log
 [error]
 
+
+
 === TEST 2: sanity
 --- apisix_yaml
 upstreams:
