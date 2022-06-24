@@ -46,18 +46,25 @@ function _M.generate_conf_server(env, conf)
         if not to then
             return nil, "bad etcd endpoint format"
         end
-        servers[i] = s:sub(to + 1)
     end
 
     local conf_render = template.compile([[
     upstream apisix_conf_backend {
-        {% for _, addr in ipairs(servers) do %}
-        server {* addr *};
-        {% end %}
+        server 0.0.0.0:80;
+        balancer_by_lua_block {
+            local conf_server = require("apisix.conf_server")
+            conf_server.balancer()
+        }
     }
     server {
         listen unix:{* home *}/conf/config_listen.sock;
         access_log off;
+
+        access_by_lua_block {
+            local conf_server = require("apisix.conf_server")
+            conf_server.access()
+        }
+
         location / {
             {% if enable_https then %}
             proxy_pass https://apisix_conf_backend;
@@ -70,10 +77,14 @@ function _M.generate_conf_server(env, conf)
             proxy_http_version 1.1;
             proxy_set_header Connection "";
         }
+
+        log_by_lua_block {
+            local conf_server = require("apisix.conf_server")
+            conf_server.log()
+        }
     }
     ]])
     return conf_render({
-        servers = servers,
         enable_https = enable_https,
         home = env.apisix_home or ".",
     })
