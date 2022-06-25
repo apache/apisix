@@ -40,7 +40,7 @@ The specific information represented by the figures in the figure is as follows:
 
 1. Register an upstream with APISIX and specify the service discovery type. APISIX-Seed will watch APISIX resource changes in etcd, filter discovery types, and obtain service names.
 2. APISIX-Seed subscribes the specified service name to the service registry to obtain changes to the corresponding service.
-3. After registering the service with the service registry, APISIX-Seed will obtain the new service information and write the updated service node into etcd.
+3. After the client registers the service with the service registry, APISIX-Seed will obtain the new service information and write the updated service node into etcd;
 4. When the corresponding resources in etcd change, APISIX worker will refresh the latest service node information to memory.
 
 :::note
