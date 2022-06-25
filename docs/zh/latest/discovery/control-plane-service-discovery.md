@@ -39,9 +39,9 @@ Apache APISIX 在早期已经支持了数据面服务发现，现在 APISIX 也�
 图中的数字代表的具体信息如下：
 
 1. 通过 Admin API 向 APISIX 注册上游并指定服务发现类型。APISIX-Seed 将监听 etcd 中的 APISIX 资源变化，过滤服务发现类型并获取服务名称（如 ZooKeeper）；
-2. APISIX-Seed 将指定的服务名称订阅到服务注册中心（如 ZooKeeper），以获取对相应服务的更改；
-3. 向服务注册中心注册服务后，APISIX-Seed 会获取新的服务信息，并将更新后的服务节点写入 etcd；
-4. 当 etcd 中对应的资源发生变化时，APISIX Worker 会将最新的服务节点信息刷新到内存中。
+2. APISIX-Seed 将在服务注册中心（如 ZooKeeper）订阅指定的服务名称，以监控和更新对应的服务信息；
+3. 客户端向服务注册中心注册服务后，APISIX-Seed 会获取新的服务信息，并将更新后的服务节点写入 etcd；
+4. 当 APISIX-Seed 在 etcd 中更新相应的服务节点信息时，APISIX 会将最新的服务节点信息同步到内存中。
 
 :::note
 
