@@ -38,7 +38,7 @@ import TabItem from '@theme/TabItem';
 
 :::note
 
-如果你想为特定的环境或打包 APISIX，请参考[apisix-build-tools](https://github.com/api7/apisix-build-tools)。
+如果你想为特定的环境或打包 APISIX，请参考 [apisix-build-tools](https://github.com/api7/apisix-build-tools)。
 
 :::
 
@@ -85,7 +85,7 @@ make install
 
 如果你在运行 `make deps` 时收到类似 `Could not find header file for LDAP/PCRE/openssl` 的错误消息，请使用此解决方案。
 
-`luarocks` 支持自定义编译时依赖项（请参考：[配置文件格式](https://github.com/luarocks/luarocks/wiki/Config-file-format)）。你可以使用第三方工具安装缺少的软件包并将其安装目录添加到 `luarocks` 变量表中。 此方法适用于 macOS、Ubuntu、CentOS 和其他类似操作系统。
+`luarocks` 支持自定义编译时依赖项（请参考：[配置文件格式](https://github.com/luarocks/luarocks/wiki/Config-file-format)）。你可以使用第三方工具安装缺少的软件包并将其安装目录添加到 `luarocks` 变量表中。此方法适用于 macOS、Ubuntu、CentOS 和其他类似操作系统。
 
 此处仅给出 macOS 的具体解决步骤，其他操作系统的解决方案类似：
 
@@ -114,7 +114,7 @@ make install
       variables = { LDAP_DIR = "/opt/homebrew/cellar/openldap/2.6.1", LDAP_INCDIR = "/opt/homebrew/cellar/openldap/2.6.1/include", }
       ```
 
-      `/opt/homebrew/cellar/openldap/` 是 `brew` 在 macOS(Apple Silicon) 上安装 `openldap` 的默认位置。 `/usr/local/opt/openldap/` 是 brew 在 macOS(Intel) 上安装 openldap 的默认位置。
+      `/opt/homebrew/cellar/openldap/` 是 `brew` 在 macOS(Apple Silicon) 上安装 `openldap` 的默认位置。`/usr/local/opt/openldap/` 是 brew 在 macOS(Intel) 上安装 openldap 的默认位置。
 
 :::
 
@@ -130,7 +130,7 @@ make uninstall && make undeps
 
 :::
 
-## Installing etcd
+## 安装 etcd
 
 APISIX 默认使用 [etcd](https://github.com/etcd-io/etcd) 来保存和同步配置。在运行 APISIX 之前，你需要在你的机器上安装 etcd。
 
@@ -178,7 +178,7 @@ apisix init
 
 :::
 
-运行以下命令测试配置文件。 APISIX 将根据 `config.yaml` 生成 `nginx.conf`，并检查 `nginx.conf` 的语法是否正确。
+运行以下命令测试配置文件，APISIX 将根据 `config.yaml` 生成 `nginx.conf`，并检查 `nginx.conf` 的语法是否正确。
 
 ```shell
 apisix test
@@ -192,7 +192,7 @@ apisix start
 
 如果需要停止 APISIX，你可以使用 `apisix quit` 或者 `apisix stop` 命令。
 
-`apisix quit` 将正常关闭 APISIX。它确保在停止之前完成所有收到的请求。
+`apisix quit` 将正常关闭 APISIX，该指令确保在停止之前完成所有收到的请求。
 
 ```shell
 apisix quit
@@ -227,7 +227,7 @@ APISIX 的一些特性需要在 OpenResty 中引入额外的 NGINX 模块。
    git clone https://github.com/openresty/test-nginx.git
    ```
 
-4. 运行以下命令将当前目录附加到 Perl 的模块目录：
+4. 运行以下命令将当前目录添加到 Perl 的模块目录：
 
    ```shell
    export PERL5LIB=.:$PERL5LIB
@@ -247,7 +247,7 @@ APISIX 的一些特性需要在 OpenResty 中引入额外的 NGINX 模块。
 
 :::note
 
-部分测试需要依赖外部服务和修改系统配置。如果想要完整地构建测试环境，请参考[ci/linux_openresty_common_runner.sh](https://github.com/apache/apisix/blob/master/ci/linux_openresty_common_runner.sh)。
+部分测试需要依赖外部服务和修改系统配置。如果想要完整地构建测试环境，请参考 [ci/linux_openresty_common_runner.sh](https://github.com/apache/apisix/blob/master/ci/linux_openresty_common_runner.sh)。
 
 :::
 
