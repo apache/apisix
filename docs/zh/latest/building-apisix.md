@@ -34,17 +34,17 @@ import TabItem from '@theme/TabItem';
 
 如果你希望为 APISIX 做出贡献或配置开发环境，你可以参考本教程。
 
-如果你想通过其他方式安装 APISIX，你可以参考[安装指南](./installation-guide.md)
+如果你想通过其他方式安装 APISIX，你可以参考[安装指南](./installation-guide.md)。
 
 :::note
 
-如果你想为特定的环境或打包 APISIX，请参考[apisix-build-tools](https://github.com/api7/apisix-build-tools).
+如果你想为特定的环境或打包 APISIX，请参考[apisix-build-tools](https://github.com/api7/apisix-build-tools)。
 
 :::
 
 ## 源码安装 APISIX
 
-首先，你必须安装依赖项。APISIX 提供了一个方便的脚本来安装这些：
+首先，你可以通过以下命令安装依赖项：
 
 ```shell
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-dependencies.sh -sL | bash -
