@@ -41,7 +41,7 @@ local merged_route = core.lrucache.new({
     ttl = 300, count = 512
 })
 local local_conf
-
+local check_plugin_metadata
 
 local _M = {
     version         = 0.3,
@@ -635,7 +635,10 @@ function _M.init_worker()
     end
 
     local plugin_metadatas, err = core.config.new("/plugin_metadata",
-        {automatic = true}
+        {
+            automatic = true,
+            checker = check_plugin_metadata
+        }
     )
     if not plugin_metadatas then
         error("failed to create etcd instance for fetching /plugin_metadatas : "
@@ -689,39 +692,55 @@ function _M.conf_version(conf)
 end
 
 
+local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin)
+    core.log.info("check plugin schema, name: ", name, ", configurations: ",
+        core.json.delay_encode(plugin_conf, true))
+    if type(plugin_conf) ~= "table" then
+        return false, "invalid plugin conf " ..
+            core.json.encode(plugin_conf, true) ..
+            " for plugin [" .. name .. "]"
+    end
+
+    local plugin_obj = local_plugins_hash[name]
+    if not plugin_obj then
+        if skip_disabled_plugin then
+            return true
+        else
+            return false, "unknown plugin [" .. name .. "]"
+        end
+    end
+
+    if plugin_obj.check_schema then
+        local disable = plugin_conf.disable
+        plugin_conf.disable = nil
+
+        local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
+        if not ok then
+            return false, "failed to check the configuration of plugin "
+                .. name .. " err: " .. err
+        end
+
+        plugin_conf.disable = disable
+    end
+
+    return true
+end
+
+
+check_plugin_metadata = function(item)
+    return check_single_plugin_schema(item.id, item,
+        core.schema.TYPE_METADATA, true)
+end
+
+
+
 local function check_schema(plugins_conf, schema_type, skip_disabled_plugin)
     for name, plugin_conf in pairs(plugins_conf) do
-        core.log.info("check plugin schema, name: ", name, ", configurations: ",
-                      core.json.delay_encode(plugin_conf, true))
-        if type(plugin_conf) ~= "table" then
-            return false, "invalid plugin conf " ..
-                core.json.encode(plugin_conf, true) ..
-                " for plugin [" .. name .. "]"
+        local ok, err = check_single_plugin_schema(name, plugin_conf,
+            schema_type, skip_disabled_plugin)
+        if not ok then
+            return false, err
         end
-
-        local plugin_obj = local_plugins_hash[name]
-        if not plugin_obj then
-            if skip_disabled_plugin then
-                goto CONTINUE
-            else
-                return false, "unknown plugin [" .. name .. "]"
-            end
-        end
-
-        if plugin_obj.check_schema then
-            local disable = plugin_conf.disable
-            plugin_conf.disable = nil
-
-            local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
-            if not ok then
-                return false, "failed to check the configuration of plugin "
-                              .. name .. " err: " .. err
-            end
-
-            plugin_conf.disable = disable
-        end
-
-        ::CONTINUE::
     end
 
     return true
