@@ -221,7 +221,7 @@
             "discovery/consul_kv",
             "discovery/nacos",
             "discovery/eureka",
-            "discovery/zookeeper",
+            "discovery/control-plane-service-discovery",
             "discovery/kubernetes"
           ]
         },

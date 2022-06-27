@@ -206,7 +206,7 @@
             "discovery/dns",
             "discovery/nacos",
             "discovery/eureka",
-            "discovery/zookeeper",
+            "discovery/control-plane-service-discovery",
             "discovery/kubernetes"
           ]
         },
