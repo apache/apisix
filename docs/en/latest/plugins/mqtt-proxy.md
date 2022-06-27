@@ -61,7 +61,7 @@ To enable the Plugin, you need to first enable the `stream_proxy` configuration 
     ...
 ```
 
-You can now send the MQT request to port `9100`.
+You can now send the MQTT request to port `9100`.
 
 You can now create a stream Route and enable the `mqtt-proxy` Plugin:
 
