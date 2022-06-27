@@ -46,6 +46,32 @@ title: sls-logger
 
 本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
+## 插件元数据设置
+
+| 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
+| ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
+| log_format       | object  | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [Nginx 内置变量](http://nginx.org/en/docs/varindex.html)。特别的，**该设置是全局生效的**，意味着指定 log_format 后，将对所有绑定 sls-logger 的 Route 或 Service 生效。 |
+
+### 设置日志格式示例
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/sls-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "log_format": {
+        "host": "$host",
+        "@timestamp": "$time_iso8601",
+        "client_ip": "$remote_addr"
+    }
+}'
+```
+
+在日志收集处，将得到类似下面的日志：
+
+```shell
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+```
+
 ## 如何开启
 
 1. 下面例子展示了如何为指定路由开启 `sls-logger` 插件的。
