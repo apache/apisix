@@ -523,6 +523,7 @@ local function _automatic_fetch(premature, self)
     end
 
     if not (health_check.conf and health_check.conf.shm_name) then
+        -- used for worker processes to synchronize configuration
         local _, err = health_check.init({
             shm_name = health_check_shm_name,
             fail_timeout = self.health_check_timeout,
