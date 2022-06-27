@@ -42,15 +42,15 @@ If you are using OpenResty, you need to build it with Dubbo support. See [How do
 
 | Name            | Type   | Required | Default              | Description                     |
 | --------------- | ------ | -------- | -------------------- | ------------------------------- |
-| service_name    | string | required |                      | Dubbo provider service name.    |
-| service_version | string | required |                      | Dubbo provider service version. |
-| method          | string | optional | The path of the URI. | Dubbo provider service method.  |
+| service_name    | string | True     |                      | Dubbo provider service name.    |
+| service_version | string | True     |                      | Dubbo provider service version. |
+| method          | string | False    | The path of the URI. | Dubbo provider service method.  |
 
 ## Static Attributes
 
 | Name                     | Type   | Required | Default | Valid values | Description                                                     |
 | ------------------------ | ------ | -------- | ------- | ------------ | --------------------------------------------------------------- |
-| upstream_multiplex_count | number | required | 32      | >= 1         | Maximum number of multiplex requests in an upstream connection. |
+| upstream_multiplex_count | number | True | 32      | >= 1         | Maximum number of multiplex requests in an upstream connection. |
 
 ## Enabling the Plugin
 
