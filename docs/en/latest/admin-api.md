@@ -768,6 +768,8 @@ Currently, the response is returned from etcd.
 
 **API**:/apisix/admin/ssl/{id}
 
+**Note**: In the APISIX V3 admin API, the API `/apisix/admin/ssl/{id}` is deprecated, and the API `/apisix/admin/ssls/{id}` is used instead.
+
 ### Request Methods
 
 | Method | Request URI            | Request Body | Description                                     |
@@ -807,6 +809,39 @@ Example Configuration:
 ```
 
 See [Certificate](./certificate.md) for more examples.
+
+## Proto
+
+**API**: /apisix/admin/proto/{id}
+
+**Note**: In the APISIX V3 admin API, the API `/apisix/admin/proto/{id}` is deprecated, and the API `/apisix/admin/protos/{id}` is used instead.
+
+The the content of `.proto` or `.pb` files to APISIX.
+
+### Request Methods
+
+| Method | Request URI                     | Request Body | Description                                                                                                                         |
+| ------ | ------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| PUT    | /apisix/admin/proto/{id}        | {...}        | Creates a proto with the specified id.                                                                                        |
+| DELETE | /apisix/admin/proto/{id}        | NULL         | Removes the proto with the specified id.                                                                                      |
+
+Example Configuration:
+
+```shell
+{
+    "content" : "syntax = \"proto3\";
+    package helloworld;
+    service Greeter {
+        rpc SayHello (HelloRequest) returns (HelloReply) {}
+    }
+    message HelloRequest {
+        string name = 1;
+    }
+    message HelloReply {
+        string message = 1;
+    }"
+}
+```
 
 ## Global Rule
 
