@@ -264,3 +264,166 @@ deployment:
 connect() failed
 --- response_body
 foo
+
+
+
+=== TEST 6: check default SNI
+--- http_config
+server {
+    listen 12345 ssl;
+    ssl_certificate             cert/apisix.crt;
+    ssl_certificate_key         cert/apisix.key;
+
+    ssl_certificate_by_lua_block {
+        local ngx_ssl = require "ngx.ssl"
+        ngx.log(ngx.WARN, "Receive SNI: ", ngx_ssl.server_name())
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:2379;
+    }
+}
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/apisix/test", "foo"))
+            local res = assert(etcd.get("/apisix/test"))
+            ngx.say(res.body.node.value)
+        }
+    }
+--- response_body
+foo
+--- extra_yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    etcd:
+        prefix: "/apisix"
+        host:
+            - https://localhost:12345
+--- error_log
+Receive SNI: localhost
+--- no_error_log
+[error]
+
+
+
+=== TEST 7: check configured SNI
+--- http_config
+server {
+    listen 12345 ssl;
+    ssl_certificate             cert/apisix.crt;
+    ssl_certificate_key         cert/apisix.key;
+
+    ssl_certificate_by_lua_block {
+        local ngx_ssl = require "ngx.ssl"
+        ngx.log(ngx.WARN, "Receive SNI: ", ngx_ssl.server_name())
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:2379;
+    }
+}
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/apisix/test", "foo"))
+            local res = assert(etcd.get("/apisix/test"))
+            ngx.say(res.body.node.value)
+        }
+    }
+--- response_body
+foo
+--- extra_yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    etcd:
+        prefix: "/apisix"
+        host:
+            - https://127.0.0.1:12345
+        tls:
+            sni: "x.com"
+--- error_log
+Receive SNI: x.com
+--- no_error_log
+[error]
+
+
+
+=== TEST 8: check Host header
+--- http_config
+server {
+    listen 12345;
+    location / {
+        access_by_lua_block {
+            ngx.log(ngx.WARN, "Receive Host: ", ngx.var.http_host)
+        }
+        proxy_pass http://127.0.0.1:2379;
+    }
+}
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/apisix/test", "foo"))
+            local res = assert(etcd.get("/apisix/test"))
+            ngx.say(res.body.node.value)
+        }
+    }
+--- response_body
+foo
+--- extra_yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    etcd:
+        prefix: "/apisix"
+        host:
+            - http://127.0.0.1:12345
+            - http://localhost:12345
+--- error_log
+Receive Host: localhost
+Receive Host: 127.0.0.1
+
+
+
+=== TEST 9: check Host header after retry
+--- http_config
+server {
+    listen 12345;
+    location / {
+        access_by_lua_block {
+            ngx.log(ngx.WARN, "Receive Host: ", ngx.var.http_host)
+        }
+        proxy_pass http://127.0.0.1:2379;
+    }
+}
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/apisix/test", "foo"))
+            local res = assert(etcd.get("/apisix/test"))
+            ngx.say(res.body.node.value)
+        }
+    }
+--- response_body
+foo
+--- extra_yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    etcd:
+        prefix: "/apisix"
+        host:
+            - http://127.0.0.1:1979
+            - http://localhost:12345
+--- error_log
+Receive Host: localhost
