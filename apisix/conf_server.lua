@@ -21,6 +21,7 @@ local balancer = require("ngx.balancer")
 local error = error
 local ipairs = ipairs
 local ngx = ngx
+local ngx_var = ngx.var
 
 
 local _M = {}
@@ -35,6 +36,7 @@ local function create_resolved_result(server)
     return {
         host = host,
         port = port,
+        server = server,
     }
 end
 
@@ -117,7 +119,7 @@ local function resolve_servers(ctx)
     if #servers > 1 then
         local nodes = {}
         for _, res in ipairs(resolved_results) do
-            local s = res.host .. ":" .. res.port
+            local s = res.server
             nodes[s] = 1
         end
         server_picker = picker.new(nodes, {})
@@ -136,13 +138,25 @@ local function pick_node(ctx)
 
         ctx.server_picker = server_picker
         ctx.balancer_server = server
-        res = create_resolved_result(server)
+
+        for _, r in ipairs(resolved_results) do
+            if r.server == server then
+                res = r
+                break
+            end
+        end
     else
         res = resolved_results[1]
     end
 
     ctx.balancer_ip = res.host
     ctx.balancer_port = res.port
+
+    ngx_var.upstream_host = res.domain or res.host
+    if balancer.recreate_request and ngx.get_phase() == "balancer" then
+        balancer.recreate_request()
+    end
+
     return true
 end
 

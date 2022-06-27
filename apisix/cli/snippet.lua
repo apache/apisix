@@ -60,6 +60,8 @@ function _M.generate_conf_server(env, conf)
         listen unix:{* home *}/conf/config_listen.sock;
         access_log off;
 
+        set $upstream_host '';
+
         access_by_lua_block {
             local conf_server = require("apisix.conf_server")
             conf_server.access()
@@ -69,6 +71,11 @@ function _M.generate_conf_server(env, conf)
             {% if enable_https then %}
             proxy_pass https://apisix_conf_backend;
             proxy_ssl_server_name on;
+            {% if sni then %}
+            proxy_ssl_name {* sni *};
+            {% else %}
+            proxy_ssl_name $upstream_host;
+            {% end %}
             proxy_ssl_protocols TLSv1.2 TLSv1.3;
             {% else %}
             proxy_pass http://apisix_conf_backend;
@@ -76,6 +83,7 @@ function _M.generate_conf_server(env, conf)
 
             proxy_http_version 1.1;
             proxy_set_header Connection "";
+            proxy_set_header Host $upstream_host;
         }
 
         log_by_lua_block {
@@ -85,6 +93,7 @@ function _M.generate_conf_server(env, conf)
     }
     ]])
     return conf_render({
+        sni = etcd.tls and etcd.tls.sni,
         enable_https = enable_https,
         home = env.apisix_home or ".",
     })
