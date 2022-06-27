@@ -275,9 +275,9 @@ end
 local function set_upstream_headers(api_ctx, picked_server)
     set_upstream_host(api_ctx, picked_server)
 
-    local hdr = core.request.header(api_ctx, "X-Forwarded-Proto")
-    if hdr then
-        api_ctx.var.var_x_forwarded_proto = hdr
+    local proto = api_ctx.var.http_x_forwarded_proto
+    if proto then
+        api_ctx.var.var_x_forwarded_proto = proto
     end
 end
 
