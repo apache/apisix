@@ -7,7 +7,7 @@ keywords:
   - 贡献代码
   - 构建 APISIX
   - 源码安装 APISIX
-description: 在本地构建和运行 APISIX 以进行开发的指南。
+description: 本文介绍了如何在本地使用源码安装 API 网关 Apache APISIX 来构建开发环境。
 ---
 
 <!--
@@ -57,13 +57,13 @@ APISIX_VERSION='2.14.1'
 mkdir apisix-${APISIX_VERSION}
 ```
 
-现在，你可以通过运行以下命令来下载 APISIX 源码包：
+现在，你可以运行以下命令来下载 APISIX 源码包：
 
 ```shell
 wget https://downloads.apache.org/apisix/${APISIX_VERSION}/apache-apisix-${APISIX_VERSION}-src.tgz
 ```
 
-你也可以从[下载页面](https://apisix.apache.org/downloads/)下载源码包。你还可以在该页面找到 APISIX Dashboard 和 APISIX Ingress Controller 的源码包。
+你可以从[下载页面](https://apisix.apache.org/downloads/)下载源码包。你也可以在该页面找到 APISIX Dashboard 和 APISIX Ingress Controller 的源码包。
 
 下载源码包后，你可以将文件解压到之前创建的文件夹中：
 
@@ -79,7 +79,7 @@ make deps
 make install
 ```
 
-这将安装 APISIX 运行时依赖的 Lua 库和 `apisix` 命令。
+该命令将安装 APISIX 运行时依赖的 Lua 库和 `apisix` 命令。
 
 :::note
 
@@ -174,7 +174,7 @@ apisix init
 
 :::tip
 
-运行 `apisix help` 命令，查看返回结果，获取其他操作命令及其描述。
+你可以运行 `apisix help` 命令，查看返回结果，获取其他操作命令及其描述。
 
 :::
 
@@ -215,7 +215,7 @@ APISIX 的一些特性需要在 OpenResty 中引入额外的 NGINX 模块。
 以下步骤展示了如何运行 APISIX 的测试用例：
 
 1. 安装 `perl` 的包管理器 [cpanminus](https://metacpan.org/pod/App::cpanminus#INSTALLATION)。
-2. 然后通过 `cpanm` 来安装 [test-nginx](https://github.com/openresty/test-nginx) 的依赖：
+2. 通过 `cpanm` 来安装 [test-nginx](https://github.com/openresty/test-nginx) 的依赖：
 
    ```shell
    sudo cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
@@ -253,7 +253,7 @@ APISIX 的一些特性需要在 OpenResty 中引入额外的 NGINX 模块。
 
 ### 故障排查
 
-以下是运行 APISIX 测试用例的一些常见故障排除步骤。
+以下是运行 APISIX 测试用例的常见故障排除步骤。
 
 出现 `Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t/servroot/conf/nginx.conf` 报错，是因为默认的 NGINX 安装路径未找到，解决方法如下：
 
