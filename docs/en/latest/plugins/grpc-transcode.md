@@ -134,7 +134,7 @@ This script will take in a `.pb` file and the `id` to create, encodes the conten
 To run the script:
 
 ```bash
-chmod +x ./upload_pb.pb
+chmod +x ./upload_pb.py
 ```
 
 ```
