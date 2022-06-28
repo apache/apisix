@@ -135,7 +135,7 @@ print(resp.text)
 运行脚本：
 
 ```shell
-chmod +x ./upload_pb.pb
+chmod +x ./upload_pb.py
 ./upload_pb.py proto.pb 1
 ```
 
