@@ -45,6 +45,21 @@ jobs:
       run: |
         echo "##[set-output name=version;]$(echo ${GITHUB_REF##*/})"
 
+    - name: Extract test type
+      shell: bash
+      id: test_env
+      run: |
+        test_dir="${{ matrix.test_dir }}"
+        if [[ $test_dir =~ 't/plugin' ]]; then
+          echo "##[set-output name=type;]$(echo 'plugin')"
+        fi
+        if [[ $test_dir =~ 't/admin ' ]]; then
+          echo "##[set-output name=type;]$(echo 'first')"
+        fi
+        if [[ $test_dir =~ ' t/xds-library' ]]; then
+          echo "##[set-output name=type;]$(echo 'last')"
+        fi
+
     - name: Linux launch common services
       run: |
         make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
@@ -66,6 +81,7 @@ jobs:
         rm -rf $(ls -1 --ignore=apisix-build-tools --ignore=t --ignore=utils --ignore=ci --ignore=Makefile --ignore=rockspec)
 
     - name: Build xDS library
+      if: steps.test_env.outputs.type == 'last'
       run: |
         cd t/xds-library
         go build -o libxds.so -buildmode=c-shared main.go export.go
@@ -77,12 +93,24 @@ jobs:
         docker run -itd -v /home/runner/work/apisix/apisix:/apisix --env TEST_FILE_SUB_DIR="$TEST_FILE_SUB_DIR" --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org docker.io/centos:7 /bin/bash
         # docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
 
-    - name: Run other docker containers for test
+    - name: Start CI env (FIRST_TEST)
+      if: steps.test_env.outputs.type == 'first'
+      run: |
+        make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
+
+    - name: Start CI env (PLUGIN_TEST)
+      if: steps.test_env.outputs.type == 'plugin'
+      run: |
+        make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
+        ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
+
+    - name: Start CI env (LAST_TEST)
+      if: steps.test_env.outputs.type == 'last'
       run: |
         # generating SSL certificates for Kafka
         keytool -genkeypair -keyalg RSA -dname "CN=127.0.0.1" -alias 127.0.0.1 -keystore ./ci/pod/kafka/kafka-server/selfsigned.jks -validity 365 -keysize 2048 -storepass changeit
-        make ci-env-up
-        ./ci/linux-ci-init-service.sh
+        make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
+        ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
 
     - name: Install dependencies
       run: |
