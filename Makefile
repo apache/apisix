@@ -24,7 +24,6 @@ SHELL := /bin/bash -o pipefail
 # Project basic setting
 VERSION                ?= master
 project_name           ?= apache-apisix
-project_compose_ci     ?= ci/pod/docker-compose.yml
 project_release_name   ?= $(project_name)-$(VERSION)-src
 
 
