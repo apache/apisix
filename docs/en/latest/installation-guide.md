@@ -167,6 +167,12 @@ Run `apisix help` to get a list of all available operations.
 :::
 
 </TabItem>
+
+<TabItem value="source code">
+
+If you want to build APISIX from source, please refer to [Building APISIX from source](./building-apisix.md).
+
+</TabItem>
 </Tabs>
 
 ## Installing etcd
