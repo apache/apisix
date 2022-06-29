@@ -43,20 +43,28 @@ local function new()
     end
 
     local etcd_conf
+    local proxy_by_conf_server = false
 
-    if local_conf.deployment
-        and local_conf.deployment.role == "traditional"
-        -- we proxy the etcd requests in traditional mode so we can test the CP's behavior in
-        -- daily development. However, a stream proxy can't be the CP.
-        -- Hence, generate a HTTP conf server to proxy etcd requests in stream proxy is
-        -- unnecessary and inefficient.
-        and is_http
-    then
-        local sock_prefix = ngx_config_prefix
+    if local_conf.deployment then
         etcd_conf = clone_tab(local_conf.deployment.etcd)
-        etcd_conf.unix_socket_proxy =
-            "unix:" .. sock_prefix .. "/conf/config_listen.sock"
-        etcd_conf.host = {"http://127.0.0.1:2379"}
+
+        if local_conf.deployment.role == "traditional"
+            -- we proxy the etcd requests in traditional mode so we can test the CP's behavior in
+            -- daily development. However, a stream proxy can't be the CP.
+            -- Hence, generate a HTTP conf server to proxy etcd requests in stream proxy is
+            -- unnecessary and inefficient.
+            and is_http
+        then
+            local sock_prefix = ngx_config_prefix
+            etcd_conf.unix_socket_proxy =
+                "unix:" .. sock_prefix .. "/conf/config_listen.sock"
+            etcd_conf.host = {"http://127.0.0.1:2379"}
+            proxy_by_conf_server = true
+
+        elseif local_conf.deployment.role == "control_plane" then
+            -- TODO: add the proxy conf in control_plane
+            proxy_by_conf_server = true
+        end
     else
         etcd_conf = clone_tab(local_conf.etcd)
     end
@@ -88,7 +96,10 @@ local function new()
     -- if an unhealthy etcd node is selected in a single admin read/write etcd operation,
     -- the retry mechanism for health check can select another healthy etcd node
     -- to complete the read/write etcd operation.
-    if not health_check.conf then
+    if proxy_by_conf_server then
+        -- health check is done in conf server
+        health_check.disable()
+    elseif not health_check.conf then
         health_check.init({
             max_fails = 1,
             retry = true,
