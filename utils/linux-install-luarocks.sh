@@ -61,3 +61,7 @@ fi
 
 luarocks config variables.OPENSSL_LIBDIR ${OPENSSL_PREFIX}/lib
 luarocks config variables.OPENSSL_INCDIR ${OPENSSL_PREFIX}/include
+
+PCRE_PREFIX=${OPENRESTY_PREFIX}/pcre
+luarocks config variables.PCRE_LIBDIR ${PCRE_PREFIX}/lib
+luarocks config variables.PCRE_INCDIR ${PCRE_PREFIX}/include
