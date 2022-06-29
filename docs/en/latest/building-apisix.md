@@ -33,7 +33,7 @@ import TabItem from '@theme/TabItem';
 
 If you are looking to contribute to APISIX or setup a development environment, this guide is for you.
 
-If you are looking to install and run APISIX, check out the [Installation](/docs/apisix/how-to-build) docs.
+If you are looking to install and run APISIX, check out the [Installation](./installation-guide.md) docs.
 
 :::note
 
