@@ -99,7 +99,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 通过上述命令启用插件后，可以通过以下方法测试插件。
 
 ```shell
-curl -i -ubar:bar http://127.0.0.1:9080/hello
+curl -i -ufoo:bar http://127.0.0.1:9080/hello
 ```
 
 如果配置成功则返回如下结果：
