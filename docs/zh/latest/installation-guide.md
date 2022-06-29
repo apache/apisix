@@ -44,7 +44,7 @@ import TabItem from '@theme/TabItem';
     {label: 'Docker', value: 'docker'},
     {label: 'Helm', value: 'helm'},
     {label: 'RPM', value: 'rpm'},
-    {label: 'Source Code', value: 'source code'}
+    {label: 'Source Code', value: 'source code'},
   ]}>
 <TabItem value="docker">
 
