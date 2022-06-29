@@ -20,6 +20,7 @@
 #
 
 apisix:
+  # hostname: apisix-node1          # If not set, the default value is server hostname (exec /bin/hostname)
   # node_listen: 9080               # APISIX listening port
   node_listen:                      # This style support multiple ports
     - 9080

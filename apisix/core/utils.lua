@@ -253,6 +253,13 @@ function _M.gethostname()
         return hostname
     end
 
+    local local_conf = config_local.local_conf()
+    local config_hostname = table.try_read_attr(local_conf, "apisix", "hostname")
+    if config_hostname then
+        hostname = config_hostname
+        return hostname
+    end
+
     local hd = io_popen("/bin/hostname")
     local data, err = hd:read("*a")
     if err == nil then
