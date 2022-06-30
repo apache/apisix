@@ -1,5 +1,12 @@
 ---
 title: dubbo-proxy
+keywords:
+  - APISIX
+  - API Gateway
+  - Plugin
+  - Apache Dubbo
+  - dubbo-proxy
+description: This document contains information about the Apache APISIX dubbo-proxy Plugin.
 ---
 
 <!--
@@ -23,40 +30,39 @@ title: dubbo-proxy
 
 ## Description
 
-dubbo-proxy plugin allows you proxy HTTP request to [**dubbo**](http://dubbo.apache.org).
+The `dubbo-proxy` Plugin allows you to proxy HTTP requests to [Apache Dubbo](https://dubbo.apache.org/en/index.html).
 
-## Requirement
+:::info IMPORTANT
 
-If you are using OpenResty, you need to build it with dubbo support, see [APISIX-Base](./FAQ/#how-do-i-build-the-apisix-base-environment).
+If you are using OpenResty, you need to build it with Dubbo support. See [How do I build the APISIX base environment](./../FAQ.md#how-do-i-build-the-apisix-base-environment) for details.
+
+:::
 
 ## Runtime Attributes
 
-| Name         | Type   | Requirement | Default  | Valid        | Description                                                          |
-| ------------ | ------ | ----------- | -------- | ------------ | -------------------------------------------------------------------- |
-| service_name    | string | required    |          |              | dubbo provider service name|
-| service_version | string | required    |          |              | dubbo provider service version|
-| method          | string | optional    | the path of uri   |     | dubbo provider service method|
+| Name            | Type   | Required | Default              | Description                     |
+| --------------- | ------ | -------- | -------------------- | ------------------------------- |
+| service_name    | string | True     |                      | Dubbo provider service name.    |
+| service_version | string | True     |                      | Dubbo provider service version. |
+| method          | string | False    | The path of the URI. | Dubbo provider service method.  |
 
 ## Static Attributes
 
-| Name         | Type   | Requirement | Default  | Valid        | Description                                                          |
-| ------------ | ------ | ----------- | -------- | ------------ | -------------------------------------------------------------------- |
-| upstream_multiplex_count | number | required    | 32        | >= 1 | the maximum number of multiplex requests in an upstream connection |
+| Name                     | Type   | Required | Default | Valid values | Description                                                     |
+| ------------------------ | ------ | -------- | ------- | ------------ | --------------------------------------------------------------- |
+| upstream_multiplex_count | number | True | 32      | >= 1         | Maximum number of multiplex requests in an upstream connection. |
 
-## How To Enable
+## Enabling the Plugin
 
-First of all, enable the dubbo-proxy plugin in the `config.yaml`:
+To enable the `dubbo-proxy` Plugin, you have to add it in your configuration file (`conf/config.yaml`):
 
-```
-# Add this in config.yaml
+```yaml title="conf/config.yaml"
 plugins:
-  - ... # plugin you need
+  - ...
   - dubbo-proxy
 ```
 
-Then reload APISIX.
-
-Here's an example, enable the dubbo-proxy plugin on the specified route:
+Now, when APISIX is reloaded, you can add it to a specific Route as shown below:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/upstreams/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -83,44 +89,41 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-## Test Plugin
+## Example usage
 
-You can follow the [Quick Start](https://github.com/alibaba/tengine/tree/master/modules/mod_dubbo#quick-start) example in Tengine and use the configuration above to test it.
-They should provide the same result.
+You can follow the [Quick Start](https://github.com/alibaba/tengine/tree/master/modules/mod_dubbo#quick-start) guide in Tengine with the configuration above for testing.
 
-The returned data from upstream dubbo service must be a `Map<String, String>`.
+Dubbo returns data in the form `Map<String, String>`.
 
-If the returned data is
+If the returned data is:
 
 ```json
 {
-    "status": "200",
-    "header1": "value1",
-    "header2": "valu2",
-    "body": "blahblah"
+  "status": "200",
+  "header1": "value1",
+  "header2": "value2",
+  "body": "body of the message"
 }
 ```
 
-the converted HTTP response will be
+The converted HTTP response will be:
 
 ```
-HTTP/1.1 200 OK # "status" will be the status code
+HTTP/1.1 200 OK
 ...
 header1: value1
 header2: value2
 ...
 
-blahblah # "body" will be the body
+body of the message
 ```
 
 ## Disable Plugin
 
-When you want to disable the dubbo-proxy plugin on a route/service, it is very simple,
- you can delete the corresponding json configuration in the plugin configuration,
-  no need to restart the service, it will take effect immediately:
+To disable the `dubbo-proxy` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uris": [
@@ -133,15 +136,9 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-The dubbo-proxy plugin has been disabled now. It works for other plugins.
+To completely disable the `dubbo-proxy` Plugin, you can remove it from your configuration file (`conf/config.yaml`):
 
-If you want to disable dubbo-proxy plugin totally,
-you need to comment out in the `config.yaml`:
-
-```yaml
+```yaml title="conf/config.yaml"
 plugins:
-  - ... # plugin you need
-  #- dubbo-proxy
+  # - dubbo-proxy
 ```
-
-And then reload APISIX.
