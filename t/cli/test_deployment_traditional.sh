@@ -104,6 +104,7 @@ deployment:
 
 make run
 sleep 1
+make stop
 
 if grep '\[error\]' logs/error.log; then
     echo "failed: could not connect to etcd with stream enabled"
@@ -131,3 +132,55 @@ if ! echo "$out" | grep 'all nodes in the etcd cluster should enable/disable TLS
 fi
 
 echo "passed: validate etcd host"
+
+# The 'admin.apisix.dev' is injected by ci/common.sh@set_coredns
+
+# etcd mTLS verify
+echo '
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    etcd:
+        host:
+            - "https://admin.apisix.dev:22379"
+        prefix: "/apisix"
+        tls:
+            cert: t/certs/mtls_client.crt
+            key: t/certs/mtls_client.key
+            verify: false
+  ' > conf/config.yaml
+
+make run
+sleep 1
+
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+make stop
+
+if [ ! $code -eq 200 ]; then
+    echo "failed: could not work when mTLS is enabled"
+    exit 1
+fi
+
+echo "passed: etcd enables mTLS successfully"
+
+echo '
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    etcd:
+        host:
+            - "https://admin.apisix.dev:22379"
+        prefix: "/apisix"
+        tls:
+            verify: false
+  ' > conf/config.yaml
+
+out=$(make init 2>&1 || echo "ouch")
+if ! echo "$out" | grep "bad certificate"; then
+    echo "failed: apisix should echo \"bad certificate\""
+    exit 1
+fi
+
+echo "passed: certificate verify fail expectedly"
