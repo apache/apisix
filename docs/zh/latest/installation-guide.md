@@ -44,6 +44,7 @@ import TabItem from '@theme/TabItem';
     {label: 'Docker', value: 'docker'},
     {label: 'Helm', value: 'helm'},
     {label: 'RPM', value: 'rpm'},
+    {label: 'Source Code', value: 'source code'},
   ]}>
 <TabItem value="docker">
 
@@ -168,6 +169,12 @@ apisix start
 你可以运行 `apisix help` 命令，通过查看返回结果，获取其他操作的命令及描述。
 
 :::
+
+</TabItem>
+
+<TabItem value="source code">
+
+如果你想要使用源码构建 APISIX，请参考[源码安装 APISIX](./building-apisix.md)。
 
 </TabItem>
 </Tabs>
