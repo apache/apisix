@@ -583,7 +583,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 
 `keepalive_pool` 允许 upstream 对象有自己单独的连接池。
 它下属的字段，比如 `requests`，可以用了配置上游连接保持的参数。
-这个特性需要 APISIX 运行于 [APISIX-Base](./FAQ.md#如何构建-APISIX-Base-环境？)。
+这个特性需要 APISIX 运行于 [APISIX-Base](./FAQ.md#如何构建-apisix-base-环境)。
 
 **upstream 对象 json 配置内容：**
 

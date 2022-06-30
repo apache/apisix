@@ -289,7 +289,7 @@ etcd:
   #password: 5tHkHhYkjr6cQY       # root password for etcd
   tls:
     # To enable etcd client certificate you need to build APISIX-Base, see
-    # https://apisix.apache.org/docs/apisix/FAQ#how-do-i-build-the-apisix-base-environment?
+    # https://apisix.apache.org/docs/apisix/FAQ#how-do-i-build-the-apisix-base-environment
     #cert: /path/to/cert          # path of certificate used by the etcd client
     #key: /path/to/key            # path of key used by the etcd client
 
