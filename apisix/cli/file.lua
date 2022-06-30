@@ -251,6 +251,13 @@ function _M.read_yaml_conf(apisix_home)
         end
     end
 
+    if default_conf.deployment
+        and default_conf.deployment.role == "traditional"
+        and default_conf.deployment.etcd
+    then
+        default_conf.etcd = default_conf.deployment.etcd
+    end
+
     return default_conf
 end
 

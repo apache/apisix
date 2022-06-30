@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local template = require("resty.template")
+local pl_path = require("pl.path")
 local ipairs = ipairs
 
 
@@ -77,6 +78,10 @@ function _M.generate_conf_server(env, conf)
             proxy_ssl_name $upstream_host;
             {% end %}
             proxy_ssl_protocols TLSv1.2 TLSv1.3;
+            {% if client_cert then %}
+            proxy_ssl_certificate {* client_cert *};
+            proxy_ssl_certificate_key {* client_cert_key *};
+            {% end %}
             {% else %}
             proxy_pass http://apisix_conf_backend;
             {% end %}
@@ -92,10 +97,21 @@ function _M.generate_conf_server(env, conf)
         }
     }
     ]])
+
+    local tls = etcd.tls
+    local client_cert
+    local client_cert_key
+    if tls and tls.cert then
+        client_cert = pl_path.abspath(tls.cert)
+        client_cert_key = pl_path.abspath(tls.key)
+    end
+
     return conf_render({
         sni = etcd.tls and etcd.tls.sni,
         enable_https = enable_https,
         home = env.apisix_home or ".",
+        client_cert = client_cert,
+        client_cert_key = client_cert_key,
     })
 end
 
