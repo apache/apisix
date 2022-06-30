@@ -2,12 +2,12 @@ name: CI Centos7
 
 on:
   push:
-    branches: [master, 'release/**']
+    branches: [master, next, 'release/**']
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
   pull_request:
-    branches: [master, 'release/**']
+    branches: [master, next, 'release/**']
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
