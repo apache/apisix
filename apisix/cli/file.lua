@@ -251,11 +251,18 @@ function _M.read_yaml_conf(apisix_home)
         end
     end
 
-    if default_conf.deployment
-        and default_conf.deployment.role == "traditional"
-        and default_conf.deployment.etcd
-    then
-        default_conf.etcd = default_conf.deployment.etcd
+    if default_conf.deployment then
+        if default_conf.deployment.role == "traditional" then
+            default_conf.etcd = default_conf.deployment.etcd
+
+        elseif default_conf.deployment.role == "control_plane" then
+            default_conf.etcd = default_conf.deployment.etcd
+            default_conf.apisix.enable_admin = true
+
+        elseif default_conf.deployment.role == "data_plane" then
+            default_conf.etcd = default_conf.deployment.role_data_plane.control_plane
+            default_conf.apisix.enable_admin = false
+        end
     end
 
     return default_conf

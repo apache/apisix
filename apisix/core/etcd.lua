@@ -42,12 +42,10 @@ local function new()
         return nil, nil, err
     end
 
-    local etcd_conf
+    local etcd_conf = clone_tab(local_conf.etcd)
     local proxy_by_conf_server = false
 
     if local_conf.deployment then
-        etcd_conf = clone_tab(local_conf.deployment.etcd)
-
         if local_conf.deployment.role == "traditional"
             -- we proxy the etcd requests in traditional mode so we can test the CP's behavior in
             -- daily development. However, a stream proxy can't be the CP.
@@ -65,8 +63,6 @@ local function new()
             -- TODO: add the proxy conf in control_plane
             proxy_by_conf_server = true
         end
-    else
-        etcd_conf = clone_tab(local_conf.etcd)
     end
 
     local prefix = etcd_conf.prefix
