@@ -2,12 +2,12 @@ name: CLI Test (master)
 
 on:
   push:
-    branches: [master]
+    branches: [master, next]
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
   pull_request:
-    branches: [master]
+    branches: [master, next]
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
