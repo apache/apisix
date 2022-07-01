@@ -21,6 +21,8 @@
 
 local fetch_local_conf  = require("apisix.core.config_local").local_conf
 local array_mt          = require("apisix.core.json").array_mt
+local try_read_attr     = require("apisix.core.table").try_read_attr
+local log               = require("apisix.core.log")
 local etcd              = require("resty.etcd")
 local clone_tab         = require("table.clone")
 local health_check      = require("resty.etcd.health_check")
@@ -33,6 +35,55 @@ local ngx_config_prefix = ngx.config.prefix()
 
 local is_http = ngx.config.subsystem == "http"
 local _M = {}
+
+
+local admin_api_version
+local function is_v3()
+    if admin_api_version then
+        if admin_api_version == "v3" then
+            return true
+        end
+
+        if admin_api_version == "default" then
+            return false
+        end
+    end
+
+    local local_conf, err = fetch_local_conf()
+    if not local_conf then
+        admin_api_version = "default"
+        log.error("failed to fetch local conf: ", err)
+        return false
+    end
+
+    local api_ver = try_read_attr(local_conf, "apisix", "admin_api_version")
+    if not api_ver or (api_ver and api_ver ~= "v3") then
+        admin_api_version = "default"
+        return false
+    end
+
+    admin_api_version = api_ver
+    return true
+end
+
+
+local function to_v3(body, action)
+    if not is_v3() then
+        body.action = action
+    end
+end
+
+
+local function to_v3_list(body)
+    if not is_v3() then
+        return
+    end
+
+    if body.node.dir then
+        body.list = body.node.nodes
+        body.node = nil
+    end
+end
 
 
 -- this function create the etcd client instance used in the Admin API
@@ -168,7 +219,7 @@ function _M.get_format(res, real_key, is_dir, formatter)
         return not_found(res)
     end
 
-    res.body.action = "get"
+    to_v3(res.body, "get")
 
     if formatter then
         return formatter(res)
@@ -196,6 +247,7 @@ function _M.get_format(res, real_key, is_dir, formatter)
     end
 
     res.body.kvs = nil
+    to_v3_list(res.body)
     return res
 end
 
@@ -272,7 +324,7 @@ local function set(key, value, ttl)
     res.headers["X-Etcd-Index"] = res.body.header.revision
 
     -- etcd v3 set would not return kv info
-    res.body.action = "set"
+    to_v3(res.body, "set")
     res.body.node = {}
     res.body.node.key = prefix .. key
     res.body.node.value = value
@@ -335,7 +387,7 @@ function _M.atomic_set(key, value, ttl, mod_revision)
 
     res.headers["X-Etcd-Index"] = res.body.header.revision
     -- etcd v3 set would not return kv info
-    res.body.action = "compareAndSwap"
+    to_v3(res.body, "compareAndSwap")
     res.body.node = {
         key = key,
         value = value,
@@ -373,7 +425,7 @@ function _M.push(key, value, ttl)
         return nil, err
     end
 
-    res.body.action = "create"
+    to_v3(res.body, "create")
     return res, nil
 end
 
@@ -397,7 +449,7 @@ function _M.delete(key)
     end
 
     -- etcd v3 set would not return kv info
-    res.body.action = "delete"
+    to_v3(res.body, "delete")
     res.body.node = {}
     res.body.key = prefix .. key
 
