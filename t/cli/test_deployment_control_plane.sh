@@ -19,45 +19,33 @@
 
 . ./t/cli/common.sh
 
-# clean etcd data
-etcdctl del / --prefix
-
-# data_plane does not write data to etcd
 echo '
+apisix:
+    enable_admin: false
 deployment:
-    role: data_plane
-    role_data_plane:
-        config_provider: control_plane
-        control_plane:
-            host:
-                - http://127.0.0.1:2379
-            prefix: "/apisix"
-            timeout: 30
-    certs:
-        cert: /path/to/ca-cert
-        cert_key: /path/to/ca-cert
-        trusted_ca_cert: /path/to/ca-cert
+    role: control_plane
+    role_control_plane:
+        config_provider: etcd
+        conf_server:
+            listen: 0.0.0.0:12345
+            cert: t/certs/mtls_server.crt
+            cert_key: t/certs/mtls_server.key
+            client_ca_cert: t/certs/mtls_ca.crt
+    etcd:
+        prefix: "/apisix"
+        host:
+            - http://127.0.0.1:2379
 ' > conf/config.yaml
 
 make run
-
 sleep 1
-
-res=$(etcdctl get / --prefix | wc -l)
-
-if [ ! $res -eq 0 ]; then
-    echo "failed: data_plane should not write data to etcd"
-    exit 1
-fi
-
-echo "passed: data_plane does not write data to etcd"
 
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 make stop
 
-if [ ! $code -eq 404 ]; then
-    echo "failed: data_plane should not enable Admin API"
+if [ ! $code -eq 200 ]; then
+    echo "failed: control_plane should enable Admin API"
     exit 1
 fi
 
-echo "passed: data_plane should not enable Admin API"
+echo "passed: control_plane should enable Admin API"
