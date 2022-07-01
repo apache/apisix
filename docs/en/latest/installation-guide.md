@@ -254,7 +254,7 @@ APISIX's default configuration can be found in `conf/config-default.yaml` file a
 
 The `conf/nginx.conf` file is automatically generated and should not be modified.
 
-:::2
+:::
 
 ### Updating Admin API key
 
