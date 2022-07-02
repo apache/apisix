@@ -109,7 +109,8 @@ done
                                 "redirect_uri": "https://iresty.com",
                                 "ssl_verify": false,
                                 "timeout": 10,
-                                "scope": "apisix"
+                                "scope": "apisix",
+                                "use_pkce": "false"
                             }
                         },
                         "upstream": {
