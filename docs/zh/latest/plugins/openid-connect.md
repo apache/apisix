@@ -47,15 +47,15 @@ description: 本文介绍了关于 Apache APISIX `openid-connect` 插件的基�
 | timeout                              | integer | 否     | 3                     | [1,...]       | 请求超时时间，单位为秒                                                                            |
 | ssl_verify                           | boolean | 否     | false                 | [true, false] | 当设置为 `true` 时，验证身份提供者的 SSL 证书。                                                    |
 | introspection_endpoint               | string  | 否     |                       |               | 身份服务器的令牌验证端点的 URL。                                                                   |
-| introspection_endpoint_auth_method   | string  | 否     |                       |               | 令牌自省的认证方法名称，如果未指定，则默认将使用 well_know 中的第一个值。                            |
+| introspection_endpoint_auth_method   | string  | 否     |                       |               | 令牌自省的认证方法名称，如果未指定，则默认使用 well_know 中的第一个值。                            |
 | public_key                           | string  | 否     |                       |               | 验证令牌的公钥。                                                                                  |
-| use_jwks                             | boolean | 否     |                       |               | 当设置为 `true` 时，使用身份认证服务器的 JWKS 端点来验证令牌。                                      |
+| use_jwks                             | boolean | 否     |                       |               | 当设置为 `true` 时，则会使用身份认证服务器的 JWKS 端点来验证令牌。                                      |
 | token_signing_alg_values_expected    | string  | 否     |                       |               | 用于对令牌进行签名的算法。                                                                         |
 | set_access_token_header              | boolean | 否     | true                  | [true, false] | 在请求头设置访问令牌。                                                                            |
 | access_token_in_authorization_header | boolean | 否     | false                 | [true, false] | 当值为 `true` 时，将访问令牌设置在请求头参数 `Authorization`，否则将使用请求头参数 `X-Access-Token`。|
 | set_id_token_header                  | boolean | 否     | true                  | [true, false] | 是否将 ID 令牌设置到请求头参数 `X-ID-Token`。                                                      |
 | set_userinfo_header                  | boolean | 否     | true                  | [true, false] | 是否将用户信息对象设置到请求头参数 `X-Userinfo`。                                                   |
-| set_refresh_token_header             | boolean | 否     | false                 |               | 当设置为 `true` 并且刷新令牌对象可用时，将该属性设置在`X-Refresh-Token`请求头中。                    |
+| set_refresh_token_header             | boolean | 否     | false                 |               | 当设置为 `true` 并且刷新令牌可用时，则会将该属性设置在`X-Refresh-Token`请求头中。                       |
 
 ## 操作模式
 
