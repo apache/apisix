@@ -102,6 +102,7 @@ function _M.get(consumer_name)
     end
 
     utils.fix_count(res.body, consumer_name)
+    utils.pagination(res.body)
     return res.status, res.body
 end
 

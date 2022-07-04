@@ -111,6 +111,7 @@ function _M.get(key)
     end
 
     utils.fix_count(res.body, key)
+    utils.pagination(res.body)
     return res.status, res.body
 end
 

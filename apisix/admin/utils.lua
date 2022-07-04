@@ -65,6 +65,47 @@ function _M.inject_conf_with_prev_conf(kind, key, conf)
 end
 
 
+local function sort(l, r)
+    return l.createdIndex < r.createdIndex
+end
+
+function _M.pagination(body)
+    local args = core.request.get_uri_args()
+    if not args.page or not args.page_size then
+        return
+    end
+
+    args.page = tonumber(args.page)
+    args.page_size = tonumber(args.page_size)
+
+    if args.page_size < 10 or args.page_size > 500 then
+        return core.response.exit(400, "page_size must be between 10 and 500")
+    end
+
+    if not args.page or args.page < 1 then
+        -- default page is 1
+        args.page = 1
+    end
+
+    local list = (body.node and body.node.nodes) or body.list
+
+    -- sort nodes by there createdIndex
+    core.table.sort(list, sort)
+
+    local to = args.page * args.page_size
+    local form =  to - args.page_size + 1
+    local res = core.table.new(args.page_size, 0)
+
+    for i = form, to do
+        if list[i] then
+            res[i - form + 1] = list[i]
+        end
+    end
+
+    body.list = res
+end
+
+
 -- fix_count makes the "count" field returned by etcd reasonable
 function _M.fix_count(body, id)
     if body.count then
