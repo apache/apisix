@@ -21,7 +21,9 @@ local balancer = require("ngx.balancer")
 local error = error
 local ipairs = ipairs
 local ngx = ngx
+local ngx_shared = ngx.shared
 local ngx_var = ngx.var
+local tonumber = tonumber
 
 
 local _M = {}
@@ -29,6 +31,16 @@ local servers = {}
 local resolved_results = {}
 local server_picker
 local has_domain = false
+
+local is_http = ngx.config.subsystem == "http"
+local health_check_shm_name = "etcd-cluster-health-check"
+if not is_http then
+    health_check_shm_name = health_check_shm_name .. "-stream"
+end
+-- an endpoint is unhealthy if it is failed for HEALTH_CHECK_MAX_FAILURE times in
+-- HEALTH_CHECK_DURATION_SECOND
+local HEALTH_CHECK_MAX_FAILURE = 3
+local HEALTH_CHECK_DURATION_SECOND = 10
 
 
 local function create_resolved_result(server)
@@ -48,6 +60,10 @@ function _M.init()
     end
 
     local etcd = conf.deployment.etcd
+    if etcd.health_check_timeout then
+        HEALTH_CHECK_DURATION_SECOND = etcd.health_check_timeout
+    end
+
     for i, s in ipairs(etcd.host) do
         local _, to = core.string.find(s, "://")
         if not to then
@@ -80,7 +96,13 @@ end
 
 
 local function response_err(err)
-    ngx.log(ngx.ERR, "failure in conf server: ", err)
+    core.log.error("failure in conf server: ", err)
+
+    if ngx.get_phase() == "balancer" then
+        return
+    end
+
+    ngx.status = 503
     ngx.say(core.json.encode({error = err}))
     ngx.exit(0)
 end
@@ -127,25 +149,87 @@ local function resolve_servers(ctx)
 end
 
 
+local function gen_unhealthy_key(addr)
+    return "conf_server:" .. addr
+end
+
+
+local function is_node_health(addr)
+    local key = gen_unhealthy_key(addr)
+    local count, err = ngx_shared[health_check_shm_name]:get(key)
+    if err then
+        core.log.warn("failed to get health check count, key: ", key, " err: ", err)
+        return true
+    end
+
+    if not count then
+        return true
+    end
+
+    return tonumber(count) < HEALTH_CHECK_MAX_FAILURE
+end
+
+
+local function report_failure(addr)
+    local key = gen_unhealthy_key(addr)
+    local count, err =
+        ngx_shared[health_check_shm_name]:incr(key, 1, 0, HEALTH_CHECK_DURATION_SECOND)
+    if not count then
+        core.log.error("failed to report failure, key: ", key, " err: ", err)
+    else
+        -- count might be larger than HEALTH_CHECK_MAX_FAILURE
+        core.log.warn("report failure, endpoint: ", addr, " count: ", count)
+    end
+end
+
+
+local function pick_node_by_server_picker(ctx)
+    local server, err = ctx.server_picker.get(ctx)
+    if not server then
+        err = err or "no valid upstream node"
+        return nil, "failed to find valid upstream server: " .. err
+    end
+
+    ctx.balancer_server = server
+
+    for _, r in ipairs(resolved_results) do
+        if r.server == server then
+            return r
+        end
+    end
+
+    return nil, "unknown server: " .. server
+end
+
+
 local function pick_node(ctx)
     local res
     if server_picker then
-        local server, err = server_picker.get(ctx)
-        if not server then
-            err = err or "no valid upstream node"
-            return nil, "failed to find valid upstream server, " .. err
+        if not ctx.server_picker then
+            ctx.server_picker = server_picker
         end
 
-        ctx.server_picker = server_picker
-        ctx.balancer_server = server
+        local err
+        res, err = pick_node_by_server_picker(ctx)
+        if not res then
+            return nil, err
+        end
 
-        for _, r in ipairs(resolved_results) do
-            if r.server == server then
-                res = r
-                break
+        while not is_node_health(res.server) do
+            core.log.warn("endpoint ", res.server, " is unhealthy, skipped")
+
+            if server_picker.after_balance then
+                server_picker.after_balance(ctx, true)
+            end
+
+            res, err = pick_node_by_server_picker(ctx)
+            if not res then
+                return nil, err
             end
         end
+
     else
+        -- we don't do health check if there is only one candidate
         res = resolved_results[1]
     end
 
@@ -185,6 +269,12 @@ function _M.balancer()
             core.log.warn("could not set upstream retries: ", err)
         end
     else
+        if ctx.server_picker and ctx.server_picker.after_balance then
+            ctx.server_picker.after_balance(ctx, true)
+        end
+
+        report_failure(ctx.balancer_server)
+
         local ok, err = pick_node(ctx)
         if not ok then
             return response_err(err)
