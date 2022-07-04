@@ -413,7 +413,7 @@ end
 -- --   etcdserver = "3.5.0"
 -- -- }
 function _M.server_version()
-    local etcd_cli, err = new()
+    local etcd_cli, _, err = new()
     if not etcd_cli then
         return nil, err
     end
