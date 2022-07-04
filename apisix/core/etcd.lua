@@ -57,7 +57,7 @@ local function is_v3()
     end
 
     local api_ver = try_read_attr(local_conf, "apisix", "admin_api_version")
-    if not api_ver or (api_ver and api_ver ~= "v3") then
+    if api_ver ~= "v3" then
         admin_api_version = "default"
         return false
     end

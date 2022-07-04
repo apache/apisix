@@ -25,6 +25,14 @@ log_level("info");
 add_block_preprocessor(sub {
     my ($block) = @_;
 
+    my $user_yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    admin_key: null
+    admin_api_version: v3
+_EOC_
+    $block->set_value("yaml_config", $user_yaml_config);
+
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -39,11 +47,6 @@ run_tests;
 __DATA__
 
 === TEST 1: use v3 admin api, no action in response body
---- yaml_config
-apisix:
-  node_listen: 1984
-  admin_key: null
-  admin_api_version: v3
 --- config
     location /t {
         content_by_lua_block {
@@ -92,11 +95,6 @@ passed
 
 
 === TEST 2: response body format only have count and list(count is 1)
---- yaml_config
-apisix:
-  node_listen: 1984
-  admin_key: null
-  admin_api_version: v3
 --- config
     location /t {
         content_by_lua_block {
@@ -127,11 +125,6 @@ qr/\{"count":1,"list":\[\{.*\}\]/
 
 
 === TEST 3: response body format only have count and list(count is 2)
---- yaml_config
-apisix:
-  node_listen: 1984
-  admin_key: null
-  admin_api_version: v3
 --- config
     location /t {
         content_by_lua_block {
@@ -182,11 +175,6 @@ qr/\{"count":2,"list":\[\{.*\},\{.*\}\]/
 
 
 === TEST 4: response body format(test services)
---- yaml_config
-apisix:
-  node_listen: 1984
-  admin_key: null
-  admin_api_version: v3
 --- config
     location /t {
         content_by_lua_block {
