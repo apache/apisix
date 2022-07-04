@@ -171,7 +171,7 @@
         },
         {
           "type": "category",
-          "label": "Other Protocols",
+          "label": "Other protocols",
           "items": [
             "plugins/dubbo-proxy",
             "plugins/mqtt-proxy",

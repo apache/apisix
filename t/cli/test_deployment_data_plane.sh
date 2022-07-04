@@ -31,6 +31,7 @@ deployment:
         control_plane:
             host:
                 - http://127.0.0.1:2379
+            prefix: "/apisix"
             timeout: 30
     certs:
         cert: /path/to/ca-cert
@@ -50,3 +51,13 @@ if [ ! $res -eq 0 ]; then
 fi
 
 echo "passed: data_plane does not write data to etcd"
+
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+make stop
+
+if [ ! $code -eq 404 ]; then
+    echo "failed: data_plane should not enable Admin API"
+    exit 1
+fi
+
+echo "passed: data_plane should not enable Admin API"
