@@ -40,7 +40,7 @@ description: 本文介绍了关于 Apache APISIX `openid-connect` 插件的基�
 | discovery                            | string  | 是     |                       |               | 身份服务器发现端点的 URL。                                                                        |
 | scope                                | string  | 否     | "openid"              |               | 用于认证的范围。                                                                                  |
 | realm                                | string  | 否     | "apisix"              |               | 用于认证的领域。                                                                                  |
-| bearer_only                          | boolean | 否     | false                 |               | 设置为 `true` 时，将检查请求中带有承载令牌的授权标头。                                               |
+| bearer_only                          | boolean | 否     | false                 |               | 当设置为 `true` 时，将检查请求中带有承载令牌的授权标头。                                               |
 | logout_path                          | string  | 否     | "/logout"             |               | 登出路径。                                                                                        |
 | post_logout_redirect_uri             | string  | 否     |                       |               | 调用登出接口后想要跳转的 URL。                                                                     |
 | redirect_uri                         | string  | 否     | "ngx.var.request_uri" |               | 身份提供者重定向返回的 URI。                                                                       |
