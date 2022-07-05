@@ -65,6 +65,10 @@ end
 
 
 function _M.pagination(body)
+    if not enable_v3() then
+        return
+    end
+
     local args = request.get_uri_args()
     if not args.page or not args.page_size then
         return

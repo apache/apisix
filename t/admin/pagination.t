@@ -24,6 +24,14 @@ no_shuffle();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
+    my $user_yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    admin_key: null
+    admin_api_version: v3
+_EOC_
+    $block->set_value("yaml_config", $user_yaml_config);
+
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
