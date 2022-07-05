@@ -19,6 +19,7 @@ local get_routes = require("apisix.router").http_routes
 local get_services = require("apisix.http.service").services
 local apisix_upstream = require("apisix.upstream")
 local utils = require("apisix.admin.utils")
+local v3_adapter = require("apisix.admin.v3_adapter")
 local tostring = tostring
 local ipairs = ipairs
 local type = type
@@ -99,7 +100,7 @@ function _M.get(id)
     end
 
     utils.fix_count(res.body, id)
-    utils.pagination(res.body)
+    v3_adapter.pagination(res.body)
     return res.status, res.body
 end
 
