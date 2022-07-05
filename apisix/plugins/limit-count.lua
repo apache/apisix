@@ -139,7 +139,7 @@ local _M = {
 
 
 local function group_conf(conf)
-    return conf
+    return core.table.deepcopy(conf)
 end
 
 
