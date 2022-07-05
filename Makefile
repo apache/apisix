@@ -243,7 +243,7 @@ clean:
 .PHONY: reload
 reload: runtime
 	@$(call func_echo_status, "$@ -> [ Start ]")
-	$(ENV_NGINX) -s reload
+	$(ENV_APISIX) reload
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
 
