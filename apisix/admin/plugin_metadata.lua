@@ -18,7 +18,6 @@ local pcall   = pcall
 local require = require
 local core    = require("apisix.core")
 local utils   = require("apisix.admin.utils")
-local v3_adapter = require("apisix.admin.v3_adapter")
 
 local injected_mark = "injected metadata_schema"
 local _M = {
@@ -112,7 +111,6 @@ function _M.get(key)
     end
 
     utils.fix_count(res.body, key)
-    v3_adapter.pagination(res.body)
     return res.status, res.body
 end
 
