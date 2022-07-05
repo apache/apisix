@@ -245,7 +245,7 @@ APISIX 的默认配置可以在 `./conf/config-default.yaml` 文件中看到，�
 
 :::warning 警告
 
-请不要手动修改 APISIX 自身的 `./conf/nginx.conf` 文件。当 APISIX 启动时，会根据 `config.yaml` 的配置自动生成新的 `nginx.conf` 并自动启动服务。
+请不要手动修改 APISIX 安装目录下的 `./conf/nginx.conf` 文件。当 APISIX 启动时，会根据 `config.yaml` 的配置自动生成新的 `nginx.conf` 并自动启动服务。
 
 :::
 
