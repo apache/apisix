@@ -28,6 +28,7 @@ title: APISIX
 Apache APISIX is a dynamic, real-time, high-performance cloud-native API gateway. It is built on top of NGINX + ngx_lua technology and leverages the power offered by LuaJIT. [Why Apache APISIX chose Nginx and Lua to build API Gateway?](https://apisix.apache.org/blog/2021/08/25/why-apache-apisix-chose-nginx-and-lua/)
 
 APISIX is divided into two main parts:
+
 1. APISIX core, including Lua plugin, multi-language plugin runtime, Wasm plugin runtime, etc.
 2. Feature-rich variety of built-in plugins: including observability, security, traffic control, etc.
 
