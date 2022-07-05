@@ -47,15 +47,16 @@ The `openid-connect` Plugin provides authentication and introspection capability
 | timeout                              | integer | False    | 3                     | [1,...]      | Request timeout time in seconds.                                                                                         |
 | ssl_verify                           | boolean | False    | false                 |              | When set to true, verifies the identity provider's SSL certificates.                                                     |
 | introspection_endpoint               | string  | False    |                       |              | URL of the token verification endpoint of the identity server.                                                           |
-| introspection_endpoint_auth_method   | string  | False    |                       |              | Authentication method name for token introspection, If not specified, the default will use the first value in well_know. |
+| introspection_endpoint_auth_method   | string  | False    | "client_secret_basic" |              | Authentication method name for token introspection.                                                                      |
+| token_endpoint_auth_method           | string  | False    |                       |              | Authentication method name for token endpoint. The default will get the first supported method specified by the OP.      |
 | public_key                           | string  | False    |                       |              | Public key to verify the token.                                                                                          |
-| use_jwks                             | boolean | False    | false                 |              | When set to `true`, uses the JWKS endpoint of the identity server to verify the token.                                     |
+| use_jwks                             | boolean | False    | false                 |              | When set to `true`, uses the JWKS endpoint of the identity server to verify the token.                                   |
 | token_signing_alg_values_expected    | string  | False    |                       |              | Algorithm used for signing the authentication token.                                                                     |
 | set_access_token_header              | boolean | False    | true                  |              | When set to true, sets the access token in a request header.                                                             |
 | access_token_in_authorization_header | boolean | False    | false                 |              | When set to true, sets the access token in the `Authorization` header. Otherwise, set the `X-Access-Token` header.       |
 | set_id_token_header                  | boolean | False    | true                  |              | When set to true and the ID token is available, sets the ID token in the `X-ID-Token` request header.                    |
 | set_userinfo_header                  | boolean | False    | true                  |              | When set to true and the UserInfo object is available, sets it in the `X-Userinfo` request header.                       |
-| set_refresh_token_header             | boolean | False    | false                 |              | When set to true and a refresh token object is available, sets it in the `X-Refresh-Token` request header.              |
+| set_refresh_token_header             | boolean | False    | false                 |              | When set to true and a refresh token object is available, sets it in the `X-Refresh-Token` request header.               |
 
 ## Modes of operation
 
