@@ -767,7 +767,7 @@ limit key: afafafhao2:remote_addr
 
 
 
-=== TEST 21: group with disable
+=== TEST 22: group with disable
 --- config
     location /t {
         content_by_lua_block {
