@@ -240,7 +240,7 @@ etcd:
 
 :::warning 警告
 
-APISIX 的默认配置，可以在 `conf/config-default.yaml` 文件中看到，该文件是与 APISIX 源码强绑定，请不要手工修改 `conf/config-default.yaml` 文件。如果需要自定义任何配置，都应在 `config.yaml` 文件中完成。
+APISIX 的默认配置可以在 `./conf/config-default.yaml` 文件中看到，该文件与 APISIX 源码强绑定，请不要手动修改 `./conf/config-default.yaml` 文件。如果需要自定义任何配置，都应在 `./conf/config.yaml` 文件中完成。
 :::
 
 :::warning 警告
