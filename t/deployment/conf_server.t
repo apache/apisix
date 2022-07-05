@@ -427,3 +427,69 @@ deployment:
             - http://localhost:12345
 --- error_log
 Receive Host: localhost
+
+
+
+=== TEST 10: mTLS for control plane
+--- exec
+curl --cert t/certs/mtls_client.crt --key t/certs/mtls_client.key -k https://localhost:12345/version
+--- response_body eval
+qr/"etcdserver":/
+--- extra_yaml_config
+deployment:
+    role: control_plane
+    role_control_plane:
+        config_provider: etcd
+        conf_server:
+            listen: 0.0.0.0:12345
+            cert: t/certs/mtls_server.crt
+            cert_key: t/certs/mtls_server.key
+            client_ca_cert: t/certs/mtls_ca.crt
+    etcd:
+        prefix: "/apisix"
+        host:
+            - http://127.0.0.1:2379
+
+
+
+=== TEST 11: no client certificate
+--- exec
+curl -k https://localhost:12345/version
+--- response_body eval
+qr/No required SSL certificate was sent/
+--- extra_yaml_config
+deployment:
+    role: control_plane
+    role_control_plane:
+        config_provider: etcd
+        conf_server:
+            listen: 0.0.0.0:12345
+            cert: t/certs/mtls_server.crt
+            cert_key: t/certs/mtls_server.key
+            client_ca_cert: t/certs/mtls_ca.crt
+    etcd:
+        prefix: "/apisix"
+        host:
+            - http://127.0.0.1:2379
+
+
+
+=== TEST 12: wrong client certificate
+--- exec
+curl --cert t/certs/apisix.crt --key t/certs/apisix.key -k https://localhost:12345/version
+--- response_body eval
+qr/The SSL certificate error/
+--- extra_yaml_config
+deployment:
+    role: control_plane
+    role_control_plane:
+        config_provider: etcd
+        conf_server:
+            listen: 0.0.0.0:12345
+            cert: t/certs/mtls_server.crt
+            cert_key: t/certs/mtls_server.key
+            client_ca_cert: t/certs/mtls_ca.crt
+    etcd:
+        prefix: "/apisix"
+        host:
+            - http://127.0.0.1:2379
