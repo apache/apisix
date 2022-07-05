@@ -85,6 +85,8 @@ apisix:
     admin_ssl_cert_key: ""      # Path of your self-signed server side key.
     admin_ssl_ca_cert: ""       # Path of your self-signed ca cert.The CA is used to sign all admin api callers' certificates.
 
+  #admin_api_version: v3        # The version of admin api, latest version is v3.
+
   # Default token when use API to call for Admin API.
   # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
   # Disabling this configuration item means that the Admin API does not
