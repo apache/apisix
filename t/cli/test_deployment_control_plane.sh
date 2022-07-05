@@ -20,6 +20,27 @@
 . ./t/cli/common.sh
 
 echo '
+deployment:
+    role: control_plane
+    role_control_plane:
+        config_provider: etcd
+        conf_server:
+            cert: t/certs/mtls_server.crt
+    etcd:
+        prefix: "/apisix"
+        host:
+            - http://127.0.0.1:2379
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'property "cert_key" is required'; then
+    echo "failed: should check deployment schema during init"
+    exit 1
+fi
+
+echo "passed: should check deployment schema during init"
+
+echo '
 apisix:
     enable_admin: false
 deployment:
@@ -49,3 +70,32 @@ if [ ! $code -eq 200 ]; then
 fi
 
 echo "passed: control_plane should enable Admin API"
+
+echo '
+deployment:
+    role: control_plane
+    role_control_plane:
+        config_provider: etcd
+        conf_server:
+            listen: 0.0.0.0:12345
+            cert: t/certs/mtls_server.crt
+            cert_key: t/certs/mtls_server.key
+            client_ca_cert: t/certs/mtls_ca.crt
+    etcd:
+        prefix: "/apisix"
+        host:
+            - http://127.0.0.1:2379
+' > conf/config.yaml
+
+make run
+sleep 1
+
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+make stop
+
+if [ ! $code -eq 200 ]; then
+    echo "failed: could not work with etcd"
+    exit 1
+fi
+
+echo "passed: work well with etcd in control plane"

@@ -1,8 +1,5 @@
----
-title: APISIX
----
+#!/usr/bin/env bash
 
-<!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -19,16 +16,25 @@ title: APISIX
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
--->
 
-## Apache APISIX : Software Architecture
+. ./t/cli/common.sh
 
-![flow-software-architecture](../../../assets/images/flow-software-architecture.png)
+make run
 
-## Plugin Loading Process
+echo "
+apisix:
+  enable_admin: true
+  admin_listen:
+    ip: 127.0.0.2
+    port: 9181
+" > conf/config.yaml
 
-![flow-load-plugin](../../../assets/images/flow-load-plugin.png)
+make reload
+make stop
 
-## Plugin Hierarchy Structure
+if ! grep "listen 127.0.0.2:9181;" conf/nginx.conf > /dev/null; then
+    echo "failed: regenerate nginx conf in 'make reload'"
+    exit 1
+fi
 
-![flow-plugin-internal](../../../assets/images/flow-plugin-internal.png)
+echo "passed: regenerate nginx conf in 'make reload'"
