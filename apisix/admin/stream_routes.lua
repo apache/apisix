@@ -115,7 +115,7 @@ function _M.get(id)
     end
 
     utils.fix_count(res.body, id)
-    v3_adapter.pagination(res.body)
+    v3_adapter.filter(res.body)
     return res.status, res.body
 end
 

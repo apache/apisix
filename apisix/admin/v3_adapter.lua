@@ -81,18 +81,17 @@ local function sort(l, r)
 end
 
 
-function _M.pagination(body)
+function _M.filter(body)
     if not enable_v3() then
         return
     end
 
     local args = request.get_uri_args()
+    args.page = tonumber(args.page)
+    args.page_size = tonumber(args.page_size)
     if not args.page or not args.page_size then
         return
     end
-
-    args.page = tonumber(args.page)
-    args.page_size = tonumber(args.page_size)
 
     if args.page_size < 10 or args.page_size > 500 then
         return response.exit(400, "page_size must be between 10 and 500")
@@ -103,18 +102,19 @@ function _M.pagination(body)
         args.page = 1
     end
 
-    local list = (body.node and body.node.nodes) or body.list
+    local list = body.list
 
     -- sort nodes by there createdIndex
     table.sort(list, sort)
 
     local to = args.page * args.page_size
-    local form =  to - args.page_size + 1
-    local res = table.new(args.page_size, 0)
+    local from =  to - args.page_size + 1
 
-    for i = form, to do
+    local res = table.new(20, 0)
+
+    for i = from, to do
         if list[i] then
-            res[i - form + 1] = list[i]
+            res[i - from + 1] = list[i]
         end
     end
 

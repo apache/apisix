@@ -103,7 +103,7 @@ function _M.get(consumer_name)
     end
 
     utils.fix_count(res.body, consumer_name)
-    v3_adapter.pagination(res.body)
+    v3_adapter.filter(res.body)
     return res.status, res.body
 end
 
