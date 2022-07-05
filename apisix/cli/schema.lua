@@ -272,9 +272,43 @@ local deployment_schema = {
     traditional = {
         properties = {
             etcd = etcd_schema,
+            role_traditional = {
+                properties = {
+                    config_provider = {
+                        enum = {"etcd"}
+                    },
+                },
+                required = {"config_provider"}
+            }
         },
         required = {"etcd"}
     },
+    control_plane = {
+        properties = {
+            etcd = etcd_schema,
+            role_control_plane = {
+                properties = {
+                    config_provider = {
+                        enum = {"etcd"}
+                    },
+                    conf_server = {
+                        properties = {
+                            listen = {
+                                type = "string",
+                                default = "0.0.0.0:9280",
+                            },
+                            cert = { type = "string" },
+                            cert_key = { type = "string" },
+                            client_ca_cert = { type = "string" },
+                        },
+                        required = {"cert", "cert_key"}
+                    },
+                },
+                required = {"config_provider", "conf_server"}
+            }
+        },
+        required = {"etcd", "role_control_plane"}
+    }
 }
 
 
