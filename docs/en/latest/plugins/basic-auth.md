@@ -97,7 +97,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 After you have configured the Plugin as mentioned above, you can make a request to the Route as shown below:
 
 ```shell
-curl -i -ufoo:bar http://127.0.0.1:9080/hello
+curl -i -u foo:bar http://127.0.0.1:9080/hello
 ```
 
 ```
