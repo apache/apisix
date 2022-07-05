@@ -33,27 +33,30 @@ description: 本文介绍了关于 Apache APISIX `openid-connect` 插件的基�
 
 ## 属性
 
-| 名称                                 | 类型     | 必选项 | 默认值                | 有效值  | 描述                                                                                                  |
-| ------------------------------------ | ------- | ------ | --------------------- | ------- | ---------------------------------------------------------------------------------------------------- |
-| client_id                            | string  | 是     |                       |               | OAuth 客户端 ID。                                                                               |
-| client_secret                        | string  | 是     |                       |               | OAuth 客户端 secret。                                                                           |
-| discovery                            | string  | 是     |                       |               | 身份服务器发现端点的 URL。                                                                      |
-| scope                                | string  | 否     | "openid"              |               | 用于认证的范围。                                                                                 |
-| realm                                | string  | 否     | "apisix"              |               | 用于认证的领域。                                                                                 |
-| bearer_only                          | boolean | 否     | false                 |               | 设置为 `true` 时，将检查请求中带有承载令牌的授权标头。                                             |
-| logout_path                          | string  | 否     | "/logout"             |               | 登出路径。                                                                                       |
-| post_logout_redirect_uri             | string  | 否     |                       |               | 调用登出接口后想要跳转的 URL。                                                                    |
-| redirect_uri                         | string  | 否     | "ngx.var.request_uri" |               | 身份提供者重定向返回的 URI。                                                                      |
-| timeout                              | integer | 否     | 3                     | [1,...]       | 请求超时时间，单位为秒                                                                            |
-| ssl_verify                           | boolean | 否     | false                 | [true, false] | 当设置为 `true` 时，验证身份提供者的 SSL 证书。                                                    |
-| introspection_endpoint               | string  | 否     |                       |               | 身份服务器的令牌验证端点的 URL。                                                                   |
-| introspection_endpoint_auth_method   | string  | 否     | "client_secret_basic" |               | 令牌自省的认证方法名称。                                                                           |
-| public_key                           | string  | 否     |                       |               | 验证令牌的公钥。                                                                                  |
-| token_signing_alg_values_expected    | string  | 否     |                       |               | 用于对令牌进行签名的算法。                                                                         |
-| set_access_token_header              | boolean | 否     | true                  | [true, false] | 在请求头设置访问令牌。                                                                            |
-| access_token_in_authorization_header | boolean | 否     | false                 | [true, false] | 当值为 `true` 时，将访问令牌设置在请求头参数 `Authorization`，否则将使用请求头参数 `X-Access-Token`。|
-| set_id_token_header                  | boolean | 否     | true                  | [true, false] | 是否将 ID 令牌设置到请求头参数 `X-ID-Token`。                                                      |
-| set_userinfo_header                  | boolean | 否     | true                  | [true, false] | 是否将用户信息对象设置到请求头参数 `X-Userinfo`。                                                   |
+| 名称                                 | 类型     | 必选项 | 默认值                | 有效值         | 描述                                                                                             |
+| ------------------------------------ | ------- | ------ | --------------------- | ------------- | ------------------------------------------------------------------------------------------------ |
+| client_id                            | string  | 是     |                       |               | OAuth 客户端 ID。                                                                                 |
+| client_secret                        | string  | 是     |                       |               | OAuth 客户端 secret。                                                                            |
+| discovery                            | string  | 是     |                       |               | 身份服务器发现端点的 URL。                                                                        |
+| scope                                | string  | 否     | "openid"              |               | 用于认证的范围。                                                                                  |
+| realm                                | string  | 否     | "apisix"              |               | 用于认证的领域。                                                                                  |
+| bearer_only                          | boolean | 否     | false                 |               | 当设置为 `true` 时，将检查请求中带有承载令牌的授权标头。                                               |
+| logout_path                          | string  | 否     | "/logout"             |               | 登出路径。                                                                                        |
+| post_logout_redirect_uri             | string  | 否     |                       |               | 调用登出接口后想要跳转的 URL。                                                                     |
+| redirect_uri                         | string  | 否     | "ngx.var.request_uri" |               | 身份提供者重定向返回的 URI。                                                                       |
+| timeout                              | integer | 否     | 3                     | [1,...]       | 请求超时时间，单位为秒                                                                             |
+| ssl_verify                           | boolean | 否     | false                 | [true, false] | 当设置为 `true` 时，验证身份提供者的 SSL 证书。                                                     |
+| introspection_endpoint               | string  | 否     |                       |               | 身份服务器的令牌验证端点的 URL。                                                                    |
+| introspection_endpoint_auth_method   | string  | 否     | "client_secret_basic" |               | 令牌自省的认证方法名称。                                                                            |
+| token_endpoint_auth_method           | string  | 否     |                       |               | 令牌端点的身份验证方法名称。默认情况将获取 OP 指定的第一个支持的方法。                                   |
+| public_key                           | string  | 否     |                       |               | 验证令牌的公钥。                                                                                   |
+| use_jwks                             | boolean | 否     | false                 |               | 当设置为 `true` 时，则会使用身份认证服务器的 JWKS 端点来验证令牌。                                    |
+| token_signing_alg_values_expected    | string  | 否     |                       |               | 用于对令牌进行签名的算法。                                                                          |
+| set_access_token_header              | boolean | 否     | true                  | [true, false] | 在请求头设置访问令牌。                                                                              |
+| access_token_in_authorization_header | boolean | 否     | false                 | [true, false] | 当设置为 `true` 时，将访问令牌设置在请求头参数 `Authorization`，否则将使用请求头参数 `X-Access-Token`。  |
+| set_id_token_header                  | boolean | 否     | true                  | [true, false] | 是否将 ID 令牌设置到请求头参数 `X-ID-Token`。                                                       |
+| set_userinfo_header                  | boolean | 否     | true                  | [true, false] | 是否将用户信息对象设置到请求头参数 `X-Userinfo`。                                                    |
+| set_refresh_token_header             | boolean | 否     | false                 |               | 当设置为 `true` 并且刷新令牌可用时，则会将该属性设置在`X-Refresh-Token`请求头中。                      |
 
 ## 操作模式
 
