@@ -28,7 +28,7 @@ description: 本文介绍了 Apache APISIX cors 插件的基本信息及使用�
 
 ## 描述
 
-`cors` 插件可以让你轻松地为服务端启用 [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)（Cross-Origin Resource Sharing，跨域资源共享） 的返回头。
+`cors` 插件可以让你轻松地为服务端启用 [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)（Cross-Origin Resource Sharing，跨域资源共享）的返回头。
 
 ## 属性
 
@@ -86,6 +86,7 @@ curl http://127.0.0.1:9080/hello -v
 ```
 
 如果发现接口已经返回了 CORS 相关的 header，则代表插件生效：
+
 ```shell
 ...
 < Server: APISIX web server
