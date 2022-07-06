@@ -228,7 +228,7 @@ apisix:
   node_listen: 8000 # APISIX listening port
 ```
 
-比如指定 APISIX 默认监听端口为 8000，并且设置 etcd 地址为 `http://foo:2379`，其他配置保持默认。在 `/conf/config.yaml` 中只需这样配置：
+比如指定 APISIX 默认监听端口为 8000，并且设置 etcd 地址为 `http://foo:2379`，其他配置保持默认。在 `./conf/config.yaml` 中只需这样配置：
 
 ```yaml title=“./conf/config.yaml”
 apisix:
