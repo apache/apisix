@@ -29,42 +29,20 @@ local setmetatable      = setmetatable
 local string            = string
 local tonumber          = tonumber
 local ngx_config_prefix = ngx.config.prefix()
+local ngx_socket_tcp    = ngx.socket.tcp
 
 
 local is_http = ngx.config.subsystem == "http"
 local _M = {}
 
 
--- this function create the etcd client instance used in the Admin API
-local function new()
-    local local_conf, err = fetch_local_conf()
-    if not local_conf then
-        return nil, nil, err
-    end
+local function has_mtls_support()
+    local s = ngx_socket_tcp()
+    return s.tlshandshake ~= nil
+end
 
-    local etcd_conf = clone_tab(local_conf.etcd)
-    local proxy_by_conf_server = false
 
-    if local_conf.deployment then
-        if local_conf.deployment.role == "traditional"
-            -- we proxy the etcd requests in traditional mode so we can test the CP's behavior in
-            -- daily development. However, a stream proxy can't be the CP.
-            -- Hence, generate a HTTP conf server to proxy etcd requests in stream proxy is
-            -- unnecessary and inefficient.
-            and is_http
-        then
-            local sock_prefix = ngx_config_prefix
-            etcd_conf.unix_socket_proxy =
-                "unix:" .. sock_prefix .. "/conf/config_listen.sock"
-            etcd_conf.host = {"http://127.0.0.1:2379"}
-            proxy_by_conf_server = true
-
-        elseif local_conf.deployment.role == "control_plane" then
-            -- TODO: add the proxy conf in control_plane
-            proxy_by_conf_server = true
-        end
-    end
-
+local function _new(etcd_conf)
     local prefix = etcd_conf.prefix
     etcd_conf.http_host = etcd_conf.host
     etcd_conf.host = nil
@@ -89,6 +67,56 @@ local function new()
         end
     end
 
+    local etcd_cli, err = etcd.new(etcd_conf)
+    if not etcd_cli then
+        return nil, nil, err
+    end
+
+    return etcd_cli, prefix
+end
+
+
+local function new()
+    local local_conf, err = fetch_local_conf()
+    if not local_conf then
+        return nil, nil, err
+    end
+
+    local etcd_conf = clone_tab(local_conf.etcd)
+    local proxy_by_conf_server = false
+
+    if local_conf.deployment then
+        if local_conf.deployment.role == "traditional"
+            -- we proxy the etcd requests in traditional mode so we can test the CP's behavior in
+            -- daily development. However, a stream proxy can't be the CP.
+            -- Hence, generate a HTTP conf server to proxy etcd requests in stream proxy is
+            -- unnecessary and inefficient.
+            and is_http
+        then
+            local sock_prefix = ngx_config_prefix
+            etcd_conf.unix_socket_proxy =
+                "unix:" .. sock_prefix .. "/conf/config_listen.sock"
+            etcd_conf.host = {"http://127.0.0.1:2379"}
+            proxy_by_conf_server = true
+
+        elseif local_conf.deployment.role == "control_plane" then
+            local addr = local_conf.deployment.role_control_plane.conf_server.listen
+            etcd_conf.host = {"https://" .. addr}
+            etcd_conf.tls = {
+                verify = false,
+            }
+
+            if has_mtls_support() and local_conf.deployment.certs.cert then
+                local cert = local_conf.deployment.certs.cert
+                local cert_key = local_conf.deployment.certs.cert_key
+                etcd_conf.tls.cert = cert
+                etcd_conf.tls.key = cert_key
+            end
+
+            proxy_by_conf_server = true
+        end
+    end
+
     -- if an unhealthy etcd node is selected in a single admin read/write etcd operation,
     -- the retry mechanism for health check can select another healthy etcd node
     -- to complete the read/write etcd operation.
@@ -102,15 +130,28 @@ local function new()
         })
     end
 
-    local etcd_cli
-    etcd_cli, err = etcd.new(etcd_conf)
-    if not etcd_cli then
+    return _new(etcd_conf)
+end
+_M.new = new
+
+
+---
+-- Create an etcd client which will connect to etcd without being proxyed by conf server.
+-- This method is used in init_worker phase when the conf server is not ready.
+--
+-- @function core.etcd.new_without_proxy
+-- @treturn table|nil the etcd client, or nil if failed.
+-- @treturn string|nil the configured prefix of etcd keys, or nil if failed.
+-- @treturn nil|string the error message.
+function _M.new_without_proxy()
+    local local_conf, err = fetch_local_conf()
+    if not local_conf then
         return nil, nil, err
     end
 
-    return etcd_cli, prefix
+    local etcd_conf = clone_tab(local_conf.etcd)
+    return _new(etcd_conf)
 end
-_M.new = new
 
 
 -- convert ETCD v3 entry to v2 one

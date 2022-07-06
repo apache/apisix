@@ -812,18 +812,13 @@ function _M.init()
         return true
     end
 
-    local etcd_cli, err = get_etcd()
+    -- don't go through proxy during start because the proxy is not available
+    local etcd_cli, prefix, err = etcd_apisix.new_without_proxy()
     if not etcd_cli then
         return nil, "failed to start a etcd instance: " .. err
     end
 
-    -- don't go through proxy during start because the proxy is not available
-    local proxy = etcd_cli.unix_socket_proxy
-    etcd_cli.unix_socket_proxy = nil
-    local etcd_conf = local_conf.etcd
-    local prefix = etcd_conf.prefix
     local res, err = readdir(etcd_cli, prefix, create_formatter(prefix))
-    etcd_cli.unix_socket_proxy = proxy
     if not res then
         return nil, err
     end

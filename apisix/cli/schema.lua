@@ -305,7 +305,20 @@ local deployment_schema = {
                     },
                 },
                 required = {"config_provider", "conf_server"}
-            }
+            },
+            certs = {
+                properties = {
+                    cert = { type = "string" },
+                    cert_key = { type = "string" },
+                    trusted_ca_cert = { type = "string" },
+                },
+                dependencies = {
+                    cert = {
+                        required = {"cert_key"},
+                    },
+                },
+                default = {},
+            },
         },
         required = {"etcd", "role_control_plane"}
     }
