@@ -73,6 +73,11 @@ local schema = {
         },
         public_key = {type = "string"},
         token_signing_alg_values_expected = {type = "string"},
+        use_pkce = {
+            description = "when set to true the PKEC(Proof Key for Code Exchange) will be used.",
+            type = "boolean",
+            default = false
+        },
         set_access_token_header = {
             description = "Whether the access token should be added as a header to the request " ..
                 "for downstream",
