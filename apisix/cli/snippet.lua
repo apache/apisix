@@ -119,6 +119,7 @@ function _M.generate_conf_server(env, conf)
             proxy_http_version 1.1;
             proxy_set_header Connection "";
             proxy_set_header Host $upstream_host;
+            proxy_next_upstream error timeout non_idempotent http_500 http_502 http_503 http_504;
         }
 
         log_by_lua_block {
