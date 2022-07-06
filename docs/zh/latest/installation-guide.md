@@ -123,7 +123,7 @@ sudo yum-config-manager --add-repo https://repos.apiseven.com/packages/centos/ap
 sudo yum install apisix
 ```
 
-:::tip 提示
+:::tip
 
 你也可以安装指定版本的 APISIX（本示例为 APISIX v2.13.1 LTS 版本）：
 
@@ -164,7 +164,7 @@ apisix init
 apisix start
 ```
 
-:::tip 提示
+:::tip
 
 你可以运行 `apisix help` 命令，通过查看返回结果，获取其他操作的命令及描述。
 
@@ -238,12 +238,12 @@ etcd:
   host: "http://foo:2379" # etcd address
 ```
 
-:::warning 警告
+:::warning
 
 APISIX 的默认配置可以在 `./conf/config-default.yaml` 文件中看到，该文件与 APISIX 源码强绑定，请不要手动修改 `./conf/config-default.yaml` 文件。如果需要自定义任何配置，都应在 `./conf/config.yaml` 文件中完成。
 :::
 
-:::warning 警告
+:::warning
 
 请不要手动修改 APISIX 安装目录下的 `./conf/nginx.conf` 文件。当 APISIX 启动时，会根据 `config.yaml` 的配置自动生成新的 `nginx.conf` 并自动启动服务。
 
