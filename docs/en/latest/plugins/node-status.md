@@ -71,7 +71,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f1
 Once you have configured the Plugin, you can make a request to the `apisix/status` endpoint to get the status:
 
 ```shell
-curl localhost:9080/apisix/status -i
+curl http://127.0.0.1:9080/apisix/status -i
 ```
 
 ```shell
@@ -103,7 +103,7 @@ The parameters in the response are described below:
 
 To remove the Plugin, you can remove it from your configuration file (`conf/config.yaml`):
 
-```
+```yaml title="conf/config.yaml"
 plugins:
   - example-plugin
   - limit-req
@@ -112,24 +112,8 @@ plugins:
   ......
 ```
 
-To disable the `node-status` Plugin on a Route, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
-
-```sh
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
-{
-    "uri": "/route1",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "192.168.1.100:80": 1
-        }
-    },
-    "plugins": {}
-}'
-```
-
 You can also remove the Route on `/apisix/status`:
 
-```sh
+```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 ```
