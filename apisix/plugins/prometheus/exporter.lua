@@ -351,6 +351,42 @@ local function etcd_modify_index()
 
 end
 
+local function shared_dict_status()
+    local header_of_shared_dict = ngx.req.get_headers()["shared_dict"]
+    if not header_of_shared_dict then
+        return
+    end
+
+    local key = {}
+    local combine_param = {}
+
+    local set_shared_dict_param = function (shared_dict_name)
+        if type(shared_dict_name) ~= "string" then
+            return
+        end
+        local share_dict = ngx.shared[shared_dict_name]
+        if share_dict then
+            combine_param[1] = shared_dict_name
+            combine_param[2] = "capacity"
+            key[1] = table.concat(combine_param, "_")
+            metrics.shared_dict:set(share_dict:capacity(), key)
+
+            combine_param[2] = "free_space"
+            key[1] = table.concat(combine_param, "_")
+            metrics.shared_dict:set(share_dict:free_space(), key)
+        end
+    end
+
+    if type(header_of_shared_dict) == "string" then
+        set_shared_dict_param(header_of_shared_dict)
+    end
+
+    if type(header_of_shared_dict) == "table" then
+        for _, shared_dict_name in ipairs(header_of_shared_dict) do
+            set_shared_dict_param(shared_dict_name)
+        end
+    end
+end
 
 local function collect(ctx, stream_only)
     if not prometheus or not metrics then
@@ -358,6 +394,9 @@ local function collect(ctx, stream_only)
                      " 'prometheus_metrics' shared dict is present in nginx template")
         return 500, {message = "An unexpected error occurred"}
     end
+
+    -- 
+    shared_dict_status()
 
     -- across all services
     nginx_status()
