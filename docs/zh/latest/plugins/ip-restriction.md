@@ -31,7 +31,7 @@ description: 本文介绍了 Apache APISIX ip-restriction 插件的基本信息�
 
 `ip-restriction` 插件可以通过将 IP 地址列入白名单或黑名单来限制对服务或路由的访问。
 
-支持对单个 IP 地址，多个 IP 地址和类似 `10.10.10.0/24` 的 CIDR（Classless InterDomain Routing，无类域间路由）范围的限制。
+支持对单个 IP 地址、多个 IP 地址和类似 `10.10.10.0/24` 的 CIDR（Classless InterDomain Routing，无类域间路由）范围的限制。
 
 ## 属性
 
@@ -43,7 +43,7 @@ description: 本文介绍了 Apache APISIX ip-restriction 插件的基本信息�
 
 :::note
 
-必须指定 `whitelist` 或 `blacklist` 属性之一，且两个属性不能一起使用。
+`whitelist` 和 `blacklist` 属性无法同时在同一个服务或路由上使用，只能使用其中之一。
 
 :::
 
@@ -88,13 +88,13 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-启用插件后，使用 curl 命令先从 IP 地址 `127.0.0.1` 发出请求：
+启用插件后，使用 `curl` 命令先从 IP 地址 `127.0.0.1` 发出请求：
 
 ```shell
 curl http://127.0.0.1:9080/index.html -i
 ```
 
-返回 200 HTTP 状态码，代表访问成功：
+返回 `200` HTTP 状态码，代表访问成功：
 
 ```shell
 HTTP/1.1 200 OK
@@ -107,7 +107,7 @@ HTTP/1.1 200 OK
 curl http://127.0.0.1:9080/index.html -i --interface 127.0.0.2
 ```
 
-返回 403 HTTP 状态码，代表访问被阻止：
+返回 `403` HTTP 状态码，代表访问被阻止：
 
 ```shell
 HTTP/1.1 403 Forbidden
@@ -115,7 +115,7 @@ HTTP/1.1 403 Forbidden
 {"message":"Your IP address is not allowed"}
 ```
 
-要更改列入白名单或黑名单的 IP 地址，你只需更新插件配置，无需重启服务：
+如果你需要更改白名单或黑名单的 IP 地址，你只需更新插件配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
