@@ -63,9 +63,7 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 
 :::tip
 
-1. 教程：[使用 Keycloak 与 API 网关保护你的 API](https://apisix.apache.org/zh/blog/2022/07/06/use-keycloak-with-api-gateway-to-secure-apis/)
-
-2. 测试用例：[openid-connect.t](https://github.com/apache/apisix/blob/master/t/plugin/openid-connect.t)
+教程：[使用 Keycloak 与 API 网关保护你的 API](https://apisix.apache.org/zh/blog/2022/07/06/use-keycloak-with-api-gateway-to-secure-apis/)
 
 :::
 
