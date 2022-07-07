@@ -63,6 +63,13 @@ function _M.generate_conf_server(env, conf)
         end
     end
 
+    local trusted_ca_cert
+    if conf.deployment.certs then
+        if conf.deployment.certs.trusted_ca_cert then
+            trusted_ca_cert = pl_path.abspath(conf.deployment.certs.trusted_ca_cert)
+        end
+    end
+
     local conf_render = template.compile([[
     upstream apisix_conf_backend {
         server 0.0.0.0:80;
@@ -71,6 +78,11 @@ function _M.generate_conf_server(env, conf)
             conf_server.balancer()
         }
     }
+
+    {% if trusted_ca_cert then %}
+    lua_ssl_trusted_certificate {* trusted_ca_cert *};
+    {% end %}
+
     server {
         {% if control_plane then %}
         listen {* control_plane.listen *} ssl;
@@ -144,6 +156,7 @@ function _M.generate_conf_server(env, conf)
         enable_https = enable_https,
         client_cert = client_cert,
         client_cert_key = client_cert_key,
+        trusted_ca_cert = trusted_ca_cert,
     })
 end
 
