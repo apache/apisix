@@ -69,7 +69,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 curl -i http://127.0.0.1:9080/root.exe?a=a
 ```
 
-如果发现返回了带有 403 状态码的 HTTP 响应头，则代表插件生效：
+如果发现返回了带有 `403` 状态码的 HTTP 响应头，则代表插件生效：
 
 ```shell
 HTTP/1.1 403 Forbidden
