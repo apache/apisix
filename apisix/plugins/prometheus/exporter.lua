@@ -122,6 +122,10 @@ function _M.http_init(prometheus_enabled_in_stream)
             "Etcd modify index for APISIX keys",
             {"key"})
 
+    metrics.shared_dict = prometheus:gauge("shared_dict",
+            "nginx shared DICT of APISIX",
+            {"key"})
+
     -- per service
 
     -- The consumer label indicates the name of consumer corresponds to the
@@ -395,7 +399,7 @@ local function collect(ctx, stream_only)
         return 500, {message = "An unexpected error occurred"}
     end
 
-    -- 
+    --
     shared_dict_status()
 
     -- across all services
