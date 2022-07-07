@@ -194,4 +194,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 1. 如果 APISIX 无法解析或者连接到身份认证服务（如 Okta、Keycloak、Authing 等），请检查或修改配置文件（`./conf/config.yaml`）中的 DNS 设置。
 
 2. 如果遇到 `the error request to the redirect_uri path, but there's no session state found` 的错误，请确认当前访问的 URL 是否携带了 `code` 与 `state`，请勿直接访问 `redirect_uri`。
-
