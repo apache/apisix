@@ -63,9 +63,7 @@ description: OpenID Connect allows the client to obtain user information from th
 
 :::tip
 
-1. Tutorial: [Use Keycloak with API Gateway to secure APIs](https://apisix.apache.org/blog/2022/07/06/use-keycloak-with-api-gateway-to-secure-apis/)
-
-2. Testcases: [openid-connect.t](https://github.com/apache/apisix/blob/master/t/plugin/openid-connect.t)
+Tutorial: [Use Keycloak with API Gateway to secure APIs](https://apisix.apache.org/blog/2022/07/06/use-keycloak-with-api-gateway-to-secure-apis/)
 
 :::
 
