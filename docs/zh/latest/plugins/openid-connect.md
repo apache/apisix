@@ -108,7 +108,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 }'
 ```
 
-以下命令可用于访问新 Route：
+以下命令可用于访问新路由：
 
 ```shell
 curl -i -X GET http://127.0.0.1:9080/get -H "Authorization: Bearer {JWT_TOKEN}"
