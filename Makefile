@@ -115,6 +115,7 @@ define func_check_folder
 	fi
 endef
 
+test = t/
 
 # Makefile target
 .PHONY: runtime
@@ -384,7 +385,7 @@ uninstall:
 test: runtime
 	@$(call func_echo_status, "$@ -> [ Start ]")
 	$(ENV_GIT) submodule update --init --recursive
-	prove -I../test-nginx/lib -I./ -r -s t/
+	prove -I../test-nginx/lib -I./ -r -s $(test)
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
 
