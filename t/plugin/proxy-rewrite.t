@@ -1097,7 +1097,7 @@ q: apisix)
 --- request
 GET /t
 --- response_body
-{"proxy-rewrite":{"headers":{"X-Api":"v2"},"uri":"/uri/plugin_proxy_rewrite"}}
+{"proxy-rewrite":{"headers":{"X-Api":"v2"},"uri":"/uri/plugin_proxy_rewrite","use_real_request_uri_unsafe":false}}
 --- no_error_log
 [error]
 
