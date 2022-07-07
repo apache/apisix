@@ -129,6 +129,7 @@ local schema = {
     }
 }
 
+local schema_copy = core.table.deepcopy(schema)
 
 local _M = {
     version = 0.4,
@@ -151,7 +152,10 @@ function _M.check_schema(conf)
 
     if conf.group then
         local fields = {}
-        for k in pairs(schema.properties) do
+        -- When the goup field is configured,
+        -- we will use schema_copy to get the whitelist of properties,
+        -- so that we can avoid getting injected properties.
+        for k in pairs(schema_copy.properties) do
             tab_insert(fields, k)
         end
         local extra = policy_to_additional_properties[conf.policy]
