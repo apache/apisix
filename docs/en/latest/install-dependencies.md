@@ -31,8 +31,6 @@ title: Install Dependencies
 
 - On some platforms, installing LuaRocks via the package manager will cause Lua to be upgraded to Lua 5.3, so we recommend installing LuaRocks via source code. if you install OpenResty and its OpenSSL develop library (openresty-openssl111-devel for rpm and openresty-openssl111-dev for deb) via the official repository, then [we provide a script for automatic installation](https://github.com/apache/apisix/blob/master/utils/linux-install-luarocks.sh). If you compile OpenResty yourself, you can refer to the above script and change the path in it. If you don't specify the OpenSSL library path when you compile, you don't need to configure the OpenSSL variables in LuaRocks, because the system's OpenSSL is used by default. If the OpenSSL library is specified at compile time, then you need to ensure that LuaRocks' OpenSSL configuration is consistent with OpenResty's.
 
-- WARNING: If you are using OpenResty which is older than `1.17.8`, please installing openresty-openss-devel instead of openresty-openssl111-devel.
-
 - OpenResty is a dependency of APISIX. If it is your first time to deploy APISIX and you don't need to use OpenResty to deploy other services, you can stop and disable OpenResty after installation since it will not affect the normal work of APISIX. Please operate carefully according to your service. For example in Ubuntu: `systemctl stop openresty && systemctl disable openresty`.
 
 ## Install
