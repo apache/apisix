@@ -23,6 +23,7 @@ local response          = require("apisix.core.response")
 local table             = require("apisix.core.table")
 local tonumber          = tonumber
 local re_find           = ngx.re.find
+local pairs             = pairs
 
 local _M = {}
 
@@ -135,15 +136,44 @@ local function filter(body, args)
         end
 
         if args.label then
-            local matched = re_find(body.list[i].value.label, args.label, "jo")
-            if not matched then
-                label_matched = false
+            if body.list[i].value.label then
+                local matched = re_find(body.list[i].value.label, args.label, "jo")
+                if not matched then
+                    label_matched = false
+                end
+            end
+
+            if body.list[i].value.labels then
+                local matched
+                for k, _ in pairs(body.list[i].value.labels) do
+                    if k == args.label then
+                        matched = true
+                        break
+                    end
+                end
+                if not matched then
+                    label_matched = false
+                end
             end
         end
 
         if args.uri then
             if body.list[i].value.uri then
                 local matched = re_find(body.list[i].value.uri, args.uri, "jo")
+                if not matched then
+                    uri_matched = false
+                end
+            end
+
+            if body.list[i].value.uris then
+                local matched
+                for _, uri in pairs(body.list[i].value.uris) do
+                    if re_find(uri, args.uri, "jo") then
+                        matched = true
+                        break
+                    end
+                end
+
                 if not matched then
                     uri_matched = false
                 end
