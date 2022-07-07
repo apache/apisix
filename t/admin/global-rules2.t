@@ -94,7 +94,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"set","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/"}}}}}
+{"action":"set","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}}
 
 
 
