@@ -81,7 +81,7 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 
 ![token introspection](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/oauth-1.png)
 
-以下示例是在 Route 上启用插件。该 Route 将通过自检请求头中提供的令牌来保护上游：
+以下示例是在路由上启用插件。该路由将通过自检请求头中提供的令牌来保护上游：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 \
