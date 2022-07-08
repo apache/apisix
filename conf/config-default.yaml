@@ -324,6 +324,70 @@ etcd:
 #      connect: 2000              # default 2000ms
 #      send: 2000                 # default 2000ms
 #      read: 5000                 # default 5000ms
+#  nacos:
+#    host:
+#      - "http://${username}:${password}@${host1}:${port1}"
+#    prefix: "/nacos/v1/"
+#    fetch_interval: 30    # default 30 sec
+#    weight: 100           # default 100
+#    timeout:
+#      connect: 2000       # default 2000 ms
+#      send: 2000          # default 2000 ms
+#      read: 5000          # default 5000 ms
+#  consul_kv:
+#    servers:
+#      - "http://127.0.0.1:8500"
+#      - "http://127.0.0.1:8600"
+#    prefix: "upstreams"
+#    skip_keys:                    # if you need to skip special keys
+#      - "upstreams/unused_api/"
+#    timeout:
+#      connect: 2000               # default 2000 ms
+#      read: 2000                  # default 2000 ms
+#      wait: 60                    # default 60 sec
+#    weight: 1                     # default 1
+#    fetch_interval: 3             # default 3 sec, only take effect for keepalive: false way
+#    keepalive: true               # default true, use the long pull way to query consul servers
+#    default_server:               # you can define default server when missing hit
+#      host: "127.0.0.1"
+#      port: 20999
+#      metadata:
+#        fail_timeout: 1           # default 1 ms
+#        weight: 1                 # default 1
+#        max_fails: 1              # default 1
+#    dump:                         # if you need, when registered nodes updated can dump into file
+#       path: "logs/consul_kv.dump"
+#       expire: 2592000            # unit sec, here is 30 day
+#  kubernetes:
+#    service:
+#      schema: https                     #apiserver schema, options [http, https], default https
+#      host: ${KUBERNETES_SERVICE_HOST}  #apiserver host, options [ipv4, ipv6, domain, environment variable], default ${KUBERNETES_SERVICE_HOST}
+#      port: ${KUBERNETES_SERVICE_PORT}  #apiserver port, options [port number, environment variable], default ${KUBERNETES_SERVICE_PORT}
+#    client:
+#      # serviceaccount token or path of serviceaccount token_file
+#      token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
+#      # token: |-
+#       # eyJhbGciOiJSUzI1NiIsImtpZCI6Ikx5ME1DNWdnbmhQNkZCNlZYMXBsT3pYU3BBS2swYzBPSkN3ZnBESGpkUEEif
+#       # 6Ikx5ME1DNWdnbmhQNkZCNlZYMXBsT3pYU3BBS2swYzBPSkN3ZnBESGpkUEEifeyJhbGciOiJSUzI1NiIsImtpZCI
+#    # kubernetes discovery plugin support use namespace_selector
+#    # you can use one of [equal, not_equal, match, not_match] filter namespace
+#    namespace_selector:
+#      # only save endpoints with namespace equal default
+#      equal: default
+#      # only save endpoints with namespace not equal default
+#      #not_equal: default
+#      # only save endpoints with namespace match one of [default, ^my-[a-z]+$]
+#      #match:
+#      #- default
+#      #- ^my-[a-z]+$
+#      # only save endpoints with namespace not match one of [default, ^my-[a-z]+$ ]
+#      #not_match:
+#      #- default
+#      #- ^my-[a-z]+$
+#    # kubernetes discovery plugin support use label_selector
+#    # for the expression of label_selector, please refer to https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+#    label_selector: |-
+#      first="a",second="b"
 
 graphql:
   max_size: 1048576               # the maximum size limitation of graphql in bytes, default 1MiB
