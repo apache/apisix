@@ -31,7 +31,7 @@ description: 本文介绍了 Apache APISIX ip-restriction 插件的基本信息�
 
 `ip-restriction` 插件可以通过将 IP 地址列入白名单或黑名单来限制对服务或路由的访问。
 
-支持对单个 IP 地址、多个 IP 地址和类似 `10.10.10.0/24` 的 CIDR（Classless InterDomain Routing，无类域间路由）范围的限制。
+支持对单个 IP 地址、多个 IP 地址和类似 `10.10.10.0/24` 的 CIDR（无类别域间路由）范围的限制。
 
 ## 属性
 
@@ -72,7 +72,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-当访问未允许的 IP 时，默认返回 `{"message":"Your IP address is not allowed"}`。如果想使用自定义的 `message`，可以在插件部分进行配置：
+当使用白名单之外的 IP 访问时，默认返回 `{"message":"Your IP address is not allowed"}`。如果想使用自定义的 `message`，可以在插件配置中进行调整：
 
 ```json
 "plugins": {
@@ -88,7 +88,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-启用插件后，使用 `curl` 命令先从 IP 地址 `127.0.0.1` 发出请求：
+启用插件后，使用 `curl` 命令访问 APISIX 实例地址：
 
 ```shell
 curl http://127.0.0.1:9080/index.html -i
