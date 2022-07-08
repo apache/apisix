@@ -81,7 +81,7 @@ Server: APISIX web server
 ...
 ```
 
-通过设置属性 `rejected_msg` 的值为 `access is not allowed`，则还会收到包含如下信息的响应体：
+通过设置属性 `rejected_msg` 的值为 `access is not allowed`，将会收到包含如下信息的响应体：
 
 ```shell
 ...
