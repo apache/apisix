@@ -1,5 +1,11 @@
 ---
 title: ip-restriction
+keywords:
+  - APISIX
+  - Plugin
+  - IP restriction
+  - ip-restriction
+description: 本文介绍了 Apache APISIX ip-restriction 插件的基本信息及使用方法。
 ---
 
 <!--
@@ -23,22 +29,27 @@ title: ip-restriction
 
 ## 描述
 
-`ip-restriction` 可以通过以下方式限制对服务或路线的访问，将 IP 地址列入白名单或黑名单。 单个 IP 地址，多个 IP 地址 或 CIDR 范围，可以使用类似 10.10.10.0/24 的 CIDR 表示法。
+`ip-restriction` 插件可以通过将 IP 地址列入白名单或黑名单来限制对服务或路由的访问。
+
+支持对单个 IP 地址、多个 IP 地址和类似 `10.10.10.0/24` 的 CIDR（无类别域间路由）范围的限制。
 
 ## 属性
 
-| 参数名    | 类型          | 可选项 | 默认值 | 有效值 | 描述                             |
+| 参数名    | 类型          | 必选项 | 默认值 | 有效值 | 描述                             |
 | --------- | ------------- | ------ | ------ | ------ | -------------------------------- |
-| whitelist | array[string] | 可选   |        |        | 加入白名单的 IP 地址或 CIDR 范围 |
-| blacklist | array[string] | 可选   |        |        | 加入黑名单的 IP 地址或 CIDR 范围 |
-| message | string | 可选   | Your IP address is not allowed. | [1, 1024] | 在未允许的 IP 访问的情况下返回的信息 |
+| whitelist | array[string] | 否   |        |        | 加入白名单的 IP 地址或 CIDR 范围。 |
+| blacklist | array[string] | 否   |        |        | 加入黑名单的 IP 地址或 CIDR 范围。 |
+| message | string | 否   | "Your IP address is not allowed" | [1, 1024] | 在未允许的 IP 访问的情况下返回的信息。 |
 
-只能单独启用白名单或黑名单，两个不能一起使用。
-`message` 可以由用户自定义。
+:::note
 
-## 如何启用
+`whitelist` 和 `blacklist` 属性无法同时在同一个服务或路由上使用，只能使用其中之一。
 
-下面是一个示例，在指定的 route 上开启了 `ip-restriction` 插件：
+:::
+
+## 启用插件
+
+以下示例展示了如何在特定路由上启用 `ip-restriction` 插件，并配置 `whitelist` 属性：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -61,7 +72,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-当未允许的 IP 访问时，默认返回 `{"message":"Your IP address is not allowed"}`。如果你想使用自定义的 `message`，可以在插件部分进行配置：
+当使用白名单之外的 IP 访问时，默认返回 `{"message":"Your IP address is not allowed"}`。如果想使用自定义的 `message`，可以在插件配置中进行调整：
 
 ```json
 "plugins": {
@@ -77,29 +88,62 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-通过 `127.0.0.1` 访问：
+启用插件后，使用 `curl` 命令访问 APISIX 实例地址：
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -i
+curl http://127.0.0.1:9080/index.html -i
+```
+
+返回 `200` HTTP 状态码，代表访问成功：
+
+```shell
 HTTP/1.1 200 OK
 ...
 ```
 
-通过 `127.0.0.2` 访问：
+再从 IP 地址 `127.0.0.2` 发出请求：
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -i --interface 127.0.0.2
+curl http://127.0.0.1:9080/index.html -i --interface 127.0.0.2
+```
+
+返回 `403` HTTP 状态码，代表访问被阻止：
+
+```shell
 HTTP/1.1 403 Forbidden
 ...
 {"message":"Your IP address is not allowed"}
 ```
 
-## 禁用插件
-
-当你想去掉 `ip-restriction` 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
+如果你需要更改白名单或黑名单的 IP 地址，你只需更新插件配置，无需重启服务：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    },
+    "plugins": {
+        "ip-restriction": {
+            "whitelist": [
+                "127.0.0.2",
+                "113.74.26.106/24"
+            ]
+        }
+    }
+}'
+```
+
+## 禁用插件
+
+当你需要禁用 `ip-restriction` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},
@@ -111,5 +155,3 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335
     }
 }'
 ```
-
-现在就已移除 `ip-restriction` 插件，其它插件的开启和移除也类似。
