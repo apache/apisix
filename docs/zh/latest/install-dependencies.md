@@ -31,8 +31,6 @@ title: 安装依赖
 
 - 在某些平台上，通过包管理器安装 LuaRocks 会导致 Lua 被升级为 Lua 5.3，所以我们建议通过源代码的方式安装 LuaRocks。如果你通过官方仓库安装 OpenResty 和 OpenResty 的 OpenSSL 开发库（rpm 版本：openresty-openssl111-devel，deb 版本：openresty-openssl111-dev），那么 [我们提供了自动安装的脚本](https://github.com/apache/apisix/tree/master/utils/linux-install-luarocks.sh)。如果你是自己编译的 OpenResty，可以参考上述脚本并修改里面的路径。如果编译时没有指定 OpenSSL 库的路径，那么无需配置 LuaRocks 内跟 OpenSSL 相关的变量，因为默认都是用的系统自带的 OpenSSL。如果编译时指定了 OpenSSL 库，那么需要保证 LuaRocks 的 OpenSSL 配置跟 OpenResty 的相一致。
 
-- 警告：如果你正在使用低于 `1.17.8` 的 OpenResty 版本，请安装 openresty-openssl-devel，而不是 openresty-openssl111-devel。
-
 - OpenResty 是 APISIX 的一个依赖项，如果是第一次部署 APISIX 并且不需要使用 OpenResty 部署其他服务，可以在 OpenResty 安装完成后停止并禁用 OpenResty，这不会影响 APISIX 的正常工作，请根据自己的业务谨慎操作。例如 Ubuntu：`systemctl stop openresty && systemctl disable openresty`。
 
 ## 安装
