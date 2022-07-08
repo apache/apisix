@@ -399,7 +399,7 @@ local function collect(ctx, stream_only)
         return 500, {message = "An unexpected error occurred"}
     end
 
-    --
+    -- collect ngx.shared.DICT status
     shared_dict_status()
 
     -- across all services
