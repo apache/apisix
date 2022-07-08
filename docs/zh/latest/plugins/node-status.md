@@ -95,7 +95,7 @@ Server: APISIX web server
 | handled      | 当前已经处理的连接总数，除非达到其他资源的限制，否则此值与 `accepted` 相同。 |
 | active       | 当前活跃的客户端连接数。                                                 |
 | reading      | 当前正在读取请求头的连接数。                                              |
-| id           | APISIX uid 信息，保存在 `./conf/apisix.uid` 文件中。                |
+| id           | APISIX UID 信息，保存在 `./conf/apisix.uid` 文件中。                |
 
 ## 禁用插件
 
