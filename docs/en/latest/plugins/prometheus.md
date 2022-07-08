@@ -187,8 +187,11 @@ The following metrics are exported by the `prometheus` Plugin:
   | node     | IP address of the Upstream node.                                                                                              |
 
 - etcd reachability: A gauge type representing whether etcd can be reached by APISIX. A value of `1` represents reachable and `0` represents unreachable.
+
 - Connections: Nginx connection metrics like active, reading, writing, and number of accepted connections.
+
 - Batch process entries: A gauge type useful when Plugins like [syslog](./syslog.md), [http-logger](./http-logger.md), [tcp-logger](./tcp-logger.md), [udp-logger](./udp-logger.md), and [zipkin](./zipkin.md) use batch process to send data. Entries that hasn't been sent in batch process will be counted in the metrics.
+
 - Latency: Histogram of the request time per service in different dimensions.
 
   The available attributes are:
@@ -202,7 +205,9 @@ The following metrics are exported by the `prometheus` Plugin:
 
 - Info: Information about the APISIX node.
 
-Here are the original metrics from APISIX:
+- Shared dict: capacity and free space of ngx.shared.DICT, this param uses the request header `Shared_DICT` to carry the shared memory name to be fetched.
+
+Here are the original metrics from APISIX: 
 
 ```shell
 curl http://127.0.0.1:9091/apisix/prometheus/metrics
@@ -272,6 +277,10 @@ apisix_http_latency_bucket{type="upstream",route="1",service="",consumer="",node
 # HELP apisix_node_info Info of APISIX node
 # TYPE apisix_node_info gauge
 apisix_node_info{hostname="desktop-2022q8f-wsl"} 1
+# HELP apisix_shared_dict nginx shared DICT of APISIX
+# TYPE apisix_shared_dict gauge
+apisix_shared_dict{key="internal-status_capacity"} 10485760
+apisix_shared_dict{key="internal-status_free_space"} 10407936
 ```
 
 ## Disable Plugin
