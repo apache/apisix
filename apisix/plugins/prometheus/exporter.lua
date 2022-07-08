@@ -33,6 +33,7 @@ local get_services = require("apisix.http.service").services
 local get_consumers = require("apisix.consumer").consumers
 local get_upstreams = require("apisix.upstream").upstreams
 local clear_tab = core.table.clear
+local concat_tab = core.table.concat
 local get_stream_routes = router.stream_routes
 local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
 local service_fetch = require("apisix.http.service").get
@@ -355,14 +356,14 @@ local function etcd_modify_index()
 
 end
 
+local key = {}
+local combine_param = {}
+
 local function shared_dict_status()
     local header_of_shared_dict = ngx.req.get_headers()["shared_dict"]
     if not header_of_shared_dict then
         return
     end
-
-    local key = {}
-    local combine_param = {}
 
     local set_shared_dict_param = function (shared_dict_name)
         if type(shared_dict_name) ~= "string" then
@@ -372,11 +373,11 @@ local function shared_dict_status()
         if share_dict then
             combine_param[1] = shared_dict_name
             combine_param[2] = "capacity"
-            key[1] = table.concat(combine_param, "_")
+            key[1] = concat_tab(combine_param, "_")
             metrics.shared_dict:set(share_dict:capacity(), key)
 
             combine_param[2] = "free_space"
-            key[1] = table.concat(combine_param, "_")
+            key[1] = concat_tab(combine_param, "_")
             metrics.shared_dict:set(share_dict:free_space(), key)
         end
     end
