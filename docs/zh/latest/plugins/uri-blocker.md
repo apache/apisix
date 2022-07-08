@@ -2,7 +2,7 @@
 title: uri-blocker
 keywords:
   - APISIX
-  - Plugin
+  - API Gateway
   - URI Blocker
 description: 本文介绍了 Apache APISIX uri-blocker 插件的基本信息及使用方法。
 ---
@@ -81,7 +81,7 @@ Server: APISIX web server
 ...
 ```
 
-如果设置了属性 `rejected_msg` 的值为 `"access is not allowed"`，则还将会收到包含如下信息的响应体：
+通过设置属性 `rejected_msg` 的值为 `access is not allowed`，则还会收到包含如下信息的响应体：
 
 ```shell
 ...
