@@ -434,3 +434,33 @@ deployment:
             - http://localhost:12345
 --- error_log
 Receive Host: localhost
+
+
+
+=== TEST 10: default timeout
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            local etcd_cli = require("resty.etcd")
+            local f = etcd_cli.new
+            local timeout
+            etcd_cli.new = function(conf)
+                timeout = conf.timeout
+                return f(conf)
+            end
+            etcd.new()
+            ngx.say(timeout)
+        }
+    }
+--- extra_yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    etcd:
+        prefix: "/apisix"
+        host:
+            - http://127.0.0.1:2379
+--- response_body
+30

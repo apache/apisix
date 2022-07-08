@@ -56,6 +56,12 @@ local etcd_schema = {
                 pattern = [[^https?://]]
             },
             minItems = 1,
+        },
+        timeout = {
+            type = "integer",
+            default = 30,
+            minimum = 1,
+            description = "etcd connection timeout in seconds",
         }
     },
     required = {"prefix", "host"}
