@@ -29,7 +29,7 @@ description: 本文介绍了 API 网关 Apache APISIX node-status 插件的相�
 
 ## 描述
 
-`node-status` 插件可用于通过暴露的 API 查询 APISIX 的请求状态，并返回基本的状态信息
+`node-status` 插件可用于通过暴露的 API 查询 APISIX 的请求状态，并返回基本的状态信息。
 
 ## 插件属性
 
