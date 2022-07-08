@@ -129,53 +129,40 @@ local function filter(body, args)
         local label_matched = true
         local uri_matched = true
         if args.name then
+            name_matched = false
             local matched = re_find(body.list[i].value.name, args.name, "jo")
-            if not matched then
-                name_matched = false
+            if matched then
+                name_matched = true
             end
         end
 
         if args.label then
-            if body.list[i].value.label then
-                local matched = re_find(body.list[i].value.label, args.label, "jo")
-                if not matched then
-                    label_matched = false
-                end
-            end
-
+            label_matched = false
             if body.list[i].value.labels then
-                local matched
                 for k, _ in pairs(body.list[i].value.labels) do
                     if k == args.label then
-                        matched = true
+                        label_matched = true
                         break
                     end
-                end
-                if not matched then
-                    label_matched = false
                 end
             end
         end
 
         if args.uri then
+            uri_matched = false
             if body.list[i].value.uri then
                 local matched = re_find(body.list[i].value.uri, args.uri, "jo")
-                if not matched then
-                    uri_matched = false
+                if matched then
+                    uri_matched = true
                 end
             end
 
             if body.list[i].value.uris then
-                local matched
                 for _, uri in pairs(body.list[i].value.uris) do
                     if re_find(uri, args.uri, "jo") then
-                        matched = true
+                        uri_matched = true
                         break
                     end
-                end
-
-                if not matched then
-                    uri_matched = false
                 end
             end
         end
