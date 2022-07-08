@@ -2,7 +2,7 @@
 title: cors
 keywords:
   - APISIX
-  - Plugin
+  - API Gateway
   - CORS
 description: 本文介绍了 Apache APISIX cors 插件的基本信息及使用方法。
 ---
@@ -45,8 +45,8 @@ description: 本文介绍了 Apache APISIX cors 插件的基本信息及使用�
 
 :::info IMPORTANT
 
-`allow_credential` 是一个很敏感的选项，请谨慎开启。开启之后，其他参数默认的 `*` 将失效，你必须显式指定它们的值。
-在使用 `**` 时，需要清楚该参数引入的一些安全隐患，比如 CSRF，并确保这样的安全等级符合自己预期。
+1. `allow_credential` 是一个很敏感的选项，请谨慎开启。开启之后，其他参数默认的 `*` 将失效，你必须显式指定它们的值。
+2. 在使用 `**` 时，需要清楚该参数引入的一些安全隐患，比如 CSRF，并确保这样的安全等级符合自己预期。
 
 :::
 

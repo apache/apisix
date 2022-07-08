@@ -2,7 +2,7 @@
 title: cors
 keywords:
   - APISIX
-  - Plugin
+  - API Gateway
   - CORS
 description: This document contains information about the Apache APISIX cors Plugin.
 ---
@@ -45,7 +45,8 @@ The `cors` Plugins lets you enable [CORS](https://developer.mozilla.org/en-US/do
 
 :::info IMPORTANT
 
-The `allow_credential` attribute is sensitive and must be used carefully. If set to `true` the default value `*` of the other attributes will be invalid and they should be specified explicitly. When using `**` you are vulnerable to security risks like CSRF. Make sure that this meets your security levels before using it.
+1. The `allow_credential` attribute is sensitive and must be used carefully. If set to `true` the default value `*` of the other attributes will be invalid and they should be specified explicitly.
+2. When using `**` you are vulnerable to security risks like CSRF. Make sure that this meets your security levels before using it.
 
 :::
 
