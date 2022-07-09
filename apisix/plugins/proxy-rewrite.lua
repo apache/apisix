@@ -167,7 +167,7 @@ function _M.rewrite(conf, ctx)
 
     local upstream_uri = ctx.var.uri
     if conf.use_real_request_uri_unsafe then
-        upstream_uri = core.utils.resolve_var("$real_request_uri", ctx.var)
+        upstream_uri = core.utils.resolve_var("real_request_uri", ctx.var)
     elseif conf.uri ~= nil then
         upstream_uri = core.utils.resolve_var(conf.uri, ctx.var)
     elseif conf.regex_uri ~= nil then
