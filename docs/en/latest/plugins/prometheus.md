@@ -207,7 +207,7 @@ The following metrics are exported by the `prometheus` Plugin:
 
 - Shared dict: capacity and free space of ngx.shared.DICT, this param uses the request header `Shared_DICT` to carry the shared memory name to be fetched.
 
-Here are the original metrics from APISIX: 
+Here are the original metrics from APISIX:
 
 ```shell
 curl http://127.0.0.1:9091/apisix/prometheus/metrics

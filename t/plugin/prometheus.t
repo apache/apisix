@@ -634,6 +634,7 @@ qr/apisix_/
 qr/etcd/
 
 
+
 === TEST 42: fetch the prometheus one shared dict data
 --- request
 GET /apisix/prometheus/metrics
@@ -641,6 +642,7 @@ GET /apisix/prometheus/metrics
 Shared_DICT: worker-events
 --- response_body_like
 .*TYPE apisix_shared_dict gauge.*worker-events_capacity.*worker-events_free_space.*
+
 
 
 === TEST 43: fetch the prometheus multiple shared dict data
@@ -654,6 +656,7 @@ Shared_DICT: internal-status
 .*TYPE apisix_shared_dict gauge.*worker-events_capacity.*worker-events_free_space.*
 
 
+
 === TEST 44: fetch the prometheus multiple shared dict data
 --- request
 GET /apisix/prometheus/metrics
@@ -663,6 +666,7 @@ Shared_DICT: upstream-healthcheck
 Shared_DICT: internal-status
 --- response_body_like
 .*TYPE apisix_shared_dict gauge.*upstream-healthcheck_capacity.*upstream-healthcheck_free_space.*
+
 
 
 === TEST 45: fetch the prometheus multiple shared dict data
@@ -676,6 +680,7 @@ Shared_DICT: internal-status
 .*TYPE apisix_shared_dict gauge.*internal-status_capacity.*internal-status_free_space.*
 
 
+
 === TEST 46: fetch the prometheus multiple shared dict data contain not exist shared dict
 --- request
 GET /apisix/prometheus/metrics
@@ -685,4 +690,3 @@ Shared_DICT: upstream-healthcheck
 Shared_DICT: not-exist-shared-dict
 --- response_body_unlike
 .*TYPE apisix_shared_dict gauge.*not-exist-shared-dict_capacity.*not-exist-shared-dict_free_space.*
-
