@@ -203,56 +203,6 @@ plugin_proxy_rewrite get method: POST
 
 
 
-=== TEST 8: set route(unsafe uri normalized at request)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "methods": ["GET"],
-                        "plugins": {
-                            "proxy-rewrite": {
-                                "use_real_request_uri_unsafe": false
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/print_uri_detailed_99"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 9: unsafe uri normalized at request
---- request
-GET /print%5Furi%5Fdetailed%5F99 HTTP/1.1
---- response_body
-ngx.var.uri: /print_uri_detailed_99
-ngx.var.request_uri: /print_uri_detailed_99
---- no_error_log
-[error]
-
-
-
 === TEST 10: set route(unsafe uri not normalized at request)
 --- config
     location /t {
@@ -273,7 +223,7 @@ ngx.var.request_uri: /print_uri_detailed_99
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/print_uri_detailed_99"
+                        "uri": "/print_uri_detailed"
                 }]]
                 )
 
@@ -294,9 +244,18 @@ passed
 
 === TEST 11: unsafe uri not normalized at request
 --- request
-GET /print%5Furi%5Fdetailed%5F99 HTTP/1.1
+GET /print%5Furi%5Fdetailed HTTP/1.1
 --- response_body
-ngx.var.uri: /print_uri_detailed_99
-ngx.var.request_uri: /print%5Furi%5Fdetailed%5F99
+ngx.var.uri: /print_uri_detailed
+ngx.var.request_uri: /print%5Furi%5Fdetailed
+--- no_error_log
+[error]
+
+=== TEST 12: safe uri not normalized at request
+--- request
+GET /print_uri_detailed HTTP/1.1
+--- response_body
+ngx.var.uri: /print_uri_detailed
+ngx.var.request_uri: /print_uri_detailed
 --- no_error_log
 [error]
