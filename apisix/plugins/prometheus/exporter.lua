@@ -360,7 +360,7 @@ local key = {}
 local combine_param = {}
 
 local function shared_dict_status()
-    local header_of_shared_dict = ngx.req.get_headers()["shared_dict"]
+    local header_of_shared_dict = core.request.header(ngx.ctx, "shared_dict")
     if not header_of_shared_dict then
         return
     end
