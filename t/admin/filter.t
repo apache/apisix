@@ -246,3 +246,509 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST 6: only search name or labels
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            for i = 1, 11 do
+                local code, body = t('/apisix/admin/services/' .. i,
+                    ngx.HTTP_PUT,
+                    [[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "name": "]] .. i .. [[",
+                        "labels": {"]] .. i .. '":"' .. i .. [["}
+                    }]]
+                )
+            end
+
+            ngx.sleep(0.5)
+
+            local matched = {1, 10, 11}
+
+            local code, body, res = t('/apisix/admin/services/?name=1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            -- match the name are 1, 10, 11
+            assert(#res.list == 3)
+
+            for _, node in ipairs(res.list) do
+                assert(core.table.array_find(matched, tonumber(node.value.name)))
+            end
+
+            code, body, res = t('/apisix/admin/services/?label=1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            -- match the label are 1, 10, 11
+            assert(#res.list == 1)
+            assert(res.list[1].value.id == "1")
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: services filter
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            for i = 1, 11 do
+                local code, body = t('/apisix/admin/services/' .. i,
+                    ngx.HTTP_PUT,
+                    [[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "name": "]] .. i .. [["
+                    }]]
+                )
+            end
+
+            ngx.sleep(0.5)
+
+            local code, body, res = t('/apisix/admin/services/?name=1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+
+            -- match the name and label are 1, 10, 11
+            assert(#res.list == 3)
+
+            local matched = {1, 10, 11}
+            for _, node in ipairs(res.list) do
+                assert(core.table.array_find(matched, tonumber(node.value.name)))
+            end
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: routes filter
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            for i = 1, 11 do
+                local code, body = t('/apisix/admin/routes/' .. i,
+                    ngx.HTTP_PUT,
+                    [[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "name": "]] .. i .. [[",
+                        "uri": "]] .. i .. [["
+                    }]]
+                )
+            end
+
+            ngx.sleep(0.5)
+
+            local code, body, res = t('/apisix/admin/services/?name=1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+
+            -- match the name and label are 1, 10, 11
+            assert(#res.list == 3)
+
+            local matched = {1, 10, 11}
+            for _, node in ipairs(res.list) do
+                assert(core.table.array_find(matched, tonumber(node.value.name)))
+            end
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: filter with pagination
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            local code, body, res = t('/apisix/admin/services/?name=1&page=1&page_size=10',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+
+            -- match the name and label are 1, 10
+            assert(#res.list == 2)
+
+            local matched = {1, 10}
+            for _, node in ipairs(res.list) do
+                assert(core.table.array_find(matched, tonumber(node.value.name)))
+            end
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: routes filter with uri
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            for i = 1, 11 do
+                local code, body = t('/apisix/admin/routes/' .. i,
+                    ngx.HTTP_PUT,
+                    [[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "name": "]] .. i .. [[",
+                        "uri": "]] .. i .. [["
+                    }]]
+                )
+            end
+
+            ngx.sleep(0.5)
+
+            local code, body, res = t('/apisix/admin/routes/?uri=1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+
+            -- match the name and label are 1, 10, 11
+            assert(#res.list == 3)
+
+            local matched = {1, 10, 11}
+            for _, node in ipairs(res.list) do
+                assert(core.table.array_find(matched, tonumber(node.value.name)))
+            end
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: match labels
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello",
+                    "labels": {
+                        "env": "production"
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello2",
+                    "labels": {
+                        "env2": "production"
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(0.5)
+
+            -- only match labels' keys
+            local code, body, res = t('/apisix/admin/routes/?label=env',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            assert(#res.list == 1)
+            assert(res.list[1].value.id == "1")
+
+            -- don't match labels' values
+            code, body, res = t('/apisix/admin/routes/?label=production',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            assert(#res.list == 0)
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 12: match uris
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uris": ["/hello", "/world"]
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uris": ["/foo", "/bar"]
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(0.5)
+
+            local code, body, res = t('/apisix/admin/routes/?uri=world',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            assert(#res.list == 1)
+            assert(res.list[1].value.id == "1")
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: match uris & labels
+# uris are same in different routes, filter by labels
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uris": ["/hello", "/world"],
+                    "labels": {
+                        "env": "production"
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uris": ["/hello", "/world"],
+                    "labels": {
+                        "build": "16"
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(0.5)
+
+            -- only match route 1
+            local code, body, res = t('/apisix/admin/routes/?uri=world&label=env',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            assert(#res.list == 1)
+            assert(res.list[1].value.id == "1")
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: match uri & labels
+# uri is same in different routes, filter by labels
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello",
+                    "labels": {
+                        "env": "production"
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello",
+                    "labels": {
+                        "env2": "production"
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(0.5)
+
+            local code, body, res = t('/apisix/admin/routes/?uri=hello&label=env',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            assert(#res.list == 1)
+            assert(res.list[1].value.id == "1")
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed

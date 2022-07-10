@@ -22,6 +22,8 @@ local request           = require("apisix.core.request")
 local response          = require("apisix.core.response")
 local table             = require("apisix.core.table")
 local tonumber          = tonumber
+local re_find           = ngx.re.find
+local pairs             = pairs
 
 local _M = {}
 
@@ -81,12 +83,7 @@ local function sort(l, r)
 end
 
 
-function _M.filter(body)
-    if not enable_v3() then
-        return
-    end
-
-    local args = request.get_uri_args()
+local function pagination(body, args)
     args.page = tonumber(args.page)
     args.page_size = tonumber(args.page_size)
     if not args.page or not args.page_size then
@@ -119,6 +116,73 @@ function _M.filter(body)
     end
 
     body.list = res
+end
+
+
+local function filter(body, args)
+    if not args.name and not args.label and not args.uri then
+        return
+    end
+
+    for i = #body.list, 1, -1 do
+        local name_matched = true
+        local label_matched = true
+        local uri_matched = true
+        if args.name then
+            name_matched = false
+            local matched = re_find(body.list[i].value.name, args.name, "jo")
+            if matched then
+                name_matched = true
+            end
+        end
+
+        if args.label then
+            label_matched = false
+            if body.list[i].value.labels then
+                for k, _ in pairs(body.list[i].value.labels) do
+                    if k == args.label then
+                        label_matched = true
+                        break
+                    end
+                end
+            end
+        end
+
+        if args.uri then
+            uri_matched = false
+            if body.list[i].value.uri then
+                local matched = re_find(body.list[i].value.uri, args.uri, "jo")
+                if matched then
+                    uri_matched = true
+                end
+            end
+
+            if body.list[i].value.uris then
+                for _, uri in pairs(body.list[i].value.uris) do
+                    if re_find(uri, args.uri, "jo") then
+                        uri_matched = true
+                        break
+                    end
+                end
+            end
+        end
+
+        if not name_matched or not label_matched or not uri_matched then
+            table.remove(body.list, i)
+        end
+    end
+end
+
+
+function _M.filter(body)
+    if not enable_v3() then
+        return
+    end
+
+    local args = request.get_uri_args()
+
+    pagination(body, args)
+    filter(body, args)
 end
 
 
