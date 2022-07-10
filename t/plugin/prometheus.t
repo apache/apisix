@@ -646,42 +646,20 @@ Shared_DICT: worker-events
 
 
 === TEST 43: fetch the prometheus multiple shared dict data
---- request
-GET /apisix/prometheus/metrics
+--- request eval
+["GET /apisix/prometheus/metrics", "GET /apisix/prometheus/metrics", "GET /apisix/prometheus/metrics"]
 --- more_headers
 Shared_DICT: worker-events
 Shared_DICT: upstream-healthcheck
 Shared_DICT: internal-status
---- response_body_like
-.*TYPE apisix_shared_dict gauge.*worker-events_capacity.*worker-events_free_space.*
+--- response_body_like eval
+[".*TYPE apisix_shared_dict gauge.*upstream-healthcheck_capacity.*upstream-healthcheck_free_space.*",
+".*TYPE apisix_shared_dict gauge.*internal-status_capacity.*internal-status_free_space.*",
+".*TYPE apisix_shared_dict gauge.*worker-events_capacity.*worker-events_free_space.*"]
 
 
 
-=== TEST 44: fetch the prometheus multiple shared dict data
---- request
-GET /apisix/prometheus/metrics
---- more_headers
-Shared_DICT: worker-events
-Shared_DICT: upstream-healthcheck
-Shared_DICT: internal-status
---- response_body_like
-.*TYPE apisix_shared_dict gauge.*upstream-healthcheck_capacity.*upstream-healthcheck_free_space.*
-
-
-
-=== TEST 45: fetch the prometheus multiple shared dict data
---- request
-GET /apisix/prometheus/metrics
---- more_headers
-Shared_DICT: worker-events
-Shared_DICT: upstream-healthcheck
-Shared_DICT: internal-status
---- response_body_like
-.*TYPE apisix_shared_dict gauge.*internal-status_capacity.*internal-status_free_space.*
-
-
-
-=== TEST 46: fetch the prometheus multiple shared dict data contain not exist shared dict
+=== TEST 44: fetch the prometheus multiple shared dict data contain not exist shared dict
 --- request
 GET /apisix/prometheus/metrics
 --- more_headers
