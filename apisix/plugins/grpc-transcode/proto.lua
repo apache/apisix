@@ -157,6 +157,35 @@ function _M.protos()
 end
 
 
+local status_pb_state
+local function init_status_pb_state()
+    -- clear current pb state
+    pb.state(nil)
+
+    -- initialize protoc compiler
+    protoc.reload()
+    local status_protoc = protoc.new()
+
+    -- compile the protobuf file on initial load module
+    -- ensure that each worker is loaded once
+    if not status_protoc.loaded["grpc_status.proto"] then
+        status_protoc:addpath("apisix/include/apisix/model")
+        local ok, err = pcall(status_protoc.loadfile, status_protoc, "grpc_status.proto")
+        if not ok then
+            status_protoc:reset()
+            return "failed to load grpc status protocol: " .. err
+        end
+    end
+
+    status_pb_state = pb.state(nil)
+end
+
+
+function _M.fetch_status_pb_state()
+    return status_pb_state
+end
+
+
 function _M.init()
     local err
     protos, err = core.config.new("/protos", {
@@ -167,6 +196,15 @@ function _M.init()
         core.log.error("failed to create etcd instance for fetching protos: ",
                        err)
         return
+    end
+
+    if not status_pb_state then
+        err = init_status_pb_state()
+        if err then
+            core.log.error("failed to init grpc status proto: ",
+                            err)
+            return
+        end
     end
 end
 
