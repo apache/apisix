@@ -588,42 +588,7 @@ qr/error_msg":"failed to check the configuration of plugin redirect err: allOf 1
 
 
 
-=== TEST 26: wrong configure, enable http_to_https with append_query_string
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/hello",
-                    "host": "foo.com",
-                    "plugins": {
-                        "redirect": {
-                            "http_to_https": true,
-                            "append_query_string": true
-                        }
-                    }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- response_body eval
-qr/error_msg":"failed to check the configuration of plugin redirect err: allOf 2 failed: value should match only one schema, but matches both schemas 1 and 2/
---- no_error_log
-[error]
-
-
-
-=== TEST 27: enable http_to_https with upstream
+=== TEST 26: enable http_to_https with upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -662,7 +627,7 @@ passed
 
 
 
-=== TEST 28: redirect
+=== TEST 27: redirect
 --- request
 GET /hello
 --- more_headers
@@ -673,7 +638,7 @@ Location: https://test.com:9443/hello
 
 
 
-=== TEST 29: set ssl(sni: test.com)
+=== TEST 28: set ssl(sni: test.com)
 --- config
 location /t {
     content_by_lua_block {
@@ -704,7 +669,7 @@ passed
 
 
 
-=== TEST 30: client https request
+=== TEST 29: client https request
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
@@ -778,7 +743,7 @@ close: 1 nil}
 
 
 
-=== TEST 31: add plugin with new uri: /test/add
+=== TEST 30: add plugin with new uri: /test/add
 --- config
     location /t {
         content_by_lua_block {
@@ -813,7 +778,7 @@ passed
 
 
 
-=== TEST 32: http to https post redirect
+=== TEST 31: http to https post redirect
 --- request
 POST /hello-https
 --- more_headers
@@ -826,7 +791,7 @@ Location: https://test.com:9443/hello-https
 
 
 
-=== TEST 33: http to https get redirect
+=== TEST 32: http to https get redirect
 --- request
 GET /hello-https
 --- more_headers
@@ -839,7 +804,7 @@ Location: https://test.com:9443/hello-https
 
 
 
-=== TEST 34: http to https head redirect
+=== TEST 33: http to https head redirect
 --- request
 HEAD /hello-https
 --- more_headers
@@ -852,7 +817,7 @@ Location: https://test.com:9443/hello-https
 
 
 
-=== TEST 35: add plugin with new regex_uri: /test/1 redirect to http://test.com/1
+=== TEST 34: add plugin with new regex_uri: /test/1 redirect to http://test.com/1
 --- config
     location /t {
         content_by_lua_block {
@@ -891,7 +856,7 @@ passed
 
 
 
-=== TEST 36: regex_uri redirect
+=== TEST 35: regex_uri redirect
 --- request
 GET /test/1
 --- response_headers
@@ -902,7 +867,7 @@ Location: http://test.com/1
 
 
 
-=== TEST 37: regex_uri not match, get response from upstream
+=== TEST 36: regex_uri not match, get response from upstream
 --- request
 GET /hello
 --- error_code: 200
@@ -913,7 +878,7 @@ hello world
 
 
 
-=== TEST 38: add plugin with new regex_uri: encode_uri = true
+=== TEST 37: add plugin with new regex_uri: encode_uri = true
 --- config
     location /t {
         content_by_lua_block {
@@ -953,7 +918,7 @@ passed
 
 
 
-=== TEST 39: regex_uri redirect with special characters
+=== TEST 38: regex_uri redirect with special characters
 --- request
 GET /test/with%20space
 --- error_code: 200
@@ -965,7 +930,7 @@ Location: http://test.com/with%20space
 
 
 
-=== TEST 40: add plugin with new uri: encode_uri = true
+=== TEST 39: add plugin with new uri: encode_uri = true
 --- config
     location /t {
         content_by_lua_block {
@@ -999,7 +964,7 @@ passed
 
 
 
-=== TEST 41: redirect with special characters
+=== TEST 40: redirect with special characters
 --- request
 GET /hello/with%20space
 --- response_headers
@@ -1010,7 +975,7 @@ Location: /hello/with%20space
 
 
 
-=== TEST 42: add plugin with new uri: $uri (append_query_string = true)
+=== TEST 41: add plugin with new uri: $uri (append_query_string = true)
 --- config
     location /t {
         content_by_lua_block {
@@ -1044,7 +1009,7 @@ passed
 
 
 
-=== TEST 43: redirect
+=== TEST 42: redirect
 --- request
 GET /hello?name=json
 --- response_headers
@@ -1055,7 +1020,7 @@ Location: /hello?name=json
 
 
 
-=== TEST 44: add plugin with new uri: $uri?type=string (append_query_string = true)
+=== TEST 43: add plugin with new uri: $uri?type=string (append_query_string = true)
 --- config
     location /t {
         content_by_lua_block {
@@ -1089,7 +1054,7 @@ passed
 
 
 
-=== TEST 45: redirect
+=== TEST 44: redirect
 --- request
 GET /hello?name=json
 --- response_headers
@@ -1100,7 +1065,7 @@ Location: /hello?type=string&name=json
 
 
 
-=== TEST 46: enable http_to_https (pass X-Forwarded-Proto)
+=== TEST 45: enable http_to_https (pass X-Forwarded-Proto)
 --- config
     location /t {
         content_by_lua_block {
@@ -1140,7 +1105,7 @@ passed
 
 
 
-=== TEST 47: enable http_to_https (pass X-Forwarded-Proto)
+=== TEST 46: enable http_to_https (pass X-Forwarded-Proto)
 --- request
 GET /hello
 --- more_headers
@@ -1149,3 +1114,38 @@ X-Forwarded-Proto: http
 --- error_code: 301
 --- response_headers
 Location: https://foo.com:9443/hello
+
+
+
+=== TEST 47: wrong configure, enable http_to_https with append_query_string
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "host": "foo.com",
+                    "plugins": {
+                        "redirect": {
+                            "http_to_https": true,
+                            "append_query_string": true
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/error_msg":"failed to check the configuration of plugin redirect err: allOf 2 failed: value should match only one schema, but matches both schemas 1 and 2/
+--- no_error_log
+[error]
