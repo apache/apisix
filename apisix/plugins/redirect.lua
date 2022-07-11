@@ -55,13 +55,32 @@ local schema = {
         },
         http_to_https = {type = "boolean"},
         encode_uri = {type = "boolean", default = false},
-        append_query_string = {type = "boolean", default = false},
+        append_query_string = {type = "boolean"},
     },
-    oneOf = {
-        {required = {"uri"}},
-        {required = {"regex_uri"}},
-        {required = {"http_to_https"}}
-    }
+    allOf = {
+        {
+            oneOf = {
+                {required = {"uri"}},
+                {required = {"regex_uri"}},
+                {required = {"http_to_https"}},
+            },
+        },
+        -- append_query_string and http_to_https are exclusive
+        {
+            oneOf = {
+                {required = {"append_query_string"}},
+                {required = {"http_to_https"}},
+                {
+                    ["not"] = {
+                        anyOf = {
+                            {required = {"append_query_string"}},
+                            {required = {"http_to_https"}},
+                        },
+                    },
+                },
+            },
+        },
+    },
 }
 
 
