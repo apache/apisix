@@ -16,7 +16,7 @@
 --
 
 local local_conf         = require("apisix.core.config_local").local_conf()
-local http               = require("resty.http")
+local socket_http        = require("socket.http")
 local core               = require("apisix.core")
 local ipmatcher          = require("resty.ipmatcher")
 local ipairs             = ipairs
@@ -69,8 +69,7 @@ local function service_info()
     return url, basic_auth
 end
 
-
-local function request(request_uri, basic_auth, method, path, query, body)
+local function request(request_uri, basic_auth, method, path, query)
     log.info("eureka uri:", request_uri, ".")
     local url = request_uri .. path
     local headers = core.table.new(0, 5)
@@ -81,34 +80,29 @@ local function request(request_uri, basic_auth, method, path, query, body)
         headers['Authorization'] = basic_auth
     end
 
-    if body and 'table' == type(body) then
-        local err
-        body, err = core.json.encode(body)
-        if not body then
-            return nil, 'invalid body : ' .. err
-        end
-        -- log.warn(method, url, body)
-        headers['Content-Type'] = 'application/json'
+    local request_body = query
+    if query and type(query) == 'table' then
+        request_body = core.json.encode(query, { indent = true })
+        headers["Content-Type"] = "application/json"
     end
 
-    local httpc = http.new()
-    local timeout = local_conf.discovery.eureka.timeout
-    local connect_timeout = timeout and timeout.connect or 2000
-    local send_timeout = timeout and timeout.send or 2000
-    local read_timeout = timeout and timeout.read or 5000
-    log.info("connect_timeout:", connect_timeout, ", send_timeout:", send_timeout,
-            ", read_timeout:", read_timeout, ".")
-    httpc:set_timeouts(connect_timeout, send_timeout, read_timeout)
-    return httpc:request_uri(url, {
-        version = 1.1,
+    if request_body then
+        headers["Content-Length"] = #request_body
+    end
+
+    local response_body = {}
+    local _, code = socket_http.request {
+        url = url,
         method = method,
         headers = headers,
-        query = query,
-        body = body,
-        ssl_verify = false,
-    })
-end
+        source = ltn12.source.string(request_body),
+        sink = ltn12.sink.table(response_body)
+    }
 
+    local resp_table = core.table.concat(response_body)
+    local data = core.json.decode(resp_table)
+    return code, data
+end
 
 local function parse_instance(instance)
     local status = instance.status
@@ -150,23 +144,12 @@ local function fetch_full_registry(premature)
         return
     end
 
-    local res, err = request(request_uri, basic_auth, "GET", "apps")
-    if not res then
-        log.error("failed to fetch registry", err)
+    local code, data = request(request_uri, basic_auth, "GET", "apps")
+    if not data or code ~= 200 then
+        log.error("failed to fetch registry, status = ", code, ",response body: ", core.json.encode(data))
         return
     end
 
-    if not res.body or res.status ~= 200 then
-        log.error("failed to fetch registry, status = ", res.status)
-        return
-    end
-
-    local json_str = res.body
-    local data, err = core.json.decode(json_str)
-    if not data then
-        log.error("invalid response body: ", json_str, " err: ", err)
-        return
-    end
     local apps = data.applications.application
     local up_apps = core.table.new(0, #apps)
     for _, app in ipairs(apps) do
