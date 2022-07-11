@@ -22,6 +22,7 @@ local apisix_home = "/usr/local/apisix"
 local pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
                   .. apisix_home .. "/deps/lib/lua/5.1/?.so;"
 local pkg_path = apisix_home .. "/deps/share/lua/5.1/?.lua;"
+                  .. apisix_home .. "/?.lua;"
 
 -- modify the load path to load our dependencies
 package.cpath = pkg_cpath .. pkg_cpath_org
