@@ -77,6 +77,7 @@ local schema = {
     required = { "proto_id", "service", "method" },
 }
 
+-- Based on https://cloud.google.com/apis/design/errors#handling_errors
 local status_rel = {
     ["1"] = 499,    -- CANCELLED
     ["2"] = 500,    -- UNKNOWN
