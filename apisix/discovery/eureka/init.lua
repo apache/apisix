@@ -193,7 +193,7 @@ function _M.init_worker()
     log.info("default_weight:", default_weight, ".")
     local fetch_interval = local_conf.discovery.eureka.fetch_interval or 30
     log.info("fetch_interval:", fetch_interval, ".")
-    ngx_timer_at(0, fetch_full_registry)
+    fetch_full_registry()
     ngx_timer_every(fetch_interval, fetch_full_registry)
 end
 
