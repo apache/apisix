@@ -203,7 +203,7 @@ plugin_proxy_rewrite get method: POST
 
 
 
-=== TEST 10: set route(unsafe uri not normalized at request)
+=== TEST 8: set route(unsafe uri not normalized at request)
 --- config
     location /t {
         content_by_lua_block {
@@ -242,7 +242,7 @@ passed
 
 
 
-=== TEST 11: unsafe uri not normalized at request
+=== TEST 9: unsafe uri not normalized at request
 --- request
 GET /print%5Furi%5Fdetailed HTTP/1.1
 --- response_body
@@ -253,7 +253,7 @@ ngx.var.request_uri: /print%5Furi%5Fdetailed
 
 
 
-=== TEST 12: set route(safe uri not normalized at request)
+=== TEST 10: set route(safe uri not normalized at request)
 --- config
     location /t {
         content_by_lua_block {
@@ -292,7 +292,7 @@ passed
 
 
 
-=== TEST 13: safe uri not normalized at request
+=== TEST 11: safe uri not normalized at request
 --- request
 GET /print_uri_detailed HTTP/1.1
 --- response_body
