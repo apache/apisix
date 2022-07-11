@@ -281,7 +281,7 @@ etcd:
     - "http://127.0.0.1:2379"     # multiple etcd address, if your etcd cluster enables TLS, please use https scheme,
                                   # e.g. https://127.0.0.1:2379.
   prefix: /apisix                 # apisix configurations prefix
-  timeout: 30                     # 30 seconds
+  #timeout: 30                    # 30 seconds
   #resync_delay: 5                # when sync failed and a rest is needed, resync after the configured seconds plus 50% random jitter
   #health_check_timeout: 10       # etcd retry the unhealthy nodes after the configured seconds
   startup_retry: 2                # the number of retry to etcd during the startup, default to 2
