@@ -187,11 +187,8 @@ The following metrics are exported by the `prometheus` Plugin:
   | node     | IP address of the Upstream node.                                                                                              |
 
 - etcd reachability: A gauge type representing whether etcd can be reached by APISIX. A value of `1` represents reachable and `0` represents unreachable.
-
 - Connections: Nginx connection metrics like active, reading, writing, and number of accepted connections.
-
 - Batch process entries: A gauge type useful when Plugins like [syslog](./syslog.md), [http-logger](./http-logger.md), [tcp-logger](./tcp-logger.md), [udp-logger](./udp-logger.md), and [zipkin](./zipkin.md) use batch process to send data. Entries that hasn't been sent in batch process will be counted in the metrics.
-
 - Latency: Histogram of the request time per service in different dimensions.
 
   The available attributes are:
@@ -204,7 +201,6 @@ The following metrics are exported by the `prometheus` Plugin:
   | node     | IP address of the Upstream node.                                                                                                    |
 
 - Info: Information about the APISIX node.
-
 - Shared dict: capacity and free space of ngx.shared.DICT, this param uses the request header `Shared_DICT` to carry the shared memory name to be fetched.
 
 Here are the original metrics from APISIX:

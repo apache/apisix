@@ -186,11 +186,8 @@ scrape_configs:
     | node         | 消费者节点 IP 地址。 |
 
 - etcd reachability: APISIX 连接 etcd 的可用性，用 0 和 1 来表示，`1` 表示可用，`0` 表示不可用。
-
 - Connections: 各种的 NGINX 连接指标，如 `active`（正处理的活动连接数），`reading`（NGINX 读取到客户端的 Header 信息数），writing（NGINX 返回给客户端的 Header 信息数），已建立的连接数。
-
 - Batch process entries: 批处理未发送数据计数器，当你使用了批处理发送插件，比如：[syslog](./syslog.md), [http-logger](./http-logger.md), [tcp-logger](./tcp-logger.md), [udp-logger](./udp-logger.md), and [zipkin](./zipkin.md)，那么你将会在此指标中看到批处理当前尚未发送的数据的数量。
-
 - Latency: 每个服务的请求用时和 APISIX 处理耗时的直方图。属性如下所示：
 
     | 名称          |    描述                                                                                 |
@@ -201,7 +198,6 @@ scrape_configs:
     | node         | 上游节点的 IP 地址。                                                                      |
 
 - Info: 当前 APISIX 节点信息。
-
 - Shared dict: 共享内存的大小以及剩余可用空间，该指标使用请求头 `Shared_DICT` 携带需要查询的共享内存名称。
 
 以下是 APISIX 的原始的指标数据集：
