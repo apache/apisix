@@ -191,7 +191,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 
 1. 如果 APISIX 无法解析或者连接到身份认证服务（如 Okta、Keycloak、Authing 等），请检查或修改配置文件（`./conf/config.yaml`）中的 DNS 设置。
 
-2. 如果遇到 `the error request to the redirect_uri path, but there's no session state found` 的错误，请检查 `redirect_url` 参数配置：APISIX 会向身份认证服务发起身份认证请求，认证服务完成认证、授权后，会携带 ID Token 和 AccessToken 重定向到 `redirect_url` 所配置的地址（例如 `http://127.0.0.1:9080/callback`），接着再次进入 APISIX 并在 OIDC 逻辑中完成 Token 交换的功能。因此 `redirect_url` 需要满足以下条件：
+2. 如果遇到 `the error request to the redirect_uri path, but there's no session state found` 的错误，请检查 `redirect_uri` 参数配置：APISIX 会向身份认证服务发起身份认证请求，认证服务完成认证、授权后，会携带 ID Token 和 AccessToken 重定向到 `redirect_uri` 所配置的地址（例如 `http://127.0.0.1:9080/callback`），接着再次进入 APISIX 并在 OIDC 逻辑中完成 Token 交换的功能。因此 `redirect_uri` 需要满足以下条件：
 
-- `redirect_url` 需要能被当前 APISIX 所在路由捕获，比如当前路由的 `uri` 是 `/api/v1/*`, `redirect_uri` 可以填写为 `/api/v1/callback`；
-- `redirect_url`（`scheme:host`） 的 `scheme` 和 `host` 是身份认证服务视角下访问 APISIX 所需的值。
+- `redirect_uri` 需要能被当前 APISIX 所在路由捕获，比如当前路由的 `uri` 是 `/api/v1/*`, `redirect_uri` 可以填写为 `/api/v1/callback`；
+- `redirect_uri`（`scheme:host`） 的 `scheme` 和 `host` 是身份认证服务视角下访问 APISIX 所需的值。
