@@ -144,7 +144,7 @@ curl --cacert /path/to/ca.pem --key /path/to/client.key.pem --cert /path/to/clie
             "protocol_level": 4
         }
     },
-    "sni": "<your_sni_name>",
+    "sni": "${your_sni_name}",
     "upstream": {
         "nodes": {
             "<your_upstream_node_name>": 1
