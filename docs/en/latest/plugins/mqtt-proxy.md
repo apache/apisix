@@ -154,7 +154,7 @@ curl --cacert /path/to/ca.pem --key /path/to/client.key.pem --cert /path/to/clie
 }'
 ```
 
-The sni name must math one or more of the SNIs provided to the ssl object that you created with the CA and server certificates.
+The `sni` name must math one or more of the SNIs provided to the SSL object that you created with the CA and server certificates.
 
 ## Disable Plugin
 
