@@ -80,6 +80,7 @@ CREATE TABLE default.test (
   `host` String,
   `client_ip` String,
   `route_id` String,
+  `service_id` String,
   `@timestamp` String,
    PRIMARY KEY(`@timestamp`)
 ) ENGINE = MergeTree()
