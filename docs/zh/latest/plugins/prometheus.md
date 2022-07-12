@@ -198,12 +198,19 @@ scrape_configs:
     | node         | 上游节点的 IP 地址。                                                                      |
 
 - Info: 当前 APISIX 节点信息。
-- Shared dict: 共享内存的大小以及剩余可用空间，该指标使用请求头 `Shared_DICT` 携带需要查询的共享内存名称。
+- Shared dict: 共享内存的大小以及剩余可用空间，该指标使用配置文件进行配置，示例如下：
+    ```yaml
+    plugin_attr:
+      prometheus:
+        #shared_DICT: internal-status    #可配置为单个字符串
+        shared_DICT:					 #也可以数组的形式进行配置
+          - internal-status
+    ```
 
 以下是 APISIX 的原始的指标数据集：
 
 ```shell
-curl http://127.0.0.1:9091/apisix/prometheus/metrics -H "Shared_DICT:internal-status"
+curl http://127.0.0.1:9091/apisix/prometheus/metrics
 ```
 
 ```shell
@@ -270,10 +277,16 @@ apisix_http_latency_bucket{type="upstream",route="1",service="",consumer="",node
 # HELP apisix_node_info Info of APISIX node
 # TYPE apisix_node_info gauge
 apisix_node_info{hostname="APISIX"} 1
-# HELP apisix_shared_dict nginx shared DICT of APISIX
-# TYPE apisix_shared_dict gauge
-apisix_shared_dict{key="internal-status_capacity"} 10485760
-apisix_shared_dict{key="internal-status_free_space"} 10407936
+# HELP apisix_shared_dict_capacity_bytes capacity every moment of nginx shared DICT since APISIX start
+# TYPE apisix_shared_dict_capacity_bytes gauge
+apisix_shared_dict_capacity_bytes{name="internal-status"} 10485760
+apisix_shared_dict_capacity_bytes{name="upstream-healthcheck"} 10485760
+apisix_shared_dict_capacity_bytes{name="worker-events"} 10485760
+# HELP apisix_shared_dict_free_space_bytes the current free space for nginx shared DICT in APISIX
+# TYPE apisix_shared_dict_free_space_bytes gauge
+apisix_shared_dict_free_space_bytes{name="internal-status"} 10412032
+apisix_shared_dict_free_space_bytes{name="upstream-healthcheck"} 10412032
+apisix_shared_dict_free_space_bytes{name="worker-events"} 10407936
 ```
 
 ## 禁用插件

@@ -201,7 +201,14 @@ The following metrics are exported by the `prometheus` Plugin:
   | node     | IP address of the Upstream node.                                                                                                    |
 
 - Info: Information about the APISIX node.
-- Shared dict: capacity and free space of ngx.shared.DICT, this param uses the request header `Shared_DICT` to carry the shared memory name to be fetched.
+- Shared dict: capacity and free space of ngx.shared.DICT, this param uses the configuration file to carry the shared memory name to be fetched, e.g:
+```yaml
+plugin_attr:
+  prometheus:
+    #shared_DICT: internal-status    #config as a string
+    shared_DICT:                     #can also be configured as a table
+      - internal-status
+```
 
 Here are the original metrics from APISIX:
 
@@ -273,10 +280,16 @@ apisix_http_latency_bucket{type="upstream",route="1",service="",consumer="",node
 # HELP apisix_node_info Info of APISIX node
 # TYPE apisix_node_info gauge
 apisix_node_info{hostname="desktop-2022q8f-wsl"} 1
-# HELP apisix_shared_dict nginx shared DICT of APISIX
-# TYPE apisix_shared_dict gauge
-apisix_shared_dict{key="internal-status_capacity"} 10485760
-apisix_shared_dict{key="internal-status_free_space"} 10407936
+# HELP apisix_shared_dict_capacity_bytes capacity every moment of nginx shared DICT since APISIX start
+# TYPE apisix_shared_dict_capacity_bytes gauge
+apisix_shared_dict_capacity_bytes{name="internal-status"} 10485760
+apisix_shared_dict_capacity_bytes{name="upstream-healthcheck"} 10485760
+apisix_shared_dict_capacity_bytes{name="worker-events"} 10485760
+# HELP apisix_shared_dict_free_space_bytes the current free space for nginx shared DICT in APISIX
+# TYPE apisix_shared_dict_free_space_bytes gauge
+apisix_shared_dict_free_space_bytes{name="internal-status"} 10412032
+apisix_shared_dict_free_space_bytes{name="upstream-healthcheck"} 10412032
+apisix_shared_dict_free_space_bytes{name="worker-events"} 10407936
 ```
 
 ## Disable Plugin
