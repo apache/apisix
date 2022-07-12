@@ -66,6 +66,12 @@ lua {
 
 {% if enabled_stream_plugins["prometheus"] and not enable_http then %}
 http {
+    lua_package_path  "{*extra_lua_path*}$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
+                       .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
+    lua_package_cpath "{*extra_lua_cpath*}$prefix/deps/lib64/lua/5.1/?.so;]=]
+                      .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
+                      .. [=[{*lua_cpath*};";
+
     {% if enabled_stream_plugins["prometheus"] then %}
     init_worker_by_lua_block {
         require("apisix.plugins.prometheus.exporter").http_init(true)
