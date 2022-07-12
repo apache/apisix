@@ -33,7 +33,6 @@ local get_services = require("apisix.http.service").services
 local get_consumers = require("apisix.consumer").consumers
 local get_upstreams = require("apisix.upstream").upstreams
 local clear_tab = core.table.clear
-local concat_tab = core.table.concat
 local get_stream_routes = router.stream_routes
 local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
 local service_fetch = require("apisix.http.service").get
@@ -123,9 +122,13 @@ function _M.http_init(prometheus_enabled_in_stream)
             "Etcd modify index for APISIX keys",
             {"key"})
 
-    metrics.shared_dict = prometheus:gauge("shared_dict",
-            "nginx shared DICT of APISIX",
-            {"key"})
+    metrics.shared_dict_capacity_bytes = prometheus:gauge("shared_dict_capacity_bytes",
+            "capacity every moment of nginx shared DICT since APISIX start",
+            {"name"})
+
+    metrics.shared_dict_free_space_bytes = prometheus:gauge("shared_dict_free_space_bytes",
+            "the current free space for nginx shared DICT in APISIX",
+            {"name"})
 
     -- per service
 
@@ -356,42 +359,40 @@ local function etcd_modify_index()
 
 end
 
-local key = {}
-local combine_param = {}
 
 local function shared_dict_status()
-    local header_of_shared_dict = core.request.header(ngx.ctx, "shared_dict")
-    if not header_of_shared_dict then
+    local attr = plugin.plugin_attr(plugin_name)
+    if not attr or not attr.shared_DICT then
         return
     end
 
+    local name = {}
     local set_shared_dict_param = function (shared_dict_name)
         if type(shared_dict_name) ~= "string" then
             return
         end
+
+        name[1] = shared_dict_name
         local share_dict = ngx.shared[shared_dict_name]
         if share_dict then
-            combine_param[1] = shared_dict_name
-            combine_param[2] = "capacity"
-            key[1] = concat_tab(combine_param, "_")
-            metrics.shared_dict:set(share_dict:capacity(), key)
-
-            combine_param[2] = "free_space"
-            key[1] = concat_tab(combine_param, "_")
-            metrics.shared_dict:set(share_dict:free_space(), key)
+            metrics.shared_dict_capacity_bytes:set(share_dict:capacity(), name)
+            metrics.shared_dict_free_space_bytes:set(share_dict:free_space(), name)
         end
     end
 
-    if type(header_of_shared_dict) == "string" then
-        set_shared_dict_param(header_of_shared_dict)
+    local shared_dicts = attr.shared_DICT
+
+    if type(shared_dicts) == "string" then
+        set_shared_dict_param(shared_dicts)
     end
 
-    if type(header_of_shared_dict) == "table" then
-        for _, shared_dict_name in ipairs(header_of_shared_dict) do
+    if type(shared_dicts) == "table" then
+        for _, shared_dict_name in ipairs(shared_dicts) do
             set_shared_dict_param(shared_dict_name)
         end
     end
 end
+
 
 local function collect(ctx, stream_only)
     if not prometheus or not metrics then

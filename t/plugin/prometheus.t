@@ -635,36 +635,63 @@ qr/etcd/
 
 
 
-=== TEST 42: fetch the prometheus one shared dict data
+=== TEST 42: fetch the prometheus one shared dict data storage with string
+--- yaml_config
+plugin_attr:
+  prometheus:
+    shared_DICT: internal-status
 --- request
 GET /apisix/prometheus/metrics
---- more_headers
-Shared_DICT: worker-events
---- response_body_like
-.*TYPE apisix_shared_dict gauge.*worker-events_capacity.*worker-events_free_space.*
+--- response_body_like eval
+qr/.*apisix_shared_dict_capacity_bytes{name="internal-status"} \d+(?:.|\n)*
+apisix_shared_dict_free_space_bytes{name="internal-status"} \d+.*/
 
 
 
-=== TEST 43: fetch the prometheus multiple shared dict data
+=== TEST 43: fetch the prometheus one shared dict data storage with table
+--- yaml_config
+plugin_attr:
+  prometheus:
+    shared_DICT:
+      - internal-status
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like eval
+qr/.*apisix_shared_dict_capacity_bytes{name="internal-status"} \d+(?:.|\n)*
+apisix_shared_dict_free_space_bytes{name="internal-status"} \d+.*/
+
+
+
+=== TEST 44: fetch the prometheus multiple shared dict data
+--- yaml_config
+plugin_attr:
+  prometheus:
+    shared_DICT:
+      - worker-events
+      - upstream-healthcheck
+      - internal-status
 --- request eval
 ["GET /apisix/prometheus/metrics", "GET /apisix/prometheus/metrics", "GET /apisix/prometheus/metrics"]
---- more_headers
-Shared_DICT: worker-events
-Shared_DICT: upstream-healthcheck
-Shared_DICT: internal-status
 --- response_body_like eval
-[".*TYPE apisix_shared_dict gauge.*upstream-healthcheck_capacity.*upstream-healthcheck_free_space.*",
-".*TYPE apisix_shared_dict gauge.*internal-status_capacity.*internal-status_free_space.*",
-".*TYPE apisix_shared_dict gauge.*worker-events_capacity.*worker-events_free_space.*"]
+[qr/.*apisix_shared_dict_capacity_bytes{name="worker-events"} \d+(?:.|\n)*
+apisix_shared_dict_free_space_bytes{name="worker-events"} \d+.*/,
+qr/.*apisix_shared_dict_capacity_bytes{name="upstream-healthcheck"} \d+(?:.|\n)*
+apisix_shared_dict_free_space_bytes{name="upstream-healthcheck"} \d+.*/,
+qr/.*apisix_shared_dict_capacity_bytes{name="internal-status"} \d+(?:.|\n)*
+apisix_shared_dict_free_space_bytes{name="internal-status"} \d+.*/]
 
 
 
-=== TEST 44: fetch the prometheus multiple shared dict data contain not exist shared dict
+=== TEST 45: fetch the prometheus multiple shared dict data contain not exist shared dict
+--- yaml_config
+plugin_attr:
+  prometheus:
+    shared_DICT:
+      - worker-events
+      - upstream-healthcheck
+      - not-exist-shared-dict
 --- request
 GET /apisix/prometheus/metrics
---- more_headers
-Shared_DICT: worker-events
-Shared_DICT: upstream-healthcheck
-Shared_DICT: not-exist-shared-dict
 --- response_body_unlike
-.*TYPE apisix_shared_dict gauge.*not-exist-shared-dict_capacity.*not-exist-shared-dict_free_space.*
+qr/.*apisix_shared_dict_capacity_bytes{name="not-exist-shared-dict"} \d+(?:.|\n)*
+apisix_shared_dict_free_space_bytes{name="not-exist-shared-dict"} \d+.*/
