@@ -129,7 +129,7 @@ Stream proxies use TCP connections and can accept TLS. Follow the guide about [h
 
 The `mqtt-proxy` plugin is enabled through TCP communications on the specified port for the stream proxy, and will also require clients to authenticate via TLS if tls is set to true.
 
-Configure `ssl` providing the CA certificate and the server certificate, together with a list of SNIs. Steps to protect `stream_routes` with `ssl` are equivalent to the ones to [protect Routes](https://apisix.apache.org/docs/apisix/mtls/#protect-route)
+Configure `ssl` providing the CA certificate and the server certificate, together with a list of SNIs. Steps to protect `stream_routes` with `ssl` are equivalent to the ones to [protect Routes](../mtls.md/#protect-route)
 
 ### Create a stream_route using mqtt-proxy plugin and mTLS
 
