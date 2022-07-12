@@ -147,7 +147,7 @@ curl --cacert /path/to/ca.pem --key /path/to/client.key.pem --cert /path/to/clie
     "sni": "${your_sni_name}",
     "upstream": {
         "nodes": {
-            "<your_upstream_node_name>": 1
+            "127.0.0.1:1980": 1
         },
         "type": "roundrobin"
     }
