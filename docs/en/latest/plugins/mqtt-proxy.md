@@ -125,7 +125,7 @@ MQTT connections with different client ID will be forwarded to different nodes b
 
 ## Enabling mTLS with mqtt-proxy plugin
 
-Stream proxies use TCP connections and can accept TLS. Follow the guide about [how to accept tls over tcp connections](https://apisix.apache.org/docs/apisix/stream-proxy/#accept-tls-over-tcp-connection) to open a stream proxy with enabled TLS.
+Stream proxies use TCP connections and can accept TLS. Follow the guide about [how to accept tls over tcp connections](../stream-proxy.md/#accept-tls-over-tcp-connection) to open a stream proxy with enabled TLS.
 
 The `mqtt-proxy` plugin is enabled through TCP communications on the specified port for the stream proxy, and will also require clients to authenticate via TLS if tls is set to true.
 
