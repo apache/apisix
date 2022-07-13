@@ -47,7 +47,7 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 | timeout                              | integer | 否     | 3                     | [1,...]       | 请求超时时间，单位为秒                                                                             |
 | ssl_verify                           | boolean | 否     | false                 | [true, false] | 当设置为 `true` 时，验证身份提供者的 SSL 证书。                                                     |
 | introspection_endpoint               | string  | 否     |                       |               | 身份服务器的令牌认证端点。                                                                    |
-| introspection_endpoint_auth_method   | string  | 否     | "client_secret_basic" |               | 令牌自检的认证方法名称。                                                                            |
+| introspection_endpoint_auth_method   | string  | 否     | "client_secret_basic" |               | 令牌内省的认证方法名称。                                                                            |
 | token_endpoint_auth_method           | string  | 否     |                       |               | 令牌端点的身份验证方法名称。默认情况将获取 OP 指定的第一个支持的方法。                                   |
 | public_key                           | string  | 否     |                       |               | 验证令牌的公钥。                                                                                   |
 | use_jwks                             | boolean | 否     | false                 |               | 当设置为 `true` 时，则会使用身份认证服务器的 JWKS 端点来验证令牌。                                    |
@@ -73,15 +73,15 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 
 2. 浏览器中认证授权：将 `bearer_only` 设置为 `false`。认证成功后，该插件可获得并管理 Cookie 中的令牌，后续请求将使用该令牌。
 
-### 令牌自检
+### 令牌内省
 
-令牌自检是通过针对 OAuth 2.0 授权的服务器来验证令牌及相关请求，详情请阅读 [Token Introspection](https://www.oauth.com/oauth2-servers/token-introspection-endpoint/)。
+令牌内省是通过针对 OAuth 2.0 授权的服务器来验证令牌及相关请求，详情请阅读 [Token Introspection](https://www.oauth.com/oauth2-servers/token-introspection-endpoint/)。
 
-首先，需要在身份认证服务器中创建受信任的客户端，并生成用于自检的有效令牌（JWT）。下图是通过网关进行令牌自检的成功示例流程：
+首先，需要在身份认证服务器中创建受信任的客户端，并生成用于内省的有效令牌（JWT）。下图是通过网关进行令牌内省的成功示例流程：
 
 ![token introspection](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/oauth-1.png)
 
-以下示例是在路由上启用插件。该路由将通过自检请求头中提供的令牌来保护上游：
+以下示例是在路由上启用插件。该路由将通过内省请求头中提供的令牌来保护上游：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 \
@@ -121,9 +121,9 @@ curl -i -X GET http://127.0.0.1:9080/get -H "Authorization: Bearer {JWT_TOKEN}"
 1. [lua-resty-openidc](https://github.com/zmartzone/lua-resty-openidc) 的文档和源代码。
 2. `exp` 字段的定义：[Introspection Response](https://tools.ietf.org/html/rfc7662#section-2.2)。
 
-### 公钥自检
+### 公钥内省
 
-除了令牌自检外，还可以使用 JWT 令牌的公钥进行验证。如果使用了公共密钥和令牌自检端点，就会执行公共密钥工作流，而不是通过身份服务器进行验证。该方式适可用于减少额外的网络调用并加快认证过程。
+除了令牌内省外，还可以使用 JWT 令牌的公钥进行验证。如果使用了公共密钥和令牌内省端点，就会执行公共密钥工作流，而不是通过身份服务器进行验证。该方式适可用于减少额外的网络调用并加快认证过程。
 
 以下示例展示了如何将公钥添加到路由中：
 
