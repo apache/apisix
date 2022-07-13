@@ -327,6 +327,32 @@ local deployment_schema = {
             },
         },
         required = {"etcd", "role_control_plane"}
+    },
+    data_plane = {
+        properties = {
+            role_data_plane = {
+                properties = {
+                    config_provider = {
+                        enum = {"control_plane", "yaml"}
+                    },
+                },
+                required = {"config_provider"}
+            },
+            certs = {
+                properties = {
+                    cert = { type = "string" },
+                    cert_key = { type = "string" },
+                    trusted_ca_cert = { type = "string" },
+                },
+                dependencies = {
+                    cert = {
+                        required = {"cert_key"},
+                    },
+                },
+                default = {},
+            },
+        },
+        required = {"role_data_plane"}
     }
 }
 

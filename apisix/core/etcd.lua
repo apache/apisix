@@ -114,6 +114,19 @@ local function new()
             end
 
             proxy_by_conf_server = true
+
+        elseif local_conf.deployment.role == "data_plane" then
+            if has_mtls_support() and local_conf.deployment.certs.cert then
+                local cert = local_conf.deployment.certs.cert
+                local cert_key = local_conf.deployment.certs.cert_key
+
+                if not etcd_conf.tls then
+                    etcd_conf.tls = {}
+                end
+
+                etcd_conf.tls.cert = cert
+                etcd_conf.tls.key = cert_key
+            end
         end
     end
 
