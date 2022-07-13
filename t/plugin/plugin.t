@@ -373,7 +373,6 @@ passed
                     ngx.say(body)
                 end
             end
-            
         }
     }
 --- response_body
