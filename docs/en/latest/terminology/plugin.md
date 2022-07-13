@@ -90,7 +90,6 @@ Some common configurations can be applied to the plugin configuration. For examp
 
 the configuration above means customizing the error response from the jwt-auth plugin to '{"message": "Missing credential in request"}'.
 
-
 ```
 {
     "jwt-auth": {
@@ -104,8 +103,8 @@ the configuration above means customizing the error response from the jwt-auth p
     }
 }
 ```
-This configuration example means that the `jwt-auth` plugin will only execute if `version` in the request parameter equals `v2`.
 
+This configuration example means that the `jwt-auth` plugin will only execute if `version` in the request parameter equals `v2`.
 
 ### Plugin Common Configuration Under `_meta`
 

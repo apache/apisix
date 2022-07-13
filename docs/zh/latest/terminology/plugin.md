@@ -84,7 +84,6 @@ local _M = {
 
 上面的配置意味着将 jwt-auth 插件的错误响应自定义为 '{"message": "Missing credential in request"}'。
 
-
 ```
 {
     "jwt-auth": {
@@ -98,8 +97,8 @@ local _M = {
     }
 }
 ```
-这个配置示例意味着只有在请求参数中 `version` 等于 `v2` 时 `jwt-auth` 插件才会执行。
 
+这个配置示例意味着只有在请求参数中 `version` 等于 `v2` 时 `jwt-auth` 插件才会执行。
 
 ### 在 `_meta` 下的插件通用配置
 
