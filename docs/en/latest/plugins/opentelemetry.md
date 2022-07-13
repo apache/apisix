@@ -62,7 +62,7 @@ This section is optional.
 
 :::
 
-There have some default YAML configurations in the `conf/config-default.yaml` file, e.g., Collector, Processors. We should update them in the `config.yaml` file.
+There have some default YAML configurations in the `conf/config-default.yaml` file, e.g., Collector, Processors. So we should update them in the `config.yaml` file.
 
 1. Open the `conf/config-default.yaml` file, and coply the `plugin_attr.opentelemetry.xxx` field to the `conf/config.yaml` file.
 
