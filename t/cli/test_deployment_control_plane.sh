@@ -40,6 +40,7 @@ fi
 
 echo "passed: should check deployment schema during init"
 
+# The 'admin.apisix.dev' is injected by ci/common.sh@set_coredns
 echo '
 apisix:
     enable_admin: false
@@ -48,14 +49,15 @@ deployment:
     role_control_plane:
         config_provider: etcd
         conf_server:
-            listen: 0.0.0.0:12345
+            listen: admin.apisix.dev:12345
             cert: t/certs/mtls_server.crt
             cert_key: t/certs/mtls_server.key
-            client_ca_cert: t/certs/mtls_ca.crt
     etcd:
         prefix: "/apisix"
         host:
             - http://127.0.0.1:2379
+    certs:
+        trusted_ca_cert: t/certs/mtls_ca.crt
 ' > conf/config.yaml
 
 make run
@@ -71,20 +73,25 @@ fi
 
 echo "passed: control_plane should enable Admin API"
 
+# use https
+# The 'admin.apisix.dev' is injected by ci/common.sh@set_coredns
 echo '
 deployment:
     role: control_plane
     role_control_plane:
         config_provider: etcd
         conf_server:
-            listen: 0.0.0.0:12345
+            listen: admin.apisix.dev:12345
             cert: t/certs/mtls_server.crt
             cert_key: t/certs/mtls_server.key
-            client_ca_cert: t/certs/mtls_ca.crt
     etcd:
         prefix: "/apisix"
         host:
             - http://127.0.0.1:2379
+    certs:
+        cert: t/certs/mtls_client.crt
+        cert_key: t/certs/mtls_client.key
+        trusted_ca_cert: t/certs/mtls_ca.crt
 ' > conf/config.yaml
 
 make run

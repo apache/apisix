@@ -123,6 +123,29 @@ deployment:
         trusted_ca_cert: /path/to/ca-cert
 ```
 
+As OpenResty <= 1.21.4 doesn't support sending mTLS request, if you need to accept the connections from APISIX running on these OpenResty versions,
+you need to disable client certificate verification in the CP instance.
+
+Here is the example of configuration:
+
+```yaml title="conf/config.yaml"
+deployment:
+    role: control_plane
+    role_control_plan:
+        config_provider: etcd
+        conf_server:
+            listen: 0.0.0.0:9280
+            cert: /path/to/ca-cert
+            cert_key: /path/to/ca-cert
+    etcd:
+       host:
+           - https://xxxx
+       prefix: /apisix
+       timeout: 30
+    certs:
+        trusted_ca_cert: /path/to/ca-cert
+```
+
 ### Standalone
 
 In this mode, APISIX is deployed as DP and reads configurations from yaml file in the local file system.

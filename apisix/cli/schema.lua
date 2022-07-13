@@ -56,6 +56,12 @@ local etcd_schema = {
                 pattern = [[^https?://]]
             },
             minItems = 1,
+        },
+        timeout = {
+            type = "integer",
+            default = 30,
+            minimum = 1,
+            description = "etcd connection timeout in seconds",
         }
     },
     required = {"prefix", "host"}
@@ -305,9 +311,48 @@ local deployment_schema = {
                     },
                 },
                 required = {"config_provider", "conf_server"}
-            }
+            },
+            certs = {
+                properties = {
+                    cert = { type = "string" },
+                    cert_key = { type = "string" },
+                    trusted_ca_cert = { type = "string" },
+                },
+                dependencies = {
+                    cert = {
+                        required = {"cert_key"},
+                    },
+                },
+                default = {},
+            },
         },
         required = {"etcd", "role_control_plane"}
+    },
+    data_plane = {
+        properties = {
+            role_data_plane = {
+                properties = {
+                    config_provider = {
+                        enum = {"control_plane", "yaml"}
+                    },
+                },
+                required = {"config_provider"}
+            },
+            certs = {
+                properties = {
+                    cert = { type = "string" },
+                    cert_key = { type = "string" },
+                    trusted_ca_cert = { type = "string" },
+                },
+                dependencies = {
+                    cert = {
+                        required = {"cert_key"},
+                    },
+                },
+                default = {},
+            },
+        },
+        required = {"role_data_plane"}
     }
 }
 

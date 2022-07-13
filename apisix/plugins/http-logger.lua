@@ -33,7 +33,7 @@ local schema = {
     type = "object",
     properties = {
         uri = core.schema.uri_def,
-        auth_header = {type = "string", default = ""},
+        auth_header = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
         include_req_body = {type = "boolean", default = false},
         include_resp_body = {type = "boolean", default = false},

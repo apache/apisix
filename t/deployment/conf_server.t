@@ -137,7 +137,7 @@ foo
     local old_f = resolver.parse_domain
     local counter = 0
     resolver.parse_domain = function (domain)
-        if domain == "x.com" then
+        if domain == "localhost" then
             counter = counter + 1
             if counter % 2 == 0 then
                 return "127.0.0.2"
@@ -165,12 +165,14 @@ deployment:
     etcd:
         prefix: "/apisix"
         host:
-            - http://x.com:2379
+            # use localhost so the connection is OK in the situation that the DNS
+            # resolve is not done in APISIX
+            - http://localhost:2379
 --- response_body
 foo
 --- error_log
-x.com is resolved to: 127.0.0.3
-x.com is resolved to: 127.0.0.2
+localhost is resolved to: 127.0.0.3
+localhost is resolved to: 127.0.0.2
 --- no_error_log
 [error]
 
@@ -302,7 +304,10 @@ deployment:
     etcd:
         prefix: "/apisix"
         host:
+            - https://127.0.0.1:12379
             - https://localhost:12345
+        tls:
+            verify: false
 --- error_log
 Receive SNI: localhost
 --- no_error_log
@@ -345,8 +350,10 @@ deployment:
     etcd:
         prefix: "/apisix"
         host:
+            - https://127.0.0.1:12379
             - https://127.0.0.1:12345
         tls:
+            verify: false
             sni: "x.com"
 --- error_log
 Receive SNI: x.com
@@ -430,66 +437,30 @@ Receive Host: localhost
 
 
 
-=== TEST 10: mTLS for control plane
---- exec
-curl --cert t/certs/mtls_client.crt --key t/certs/mtls_client.key -k https://localhost:12345/version
---- response_body eval
-qr/"etcdserver":/
+=== TEST 10: default timeout
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            local etcd_cli = require("resty.etcd")
+            local f = etcd_cli.new
+            local timeout
+            etcd_cli.new = function(conf)
+                timeout = conf.timeout
+                return f(conf)
+            end
+            etcd.new()
+            ngx.say(timeout)
+        }
+    }
 --- extra_yaml_config
 deployment:
-    role: control_plane
-    role_control_plane:
+    role: traditional
+    role_traditional:
         config_provider: etcd
-        conf_server:
-            listen: 0.0.0.0:12345
-            cert: t/certs/mtls_server.crt
-            cert_key: t/certs/mtls_server.key
-            client_ca_cert: t/certs/mtls_ca.crt
     etcd:
         prefix: "/apisix"
         host:
             - http://127.0.0.1:2379
-
-
-
-=== TEST 11: no client certificate
---- exec
-curl -k https://localhost:12345/version
---- response_body eval
-qr/No required SSL certificate was sent/
---- extra_yaml_config
-deployment:
-    role: control_plane
-    role_control_plane:
-        config_provider: etcd
-        conf_server:
-            listen: 0.0.0.0:12345
-            cert: t/certs/mtls_server.crt
-            cert_key: t/certs/mtls_server.key
-            client_ca_cert: t/certs/mtls_ca.crt
-    etcd:
-        prefix: "/apisix"
-        host:
-            - http://127.0.0.1:2379
-
-
-
-=== TEST 12: wrong client certificate
---- exec
-curl --cert t/certs/apisix.crt --key t/certs/apisix.key -k https://localhost:12345/version
---- response_body eval
-qr/The SSL certificate error/
---- extra_yaml_config
-deployment:
-    role: control_plane
-    role_control_plane:
-        config_provider: etcd
-        conf_server:
-            listen: 0.0.0.0:12345
-            cert: t/certs/mtls_server.crt
-            cert_key: t/certs/mtls_server.key
-            client_ca_cert: t/certs/mtls_ca.crt
-    etcd:
-        prefix: "/apisix"
-        host:
-            - http://127.0.0.1:2379
+--- response_body
+30
