@@ -956,6 +956,16 @@ _M.plugin_injected_schema = {
                 description = "priority of plugins by customized order",
                 type = "integer",
             },
+            filter = {
+                description = "filter determines whether the plugin "..
+                                "needs to be executed at runtime",
+                type  = "object",
+                properties = {
+                    vars = {
+                        type = "array"
+                    }
+                }
+            }
         }
     }
 }
