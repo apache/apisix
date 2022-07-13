@@ -136,7 +136,7 @@ Configure `ssl` providing the CA certificate and the server certificate, togethe
 Here is an example of how create a stream_route which is using the `mqtt-proxy` plugin, providing the CA certificate, the client certificate and the client key (for self-signed certificates which are not trusted by your host, use the `-k` flag):
 
 ```shell
-curl --cacert /path/to/ca.pem --key /path/to/client.key.pem --cert /path/to/client.pem  127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl 127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "mqtt-proxy": {
