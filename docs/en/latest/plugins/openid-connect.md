@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - OpenID Connect
   - OIDC
-description: OpenID Connect allows the client to obtain user information from the identity providers, such as Keycloak, Ory, Okta, Auth0, etc. API Gateway APISIX supports to integrate with the above identity providers to protect your APIs.
+description: OpenID Connect allows the client to obtain user information from the identity providers, such as Keycloak, Ory Hydra, Okta, Auth0, etc. API Gateway APISIX supports to integrate with the above identity providers to protect your APIs.
 ---
 
 <!--
@@ -29,7 +29,7 @@ description: OpenID Connect allows the client to obtain user information from th
 
 ## Description
 
-[OpenID Connect](https://openid.net/connect/) (OIDC) is an authentication protocol based on the OAuth 2.0. It allows the client to obtain user information from the identity provider (IdP), e.g., Keycloak, Ory, Okta, Auth0, etc. API Gateway Apache APISIX supports to integrate with the above identity providers to protect your APIs.
+[OpenID Connect](https://openid.net/connect/) (OIDC) is an authentication protocol based on the OAuth 2.0. It allows the client to obtain user information from the identity provider (IdP), e.g., Keycloak, Ory Hydra, Okta, Auth0, etc. API Gateway Apache APISIX supports to integrate with the above identity providers to protect your APIs.
 
 ## Attributes
 
