@@ -55,3 +55,34 @@ if [ ! $code -eq 200 ]; then
 fi
 
 echo "passed: work well with etcd in control plane"
+
+echo '
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: control_plane
+        control_plane:
+            host:
+            - "https://admin.apisix.dev:22379"
+            prefix: "/apisix"
+            timeout: 30
+            tls:
+                verify: false
+    certs:
+        cert: t/certs/mtls_client.crt
+        cert_key: t/certs/mtls_client.key
+        trusted_ca_cert: t/certs/mtls_ca.crt
+' > conf/config.yaml
+
+rm logs/error.log
+make run
+sleep 1
+
+make stop
+
+if grep '\[error\] .\+ https://admin.apisix.dev:22379' logs/error.log; then
+    echo "failed: work well with control plane in data plane"
+    exit 1
+fi
+
+echo "passed: work well with control plane in data plane"
