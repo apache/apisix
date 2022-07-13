@@ -382,7 +382,6 @@ passed
 
 
 === TEST 12: proxy-rewrite plugin run with _meta filter vars
---- FIRST
 --- config
     location /t {
         content_by_lua_block {
@@ -437,7 +436,6 @@ x-api-version: v2
 
 
 === TEST 14: hit route: not run proxy-rewrite plugin
---- LAST
 --- request
 GET /hello?version=v1
 --- response_body
