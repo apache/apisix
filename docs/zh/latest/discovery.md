@@ -49,7 +49,7 @@ APISIX 要扩展注册中心其实是件非常容易的事情，其基本步骤�
 
 首先，在 `apisix/discovery` 下创建 `eureka` 目录；
 
-其次，在 `apisix/discovery/eureka` 目录中添加 [`init.lua`](../../../apisix/discovery/eureka/init.lua);
+其次，在 `apisix/discovery/eureka` 目录中添加 [`init.lua`](https://github.com/apache/apisix/blob/master/apisix/discovery/init.lua);
 
 然后在 `init.lua` 实现用于初始化的 `init_worker` 函数以及用于获取服务实例节点列表的 `nodes` 函数即可：
 
