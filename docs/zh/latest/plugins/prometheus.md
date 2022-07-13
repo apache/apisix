@@ -199,13 +199,14 @@ scrape_configs:
 
 - Info: 当前 APISIX 节点信息。
 - Shared dict: 共享内存的大小以及剩余可用空间，该指标使用配置文件进行配置，示例如下：
-    ```yaml
-    plugin_attr:
-      prometheus:
-        #shared_DICT: internal-status    #可配置为单个字符串
-        shared_DICT:					 #也可以数组的形式进行配置
-          - internal-status
-    ```
+
+```yaml
+plugin_attr:
+    prometheus:
+    #shared_DICT: internal-status    #可配置为单个字符串
+    shared_DICT:					 #也可以数组的形式进行配置
+        - internal-status
+```
 
 以下是 APISIX 的原始的指标数据集：
 

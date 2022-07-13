@@ -202,6 +202,7 @@ The following metrics are exported by the `prometheus` Plugin:
 
 - Info: Information about the APISIX node.
 - Shared dict: capacity and free space of ngx.shared.DICT, this param uses the configuration file to carry the shared memory name to be fetched, e.g:
+
 ```yaml
 plugin_attr:
   prometheus:
