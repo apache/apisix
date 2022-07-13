@@ -637,9 +637,10 @@ qr/etcd/
 
 === TEST 42: fetch the prometheus one shared dict data storage with string
 --- yaml_config
-plugin_attr:
-  prometheus:
-    shared_DICT: internal-status
+nginx_config:
+  http:
+    lua_shared_dict:
+      internal-status: 10m
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like eval
@@ -648,28 +649,14 @@ apisix_shared_dict_free_space_bytes{name="internal-status"} \d+.*/
 
 
 
-=== TEST 43: fetch the prometheus one shared dict data storage with table
+=== TEST 43: fetch the prometheus multiple shared dict data
 --- yaml_config
-plugin_attr:
-  prometheus:
-    shared_DICT:
-      - internal-status
---- request
-GET /apisix/prometheus/metrics
---- response_body_like eval
-qr/.*apisix_shared_dict_capacity_bytes{name="internal-status"} \d+(?:.|\n)*
-apisix_shared_dict_free_space_bytes{name="internal-status"} \d+.*/
-
-
-
-=== TEST 44: fetch the prometheus multiple shared dict data
---- yaml_config
-plugin_attr:
-  prometheus:
-    shared_DICT:
-      - worker-events
-      - upstream-healthcheck
-      - internal-status
+nginx_config:
+  http:
+    lua_shared_dict:
+      worker-events: 10m
+      upstream-healthcheck: 10m
+      internal-status: 10m
 --- request eval
 ["GET /apisix/prometheus/metrics", "GET /apisix/prometheus/metrics", "GET /apisix/prometheus/metrics"]
 --- response_body_like eval
@@ -682,14 +669,14 @@ apisix_shared_dict_free_space_bytes{name="internal-status"} \d+.*/]
 
 
 
-=== TEST 45: fetch the prometheus multiple shared dict data contain not exist shared dict
+=== TEST 44: fetch the prometheus multiple shared dict data contain not exist shared dict
 --- yaml_config
-plugin_attr:
-  prometheus:
-    shared_DICT:
-      - worker-events
-      - upstream-healthcheck
-      - not-exist-shared-dict
+nginx_config:
+  http:
+    lua_shared_dict:
+      worker-events: 10m
+      upstream-healthcheck: 10m
+      not-exist-shared-dict: 10m
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_unlike

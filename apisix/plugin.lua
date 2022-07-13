@@ -64,6 +64,13 @@ end
 _M.plugin_attr = plugin_attr
 
 
+local function nginx_config(name)
+    local local_conf = core.config.local_conf()
+    return core.table.try_read_attr(local_conf, "nginx_config", name)
+end
+_M.nginx_config = nginx_config
+
+
 local function sort_plugin(l, r)
     return l.priority > r.priority
 end

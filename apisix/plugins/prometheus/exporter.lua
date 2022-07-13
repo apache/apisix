@@ -18,6 +18,7 @@ local base_prometheus = require("prometheus")
 local core      = require("apisix.core")
 local plugin    = require("apisix.plugin")
 local ipairs    = ipairs
+local pairs     = pairs
 local ngx       = ngx
 local re_gmatch = ngx.re.gmatch
 local ffi       = require("ffi")
@@ -33,6 +34,7 @@ local get_services = require("apisix.http.service").services
 local get_consumers = require("apisix.consumer").consumers
 local get_upstreams = require("apisix.upstream").upstreams
 local clear_tab = core.table.clear
+local insert_tab = core.table.insert
 local get_stream_routes = router.stream_routes
 local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
 local service_fetch = require("apisix.http.service").get
@@ -123,11 +125,11 @@ function _M.http_init(prometheus_enabled_in_stream)
             {"key"})
 
     metrics.shared_dict_capacity_bytes = prometheus:gauge("shared_dict_capacity_bytes",
-            "capacity every moment of nginx shared DICT since APISIX start",
+            "The capacity of each nginx shared DICT since APISIX start",
             {"name"})
 
     metrics.shared_dict_free_space_bytes = prometheus:gauge("shared_dict_free_space_bytes",
-            "the current free space for nginx shared DICT in APISIX",
+            "The free space of each nginx shared DICT since APISIX start",
             {"name"})
 
     -- per service
@@ -360,35 +362,32 @@ local function etcd_modify_index()
 end
 
 
+local shared_dicts
 local function shared_dict_status()
-    local attr = plugin.plugin_attr(plugin_name)
-    if not attr or not attr.shared_DICT then
-        return
+    local config_indexs = {"http", "stream", "meta"}
+    if not shared_dicts then
+        shared_dicts = {}
+        local existed = {}
+        for _, config_index in ipairs(config_indexs) do
+            local config = plugin.nginx_config(config_index)
+            if config and config.lua_shared_dict then
+                for shared_dict_name, _ in pairs(config.lua_shared_dict) do
+                    if existed[shared_dict_name] == nil then
+                        insert_tab(shared_dicts, shared_dict_name)
+                        existed[shared_dict_name] = true
+                    end
+                end
+            end
+        end
     end
 
     local name = {}
-    local set_shared_dict_param = function (shared_dict_name)
-        if type(shared_dict_name) ~= "string" then
-            return
-        end
-
+    for _, shared_dict_name in ipairs(shared_dicts) do
         name[1] = shared_dict_name
         local share_dict = ngx.shared[shared_dict_name]
         if share_dict then
             metrics.shared_dict_capacity_bytes:set(share_dict:capacity(), name)
             metrics.shared_dict_free_space_bytes:set(share_dict:free_space(), name)
-        end
-    end
-
-    local shared_dicts = attr.shared_DICT
-
-    if type(shared_dicts) == "string" then
-        set_shared_dict_param(shared_dicts)
-    end
-
-    if type(shared_dicts) == "table" then
-        for _, shared_dict_name in ipairs(shared_dicts) do
-            set_shared_dict_param(shared_dict_name)
         end
     end
 end
