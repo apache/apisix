@@ -77,15 +77,24 @@ local schema = {
     required = { "proto_id", "service", "method" },
 }
 
+-- Based on https://cloud.google.com/apis/design/errors#handling_errors
 local status_rel = {
-    ["3"] = 400,
-    ["4"] = 504,
-    ["5"] = 404,
-    ["7"] = 403,
-    ["11"] = 416,
-    ["12"] = 501,
-    ["13"] = 500,
-    ["14"] = 503,
+    ["1"] = 499,    -- CANCELLED
+    ["2"] = 500,    -- UNKNOWN
+    ["3"] = 400,    -- INVALID_ARGUMENT
+    ["4"] = 504,    -- DEADLINE_EXCEEDED
+    ["5"] = 404,    -- NOT_FOUND
+    ["6"] = 409,    -- ALREADY_EXISTS
+    ["7"] = 403,    -- PERMISSION_DENIED
+    ["8"] = 429,    -- RESOURCE_EXHAUSTED
+    ["9"] = 400,    -- FAILED_PRECONDITION
+    ["10"] = 409,   -- ABORTED
+    ["11"] = 400,   -- OUT_OF_RANGE
+    ["12"] = 501,   -- UNIMPLEMENTED
+    ["13"] = 500,   -- INTERNAL
+    ["14"] = 503,   -- UNAVAILABLE
+    ["15"] = 500,   -- DATA_LOSS
+    ["16"] = 401,   -- UNAUTHENTICATED
 }
 
 local _M = {
