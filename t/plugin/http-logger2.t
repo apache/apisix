@@ -42,6 +42,13 @@ add_block_preprocessor(sub {
             }
         }
 
+        location /http-logger/Authorization {
+            content_by_lua_block {
+                ngx.log(ngx.WARN, "received Authorization header: [", ngx.var.http_authorization, "]")
+                ngx.say("OK")
+            }
+        }
+
         location /http-logger/center {
             content_by_lua_block {
                 local function str_split(str, reps)
@@ -252,4 +259,53 @@ test-http-logger-response
 --- error_log
 request.body:test-http-logger-request
 response.body:test-http-logger-response
+--- wait: 1.5
+
+
+
+=== TEST 8: test default Authorization header sent to the log server
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["POST"],
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:12001/http-logger/Authorization",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:12001": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/http-logger/test"
+                }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: hit
+--- request
+POST /http-logger/test
+test-http-logger-request
+--- error_log
+received Authorization header: [nil]
 --- wait: 1.5
