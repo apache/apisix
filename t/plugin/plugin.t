@@ -284,7 +284,7 @@ GET /hello
                     error_response = "OK"
                 }},
             }) do
-                local code, body = t('/apisix/admin/global_rules/1',
+                local code, body = t('/apisix/admin/plugin_configs/1',
                     ngx.HTTP_PUT,
                     {
                         plugins = {
@@ -315,7 +315,7 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
 
-            local code, body = t('/apisix/admin/global_rules/1',
+            local code, body = t('/apisix/admin/plugin_configs/1',
                 ngx.HTTP_PUT,
                 {
                     plugins = {
@@ -353,7 +353,7 @@ passed
                     {"arg_name", "*=", "json"}
                 }
             }) do
-                local code, body = t('/apisix/admin/global_rules/1',
+                local code, body = t('/apisix/admin/plugin_configs/1',
                     ngx.HTTP_PUT,
                     {
                         plugins = {

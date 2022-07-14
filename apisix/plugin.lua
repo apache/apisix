@@ -375,7 +375,7 @@ local function trace_plugins_info_for_debug(ctx, plugins)
     end
 end
 
-local function meta_filter(ctx, plugin_name, plugin_conf)
+local function meta_filter(plugin_name, plugin_conf)
     local filter_vars = plugin_conf._meta and
                 plugin_conf._meta.filter and plugin_conf._meta.filter.vars
     if not filter_vars then
@@ -419,12 +419,8 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
             goto continue
         end
 
-        -- Avoid doing expr matching at every phase of the same plugin.
-        local filter_passed_name = name .. "_meta_filter_passed"
-        if ctx[filter_passed_name] == nil then
-            ctx[filter_passed_name] = meta_filter(ctx, name, plugin_conf)
-        end
-        if not plugin_conf.disable and ctx[filter_passed_name] then
+        local matched = meta_filter(name, plugin_conf)
+        if not plugin_conf.disable and matched then
             if plugin_obj.run_policy == "prefer_route" and route_plugin_conf ~= nil then
                 local plugin_conf_in_route = route_plugin_conf[name]
                 if plugin_conf_in_route and not plugin_conf_in_route.disable then
