@@ -41,10 +41,10 @@ The plugin only supports binary-encoded [OLTP over HTTP](https://opentelemetry.i
 
 ## Load Plugin
 
-APISIX doesn't load the `opentelemetry` plugin by default because of the `conf/config-default.yaml` file. Follow the steps to load it:
+APISIX doesn't load the `opentelemetry` plugin by default. Follow these steps to load it:
 
-1. Open the `conf/config-default.yaml` file, and copy the `plugins` field with **all plugin names** to the `conf/config.yaml` file.
-2. Uncomment the `#- opentelemetry` line or remove the `#`.
+1. Open the `conf/config-default.yaml` file and copy the `plugins` field with **all plugin names** to the `conf/config.yaml` file.
+2. Uncomment the `#- opentelemetry` line by removing the `#` symbol.
 3. Follow the [Plugin Hot Reload Guide](/docs/apisix/terminology/plugin/#hot-reload) to reload plugins.
 
 ```yaml title="conf/config.yaml"
@@ -58,13 +58,13 @@ plugins:
 
 :::info
 
-This section is optional.
+Before using OpenTelemtry, you should first configure it in the `config.yaml` file.
 
 :::
 
-There have some default YAML configurations in the `conf/config-default.yaml` file, e.g., Collector, Processors. So we should update them in the `config.yaml` file.
+In the `conf/config-default.yaml` file you can find some default configuration for the plugin, e.g., Collector, Processors, etc. The default configuration needs to be updated to match your own environment in the `config.yaml` file.
 
-1. Open the `conf/config-default.yaml` file, and coply the `plugin_attr.opentelemetry.xxx` field to the `conf/config.yaml` file.
+1. Open the `conf/config-default.yaml` file, and copy the `plugin_attr.opentelemetry.xxx` field to the `conf/config.yaml` file.
 
 ```yaml title="conf/config.yaml"
 plugin_attr:
