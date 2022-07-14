@@ -198,7 +198,7 @@ scrape_configs:
     | node         | 上游节点的 IP 地址。                                                                      |
 
 - Info: 当前 APISIX 节点信息。
-- Shared dict: APISIX中所有共享内存的容量以及剩余可用空间。
+- Shared dict: APISIX 中所有共享内存的容量以及剩余可用空间。
 
 以下是 APISIX 的原始的指标数据集：
 
