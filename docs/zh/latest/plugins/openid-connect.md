@@ -2,10 +2,10 @@
 title: openid-connect
 keywords:
   - APISIX
-  - Plugin
+  - API Gateway
   - OpenID Connect
-  - openid-connect
-description: 本文介绍了关于 Apache APISIX `openid-connect` 插件的基本信息及使用方法。
+  - OIDC
+description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议，APISIX 可以与支持该协议的身份认证服务对接，如 Okta、Keycloak、Ory Hydra、Authing 等，实现对客户端请求的身份认证。
 ---
 
 <!--
@@ -29,7 +29,7 @@ description: 本文介绍了关于 Apache APISIX `openid-connect` 插件的基�
 
 ## 描述
 
-`openid-connect` 插件通过 [OpenID Connect](https://openid.net/connect/) 为 APISIX 提供身份验证和自省功能。
+[OpenID Connect](https://openid.net/connect/)（OIDC）是基于 OAuth 2.0 的身份认证协议，APISIX 可以与支持该协议的身份认证服务对接，如 Okta、Keycloak、Ory Hydra、Authing 等，实现对客户端请求的身份认证。
 
 ## 属性
 
@@ -37,17 +37,17 @@ description: 本文介绍了关于 Apache APISIX `openid-connect` 插件的基�
 | ------------------------------------ | ------- | ------ | --------------------- | ------------- | ------------------------------------------------------------------------------------------------ |
 | client_id                            | string  | 是     |                       |               | OAuth 客户端 ID。                                                                                 |
 | client_secret                        | string  | 是     |                       |               | OAuth 客户端 secret。                                                                            |
-| discovery                            | string  | 是     |                       |               | 身份服务器发现端点的 URL。                                                                        |
+| discovery                            | string  | 是     |                       |               | 身份认证服务暴露的服务发现端点。                                                                            |
 | scope                                | string  | 否     | "openid"              |               | 用于认证的范围。                                                                                  |
-| realm                                | string  | 否     | "apisix"              |               | 用于认证的领域。                                                                                  |
-| bearer_only                          | boolean | 否     | false                 |               | 当设置为 `true` 时，将检查请求中带有承载令牌的授权标头。                                               |
+| realm                                | string  | 否     | "apisix"              |               | 与租户概念类似，不同 Realm 之间是相互隔离的，只能管理和验证它们所具有的用户。                                                                                  |
+| bearer_only                          | boolean | 否     | false                 |               | 当设置为 `true` 时，将仅检查请求头中的令牌（Token）。                                               |
 | logout_path                          | string  | 否     | "/logout"             |               | 登出路径。                                                                                        |
 | post_logout_redirect_uri             | string  | 否     |                       |               | 调用登出接口后想要跳转的 URL。                                                                     |
 | redirect_uri                         | string  | 否     | "ngx.var.request_uri" |               | 身份提供者重定向返回的 URI。                                                                       |
 | timeout                              | integer | 否     | 3                     | [1,...]       | 请求超时时间，单位为秒                                                                             |
 | ssl_verify                           | boolean | 否     | false                 | [true, false] | 当设置为 `true` 时，验证身份提供者的 SSL 证书。                                                     |
-| introspection_endpoint               | string  | 否     |                       |               | 身份服务器的令牌验证端点的 URL。                                                                    |
-| introspection_endpoint_auth_method   | string  | 否     | "client_secret_basic" |               | 令牌自省的认证方法名称。                                                                            |
+| introspection_endpoint               | string  | 否     |                       |               | 身份服务器的令牌认证端点。                                                                    |
+| introspection_endpoint_auth_method   | string  | 否     | "client_secret_basic" |               | 令牌内省的认证方法名称。                                                                            |
 | token_endpoint_auth_method           | string  | 否     |                       |               | 令牌端点的身份验证方法名称。默认情况将获取 OP 指定的第一个支持的方法。                                   |
 | public_key                           | string  | 否     |                       |               | 验证令牌的公钥。                                                                                   |
 | use_jwks                             | boolean | 否     | false                 |               | 当设置为 `true` 时，则会使用身份认证服务器的 JWKS 端点来验证令牌。                                    |
@@ -59,105 +59,98 @@ description: 本文介绍了关于 Apache APISIX `openid-connect` 插件的基�
 | set_userinfo_header                  | boolean | 否     | true                  | [true, false] | 是否将用户信息对象设置到请求头参数 `X-Userinfo`。                                                    |
 | set_refresh_token_header             | boolean | 否     | false                 |               | 当设置为 `true` 并且刷新令牌可用时，则会将该属性设置在`X-Refresh-Token`请求头中。                      |
 
-## 操作模式
+## 使用场景
 
-`openid-connect` 插件提供三种操作模式：
+:::tip
 
-1. 可以将**插件**配置为：仅验证预期会出现在请求头中的访问令牌。在这种模式下，没有令牌或带有无效令牌的请求将被拒绝。这需要将 `bearer_only` 属性设置为 `true` 并配置 `introspection_endpoint` 或 `public_key` 属性。这种操作模式可用于服务端之间的通信，在这种模式下，请求者可以合理地获取和管理有效的令牌。
+教程：[使用 Keycloak 与 API 网关保护你的 API](https://apisix.apache.org/zh/blog/2022/07/06/use-keycloak-with-api-gateway-to-secure-apis/)
 
-2. 可以将**插件**配置为：通过 OIDC 授权对没有有效令牌的请求进行身份验证，其中该插件充当 OIDC 依赖方。在这种情况下，认证成功后，该插件可以获得并管理会话 Cookie 中的访问令牌，包含 Cookie 的后续请求将使用访问令牌。你需要将 `bearer_only` 属性设置为 `false` 才可以使用这种模式。这种操作模式可用于支持以下情况：客户端或请求者是通过 Web 浏览器进行交互的用户。
+:::
 
-3. 该插件也可以通过将 `bearer_only` 设置为 `false`，并配置 `introspection_endpoint` 或 `public_key` 属性来支持以上两种场景。在这种情况下，对来自请求头的现有令牌的自省优先于依赖方流程。也就是说，如果一个请求中包含一个无效的令牌，那么该请求将会被拒绝，不会从重定向到 ID 提供者获得一个有效的令牌。
+该插件提供两种使用场景：
 
-用于验证请求的方法会影响到 header，你可以在将请求发送到上游服务之前对其执行。
+1. 应用之间认证授权：将 `bearer_only` 设置为 `true`，并配置 `introspection_endpoint` 或 `public_key` 属性。该场景下，请求头（Header）中没有令牌或无效令牌的请求将被拒绝。
 
-### 令牌自省
+2. 浏览器中认证授权：将 `bearer_only` 设置为 `false`。认证成功后，该插件可获得并管理 Cookie 中的令牌，后续请求将使用该令牌。
 
-令牌自省是通过针对 Oauth 2 授权的服务器来验证令牌及相关请求。
+### 令牌内省
 
-首先，需要在身份认证服务器中创建受信任的客户端，并生成用于自省的有效令牌（JWT）。
+令牌内省是通过针对 OAuth 2.0 授权的服务器来验证令牌及相关请求，详情请阅读 [Token Introspection](https://www.oauth.com/oauth2-servers/token-introspection-endpoint/)。
 
-下图展示了通过网关进行令牌自省的示例（成功）流程。
+首先，需要在身份认证服务器中创建受信任的客户端，并生成用于内省的有效令牌（JWT）。下图是通过网关进行令牌内省的成功示例流程：
 
 ![token introspection](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/oauth-1.png)
 
-以下示例是在 Route 上启用插件。该 Route 将通过自省请求头中提供的令牌来保护上游：
+以下示例是在路由上启用插件。该路由将通过内省请求头中提供的令牌来保护上游：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "uri":"/get",
-    "plugins":{
-        "proxy-rewrite":{
-            "scheme":"https"
-        },
-        "openid-connect":{
-            "client_id":"api_six_client_id",
-            "client_secret":"client_secret_code",
-            "discovery":"full_URL_of_the_discovery_endpoint",
-            "introspection_endpoint":"full_URL_of_introspection_endpoint",
-            "bearer_only":true,
-            "realm":"master",
-            "introspection_endpoint_auth_method":"client_secret_basic"
-        }
-    },
-    "upstream":{
-        "type":"roundrobin",
-        "nodes":{
-            "httpbin.org:443":1
-        }
+  "uri": "/get",
+  "plugins":{
+    "openid-connect":{
+      "client_id": "${CLIENT_ID}",
+      "client_secret": "${CLIENT_SECRET}",
+      "discovery": "${DISCOVERY_ENDPOINT}",
+      "introspection_endpoint": "${INTROSPECTION_ENDPOINT}",
+      "bearer_only": true,
+      "realm": "master",
+      "introspection_endpoint_auth_method": "client_secret_basic"
     }
+  },
+  "upstream":{
+    "type": "roundrobin",
+    "nodes":{
+      "httpbin.org:443":1
+    }
+  }
 }'
 ```
 
-以下命令可用于访问新 Route：
+以下命令可用于访问新路由：
 
 ```shell
-curl -i -X GET http://127.0.0.1:9080/get \
--H "Host: httpbin.org" -H "Authorization: Bearer {replace_jwt_token}"
+curl -i -X GET http://127.0.0.1:9080/get -H "Authorization: Bearer {JWT_TOKEN}"
 ```
 
 在此示例中，插件强制在请求头中设置访问令牌和 Userinfo 对象。
 
-当 Oauth 2 授权服务器返回结果里除了令牌之外还有过期时间，其中令牌将在 APISIX 中缓存直至过期。有关更多详细信息，请参考：
+当 OAuth 2.0 授权服务器返回结果里除了令牌之外还有过期时间，其中令牌将在 APISIX 中缓存直至过期。更多信息请参考：
 
 1. [lua-resty-openidc](https://github.com/zmartzone/lua-resty-openidc) 的文档和源代码。
 2. `exp` 字段的定义：[Introspection Response](https://tools.ietf.org/html/rfc7662#section-2.2)。
 
-### 公钥自省
+### 公钥内省
 
-除了令牌自省外，还可以使用 JWT 令牌的公钥进行验证。如果使用了公共密钥和令牌自省端点，就会执行公共密钥工作流，而不是通过身份服务器进行验证。如果要减少额外的网络调用并加快过程，可以使用此方法。
+除了令牌内省外，还可以使用 JWT 令牌的公钥进行验证。如果使用了公共密钥和令牌内省端点，就会执行公共密钥工作流，而不是通过身份服务器进行验证。该方式适可用于减少额外的网络调用并加快认证过程。
 
-以下示例展示了如何将公钥添加到 Route 中：
+以下示例展示了如何将公钥添加到路由中：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "uri":"/get",
-    "plugins":{
-        "proxy-rewrite":{
-            "scheme":"https"
-        },
-        "openid-connect":{
-            "client_id":"api_six_client_id",
-            "client_secret":"client_secret_code",
-            "discovery":"full_URL_of_the_discovery_endpoint",
-            "bearer_only":true,
-            "realm":"master",
-            "token_signing_alg_values_expected":"RS256",
-            "public_key":"-----BEGIN PUBLIC KEY-----
-            {public_key}
-            -----END PUBLIC KEY-----"
-        }
-    },
-    "upstream":{
-        "type":"roundrobin",
-        "nodes":{
-            "httpbin.org:443":1
-        }
+  "uri": "/get",
+  "plugins":{
+    "openid-connect":{
+      "client_id": "${CLIENT_ID}",
+      "client_secret": "${CLIENT_SECRET}",
+      "discovery": "${DISCOVERY_ENDPOINT}",
+      "bearer_only": true,
+      "realm": "master",
+      "token_signing_alg_values_expected": "RS256",
+      "public_key": "-----BEGIN PUBLIC KEY-----
+      {public_key}
+      -----END PUBLIC KEY-----"
     }
+  },
+  "upstream":{
+    "type": "roundrobin",
+    "nodes":{
+      "httpbin.org:443":1
+    }
+  }
 }'
 ```
 
@@ -175,16 +168,13 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 {
   "uri": "/get",
   "plugins": {
-    "proxy-rewrite": {
-      "scheme": "https"
-    },
     "openid-connect": {
-      "client_id": "api_six_client_id",
-      "client_secret": "client_secret_code",
-      "discovery": "full_URL_of_the_discovery_endpoint",
+      "client_id": "${CLIENT_ID}",
+      "client_secret": "${CLIENT_SECRET}",
+      "discovery": "${DISCOVERY_ENDPOINT}",
       "bearer_only": false,
       "realm": "master"
-}
+    }
   },
   "upstream": {
     "type": "roundrobin",
@@ -199,4 +189,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 
 ## 故障排除
 
-如果 APISIX 无法解析或者连接到身份提供者，请检查或修改配置文件（`./conf/config.yaml`）中的 DNS 设置。
+1. 如果 APISIX 无法解析或者连接到身份认证服务（如 Okta、Keycloak、Authing 等），请检查或修改配置文件（`./conf/config.yaml`）中的 DNS 设置。
+
+2. 如果遇到 `the error request to the redirect_uri path, but there's no session state found` 的错误，请检查 `redirect_uri` 参数配置：APISIX 会向身份认证服务发起身份认证请求，认证服务完成认证、授权后，会携带 ID Token 和 AccessToken 重定向到 `redirect_uri` 所配置的地址（例如 `http://127.0.0.1:9080/callback`），接着再次进入 APISIX 并在 OIDC 逻辑中完成 Token 交换的功能。因此 `redirect_uri` 需要满足以下条件：
+
+- `redirect_uri` 需要能被当前 APISIX 所在路由捕获，比如当前路由的 `uri` 是 `/api/v1/*`, `redirect_uri` 可以填写为 `/api/v1/callback`；
+- `redirect_uri`（`scheme:host`）的 `scheme` 和 `host` 是身份认证服务视角下访问 APISIX 所需的值。
