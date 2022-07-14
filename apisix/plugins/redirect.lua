@@ -55,12 +55,14 @@ local schema = {
         },
         http_to_https = {type = "boolean"},
         encode_uri = {type = "boolean", default = false},
-        append_query_string = {type = "boolean", default = false},
+        append_query_string = {type = "boolean"},
     },
     oneOf = {
         {required = {"uri"}},
         {required = {"regex_uri"}},
-        {required = {"http_to_https"}}
+        {required = {"http_to_https"}, ["not"] = {
+           required = {"append_query_string"}
+        }}
     }
 }
 

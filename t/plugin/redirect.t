@@ -1114,3 +1114,38 @@ X-Forwarded-Proto: http
 --- error_code: 301
 --- response_headers
 Location: https://foo.com:9443/hello
+
+
+
+=== TEST 47: wrong configure, enable http_to_https with append_query_string
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "host": "foo.com",
+                    "plugins": {
+                        "redirect": {
+                            "http_to_https": true,
+                            "append_query_string": true
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/error_msg":"failed to check the configuration of plugin redirect err: value should match only one schema, but matches none/
+--- no_error_log
+[error]
