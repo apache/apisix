@@ -260,7 +260,11 @@ function _M.read_yaml_conf(apisix_home)
             default_conf.apisix.enable_admin = true
 
         elseif default_conf.deployment.role == "data_plane" then
-            default_conf.etcd = default_conf.deployment.role_data_plane.control_plane
+            if default_conf.deployment.role_data_plane.config_provider == "yaml" then
+                default_conf.apisix.config_center = "yaml"
+            else
+                default_conf.etcd = default_conf.deployment.role_data_plane.control_plane
+            end
             default_conf.apisix.enable_admin = false
         end
 
