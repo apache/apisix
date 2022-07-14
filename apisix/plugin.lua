@@ -376,14 +376,13 @@ local function trace_plugins_info_for_debug(ctx, plugins)
 end
 
 local function meta_filter(plugin_name, plugin_conf)
-    local filter_vars = plugin_conf._meta and
-                plugin_conf._meta.filter and plugin_conf._meta.filter.vars
-    if not filter_vars then
+    local filter = plugin_conf._meta and plugin_conf._meta.filter
+    if not filter then
         return true
     end
 
     local ex, ok, err
-    ex, err = expr_lrucache(plugin_name, plugin_conf, expr.new, filter_vars)
+    ex, err = expr_lrucache(plugin_name, plugin_conf, expr.new, filter)
     if not ex then
         core.log.warn("failed to get the 'vars' expression: ",
                  err or "", " plugin_name: ", plugin_name)
@@ -751,10 +750,8 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
                 .. name .. " err: " .. err
         end
 
-        if plugin_conf._meta and plugin_conf._meta.filter and
-            plugin_conf._meta.filter.vars then
-
-            ok, err = expr.new(plugin_conf._meta.filter.vars)
+        if plugin_conf._meta and plugin_conf._meta.filter then
+            ok, err = expr.new(plugin_conf._meta.filter)
             if not ok then
                 return nil, "failed to validate the 'vars' expression: " .. err
             end

@@ -95,9 +95,7 @@ the configuration above means customizing the error response from the jwt-auth p
     "jwt-auth": {
         "_meta": {
             "filter": {
-                "vars": {
-                    {"arg_version", "==", "v2"}
-                }
+                {"arg_version", "==", "v2"}
             }
         }
     }
@@ -112,7 +110,7 @@ This configuration example means that the `jwt-auth` plugin will only execute if
 |--------------|------|-------------|
 | error_response | string/object  | Custom error response |
 | priority       | integer        | Custom plugin priority |
-| filter.vars  | array | Depending on the requested parameters, it is decided at runtime whether the plugin should be executed. List of variables to match for filtering requests for conditional traffic split. It is in the format {variable operator value}. For example, `{"arg_name", "==", "json"}`. The variables here are consistent with Nginx internal variables. For details on supported operators, please see [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
+| filter  | array | Depending on the requested parameters, it is decided at runtime whether the plugin should be executed. List of variables to match for filtering requests for conditional traffic split. It is in the format {variable operator value}. For example, `{"arg_name", "==", "json"}`. The variables here are consistent with Nginx internal variables. For details on supported operators, please see [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
 
 ### Custom Plugin Priority
 

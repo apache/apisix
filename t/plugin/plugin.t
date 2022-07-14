@@ -321,9 +321,7 @@ passed
                     plugins = {
                         ["jwt-auth"] = {
                             _meta = {
-                                filter = {
-                                    vars = "arg_k == v"
-                                }
+                                filter = "arg_k == v"
                             }
                         }
                     }
@@ -337,7 +335,7 @@ passed
         }
     }
 --- response_body
-{"error_msg":"failed to check the configuration of plugin jwt-auth err: property \"_meta\" validation failed: property \"filter\" validation failed: property \"vars\" validation failed: wrong type: expected array, got string"}
+{"error_msg":"failed to check the configuration of plugin jwt-auth err: property \"_meta\" validation failed: property \"filter\" validation failed: wrong type: expected array, got string"}
 
 
 
@@ -347,7 +345,7 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
 
-            for _, vars in ipairs({
+            for _, filter in ipairs({
                 {"arg_name", "==", "json"},
                 {
                     {"arg_name", "*=", "json"}
@@ -359,9 +357,7 @@ passed
                         plugins = {
                             ["jwt-auth"] = {
                                 _meta = {
-                                    filter = {
-                                        vars = vars
-                                    }
+                                    filter = filter
                                 }
                             }
                         }
@@ -393,9 +389,7 @@ passed
                         ["proxy-rewrite"] = {
                             _meta = {
                                 filter = {
-                                    vars = {
-                                        {"arg_version", "==", "v2"}
-                                    }
+                                    {"arg_version", "==", "v2"}
                                 }
                             },
                             uri = "/echo",
@@ -430,8 +424,6 @@ passed
 GET /hello?version=v2
 --- response_headers
 x-api-version: v2
---- no_error_log
-[error]
 
 
 
@@ -440,5 +432,3 @@ x-api-version: v2
 GET /hello?version=v1
 --- response_body
 hello world
---- no_error_log
-[error]
