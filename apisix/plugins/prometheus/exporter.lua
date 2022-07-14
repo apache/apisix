@@ -34,7 +34,6 @@ local get_services = require("apisix.http.service").services
 local get_consumers = require("apisix.consumer").consumers
 local get_upstreams = require("apisix.upstream").upstreams
 local clear_tab = core.table.clear
-local insert_tab = core.table.insert
 local get_stream_routes = router.stream_routes
 local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
 local service_fetch = require("apisix.http.service").get
@@ -362,32 +361,13 @@ local function etcd_modify_index()
 end
 
 
-local shared_dicts
 local function shared_dict_status()
-    local config_indexs = {"http", "stream", "meta"}
-    if not shared_dicts then
-        shared_dicts = {}
-        local existed = {}
-        for _, config_index in ipairs(config_indexs) do
-            local config = plugin.nginx_config(config_index)
-            if config and config.lua_shared_dict then
-                for shared_dict_name, _ in pairs(config.lua_shared_dict) do
-                    if existed[shared_dict_name] == nil then
-                        insert_tab(shared_dicts, shared_dict_name)
-                        existed[shared_dict_name] = true
-                    end
-                end
-            end
-        end
-    end
-
     local name = {}
-    for _, shared_dict_name in ipairs(shared_dicts) do
-        name[1] = shared_dict_name
-        local share_dict = ngx.shared[shared_dict_name]
-        if share_dict then
-            metrics.shared_dict_capacity_bytes:set(share_dict:capacity(), name)
-            metrics.shared_dict_free_space_bytes:set(share_dict:free_space(), name)
+    for shared_dict_name, shared_dict in pairs(ngx.shared) do
+        if shared_dict then
+            name[1] = shared_dict_name
+            metrics.shared_dict_capacity_bytes:set(shared_dict:capacity(), name)
+            metrics.shared_dict_free_space_bytes:set(shared_dict:free_space(), name)
         end
     end
 end
