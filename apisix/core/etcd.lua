@@ -319,6 +319,10 @@ local function set(key, value, ttl)
         return nil, err
     end
 
+    if res.body.error then
+        return nil, res.body.error
+    end
+
     res.headers["X-Etcd-Index"] = res.body.header.revision
 
     -- etcd v3 set would not return kv info
