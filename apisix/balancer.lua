@@ -302,6 +302,7 @@ do
             local size = keepalive_pool.size
             local requests = keepalive_pool.requests
 
+            core.table.clear(pool_opt)
             pool_opt.pool_size = size
 
             local scheme = up_conf.scheme
