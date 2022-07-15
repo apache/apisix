@@ -432,3 +432,53 @@ x-api-version: v2
 GET /hello?version=v1
 --- response_body
 hello world
+
+
+
+=== TEST 15: different route，same plugin, different filter (for expr_lrucache)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                {
+                    plugins = {
+                        ["proxy-rewrite"] = {
+                            _meta = {
+                                filter = {
+                                    {"arg_version", "==", "v3"}
+                                }
+                            },
+                            uri = "/echo",
+                            headers = {
+                                ["X-Api-Version"] = "v3"
+                            }
+                        }
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:1980"] = 1
+                        },
+                        type = "roundrobin"
+                    },
+                    uri = "/hello1"
+                }
+            )
+            if code >= 300 then
+                ngx.print(body)
+            else
+                ngx.say(body)
+            end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: hit route: run proxy-rewrite plugin
+--- request
+GET /hello1?version=v3
+--- response_headers
+x-api-version: v3

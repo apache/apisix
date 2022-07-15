@@ -375,14 +375,15 @@ local function trace_plugins_info_for_debug(ctx, plugins)
     end
 end
 
-local function meta_filter(plugin_name, plugin_conf)
+local function meta_filter(route, plugin_name, plugin_conf)
     local filter = plugin_conf._meta and plugin_conf._meta.filter
     if not filter then
         return true
     end
 
     local ex, ok, err
-    ex, err = expr_lrucache(plugin_name, plugin_conf, expr.new, filter)
+    ex, err = expr_lrucache(plugin_name .. (route.value.id or ""),
+                    plugin_conf, expr.new, filter)
     if not ex then
         core.log.warn("failed to get the 'vars' expression: ",
                  err or "", " plugin_name: ", plugin_name)
@@ -418,7 +419,7 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
             goto continue
         end
 
-        local matched = meta_filter(name, plugin_conf)
+        local matched = meta_filter(conf, name, plugin_conf)
         if not plugin_conf.disable and matched then
             if plugin_obj.run_policy == "prefer_route" and route_plugin_conf ~= nil then
                 local plugin_conf_in_route = route_plugin_conf[name]
