@@ -364,11 +364,9 @@ end
 local function shared_dict_status()
     local name = {}
     for shared_dict_name, shared_dict in pairs(ngx.shared) do
-        if shared_dict then
-            name[1] = shared_dict_name
-            metrics.shared_dict_capacity_bytes:set(shared_dict:capacity(), name)
-            metrics.shared_dict_free_space_bytes:set(shared_dict:free_space(), name)
-        end
+        name[1] = shared_dict_name
+        metrics.shared_dict_capacity_bytes:set(shared_dict:capacity(), name)
+        metrics.shared_dict_free_space_bytes:set(shared_dict:free_space(), name)
     end
 end
 

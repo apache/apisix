@@ -281,19 +281,7 @@ apisix_shared_dict_capacity_bytes{name="balancer-ewma-last-touched-at"} 10485760
 apisix_shared_dict_capacity_bytes{name="balancer-ewma-locks"} 10485760
 apisix_shared_dict_capacity_bytes{name="discovery"} 1048576
 apisix_shared_dict_capacity_bytes{name="etcd-cluster-health-check"} 10485760
-apisix_shared_dict_capacity_bytes{name="ext-plugin"} 1048576
-apisix_shared_dict_capacity_bytes{name="internal-status"} 10485760
-apisix_shared_dict_capacity_bytes{name="introspection"} 10485760
-apisix_shared_dict_capacity_bytes{name="jwks"} 1048576
-apisix_shared_dict_capacity_bytes{name="lrucache-lock"} 10485760
-apisix_shared_dict_capacity_bytes{name="plugin-api-breaker"} 10485760
-apisix_shared_dict_capacity_bytes{name="plugin-limit-conn"} 10485760
-apisix_shared_dict_capacity_bytes{name="plugin-limit-count"} 10485760
-apisix_shared_dict_capacity_bytes{name="plugin-limit-count-redis-cluster-slot-lock"} 1048576
-apisix_shared_dict_capacity_bytes{name="plugin-limit-req"} 10485760
-apisix_shared_dict_capacity_bytes{name="prometheus-metrics"} 10485760
-apisix_shared_dict_capacity_bytes{name="upstream-healthcheck"} 10485760
-apisix_shared_dict_capacity_bytes{name="worker-events"} 10485760
+...
 # HELP apisix_shared_dict_free_space_bytes The free space of each nginx shared DICT since APISIX start
 # TYPE apisix_shared_dict_free_space_bytes gauge
 apisix_shared_dict_free_space_bytes{name="access-tokens"} 1032192
@@ -302,19 +290,7 @@ apisix_shared_dict_free_space_bytes{name="balancer-ewma-last-touched-at"} 104120
 apisix_shared_dict_free_space_bytes{name="balancer-ewma-locks"} 10412032
 apisix_shared_dict_free_space_bytes{name="discovery"} 1032192
 apisix_shared_dict_free_space_bytes{name="etcd-cluster-health-check"} 10412032
-apisix_shared_dict_free_space_bytes{name="ext-plugin"} 1032192
-apisix_shared_dict_free_space_bytes{name="internal-status"} 10412032
-apisix_shared_dict_free_space_bytes{name="introspection"} 10412032
-apisix_shared_dict_free_space_bytes{name="jwks"} 1032192
-apisix_shared_dict_free_space_bytes{name="lrucache-lock"} 10412032
-apisix_shared_dict_free_space_bytes{name="plugin-api-breaker"} 10412032
-apisix_shared_dict_free_space_bytes{name="plugin-limit-conn"} 10412032
-apisix_shared_dict_free_space_bytes{name="plugin-limit-count"} 10412032
-apisix_shared_dict_free_space_bytes{name="plugin-limit-count-redis-cluster-slot-lock"} 1036288
-apisix_shared_dict_free_space_bytes{name="plugin-limit-req"} 10412032
-apisix_shared_dict_free_space_bytes{name="prometheus-metrics"} 10399744
-apisix_shared_dict_free_space_bytes{name="upstream-healthcheck"} 10412032
-apisix_shared_dict_free_space_bytes{name="worker-events"} 10407936
+...
 ```
 
 ## Disable Plugin
