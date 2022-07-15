@@ -4,7 +4,6 @@ keywords:
   - APISIX
   - API Gateway
   - Referer restriction
-  - referer-restriction
 description: This document contains information about the Apache APISIX referer-restriction Plugin.
 ---
 
