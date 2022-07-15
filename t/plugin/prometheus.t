@@ -635,7 +635,7 @@ qr/etcd/
 
 
 
-=== TEST 43: fetch the prometheus multiple shared dict data
+=== TEST 42: fetch the prometheus multiple shared dict data
 --- request eval
 ["GET /apisix/prometheus/metrics",
 "GET /apisix/prometheus/metrics",
