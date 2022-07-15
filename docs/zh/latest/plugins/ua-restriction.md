@@ -4,7 +4,6 @@ keywords:
   - APISIX
   - API Gateway
   - UA restriction
-  - ua-restriction
 description: 本文介绍了 Apache APISIX ua-restriction 插件的基本信息及使用方法。
 ---
 
@@ -33,22 +32,22 @@ description: 本文介绍了 Apache APISIX ua-restriction 插件的基本信息�
 
 ## 属性
 
-| 参数名    | 类型          | 必选项 | 默认值 | 有效值 | 描述                             |
+| 名称    | 类型          | 必选项 | 默认值 | 有效值 | 描述                             |
 | --------- | ------------- | ------ | ------ | ------ | -------------------------------- |
-| bypass_missing  | boolean       | 否    | false   |       | 当 `User-Agent` 不存在时，是否绕过检查。如果设置该选项为 `true`，那么将绕过检查。 |
 | allowlist | array[string] | 否   |        |        | 加入白名单的 `User-Agent`。 |
-| denylist | array[string] | 否   |        |        | 加入黑名单的 `User-Agent`。 |
-| message | string | 否   | "Not allowed" | [1, 1024] | 当未允许的 `User-Agent` 访问时返回的信息。 |
+| denylist  | array[string] | 否   |        |        | 加入黑名单的 `User-Agent`。 |
+| message | string  | 否   | "Not allowed" | [1, 1024] | 当未允许的 `User-Agent` 访问时返回的信息。 |
+| bypass_missing | boolean       | 否    | false   |       | 当设置为 `true` 时，如果 `User-Agent` 请求头不存在或格式有误时，将绕过检查。 |
 
 :::note
 
-`allowlist` 和 `denylist` 可以同时启用。同时启用时，插件会先根据 `User-Agent` 检查 `allowlist`，再检查 `denylist`。
+`allowlist` 和 `denylist` 可以同时启用。同时启用时，插件会根据 `User-Agent` 先检查 `allowlist`，再检查 `denylist`。
 
 :::
 
 ## 启用插件
 
-以下示例展示了如何在特定路由上启用并配置 `ua-restriction` 插件：
+以下示例展示了如何在指定路由上启用并配置 `ua-restriction` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

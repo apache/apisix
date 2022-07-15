@@ -4,7 +4,6 @@ keywords:
   - APISIX
   - API Gateway
   - UA restriction
-  - ua-restriction
 description: This document contains information about the Apache APISIX ua-restriction Plugin.
 ---
 
