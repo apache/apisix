@@ -18,14 +18,20 @@
 local pkg_cpath_org = package.cpath
 local pkg_path_org = package.path
 
+local _, find_pos_end = string.find(pkg_path_org, ";", -1, true)
+if not find_pos_end then
+    pkg_path_org = pkg_path_org .. ";"
+end
+
 local apisix_home = "/usr/local/apisix"
 local pkg_cpath = apisix_home .. "/deps/lib64/lua/5.1/?.so;"
                   .. apisix_home .. "/deps/lib/lua/5.1/?.so;"
-local pkg_path = apisix_home .. "/deps/share/lua/5.1/?.lua;"
+local pkg_path_deps = apisix_home .. "/deps/share/lua/5.1/?.lua;"
+local pkg_path_env = apisix_home .. "/?.lua;"
 
 -- modify the load path to load our dependencies
 package.cpath = pkg_cpath .. pkg_cpath_org
-package.path  = pkg_path .. pkg_path_org
+package.path  = pkg_path_deps .. pkg_path_org .. pkg_path_env
 
 -- pass path to construct the final result
 local env = require("apisix.cli.env")(apisix_home, pkg_cpath_org, pkg_path_org)
