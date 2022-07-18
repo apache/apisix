@@ -233,12 +233,8 @@ plugin_proxy_rewrite get method: POST
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -248,8 +244,6 @@ GET /print%5Furi%5Fdetailed HTTP/1.1
 --- response_body
 ngx.var.uri: /print_uri_detailed
 ngx.var.request_uri: /print%5Furi%5Fdetailed
---- no_error_log
-[error]
 
 
 
@@ -283,12 +277,8 @@ ngx.var.request_uri: /print%5Furi%5Fdetailed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -298,5 +288,3 @@ GET /print_uri_detailed HTTP/1.1
 --- response_body
 ngx.var.uri: /print_uri_detailed
 ngx.var.request_uri: /print_uri_detailed
---- no_error_log
-[error]
