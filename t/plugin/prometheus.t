@@ -635,30 +635,11 @@ qr/etcd/
 
 
 
-=== TEST 42: fetch the prometheus multiple shared dict data
---- request eval
-["GET /apisix/prometheus/metrics",
-"GET /apisix/prometheus/metrics",
-"GET /apisix/prometheus/metrics",
-"GET /apisix/prometheus/metrics",
-"GET /apisix/prometheus/metrics",
-"GET /apisix/prometheus/metrics",
-"GET /apisix/prometheus/metrics",
-"GET /apisix/prometheus/metrics"]
---- response_body_like eval
-[qr/.*apisix_shared_dict_capacity_bytes{name="internal-status"} \d+(?:.|\n)*
-apisix_shared_dict_free_space_bytes{name="internal-status"} \d+.*/,
-qr/.*apisix_shared_dict_capacity_bytes{name="upstream-healthcheck"} \d+(?:.|\n)*
-apisix_shared_dict_free_space_bytes{name="upstream-healthcheck"} \d+.*/,
-qr/.*apisix_shared_dict_capacity_bytes{name="worker-events"} \d+(?:.|\n)*
-apisix_shared_dict_free_space_bytes{name="worker-events"} \d+.*/,
-qr/.*apisix_shared_dict_capacity_bytes{name="lrucache-lock"} \d+(?:.|\n)*
-apisix_shared_dict_free_space_bytes{name="lrucache-lock"} \d+.*/,
-qr/.*apisix_shared_dict_capacity_bytes{name="balancer-ewma"} \d+(?:.|\n)*
-apisix_shared_dict_free_space_bytes{name="balancer-ewma"} \d+.*/,
-qr/.*apisix_shared_dict_capacity_bytes{name="balancer-ewma-locks"} \d+(?:.|\n)*
-apisix_shared_dict_free_space_bytes{name="balancer-ewma-locks"} \d+.*/,
-qr/.*apisix_shared_dict_capacity_bytes{name="balancer-ewma-last-touched-at"} \d+(?:.|\n)*
-apisix_shared_dict_free_space_bytes{name="balancer-ewma-last-touched-at"} \d+.*/,
-qr/.*apisix_shared_dict_capacity_bytes{name="etcd-cluster-health-check"} \d+(?:.|\n)*
-apisix_shared_dict_free_space_bytes{name="etcd-cluster-health-check"} \d+.*/]
+=== TEST 42: fetch the prometheus shared dict internal-status data
+--- http_config
+lua_shared_dict test-shared-dict 10m;
+--- request
+GET /apisix/prometheus/metrics
+--- response_body_like
+.*apisix_shared_dict_capacity_bytes{name="test-shared-dict"} \d+(?:.|\n)*
+apisix_shared_dict_free_space_bytes{name="test-shared-dict"} \d+.*
