@@ -482,3 +482,46 @@ passed
 GET /hello1?version=v3
 --- response_headers
 x-api-version: v3
+
+
+
+=== TEST 17: same plugin, same id between routes and global_rules, different filter (for expr_lrucache)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/2',
+                ngx.HTTP_PUT,
+                {
+                    plugins = {
+                        ["proxy-rewrite"] = {
+                            _meta = {
+                                filter = {
+                                    {"arg_version", "==", "v4"}
+                                }
+                            },
+                            uri = "/echo",
+                            headers = {
+                                ["X-Api-Version"] = "v4"
+                            }
+                        }
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.print(body)
+            else
+                ngx.say(body)
+            end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: hit route: run proxy-rewrite plugin
+--- request
+GET /hello1?version=v4
+--- response_headers
+x-api-version: v4
