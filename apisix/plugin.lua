@@ -383,21 +383,20 @@ local function meta_filter(ctx, plugin_name, plugin_conf)
 
     local ex, ok, err
     if ctx then
-        local key = core.table.concat({plugin_name, ctx.conf_type,
-                                 ctx.conf_id}, "")
-        ex, err = expr_lrucache(key, ctx.conf_version, expr.new, filter)
+        ex, err = expr_lrucache(plugin_name .. ctx.conf_type .. ctx.conf_id,
+                                 ctx.conf_version, expr.new, filter)
     else
         ex, err = expr.new(filter)
     end
     if not ex then
-        core.log.warn("failed to get the 'vars' expression: ",
-                 err or "", " plugin_name: ", plugin_name)
+        core.log.warn("failed to get the 'vars' expression: ", err ,
+                         " plugin_name: ", plugin_name)
         return true
     end
     ok, err = ex:eval()
     if err then
-        core.log.warn("failed to run the 'vars' expression: ",
-                 err or "", " plugin_name: ", plugin_name)
+        core.log.warn("failed to run the 'vars' expression: ", err,
+                         " plugin_name: ", plugin_name)
         return true
     end
     return ok
