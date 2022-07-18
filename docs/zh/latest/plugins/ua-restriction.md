@@ -4,7 +4,7 @@ keywords:
   - APISIX
   - API Gateway
   - UA restriction
-description: 本文介绍了 Apache APISIX ua-restriction 插件的基本信息及使用方法。
+description: 本文介绍了 Apache APISIX ua-restriction 插件的使用方法，通过该插件可以将指定的 User-Agent 列入白名单或黑名单来限制对服务或路由的访问。
 ---
 
 <!--
@@ -29,6 +29,8 @@ description: 本文介绍了 Apache APISIX ua-restriction 插件的基本信息�
 ## 描述
 
 `ua-restriction` 插件可以通过将指定 `User-Agent` 列入白名单或黑名单的方式来限制对服务或路由的访问。
+
+一种常见的场景是用来设置爬虫规则。`User-Agent` 是客户端在向服务器发送请求时的身份标识，用户可以将一些爬虫程序的请求头列入 `ua-restriction` 插件的白名单或黑名单中。
 
 ## 属性
 

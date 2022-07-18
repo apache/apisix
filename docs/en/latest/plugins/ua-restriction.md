@@ -4,7 +4,7 @@ keywords:
   - APISIX
   - API Gateway
   - UA restriction
-description: This document contains information about the Apache APISIX ua-restriction Plugin.
+description: This document contains information about the Apache APISIX ua-restriction Plugin, which allows you to restrict access to a Route or Service based on the User-Agent header with an allowlist and a denylist.
 ---
 
 <!--
@@ -29,6 +29,8 @@ description: This document contains information about the Apache APISIX ua-restr
 ## Description
 
 The `ua-restriction` Plugin allows you to restrict access to a Route or Service based on the `User-Agent` header with an `allowlist` and a `denylist`.
+
+A common scenario is to set crawler rules. `User-Agent` is the identity of the client when sending requests to the server, and the user can whitelist or blacklist some crawler request headers in the `ua-restriction` Plugin.
 
 ## Attributes
 
