@@ -85,7 +85,7 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H 'X-API-KEY: edd1c9f034335f
 
 ## 测试插件
 
-使用上游的配置，在一定时间内如果你的上流服务返回 500 达到3 次。客户端将会收到 502（break_response_code）应答。
+使用上游的配置，在一定时间内如果你的上流服务返回 500 达到 3 次。客户端将会收到 502（break_response_code）应答。
 
 ```shell
 $ curl -i "http://127.0.0.1:9080/hello"
