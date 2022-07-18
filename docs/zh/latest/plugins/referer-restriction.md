@@ -4,7 +4,7 @@ keywords:
   - APISIX
   - API 网关
   - Referer restriction
-description: 本文介绍了 Apache APISIX referer-restriction 插件的基本信息及使用方法。
+description: 本文介绍了 Apache APISIX referer-restriction 插件的使用方法，通过该插件可以将 referer 请求头中的域名加入黑名单或者白名单来限制其对服务或路由的访问。
 ---
 
 <!--
