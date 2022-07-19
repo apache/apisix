@@ -1,5 +1,10 @@
 ---
 title: referer-restriction
+keywords:
+  - APISIX
+  - API 网关
+  - Referer restriction
+description: 本文介绍了 Apache APISIX referer-restriction 插件的使用方法，通过该插件可以将 referer 请求头中的域名加入黑名单或者白名单来限制其对服务或路由的访问。
 ---
 
 <!--
@@ -23,23 +28,26 @@ title: referer-restriction
 
 ## 描述
 
-`referer-restriction` 插件可以根据 Referer 请求头限制访问。
+`referer-restriction` 插件允许用户将 `Referer` 请求头中的域名列入白名单或黑名单来限制该域名对服务或路由的访问。
 
 ## 属性
 
-| 参数名    | 类型          | 可选项 | 默认值 | 有效值 | 描述                             |
+| 名称    | 类型          | 必选项 | 默认值 | 有效值 | 描述                             |
 | --------- | ------------- | ------ | ------ | ------ | -------------------------------- |
-| whitelist | array[string] | 可选    |         |       | 白名单域名列表。域名开头可以用'*'作为通配符。 |
-| blacklist | array[string] | 可选    |         |       | 黑名单域名列表。域名开头可以用'*'作为通配符。 |
-| message | string | 可选    | Your referer host is not allowed | [1, 1024] | 在未允许访问的情况下返回的信息。 |
-| bypass_missing  | boolean       | 可选    | false   |       | 当 Referer 不存在或格式有误时，是否绕过检查。 |
+| whitelist | array[string] | 否    |         |       | 白名单域名列表。域名开头可以用 `*` 作为通配符。 |
+| blacklist | array[string] | 否    |         |       | 黑名单域名列表。域名开头可以用 `*` 作为通配符。 |
+| message | string | 否    | "Your referer host is not allowed" | [1, 1024] | 在未允许访问的情况下返回的信息。 |
+| bypass_missing  | boolean       | 否    | false   |       | 当设置为 `true` 时，如果 `Referer` 请求头不存在或格式有误，将绕过检查。 |
 
-只能单独启用白名单或黑名单，两个不能一起使用。
-`message`可以由用户自定义。
+:::info IMPORTANT
 
-## 如何启用
+`whitelist` 和 `blacklist` 属性无法同时在同一个服务或路由上使用，只能使用其中之一。
 
-下面是一个示例，在指定的 route 上开启了 `referer-restriction` 插件：
+:::
+
+## 启用插件
+
+以下示例展示了如何在特定路由上启用 `referer-restriction` 插件，并配置 `whitelist` 和 `bypass_missing` 属性：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -65,37 +73,52 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-带 `Referer: http://xx.com/x` 请求：
+通过上述命令启用插件后，你可以在请求中添加 `Referer: http://xx.com/x` 测试插件：
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'Referer: http://xx.com/x'
+curl http://127.0.0.1:9080/index.html -H 'Referer: http://xx.com/x'
+```
+
+返回的 HTTP 响应头中带有 `200` 状态码则表示访问成功：
+
+```shell
 HTTP/1.1 200 OK
 ...
 ```
 
-带 `Referer: http://yy.com/x` 请求：
+接下来，将请求设置为 `Referer: http://yy.com/x`：
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html -H 'Referer: http://yy.com/x'
+curl http://127.0.0.1:9080/index.html -H 'Referer: http://yy.com/x'
+```
+
+返回的 HTTP 响应头中带有 `403` 状态码，并在响应体中带有 `message` 属性值，代表访问被阻止：
+
+```shell
 HTTP/1.1 403 Forbidden
 ...
 {"message":"Your referer host is not allowed"}
 ```
 
-不带 `Referer` 请求：
+因为启用插件时会将属性 `bypass_missing` 设置为 `true`，所以未指定 `Refer` 请求头的请求将跳过检查：
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html
+curl http://127.0.0.1:9080/index.html
+```
+
+返回的 HTTP 响应头中带有 `200` 状态码，代表访问成功：
+
+```shell
 HTTP/1.1 200 OK
 ...
 ```
 
 ## 禁用插件
 
-当你想去掉 `referer-restriction` 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
+当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},
@@ -107,5 +130,3 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335
     }
 }'
 ```
-
-现在就已移除 `referer-restriction` 插件，其它插件的开启和移除也类似。
