@@ -201,6 +201,7 @@ The following metrics are exported by the `prometheus` Plugin:
   | node     | IP address of the Upstream node.                                                                                                    |
 
 - Info: Information about the APISIX node.
+- Shared dict: The capacity and free space of all nginx.shared.DICT in APISIX.
 
 Here are the original metrics from APISIX:
 
@@ -272,6 +273,24 @@ apisix_http_latency_bucket{type="upstream",route="1",service="",consumer="",node
 # HELP apisix_node_info Info of APISIX node
 # TYPE apisix_node_info gauge
 apisix_node_info{hostname="desktop-2022q8f-wsl"} 1
+# HELP apisix_shared_dict_capacity_bytes The capacity of each nginx shared DICT since APISIX start
+# TYPE apisix_shared_dict_capacity_bytes gauge
+apisix_shared_dict_capacity_bytes{name="access-tokens"} 1048576
+apisix_shared_dict_capacity_bytes{name="balancer-ewma"} 10485760
+apisix_shared_dict_capacity_bytes{name="balancer-ewma-last-touched-at"} 10485760
+apisix_shared_dict_capacity_bytes{name="balancer-ewma-locks"} 10485760
+apisix_shared_dict_capacity_bytes{name="discovery"} 1048576
+apisix_shared_dict_capacity_bytes{name="etcd-cluster-health-check"} 10485760
+...
+# HELP apisix_shared_dict_free_space_bytes The free space of each nginx shared DICT since APISIX start
+# TYPE apisix_shared_dict_free_space_bytes gauge
+apisix_shared_dict_free_space_bytes{name="access-tokens"} 1032192
+apisix_shared_dict_free_space_bytes{name="balancer-ewma"} 10412032
+apisix_shared_dict_free_space_bytes{name="balancer-ewma-last-touched-at"} 10412032
+apisix_shared_dict_free_space_bytes{name="balancer-ewma-locks"} 10412032
+apisix_shared_dict_free_space_bytes{name="discovery"} 1032192
+apisix_shared_dict_free_space_bytes{name="etcd-cluster-health-check"} 10412032
+...
 ```
 
 ## Disable Plugin
