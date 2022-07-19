@@ -198,6 +198,7 @@ scrape_configs:
     | node         | 上游节点的 IP 地址。                                                                      |
 
 - Info: 当前 APISIX 节点信息。
+- Shared dict: APISIX 中所有共享内存的容量以及剩余可用空间。
 
 以下是 APISIX 的原始的指标数据集：
 
@@ -205,7 +206,7 @@ scrape_configs:
 curl http://127.0.0.1:9091/apisix/prometheus/metrics
 ```
 
-```
+```shell
 # HELP apisix_bandwidth Total bandwidth in bytes consumed per service in Apisix
 # TYPE apisix_bandwidth counter
 apisix_bandwidth{type="egress",route="",service="",consumer="",node=""} 8417
@@ -269,6 +270,24 @@ apisix_http_latency_bucket{type="upstream",route="1",service="",consumer="",node
 # HELP apisix_node_info Info of APISIX node
 # TYPE apisix_node_info gauge
 apisix_node_info{hostname="APISIX"} 1
+# HELP apisix_shared_dict_capacity_bytes The capacity of each nginx shared DICT since APISIX start
+# TYPE apisix_shared_dict_capacity_bytes gauge
+apisix_shared_dict_capacity_bytes{name="access-tokens"} 1048576
+apisix_shared_dict_capacity_bytes{name="balancer-ewma"} 10485760
+apisix_shared_dict_capacity_bytes{name="balancer-ewma-last-touched-at"} 10485760
+apisix_shared_dict_capacity_bytes{name="balancer-ewma-locks"} 10485760
+apisix_shared_dict_capacity_bytes{name="discovery"} 1048576
+apisix_shared_dict_capacity_bytes{name="etcd-cluster-health-check"} 10485760
+...
+# HELP apisix_shared_dict_free_space_bytes The free space of each nginx shared DICT since APISIX start
+# TYPE apisix_shared_dict_free_space_bytes gauge
+apisix_shared_dict_free_space_bytes{name="access-tokens"} 1032192
+apisix_shared_dict_free_space_bytes{name="balancer-ewma"} 10412032
+apisix_shared_dict_free_space_bytes{name="balancer-ewma-last-touched-at"} 10412032
+apisix_shared_dict_free_space_bytes{name="balancer-ewma-locks"} 10412032
+apisix_shared_dict_free_space_bytes{name="discovery"} 1032192
+apisix_shared_dict_free_space_bytes{name="etcd-cluster-health-check"} 10412032
+...
 ```
 
 ## 禁用插件
