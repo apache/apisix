@@ -272,7 +272,7 @@ local function load_stream(plugin_names)
 end
 
 
-function _M.load(config)
+local function get_plugin_names(config)
     local http_plugin_names
     local stream_plugin_names
 
@@ -294,7 +294,7 @@ function _M.load(config)
         local plugins_conf = config.value
         -- plugins_conf can be nil when another instance writes into etcd key "/apisix/plugins/"
         if not plugins_conf then
-            return local_plugins
+            return true
         end
 
         for _, conf in ipairs(plugins_conf) do
@@ -304,6 +304,16 @@ function _M.load(config)
                 core.table.insert(http_plugin_names, conf.name)
             end
         end
+    end
+
+    return false, http_plugin_names, stream_plugin_names
+end
+
+
+function _M.load(config)
+    local ignored, http_plugin_names, stream_plugin_names = get_plugin_names(config)
+    if ignored then
+        return local_plugins
     end
 
     if ngx.config.subsystem == "http" then
@@ -620,15 +630,20 @@ end
 
 
 function _M.init_worker()
-    _M.load()
+    local _, http_plugin_names, stream_plugin_names = get_plugin_names()
 
     -- some plugins need to be initialized in init* phases
-    if is_http and local_plugins_hash["prometheus"] then
-        local prometheus_enabled_in_stream = stream_local_plugins_hash["prometheus"]
+    if is_http and core.table.array_find(http_plugin_names, "prometheus") then
+        local prometheus_enabled_in_stream =
+            core.table.array_find(stream_plugin_names, "prometheus")
         require("apisix.plugins.prometheus.exporter").http_init(prometheus_enabled_in_stream)
-    elseif not is_http and stream_local_plugins_hash["prometheus"] then
+    elseif not is_http and core.table.array_find(stream_plugin_names, "prometheus") then
         require("apisix.plugins.prometheus.exporter").stream_init()
     end
+
+    -- someone's plugin needs to be initialized after prometheus
+    -- see https://github.com/apache/apisix/issues/3286
+    _M.load()
 
     if local_conf and not local_conf.apisix.enable_admin then
         init_plugins_syncer()
