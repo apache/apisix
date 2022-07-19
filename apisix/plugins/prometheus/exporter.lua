@@ -18,6 +18,7 @@ local base_prometheus = require("prometheus")
 local core      = require("apisix.core")
 local plugin    = require("apisix.plugin")
 local ipairs    = ipairs
+local pairs     = pairs
 local ngx       = ngx
 local re_gmatch = ngx.re.gmatch
 local ffi       = require("ffi")
@@ -121,6 +122,14 @@ function _M.http_init(prometheus_enabled_in_stream)
     metrics.etcd_modify_indexes = prometheus:gauge("etcd_modify_indexes",
             "Etcd modify index for APISIX keys",
             {"key"})
+
+    metrics.shared_dict_capacity_bytes = prometheus:gauge("shared_dict_capacity_bytes",
+            "The capacity of each nginx shared DICT since APISIX start",
+            {"name"})
+
+    metrics.shared_dict_free_space_bytes = prometheus:gauge("shared_dict_free_space_bytes",
+            "The free space of each nginx shared DICT since APISIX start",
+            {"name"})
 
     -- per service
 
@@ -352,12 +361,25 @@ local function etcd_modify_index()
 end
 
 
+local function shared_dict_status()
+    local name = {}
+    for shared_dict_name, shared_dict in pairs(ngx.shared) do
+        name[1] = shared_dict_name
+        metrics.shared_dict_capacity_bytes:set(shared_dict:capacity(), name)
+        metrics.shared_dict_free_space_bytes:set(shared_dict:free_space(), name)
+    end
+end
+
+
 local function collect(ctx, stream_only)
     if not prometheus or not metrics then
         core.log.error("prometheus: plugin is not initialized, please make sure ",
                      " 'prometheus_metrics' shared dict is present in nginx template")
         return 500, {message = "An unexpected error occurred"}
     end
+
+    -- collect ngx.shared.DICT status
+    shared_dict_status()
 
     -- across all services
     nginx_status()
