@@ -377,6 +377,10 @@ for i = 1, 100 do
     _M["print_uri_" .. i] = print_uri
 end
 
+function _M.print_uri_detailed()
+    ngx.say("ngx.var.uri: ", ngx.var.uri)
+    ngx.say("ngx.var.request_uri: ", ngx.var.request_uri)
+end
 
 function _M.headers()
     local args = ngx.req.get_uri_args()
