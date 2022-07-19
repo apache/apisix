@@ -75,7 +75,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 - **Full Dynamic**
 
   - [Hot Updates And Hot Plugins](docs/en/latest/terminology/plugin.md): Continuously updates its configurations and plugins without restarts!
-  - [Proxy Rewrite](docs/en/latest/plugins/proxy-rewrite.md): Support rewrite the `host`, `uri`, `schema`, `enable_websocket`, `headers` of the request before send to upstream.
+  - [Proxy Rewrite](docs/en/latest/plugins/proxy-rewrite.md): Support rewrite the `host`, `uri`, `schema`, `method`, `headers` of the request before send to upstream.
   - [Response Rewrite](docs/en/latest/plugins/response-rewrite.md): Set customized response status code, body and header to the client.
   - Dynamic Load Balancing: Round-robin load balancing with weight.
   - Hash-based Load Balancing: Load balance with consistent hashing sessions.
