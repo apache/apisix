@@ -46,7 +46,7 @@ In an unhealthy state, if the Upstream service responds with a status code from 
 | break_response_headers  | array[object]  | False    |         | [{"key":"header_name","value":"can contain Nginx $var"}] | Headers of the response message to return when Upstream is unhealthy. Can only be configured when the `break_response_body` attribute is configured. The values can contain APISIX variables. For example, we can use `{"key":"X-Client-Addr","value":"$remote_addr:$remote_port"}`. |
 | max_breaker_sec         | integer        | False    | 300     | >=3             | Maximum time in seconds for circuit breaking.                                                                                                                                                                                                |
 | unhealthy.http_statuses | array[integer] | False    | [500]   | [500, ..., 599] | Status codes of Upstream to be considered unhealthy.                                                                                                                                                                                         |
-| unhealthy.failures      | integer        | False    | 3       | >=1             | Number of consecutive failures for the Upstream service to be considered unhealthy.                                                                                                                                                          |
+| unhealthy.failures      | integer        | False    | 3       | >=1             | Number of failures within a certain period of time for the Upstream service to be considered unhealthy.                                                                                                                                                          |
 | healthy.http_statuses   | array[integer] | False    | [200]   | [200, ..., 499] | Status codes of Upstream to be considered healthy.                                                                                                                                                                                           |
 | healthy.successes       | integer        | False    | 3       | >=1             | Number of consecutive healthy requests for the Upstream service to be considered healthy.                                                                                                                                                    |
 
@@ -80,7 +80,7 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-In this configuration, a response code of 500 or 503 three times in a row triggers the unhealthy status of the Upstream service. A response code of 200 restores its healthy status.
+In this configuration, a response code of 500 or 503 three times within a certain period of time triggers the unhealthy status of the Upstream service. A response code of 200 restores its healthy status.
 
 ## Example usage
 

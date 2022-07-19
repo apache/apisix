@@ -48,14 +48,14 @@ title: api-breaker
 | break_response_headers  | array[object]  | 可选   | 无         | [{"key":"header_name","value":"can contain Nginx $var"}] | 不健康返回报文头，这里可以设置多个。该字段仅在 `break_response_body` 被配置时生效。这个值能够以 `$var` 的格式包含 APISIX 变量，比如 `{"key":"X-Client-Addr","value":"$remote_addr:$remote_port"}`。 |
 | max_breaker_sec         | integer        | 可选   | 300        | >=3             | 最大熔断持续时间                 |
 | unhealthy.http_statuses | array[integer] | 可选   | {500}      | [500, ..., 599] | 不健康时候的状态码               |
-| unhealthy.failures      | integer        | 可选   | 3          | >=1             | 触发不健康状态的连续错误请求次数 |
+| unhealthy.failures      | integer        | 可选   | 3          | >=1             | 在一定时间内触发不健康状态的异常请求次数 |
 | healthy.http_statuses   | array[integer] | 可选   | {200}      | [200, ..., 499] | 健康时候的状态码                 |
 | healthy.successes       | integer        | 可选   | 3          | >=1             | 触发健康状态的连续正常请求次数   |
 
 ## 启用方式
 
 这是一个示例，在指定的路由上启用 `api-breaker` 插件。
-应答 500 或 503 连续 3 次，触发熔断。应答 200 连续 1 次，恢复健康。
+在一定时间内应答 500 或 503 达到 3 次，触发熔断。应答 200 连续 1 次，恢复健康。
 
 ```shell
 curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -85,7 +85,7 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H 'X-API-KEY: edd1c9f034335f
 
 ## 测试插件
 
-使用上游的配置，如果你的上流服务返回 500，连续 3 次。客户端将会收到 502（break_response_code）应答。
+使用上游的配置，在一定时间内如果你的上流服务返回 500 达到 3 次。客户端将会收到 502（break_response_code）应答。
 
 ```shell
 $ curl -i "http://127.0.0.1:9080/hello"
