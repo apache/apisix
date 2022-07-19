@@ -2,10 +2,9 @@
 title: referer-restriction
 keywords:
   - APISIX
-  - Plugin
+  - API Gateway
   - Referer restriction
-  - referer-restriction
-description: This document contains information about the Apache APISIX referer-restriction Plugin.
+description: This document contains information about the Apache APISIX referer-restriction Plugin, which can be used to restrict access to a Service or a Route by whitelisting/blacklisting the Referer request header.
 ---
 
 <!--
@@ -37,7 +36,7 @@ The `referer-restriction` Plugin can be used to restrict access to a Service or 
 |----------------|---------------|----------|----------------------------------|--------------|---------------------------------------------------------------------------------------------------|
 | whitelist      | array[string] | False    |                                  |              | List of hostnames to whitelist. A hostname can start with `*` for wildcard.                       |
 | blacklist      | array[string] | False    |                                  |              | List of hostnames to blacklist. A hostname can start with `*` for wildcard.                       |
-| message        | string        | False    | Your referer host is not allowed | [1, 1024]    | Message returned when access is not allowed.                                                      |
+| message        | string        | False    | "Your referer host is not allowed" | [1, 1024]    | Message returned when access is not allowed.                                                      |
 | bypass_missing | boolean       | False    | false                            |              | When set to `true`, bypasses the check when the `Referer` request header is missing or malformed. |
 
 :::info IMPORTANT
@@ -97,7 +96,7 @@ HTTP/1.1 403 Forbidden
 {"message":"Your referer host is not allowed"}
 ```
 
-Since we have set `bypass_missing` to `true` a request without the `Referer` header will be successful as the check is skipped:
+Since we have set `bypass_missing` to `true`, a request without the `Referer` header will be successful as the check is skipped:
 
 ```shell
 curl http://127.0.0.1:9080/index.html
