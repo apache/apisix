@@ -78,6 +78,11 @@ local schema = {
             type = "object",
             minProperties = 1,
         },
+        use_real_request_uri_unsafe = {
+            description = "use real_request_uri instead, THIS IS VERY UNSAFE.",
+            type        = "boolean",
+            default     = false,
+        },
     },
     minProperties = 1,
 }
@@ -161,7 +166,9 @@ function _M.rewrite(conf, ctx)
     end
 
     local upstream_uri = ctx.var.uri
-    if conf.uri ~= nil then
+    if conf.use_real_request_uri_unsafe then
+        upstream_uri = ctx.var.real_request_uri
+    elseif conf.uri ~= nil then
         upstream_uri = core.utils.resolve_var(conf.uri, ctx.var)
     elseif conf.regex_uri ~= nil then
         local uri, _, err = re_sub(ctx.var.uri, conf.regex_uri[1],
@@ -177,22 +184,24 @@ function _M.rewrite(conf, ctx)
         end
     end
 
-    local index = str_find(upstream_uri, "?")
-    if index then
-        upstream_uri = core.utils.uri_safe_encode(sub_str(upstream_uri, 1, index-1)) ..
-                       sub_str(upstream_uri, index)
-    else
-        upstream_uri = core.utils.uri_safe_encode(upstream_uri)
-    end
-
-    if ctx.var.is_args == "?" then
+    if not conf.use_real_request_uri_unsafe then
+        local index = str_find(upstream_uri, "?")
         if index then
-            ctx.var.upstream_uri = upstream_uri .. "&" .. (ctx.var.args or "")
+            upstream_uri = core.utils.uri_safe_encode(sub_str(upstream_uri, 1, index-1)) ..
+                           sub_str(upstream_uri, index)
         else
-            ctx.var.upstream_uri = upstream_uri .. "?" .. (ctx.var.args or "")
+            upstream_uri = core.utils.uri_safe_encode(upstream_uri)
         end
-    else
-        ctx.var.upstream_uri = upstream_uri
+
+        if ctx.var.is_args == "?" then
+            if index then
+                ctx.var.upstream_uri = upstream_uri .. "&" .. (ctx.var.args or "")
+            else
+                ctx.var.upstream_uri = upstream_uri .. "?" .. (ctx.var.args or "")
+            end
+        else
+            ctx.var.upstream_uri = upstream_uri
+        end
     end
 
     if conf.headers then

@@ -447,7 +447,7 @@ passed
         }
     }
 --- response_body
-{"action":"set","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/"}}}}}
+{"action":"set","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}}
 --- request
 GET /t
 --- no_error_log
@@ -485,7 +485,7 @@ GET /t
         }
     }
 --- response_body
-{"action":"compareAndSwap","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/"}}}}}
+{"action":"compareAndSwap","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}}
 --- request
 GET /t
 --- no_error_log
@@ -521,7 +521,7 @@ GET /t
         }
     }
 --- response_body
-{"action":"get","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/"}}}}}
+{"action":"get","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}}
 --- request
 GET /t
 --- no_error_log
