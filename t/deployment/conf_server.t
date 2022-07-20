@@ -310,8 +310,6 @@ deployment:
             verify: false
 --- error_log
 Receive SNI: localhost
---- no_error_log
-[error]
 
 
 
@@ -357,8 +355,6 @@ deployment:
             sni: "x.com"
 --- error_log
 Receive SNI: x.com
---- no_error_log
-[error]
 
 
 
