@@ -84,12 +84,27 @@ local _M = {
 
 上面的配置意味着将 jwt-auth 插件的错误响应自定义为 '{"message": "Missing credential in request"}'。
 
+```
+{
+    "jwt-auth": {
+        "_meta": {
+            "filter": {
+                {"arg_version", "==", "v2"}
+            }
+        }
+    }
+}
+```
+
+这个配置示例意味着只有在请求参数中 `version` 等于 `v2` 时 `jwt-auth` 插件才会执行。
+
 ### 在 `_meta` 下的插件通用配置
 
 | 名称         | 类型 | 描述           |
 |--------------|------|----------------|
 | error_response | string/object  | 自定义错误响应 |
 | priority       | integer        | 自定义插件优先级 |
+| filter  | array   | 根据请求的参数，在运行时控制插件是否执行。由一个或多个{var, operator, val}元素组成列表，类似这样：{{var, operator, val}, {var, operator, val}, ...}}。例如：`{"arg_name", "==", "json"}`，表示当前请求参数 name 是 json。这里的 var 与 Nginx 内部自身变量命名是保持一致。操作符的具体用法请看[lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 operator-list 部分。|
 
 ### 自定义插件优先级
 
