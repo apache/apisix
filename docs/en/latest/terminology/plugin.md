@@ -90,12 +90,27 @@ Some common configurations can be applied to the plugin configuration. For examp
 
 the configuration above means customizing the error response from the jwt-auth plugin to '{"message": "Missing credential in request"}'.
 
+```
+{
+    "jwt-auth": {
+        "_meta": {
+            "filter": {
+                {"arg_version", "==", "v2"}
+            }
+        }
+    }
+}
+```
+
+This configuration example means that the `jwt-auth` plugin will only execute if `version` in the request parameter equals `v2`.
+
 ### Plugin Common Configuration Under `_meta`
 
 | Name         | Type | Description |
 |--------------|------|-------------|
 | error_response | string/object  | Custom error response |
 | priority       | integer        | Custom plugin priority |
+| filter  | array | Depending on the requested parameters, it is decided at runtime whether the plugin should be executed. List of variables to match for filtering requests for conditional traffic split. It is in the format {variable operator value}. For example, `{"arg_name", "==", "json"}`. The variables here are consistent with Nginx internal variables. For details on supported operators, please see [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
 
 ### Custom Plugin Priority
 
