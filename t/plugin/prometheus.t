@@ -632,14 +632,3 @@ GET /apisix/prometheus/metrics
 qr/apisix_/
 --- response_body_unlike eval
 qr/etcd/
-
-
-
-=== TEST 42: fetch the prometheus shared dict internal-status data
---- http_config
-lua_shared_dict test-shared-dict 10m;
---- request
-GET /apisix/prometheus/metrics
---- response_body_like
-.*apisix_shared_dict_capacity_bytes{name="test-shared-dict"} 10485760(?:.|\n)*
-apisix_shared_dict_free_space_bytes{name="test-shared-dict"} \d+.*
