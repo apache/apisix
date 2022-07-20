@@ -54,7 +54,7 @@ __DATA__
         }
     }
 --- response_body_like eval
-qr/{"algorithm":"HS256","base64_secret":false,"exp":86400,"key":"123","secret":"[a-zA-Z0-9+\\\/]+={0,2}"}/
+qr/{"algorithm":"HS256","base64_secret":false,"exp":86400,"key":"123","lifetime_grace_period":0,"secret":"[a-zA-Z0-9+\\\/]+={0,2}"}/
 
 
 
@@ -957,7 +957,7 @@ qr/failed to sign jwt/
         }
     }
 --- response_body_like eval
-qr/{"algorithm":"HS512","base64_secret":false,"exp":86400,"key":"123","secret":"[a-zA-Z0-9+\\\/]+={0,2}"}/
+qr/{"algorithm":"HS512","base64_secret":false,"exp":86400,"key":"123","lifetime_grace_period":0,"secret":"[a-zA-Z0-9+\\\/]+={0,2}"}/
 
 
 
