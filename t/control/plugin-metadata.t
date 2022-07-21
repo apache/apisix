@@ -16,12 +16,6 @@
 #
 use t::APISIX 'no_plan';
 
-repeat_each(1);
-no_long_string();
-no_root_location();
-no_shuffle();
-log_level("info");
-
 run_tests;
 
 __DATA__
