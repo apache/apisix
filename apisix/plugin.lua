@@ -19,6 +19,7 @@ local core          = require("apisix.core")
 local config_util   = require("apisix.core.config_util")
 local enable_debug  = require("apisix.debug").enable_debug
 local wasm          = require("apisix.wasm")
+local expr          = require("resty.expr.v1")
 local ngx           = ngx
 local crc32         = ngx.crc32_short
 local ngx_exit      = ngx.exit
@@ -38,6 +39,9 @@ local stream_local_plugins_hash = core.table.new(0, 32)
 
 
 local merged_route = core.lrucache.new({
+    ttl = 300, count = 512
+})
+local expr_lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
 local local_conf
@@ -381,6 +385,32 @@ local function trace_plugins_info_for_debug(ctx, plugins)
     end
 end
 
+local function meta_filter(ctx, plugin_name, plugin_conf)
+    local filter = plugin_conf._meta and plugin_conf._meta.filter
+    if not filter then
+        return true
+    end
+
+    local ex, ok, err
+    if ctx then
+        ex, err = expr_lrucache(plugin_name .. ctx.conf_type .. ctx.conf_id,
+                                 ctx.conf_version, expr.new, filter)
+    else
+        ex, err = expr.new(filter)
+    end
+    if not ex then
+        core.log.warn("failed to get the 'vars' expression: ", err ,
+                         " plugin_name: ", plugin_name)
+        return true
+    end
+    ok, err = ex:eval()
+    if err then
+        core.log.warn("failed to run the 'vars' expression: ", err,
+                         " plugin_name: ", plugin_name)
+        return true
+    end
+    return ok
+end
 
 function _M.filter(ctx, conf, plugins, route_conf, phase)
     local user_plugin_conf = conf.value.plugins
@@ -399,7 +429,12 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
         local name = plugin_obj.name
         local plugin_conf = user_plugin_conf[name]
 
-        if type(plugin_conf) == "table" and not plugin_conf.disable then
+        if type(plugin_conf) ~= "table" then
+            goto continue
+        end
+
+        local matched = meta_filter(ctx, name, plugin_conf)
+        if not plugin_conf.disable and matched then
             if plugin_obj.run_policy == "prefer_route" and route_plugin_conf ~= nil then
                 local plugin_conf_in_route = route_plugin_conf[name]
                 if plugin_conf_in_route and not plugin_conf_in_route.disable then
@@ -412,9 +447,9 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
             end
             core.table.insert(plugins, plugin_obj)
             core.table.insert(plugins, plugin_conf)
-
-            ::continue::
         end
+
+        ::continue::
     end
 
     trace_plugins_info_for_debug(ctx, plugins)
@@ -733,6 +768,13 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
         if not ok then
             return false, "failed to check the configuration of plugin "
                 .. name .. " err: " .. err
+        end
+
+        if plugin_conf._meta and plugin_conf._meta.filter then
+            ok, err = expr.new(plugin_conf._meta.filter)
+            if not ok then
+                return nil, "failed to validate the 'vars' expression: " .. err
+            end
         end
 
         plugin_conf.disable = disable
