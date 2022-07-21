@@ -48,6 +48,18 @@ add_block_preprocessor(sub {
                 ngx.say("ok")
             }
         }
+        location /clickhouse-logger/test1 {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local data = ngx.req.get_body_data()
+                local headers = ngx.req.get_headers()
+                ngx.log(ngx.WARN, "clickhouse body: ", data)
+                for k, v in pairs(headers) do
+                    ngx.log(ngx.WARN, "clickhouse headers: " .. k .. ":" .. v)
+                end
+                ngx.say("ok")
+            }
+        }
     }
 _EOC_
 
@@ -70,7 +82,7 @@ __DATA__
                                                  password = "a",
                                                  database = "default",
                                                  logtable = "t",
-                                                 endpoint_addr = "http://127.0.0.1:10420/clickhouse-logger/test",
+                                                 endpoint_addrs = {"http://127.0.0.1:10420/clickhouse-logger/test"},
                                                  max_retry_count = 1,
                                                  name = "clickhouse logger",
                                                  ssl_verify = false
@@ -97,7 +109,7 @@ passed
                                                  password = "a",
                                                  database = "default",
                                                  logtable = "t",
-                                                 endpoint_addr = "http://127.0.0.1:10420/clickhouse-logger/test"
+                                                 endpoint_addrs = {"http://127.0.0.1:10420/clickhouse-logger/test"}
                                                  })
 
             if not ok then
@@ -131,7 +143,7 @@ passed
         }
     }
 --- response_body
-property "endpoint_addr" is required
+property "endpoint_addrs" is required
 
 
 
@@ -149,7 +161,7 @@ property "endpoint_addr" is required
                                 "password": "a",
                                 "database": "default",
                                 "logtable": "t",
-                                "endpoint_addr": "http://127.0.0.1:10420/clickhouse-logger/test",
+                                "endpoint_addrs": ["http://127.0.0.1:10420/clickhouse-logger/test"],
                                 "batch_max_size":1,
                                 "inactive_timeout":1
                             }
@@ -176,6 +188,61 @@ passed
 
 
 === TEST 5: access local server
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- error_log
+clickhouse body: INSERT INTO t FORMAT JSONEachRow
+clickhouse headers: x-clickhouse-key:a
+clickhouse headers: x-clickhouse-user:default
+clickhouse headers: x-clickhouse-database:default
+--- wait: 5
+
+
+
+=== TEST 6: add plugin on routes using multi clickhouse-logger
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "clickhouse-logger": {
+                                "user": "default",
+                                "password": "a",
+                                "database": "default",
+                                "logtable": "t",
+                                "endpoint_addrs": ["http://127.0.0.1:10420/clickhouse-logger/test",
+                                                  "http://127.0.0.1:10420/clickhouse-logger/test1"],
+                                "batch_max_size":1,
+                                "inactive_timeout":1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: access local server
 --- request
 GET /opentracing
 --- response_body
