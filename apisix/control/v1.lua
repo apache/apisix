@@ -16,7 +16,6 @@
 --
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
-local plugins = require("apisix.admin.plugins")
 local get_routes = require("apisix.router").http_routes
 local get_services = require("apisix.http.service").services
 local upstream_mod = require("apisix.upstream")
@@ -278,7 +277,7 @@ function _M.dump_service_info()
 end
 
 function _M.dump_all_plugin_metadata()
-    local names = plugins.get_plugins_list()
+    local names = core.config.local_conf().plugins
     local metadatas = core.table.new(0, #names)
     for _, name in ipairs(names) do
         local metadata = plugin.plugin_metadata(name)
