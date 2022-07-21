@@ -214,7 +214,7 @@ Triggers a full garbage collection in the HTTP subsystem.
 
 ### GET /v1/routes
 
-Introduced in [v3.0](https://github.com/apache/apisix/releases/tag/3.0).
+Introduced in [v2.10.0](https://github.com/apache/apisix/releases/tag/2.10.0).
 
 Returns all configured [Routes](./terminology/route.md):
 
@@ -254,7 +254,7 @@ Returns all configured [Routes](./terminology/route.md):
 
 ### GET /v1/route/{route_id}
 
-Introduced in [v3.0](https://github.com/apache/apisix/releases/tag/3.0).
+Introduced in [v2.10.0](https://github.com/apache/apisix/releases/tag/2.10.0).
 
 Returns the Route with the specified `route_id`:
 
@@ -292,7 +292,7 @@ Returns the Route with the specified `route_id`:
 
 ### GET /v1/services
 
-Introduced in [v2.11](https://github.com/apache/apisix/releases/tag/2.11).
+Introduced in [v2.11.0](https://github.com/apache/apisix/releases/tag/2.11.0).
 
 Returns all the Services:
 
@@ -340,7 +340,7 @@ Returns all the Services:
 
 ### GET /v1/service/{service_id}
 
-Introduced in [v2.11](https://github.com/apache/apisix/releases/tag/2.11).
+Introduced in [v2.11.0](https://github.com/apache/apisix/releases/tag/2.11.0).
 
 Returns the Service with the specified `service_id`:
 
@@ -374,7 +374,7 @@ Returns the Service with the specified `service_id`:
 
 ### GET /v1/upstreams
 
-Introduced in [v2.11](https://github.com/apache/apisix/releases/tag/2.11).
+Introduced in [v2.11.0](https://github.com/apache/apisix/releases/tag/2.11.0).
 
 Dumps all Upstreams:
 
@@ -415,7 +415,7 @@ Dumps all Upstreams:
 
 ### GET /v1/upstream/{upstream_id}
 
-Introduced in [v2.11](https://github.com/apache/apisix/releases/tag/2.11).
+Introduced in [v2.11.0](https://github.com/apache/apisix/releases/tag/2.11.0).
 
 Dumps the Upstream with the specified `upstream_id`:
 
