@@ -244,7 +244,7 @@ qr/"error":"The requested resource does not exist."/
                  [[{
                         "plugins": {
                             "openwhisk": {
-                                "api_host": "http://127.0.0.0:3233",
+                                "api_host": "http://127.0.0.1:1979",
                                 "service_token": "23bc46b1-71f6-4ed5-8c54-816aa4f8c502:123zO3xZCLrMN6v2BKK1dXYFpXlPkccOFqm12CdAsMgRU4VrNZ9lyGVCGuMDGIwP",
                                 "namespace": "guest",
                                 "action": "non-existent"
