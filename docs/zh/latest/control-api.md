@@ -209,7 +209,6 @@ APISIX 中一些插件添加了自己的 control API。如果你对他们感兴�
 
 注意，当你启用 stream proxy 时，APISIX 将为 stream 子系统运行另一个 Lua 虚拟机。它不会触发这个 Lua 虚拟机中的全量 GC。
 
-
 ### GET /v1/plugin_metadatas
 
 引入自 2.15 版本
@@ -232,7 +231,6 @@ APISIX 中一些插件添加了自己的 control API。如果你对他们感兴�
     }
 ]
 ```
-
 
 ### GET /v1/plugin_metadata/{plugin_name}
 
