@@ -32,7 +32,6 @@ description: CSRF 插件基于 Double Submit Cookie 的方式，保护用户的 
 
 `csrf` 插件基于 [`Double Submit Cookie`](https://en.wikipedia.org/wiki/Cross-site_request_forgery#Double_Submit_Cookie) 的方式，保护用户的 API 免于 CSRF 攻击。
 
-
 `csrf` 插件认为 `GET`、`HEAD` 和 `OPTIONS` 为 `safe-methods`，其他的请求方法为 `unsafe-methods`。因此 `GET`、`HEAD` 和 `OPTIONS` 方法的调用不会被检查拦截。
 
 ## 属性
@@ -42,7 +41,6 @@ description: CSRF 插件基于 Double Submit Cookie 的方式，保护用户的 
 | name   | string | 否    | `apisix-csrf-token`  |    | 生成的 Cookie 中的 Token 名称，需要使用此名称在请求头携带 Cookie 中的内容。 |
 | expires | number | 否 | `7200` | | CSRF Cookie 的过期时间，单位为秒。当设置为 `0` 时，会忽略 CSRF Cookie 过期时间检查。|
 | key | string | 是 |  |  | 加密 Token 的秘钥。        |
-
 
 ## 启用插件
 
