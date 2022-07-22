@@ -25,7 +25,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local _, body = t('/apisix/admin/plugin_metadata/example-plugin',
+            local code = t('/apisix/admin/plugin_metadata/example-plugin',
                 ngx.HTTP_PUT,
                 [[{
                     "skey": "val",
@@ -41,23 +41,26 @@ __DATA__
                     "action": "set"
                 }]]
                 )
+            if code ~= 200 then
+                ngx.status = code
+                return
+            end
 
-            ngx.say(body)
-
-            local _, body = t('/apisix/admin/plugin_metadata/file-logger',
+            local code = t('/apisix/admin/plugin_metadata/file-logger',
                 ngx.HTTP_PUT,
                 [[
                 {"log_format": {"upstream_response_time": "$upstream_response_time"}}
                 ]]
                 )
-            ngx.say(body)
+            if code ~= 200 then
+                ngx.status = code
+                return
+            end
         }
     }
 --- request
 GET /t
---- response_body
-passed
-passed
+--- error_code: 200
 --- no_error_log
 [error]
 
