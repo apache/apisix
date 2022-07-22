@@ -263,6 +263,9 @@ local function list_watch(informer, apiserver)
     local reason, message
     local httpc = http.new()
 
+    informer.continue = ""
+    informer.version = ""
+
     informer.fetch_state = "connecting"
     core.log.info("begin to connect ", apiserver.host, ":", apiserver.port)
 
