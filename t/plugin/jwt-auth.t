@@ -498,7 +498,7 @@ property "key" is required
             local code, body, raw = t('/apisix/admin/schema/plugins/jwt-auth?schema_type=consumer',
                 ngx.HTTP_GET,
                 [[
-{"dependencies":{"algorithm":{"oneOf":[{"properties":{"algorithm":{"default":"HS256","enum":["HS256","HS512"]}}},{"required":["public_key","private_key"],"properties":{"algorithm":{"enum":["RS256"]},"public_key":{"type":"string"},"private_key":{"type":"string"}}}]}},"required":["key"],"type":"object","properties":{"base64_secret":{"default":false,"type":"boolean"},"secret":{"type":"string"},"algorithm":{"enum":["HS256","HS512","RS256"],"default":"HS256","type":"string"},"exp":{"minimum":1,"default":86400,"type":"integer"},"key":{"type":"string"}}}
+{"dependencies":{"algorithm":{"oneOf":[{"properties":{"algorithm":{"default":"HS256","enum":["HS256","HS512"]}}},{"required":["public_key","private_key"],"properties":{"algorithm":{"enum":["RS256","ES256"]},"public_key":{"type":"string"},"private_key":{"type":"string"}}}]}},"required":["key"],"type":"object","properties":{"base64_secret":{"default":false,"type":"boolean"},"secret":{"type":"string"},"algorithm":{"enum":["HS256","HS512","RS256","ES256"],"default":"HS256","type":"string"},"exp":{"minimum":1,"default":86400,"type":"integer"},"key":{"type":"string"}}}
                 ]]
                 )
 
