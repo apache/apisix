@@ -113,7 +113,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 
 ## 测试插件
 
-现在，如果你向 APISIX 发出请求，它将记录在您的 mockbin 服务器中：
+你可以通过以下命令向 APISIX 发出请求，访问日志将记录在你的 `mockbin` 服务器中：
 
 ```shell
 curl -i http://127.0.0.1:9080/hello
