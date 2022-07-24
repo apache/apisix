@@ -115,12 +115,12 @@ done
 
             for _, data in ipairs(data) do
                 local code, body = t(data.url, ngx.HTTP_PUT, data.data)
-                ngx.say(code..body)
+                ngx.say(body)
             end
         }
     }
 --- response_body eval
-"201passed\n" x 3
+"passed\n" x 3
 
 
 
@@ -342,7 +342,7 @@ x-rbac-token: V1#invalid-appid#rbac-token
 === TEST 16: verify: failed
 --- request
 GET /hello1
---- error_code: 401
+--- error_code: 403
 --- more_headers
 x-rbac-token: V1#wolf-rbac-app#wolf-rbac-token
 --- response_body
