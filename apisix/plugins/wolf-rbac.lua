@@ -324,7 +324,7 @@ function _M.rewrite(conf, ctx)
         core.log.error(" check_url_permission(",
             core.json.delay_encode(perm_item),
             ") failed, res: ",core.json.delay_encode(res))
-        return 401, fail_response("Invalid user permission",
+        return 403, fail_response("Invalid user permission",
             { username = username, nickname = nickname }
         )
     end
