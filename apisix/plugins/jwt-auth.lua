@@ -71,6 +71,11 @@ local consumer_schema = {
         vault = {
             type = "object",
             properties = {}
+        },
+        lifetime_grace_period = {
+            type = "integer",
+            minimum = 0,
+            default = 0
         }
     },
     dependencies = {
@@ -389,7 +394,10 @@ function _M.rewrite(conf, ctx)
         core.log.error("failed to retrieve secrets, err: ", err)
         return 503, {message = "failed to verify jwt"}
     end
-    jwt_obj = jwt:verify_jwt_obj(auth_secret, jwt_obj)
+    local claim_specs = jwt:get_default_validation_options(jwt_obj)
+    claim_specs.lifetime_grace_period = consumer.auth_conf.lifetime_grace_period
+
+    jwt_obj = jwt:verify_jwt_obj(auth_secret, jwt_obj, claim_specs)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
 
     if not jwt_obj.verified then
