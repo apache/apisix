@@ -32,7 +32,9 @@ local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
-        endpoint_addrs = {items = core.schema.uri_def, type = "array", minItems = 1}, -- deprecated, use "host" instead
+        -- deprecated, use "endpoint_addrs" instead
+        endpoint_addr = core.schema.uri_def,
+        endpoint_addrs = {items = core.schema.uri_def, type = "array", minItems = 1},
         user = {type = "string", default = ""},
         password = {type = "string", default = ""},
         database = {type = "string", default = ""},
@@ -41,7 +43,10 @@ local schema = {
         name = {type = "string", default = "clickhouse logger"},
         ssl_verify = {type = "boolean", default = true},
     },
-    required = {"endpoint_addrs", "user", "password", "database", "logtable"}
+    oneOf = {
+        {required = {"endpoint_addr", "user", "password", "database", "logtable"}},
+        {required = {"endpoint_addrs", "user", "password", "database", "logtable"}}
+    },
 }
 
 
@@ -73,7 +78,12 @@ end
 local function send_http_data(conf, log_message)
     local err_msg
     local res = true
-    local selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
+    local selected_endpoint_addr
+    if conf.endpoint_addr then
+        selected_endpoint_addr = conf.endpoint_addr
+    else
+        selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
+    end
     local url_decoded = url.parse(selected_endpoint_addr)
     local host = url_decoded.host
     local port = url_decoded.port

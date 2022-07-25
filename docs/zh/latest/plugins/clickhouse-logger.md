@@ -27,11 +27,12 @@ title: clickhouse-logger
 
 ## 属性
 
-| 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                                |
-| ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| endpoint_addrs    | 数组    | 必须   |               |         | `clickhouse` 服务器的 endpoints。                  |
-| database         | string  | 必须   |               |         | 使用的数据库。                                     |
-| logtable         | string  | 必须   |               |         | 写入的表名 。                                      |
+| 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                                 |
+| ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------  |
+| endpoint_addr    | 废弃    | 必须   |               |         | 推荐使用 `endpoint_addrs` 代替。`clickhouse` 服务器的 endpoints。|
+| endpoint_addrs   | array    | 必须   |               |         | `clickhouse` 服务器的 endpoints。|
+| database         | string  | 必须   |               |         | 使用的数据库。                                      |
+| logtable         | string  | 必须   |               |         | 写入的表名 。                                       |
 | user             | string  | 必须   |               |         | clickhouse 的用户。                                |
 | password         | string  | 必须   |               |         | clickhouse 的密码 。                               |
 | timeout          | integer | 可选   | 3             | [1,...] | 发送请求后保持连接活动的时间。                       |

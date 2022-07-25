@@ -35,7 +35,8 @@ The `clickhouse-logger` Plugin is used to push logs to [ClickHouse](https://clic
 
 | Name          | Type    | Required | Default             | Valid values | Description                                                    |
 |---------------|---------|----------|---------------------|--------------|----------------------------------------------------------------|
-| endpoint_addrs | array   | True     |                     |              | ClickHouse endpoints.                                          |
+| endpoint_addr | Deprecated   | True     |                |              | Use `endpoint_addrs` instead. ClickHouse endpoints.            |
+| endpoint_addrs | array  | True     |                     |              | ClickHouse endpoints.                                          |
 | database      | string  | True     |                     |              | Name of the database to store the logs.                        |
 | logtable      | string  | True     |                     |              | Table name to store the logs.                                  |
 | user          | string  | True     |                     |              | ClickHouse username.                                           |

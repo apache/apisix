@@ -82,7 +82,7 @@ __DATA__
                                                  password = "a",
                                                  database = "default",
                                                  logtable = "t",
-                                                 endpoint_addrs = {"http://127.0.0.1:10420/clickhouse-logger/test"},
+                                                 endpoint_addr = {"http://127.0.0.1:10420/clickhouse-logger/test"},
                                                  max_retry_count = 1,
                                                  name = "clickhouse logger",
                                                  ssl_verify = false
@@ -109,7 +109,7 @@ passed
                                                  password = "a",
                                                  database = "default",
                                                  logtable = "t",
-                                                 endpoint_addrs = {"http://127.0.0.1:10420/clickhouse-logger/test"}
+                                                 endpoint_addr = {"http://127.0.0.1:10420/clickhouse-logger/test"}
                                                  })
 
             if not ok then
@@ -143,7 +143,7 @@ passed
         }
     }
 --- response_body
-property "endpoint_addrs" is required
+property "endpoint_addr" is required
 
 
 
@@ -161,7 +161,7 @@ property "endpoint_addrs" is required
                                 "password": "a",
                                 "database": "default",
                                 "logtable": "t",
-                                "endpoint_addrs": "http://127.0.0.1:10420/clickhouse-logger/test",
+                                "endpoint_addr": "http://127.0.0.1:10420/clickhouse-logger/test",
                                 "batch_max_size":1,
                                 "inactive_timeout":1
                             }
@@ -183,25 +183,11 @@ property "endpoint_addrs" is required
         }
     }
 --- response_body
-property "endpoint_addrs" validation failed: wrong type: expected array, got string
+passed
 
 
 
-=== TEST 5: access local server
---- request
-GET /opentracing
---- response_body
-opentracing
---- error_log
-clickhouse body: INSERT INTO t FORMAT JSONEachRow
-clickhouse headers: x-clickhouse-key:a
-clickhouse headers: x-clickhouse-user:default
-clickhouse headers: x-clickhouse-database:default
---- wait: 5
-
-
-
-=== TEST 6: add plugin on routes using multi clickhouse-logger
+=== TEST 5: add plugin on routes using multi clickhouse-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -215,7 +201,7 @@ clickhouse headers: x-clickhouse-database:default
                                 "password": "a",
                                 "database": "default",
                                 "logtable": "t",
-                                "endpoint_addrs": ["http://127.0.0.1:10420/clickhouse-logger/test",
+                                "endpoint_addr": ["http://127.0.0.1:10420/clickhouse-logger/test",
                                                   "http://127.0.0.1:10420/clickhouse-logger/test1"],
                                 "batch_max_size":1,
                                 "inactive_timeout":1
@@ -242,7 +228,7 @@ passed
 
 
 
-=== TEST 7: access local server
+=== TEST 6: access local server
 --- request
 GET /opentracing
 --- response_body
