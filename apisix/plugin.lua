@@ -875,14 +875,20 @@ function _M.run_plugin(phase, plugins, api_ctx)
         return api_ctx
     end
 
+    local ori_phase = phase
     if phase ~= "log"
         and phase ~= "header_filter"
         and phase ~= "body_filter"
         and phase ~= "delayed_body_filter"
     then
         for i = 1, #plugins, 2 do
-            if phase == "rewrite_in_consumer" and plugins[i + 1]._from_consumer
-                    and plugins[i].type ~= "auth"then
+            if ori_phase == "rewrite_in_consumer" and not plugins[i + 1]._from_consumer
+                    and plugins[i].type == "auth" then
+                plugins[i + 1]._skip_rewrite_in_consumer = true
+            end
+
+            if ori_phase == "rewrite_in_consumer" and plugins[i + 1]._from_consumer
+                    and plugins[i].type ~= "auth" then
                 phase = "rewrite"
             end
             local phase_func = plugins[i][phase]
