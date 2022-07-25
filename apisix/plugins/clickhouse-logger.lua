@@ -32,7 +32,7 @@ local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
-        endpoint_addrs = {items = core.schema.uri_def, type = "array", minItems = 1},
+        endpoint_addrs = {items = core.schema.uri_def, type = "array", minItems = 1}, -- deprecated, use "host" instead
         user = {type = "string", default = ""},
         password = {type = "string", default = ""},
         database = {type = "string", default = ""},

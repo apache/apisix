@@ -161,7 +161,7 @@ property "endpoint_addrs" is required
                                 "password": "a",
                                 "database": "default",
                                 "logtable": "t",
-                                "endpoint_addrs": ["http://127.0.0.1:10420/clickhouse-logger/test"],
+                                "endpoint_addrs": "http://127.0.0.1:10420/clickhouse-logger/test",
                                 "batch_max_size":1,
                                 "inactive_timeout":1
                             }
@@ -183,7 +183,7 @@ property "endpoint_addrs" is required
         }
     }
 --- response_body
-passed
+property "endpoint_addrs" validation failed: wrong type: expected array, got string
 
 
 
