@@ -32,7 +32,7 @@ description: CSRF 插件基于 Double Submit Cookie 的方式，保护用户的 
 
 `csrf` 插件基于 [`Double Submit Cookie`](https://en.wikipedia.org/wiki/Cross-site_request_forgery#Double_Submit_Cookie) 的方式，保护用户的 API 免于 CSRF 攻击。
 
-`csrf` 插件认为 `GET`、`HEAD` 和 `OPTIONS` 为 `safe-methods`，其他的请求方法为 `unsafe-methods`。因此 `GET`、`HEAD` 和 `OPTIONS` 方法的调用不会被检查拦截。
+在此插件运行时，`GET`、`HEAD` 和 `OPTIONS` 会被定义为 `safe-methods`，其他的请求方法则定义为 `unsafe-methods`。因此 `GET`、`HEAD` 和 `OPTIONS` 方法的调用不会被检查拦截。
 
 ## 属性
 
@@ -74,11 +74,11 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 
 :::
 
-在后续的对该路由的 `unsafe-methods` 请求中，需要从 Cookie 中读取加密的 Token，并在请求头中携带该 Token。请求头字段的名称为插件属性中的 `name`。
+在后续对该路由进行的 `unsafe-methods` 请求中，需要从 Cookie 中读取加密的 Token，并在请求头中携带该 Token。请求头字段的名称为插件属性中的 `name`。
 
 ## 测试插件
 
-启用插件后，使用 `curl` 命令尝试直接对该路由发起 `POST` 请求，会返回 `Unauthorized` 的错误：
+启用插件后，使用 `curl` 命令尝试直接对该路由发起 `POST` 请求，会返回 `Unauthorized` 字样的报错提示：
 
 ```shell
 curl -i http://127.0.0.1:9080/hello -X POST
