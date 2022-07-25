@@ -211,7 +211,7 @@ APISIX 中一些插件添加了自己的 control API。如果你对他们感兴�
 
 ### GET /v1/plugin_metadatas
 
-引入自 2.15 版本
+引入自 3.0.0 版本
 
 打印所有插件的元数据：
 
@@ -233,7 +233,7 @@ APISIX 中一些插件添加了自己的 control API。如果你对他们感兴�
 
 ### GET /v1/plugin_metadata/{plugin_name}
 
-引入自 2.15 版本
+引入自 3.0.0 版本
 
 打印指定插件的元数据：
 

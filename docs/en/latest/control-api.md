@@ -454,7 +454,7 @@ Dumps the Upstream with the specified `upstream_id`:
 
 ### GET /v1/plugin_metadatas
 
-Introduced in [v2.15.0](https://github.com/apache/apisix/releases/tag/2.15.0).
+Introduced in [v3.0.0](https://github.com/apache/apisix/releases/tag/2.15.0).
 
 Dumps all plugin_metadatas:
 
@@ -476,7 +476,7 @@ Dumps all plugin_metadatas:
 
 ### GET /v1/plugin_metadata/{plugin_name}
 
-Introduced in [v2.15.0](https://github.com/apache/apisix/releases/tag/2.15.0).
+Introduced in [v3.0.0](https://github.com/apache/apisix/releases/tag/2.15.0).
 
 Dumps the metadata with the specified `plugin_name`:
 

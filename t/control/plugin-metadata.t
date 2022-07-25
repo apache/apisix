@@ -52,7 +52,7 @@ __DATA__
                 {"log_format": {"upstream_response_time": "$upstream_response_time"}}
                 ]]
                 )
-            if code ~= 200 and code ~= 201 then
+            if code >= 300 then
                 ngx.status = code
                 return
             end
