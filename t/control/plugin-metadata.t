@@ -43,15 +43,6 @@ __DATA__
                 [[{
                     "skey": "val",
                     "ikey": 1
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "skey": "val",
-                            "ikey": 1
-                        }
-                    },
-                    "action": "set"
                 }]]
                 )
             if code >= 300 then
