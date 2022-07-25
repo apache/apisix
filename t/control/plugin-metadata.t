@@ -16,6 +16,19 @@
 #
 use t::APISIX 'no_plan';
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
+});
+
 run_tests;
 
 __DATA__
@@ -41,7 +54,7 @@ __DATA__
                     "action": "set"
                 }]]
                 )
-            if code ~= 200 and code ~= 201 then
+            if code >= 300 then
                 ngx.status = code
                 return
             end
@@ -58,11 +71,7 @@ __DATA__
             end
         }
     }
---- request
-GET /t
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
@@ -84,8 +93,6 @@ GET /t
             end
         }
     }
---- request
-GET /t
 --- response_body
 check log_format: true
 check skey: true
@@ -106,8 +113,6 @@ check ikey: true
             end
         }
     }
---- request
-GET /t
 --- response_body
 check log_format: true
 
