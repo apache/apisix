@@ -89,7 +89,6 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    ngx.log(ngx.WARN, "first enter key-auth")
     local from_header = true
     local key = core.request.header(ctx, conf.header)
 
