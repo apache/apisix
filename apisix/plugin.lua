@@ -875,28 +875,27 @@ function _M.run_plugin(phase, plugins, api_ctx)
         return api_ctx
     end
 
-    local ori_phase = phase
     if phase ~= "log"
         and phase ~= "header_filter"
         and phase ~= "body_filter"
         and phase ~= "delayed_body_filter"
     then
         for i = 1, #plugins, 2 do
-            if ori_phase == "rewrite_in_consumer" and not plugins[i + 1]._from_consumer
-                    and plugins[i].type == "auth" then
-                plugins[i + 1]._skip_rewrite_in_consumer = true
+            local phase_func
+            if phase == "rewrite_in_consumer" then
+                if not plugins[i + 1]._from_consumer and plugins[i].type == "auth" then
+                    plugins[i + 1]._skip_rewrite_in_consumer = true
+                end
+                phase_func = plugins[i]["rewrite"]
+            else
+                phase_func = plugins[i][phase]
             end
 
-            if ori_phase == "rewrite_in_consumer" and plugins[i + 1]._from_consumer
-                    and plugins[i].type ~= "auth" then
-                phase = "rewrite"
-            end
-            local phase_func = plugins[i][phase]
-
-            if phase == "rewrite" and plugins[i + 1]._skip_rewrite_in_consumer then
+            if phase == "rewrite_in_consumer" and plugins[i + 1]._skip_rewrite_in_consumer then
                 goto CONTINUE
             end
 
+            ngx.log(ngx.WARN, "phase_func : ", require("inspect")(phase_func))
             if phase_func then
                 plugin_run = true
                 local conf = plugins[i + 1]
