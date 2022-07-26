@@ -895,7 +895,6 @@ function _M.run_plugin(phase, plugins, api_ctx)
                 goto CONTINUE
             end
 
-            ngx.log(ngx.WARN, "phase_func : ", require("inspect")(phase_func))
             if phase_func then
                 plugin_run = true
                 local conf = plugins[i + 1]
