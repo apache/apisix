@@ -27,6 +27,7 @@ github:
       - apigateway
       - microservices
       - api
+      - apis
       - loadbalancing
       - reverse-proxy
       - api-management
@@ -36,6 +37,9 @@ github:
       - devops
       - kubernetes
       - docker
+      - kubernetes-ingress
+      - kubernetes-ingress-controller
+      - service-mesh
 
     enabled_merge_buttons:
       squash:  true
