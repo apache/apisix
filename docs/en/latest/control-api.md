@@ -451,3 +451,40 @@ Dumps the Upstream with the specified `upstream_id`:
    "modifiedIndex":1225
 }
 ```
+
+### GET /v1/plugin_metadatas
+
+Introduced in [v3.0.0](https://github.com/apache/apisix/releases/tag/3.0.0).
+
+Dumps all plugin_metadatas:
+
+```json
+[
+    {
+        "log_format": {
+            "upstream_response_time": "$upstream_response_time"
+        },
+        "id": "file-logger"
+    },
+    {
+        "ikey": 1,
+        "skey": "val",
+        "id": "example-plugin"
+    }
+]
+```
+
+### GET /v1/plugin_metadata/{plugin_name}
+
+Introduced in [v3.0.0](https://github.com/apache/apisix/releases/tag/3.0.0).
+
+Dumps the metadata with the specified `plugin_name`:
+
+```json
+{
+    "log_format": {
+        "upstream_response_time": "$upstream_response_time"
+    },
+    "id": "file-logger"
+}
+```
