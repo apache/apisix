@@ -883,7 +883,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
         for i = 1, #plugins, 2 do
             local phase_func
             if phase == "rewrite_in_consumer" then
-                if not plugins[i + 1]._from_consumer and plugins[i].type == "auth" then
+                if plugins[i].type == "auth" then
                     plugins[i + 1]._skip_rewrite_in_consumer = true
                 end
                 phase_func = plugins[i]["rewrite"]
