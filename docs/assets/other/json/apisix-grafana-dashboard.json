@@ -1703,9 +1703,9 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:1148",
+          "$$hashKey": "object:420",
           "decimals": null,
-          "format": "bytes",
+          "format": "decbytes",
           "label": "",
           "logBase": 1,
           "max": null,
@@ -1713,7 +1713,7 @@
           "show": true
         },
         {
-          "$$hashKey": "object:1149",
+          "$$hashKey": "object:421",
           "decimals": null,
           "format": "Misc",
           "label": "",
@@ -1808,9 +1808,9 @@
       },
       "yaxes": [
         {
-          "$$hashKey": "object:1209",
+          "$$hashKey": "object:481",
           "decimals": null,
-          "format": "bytes",
+          "format": "decbytes",
           "label": "",
           "logBase": 1,
           "max": null,
@@ -1818,7 +1818,7 @@
           "show": true
         },
         {
-          "$$hashKey": "object:1210",
+          "$$hashKey": "object:482",
           "decimals": null,
           "format": "Misc",
           "label": "",
