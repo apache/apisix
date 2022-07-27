@@ -40,7 +40,7 @@ basic:
 
 :::note
 
-For APISIX releases priot to v2.10, basic debug mode is enabled by setting `apisix.enable_debug = true` in your configuration file (`conf/config.yaml`). 
+For APISIX releases priot to v2.10, basic debug mode is enabled by setting `apisix.enable_debug = true` in your configuration file (`conf/config.yaml`).
 
 :::
 
