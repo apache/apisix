@@ -82,7 +82,7 @@ __DATA__
                                                  password = "a",
                                                  database = "default",
                                                  logtable = "t",
-                                                 endpoint_addr = {"http://127.0.0.1:10420/clickhouse-logger/test"},
+                                                 endpoint_addr = "http://127.0.0.1:10420/clickhouse-logger/test",
                                                  max_retry_count = 1,
                                                  name = "clickhouse logger",
                                                  ssl_verify = false
@@ -109,7 +109,7 @@ passed
                                                  password = "a",
                                                  database = "default",
                                                  logtable = "t",
-                                                 endpoint_addr = {"http://127.0.0.1:10420/clickhouse-logger/test"}
+                                                 endpoint_addr = "http://127.0.0.1:10420/clickhouse-logger/test"
                                                  })
 
             if not ok then
@@ -143,7 +143,7 @@ passed
         }
     }
 --- response_body
-property "endpoint_addr" is required
+value should match only one schema, but matches none
 
 
 
@@ -201,7 +201,7 @@ passed
                                 "password": "a",
                                 "database": "default",
                                 "logtable": "t",
-                                "endpoint_addr": ["http://127.0.0.1:10420/clickhouse-logger/test",
+                                "endpoint_addrs": ["http://127.0.0.1:10420/clickhouse-logger/test",
                                                   "http://127.0.0.1:10420/clickhouse-logger/test1"],
                                 "batch_max_size":1,
                                 "inactive_timeout":1
@@ -223,6 +223,7 @@ passed
             ngx.say(body)
         }
     }
+--- error_code: 200
 --- response_body
 passed
 
