@@ -238,3 +238,68 @@ x-real-ip: 127.0.0.1
     }
 --- response_body
 {"key-auth":true,"proxy-rewrite":true}
+
+
+
+=== TEST 7: configure non-auth plugins in the consumer and run it's rewrite phase
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/jack',
+                 ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "auth-jack"
+                        },
+                        "ip-restriction": {
+                            "blacklist": [
+                                "127.0.0.0/24"
+                            ]
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "key-auth": {}
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: hit routes and ip-restriction work well
+--- request
+GET /hello
+--- more_headers
+apikey: auth-jack
+--- error_code: 403
+--- response_body
+{"message":"Your IP address is not allowed"}
