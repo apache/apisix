@@ -177,9 +177,9 @@ APISIX 目前支持在多处设置 CA 证书，比如 [保护 Admin API](./mtls.
 
 如果你需要在不同的地方指定不同的 CA 证书，你可以将这些 CA 证书制作成一个 CA bundle 文件，在需要用到 CA 证书的地方将配置指向这个文件。这样可以避免生成的 `lua_ssl_trusted_certificate` 存在多处并且互相覆盖的问题。
 
-下面用一个完整的例子来展示如何在 APISXI 设置多个 CA 证书。
+下面用一个完整的例子来展示如何在 APISIX 设置多个 CA 证书。
 
-假设让 Client 与 APISIX Admin API，APISXI 与 ETCD 之间都使用 mTLS 协议进行通信，目前有两张 CA 证书，分别是 `foo_ca.crt` 和 `bar_ca.crt`，用这两张 CA 证书各自签发 client 与 server 证书对，`foo_ca.crt` 及其签发的证书对用于保护 Admin API，`bar_ca.crt` 及其签发的证书对用于保护 ETCD。
+假设让 Client 与 APISIX Admin API，APISIX 与 ETCD 之间都使用 mTLS 协议进行通信，目前有两张 CA 证书，分别是 `foo_ca.crt` 和 `bar_ca.crt`，用这两张 CA 证书各自签发 client 与 server 证书对，`foo_ca.crt` 及其签发的证书对用于保护 Admin API，`bar_ca.crt` 及其签发的证书对用于保护 ETCD。
 
 下表详细列出这个示例所涉及到的配置及其作用：
 

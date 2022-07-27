@@ -180,13 +180,13 @@ In these places, `ssl_trusted_certificate` or `trusted_ca_cert` will be used to 
 
 If you need to set up different CA certificates in different places, then you can package these CA certificates into a CA bundle file and point to this file when you need to set up CAs. This will avoid the problem that the generated `lua_ssl_trusted_certificate` has multiple locations and overwrites each other.
 
-The following is a complete example to show how to set up multiple CA certificates in APISXI.
+The following is a complete example to show how to set up multiple CA certificates in APISIX.
 
-Suppose we let Client and APISIX Admin API, APISXI and ETCD communicate with each other using mTLS protocol, and currently there are two CA certificates, `foo_ca.crt` and `bar_ca.crt`, and use each of these two CA certificates to issue client and server certificate pairs, `foo_ca. crt` and its issued certificate pair are used to protect Admin API, and `bar_ca.crt` and its issued certificate pair are used to protect ETCD.
+Suppose we let Client and APISIX Admin API, APISIX and ETCD communicate with each other using mTLS protocol, and currently there are two CA certificates, `foo_ca.crt` and `bar_ca.crt`, and use each of these two CA certificates to issue client and server certificate pairs, `foo_ca. crt` and its issued certificate pair are used to protect Admin API, and `bar_ca.crt` and its issued certificate pair are used to protect ETCD.
 
 The following table details the configurations involved in this example and what they do:
 
-| 配置              | 类型     | 用途                                                                                                                                                                          |
+| Configuration    | Type     | Description                                                                                                                                                                  |
 | -------------    | -------  | -------------------------------------------------------------------------------------------------------------------------------------------------------------                |
 | foo_ca.crt       | CA cert  | Issues the secondary certificate required for the client to communicate with the APISIX Admin API over mTLS.                                                                 |
 | foo_client.crt   | cert     | A certificate issued by `foo_ca.crt` and used by the client to prove its identity when accessing the APISIX Admin API.                                                       |
@@ -210,7 +210,7 @@ cat /path/to/foo_ca.crt /path/to/bar_ca.crt > apisix.ca-bundle
 
 2. Start the ETCD cluster and enable client authentication
 
-```shell
+```text
 # Use goreman to run `go get github.com/mattn/goreman`
 etcd1: etcd --name infra1 --listen-client-urls https://127.0.0.1:12379 --advertise-client-urls https://127.0.0.1:12379 --listen-peer-urls http://127.0.0.1:12380 --initial-advertise-peer-urls http://127.0.0.1:12380 --initial-cluster-token etcd-cluster-1 --initial-cluster 'infra1=http://127.0.0.1:12380,infra2=http://127.0.0.1:22380,infra3=http://127.0.0.1:32380' --initial-cluster-state new --cert-file /path/to/bar_etcd.crt --key-file /path/to/bar_etcd.key --client-cert-auth --trusted-ca-file /path/to/apisix.ca-bundle
 etcd2: etcd --name infra2 --listen-client-urls https://127.0.0.1:22379 --advertise-client-urls https://127.0.0.1:22379 --listen-peer-urls http://127.0.0.1:22380 --initial-advertise-peer-urls http://127.0.0.1:22380 --initial-cluster-token etcd-cluster-1 --initial-cluster 'infra1=http://127.0.0.1:12380,infra2=http://127.0.0.1:22380,infra3=http://127.0.0.1:32380' --initial-cluster-state new --cert-file /path/to/bar_etcd.crt --key-file /path/to/bar_etcd.key --client-cert-auth --trusted-ca-file /path/to/apisix.ca-bundle
@@ -268,8 +268,7 @@ curl -vvv --resolve 'admin.apisix.dev:9180:127.0.0.1' https://admin.apisix.dev:9
 
 A successful mTLS communication between curl and the APISIX Admin API is indicated if the following SSL handshake process is output:
 
-```
-shell
+```shell
 * TLSv1.3 (OUT), TLS handshake, Client hello (1):
 * TLSv1.3 (IN), TLS handshake, Server hello (2):
 * TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
@@ -298,7 +297,7 @@ Access-Control-Allow-Origin: *
 Access-Control-Allow-Credentials: true
 Server: APISIX/2.14.1
 
-……
+...
 ```
 
 APISIX proxied the request to the `/get` path of the upstream `httpbin.org` and returned `HTTP/1.1 200 OK`. The whole process is working fine using CA bundle instead of CA certificate.
