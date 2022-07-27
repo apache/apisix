@@ -736,11 +736,20 @@ function _M.run_plugin(phase, plugins, api_ctx)
         and phase ~= "delayed_body_filter"
     then
         for i = 1, #plugins, 2 do
-            if phase == "rewrite_in_consumer" and plugins[i + 1]._from_consumer
-                    and plugins[i].type ~= "auth"then
-                phase = "rewrite"
+            local phase_func
+            if phase == "rewrite_in_consumer" then
+                if plugins[i].type == "auth" then
+                    plugins[i + 1]._skip_rewrite_in_consumer = true
+                end
+                phase_func = plugins[i]["rewrite"]
+            else
+                phase_func = plugins[i][phase]
             end
-            local phase_func = plugins[i][phase]
+
+            if phase == "rewrite_in_consumer" and plugins[i + 1]._skip_rewrite_in_consumer then
+                goto CONTINUE
+            end
+
             if phase_func then
                 plugin_run = true
                 local code, body = phase_func(plugins[i + 1], api_ctx)
@@ -760,6 +769,8 @@ function _M.run_plugin(phase, plugins, api_ctx)
                     end
                 end
             end
+
+            ::CONTINUE::
         end
         return api_ctx, plugin_run
     end
