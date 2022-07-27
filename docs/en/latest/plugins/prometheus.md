@@ -53,6 +53,29 @@ plugin_attr:
     export_uri: /apisix/metrics
 ```
 
+### Specifying `ngx_var_labels`
+
+For http request related metrics, you could specify extra labels, which match the nginx variables.
+
+If you specify label for nonexist nginx variable, the label value would be "nil".
+
+Currently, only below metrics are supported:
+
+* http_status
+* http_latency
+* bandwidth
+
+
+Here is a configuration example:
+
+```yaml title="conf/config.yaml"
+plugin_attr:
+  prometheus:
+    ngx_var_labels:
+        http_status:
+            - upstream_addr
+            - upstream_status
+
 ## API
 
 This Plugin will add the API endpoint `/apisix/prometheus/metrics` or your custom export URI for exposing the metrics.

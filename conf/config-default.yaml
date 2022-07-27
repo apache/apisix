@@ -522,6 +522,14 @@ plugin_attr:
     export_addr:
       ip: 127.0.0.1
       port: 9091
+    # ngx_var_labels:
+    #   http_status:
+    #     - upstream_addr
+    #     - upstream_status
+    #   http_latency:
+    #     - upstream_addr
+    #   bandwidth:
+    #     - upstream_addr
   server-info:
     report_ttl: 60   # live time for server info in etcd (unit: second)
   dubbo-proxy:

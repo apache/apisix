@@ -34,6 +34,7 @@ local get_services = require("apisix.http.service").services
 local get_consumers = require("apisix.consumer").consumers
 local get_upstreams = require("apisix.upstream").upstreams
 local clear_tab = core.table.clear
+local tab_insert_tail = core.table.insert_tail
 local get_stream_routes = router.stream_routes
 local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
 local service_fetch = require("apisix.http.service").get
@@ -63,6 +64,28 @@ local function gen_arr(...)
     end
 
     return inner_tab_arr
+end
+
+local ngx_var_label_values_tbl = {}
+
+local function ngx_var_label_values(ctx, name)
+    clear_tab(ngx_var_label_values_tbl)
+
+    local attr = plugin.plugin_attr("prometheus")
+    local ngx_var_labels = attr.ngx_var_labels
+
+    if ngx_var_labels and ngx_var_labels[name] then
+        local labels = ngx_var_labels[name]
+        for _, name in ipairs(labels) do
+            local val = ctx.var[name]
+            if val == nil then
+                val = "nil"
+            end
+            core.table.insert(ngx_var_label_values_tbl, val)
+        end
+    end
+
+    return ngx_var_label_values_tbl
 end
 
 
@@ -102,6 +125,8 @@ function _M.http_init(prometheus_enabled_in_stream)
         metric_prefix = attr.metric_prefix
     end
 
+    local ngx_var_labels = attr.ngx_var_labels
+
     prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
 
     metrics.connections = prometheus:gauge("nginx_http_current_connections",
@@ -136,17 +161,29 @@ function _M.http_init(prometheus_enabled_in_stream)
     -- The consumer label indicates the name of consumer corresponds to the
     -- request to the route/service, it will be an empty string if there is
     -- no consumer in request.
+    local labels = {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node"}
+    if ngx_var_labels and ngx_var_labels.http_status then
+        tab_insert_tail(labels, unpack(ngx_var_labels.http_status))
+    end
     metrics.status = prometheus:counter("http_status",
             "HTTP status codes per service in APISIX",
-            {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node"})
+            labels)
 
+    local labels = {"type", "route", "service", "consumer", "node"}
+    if ngx_var_labels and ngx_var_labels.http_latency then
+        tab_insert_tail(labels, unpack(ngx_var_labels.http_latency))
+    end
     metrics.latency = prometheus:histogram("http_latency",
         "HTTP request latency in milliseconds per service in APISIX",
-        {"type", "route", "service", "consumer", "node"}, DEFAULT_BUCKETS)
+        labels, DEFAULT_BUCKETS)
 
+    local labels = {"type", "route", "service", "consumer", "node"}
+    if ngx_var_labels and ngx_var_labels.bandwidth then
+        tab_insert_tail(labels, unpack(ngx_var_labels.bandwidth))
+    end
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
-            {"type", "route", "service", "consumer", "node"})
+            labels)
 
     if prometheus_enabled_in_stream then
         init_stream_metrics()
@@ -208,25 +245,35 @@ function _M.http_log(conf, ctx)
 
     metrics.status:inc(1,
         gen_arr(vars.status, route_id, matched_uri, matched_host,
-                service_id, consumer_name, balancer_ip))
+                service_id, consumer_name, balancer_ip,
+                unpack(ngx_var_label_values(ctx, "http_status"))))
 
     local latency, upstream_latency, apisix_latency = latency_details(ctx)
+    local latency_ngx_var_label_values = ngx_var_label_values(ctx, "http_latency")
+
     metrics.latency:observe(latency,
-        gen_arr("request", route_id, service_id, consumer_name, balancer_ip))
+        gen_arr("request", route_id, service_id, consumer_name, balancer_ip,
+        unpack(latency_ngx_var_label_values)))
 
     if upstream_latency then
         metrics.latency:observe(upstream_latency,
-            gen_arr("upstream", route_id, service_id, consumer_name, balancer_ip))
+            gen_arr("upstream", route_id, service_id, consumer_name, balancer_ip,
+            unpack(latency_ngx_var_label_values)))
     end
 
     metrics.latency:observe(apisix_latency,
-        gen_arr("apisix", route_id, service_id, consumer_name, balancer_ip))
+        gen_arr("apisix", route_id, service_id, consumer_name, balancer_ip,
+        unpack(latency_ngx_var_label_values)))
+
+    local bandwidth_ngx_var_label_values = ngx_var_label_values(ctx, "bandwidth")
 
     metrics.bandwidth:inc(vars.request_length,
-        gen_arr("ingress", route_id, service_id, consumer_name, balancer_ip))
+        gen_arr("ingress", route_id, service_id, consumer_name, balancer_ip,
+        unpack(bandwidth_ngx_var_label_values)))
 
     metrics.bandwidth:inc(vars.bytes_sent,
-        gen_arr("egress", route_id, service_id, consumer_name, balancer_ip))
+        gen_arr("egress", route_id, service_id, consumer_name, balancer_ip,
+        unpack(bandwidth_ngx_var_label_values)))
 end
 
 
