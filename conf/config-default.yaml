@@ -522,7 +522,7 @@ plugin_attr:
     export_addr:
       ip: 127.0.0.1
       port: 9091
-    # ngx_var_labels:
+    # custom_labels:
     #   http_status:
     #     - upstream_addr
     #     - upstream_status

@@ -73,10 +73,10 @@ local function ngx_var_label_values(ctx, name)
     clear_tab(ngx_var_label_values_tbl)
 
     local attr = plugin.plugin_attr("prometheus")
-    local ngx_var_labels = attr.ngx_var_labels
+    local custom_labels = attr.custom_labels
 
-    if ngx_var_labels and ngx_var_labels[name] then
-        local labels = ngx_var_labels[name]
+    if custom_labels and custom_labels[name] then
+        local labels = custom_labels[name]
         for _, name in ipairs(labels) do
             local val = ctx.var[name]
             if val == nil then
@@ -126,7 +126,7 @@ function _M.http_init(prometheus_enabled_in_stream)
         metric_prefix = attr.metric_prefix
     end
 
-    local ngx_var_labels = attr.ngx_var_labels
+    local custom_labels = attr.custom_labels
 
     prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
 
@@ -163,24 +163,24 @@ function _M.http_init(prometheus_enabled_in_stream)
     -- request to the route/service, it will be an empty string if there is
     -- no consumer in request.
     local labels = {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node"}
-    if ngx_var_labels and ngx_var_labels.http_status then
-        tab_insert_tail(labels, unpack(ngx_var_labels.http_status))
+    if custom_labels and custom_labels.http_status then
+        tab_insert_tail(labels, unpack(custom_labels.http_status))
     end
     metrics.status = prometheus:counter("http_status",
             "HTTP status codes per service in APISIX",
             labels)
 
     local labels = {"type", "route", "service", "consumer", "node"}
-    if ngx_var_labels and ngx_var_labels.http_latency then
-        tab_insert_tail(labels, unpack(ngx_var_labels.http_latency))
+    if custom_labels and custom_labels.http_latency then
+        tab_insert_tail(labels, unpack(custom_labels.http_latency))
     end
     metrics.latency = prometheus:histogram("http_latency",
         "HTTP request latency in milliseconds per service in APISIX",
         labels, DEFAULT_BUCKETS)
 
     local labels = {"type", "route", "service", "consumer", "node"}
-    if ngx_var_labels and ngx_var_labels.bandwidth then
-        tab_insert_tail(labels, unpack(ngx_var_labels.bandwidth))
+    if custom_labels and custom_labels.bandwidth then
+        tab_insert_tail(labels, unpack(custom_labels.bandwidth))
     end
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",

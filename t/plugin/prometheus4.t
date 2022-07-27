@@ -103,7 +103,7 @@ passed
 --- yaml_config
 plugin_attr:
     prometheus:
-        ngx_var_labels:
+        custom_labels:
             bandwidth:
                 - upstream_addr
                 - upstream_status
@@ -125,7 +125,7 @@ qr/apisix_bandwidth\{type="egress",route="10",service="",consumer="",node="127.0
 --- yaml_config
 plugin_attr:
     prometheus:
-        ngx_var_labels:
+        custom_labels:
             http_status:
                 - dummy
             bandwidth:
