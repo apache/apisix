@@ -261,7 +261,12 @@ x-real-ip: 127.0.0.1
                         }
                     }
                 }]]
-                )
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
 
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
@@ -277,7 +282,7 @@ x-real-ip: 127.0.0.1
                         },
                         "uri": "/hello"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
