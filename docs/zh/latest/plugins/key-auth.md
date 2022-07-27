@@ -45,7 +45,8 @@ Router 端：
 
 | 名称              | 类型   | 必选项 | 默认值 | 描述                                                                                                                                                       |
 | ----------------- | ------ | ----- | ------ |----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| header            | string | 否    | apikey | 设置我们从哪个 header 获取 key。                                                                                                                                   |
+| var_combination   | string | 否    |        | 设置我们从哪个变量组合中获取 key，如 "$remote_addr $consumer_name" 解析之后会组合成一个 key。优先级最高。|
+| header            | string | 否    | apikey | 设置我们从哪个 header 获取 key。优先级低于  `var_combination`。                                                                                                                                   |
 | query             | string | 否    | apikey | 设置我们从哪个 query string 获取 key，优先级低于 `header`。                                                                                                              |
 | hide_credentials  | bool   | 否    | false  | 当设置为 `false` 时将含有认证信息的 header 或 query string 传递给 Upstream。 如果为 `true` 时将删除对应的 header 或 query string，具体删除哪一个取决于是从 header 获取 key 还是从 query string  获取 key。 |
 

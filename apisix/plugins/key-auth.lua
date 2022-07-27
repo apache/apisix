@@ -35,6 +35,9 @@ local schema = {
             type = "string",
             default = "apikey",
         },
+        var_combination = {
+            type = "string"
+        },
         hide_credentials = {
             type = "boolean",
             default = false,
@@ -90,12 +93,28 @@ end
 
 function _M.rewrite(conf, ctx)
     local from_header = true
-    local key = core.request.header(ctx, conf.header)
+    local key
+
+    if conf.var_combination then
+        local err, n_resolved
+        key, err, n_resolved = core.utils.resolve_var(conf.var_combination, ctx.var)
+        if err then
+            core.log.error("could not resolve vars in ",
+                                conf.var_combination, " error: ", err)
+        end
+
+        if n_resolved == 0 then
+            key = nil
+        end
+    end
 
     if not key then
-        local uri_args = core.request.get_uri_args(ctx) or {}
-        key = uri_args[conf.query]
-        from_header = false
+        key = core.request.header(ctx, conf.header)
+        if not key then
+            local uri_args = core.request.get_uri_args(ctx) or {}
+            key = uri_args[conf.query]
+            from_header = false
+        end
     end
 
     if not key then

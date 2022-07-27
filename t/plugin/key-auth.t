@@ -585,3 +585,84 @@ GET /hello?auth=auth-one
 auth: auth-one
 --- no_error_log
 [error]
+
+
+
+=== TEST 26: add consumer with plugin and username
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "bob",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "12345:abc"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 27: add key-auth plugin with var_combination
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {
+                            "var_combination": "${http_client_id}:${http_client_secret}"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 28: verify auth get key  from var_combination
+--- request
+GET /hello
+--- more_headers
+client_id: 12345
+client_secret: abc
+--- no_error_log
+[error]
