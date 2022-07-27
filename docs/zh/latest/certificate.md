@@ -259,7 +259,12 @@ etcd:
 用 curl 模拟客户端，与 APISIX Admin API 进行 mTLS 通信，并创建一条路由：
 
 ```shell
-curl -vvv --resolve 'admin.apisix.dev:9180:127.0.0.1' https://admin.apisix.dev:9180/apisix/admin/routes/1 --cert /path/to/foo_client.crt --key /path/to/foo_client.key --cacert/path/to/apisix.ca-bundle -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl -vvv \
+    --resolve 'admin.apisix.dev:9180:127.0.0.1' https://admin.apisix.dev:9180/apisix/admin/routes/1 \
+    --cert /path/to/foo_client.crt \
+    --key /path/to/foo_client.key \
+    --cacert /path/to/apisix.ca-bundle \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/get",
     "upstream": {

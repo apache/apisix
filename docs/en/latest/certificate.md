@@ -221,8 +221,8 @@ etcd3: etcd --name infra3 --listen-client-urls https://127.0.0.1:32379 --adverti
 
 Use `goreman` to start the ETCD cluster:
 
-```
-
+```shell
+goreman -f Procfile-single-enable-mtls start > goreman.log 2>&1 &
 ```
 
 3. Update `config.yaml`
@@ -262,7 +262,12 @@ Start APISIX, if APISIX starts successfully and there is no abnormal output in `
 Use curl to simulate a client, communicate with APISIX Admin API with mTLS, and create a route:
 
 ```shell
-curl -vvv --resolve 'admin.apisix.dev:9180:127.0.0.1' https://admin.apisix.dev:9180/apisix/admin/routes/1 --cert /path/to/foo_client.crt --key /path/to/foo_client.key --cacert/path/to/apisix.ca-bundle -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl -vvv \
+    --resolve 'admin.apisix.dev:9180:127.0.0.1' https://admin.apisix.dev:9180/apisix/admin/routes/1 \
+    --cert /path/to/foo_client.crt \
+    --key /path/to/foo_client.key \
+    --cacert /path/to/apisix.ca-bundle \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/get",
     "upstream": {
