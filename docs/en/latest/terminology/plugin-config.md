@@ -1,5 +1,10 @@
 ---
 title: Plugin Config
+keywords:
+  - API gateway
+  - Apache APISIX
+  - Plugin Config
+description: Plugin Config in Apache APISIX.
 ---
 
 <!--
@@ -23,11 +28,10 @@ title: Plugin Config
 
 Plugin Configs are used to extract commonly used [Plugin](./plugin.md) configurations and can be bound directly to a [Route](./route.md).
 
-The example below illustrates how this can be used:
+The example below illustrates how to create a Plugin Config and bind it to a Route:
 
 ```shell
-# create a plugin config
-$ curl http://127.0.0.1:9080/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9080/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "desc": "blah",
     "plugins": {
@@ -38,9 +42,10 @@ $ curl http://127.0.0.1:9080/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9
         }
     }
 }'
+```
 
-# bind it to route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uris": ["/index.html"],
     "plugin_config_id": 1,

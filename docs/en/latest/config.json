@@ -6,7 +6,6 @@
       "label": "Architecture Design",
       "items": [
         "architecture-design/apisix",
-        "architecture-design/plugin-config",
         "architecture-design/debug-mode",
         "architecture-design/deployment-role"
       ]
@@ -19,6 +18,7 @@
         "terminology/consumer",
         "terminology/global-rule",
         "terminology/plugin",
+        "terminology/plugin-config",
         "terminology/route",
         "terminology/router",
         "terminology/script",
