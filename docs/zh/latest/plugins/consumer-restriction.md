@@ -39,7 +39,7 @@ description: Consumer Restriction 插件允许用户根据 Route、Service 或 C
 | whitelist | array[string] | 是    |                  |                        | 加入白名单的对象，优先级高于 `allowed_by_methods`。 |
 | blacklist | array[string] | 是    |                  |                        | 加入黑名单的对象，优先级高于 `whitelist`。 |
 | rejected_code | integer   | 否    | 403              | [200,...]          | 当请求被拒绝时，返回的 HTTP 状态码。    |
-| rejected_msg | string   | 否    |               |                   | 当请求被拒绝时，返回的消息内容。     |
+| rejected_msg | string   | 否    |               |                   | 当请求被拒绝时，返回的错误信息。     |
 
 :::note
 
@@ -130,9 +130,9 @@ HTTP/1.1 403 Forbidden
 
 ### 通过 `allowed_by_methods` 限制访问
 
-首先，创建两个 Consumer，分别为 `jack1` 和 `jack2`，方法参考 [通过 `consumer_name` 限制访问](#通过-consumername-限制访问)。
+首先，创建两个 Consumer，分别为 `jack1` 和 `jack2`，创建方法请参考[通过 `consumer_name` 限制访问](#通过-consumername-限制访问)。
 
-然后，在指定路由上启用并配置 `consumer-restriction` 插件，并限制指定 Consumer 只能使用指定 HTTP 方法进行访问：
+然后，在指定路由上启用并配置 `consumer-restriction` 插件，并且仅允许 `jack1` 使用 `POST` 方法进行访问：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -234,7 +234,7 @@ curl http://127.0.0.1:9080/apisix/admin/services/2 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-然后配合 `key-auth` 授权插件，在指定路由上启用并配置 `consumer-restriction` 插件，并通过将 `service_id` 加入 `whitelist` 来限制 Consumer 对 Service 的访问：
+在指定 Consumer 上配置 `key-auth` 和 `consumer-restriction` 插件，并通过将 `service_id` 加入 `whitelist` 来限制 Consumer 对 Service 的访问：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -321,7 +321,7 @@ HTTP/1.1 403 Forbidden
 
 ## 禁用插件
 
-当你需要禁用 `consumer-restriction` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
