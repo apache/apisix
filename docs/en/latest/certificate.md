@@ -182,7 +182,7 @@ If you need to set up different CA certificates in different places, then you ca
 
 The following is a complete example to show how to set up multiple CA certificates in APISIX.
 
-Suppose we let client and APISIX Admin API, APISIX and ETCD communicate with each other using mTLS protocol, and currently there are two CA certificates, `foo_ca.crt` and `bar_ca.crt`, and use each of these two CA certificates to issue client and server certificate pairs, `foo_ca. crt` and its issued certificate pair are used to protect Admin API, and `bar_ca.crt` and its issued certificate pair are used to protect ETCD.
+Suppose we let client and APISIX Admin API, APISIX and ETCD communicate with each other using mTLS protocol, and currently there are two CA certificates, `foo_ca.crt` and `bar_ca.crt`, and use each of these two CA certificates to issue client and server certificate pairs, `foo_ca.crt` and its issued certificate pair are used to protect Admin API, and `bar_ca.crt` and its issued certificate pair are used to protect ETCD.
 
 The following table details the configurations involved in this example and what they do:
 
