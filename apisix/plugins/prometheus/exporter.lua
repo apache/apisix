@@ -40,6 +40,7 @@ local service_fetch = require("apisix.http.service").get
 local latency_details = require("apisix.utils.log-util").latency_details_in_ms
 local xrpc = require("apisix.stream.xrpc")
 local unpack = unpack
+local next = next
 
 
 local ngx_capture
