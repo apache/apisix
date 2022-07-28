@@ -29,6 +29,8 @@ This represents the configuration of the plugins that are executed during the HT
 
 While configuring the same plugin, only one copy of the configuration is valid. The order of precedence is always `Consumer` > `Route` > `Service`.
 
+:::
+
 While [configuring APISIX](./architecture-design/apisix.md#configuring-apisix), you can declare the Plugins that are supported by the local APISIX node. This acts as a whitelisting mechanism as Plugins that are not in this whitelist will be automatically ignored. So, this feature can be used to temporarily turn off/turn on specific plugins.
 
 ## Adding a Plugin
@@ -72,7 +74,7 @@ A warning level log as shown below indicates that the request was rejected by th
 ip-restriction exits with http status code 403
 ```
 
-## Plugin Common Configuration
+## Plugin common configuration
 
 Some common configurations can be applied to the plugin configuration. For example,
 
@@ -104,7 +106,7 @@ the configuration above means customizing the error response from the jwt-auth p
 
 This configuration example means that the `jwt-auth` plugin will only execute if `version` in the request parameter equals `v2`.
 
-### Plugin Common Configuration Under `_meta`
+### Plugin common configuration under `_meta`
 
 | Name         | Type | Description |
 |--------------|------|-------------|
@@ -112,7 +114,7 @@ This configuration example means that the `jwt-auth` plugin will only execute if
 | priority       | integer        | Custom plugin priority |
 | filter  | array | Depending on the requested parameters, it is decided at runtime whether the plugin should be executed. List of variables to match for filtering requests for conditional traffic split. It is in the format {variable operator value}. For example, `{"arg_name", "==", "json"}`. The variables here are consistent with Nginx internal variables. For details on supported operators, please see [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
 
-### Custom Plugin Priority
+### Custom Plugin priority
 
 All plugins have a default priority, but it is possible to customize the plugin priority to change the plugin's execution order.
 
@@ -143,12 +145,14 @@ The default priority of serverless-pre-function is 10000, and the default priori
 
 The above configuration means setting the priority of the serverless-pre-function plugin to -2000 and the priority of the serverless-post-function plugin to 10000. The serverless-post-function plugin will be executed first, and serverless-pre-function plugin will be executed next.
 
-Note:
+:::note
 
 - Custom plugin priority only affects the current object(route, service ...) of the plugin instance binding, not all instances of that plugin. For example, if the above plugin configuration belongs to Route A, the order of execution of the plugins serverless-post-function and serverless-post-function on Route B will not be affected and the default priority will be used.
 - Custom plugin priority does not apply to the rewrite phase of some plugins configured on the consumer. The rewrite phase of plugins configured on the route will be executed first, and then the rewrite phase of plugins (exclude auth plugins) from the consumer will be executed.
 
-## Hot Reload
+:::
+
+## Hot reload
 
 APISIX Plugins are hot-loaded. This means that there is no need to restart the service if you add, delete, modify plugins, or even if you update the plugin code. To hot-reload, you can send an HTTP request through the [Admin API](../admin-api.md):
 
