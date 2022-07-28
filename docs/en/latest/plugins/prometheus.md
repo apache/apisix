@@ -65,7 +65,6 @@ Currently, only below metrics are supported:
 * http_latency
 * bandwidth
 
-
 Here is a configuration example:
 
 ```yaml title="conf/config.yaml"
