@@ -27,21 +27,23 @@ title: clickhouse-logger
 
 ## 属性
 
-| 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
-| ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| endpoint_addr    | string  | 必须   |               |         | `clickhouse` 服务器的 endpoint。                   |
-| database         | string  | 必须   |               |         | 使用的数据库。                                    |
-| logtable         | string  | 必须   |               |         | 写入的表名 。    |
-| user             | string  | 必须   |               |         | clickhouse 的用户。 |
-| password         | string  | 必须   |               |         | clickhouse 的密码 。  |
-| timeout          | integer | 可选   | 3             | [1,...] | 发送请求后保持连接活动的时间。                   |
-| name             | string  | 可选   | "clickhouse logger" |         | 标识 logger 的唯一标识符。                     |
-| ssl_verify       | boolean | 可选   | true          | [true,false] | 验证证书。             |
+| 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                                 |
+| ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------  |
+| endpoint_addr    | 废弃    | 必须   |               |         | 推荐使用 `endpoint_addrs` 代替。`clickhouse` 服务器的 endpoints。|
+| endpoint_addrs   | array    | 必须   |               |         | `clickhouse` 服务器的 endpoints。|
+| database         | string  | 必须   |               |         | 使用的数据库。                                      |
+| logtable         | string  | 必须   |               |         | 写入的表名 。                                       |
+| user             | string  | 必须   |               |         | clickhouse 的用户。                                |
+| password         | string  | 必须   |               |         | clickhouse 的密码 。                               |
+| timeout          | integer | 可选   | 3             | [1,...] | 发送请求后保持连接活动的时间。                       |
+| name             | string  | 可选   | "clickhouse logger" |         | 标识 logger 的唯一标识符。                    |
+| ssl_verify       | boolean | 可选   | true          | [true,false] | 验证证书。                                    |
 
 本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ## 如何开启
 
+如果配置多个 endpoints 将随机写入。
 这是有关如何为特定路由启用 `clickhouse-logger` 插件的示例。
 
 ```shell
@@ -53,7 +55,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
                 "password": "a",
                 "database": "default",
                 "logtable": "test",
-                "endpoint_addr": "http://127.0.0.1:8123"
+                "endpoint_addrs": ["http://127.0.0.1:8123"]
             }
        },
       "upstream": {
