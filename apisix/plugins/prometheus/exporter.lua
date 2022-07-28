@@ -78,13 +78,13 @@ local function extra_labels(name, ctx)
     if metrics and metrics[name] and metrics[name].extra_labels then
         local labels = metrics[name].extra_labels
         for _, kv in ipairs(labels) do
-			local val, v = next(kv)
-			if ctx then
-				val = ctx.var[v:sub(2)]
-				if val == nil then
-					val = ""
-				end
-			end
+            local val, v = next(kv)
+            if ctx then
+                val = ctx.var[v:sub(2)]
+                if val == nil then
+                    val = ""
+                end
+            end
             core.table.insert(extra_labels_tbl, val)
         end
     end
@@ -166,7 +166,7 @@ function _M.http_init(prometheus_enabled_in_stream)
     metrics.status = prometheus:counter("http_status",
             "HTTP status codes per service in APISIX",
             {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node",
-			unpack(extra_labels("http_status"))})
+            unpack(extra_labels("http_status"))})
 
     metrics.latency = prometheus:histogram("http_latency",
         "HTTP request latency in milliseconds per service in APISIX",
