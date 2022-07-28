@@ -76,11 +76,11 @@ title: Changelog
 - Allow customizing error response in the plugin: [#7128](https://github.com/apache/apisix/pull/7128)
 - Add metrics to xRPC Redis proxy: [#7183](https://github.com/apache/apisix/pull/7183)
 - Introduce deployment role to simplify the deployment of APISIX:
-    - [#7405](https://github.com/apache/apisix/pull/7405)
-    - [#7417](https://github.com/apache/apisix/pull/7417)
-    - [#7392](https://github.com/apache/apisix/pull/7392)
-    - [#7365](https://github.com/apache/apisix/pull/7365)
-    - [#7249](https://github.com/apache/apisix/pull/7249)
+    - [#7405](https://github.com/apache/apisix/pull/7405)
+    - [#7417](https://github.com/apache/apisix/pull/7417)
+    - [#7392](https://github.com/apache/apisix/pull/7392)
+    - [#7365](https://github.com/apache/apisix/pull/7365)
+    - [#7249](https://github.com/apache/apisix/pull/7249)
 
 ### Plugin
 
