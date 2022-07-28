@@ -6,7 +6,6 @@
       "label": "Architecture Design",
       "items": [
         "architecture-design/apisix",
-        "architecture-design/debug-mode",
         "architecture-design/deployment-role"
       ]
     },
@@ -201,6 +200,10 @@
         {
           "type": "doc",
           "id": "building-apisix"
+        },
+        {
+          "type": "doc",
+          "id": "debug-mode"
         }
       ]
     },
