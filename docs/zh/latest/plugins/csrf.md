@@ -2,10 +2,11 @@
 title: csrf
 keywords:
   - APISIX
-  - API Gateway
+  - API 网关
+  - 跨站请求伪造攻击
   - Cross-site request forgery
   - csrf
-description: CSRF 插件基于 Double Submit Cookie 的方式，保护用户的 API 免于 CSRF 攻击。
+description: CSRF 插件基于 Double Submit Cookie 的方式，帮助用户阻止跨站请求伪造攻击。
 
 ---
 
@@ -40,7 +41,7 @@ description: CSRF 插件基于 Double Submit Cookie 的方式，保护用户的 
 | ---------------- | ------- | ----------- | ------- | ----- |---------------------|
 | name   | string | 否    | `apisix-csrf-token`  |    | 生成的 Cookie 中的 Token 名称，需要使用此名称在请求头携带 Cookie 中的内容。 |
 | expires | number | 否 | `7200` | | CSRF Cookie 的过期时间，单位为秒。当设置为 `0` 时，会忽略 CSRF Cookie 过期时间检查。|
-| key | string | 是 |  |  | 加密 Token 的秘钥。        |
+| key | string | 是 |  |  | 加密 Token 的密钥。        |
 
 ## 启用插件
 
@@ -90,7 +91,7 @@ HTTP/1.1 401 Unauthorized
 {"error_msg":"no csrf token in headers"}
 ```
 
-当发起 `GET` 请求时，返回中会有携带 Token 的 Cookie：
+当发起 `GET` 请求时，返回结果中会有携带 Token 的 Cookie：
 
 ```shell
 curl -i http://127.0.0.1:9080/hello
@@ -104,7 +105,7 @@ Set-Cookie: apisix-csrf-token=eyJyYW5kb20iOjAuNjg4OTcyMzA4ODM1NDMsImV4cGlyZXMiOj
 
 在请求之前，用户需要从 Cookie 中读取 Token，并在后续的 `unsafe-methods` 请求的请求头中携带。
 
-例如，在客户端使用 [js-cookie](https://github.com/js-cookie/js-cookie) 读取 Cookie，使用 [axios](https://github.com/axios/axios) 发送请求：
+例如，你可以在客户端使用 [js-cookie](https://github.com/js-cookie/js-cookie) 读取 Cookie，使用 [axios](https://github.com/axios/axios) 发送请求：
 
 ```js
 const token = Cookie.get('apisix-csrf-token');
@@ -114,7 +115,7 @@ const instance = axios.create({
 });
 ```
 
-使用 `curl` 命令发送请求，确保请求中携带了 Cookie 信息，返回 `200` HTTP 状态码则表示请求成功：
+使用 `curl` 命令发送请求，确保请求中携带了 Cookie 信息，如果返回 `200` HTTP 状态码则表示请求成功：
 
 ```shell
 curl -i http://127.0.0.1:9080/hello -X POST -H 'apisix-csrf-token: eyJyYW5kb20iOjAuNjg4OTcyMzA4ODM1NDMsImV4cGlyZXMiOjcyMDAsInNpZ24iOiJcL09uZEF4WUZDZGYwSnBiNDlKREtnbzVoYkJjbzhkS0JRZXVDQm44MG9ldz0ifQ==' -b 'apisix-csrf-token=eyJyYW5kb20iOjAuNjg4OTcyMzA4ODM1NDMsImV4cGlyZXMiOjcyMDAsInNpZ24iOiJcL09uZEF4WUZDZGYwSnBiNDlKREtnbzVoYkJjbzhkS0JRZXVDQm44MG9ldz0ifQ=='
@@ -126,7 +127,7 @@ HTTP/1.1 200 OK
 
 ## 禁用插件
 
-当你需要禁用 `csrf` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
