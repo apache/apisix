@@ -53,7 +53,7 @@ plugin_attr:
     export_uri: /apisix/metrics
 ```
 
-### Specifying `custom_labels`
+### Specifying `metrics`
 
 For http request related metrics, you could specify extra labels, which match the nginx variables.
 
@@ -71,10 +71,11 @@ Here is a configuration example:
 ```yaml title="conf/config.yaml"
 plugin_attr:
   prometheus:
-    custom_labels:
+    metrics:
         http_status:
-            - upstream_addr
-            - upstream_status
+            extra_labels:
+                - upstream_addr: $upstream_addr
+                - upstream_status: $upstream_status
 
 ## API
 

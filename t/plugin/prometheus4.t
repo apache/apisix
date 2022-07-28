@@ -63,7 +63,6 @@ __DATA__
             end
         }
     }
---- error_code: 200
 
 
 
@@ -103,10 +102,11 @@ passed
 --- yaml_config
 plugin_attr:
     prometheus:
-        custom_labels:
+        metrics:
             bandwidth:
-                - upstream_addr
-                - upstream_status
+                extra_labels:
+                    - upstream_addr: $upstream_addr
+                    - upstream_status: $upstream_status
 --- request
 GET /hello
 --- error_code: 200
@@ -125,12 +125,10 @@ qr/apisix_bandwidth\{type="egress",route="10",service="",consumer="",node="127.0
 --- yaml_config
 plugin_attr:
     prometheus:
-        custom_labels:
+        metrics:
             http_status:
-                - dummy
-            bandwidth:
-                - upstream_addr
-                - upstream_status
+                extra_labels:
+                    - dummy: $dummy
 --- request
 GET /hello
 --- error_code: 200
@@ -141,4 +139,4 @@ GET /hello
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="200",route="10",matched_uri="\/hello",matched_host="",service="",consumer="",node="127.0.0.1",dummy="nil"\} \d+/
+qr/apisix_http_status\{code="200",route="10",matched_uri="\/hello",matched_host="",service="",consumer="",node="127.0.0.1",dummy=""\} \d+/
