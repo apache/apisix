@@ -109,7 +109,6 @@ plugin_attr:
                     - upstream_status: $upstream_status
 --- request
 GET /hello
---- error_code: 200
 
 
 
@@ -131,11 +130,10 @@ plugin_attr:
                     - dummy: $dummy
 --- request
 GET /hello
---- error_code: 200
 
 
 
-=== TEST 6: fetch the prometheus metric data, with nil label
+=== TEST 6: fetch the prometheus metric data, with nonexist ngx variable
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval

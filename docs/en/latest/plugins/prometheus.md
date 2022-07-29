@@ -55,9 +55,9 @@ plugin_attr:
 
 ### Specifying `metrics`
 
-For http request related metrics, you could specify extra labels, which match the nginx variables.
+For http request related metrics, you could specify extra labels, which match the APISIX variables.
 
-If you specify label for nonexist nginx variable, the label value would be "".
+If you specify label for nonexist APISIX variable, the label value would be "".
 
 Currently, only below metrics are supported:
 
