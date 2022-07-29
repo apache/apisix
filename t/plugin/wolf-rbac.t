@@ -346,13 +346,13 @@ GET /hello1
 --- more_headers
 x-rbac-token: V1#wolf-rbac-app#wolf-rbac-token
 --- response_body
-{"message":"Invalid user permission"}
+{"message":"ERR_ACCESS_DENIED"}
 --- grep_error_log eval
-qr/no permission to access */
+qr/ERR_ACCESS_DENIED */
 --- grep_error_log_out
-no permission to access
-no permission to access
-no permission to access
+ERR_ACCESS_DENIED
+ERR_ACCESS_DENIED
+ERR_ACCESS_DENIED
 
 
 
@@ -545,3 +545,36 @@ location /t {
 }
 --- response_body_like eval
 qr/success to change password/
+
+
+
+=== TEST 29: verify: failed, server internal error
+--- request
+GET /hello/500
+--- error_code: 500
+--- more_headers
+x-rbac-token: V1#wolf-rbac-app#wolf-rbac-token
+--- response_body
+{"message":"request to wolf-server failed, status:500"}
+--- grep_error_log eval
+qr/request to wolf-server failed, status:500 */
+--- grep_error_log_out
+request to wolf-server failed, status:500
+request to wolf-server failed, status:500
+
+
+
+=== TEST 30: verify: failed, token is expired
+--- request
+GET /hello/401
+--- error_code: 401
+--- more_headers
+x-rbac-token: V1#wolf-rbac-app#wolf-rbac-token
+--- response_body
+{"message":"ERR_TOKEN_INVALID"}
+--- grep_error_log eval
+qr/ERR_TOKEN_INVALID */
+--- grep_error_log_out
+ERR_TOKEN_INVALID
+ERR_TOKEN_INVALID
+ERR_TOKEN_INVALID

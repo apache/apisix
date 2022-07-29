@@ -298,9 +298,15 @@ function _M.wolf_rbac_access_check()
         ngx.say(json_encode({ok=true,
                             data={ userInfo={nickname="administrator",
                                 username="admin", id="100"} }}))
-    else
+    elseif resName == '/hello/500' then
+        ngx.status = 500
+        ngx.say(json_encode({ok=false, reason="ERR_SERVER_ERROR"}))
+    elseif resName == '/hello/401' then
         ngx.status = 401
-        ngx.say(json_encode({ok=false, reason="no permission to access"}))
+        ngx.say(json_encode({ok=false, reason="ERR_TOKEN_INVALID"}))
+    else
+        ngx.status = 403
+        ngx.say(json_encode({ok=false, reason="ERR_ACCESS_DENIED"}))
     end
 end
 
