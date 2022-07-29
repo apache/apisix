@@ -57,7 +57,7 @@ plugin_attr:
 
 For http request related metrics, you could specify extra labels, which match the nginx variables.
 
-If you specify label for nonexist nginx variable, the label value would be "nil".
+If you specify label for nonexist nginx variable, the label value would be "".
 
 Currently, only below metrics are supported:
 
