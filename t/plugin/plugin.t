@@ -372,7 +372,7 @@ passed
         }
     }
 --- response_body
-{"error_msg":"failed to check the configuration of plugin jwt-auth err: property \"_meta\" validation failed: property \"filter\" validation failed: failed to validate item 1: wrong type: expected array, got string"}
+{"error_msg":"failed to validate the 'vars' expression: rule should be wrapped inside brackets"}
 {"error_msg":"failed to validate the 'vars' expression: invalid operator '*='"}
 
 
