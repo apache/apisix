@@ -78,7 +78,7 @@ The instance of APISIX deployed as the data plane will:
 
 1. Fetch the configuration from the control plane. The default port is `9280`.
 2. Performs a health check on all configured control plane addresses before starting the service.
-   1. If the control plane addresses are unavailable, the starup fails and an exception is thrown.
+   1. If the control plane addresses are unavailable, the startup fails and an exception is thrown.
    2. If at least one control plane address is available, it prints the unhealthy control planes logs, and starts the APISIX service.
    3. If all control planes are normal, APISIX service is started normally.
 3. Once the service is started, it will handle the user requests.
@@ -156,7 +156,7 @@ deployment:
 
 In the standalone deployment mode, APISIX is deployed as a data plane and it reads in configurations from a YAML file (`apisix.yaml`) in the local file system.
 
-This deployment mode is useful when you have to declaritively define the configuration or when you are using a different configuration center other than etcd.
+This deployment mode is useful when you have to declaratively define the configuration or when you are using a different configuration center other than etcd.
 
 To configure APISIX in standalone mode:
 
