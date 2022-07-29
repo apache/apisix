@@ -960,10 +960,6 @@ _M.plugin_injected_schema = {
                 description = "filter determines whether the plugin "..
                                 "needs to be executed at runtime",
                 type  = "array",
-                maxItems = 20,
-                items = {
-                    type = "array"
-                }
             }
         }
     }
