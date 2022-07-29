@@ -5,7 +5,7 @@ keywords:
   - Plugin
   - Cross-site request forgery
   - csrf
-description: This document contains information about the Apache APISIX csrf Plugin.
+description: The CSRF Plugin can be used to protect your API against CSRF attacks using the Double Submit Cookie method.
 ---
 
 <!--
