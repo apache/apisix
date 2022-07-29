@@ -35,11 +35,11 @@ The `consumer-restriction` Plugin allows users to set access restrictions based 
 | Name               | Type          | Required | Default       | Valid values  | Description |
 |--------------------|---------------|----------|---------------|---------------|-------------|
 | type               | string        | False    | consumer_name | ["consumer_name", "service_id", "route_id"]  | Type of object to base the restriction on.  |
-| allowed_by_methods | array[object] | False    |               | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE", "PURGE"] | List of allowed HTTP methods for a Consumer. |
 | whitelist          | array[string] | True     |               |                                              | List of objects to whitelist. Has a higher priority than `allowed_by_methods`. |
 | blacklist          | array[string] | True     |               |                                              | List of objects to blacklist. Has a higher priority than `whitelist`.          |
 | rejected_code      | integer       | False    | 403           | [200,...]                                    | HTTP status code returned when the request is rejected.                        |
 | rejected_msg       | string        | False    |               |                                              | Message returned when the request is rejected.                                 |
+| allowed_by_methods | array[object] | False    |               | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE", "PURGE"] | List of allowed HTTP methods for a Consumer. |
 
 :::note
 
