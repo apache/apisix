@@ -38,11 +38,11 @@ description: limit-req 插件使用漏桶算法限制对用户服务的请求速
 | rate          | integer | 是   |        | rate > 0                                                                | 指定的请求速率（以秒为单位），请求速率超过 `rate` 但没有超过（`rate` + `burst`）的请求会被加上延时。                                             |
 | burst         | integer | 是   |        | burst >= 0                                                              | 请求速率超过（`rate` + `burst`）的请求会被直接拒绝。                                                                                            |
 | key_type      | string  | 否   | "var"  | ["var", "var_combination"]                                              | 要使用的用户指定 `key` 的类型。              |
-| key           | string  | 是   |        | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name"] | 用来做请求计数的依据，当前接受的 `key` 有："remote_addr"（客户端 IP 地址），"server_addr"（服务端 IP 地址）, 请求头中的 "X-Forwarded-For" 或 "X-Real-IP"，"consumer_name"（consumer 的 username）。 |
+| key           | string  | 是   |        | ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name"] | 用来做请求计数的依据，当前接受的 `key` 有：`remote_addr`（客户端 IP 地址），`server_addr`（服务端 IP 地址）, 请求头中的 `X-Forwarded-For` 或 `X-Real-IP`，`consumer_name`（Consumer 的 `username`）。 |
 | rejected_code | integer | 否   | 503    | [200,...,599]                                                              | 当超过阈值的请求被拒绝时，返回的 HTTP 状态码。                                                                                                        |
 | rejected_msg       | string | 否                                |            | 非空                                          | 当超过阈值的请求被拒绝时，返回的响应体。                                                                                                                                                                                                             |
-| nodelay       | boolean | 否   | false  |                                                                         | 如果设置为 true， 请求速率超过 `rate` 但没有超过（`rate` + `burst`）的请求不会加上延迟；如果设置为 false，则会加上延迟。 |
-| allow_degradation              | boolean  | 否                                | false       |                                                                     | 当限速插件功能临时不可用时是否允许请求继续。如果设置为 true，则自动允许请求继续。|
+| nodelay       | boolean | 否   | false  |                                                                         | 如果设置为 `true`， 请求速率超过 `rate` 但没有超过（`rate` + `burst`）的请求不会加上延迟；如果设置为 `false`，则会加上延迟。 |
+| allow_degradation              | boolean  | 否                                | false       |                                                                     | 当限速插件功能临时不可用时是否允许请求继续。如果设置为 `true`，则自动允许请求继续。|
 
 ## 启用插件
 
@@ -97,10 +97,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }
 ```
 
-你也可以通过 Web 界面来完成上面的操作，先增加一个 Route，然后在插件页面中添加 `limit-req` 插件：
-
-![添加插件](/docs/assets/images/plugin/limit-req-1.png)
-
 **测试插件**
 
 上述配置限制了每秒请求速率为 `1`，大于 `1` 且小于 `3` 的请求会被加上延时，速率超过 `3` 就会被拒绝。
@@ -129,7 +125,7 @@ Server: APISIX web server
 </html>
 ```
 
-同时，如果你设置了属性 `rejected_msg` 的值为 `"Requests are too frequent, please try again later."`，当请求速率超出限制时，返回如下包含 503 HTTP 状态码的响应体，插件生效：
+同时，如果你设置了 `rejected_msg` 属性的值为 `"Requests are too frequent, please try again later."`，当请求速率超出限制时，返回如下包含 `503` HTTP 状态码的响应体，插件生效：
 
 ```shell
 HTTP/1.1 503 Service Temporarily Unavailable
@@ -194,13 +190,13 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 curl -i http://127.0.0.1:9080/index.html -H 'apikey: auth-jack'
 ```
 
-当请求速率未超过 `rate + burst` 的值时，返回 200 HTTP 状态码，说明请求成功，插件生效：
+当请求速率未超过 `rate + burst` 的值时，返回 `200` HTTP 状态码，说明请求成功，插件生效：
 
 ```shell
 HTTP/1.1 200 OK
 ```
 
-当请求速率超过 `rate + burst` 的值时，返回 403 HTTP 状态码，说明请求被阻止，插件生效：
+当请求速率超过 `rate + burst` 的值时，返回 `403` HTTP 状态码，说明请求被阻止，插件生效：
 
 ```shell
 HTTP/1.1 403 Forbidden
@@ -232,7 +228,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-类似的，通过以下命令移除 Consumer 上的 `limit-req` 插件：
+你也可以通过以下命令移除 Consumer 上的 `limit-req` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
