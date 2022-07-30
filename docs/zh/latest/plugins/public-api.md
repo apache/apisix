@@ -67,7 +67,7 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
 
 ```shell
 curl 'http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key'
-``` 
+```
 
 ```shell
 eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTkyNTQzNzEsImtleSI6InVzZXIta2V5In0.q6i2VD3YChRjrfDHWw3wG36Y30OOH4Z1jl5N24KhfGw
@@ -138,7 +138,6 @@ HTTP/1.1 200 OK
 ```
 
 发出访问请求，如果返回 `401` HTTP 状态码，则说明请求被阻止，插件生效：
-
 
 ```shell
 curl -i 'http://127.0.0.1:9080/gen_token?key=user-key'
