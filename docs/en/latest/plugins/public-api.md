@@ -2,10 +2,10 @@
 title: public-api
 keywords:
   - APISIX
-  - Plugin
+  - API Gateway
   - Public API
   - public-api
-description: This document contains information about the Apache APISIX public-api Plugin.
+description: The public-api is used for exposing an API endpoint through a general HTTP API router.
 ---
 
 <!--
