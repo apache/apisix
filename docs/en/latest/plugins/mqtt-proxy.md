@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - MQTT Proxy
-description: This document contains information about the Apache APISIX mqtt-proxy Plugin.
+description: This document contains information about the Apache APISIX mqtt-proxy Plugin. The `mqtt-proxy` Plugin is used for dynamic load balancing with `client_id` of MQTT.
 ---
 
 <!--

@@ -1,5 +1,11 @@
 ---
 title: mqtt-proxy
+keywords:
+  - APISIX
+  - API 网关
+  - Plugin
+  - MQTT Proxy
+description: 本文档介绍了 Apache APISIX mqtt-proxy 插件的信息，通过 `mqtt-proxy` 插件可以使用 MQTT 的 `client_id` 进行动态负载平衡。
 ---
 
 <!--
@@ -23,7 +29,7 @@ title: mqtt-proxy
 
 ## 描述
 
-通过 `mqtt-proxy` 插件可以使用 MQTT 的 `client_id` 进行动态负载平衡。 它仅适用于 `stream` 模式。
+通过 `mqtt-proxy` 插件可以使用 MQTT 的 `client_id` 进行动态负载平衡。它仅适用于 `stream` 模式。
 
 这个插件支持 MQTT [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) 及 [5.0]( https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html ) 两个协议。
 
@@ -57,7 +63,7 @@ title: mqtt-proxy
 
 现在你可以将请求发送到 `9100` 端口。
 
-你可以创建一个 `Stream Route` 并启用 `mqtt-proxy` 插件。
+你可以创建一个 stream 路由并启用 `mqtt-proxy` 插件。
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
