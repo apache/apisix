@@ -53,6 +53,29 @@ plugin_attr:
     export_uri: /apisix/metrics
 ```
 
+### Specifying `metrics`
+
+For http request related metrics, you could specify extra labels, which match the APISIX variables.
+
+If you specify label for nonexist APISIX variable, the label value would be "".
+
+Currently, only below metrics are supported:
+
+* http_status
+* http_latency
+* bandwidth
+
+Here is a configuration example:
+
+```yaml title="conf/config.yaml"
+plugin_attr:
+  prometheus:
+    metrics:
+        http_status:
+            extra_labels:
+                - upstream_addr: $upstream_addr
+                - upstream_status: $upstream_status
+
 ## API
 
 This Plugin will add the API endpoint `/apisix/prometheus/metrics` or your custom export URI for exposing the metrics.
