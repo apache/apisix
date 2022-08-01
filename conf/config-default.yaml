@@ -522,6 +522,20 @@ plugin_attr:
     export_addr:
       ip: 127.0.0.1
       port: 9091
+    #metrics:
+    #  http_status:
+    #    # extra labels from nginx variables
+    #    extra_labels:
+    #      # the label name doesn't need to be the same as variable name
+    #      # below labels are only examples, you could add any valid variables as you need
+    #      - upstream_addr: $upstream_addr
+    #      - upstream_status: $upstream_status
+    #  http_latency:
+    #    extra_labels:
+    #      - upstream_addr: $upstream_addr
+    #  bandwidth:
+    #    extra_labels:
+    #      - upstream_addr: $upstream_addr
   server-info:
     report_ttl: 60   # live time for server info in etcd (unit: second)
   dubbo-proxy:
