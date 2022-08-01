@@ -68,7 +68,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-下面是一个示例，在指定的 route 上开启了 limit-conn 插件，并设置 `key_type` 为 `var_combination`:
+下面是一个示例，在指定的路由上开启了 `limit-conn` 插件，并设置 `key_type` 为 `var_combination`:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -139,17 +139,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 对 WebSocket 链接限速
 
-Apache APISIX 支持 WebSocket 代理，我们可以使用 limit-conn 插件限制 WebSocket 链接的并发数。
+Apache APISIX 支持 WebSocket 代理，我们可以使用 `limit-conn` 插件限制 WebSocket 链接的并发数。
 
 1、启动 WebSocket Server
 
-```
+```shell
 docker run -p 1980:8080 --name websocket-demo casperklein/websocket-demo
 ```
 
 2、注册路由，在路由上启用 WebSocket 代理并开启 limit-conn 插件
 
-```
+```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/ws",
@@ -177,7 +177,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 3、发起 WebSocket 请求，链接建立成功
 
-```
+```shell
 curl --include \
      --no-buffer \
      --header "Connection: Upgrade" \
@@ -196,7 +196,7 @@ Server: APISIX/2.15.0
 
 4、在另一个终端中再次发起 WebSocket 请求，请求将被拒绝
 
-```
+```shell
 HTTP/1.1 503 Service Temporarily Unavailable
 Date: Mon, 01 Aug 2022 03:49:17 GMT
 Content-Type: text/html; charset=utf-8
