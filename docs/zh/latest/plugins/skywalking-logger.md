@@ -1,5 +1,11 @@
 ---
-title: skywalking-logger
+title: skywalking
+keywords:
+  - APISIX
+  - API 网关
+  - Plugin
+  - SkyWalking
+description: 本文将介绍 API 网关 Apache APISIX 如何通过 skywalking-logger 插件将日志数据推送到 SkyWalking OAP 服务器。
 ---
 
 <!--
@@ -37,7 +43,7 @@ title: skywalking-logger
 | service_name           | string  | 否     |"APISIX"              |               | SkyWalking 服务名称。                                              |
 | service_instance_name  | string  | 否     |"APISIX Instance Name"|               | SkyWalking 服务的实例名称。当设置为 `$hostname`会直接获取本地主机名。 |
 | timeout                | integer | 否     | 3                    | [1,...]       | 发送请求后保持连接活动的时间。                                       |
-| name                    | string  | 否     | "skywalking logger"  |               | 标识 logger 的唯一标识符。                                         |
+| name                   | string  | 否     | "skywalking logger"  |               | 标识 logger 的唯一标识符。                                         |
 | include_req_body       | boolean | 否     | false                | [false, true] | 当设置为 `true` 时，将请求正文包含在日志中。                         |
 
 本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
@@ -48,7 +54,7 @@ title: skywalking-logger
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX](../apisix-variable.md) 变量或 [NGINX](http://nginx.org/en/docs/varindex.html) 内置变量。|
+| log_format       | object  | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX](../apisix-variable.md) 或 [NGINX](http://nginx.org/en/docs/varindex.html) 变量。|
 
 :::info 重要
 
@@ -70,7 +76,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/skywalking-logger \
 }'
 ```
 
-配置成功后，你的日志格式将会变成如下格式：
+配置成功后，将得到如下日志格式：
 
 ```shell
 {"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
