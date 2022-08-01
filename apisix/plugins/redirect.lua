@@ -55,14 +55,12 @@ local schema = {
         },
         http_to_https = {type = "boolean"},
         encode_uri = {type = "boolean", default = false},
-        append_query_string = {type = "boolean"},
+        append_query_string = {type = "boolean", default = false},
     },
     oneOf = {
         {required = {"uri"}},
         {required = {"regex_uri"}},
-        {required = {"http_to_https"}, ["not"] = {
-           required = {"append_query_string"}
-        }}
+        {required = {"http_to_https"}}
     }
 }
 
@@ -103,6 +101,8 @@ end
 
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
+    ngx.log(ngx.WARN, "err : ", require("inspect")(err))
+
     if not ok then
         return false, err
     end
@@ -115,6 +115,11 @@ function _M.check_schema(conf)
                                       conf.regex_uri[1], conf.regex_uri[2], err)
             return false, msg
         end
+    end
+
+    if conf.http_to_https and conf.append_query_string then
+        ngx.log(ngx.WARN, "conf : ", require("inspect")(conf))
+        return false, "only one of `http_to_https` and `append_query_string` can be configured."
     end
 
     return true
