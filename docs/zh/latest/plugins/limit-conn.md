@@ -137,9 +137,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 现在就已经移除了 limit-conn 插件了。其他插件的开启和移除也是同样的方法。
 
-## 对 WebSocket 链接限速
+## 对 WebSocket 连接限速
 
-Apache APISIX 支持 WebSocket 代理，我们可以使用 `limit-conn` 插件限制 WebSocket 链接的并发数。
+Apache APISIX 支持 WebSocket 代理，我们可以使用 `limit-conn` 插件限制 WebSocket 连接的并发数。
 
 1、启动 WebSocket Server
 
@@ -173,9 +173,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-上述路由在 `/ws` 上开启了 WebSocket 代理，并限制了 WebSocket 链接并发数 1，超过 1 个并发的 WebSocket 链接将返回 503 拒绝请求。
+上述路由在 `/ws` 上开启了 WebSocket 代理，并限制了 WebSocket 连接并发数 1，超过 1 个并发的 WebSocket 连接将返回 503 拒绝请求。
 
-3、发起 WebSocket 请求，链接建立成功
+3、发起 WebSocket 请求，连接建立成功
 
 ```shell
 curl --include \
