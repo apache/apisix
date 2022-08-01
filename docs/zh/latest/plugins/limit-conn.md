@@ -39,7 +39,7 @@ title: limit-conn
 | rejected_msg       | string | 否                                |            | 非空                                          | 当请求超过 `conn` + `burst` 这个阈值时，返回的响应体。                                                                                                                                                                     |
 | allow_degradation              | boolean  | 否                                | false       |                                                                     | 当插件功能临时不可用时是否允许请求继续。当值设置为 true 时则自动允许请求继续，默认值是 false。                                                                                                                                                    |
 
-### 如何启用
+## 开启插件
 
 下面是一个示例，在指定的 route 上开启了 limit-conn 插件，并设置 `key_type` 为 `var`:
 
@@ -98,7 +98,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 你也可以通过 web 界面来完成上面的操作，先增加一个 route，然后在插件页面中添加 limit-conn 插件：
 ![enable limit-conn plugin](../../../assets/images/plugin/limit-conn-1.png)
 
-### 测试插件
+## 测试插件
 
 上面启用的插件的参数表示只允许一个并发请求。 当收到多个并发请求时，将直接返回 503 拒绝请求。
 
@@ -117,7 +117,7 @@ curl -i http://127.0.0.1:9080/index.html?sleep=20
 
 这就表示 limit-conn 插件生效了。
 
-### 移除插件
+## 移除插件
 
 当你想去掉 limit-conn 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
 
@@ -136,3 +136,74 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 现在就已经移除了 limit-conn 插件了。其他插件的开启和移除也是同样的方法。
+
+## 对 WebSocket 链接限速
+Apache APISIX 支持 WebSocket 代理，我们可以使用 limit-conn 插件限制 WebSocket 链接的并发数。
+
+1、启动 WebSocket Server
+```
+docker run -p 1980:8080 --name websocket-demo casperklein/websocket-demo
+```
+
+2、注册路由，在路由上启用 WebSocket 代理并开启 limit-conn 插件
+```
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/ws",
+    "enable_websocket":true,
+    "plugins": {
+        "limit-conn": {
+            "conn": 1,
+            "burst": 0,
+            "default_conn_delay": 0.1,
+            "rejected_code": 503,
+            "key_type": "var",
+            "key": "remote_addr"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+上述路由在 `/ws` 上开启了 WebSocket 代理，并限制了 WebSocket 链接并发数 1，超过 1 个并发的 WebSocket 链接将返回 503 拒绝请求。
+
+
+3、发起 WebSocket 请求，链接建立成功
+```
+curl --include \
+     --no-buffer \
+     --header "Connection: Upgrade" \
+     --header "Upgrade: websocket" \
+     --header "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==" \
+     --header "Sec-WebSocket-Version: 13" \
+     --http1.1 \
+     http://127.0.0.1:9080/ws
+
+HTTP/1.1 101 Switching Protocols
+Connection: upgrade
+Upgrade: websocket
+Sec-WebSocket-Accept: HSmrc0sMlYUkAGmm5OPpG2HaGWk=
+Server: APISIX/2.15.0
+```
+
+4、在另一个终端中再次发起 WebSocket 请求，请求将被拒绝
+```
+HTTP/1.1 503 Service Temporarily Unavailable
+Date: Mon, 01 Aug 2022 03:49:17 GMT
+Content-Type: text/html; charset=utf-8
+Content-Length: 194
+Connection: keep-alive
+Server: APISIX/2.15.0
+
+<html>
+<head><title>503 Service Temporarily Unavailable</title></head>
+<body>
+<center><h1>503 Service Temporarily Unavailable</h1></center>
+<hr><center>openresty</center>
+</body>
+</html>
+```
