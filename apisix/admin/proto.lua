@@ -21,6 +21,7 @@ local utils = require("apisix.admin.utils")
 local get_routes = require("apisix.router").http_routes
 local get_services = require("apisix.http.service").services
 local compile_proto = require("apisix.plugins.grpc-transcode.proto").compile_proto
+local v3_adapter = require("apisix.admin.v3_adapter")
 local tostring = tostring
 
 
@@ -99,6 +100,7 @@ function _M.get(id)
     end
 
     utils.fix_count(res.body, id)
+    v3_adapter.filter(res.body)
     return res.status, res.body
 end
 
