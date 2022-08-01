@@ -2,10 +2,9 @@
 title: consumer-restriction
 keywords:
   - APISIX
-  - Plugin
+  - API Gateway
   - Consumer restriction
-  - consumer-restriction
-description: This document contains information about the Apache APISIX consumer-restriction Plugin.
+description: The Consumer Restriction Plugin allows users to set access restrictions based on Consumer, Route, or Service.
 ---
 
 <!--
@@ -33,14 +32,14 @@ The `consumer-restriction` Plugin allows users to set access restrictions based 
 
 ## Attributes
 
-| Name               | Type          | Required | Default       | Valid values                                                                              | Description                                                                    |
-|--------------------|---------------|----------|---------------|-------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------|
-| type               | string        | False    | consumer_name | ["consumer_name", "service_id", "route_id"]                                               | Type of object to base the restriction on.                                     |
-| whitelist          | array[string] | True     |               |                                                                                           | List of objects to whitelist. Has a higher priority than `allowed_by_methods`. |
-| blacklist          | array[string] | True     |               |                                                                                           | List of objects to blacklist. Has a higher priority than `whitelist`.          |
-| rejected_code      | integer       | False    | 403           | [200,...]                                                                                 | HTTP status code returned when the request is rejected.                        |
-| rejected_msg       | string        | False    |               |                                                                                           | Message returned when the request is rejected.                                 |
-| allowed_by_methods | array[object] | False    |               | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE", "PURGE"] | List of allowed HTTP methods for a Consumer.                                   |
+| Name               | Type          | Required | Default       | Valid values  | Description |
+|--------------------|---------------|----------|---------------|---------------|-------------|
+| type               | string        | False    | consumer_name | ["consumer_name", "service_id", "route_id"]  | Type of object to base the restriction on.  |
+| whitelist          | array[string] | True     |               |                                              | List of objects to whitelist. Has a higher priority than `allowed_by_methods`. |
+| blacklist          | array[string] | True     |               |                                              | List of objects to blacklist. Has a higher priority than `whitelist`.          |
+| rejected_code      | integer       | False    | 403           | [200,...]                                    | HTTP status code returned when the request is rejected.                        |
+| rejected_msg       | string        | False    |               |                                              | Message returned when the request is rejected.                                 |
+| allowed_by_methods | array[object] | False    |               | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE", "PURGE"] | List of allowed HTTP methods for a Consumer. |
 
 :::note
 
@@ -115,7 +114,6 @@ curl -u jack2019:123456 http://127.0.0.1:9080/index.html
 
 ```shell
 HTTP/1.1 200 OK
-...
 ```
 
 And requests from `jack2` are blocked:
