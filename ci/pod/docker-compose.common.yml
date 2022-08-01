@@ -76,14 +76,14 @@ services:
       - ./t/certs:/certs
 
 
-  # ## Redis cluster
-  # redis-cluster:
-  #   image: vishnunair/docker-redis-cluster:latest
-  #   restart: unless-stopped
-  #   ports:
-  #     - "5000:6379"
-  #     - "5002:6380"
-  #     - "5003:6381"
-  #     - "5004:6382"
-  #     - "5005:6383"
-  #     - "5006:6384"
+  ## Redis cluster
+  redis-cluster:
+    image: vishnunair/docker-redis-cluster:latest
+    restart: unless-stopped
+    ports:
+      - "5000:6379"
+      - "5002:6380"
+      - "5003:6381"
+      - "5004:6382"
+      - "5005:6383"
+      - "5006:6384"
