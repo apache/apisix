@@ -143,14 +143,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 ## Limit the rate of WebSocket connections
+
 Apache APISIX supports WebSocket proxy, we can use limit-conn plugin to limit the number of concurrent WebSocket connections.
 
-1. Start WebSocket Server.
+1. Start WebSocket Server
+
 ````
 docker run -p 1980:8080 --name websocket-demo casperklein/websocket-demo
 ````
 
-2. Register the route, enable the WebSocket proxy on the route and enable the limit-conn plugin.
+2. Register the route, enable the WebSocket proxy on the route and enable the limit-conn plugin
+
 ````
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -178,6 +181,7 @@ The above route enables the WebSocket proxy on `/ws`, and limits the number of c
 
 
 3. Initiate a WebSocket request, and the link is established successfully
+
 ````
 curl --include \
      --no-buffer \
@@ -196,6 +200,7 @@ Server: APISIX/2.15.0
 ````
 
 4. Initiate the WebSocket request again in another terminal, the request will be rejected
+
 ````
 HTTP/1.1 503 Service Temporarily Unavailable
 Date: Mon, 01 Aug 2022 03:49:17 GMT
