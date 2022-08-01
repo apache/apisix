@@ -4,8 +4,7 @@ keywords:
   - APISIX
   - API 网关
   - Public API
-  - public-api
-description: public-api 插件用于通过一个通用的 HTTP API 路由暴露一个 API 端点。
+description: 本文介绍了 public-api 的相关操作，你可以使用 public-api 插件保护你需要暴露的 API 的端点。
 ---
 
 <!--
@@ -29,11 +28,15 @@ description: public-api 插件用于通过一个通用的 HTTP API 路由暴露�
 
 ## 描述
 
-`public-api` 插件用于通过一个通用的 HTTP API 路由暴露一个 API 端点。
+`public-api` 插件可用于通过创建路由的方式暴露用户自定义的 API。
 
-当你使用自定义插件时，你可以使用 `public-api` 插件为特定功能定义一个固定的公共 API。例如，你可以使用 [`jwt-auth`](./jwt-auth.md) 插件创建一个公共 API 端点 `/apisix/plugin/jwt/sign` 用于 JWT 认证。
+你可以通过在路由中添加 `public-api` 插件，来保护**自定义插件为了实现特定功能**而暴露的 API。例如，你可以使用 [`jwt-auth`](./jwt-auth.md) 插件创建一个公共 API 端点 `/apisix/plugin/jwt/sign` 用于 JWT 认证。
+
+:::note 注意
 
 默认情况下，在自定义插件中添加的公共 API 是不公开的，用户需要手动配置一个路由并在上面启用 `public-api` 插件。
+
+:::
 
 ## 属性
 
@@ -43,15 +46,17 @@ description: public-api 插件用于通过一个通用的 HTTP API 路由暴露�
 
 ## 启用插件
 
-除了 `public-api` 插件，下面的例子也使用了 [`jwt-auth`](./jwt-auth.md) 和 [`key-auth`](./key-auth.md) 插件，详细使用方法请参考它们对应的文档。
+`public-api` 插件需要与授权插件一起配合使用，以下示例分别用到了 [`jwt-auth`](./jwt-auth.md) 插件和 [`key-auth`](./key-auth.md) 插件。
 
 ### 基本用法
 
-以下示例展示了如何在指定路由上启用并配置 `public-api` 插件：
+首先，你需要启用并配置 `jwt-auth` 插件，详细使用方法请参考 [`jwt-auth`](./jwt-auth.md) 插件文档。
+
+然后，使用以下命令在指定路由上启用并配置 `public-api` 插件：
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
-    -H 'X-API-KEY: <api-key>' \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
     -H 'Content-Type: application/json' \
     -d '{
     "uri": "/apisix/plugin/jwt/sign",
@@ -70,16 +75,18 @@ curl 'http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key'
 ```
 
 ```shell
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTkyNTQzNzEsImtleSI6InVzZXIta2V5In0.q6i2VD3YChRjrfDHWw3wG36Y30OOH4Z1jl5N24KhfGw
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTk0Mjg1MzIsImtleSI6InVzZXIta2V5In0.NhrWrO-da4kXezxTLdgFBX2rJA2dF1qESs8IgmwhNd0
 ```
 
 ### 使用自定义 URI
 
-你可以使用一个自定义的 URI 来暴露 API：
+首先，你需要启用并配置 `jwt-auth` 插件，详细使用方法请参考 [`jwt-auth`](./jwt-auth.md) 插件文档。
+
+然后，你可以使用一个自定义的 URI 来暴露 API：
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r2' \
-    -H 'X-API-KEY: <api-key>' \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
     -H 'Content-Type: application/json' \
     -d '{
     "uri": "/gen_token",
@@ -100,16 +107,16 @@ curl 'http://127.0.0.1:9080/gen_token?key=user-key'
 ```
 
 ```shell
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTkyNTQzNzEsImtleSI6InVzZXIta2V5In0.q6i2VD3YChRjrfDHWw3wG36Y30OOH4Z1jl5N24KhfGw
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTk0Mjg1NjIsImtleSI6InVzZXIta2V5In0.UVkXWbyGb8ajBNtxs0iAaFb2jTEWIlqTR125xr1ZMLc
 ```
 
 ### 确保 Route 安全
 
-你可以使用 `key-auth` 插件来添加认证，从而确保路由的安全：
+你可以配合使用 `key-auth` 插件来添加认证，从而确保路由的安全：
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r2' \
-    -H 'X-API-KEY: <api-key>' \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
     -H 'Content-Type: application/json' \
     -d '{
     "uri": "/gen_token",
@@ -117,7 +124,9 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r2' \
         "public-api": {
             "uri": "/apisix/plugin/jwt/sign"
         },
-        "key-auth": {}
+        "key-auth": {
+            "key": "test-apikey"
+        }
     }
 }'
 ```
@@ -129,7 +138,7 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r2' \
 发出访问请求并指定 `apikey`，如果返回 `200` HTTP 状态码，则说明请求被允许：
 
 ```shell
-curl -i 'http://127.0.0.1:9080/gen_token?key=user-key'
+curl -i 'http://127.0.0.1:9080/gen_token?key=user-key' \
     -H "apikey: test-apikey"
 ```
 
@@ -144,7 +153,7 @@ curl -i 'http://127.0.0.1:9080/gen_token?key=user-key'
 ```
 
 ```shell
-HTTP/1.1 401 UNAUTHORIZED
+HTTP/1.1 401 Unauthorized
 ```
 
 ## 禁用插件
