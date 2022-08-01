@@ -101,7 +101,6 @@ end
 
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
-    ngx.log(ngx.WARN, "err : ", require("inspect")(err))
 
     if not ok then
         return false, err
@@ -118,7 +117,6 @@ function _M.check_schema(conf)
     end
 
     if conf.http_to_https and conf.append_query_string then
-        ngx.log(ngx.WARN, "conf : ", require("inspect")(conf))
         return false, "only one of `http_to_https` and `append_query_string` can be configured."
     end
 
