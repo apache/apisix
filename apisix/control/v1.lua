@@ -276,6 +276,28 @@ function _M.dump_service_info()
     return 200, info
 end
 
+function _M.dump_all_plugin_metadata()
+    local names = core.config.local_conf().plugins
+    local metadatas = core.table.new(0, #names)
+    for _, name in ipairs(names) do
+        local metadata = plugin.plugin_metadata(name)
+        if metadata then
+            core.table.insert(metadatas, metadata.value)
+        end
+    end
+    return 200, metadatas
+end
+
+function _M.dump_plugin_metadata()
+    local uri_segs = core.utils.split_uri(ngx_var.uri)
+    local name = uri_segs[4]
+    local metadata = plugin.plugin_metadata(name)
+    if not metadata then
+        return 404, {error_msg = str_format("plugin metadata[%s] not found", name)}
+    end
+    return 200, metadata.value
+end
+
 
 return {
     -- /v1/schema
@@ -337,5 +359,17 @@ return {
         methods = {"GET"},
         uris = {"/upstream/*"},
         handler = _M.dump_upstream_info,
+    },
+    -- /v1/plugin_metadatas
+    {
+        methods = {"GET"},
+        uris = {"/plugin_metadatas"},
+        handler = _M.dump_all_plugin_metadata,
+    },
+    -- /v1/plugin_metadata/*
+    {
+        methods = {"GET"},
+        uris = {"/plugin_metadata/*"},
+        handler = _M.dump_plugin_metadata,
     }
 }

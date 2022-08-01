@@ -232,7 +232,7 @@ local function check_url_permission(server, appid, action, resName, client_ip, w
         }
     end
 
-    if res.status ~= 200 and res.status ~= 401 then
+    if res.status ~= 200 and res.status >= 500 then
         return {
             status = 500,
             err = 'request to wolf-server failed, status:' .. res.status
@@ -314,7 +314,7 @@ function _M.rewrite(conf, ctx)
         core.response.set_header(prefix .. "UserId", userId)
         core.response.set_header(prefix .. "Username", username)
         core.response.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))
-        core.request.set_header(ctx, prefix .. "UserId", userId, ctx)
+        core.request.set_header(ctx, prefix .. "UserId", userId)
         core.request.set_header(ctx, prefix .. "Username", username)
         core.request.set_header(ctx, prefix .. "Nickname", ngx.escape_uri(nickname))
     end
@@ -324,9 +324,7 @@ function _M.rewrite(conf, ctx)
         core.log.error(" check_url_permission(",
             core.json.delay_encode(perm_item),
             ") failed, res: ",core.json.delay_encode(res))
-        return 401, fail_response("Invalid user permission",
-            { username = username, nickname = nickname }
-        )
+        return res.status, fail_response(res.err, { username = username, nickname = nickname })
     end
     core.log.info("wolf-rbac check permission passed")
 end

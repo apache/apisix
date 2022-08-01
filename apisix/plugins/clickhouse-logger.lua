@@ -21,6 +21,7 @@ local core            = require("apisix.core")
 local http            = require("resty.http")
 local url             = require("net.url")
 local plugin          = require("apisix.plugin")
+local math_random     = math.random
 
 local ngx      = ngx
 local tostring = tostring
@@ -31,7 +32,9 @@ local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
+        -- deprecated, use "endpoint_addrs" instead
         endpoint_addr = core.schema.uri_def,
+        endpoint_addrs = {items = core.schema.uri_def, type = "array", minItems = 1},
         user = {type = "string", default = ""},
         password = {type = "string", default = ""},
         database = {type = "string", default = ""},
@@ -40,7 +43,10 @@ local schema = {
         name = {type = "string", default = "clickhouse logger"},
         ssl_verify = {type = "boolean", default = true},
     },
-    required = {"endpoint_addr", "user", "password", "database", "logtable"}
+    oneOf = {
+        {required = {"endpoint_addr", "user", "password", "database", "logtable"}},
+        {required = {"endpoint_addrs", "user", "password", "database", "logtable"}}
+    },
 }
 
 
@@ -72,11 +78,17 @@ end
 local function send_http_data(conf, log_message)
     local err_msg
     local res = true
-    local url_decoded = url.parse(conf.endpoint_addr)
+    local selected_endpoint_addr
+    if conf.endpoint_addr then
+        selected_endpoint_addr = conf.endpoint_addr
+    else
+        selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
+    end
+    local url_decoded = url.parse(selected_endpoint_addr)
     local host = url_decoded.host
     local port = url_decoded.port
 
-    core.log.info("sending a batch logs to ", conf.endpoint_addr)
+    core.log.info("sending a batch logs to ", selected_endpoint_addr)
 
     if not port then
         if url_decoded.scheme == "https" then

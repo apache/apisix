@@ -52,6 +52,8 @@ discovery:
        # eyJhbGciOiJSUzI1NiIsImtpZCI6Ikx5ME1DNWdnbmhQNkZCNlZYMXBsT3pYU3BBS2swYzBPSkN3ZnBESGpkUEEif
        # 6Ikx5ME1DNWdnbmhQNkZCNlZYMXBsT3pYU3BBS2swYzBPSkN3ZnBESGpkUEEifeyJhbGciOiJSUzI1NiIsImtpZCI
 
+    default_weight: 50 # weight assigned to each discovered endpoint. default 50, minimum 0
+
     # kubernetes discovery plugin support use namespace_selector
     # you can use one of [equal, not_equal, match, not_match] filter namespace
     namespace_selector:
