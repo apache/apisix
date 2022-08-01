@@ -124,8 +124,6 @@ deployment:
             - http://[::1]:2379
 --- error_log
 dns resolve localhost, result:
---- no_error_log
-[error]
 --- response_body
 foo
 
@@ -236,8 +234,6 @@ OK
 --- error_log
 x.com is resolved to: 127.0.0.3
 x.com is resolved to: 127.0.0.2
---- no_error_log
-[error]
 
 
 
