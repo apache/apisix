@@ -141,13 +141,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 Apache APISIX 支持 WebSocket 代理，我们可以使用 `limit-conn` 插件限制 WebSocket 连接的并发数。
 
-1、启动 WebSocket Server
-
-```shell
-docker run -p 1980:8080 --name websocket-demo casperklein/websocket-demo
-```
-
-2、注册路由，在路由上启用 WebSocket 代理并开启 limit-conn 插件
+1、创建路由并启用 WebSocket 代理和 `limit-conn` 插件
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -173,9 +167,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-上述路由在 `/ws` 上开启了 WebSocket 代理，并限制了 WebSocket 连接并发数 1，超过 1 个并发的 WebSocket 连接将返回 503 拒绝请求。
+上述路由在 `/ws` 上开启了 WebSocket 代理，并限制了 WebSocket 连接并发数 1，超过 1 个并发的 WebSocket 连接将返回 `503` 拒绝请求。
 
-3、发起 WebSocket 请求，连接建立成功
+2、发起 WebSocket 请求，连接建立成功
 
 ```shell
 curl --include \
@@ -186,15 +180,18 @@ curl --include \
      --header "Sec-WebSocket-Version: 13" \
      --http1.1 \
      http://127.0.0.1:9080/ws
+```
 
+```shell
 HTTP/1.1 101 Switching Protocols
 Connection: upgrade
 Upgrade: websocket
 Sec-WebSocket-Accept: HSmrc0sMlYUkAGmm5OPpG2HaGWk=
 Server: APISIX/2.15.0
+...
 ```
 
-4、在另一个终端中再次发起 WebSocket 请求，请求将被拒绝
+3、在另一个终端中再次发起 WebSocket 请求，请求将被拒绝
 
 ```shell
 HTTP/1.1 503 Service Temporarily Unavailable
