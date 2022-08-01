@@ -1,5 +1,5 @@
 ---
-title: skywalking
+title: skywalking-logger
 keywords:
   - APISIX
   - API 网关
