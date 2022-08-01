@@ -172,8 +172,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
-上述路由在 `/ws` 上开启了 WebSocket 代理，并限制了 WebSocket 链接并发数 1，超过 1 个并发的 WebSocket 链接将返回 503 拒绝请求。
 
+上述路由在 `/ws` 上开启了 WebSocket 代理，并限制了 WebSocket 链接并发数 1，超过 1 个并发的 WebSocket 链接将返回 503 拒绝请求。
 
 3、发起 WebSocket 请求，链接建立成功
 

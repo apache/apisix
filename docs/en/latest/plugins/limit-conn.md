@@ -177,8 +177,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ````
-The above route enables the WebSocket proxy on `/ws`, and limits the number of concurrent WebSocket connections to 1. More than 1 concurrent WebSocket connection will return 503 to reject the request.
 
+The above route enables the WebSocket proxy on `/ws`, and limits the number of concurrent WebSocket connections to 1. More than 1 concurrent WebSocket connection will return 503 to reject the request.
 
 3. Initiate a WebSocket request, and the link is established successfully
 
