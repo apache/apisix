@@ -1146,6 +1146,6 @@ Location: https://foo.com:9443/hello
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/error_msg":"failed to check the configuration of plugin redirect err: value should match only one schema, but matches none/
+qr/error_msg":"failed to check the configuration of plugin redirect err: only one of `http_to_https` and `append_query_string` can be configured."/
 --- no_error_log
 [error]
