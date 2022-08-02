@@ -19,7 +19,7 @@ local ngx = ngx
 local ngx_re = require("ngx.re")
 local ipairs = ipairs
 local consumer_mod = require("apisix.consumer")
-local lualdap = require("lualdap")
+local ldap = require("resty.ldap")
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
@@ -30,11 +30,13 @@ local schema = {
     title = "work with route or service object",
     properties = {
         base_dn = { type = "string" },
-        ldap_uri = { type = "string" },
+        ldap_host = { type = "string" },
+        ldap_port = { type = "number" },
         use_tls = { type = "boolean" },
+        verify_ldap_host = { type = "boolean" },
         uid = { type = "string" }
     },
-    required = {"base_dn","ldap_uri"},
+    required = {"base_dn","ldap_host","ldap_port"},
 }
 
 local consumer_schema = {
@@ -139,8 +141,20 @@ function _M.rewrite(conf, ctx)
     local uid = conf.uid or "cn"
 
     local userdn =  uid .. "=" .. user.username .. "," .. conf.base_dn
-    local ld = lualdap.open_simple (conf.ldap_uri, userdn, user.password, conf.use_tls)
-    if not ld then
+    local ldapconf = {
+        timeout = 10000,
+        start_tls = false,
+        ldap_host = conf.ldap_host,
+        ldap_port = conf.ldap_port,
+        ldaps = conf.use_tls,
+        verify_ldap_host = conf.verify_ldap_host,
+        base_dn = conf.base_dn,
+        attribute = uid,
+        keepalive = 60000,
+    }
+    local res, err = ldap.ldap_authenticate(user.username, user.password, ldapconf)
+    if not res then
+        core.log.error(err)
         return 401, { message = "Invalid user authorization" }
     end
 

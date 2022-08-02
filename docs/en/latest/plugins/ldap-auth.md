@@ -33,7 +33,7 @@ The `ldap-auth` Plugin can be used to add LDAP authentication to a Route or a Se
 
 This Plugin works with the Consumer object and the consumers of the API can authenticate with an LDAP server using [basic authentication](https://en.wikipedia.org/wiki/Basic_access_authentication).
 
-This Plugin uses [lualdap](https://lualdap.github.io/lualdap/) for connecting with an LDAP server.
+This Plugin uses [lua-resty-ldap](https://github.com/api7/lua-resty-ldap) for connecting with an LDAP server.
 
 ## Attributes
 
@@ -48,8 +48,10 @@ For Route:
 | Name     | Type    | Required | Default | Description                                                            |
 |----------|---------|----------|---------|------------------------------------------------------------------------|
 | base_dn  | string  | True     |         | Base dn of the LDAP server. For example, `ou=users,dc=example,dc=org`. |
-| ldap_uri | string  | True     |         | URI of the LDAP server.                                                |
-| use_tls  | boolean | False    | `true`  | If set to `true` uses TLS.                                             |
+| ldap_host| string  | True     |         | host of the LDAP server.                                               |
+| ldap_port| number  | True     |         | port of the LDAP server.                                               |
+| use_tls  | boolean | False    | `false`  | If set to `true` uses TLS.                                            |
+| verify_ldap_host| boolean  | False     | `false`        | Whether to verify the server certificate when `use_tls` is enabled; If set to `true`, you must set `ssl_trusted_certificate` in `config.yaml`, and make sure the `ldap_host` matches the host in server certificate. |
 | uid      | string  | False    | `cn`    | uid attribute.                                                         |
 
 ## Enabling the plugin
@@ -78,7 +80,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "plugins": {
         "ldap-auth": {
             "base_dn": "ou=users,dc=example,dc=org",
-            "ldap_uri": "localhost:1389",
+            "ldap_host": "localhost",
+            "ldap_port": "1389",
             "uid": "cn"
         },
     },

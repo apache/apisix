@@ -61,7 +61,7 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.ldap-auth")
-            local ok, err = plugin.check_schema({base_dn = 123, ldap_uri = "127.0.0.1:1389"})
+            local ok, err = plugin.check_schema({base_dn = 123, ldap_host = "127.0.0.1", ldap_port=1389})
             if not ok then
                 ngx.say(err)
             end
@@ -115,7 +115,8 @@ passed
                     "plugins": {
                         "ldap-auth": {
                             "base_dn": "ou=users,dc=example,dc=org",
-                            "ldap_uri": "127.0.0.1:1389",
+                            "ldap_host": "127.0.0.1",
+                            "ldap_port": 1389,
                             "uid": "cn"
                         }
                     },
@@ -202,6 +203,8 @@ Authorization: Basic Zm9vOmZvbwo=
 --- error_code: 401
 --- response_body
 {"message":"Invalid user authorization"}
+--- error_log
+The supplied credential is invalid
 
 
 
@@ -228,7 +231,8 @@ find consumer user01
                     "plugins": {
                         "ldap-auth": {
                             "base_dn": "ou=users,dc=example,dc=org",
-                            "ldap_uri": "127.0.0.1:1389",
+                            "ldap_host": "127.0.0.1",
+                            "ldap_port": 1389,
                             "uid": "cn"
                         }
                     },
@@ -302,7 +306,7 @@ find consumer user01
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"title":"work with route or service object","required":["base_dn","ldap_uri"],"properties":{"base_dn":{"type":"string"},"ldap_uri":{"type":"string"},"use_tls":{"type":"boolean"},"disable":{"type":"boolean"},"uid":{"type":"string"}},"type":"object"}
+{"title":"work with route or service object","required":["base_dn","ldap_host","ldap_port"],"properties":{"base_dn":{"type":"string"},"ldap_host":{"type":"string"},"ldap_port":{"type":"number"},"use_tls":{"type":"boolean"},"verify_ldap_host":{"type":"boolean"},"disable":{"type":"boolean"},"uid":{"type":"string"}},"type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -338,8 +342,109 @@ find consumer user01
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"title":"work with route or service object","required":["base_dn","ldap_uri"],"properties":{"base_dn":{"type":"string"},"ldap_uri":{"type":"string"},"use_tls":{"type":"boolean"},"disable":{"type":"boolean"},"uid":{"type":"string"}},"type":"object"}                ]]
+{"title":"work with route or service object","required":["base_dn","ldap_host","ldap_port"],"properties":{"base_dn":{"type":"string"},"ldap_host":{"type":"string"},"ldap_port":{"type":"number"},"use_tls":{"type":"boolean"},"verify_ldap_host":{"type":"boolean"},"disable":{"type":"boolean"},"uid":{"type":"string"}},"type":"object"}                ]]
                 )
             ngx.status = code
         }
     }
+
+
+
+=== TEST 17: enable ldap-auth with tls
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "ldap-auth": {
+                            "base_dn": "ou=users,dc=example,dc=org",
+                            "ldap_host": "localhost",
+                            "ldap_port": 1636,
+                            "uid": "cn",
+                            "use_tls": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: verify
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic dXNlcjAxOnBhc3N3b3JkMQ==
+--- response_body
+hello world
+--- error_log
+find consumer user01
+
+
+
+=== TEST 19: enable ldap-auth with tls, verify CA
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "ldap-auth": {
+                            "base_dn": "ou=users,dc=example,dc=org",
+                            "ldap_host": "localhost",
+                            "ldap_port": 1636,
+                            "uid": "cn",
+                            "use_tls": true,
+                            "verify_ldap_host": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: verify
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic dXNlcjAxOnBhc3N3b3JkMQ==
+--- response_body
+hello world
+--- error_log
+find consumer user01
