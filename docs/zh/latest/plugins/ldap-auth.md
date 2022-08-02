@@ -46,10 +46,10 @@ Route 端：
 | 名称     | 类型    | 必选项 | 默认值 | 描述                                                            |
 |----------|---------|----------|---------|------------------------------------------------------------------------|
 | base_dn  | string  | 是     |         | LDAP 服务器的 dn，例如：`ou=users,dc=example,dc=org`。|
-| ldap_host| string  | 是     |         | LDAP服务器的主机名.                                               |
-| ldap_port| number  | 是     |         | LDAP服务器的端口号。                                               |
+| ldap_host| string  | 是     |         | LDAP 服务器的主机名。                                               |
+| ldap_port| number  | 是     |         | LDAP 服务器的端口号。                                               |
 | use_tls  | boolean | 否    | false  | 如果设置为 `true` 则表示启用 TLS。                                             |
-| verify_ldap_host| boolean  | 否     | false        | 是否校验LDAP服务器的证书。如果设置为`true`，你必须设置`config.yaml`里面的`ssl_trusted_certificate`，并且确保`ldap_host`和服务器证书中的host匹配。 |
+| verify_ldap_host| boolean  | 否     | false        | 是否校验 LDAP 服务器的证书。如果设置为 `true`，你必须设置 `config.yaml` 里面的 `ssl_trusted_certificate`，并且确保 `ldap_host` 和服务器证书中的 host 匹配。 |
 | uid      | string  | 否    | cn    | UID 属性。                                                         |
 
 ## 启用插件
