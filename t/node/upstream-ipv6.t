@@ -157,7 +157,7 @@ hello world
 
 
 
-=== TEST 7: set upstream(id: 1)
+=== TEST 7: set upstream, one array item to specify node
 --- config
     location /t {
         content_by_lua_block {
@@ -203,7 +203,7 @@ hello world
 
 
 
-=== TEST 9: set upstream(id: 1)
+=== TEST 9: set upstream, one hash key to specify node, in wrong format
 --- config
     location /t {
         content_by_lua_block {
@@ -243,7 +243,7 @@ connect() to [::0.1.25.128]:80 failed
 
 
 
-=== TEST 11: set upstream(id: 1) with two nodes
+=== TEST 11: set upstream, two array items to specify nodes
 --- config
     location /t {
         content_by_lua_block {
