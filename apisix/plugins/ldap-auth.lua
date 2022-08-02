@@ -30,13 +30,12 @@ local schema = {
     title = "work with route or service object",
     properties = {
         base_dn = { type = "string" },
-        ldap_host = { type = "string" },
-        ldap_port = { type = "number" },
+        ldap_uri = { type = "string" },
         use_tls = { type = "boolean" },
         verify_ldap_host = { type = "boolean" },
         uid = { type = "string" }
     },
-    required = {"base_dn","ldap_host","ldap_port"},
+    required = {"base_dn","ldap_uri"},
 }
 
 local consumer_schema = {
@@ -140,12 +139,14 @@ function _M.rewrite(conf, ctx)
     -- 2. try authenticate the user against the ldap server
     local uid = conf.uid or "cn"
 
+    local ldap_host, ldap_port = core.utils.parse_addr(conf.ldap_uri)
+
     local userdn =  uid .. "=" .. user.username .. "," .. conf.base_dn
     local ldapconf = {
         timeout = 10000,
         start_tls = false,
-        ldap_host = conf.ldap_host,
-        ldap_port = conf.ldap_port,
+        ldap_host = ldap_host,
+        ldap_port = ldap_port or 389,
         ldaps = conf.use_tls,
         verify_ldap_host = conf.verify_ldap_host,
         base_dn = conf.base_dn,
@@ -154,7 +155,7 @@ function _M.rewrite(conf, ctx)
     }
     local res, err = ldap.ldap_authenticate(user.username, user.password, ldapconf)
     if not res then
-        core.log.error(err)
+        core.log.warn("ldap-auth: ", err)
         return 401, { message = "Invalid user authorization" }
     end
 

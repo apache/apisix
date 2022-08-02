@@ -61,7 +61,7 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.ldap-auth")
-            local ok, err = plugin.check_schema({base_dn = 123, ldap_host = "127.0.0.1", ldap_port=1389})
+            local ok, err = plugin.check_schema({base_dn = 123, ldap_uri = "127.0.0.1:1389"})
             if not ok then
                 ngx.say(err)
             end
@@ -115,8 +115,7 @@ passed
                     "plugins": {
                         "ldap-auth": {
                             "base_dn": "ou=users,dc=example,dc=org",
-                            "ldap_host": "127.0.0.1",
-                            "ldap_port": 1389,
+                            "ldap_uri": "127.0.0.1:1389",
                             "uid": "cn"
                         }
                     },
@@ -231,8 +230,7 @@ find consumer user01
                     "plugins": {
                         "ldap-auth": {
                             "base_dn": "ou=users,dc=example,dc=org",
-                            "ldap_host": "127.0.0.1",
-                            "ldap_port": 1389,
+                            "ldap_uri": "127.0.0.1:1389",
                             "uid": "cn"
                         }
                     },
@@ -306,7 +304,7 @@ find consumer user01
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"title":"work with route or service object","required":["base_dn","ldap_host","ldap_port"],"properties":{"base_dn":{"type":"string"},"ldap_host":{"type":"string"},"ldap_port":{"type":"number"},"use_tls":{"type":"boolean"},"verify_ldap_host":{"type":"boolean"},"disable":{"type":"boolean"},"uid":{"type":"string"}},"type":"object"}
+{"title":"work with route or service object","required":["base_dn","ldap_uri"],"properties":{"base_dn":{"type":"string"},"ldap_uri":{"type":"string"},"use_tls":{"type":"boolean"},"verify_ldap_host":{"type":"boolean"},"disable":{"type":"boolean"},"uid":{"type":"string"}},"type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -342,7 +340,7 @@ find consumer user01
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"title":"work with route or service object","required":["base_dn","ldap_host","ldap_port"],"properties":{"base_dn":{"type":"string"},"ldap_host":{"type":"string"},"ldap_port":{"type":"number"},"use_tls":{"type":"boolean"},"verify_ldap_host":{"type":"boolean"},"disable":{"type":"boolean"},"uid":{"type":"string"}},"type":"object"}                ]]
+{"title":"work with route or service object","required":["base_dn","ldap_uri"],"properties":{"base_dn":{"type":"string"},"ldap_uri":{"type":"string"},"use_tls":{"type":"boolean"},"verify_ldap_host":{"type":"boolean"},"disable":{"type":"boolean"},"uid":{"type":"string"}},"type":"object"}                ]]
                 )
             ngx.status = code
         }
@@ -361,8 +359,7 @@ find consumer user01
                     "plugins": {
                         "ldap-auth": {
                             "base_dn": "ou=users,dc=example,dc=org",
-                            "ldap_host": "localhost",
-                            "ldap_port": 1636,
+                            "ldap_uri": "localhost:1636",
                             "uid": "cn",
                             "use_tls": true
                         }
@@ -411,8 +408,7 @@ find consumer user01
                     "plugins": {
                         "ldap-auth": {
                             "base_dn": "ou=users,dc=example,dc=org",
-                            "ldap_host": "localhost",
-                            "ldap_port": 1636,
+                            "ldap_uri": "localhost:1636",
                             "uid": "cn",
                             "use_tls": true,
                             "verify_ldap_host": true

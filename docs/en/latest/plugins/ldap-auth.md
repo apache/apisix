@@ -48,10 +48,9 @@ For Route:
 | Name     | Type    | Required | Default | Description                                                            |
 |----------|---------|----------|---------|------------------------------------------------------------------------|
 | base_dn  | string  | True     |         | Base dn of the LDAP server. For example, `ou=users,dc=example,dc=org`. |
-| ldap_host| string  | True     |         | host of the LDAP server.                                               |
-| ldap_port| number  | True     |         | port of the LDAP server.                                               |
-| use_tls  | boolean | False    | `false`  | If set to `true` uses TLS.                                            |
-| verify_ldap_host| boolean  | False     | `false`        | Whether to verify the server certificate when `use_tls` is enabled; If set to `true`, you must set `ssl_trusted_certificate` in `config.yaml`, and make sure the `ldap_host` matches the host in server certificate. |
+| ldap_uri | string  | True     |         | URI of the LDAP server.                                                |
+| use_tls  | boolean | False    | `false` | If set to `true` uses TLS.                                             |
+| verify_ldap_host| boolean  | False     | `false`        | Whether to verify the server certificate when `use_tls` is enabled; If set to `true`, you must set `ssl_trusted_certificate` in `config.yaml`, and make sure the host of `ldap_uri` matches the host in server certificate. |
 | uid      | string  | False    | `cn`    | uid attribute.                                                         |
 
 ## Enabling the plugin
@@ -80,8 +79,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "plugins": {
         "ldap-auth": {
             "base_dn": "ou=users,dc=example,dc=org",
-            "ldap_host": "localhost",
-            "ldap_port": "1389",
+            "ldap_uri": "localhost:1389",
             "uid": "cn"
         },
     },
