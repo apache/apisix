@@ -2,12 +2,12 @@ name: CI Kubernetes
 
 on:
   push:
-    branches: [ master, next, 'release/**' ]
+    branches: [ master, 'release/**' ]
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
   pull_request:
-    branches: [ master, next, 'release/**' ]
+    branches: [ master, 'release/**' ]
     paths-ignore:
       - 'docs/**'
       - '**/*.md'

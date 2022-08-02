@@ -20,9 +20,9 @@ name: License checker
 
 on:
   push:
-    branches: [master, next, 'release/**']
+    branches: [master, 'release/**']
   pull_request:
-    branches: [master, next, 'release/**']
+    branches: [master, 'release/**']
 
 jobs:
   check-license:

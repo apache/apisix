@@ -2,7 +2,7 @@ name: Doc Lint
 
 on:
   pull_request:
-    branches: [master, next, 'release/**']
+    branches: [master, 'release/**']
     paths:
       - 'docs/**'
       - '**/*.md'
