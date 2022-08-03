@@ -126,7 +126,7 @@ local function send_cls_request(host, topic, secret_id, secret_key, pb_data)
         err = fmt("got wrong status: %s, headers: %s, body, %s", res.status, json.encode(res.headers), res.body)
         -- 413, 404, 401, 403 are not retryable
         if res.status == 413 or res.status == 404 or res.status == 401 or res.status == 403 then
-            core.log.err(err, ", not retryable")
+            core.log.error(err, ", not retryable")
             return true
         end
 
