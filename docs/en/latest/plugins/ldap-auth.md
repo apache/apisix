@@ -50,7 +50,7 @@ For Route:
 | base_dn  | string  | True     |         | Base dn of the LDAP server. For example, `ou=users,dc=example,dc=org`. |
 | ldap_uri | string  | True     |         | URI of the LDAP server.                                                |
 | use_tls  | boolean | False    | `false` | If set to `true` uses TLS.                                             |
-| verify_ldap_host| boolean  | False     | `false`        | Whether to verify the server certificate when `use_tls` is enabled; If set to `true`, you must set `ssl_trusted_certificate` in `config.yaml`, and make sure the host of `ldap_uri` matches the host in server certificate. |
+| tls_verify| boolean  | False     | `false`        | Whether to verify the server certificate when `use_tls` is enabled; If set to `true`, you must set `ssl_trusted_certificate` in `config.yaml`, and make sure the host of `ldap_uri` matches the host in server certificate. |
 | uid      | string  | False    | `cn`    | uid attribute.                                                         |
 
 ## Enabling the plugin

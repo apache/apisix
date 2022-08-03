@@ -304,7 +304,7 @@ find consumer user01
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"title":"work with route or service object","required":["base_dn","ldap_uri"],"properties":{"base_dn":{"type":"string"},"ldap_uri":{"type":"string"},"use_tls":{"type":"boolean"},"verify_ldap_host":{"type":"boolean"},"disable":{"type":"boolean"},"uid":{"type":"string"}},"type":"object"}
+{"title":"work with route or service object","required":["base_dn","ldap_uri"],"properties":{"base_dn":{"type":"string"},"ldap_uri":{"type":"string"},"use_tls":{"type":"boolean"},"tls_verify":{"type":"boolean"},"disable":{"type":"boolean"},"uid":{"type":"string"}},"type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -340,7 +340,7 @@ find consumer user01
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"title":"work with route or service object","required":["base_dn","ldap_uri"],"properties":{"base_dn":{"type":"string"},"ldap_uri":{"type":"string"},"use_tls":{"type":"boolean"},"verify_ldap_host":{"type":"boolean"},"disable":{"type":"boolean"},"uid":{"type":"string"}},"type":"object"}                ]]
+{"title":"work with route or service object","required":["base_dn","ldap_uri"],"properties":{"base_dn":{"type":"string"},"ldap_uri":{"type":"string"},"use_tls":{"type":"boolean"},"tls_verify":{"type":"boolean"},"disable":{"type":"boolean"},"uid":{"type":"string"}},"type":"object"}                ]]
                 )
             ngx.status = code
         }
@@ -411,7 +411,7 @@ find consumer user01
                             "ldap_uri": "localhost:1636",
                             "uid": "cn",
                             "use_tls": true,
-                            "verify_ldap_host": true
+                            "tls_verify": true
                         }
                     },
                     "upstream": {

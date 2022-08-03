@@ -48,7 +48,7 @@ Route 端：
 | base_dn  | string  | 是     |         | LDAP 服务器的 dn，例如：`ou=users,dc=example,dc=org`。|
 | ldap_uri | string  | 是     |         | LDAP 服务器的 URI。                                                |
 | use_tls  | boolean | 否    | false  | 如果设置为 `true` 则表示启用 TLS。                                             |
-| verify_ldap_host| boolean  | 否     | false        | 是否校验 LDAP 服务器的证书。如果设置为 `true`，你必须设置 `config.yaml` 里面的 `ssl_trusted_certificate`，并且确保 `ldap_uri` 里的 host 和服务器证书中的 host 匹配。 |
+| tls_verify| boolean  | 否     | false        | 是否校验 LDAP 服务器的证书。如果设置为 `true`，你必须设置 `config.yaml` 里面的 `ssl_trusted_certificate`，并且确保 `ldap_uri` 里的 host 和服务器证书中的 host 匹配。 |
 | uid      | string  | 否    | cn    | UID 属性。                                                         |
 
 ## 启用插件
