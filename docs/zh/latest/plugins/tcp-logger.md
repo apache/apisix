@@ -44,7 +44,7 @@ description: 本文介绍了 API 网关 Apache APISIX 如何启用 tcp-logger �
 | tls_options      | string  | 否     |        |         | TLS 选项。                                        |
 | include_req_body | boolean | 否     |        |         | 当设置为 `true` 时，将请求体包含在日志中。           |
 
-该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
+该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
 ## 启用插件
 
