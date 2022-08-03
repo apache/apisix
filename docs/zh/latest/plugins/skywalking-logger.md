@@ -46,7 +46,7 @@ description: 本文将介绍 API 网关 Apache APISIX 如何通过 skywalking-lo
 | name                   | string  | 否     | "skywalking logger"  |               | 标识 logger 的唯一标识符。                                         |
 | include_req_body       | boolean | 否     | false                | [false, true] | 当设置为 `true` 时，将请求正文包含在日志中。                         |
 
-该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
+该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
 ## 配置插件元数据
 
