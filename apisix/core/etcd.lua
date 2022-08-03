@@ -21,6 +21,7 @@
 
 local fetch_local_conf  = require("apisix.core.config_local").local_conf
 local array_mt          = require("apisix.core.json").array_mt
+local v3_adapter        = require("apisix.admin.v3_adapter")
 local etcd              = require("resty.etcd")
 local clone_tab         = require("table.clone")
 local health_check      = require("resty.etcd.health_check")
@@ -218,7 +219,7 @@ function _M.get_format(res, real_key, is_dir, formatter)
         return not_found(res)
     end
 
-    res.body.action = "get"
+    v3_adapter.to_v3(res.body, "get")
 
     if formatter then
         return formatter(res)
@@ -246,6 +247,7 @@ function _M.get_format(res, real_key, is_dir, formatter)
     end
 
     res.body.kvs = nil
+    v3_adapter.to_v3_list(res.body)
     return res
 end
 
@@ -326,7 +328,7 @@ local function set(key, value, ttl)
     res.headers["X-Etcd-Index"] = res.body.header.revision
 
     -- etcd v3 set would not return kv info
-    res.body.action = "set"
+    v3_adapter.to_v3(res.body, "set")
     res.body.node = {}
     res.body.node.key = prefix .. key
     res.body.node.value = value
@@ -389,7 +391,7 @@ function _M.atomic_set(key, value, ttl, mod_revision)
 
     res.headers["X-Etcd-Index"] = res.body.header.revision
     -- etcd v3 set would not return kv info
-    res.body.action = "compareAndSwap"
+    v3_adapter.to_v3(res.body, "compareAndSwap")
     res.body.node = {
         key = key,
         value = value,
@@ -427,7 +429,7 @@ function _M.push(key, value, ttl)
         return nil, err
     end
 
-    res.body.action = "create"
+    v3_adapter.to_v3(res.body, "create")
     return res, nil
 end
 
@@ -451,7 +453,7 @@ function _M.delete(key)
     end
 
     -- etcd v3 set would not return kv info
-    res.body.action = "delete"
+    v3_adapter.to_v3(res.body, "delete")
     res.body.node = {}
     res.body.key = prefix .. key
 
