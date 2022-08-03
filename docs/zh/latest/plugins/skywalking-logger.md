@@ -33,7 +33,7 @@ description: 本文将介绍 API 网关 Apache APISIX 如何通过 skywalking-lo
 
 如果上下文中存在 `tracing context`，插件会自动建立 `trace` 与日志的关联，该功能依赖于 [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/latest/en/protocols/skywalking-cross-process-propagation-headers-protocol-v3/)。
 
-该插件也提供了将访问日志作为 JSON 对象发送到 SkyWalking OAP 服务器的能力
+该插件也提供了将访问日志作为 JSON 对象发送到 SkyWalking OAP 服务器的能力。
 
 ## 属性
 
@@ -46,7 +46,7 @@ description: 本文将介绍 API 网关 Apache APISIX 如何通过 skywalking-lo
 | name                   | string  | 否     | "skywalking logger"  |               | 标识 logger 的唯一标识符。                                         |
 | include_req_body       | boolean | 否     | false                | [false, true] | 当设置为 `true` 时，将请求正文包含在日志中。                         |
 
-本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
+该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
 ## 配置插件元数据
 
@@ -58,7 +58,7 @@ description: 本文将介绍 API 网关 Apache APISIX 如何通过 skywalking-lo
 
 :::info 重要
 
-该配置是全局生效的。如果你指定了 `log_format`，该配置就会对所有绑定 `skywalking-logger` 的路由或服务生效。
+该配置全局生效。如果你指定了 `log_format`，该配置就会对所有绑定 `skywalking-logger` 的路由或服务生效。
 
 :::
 
