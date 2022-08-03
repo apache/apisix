@@ -66,7 +66,8 @@ description: 本文档介绍了 Apache APISIX mqtt-proxy 插件的信息，通�
 你可以创建一个 stream 路由并启用 `mqtt-proxy` 插件。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "mqtt-proxy": {
@@ -90,7 +91,8 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 该插件暴露了一个变量 `mqtt_client_id`，你可以使用它来通过客户端 ID 进行负载均衡。比如：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "mqtt-proxy": {
@@ -151,7 +153,11 @@ curl 127.0.0.1:9180/apisix/admin/stream_routes/1 \
 }'
 ```
 
+:::note 注意
+
 `sni` 名称必须与提供的 CA 和服务器证书创建的 SSL 对象的一个​​或多个 SNI 匹配。
+
+:::
 
 ## 禁用插件
 
