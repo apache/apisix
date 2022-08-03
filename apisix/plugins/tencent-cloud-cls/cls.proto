@@ -1,34 +1,50 @@
-syntax = "proto2";
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
+// https://cloud.tencent.com/document/product/614/59470
 package cls;
 
 message Log
 {
-  required int64 time = 1 [jstype = JS_STRING];
   message Content
   {
-    required string key = 1;
-    required string value = 2;
+    required string key   = 1; // 每组字段的 key
+    required string value = 2; // 每组字段的 value
   }
-  repeated Content contents = 2;
+  required int64   time     = 1; // 时间戳，UNIX时间格式
+  repeated Content contents = 2; // 一条日志里的多个kv组合
 }
 
 message LogTag
 {
-  required string key = 1;
-  required string value = 2;
+  required string key       = 1;
+  required string value     = 2;
 }
 
 message LogGroup
 {
-  repeated Log logs = 1;
-  optional string contextFlow = 2;
-  optional string filename = 3;
-  optional string source = 4;
-  repeated LogTag logTags = 5;
+  repeated Log    logs        = 1; // 多条日志合成的日志数组
+  optional string contextFlow = 2; // 目前暂无效用
+  optional string filename    = 3; // 日志文件名
+  optional string source      = 4; // 日志来源，一般使用机器IP
+  repeated LogTag logTags     = 5;
 }
 
 message LogGroupList
 {
-  repeated LogGroup logGroupList = 1;
+  repeated LogGroup logGroupList = 1; // 日志组列表
 }
