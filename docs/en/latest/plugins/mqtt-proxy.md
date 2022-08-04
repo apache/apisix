@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - MQTT Proxy
-description: This document contains information about the Apache APISIX mqtt-proxy Plugin.
+description: This document contains information about the Apache APISIX mqtt-proxy Plugin. The `mqtt-proxy` Plugin is used for dynamic load balancing with `client_id` of MQTT.
 ---
 
 <!--
@@ -127,9 +127,9 @@ MQTT connections with different client ID will be forwarded to different nodes b
 
 Stream proxies use TCP connections and can accept TLS. Follow the guide about [how to accept tls over tcp connections](../stream-proxy.md/#accept-tls-over-tcp-connection) to open a stream proxy with enabled TLS.
 
-The `mqtt-proxy` plugin is enabled through TCP communications on the specified port for the stream proxy, and will also require clients to authenticate via TLS if tls is set to true.
+The `mqtt-proxy` plugin is enabled through TCP communications on the specified port for the stream proxy, and will also require clients to authenticate via TLS if `tls` is set to `true`.
 
-Configure `ssl` providing the CA certificate and the server certificate, together with a list of SNIs. Steps to protect `stream_routes` with `ssl` are equivalent to the ones to [protect Routes](../mtls.md/#protect-route)
+Configure `ssl` providing the CA certificate and the server certificate, together with a list of SNIs. Steps to protect `stream_routes` with `ssl` are equivalent to the ones to [protect Routes](../mtls.md/#protect-route).
 
 ### Create a stream_route using mqtt-proxy plugin and mTLS
 
@@ -154,7 +154,7 @@ curl 127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-The `sni` name must math one or more of the SNIs provided to the SSL object that you created with the CA and server certificates.
+The `sni` name must match one or more of the SNIs provided to the SSL object that you created with the CA and server certificates.
 
 ## Disable Plugin
 
