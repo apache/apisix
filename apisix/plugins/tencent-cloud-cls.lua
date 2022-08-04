@@ -20,8 +20,9 @@ local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local cls_sdk = require("apisix.plugins.tencent-cloud-cls.cls-sdk")
 local random = math.random
-local ngx = ngx
 math.randomseed(ngx.time() + ngx.worker.pid())
+local ngx = ngx
+local pairs = pairs
 
 local plugin_name = "tencent-cloud-cls"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
@@ -36,6 +37,7 @@ local schema = {
         sample_rate = { type = "integer", minimum = 1, maximum = 100, default = 100 },
         include_req_body = { type = "boolean", default = false },
         include_resp_body = { type = "boolean", default = false },
+        global_tag = { type = "object" },
     },
     required = { "cls_host", "cls_topic", "secret_id", "secret_key" }
 }
@@ -70,6 +72,11 @@ function _M.log(conf, ctx)
     local entry = log_util.get_full_log(ngx, conf)
     if not entry.route_id then
         entry.route_id = "no-matched"
+    end
+    if conf.global_tag ~= nil then
+        for k, v in pairs(conf.global_tag) do
+            entry[k] = v
+        end
     end
 
     if batch_processor_manager:add_entry(conf, entry) then
