@@ -16,6 +16,7 @@
 --
 
 local pb = require "pb"
+local assert = assert
 assert(pb.loadfile("apisix/plugins/tencent-cloud-cls/cls.pb"))
 local http = require("resty.http")
 local socket = require("socket")
@@ -31,10 +32,15 @@ local ngx_sha1_bin = ngx.sha1_bin
 local ngx_hmac_sha1 = ngx.hmac_sha1
 
 local fmt = string.format
+local table = table
 local concat_tab = table.concat
 local clear_tab = table.clear
 local new_tab = table.new
 local insert_tab = table.insert
+local ipairs = ipairs
+local pairs = pairs
+local type = type
+local tostring = tostring
 
 local MAX_SINGLE_VALUE_SIZE = 1 * 1024 * 1024
 local MAX_LOG_GROUP_VALUE_SIZE = 5 * 1024 * 1024 -- 5MB
@@ -55,7 +61,7 @@ local function get_ip(hostname)
     local _, resolved = socket.dns.toip(hostname)
     local ListTab = {}
     for _, v in ipairs(resolved.ip) do
-        table.insert(ListTab, v)
+        insert_tab(ListTab, v)
     end
     return ListTab
 end
@@ -80,7 +86,8 @@ local function sign(secret_id, secret_key)
     local format_params = ""
     local format_headers = ""
     local sign_algorithm = "sha1"
-    local http_request_info = fmt("%s\n%s\n%s\n%s\n", method, cls_api_path, format_params, format_headers)
+    local http_request_info = fmt("%s\n%s\n%s\n%s\n",
+                                  method, cls_api_path, format_params, format_headers)
     local cur_time = ngx_time()
     local sign_time = fmt("%d;%d", cur_time, cur_time + auth_expire_time)
     local string_to_sign = fmt("%s\n%s\n%s\n", sign_algorithm, sign_time, sha1(http_request_info))
@@ -123,7 +130,8 @@ local function send_cls_request(host, topic, secret_id, secret_key, pb_data)
     end
 
     if res.status ~= 200 then
-        err = fmt("got wrong status: %s, headers: %s, body, %s", res.status, json.encode(res.headers), res.body)
+        err = fmt("got wrong status: %s, headers: %s, body, %s",
+                  res.status, json.encode(res.headers), res.body)
         -- 413, 404, 401, 403 are not retryable
         if res.status == 413 or res.status == 404 or res.status == 401 or res.status == 403 then
             core.log.error(err, ", not retryable")

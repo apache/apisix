@@ -77,7 +77,8 @@ function _M.log(conf, ctx)
     end
 
     local process = function(entries)
-        return cls_sdk.send_to_cls(conf.secret_id, conf.secret_key, conf.cls_host, conf.cls_topic, entries)
+        return cls_sdk.send_to_cls(conf.secret_id, conf.secret_key,
+                                   conf.cls_host, conf.cls_topic, entries)
     end
 
     batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, process)
