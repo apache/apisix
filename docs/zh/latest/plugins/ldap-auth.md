@@ -29,7 +29,7 @@ description: 本篇文档介绍了 Apache APISIX ldap-auth 插件的相关信息
 
 ## 描述
 
-`ldap-auth` 插件可用于给路由或服务添加 LDAP 身份认证，该插件使用 [lualdap](https://lualdap.github.io/lualdap/) 连接 LDAP 服务器。
+`ldap-auth` 插件可用于给路由或服务添加 LDAP 身份认证，该插件使用 [lua-resty-ldap](https://github.com/api7/lua-resty-ldap) 连接 LDAP 服务器。
 
 该插件需要与 Consumer 一起配合使用，API 的调用方可以使用 [basic authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) 与 LDAP 服务器进行认证。
 
@@ -47,7 +47,8 @@ Route 端：
 |----------|---------|----------|---------|------------------------------------------------------------------------|
 | base_dn  | string  | 是     |         | LDAP 服务器的 dn，例如：`ou=users,dc=example,dc=org`。|
 | ldap_uri | string  | 是     |         | LDAP 服务器的 URI。                                                |
-| use_tls  | boolean | 否    | true  | 如果设置为 `true` 则表示启用 TLS。                                             |
+| use_tls  | boolean | 否    | false  | 如果设置为 `true` 则表示启用 TLS。                                             |
+| tls_verify| boolean  | 否     | false        | 是否校验 LDAP 服务器的证书。如果设置为 `true`，你必须设置 `config.yaml` 里面的 `ssl_trusted_certificate`，并且确保 `ldap_uri` 里的 host 和服务器证书中的 host 匹配。 |
 | uid      | string  | 否    | cn    | UID 属性。                                                         |
 
 ## 启用插件
