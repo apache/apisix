@@ -22,6 +22,7 @@ local http = require("resty.http")
 local socket = require("socket")
 local str_util = require("resty.string")
 local core = require("apisix.core")
+local core_gethostname = require("apisix.core.utils").gethostname
 local json = core.json
 local json_encode = json.encode
 
@@ -66,7 +67,7 @@ local function get_ip(hostname)
     return ListTab
 end
 
-local host_ip = tostring(unpack(get_ip(socket.dns.gethostname())))
+local host_ip = tostring(unpack(get_ip(core_gethostname())))
 local log_group_list = {}
 local log_group_list_pb = {
     logGroupList = log_group_list,
