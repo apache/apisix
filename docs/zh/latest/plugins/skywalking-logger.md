@@ -1,5 +1,11 @@
 ---
 title: skywalking-logger
+keywords:
+  - APISIX
+  - API 网关
+  - Plugin
+  - SkyWalking
+description: 本文将介绍 API 网关 Apache APISIX 如何通过 skywalking-logger 插件将日志数据推送到 SkyWalking OAP 服务器。
 ---
 
 <!--
@@ -23,29 +29,67 @@ title: skywalking-logger
 
 ## 描述
 
-`skywalking-logger` 是一个可将 Access Log 数据通过 `HTTP` 推送到 `SkyWalking OAP` 服务器的插件。如果上下文中存在 `tracing context`，插件会自动建立 `trace` 与日志的关联，这依赖于 [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/latest/en/protocols/skywalking-cross-process-propagation-headers-protocol-v3/)的支持。
+`skywalking-logger` 插件可用于将 APISIX 的访问日志数据推送到 SkyWalking OAP 服务器。
 
-本插件提供将 Access Log 数据作为 JSON 对象发送到 `SkyWalking OAP` 服务器的功能。
+如果上下文中存在 `tracing context`，插件会自动建立 `trace` 与日志的关联，该功能依赖于 [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/latest/en/protocols/skywalking-cross-process-propagation-headers-protocol-v3/)。
+
+该插件也提供了将访问日志作为 JSON 对象发送到 SkyWalking OAP 服务器的能力。
 
 ## 属性
 
+| 名称                    | 类型    | 必选项 | 默认值                | 有效值        | 描述                                                               |
+| ---------------------- | ------- | ------ | -------------------- | ------------- | ---------------------------------------------------------------- |
+| endpoint_addr          | string  | 是     |                      |               | SkyWalking OAP 服务器的 URI。                                      |
+| service_name           | string  | 否     |"APISIX"              |               | SkyWalking 服务名称。                                              |
+| service_instance_name  | string  | 否     |"APISIX Instance Name"|               | SkyWalking 服务的实例名称。当设置为 `$hostname`会直接获取本地主机名。 |
+| timeout                | integer | 否     | 3                    | [1,...]       | 发送请求后保持连接活动的时间。                                       |
+| name                   | string  | 否     | "skywalking logger"  |               | 标识 logger 的唯一标识符。                                         |
+| include_req_body       | boolean | 否     | false                | [false, true] | 当设置为 `true` 时，将请求正文包含在日志中。                         |
+
+该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
+
+## 配置插件元数据
+
+`skywalking-logger` 也支持自定义日志格式，与 [http-logger](./http-logger.md) 插件类似。
+
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| endpoint_addr    | string  | 必须   |               |         | `SkyWalking OAp` 服务器的 URI。                   |
-| service_name   | string  | 可选   |"APISIX"         |         | `SkyWalking` 服务名称。                           |
-| service_instance_name    | string  | 可选   |"APISIX Instance Name"|         | `SkyWalking`服务实例名称，将其设置为`$hostname`以直接获取本地主机名。 |
-| timeout          | integer | 可选   | 3             | [1,...] | 发送请求后保持连接活动的时间。                      |
-| name             | string  | 可选   | "skywalking logger" |         | 标识 logger 的唯一标识符。                   |
-| include_req_body | boolean | 可选   | false         | [false, true] | 是否包括请求 body。false： 表示不包含请求的 body ； true： 表示包含请求的 body 。 |
+| log_format       | object  | 否   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX](../apisix-variable.md) 或 [NGINX](http://nginx.org/en/docs/varindex.html) 变量。|
 
-本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
+:::info 重要
 
-## 如何开启
+该配置全局生效。如果你指定了 `log_format`，该配置就会对所有绑定 `skywalking-logger` 的路由或服务生效。
 
-这是有关如何为特定路由启用 `skywalking-logger` 插件的示例。在此之前，需要有可用的 SkyWalking OAP 可以被访问。
+:::
+
+以下示例展示了如何通过 Admin API 进行插件元数据配置：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/skywalking-logger \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "log_format": {
+        "host": "$host",
+        "@timestamp": "$time_iso8601",
+        "client_ip": "$remote_addr"
+    }
+}'
+```
+
+配置成功后，将得到如下日志格式：
+
+```shell
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+```
+
+## 启用插件
+
+完成 SkyWalking OAP 配置后，你可以通过以下命令在路由中启用该插件：
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
       "plugins": {
             "skywalking-logger": {
@@ -64,33 +108,21 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-> 成功：
+现在你可以向 APISIX 发起请求：
 
 ```shell
-$ curl -i http://127.0.0.1:9080/hello
-HTTP/1.1 200 OK
-...
-hello, world
+curl -i http://127.0.0.1:9080/hello
 ```
 
-完成上述步骤后，可以在 `SkyWalking UI` 查看到相关日志。
-
-## 插件元数据设置
-
-`skywalking-logger` 也支持自定义日志格式，与 [http-logger](./http-logger.md) 插件类似。
-
-| 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
-| ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 __APISIX__ 变量或 [Nginx 内置变量](http://nginx.org/en/docs/varindex.html)。|
-
-特别的，**该设置是全局生效的**，意味着指定 log_format 后，将对所有绑定 skywalking-logger 的 Route 或 Service 生效。
+完成上述步骤后，你可以在 SkyWalking UI 查看到相关日志。
 
 ## 禁用插件
 
-在插件配置中删除相应的 JSON 配置就可以禁用 `skywalking-logger` 插件。由于 Apache APISIX 插件支持热加载，因此无需重新启动 Apache APISIX：
+当你需要禁用该插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
