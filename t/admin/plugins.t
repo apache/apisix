@@ -126,6 +126,7 @@ example-plugin
 aws-lambda
 azure-functions
 openwhisk
+openfunction
 serverless-post-function
 ext-plugin-post-req
 ext-plugin-post-resp
