@@ -2,10 +2,9 @@
 title: public-api
 keywords:
   - APISIX
-  - Plugin
+  - API Gateway
   - Public API
-  - public-api
-description: This document contains information about the Apache APISIX public-api Plugin.
+description: The public-api is used for exposing an API endpoint through a general HTTP API router.
 ---
 
 <!--
@@ -33,7 +32,11 @@ The `public-api` is used for exposing an API endpoint through a general HTTP API
 
 When you are using custom Plugins, you can use the `public-api` Plugin to define a fixed, public API for a particular functionality. For example, you can create a public API endpoint `/apisix/plugin/jwt/sign` for JWT authentication using the [jwt-auth](./jwt-auth.md) Plugin.
 
+:::note
+
 The public API added in a custom Plugin is not exposed by default and the user should manually configure a Route and enable the `public-api` Plugin on it.
+
+:::
 
 ## Attributes
 
@@ -113,7 +116,7 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r2' \
 Now, only authenticated requests are allowed:
 
 ```shell
-curl -i 'http://127.0.0.1:9080/gen_token?key=user-key'
+curl -i 'http://127.0.0.1:9080/gen_token?key=user-key' \
     -H "apikey: test-apikey"
 ```
 
@@ -128,7 +131,7 @@ curl -i 'http://127.0.0.1:9080/gen_token?key=user-key'
 ```
 
 ```shell
-HTTP/1.1 401 UNAUTHORIZED
+HTTP/1.1 401 Unauthorized
 ```
 
 ## Disable Plugin
