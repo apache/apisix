@@ -19,8 +19,7 @@ local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local cls_sdk = require("apisix.plugins.tencent-cloud-cls.cls-sdk")
-local random = math.random
-math.randomseed(ngx.time() + ngx.worker.pid())
+local math = math
 local ngx = ngx
 local pairs = pairs
 
@@ -35,7 +34,12 @@ local schema = {
         -- https://console.cloud.tencent.com/capi
         secret_id = { type = "string" },
         secret_key = { type = "string" },
-        sample_rate = { type = "integer", minimum = 1, maximum = 100, default = 100 },
+        sample_ratio = {
+            type = "number",
+            minimum = 0.00001,
+            maximum = 1,
+            default = 1
+        },
         include_req_body = { type = "boolean", default = false },
         include_resp_body = { type = "boolean", default = false },
         global_tag = { type = "object" },
@@ -76,11 +80,13 @@ end
 
 function _M.access(conf, ctx)
     -- sample if set
-    if conf.sample_rate < 100 and random(1, 100) > conf.sample_rate then
-        core.log.debug("not sampled")
+    ctx.cls_sample = false
+    if conf.sample_ratio == 1 or math.random() < conf.sample_ratio then
+        core.log.debug("cls sampled")
+        ctx.cls_sample = true
         return
     end
-    ctx.cls_sample = true
+    core.log.debug("cls not sampled")
 end
 
 
@@ -94,7 +100,7 @@ end
 function _M.log(conf, ctx)
     -- sample if set
     if not ctx.cls_sample then
-        core.log.debug("not sampled")
+        core.log.debug("cls not sampled, skip log")
         return
     end
     local metadata = plugin.plugin_metadata(plugin_name)
@@ -108,10 +114,6 @@ function _M.log(conf, ctx)
         entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
     else
         entry = log_util.get_full_log(ngx, conf)
-    end
-
-    if not entry.route_id then
-        entry.route_id = "no-matched"
     end
 
     if conf.global_tag then

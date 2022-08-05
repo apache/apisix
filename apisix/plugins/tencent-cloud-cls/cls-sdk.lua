@@ -25,13 +25,11 @@ local core = require("apisix.core")
 local core_gethostname = require("apisix.core.utils").gethostname
 local json = core.json
 local json_encode = json.encode
-
 local ngx = ngx
 local ngx_time = ngx.time
 local ngx_now = ngx.now
 local ngx_sha1_bin = ngx.sha1_bin
 local ngx_hmac_sha1 = ngx.hmac_sha1
-
 local fmt = string.format
 local table = table
 local concat_tab = table.concat
@@ -58,13 +56,14 @@ local params_cache = {
     headers = headers_cache,
 }
 
+
 local function get_ip(hostname)
     local _, resolved = socket.dns.toip(hostname)
-    local ListTab = {}
+    local ip_list = {}
     for _, v in ipairs(resolved.ip) do
-        insert_tab(ListTab, v)
+        insert_tab(ip_list, v)
     end
-    return ListTab
+    return ip_list
 end
 
 local host_ip = tostring(unpack(get_ip(core_gethostname())))
@@ -73,13 +72,16 @@ local log_group_list_pb = {
     logGroupList = log_group_list,
 }
 
+
 local function sha1(msg)
     return str_util.to_hex(ngx_sha1_bin(msg))
 end
 
+
 local function sha1_hmac(key, msg)
     return str_util.to_hex(ngx_hmac_sha1(key, msg))
 end
+
 
 -- sign algorithm https://cloud.tencent.com/document/product/614/12445
 local function sign(secret_id, secret_key)
@@ -108,6 +110,7 @@ local function sign(secret_id, secret_key)
 
     return concat_tab(arr, '&')
 end
+
 
 local function send_cls_request(host, topic, secret_id, secret_key, pb_data)
     local http_new = http:new()
@@ -146,6 +149,7 @@ local function send_cls_request(host, topic, secret_id, secret_key, pb_data)
     return true
 end
 
+
 -- normalized log data for CLS API
 local function normalize_log(log)
     local normalized_log = {}
@@ -172,6 +176,7 @@ local function normalize_log(log)
     end
     return normalized_log, log_size
 end
+
 
 local function send_to_cls(secret_id, secret_key, host, topic_id, logs)
     clear_tab(log_group_list)
