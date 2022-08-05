@@ -190,9 +190,9 @@ local function run()
                                         uri_args)
     if code then
         if v3_adapter.enable_v3() then
-            core.response.set_header("X-API-VERSION", "v3")
+            core.response.set_header("X-API-VERSION", "3")
         else
-            core.response.set_header("X-API-VERSION", "v2")
+            core.response.set_header("X-API-VERSION", "2")
         end
         data = strip_etcd_resp(data)
         core.response.exit(code, data)
