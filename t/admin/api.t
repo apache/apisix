@@ -70,7 +70,7 @@ apisix:
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- response_headers
-X-API-VERSION: 2
+X-API-VERSION: v2
 
 
 
@@ -81,4 +81,4 @@ apisix:
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- response_headers
-X-API-VERSION: 3
+X-API-VERSION: v3
