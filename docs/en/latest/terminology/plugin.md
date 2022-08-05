@@ -191,12 +191,7 @@ curl -v /dev/null http://127.0.0.1:9080/get -H"host:httpbin.org"
 
 ```shell
 < HTTP/1.1 200 OK
-< Content-Type: application/json
-< Content-Length: 306
-< Connection: keep-alive
-< Date: Thu, 04 Aug 2022 07:02:06 GMT
-< Access-Control-Allow-Origin: *
-< Access-Control-Allow-Credentials: true
+......
 < Server: APISIX/2.15.0
 <
 {
@@ -221,12 +216,7 @@ curl -v /dev/null http://127.0.0.1:9080/get?version=v2 -H"host:httpbin.org"
 
 ```shell
 < HTTP/1.1 200 OK
-< Content-Type: application/json
-< Content-Length: 428
-< Connection: keep-alive
-< Date: Thu, 04 Aug 2022 07:02:27 GMT
-< Access-Control-Allow-Origin: *
-< Access-Control-Allow-Credentials: true
+......
 < Server: APISIX/2.15.0
 <
 {

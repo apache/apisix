@@ -72,9 +72,9 @@ local _M = {
 
 | 名称         | 类型 | 描述           |
 |--------------|------|----------------|
-| error_response | string/object  | 自定义错误响应 |
-| priority       | integer        | 自定义插件优先级 |
-| filter  | array   | 根据请求的参数，在运行时控制插件是否执行。此配置由一个或多个 {var, operator, val} 元素组成列表，类似：{{var, operator, val}, {var, operator, val}, ...}}。例如 `{"arg_version", "==", "v2"}`，表示当前请求参数 `version` 是 `v2`。这里的 var 与 NGINX 内部自身变量命名是保持一致。操作符的具体用法请看[lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 operator-list 部分。|
+| error_response | string/object  | 自定义错误响应。 |
+| priority       | integer        | 自定义插件优先级。 |
+| filter  | array   | 根据请求的参数，在运行时控制插件是否执行。此配置由一个或多个 {var, operator, val} 元素组成列表，类似：{{var, operator, val}, {var, operator, val}, ...}}。例如 `{"arg_version", "==", "v2"}`，表示当前请求参数 `version` 是 `v2`。这里的 `var` 与 NGINX 内部自身变量命名是保持一致。操作符的具体用法请看[lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 operator-list 部分。|
 
 ### 自定义错误响应
 
@@ -134,7 +134,7 @@ serverless-pre-function 的默认优先级是 10000，serverless-post-function �
 
 默认情况下，在路由中指定的插件都会被执行。但是我们可以通过 `filter` 配置项为插件添加一个过滤器，通过过滤器的执行结果控制插件是否执行。
 
-如下配置表示，只有当请求查询参数中 `version` 值为 `v2` 时， `proxy-rewrite` 插件才会执行。
+如下配置表示，只有当请求查询参数中 `version` 值为 `v2` 时，`proxy-rewrite` 插件才会执行。
 
 ```json
 {
@@ -181,12 +181,7 @@ curl -v /dev/null http://127.0.0.1:9080/get -H"host:httpbin.org"
 
 ```shell
 < HTTP/1.1 200 OK
-< Content-Type: application/json
-< Content-Length: 306
-< Connection: keep-alive
-< Date: Thu, 04 Aug 2022 07:02:06 GMT
-< Access-Control-Allow-Origin: *
-< Access-Control-Allow-Credentials: true
+......
 < Server: APISIX/2.15.0
 <
 {
@@ -211,12 +206,7 @@ curl -v /dev/null http://127.0.0.1:9080/get?version=v2 -H"host:httpbin.org"
 
 ```shell
 < HTTP/1.1 200 OK
-< Content-Type: application/json
-< Content-Length: 428
-< Connection: keep-alive
-< Date: Thu, 04 Aug 2022 07:02:27 GMT
-< Access-Control-Allow-Origin: *
-< Access-Control-Allow-Credentials: true
+......
 < Server: APISIX/2.15.0
 <
 {
