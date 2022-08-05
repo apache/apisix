@@ -18,6 +18,7 @@ local require = require
 local core = require("apisix.core")
 local route = require("apisix.utils.router")
 local plugin = require("apisix.plugin")
+local v3_adapter = require("apisix.admin.v3_adapter")
 local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_time = ngx.time
@@ -188,6 +189,11 @@ local function run()
     local code, data = resource[method](seg_id, req_body, seg_sub_path,
                                         uri_args)
     if code then
+        if v3_adapter.enable_v3() then
+            core.response.set_header("X-API-VERSION", "v3")
+        else
+            core.response.set_header("X-API-VERSION", "v2")
+        end
         data = strip_etcd_resp(data)
         core.response.exit(code, data)
     end
