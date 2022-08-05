@@ -24,6 +24,7 @@ math.randomseed(ngx.time() + ngx.worker.pid())
 local ngx = ngx
 local pairs = pairs
 
+
 local plugin_name = "tencent-cloud-cls"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
@@ -42,38 +43,78 @@ local schema = {
     required = { "cls_host", "cls_topic", "secret_id", "secret_key" }
 }
 
+
+local metadata_schema = {
+    type = "object",
+    properties = {
+        log_format = log_util.metadata_schema_log_format,
+    },
+}
+
+
 local _M = {
     version = 0.1,
     priority = 397,
     name = plugin_name,
     schema = batch_processor_manager:wrap_schema(schema),
+    metadata_schema = metadata_schema,
 }
 
-function _M.check_schema(conf)
-    return core.schema.check(schema, conf)
+
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
+
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return nil, err
+    end
+    return log_util.check_log_schema(conf)
 end
 
-function _M.body_filter(conf, ctx)
+
+function _M.access(conf, ctx)
     -- sample if set
     if conf.sample_rate < 100 and random(1, 100) > conf.sample_rate then
         core.log.debug("not sampled")
         return
     end
-    log_util.collect_body(conf, ctx)
     ctx.cls_sample = true
 end
 
+
+function _M.body_filter(conf, ctx)
+    if ctx.cls_sample then
+        log_util.collect_body(conf, ctx)
+    end
+end
+
+
 function _M.log(conf, ctx)
     -- sample if set
-    if ctx.cls_sample == nil then
+    if not ctx.cls_sample then
         core.log.debug("not sampled")
         return
     end
-    local entry = log_util.get_full_log(ngx, conf)
+    local metadata = plugin.plugin_metadata(plugin_name)
+    core.log.info("metadata: ", core.json.delay_encode(metadata))
+
+    local entry
+
+    if metadata and metadata.value.log_format
+            and core.table.nkeys(metadata.value.log_format) > 0
+    then
+        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
+    else
+        entry = log_util.get_full_log(ngx, conf)
+    end
+
     if not entry.route_id then
         entry.route_id = "no-matched"
     end
-    if conf.global_tag ~= nil then
+
+    if conf.global_tag then
         for k, v in pairs(conf.global_tag) do
             entry[k] = v
         end
@@ -90,5 +131,6 @@ function _M.log(conf, ctx)
 
     batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, process)
 end
+
 
 return _M
