@@ -2,10 +2,9 @@
 title: client-control
 keywords:
   - APISIX
-  - Plugin
+  - API Gateway
   - Client Control
-  - client-control
-description: This document contains information about the Apache APISIX client-control Plugin.
+description: This document contains information about the Apache APISIX client-control Plugin, you can use it to  control the behavior of Nginx to handle a client request dynamically.
 ---
 
 <!--
@@ -41,7 +40,7 @@ This Plugin requires APISIX to run on APISIX-Base. See [apisix-build-tools](http
 
 | Name          | Type    | Required | Valid values | Description                                                                                                                          |
 | ------------- | ------- | -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| max_body_size | integer | False    | [0,...]      | Dynamically set the [client_max_body_size](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size) directive. |
+| max_body_size | integer | False    | [0,...]      | Dynamically set the [`client_max_body_size`](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size) directive. |
 
 ## Enabling the Plugin
 
