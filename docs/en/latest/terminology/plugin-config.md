@@ -60,7 +60,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 When APISIX can't find the Plugin Config with the `id`, the requests reaching this Route are terminated with a status code of 503.
 
-If a Route already has the `plugins` field configured, the plugins in the Plugin Config will effectively be merged to it. The same plugin in the Plugin Config will override the ones configured directly in the Route.
+If a Route already has the `plugins` field configured, the plugins in the Plugin Config will effectively be merged to it. The same plugin in the Plugin Config will not override the ones configured directly in the Route.
 
 For example, if we configure a Plugin Config as shown below
 
@@ -135,7 +135,7 @@ the effective configuration will be as the one shown below:
             "host": "apisix.iresty.com"
         },
         "limit-count": {
-            "count": 2,
+            "count": 20,
             "time_window": 60,
             "rejected_code": 503
         }

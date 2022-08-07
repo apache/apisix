@@ -65,7 +65,9 @@ function _M.merge(route_conf, plugin_config)
     route_conf.value.plugins = core.table.clone(route_conf.value.plugins)
 
     for name, value in pairs(plugin_config.value.plugins) do
-        route_conf.value.plugins[name] = value
+        if not route_conf.value.plugins[name] then
+            route_conf.value.plugins[name] = value
+        end
     end
 
     route_conf.update_count = route_conf.update_count + 1

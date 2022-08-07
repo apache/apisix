@@ -113,7 +113,7 @@ routes:
 --- request
 GET /echo
 --- response_body
-hello
+world
 --- response_headers
 in: out
 --- error_log eval
