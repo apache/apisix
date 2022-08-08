@@ -373,7 +373,6 @@ GET /t
 passed
 --- no_error_log
 [error]
---- skip_nginx: 5: < 1.19.0
 
 
 
@@ -384,7 +383,6 @@ mmm
 hello world
 --- no_error_log
 [error]
---- skip_nginx: 5: < 1.19.0
 
 
 
