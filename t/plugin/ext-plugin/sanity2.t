@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,7 +14,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+use t::APISIX 'no_plan';
 
+repeat_each(1);
+no_long_string();
+no_root_location();
+no_shuffle();
+log_level("info");
 
-export OPENRESTY_VERSION=1.17.8.2
-. ./ci/linux_openresty_common_runner.sh
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    my $cmd = $block->ext_plugin_cmd // "['sleep', '5s']";
+    my $extra_yaml_config = <<_EOC_;
+ext-plugin:
+    cmd: $cmd
+_EOC_
+    $block->set_value("extra_yaml_config", $extra_yaml_config);
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if (!$block->error_log) {
+        $block->set_value("no_error_log", "[error]\n[alert]");
+    }
+});
+
+run_tests;
+
+__DATA__
+
+=== TEST 1: terminate spawn runner
+--- ext_plugin_cmd
+["t/plugin/ext-plugin/runner.sh", "3600"]
+--- config
+    location /t {
+        return 200;
+    }
+--- shutdown_error_log eval
+qr/terminate runner \d+ with SIGTERM/
