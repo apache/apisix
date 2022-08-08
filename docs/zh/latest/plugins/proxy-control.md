@@ -4,7 +4,7 @@ keywords:
   - APISIX
   - API 网关
   - Proxy Control
-description: 本文介绍了 Apache APISIX proxy-control 插件的相关操作，你可以使用此插件动态地控制 Nginx 代理的行为。
+description: 本文介绍了 Apache APISIX proxy-control 插件的相关操作，你可以使用此插件动态地控制 NGINX 代理的行为。
 ---
 
 <!--
@@ -28,7 +28,7 @@ description: 本文介绍了 Apache APISIX proxy-control 插件的相关操作�
 
 ## 描述
 
-`proxy-control` 插件能够动态地控制 Nginx 代理的行为。
+使用 `proxy-control` 插件能够动态地控制 NGINX 代理的相关行为。
 
 :::info 重要
 
@@ -47,7 +47,8 @@ description: 本文介绍了 Apache APISIX proxy-control 插件的相关操作�
 以下示例展示了如何在指定路由上启用 `proxy-control` 插件：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 \
+  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/upload",
     "plugins": {
@@ -66,7 +67,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 
 ## 测试插件
 
-启用插件后，使用 `curl` 命令请求该路由来上传一个大文件：
+启用插件后，使用 `curl` 命令请求该路由进行一个大文件的上传测试：
 
 ```shell
 curl -i http://127.0.0.1:9080/upload -d @very_big_file
@@ -79,7 +80,8 @@ curl -i http://127.0.0.1:9080/upload -d @very_big_file
 当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d 
 {
     "uri": "/upload",
     "upstream": {

@@ -4,7 +4,7 @@ keywords:
   - APISIX
   - API Gateway
   - Proxy Control
-description: This document contains information about the Apache APISIX proxy-control Plugin, you can use it to control the behavior of the Nginx proxy dynamically.
+description: This document contains information about the Apache APISIX proxy-control Plugin, you can use it to control the behavior of the NGINX proxy dynamically.
 ---
 
 <!--
@@ -28,7 +28,7 @@ description: This document contains information about the Apache APISIX proxy-co
 
 ## Description
 
-The proxy-control Plugin dynamically controls the behavior of the Nginx proxy.
+The proxy-control Plugin dynamically controls the behavior of the NGINX proxy.
 
 :::info IMPORTANT
 
@@ -47,7 +47,8 @@ This Plugin requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-the
 The example below enables the Plugin on a specific Route:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 \
+  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/upload",
     "plugins": {
@@ -79,7 +80,8 @@ It's expected to not find a message "a client request body is buffered to a temp
 To disable the `proxy-control` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 \
+  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/upload",
     "upstream": {
