@@ -41,7 +41,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.openfunction")
-            local ok, err = plugin.check_schema({function_uri = "http://60.188.58.218:30585/default/function-sample", service_token = "test:test"})
+            local ok, err = plugin.check_schema({function_uri = "http://127.0.0.1:30585/default/function-sample", service_token = "test:test"})
             if not ok then
                 ngx.say(err)
             end
@@ -96,7 +96,7 @@ property "function_uri" validation failed: wrong type: expected string, got numb
                  [[{
                         "plugins": {
                             "openfunction": {
-                                "function_uri": "http://60.188.58.218:30585/default/function-sample/world",
+                                "function_uri": "http://127.0.0.1:30585/default/function-sample/world",
                                 "service_token": "test:test"
                             }
                         },
