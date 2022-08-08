@@ -310,7 +310,9 @@ end
 
 
 local function sign_jwt_with_RS256_ES256(key, consumer, payload)
-    local public_key, private_key, err = get_rsa_or_ecdsa_keypair(consumer.auth_conf, consumer.username)
+    local public_key, private_key, err = get_rsa_or_ecdsa_keypair(
+        consumer.auth_conf, consumer.username
+    )
     if not public_key then
         core.log.error("failed to sign jwt, err: ", err)
         core.response.exit(503, "failed to sign jwt")
