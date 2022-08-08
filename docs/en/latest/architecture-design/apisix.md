@@ -1,7 +1,11 @@
 ---
 title: Architecture
+keywords:
+  - API gateway
+  - Apache APISIX
+  - APISIX architecture
+description: Architecture of Apache APISIX—the cloud native API gateway.
 ---
-
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -63,7 +67,7 @@ deployment:
         config_provider: etcd
     etcd:
        host:
-           - http://xxxx
+           - http://${IP}:${Port}
        prefix: /apisix
        timeout: 30
 ```
@@ -92,7 +96,7 @@ deployment:
        config_provider: control_plane
        control_plane:
            host:
-               - xxxx:9280
+               - ${IP}:9280
            timeout: 30
     certs:
         cert: /path/to/ca-cert
@@ -119,7 +123,7 @@ deployment:
             client_ca_cert: /path/to/ca-cert
     etcd:
        host:
-           - https://xxxx
+           - https://${IP}:${Port}
        prefix: /apisix
        timeout: 30
     certs:
@@ -143,7 +147,7 @@ deployment:
             cert_key: /path/to/ca-cert
     etcd:
        host:
-           - https://xxxx
+           - https://${IP}:${Port}
        prefix: /apisix
        timeout: 30
     certs:
