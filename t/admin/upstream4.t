@@ -201,33 +201,7 @@ passed
 
 
 
-=== TEST 7: invalid route: multi nodes with `node` mode to pass host
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "nodes": {
-                        "httpbin.org:8080": 1,
-                        "test.com:8080": 1
-                    },
-                    "type": "roundrobin",
-                    "pass_host": "node"
-                }]]
-                )
-
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- skip_nginx: 5: > 1.19.0
---- error_code: 400
-
-
-
-=== TEST 8: invalid route: empty `upstream_host` when `pass_host` is `rewrite`
+=== TEST 7: invalid route: empty `upstream_host` when `pass_host` is `rewrite`
 --- config
     location /t {
         content_by_lua_block {
@@ -253,7 +227,7 @@ passed
 
 
 
-=== TEST 9: set upstream(with labels)
+=== TEST 8: set upstream(with labels)
 --- config
     location /t {
         content_by_lua_block {
@@ -299,7 +273,7 @@ passed
 
 
 
-=== TEST 10: get upstream(with labels)
+=== TEST 9: get upstream(with labels)
 --- config
     location /t {
         content_by_lua_block {
@@ -335,7 +309,7 @@ passed
 
 
 
-=== TEST 11: patch upstream(only labels)
+=== TEST 10: patch upstream(only labels)
 --- config
     location /t {
         content_by_lua_block {
@@ -375,7 +349,7 @@ passed
 
 
 
-=== TEST 12: invalid format of label value: set upstream
+=== TEST 11: invalid format of label value: set upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -403,7 +377,7 @@ passed
 
 
 
-=== TEST 13: patch upstream(whole, create_time)
+=== TEST 12: patch upstream(whole, create_time)
 --- config
     location /t {
         content_by_lua_block {
@@ -453,7 +427,7 @@ passed
 
 
 
-=== TEST 14: patch upstream(whole, update_time)
+=== TEST 13: patch upstream(whole, update_time)
 --- config
     location /t {
         content_by_lua_block {
@@ -503,7 +477,7 @@ passed
 
 
 
-=== TEST 15: create upstream with create_time and update_time
+=== TEST 14: create upstream with create_time and update_time
 --- config
     location /t {
         content_by_lua_block {
@@ -543,7 +517,7 @@ passed
 
 
 
-=== TEST 16: delete test upstream
+=== TEST 15: delete test upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -563,7 +537,7 @@ passed
 
 
 
-=== TEST 17: patch upstream with sub_path, the data is number
+=== TEST 16: patch upstream with sub_path, the data is number
 --- config
     location /t {
         content_by_lua_block {
@@ -606,7 +580,7 @@ passed
 
 
 
-=== TEST 18: set upstream(id: 1)
+=== TEST 17: set upstream(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -630,7 +604,7 @@ passed
 
 
 
-=== TEST 19: set service(id: 1)
+=== TEST 18: set service(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -653,7 +627,7 @@ passed
 
 
 
-=== TEST 20: set route(id: 1)
+=== TEST 19: set route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -677,7 +651,7 @@ passed
 
 
 
-=== TEST 21: delete upstream(id: 1)
+=== TEST 20: delete upstream(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -696,7 +670,7 @@ passed
 
 
 
-=== TEST 22: delete route(id: 1)
+=== TEST 21: delete route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -715,7 +689,7 @@ passed
 
 
 
-=== TEST 23: delete service(id: 1)
+=== TEST 22: delete service(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -734,7 +708,7 @@ passed
 
 
 
-=== TEST 24: delete upstream(id: 1)
+=== TEST 23: delete upstream(id: 1)
 --- config
     location /t {
         content_by_lua_block {

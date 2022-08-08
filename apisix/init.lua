@@ -41,7 +41,6 @@ local apisix_ssl      = require("apisix.ssl")
 local upstream_util   = require("apisix.utils.upstream")
 local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
-local ngx_balancer    = require("ngx.balancer")
 local debug           = require("apisix.debug")
 local pubsub_kafka    = require("apisix.pubsub.kafka")
 local ngx             = ngx
@@ -219,10 +218,7 @@ local function set_upstream_host(api_ctx, picked_server)
         return
     end
 
-    local nodes_count = up_conf.nodes and #up_conf.nodes or 0
-    if nodes_count == 1 or ngx_balancer.recreate_request then
-        api_ctx.var.upstream_host = picked_server.upstream_host
-    end
+    api_ctx.var.upstream_host = picked_server.upstream_host
 end
 
 
