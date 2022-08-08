@@ -166,8 +166,7 @@ The format response as below:
       "status": 1
     },
     "key": "/apisix/routes/1"
-  },
-  "action": "set"
+  }
 }
 ```
 
