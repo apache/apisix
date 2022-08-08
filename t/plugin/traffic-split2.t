@@ -744,7 +744,6 @@ qr/1980, 1981, 1982, 1980, 1981, 1982, 1980, 1981, 1982/
             ngx.say(body)
         }
     }
---- skip_nginx: 5: < 1.19.0
 --- response_body
 passed
 
@@ -753,7 +752,6 @@ passed
 === TEST 19: hit route
 --- request
 GET /uri?id=1
---- skip_nginx: 5: < 1.19.0
 --- response_body eval
 qr/host: 127.0.0.1/
 --- error_log

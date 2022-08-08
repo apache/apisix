@@ -237,7 +237,7 @@ local function pick_node(ctx)
     ctx.balancer_port = res.port
 
     ngx_var.upstream_host = res.domain or res.host
-    if balancer.recreate_request and ngx.get_phase() == "balancer" then
+    if ngx.get_phase() == "balancer" then
         balancer.recreate_request()
     end
 
