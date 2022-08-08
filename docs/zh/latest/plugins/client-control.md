@@ -4,7 +4,7 @@ keywords:
   - APISIX
   - API 网关
   - Client Control
-description: 本文介绍了 Apache APISIX proxy-control 插件的相关操作，你可以使用此插件动态地控制 Nginx 处理客户端的请求的行为。
+description: 本文介绍了 Apache APISIX proxy-control 插件的相关操作，你可以使用此插件动态地控制 NGINX 处理客户端的请求的行为。
 ---
 
 <!--
@@ -28,7 +28,7 @@ description: 本文介绍了 Apache APISIX proxy-control 插件的相关操作�
 
 ## 描述
 
-`client-control` 插件能够动态地控制 Nginx 处理客户端的请求的行为。
+`client-control` 插件能够动态地控制 NGINX 处理客户端的请求的行为。
 
 :::info 重要
 
@@ -47,7 +47,8 @@ description: 本文介绍了 Apache APISIX proxy-control 插件的相关操作�
 以下示例展示了如何在指定路由上启用 `client-control` 插件，并设置 `max_body_size`：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 \
+  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {

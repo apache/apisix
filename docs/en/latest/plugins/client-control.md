@@ -4,7 +4,7 @@ keywords:
   - APISIX
   - API Gateway
   - Client Control
-description: This document contains information about the Apache APISIX client-control Plugin, you can use it to  control the behavior of Nginx to handle a client request dynamically.
+description: This document describes the Apache APISIX client-control Plugin, you can use it to control NGINX behavior to handle a client request dynamically.
 ---
 
 <!--
@@ -28,7 +28,7 @@ description: This document contains information about the Apache APISIX client-c
 
 ## Description
 
-The `client-control` Plugin can be used to dynamically control the behavior of Nginx to handle a client request.
+The `client-control` Plugin can be used to dynamically control the behavior of NGINX to handle a client request.
 
 :::info IMPORTANT
 
@@ -47,7 +47,8 @@ This Plugin requires APISIX to run on APISIX-Base. See [apisix-build-tools](http
 The example below enables the Plugin on a specific Route:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1 \
+  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
