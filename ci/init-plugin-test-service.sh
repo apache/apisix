@@ -83,10 +83,10 @@ create_functions() {
     kubectl set resources deployment -n openfunction --all=true --requests=cpu=40m,memory=64Mi
     kubectl set resources deployment -n kube-system --all=true --requests=cpu=50m,memory=64Mi
 
-    kubectl wait fn function-sample --for=jsonpath='{.status.build.state}'=Succeeded  --timeout=300s
-    kubectl wait fn function-sample --for=jsonpath='{.status.build.state}'=Running  --timeout=300s
-    kubectl wait fn test-body --for=jsonpath='{.status.build.state}'=Succeeded  --timeout=300s
-    kubectl wait fn test-body --for=jsonpath='{.status.build.state}'=Running  --timeout=300s
+    kubectl wait fn function-sample --for=jsonpath='{.status.build.state}'=Succeeded  --timeout=500s
+    kubectl wait fn function-sample --for=jsonpath='{.status.build.state}'=Running  --timeout=500s
+    kubectl wait fn test-body --for=jsonpath='{.status.build.state}'=Succeeded  --timeout=500s
+    kubectl wait fn test-body --for=jsonpath='{.status.build.state}'=Running  --timeout=500s
 
 }
 
