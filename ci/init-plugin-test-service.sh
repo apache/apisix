@@ -91,8 +91,7 @@ create_functions() {
 }
 
 set_ingress_controller() {
-    yum install -y httpd
-    htpasswd -cd auth test test
+    htpasswd -cb auth test test
     kubectl create secret generic basic-auth --from-file=auth
 
     kubectl patch ingress openfunction -p '{"metadata":{"annotations":{"nginx.ingress.kubernetes.io/auth-type":"basic","nginx.ingress.kubernetes.io/auth-secret":"basic-auth","nginx.ingress.kubernetes.io/auth-realm":"Authentication Required - test"}}}'
