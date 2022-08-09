@@ -42,7 +42,7 @@ __DATA__
                         "value": {
                             "sni": "test.com"
                         },
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -51,7 +51,7 @@ __DATA__
             ngx.status = code
             ngx.say(body)
 
-            local res = assert(etcd.get('/ssl/1'))
+            local res = assert(etcd.get('/ssls/1'))
             local prev_create_time = res.body.node.value.create_time
             assert(prev_create_time ~= nil, "create_time is nil")
             local update_time = res.body.node.value.update_time
@@ -83,7 +83,7 @@ passed
                             "key": null
                         },
 
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "get"
                 }]]
@@ -182,7 +182,7 @@ GET /t
 
             ngx.say("[push] code: ", code, " message: ", message)
 
-            local id = string.sub(res.node.key, #"/apisix/ssl/" + 1)
+            local id = string.sub(res.node.key, #"/apisix/ssls/" + 1)
             code, message = t.test('/apisix/admin/ssls/' .. id,
                  ngx.HTTP_DELETE,
                  nil,
@@ -222,7 +222,7 @@ GET /t
                         "value": {
                             "sni": "foo.com"
                         },
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -261,7 +261,7 @@ GET /t
                         "value": {
                             "sni": "*.foo.com"
                         },
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -302,7 +302,7 @@ passed
                         "value": {
                             "snis": ["*.foo.com", "bar.com"]
                         },
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -345,7 +345,7 @@ passed
                             "sni": "bar.com",
                             "exptime": 1619798400
                         },
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -479,7 +479,7 @@ GET /t
                         "value": {
                             "sni": "test.com"
                         },
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -521,7 +521,7 @@ passed
                         "value": {
                             "sni": "test.com"
                         },
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -566,7 +566,7 @@ GET /t
                             }
                         },
 
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -608,7 +608,7 @@ passed
                             }
                         },
 
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -659,7 +659,7 @@ GET /t
                             "validity_start": 1602873670,
                             "validity_end": 1603893670
                         },
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -733,8 +733,8 @@ GET /t
                 return
             end
 
-            local id = string.sub(res.node.key, #"/apisix/ssl/" + 1)
-            local res = assert(etcd.get('/ssl/' .. id))
+            local id = string.sub(res.node.key, #"/apisix/ssls/" + 1)
+            local res = assert(etcd.get('/ssls/' .. id))
             local prev_create_time = res.body.node.value.create_time
             assert(prev_create_time ~= nil, "create_time is nil")
             local update_time = res.body.node.value.update_time
@@ -751,7 +751,7 @@ GET /t
                 return
             end
 
-            local res = assert(etcd.get('/ssl/' .. id))
+            local res = assert(etcd.get('/ssls/' .. id))
             local create_time = res.body.node.value.create_time
             assert(create_time == 0, "create_time mismatched")
             local update_time = res.body.node.value.update_time
@@ -790,7 +790,7 @@ passed
                 core.json.encode(data),
                 [[{
                     "node": {
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -826,7 +826,7 @@ GET /t
                 core.json.encode(data),
                 [[{
                     "node": {
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]

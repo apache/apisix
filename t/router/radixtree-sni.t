@@ -44,7 +44,7 @@ location /t {
                     "value": {
                         "sni": "www.test.com"
                     },
-                    "key": "/apisix/ssl/1"
+                    "key": "/apisix/ssls/1"
                 },
                 "action": "set"
             }]]
@@ -231,7 +231,7 @@ location /t {
                     "value": {
                         "sni": "*.test.com"
                     },
-                    "key": "/apisix/ssl/1"
+                    "key": "/apisix/ssls/1"
                 },
                 "action": "set"
             }]]
@@ -345,7 +345,7 @@ location /t {
                     "value": {
                         "sni": "test.com"
                     },
-                    "key": "/apisix/ssl/1"
+                    "key": "/apisix/ssls/1"
                 },
                 "action": "set"
             }]]
@@ -459,7 +459,7 @@ location /t {
                     "value": {
                         "sni": "*.test2.com"
                     },
-                    "key": "/apisix/ssl/1"
+                    "key": "/apisix/ssls/1"
                 },
                 "action": "set"
             }]]
@@ -587,7 +587,7 @@ location /t {
                     "value": {
                         "status": 0
                     },
-                    "key": "/apisix/ssl/1"
+                    "key": "/apisix/ssls/1"
                 },
                 "action": "compareAndSwap"
             }]]
@@ -668,7 +668,7 @@ location /t {
                     "value": {
                         "status": 1
                     },
-                    "key": "/apisix/ssl/1"
+                    "key": "/apisix/ssls/1"
                 },
                 "action": "compareAndSwap"
             }]]
@@ -752,7 +752,7 @@ location /t {
                     "value": {
                         "snis": ["test2.com", "*.test2.com"]
                     },
-                    "key": "/apisix/ssl/1"
+                    "key": "/apisix/ssls/1"
                 },
                 "action": "set"
             }]]

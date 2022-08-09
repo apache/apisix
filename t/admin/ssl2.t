@@ -104,7 +104,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"set","node":{"key":"/apisix/ssl/1","value":{"cert":"","id":"1","key":"","sni":"test.com","status":1,"type":"server"}}}
+{"action":"set","node":{"key":"/apisix/ssls/1","value":{"cert":"","id":"1","key":"","sni":"test.com","status":1,"type":"server"}}}
 
 
 
@@ -137,7 +137,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"compareAndSwap","node":{"key":"/apisix/ssl/1","value":{"cert":"","id":"1","key":"","sni":"t.com","status":1,"type":"server"}}}
+{"action":"compareAndSwap","node":{"key":"/apisix/ssls/1","value":{"cert":"","id":"1","key":"","sni":"t.com","status":1,"type":"server"}}}
 
 
 
@@ -172,7 +172,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"get","node":{"key":"/apisix/ssl/1","value":{"cert":"","id":"1","sni":"t.com","status":1,"type":"server"}}}
+{"action":"get","node":{"key":"/apisix/ssls/1","value":{"cert":"","id":"1","sni":"t.com","status":1,"type":"server"}}}
 
 
 
@@ -200,7 +200,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"delete","deleted":"1","key":"/apisix/ssl/1","node":{}}
+{"action":"delete","deleted":"1","key":"/apisix/ssls/1","node":{}}
 
 
 
