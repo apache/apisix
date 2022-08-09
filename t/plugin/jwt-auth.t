@@ -498,7 +498,7 @@ property "key" is required
             local code, body, raw = t('/apisix/admin/schema/plugins/jwt-auth?schema_type=consumer',
                 ngx.HTTP_GET,
                 [[
-{"dependencies":{"algorithm":{"oneOf":[{"properties":{"algorithm":{"default":"HS256","enum":["HS256","HS512"]}}},{"required":["public_key","private_key"],"properties":{"algorithm":{"enum":["RS256"]},"public_key":{"type":"string"},"private_key":{"type":"string"}}}]}},"required":["key"],"type":"object","properties":{"base64_secret":{"default":false,"type":"boolean"},"secret":{"type":"string"},"algorithm":{"enum":["HS256","HS512","RS256"],"default":"HS256","type":"string"},"exp":{"minimum":1,"default":86400,"type":"integer"},"key":{"type":"string"}}}
+{"dependencies":{"algorithm":{"oneOf":[{"properties":{"algorithm":{"default":"HS256","enum":["HS256","HS512"]}}},{"required":["public_key","private_key"],"properties":{"algorithm":{"enum":["RS256","ES256"]},"public_key":{"type":"string"},"private_key":{"type":"string"}}}]}},"required":["key"],"type":"object","properties":{"base64_secret":{"default":false,"type":"boolean"},"secret":{"type":"string"},"algorithm":{"enum":["HS256","HS512","RS256","ES256"],"default":"HS256","type":"string"},"exp":{"minimum":1,"default":86400,"type":"integer"},"key":{"type":"string"}}}
                 ]]
                 )
 
@@ -1083,7 +1083,7 @@ hello world
         content_by_lua_block {
             local plugin = require("apisix.plugins.jwt-auth")
             local core = require("apisix.core")
-            local conf = {key = "123", algorithm = "ES256"}
+            local conf = {key = "123", algorithm = "ES512"}
 
             local ok, err = plugin.check_schema(conf, core.schema.TYPE_CONSUMER)
             if not ok then
@@ -1235,3 +1235,94 @@ qr/failed to validate dependent schema for \\"algorithm\\"/
 --- error_code: 400
 --- response_body_like eval
 qr/failed to validate dependent schema for \\"algorithm\\"/
+
+
+
+=== TEST 52: add consumer with username and plugins with public_key, private_key(ES256)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "kerouac",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key-es256",
+                            "algorithm": "ES256",
+                            "public_key": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9\nq9UU8I5mEovUf86QZ7kOBIjJwqnzD1omageEHWwHdBO6B+dFabmdT9POxg==\n-----END PUBLIC KEY-----",
+                            "private_key": "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hb2\nOF/2NxApJCzGCEDdfSp6VQO30hyhRANCAAQRWz+jn65BtOMvdyHKcvjBeBSDZH2r\n1RTwjmYSi9R/zpBnuQ4EiMnCqfMPWiZqB4QdbAd0E7oH50VpuZ1P087G\n-----END PRIVATE KEY-----"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 53: JWT sign and verify use ES256 algorithm(private_key numbits = 512)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 54: sign/verify use ES256 algorithm(private_key numbits = 512)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key-es256',
+                ngx.HTTP_GET
+            )
+
+            if code > 200 then
+                ngx.status = code
+                ngx.say(err)
+                return
+            end
+
+            local code, _, res = t('/hello?jwt=' .. sign,
+                ngx.HTTP_GET
+            )
+
+            ngx.status = code
+            ngx.print(res)
+        }
+    }
+--- response_body
+hello world
