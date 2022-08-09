@@ -57,8 +57,7 @@ __DATA__
                             }
                         },
                         "key": "/apisix/global_rules/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -102,8 +101,7 @@ passed
                             }
                         },
                         "key": "/apisix/global_rules/1"
-                    },
-                    "action": "get"
+                    }
                 }]]
                 )
 
@@ -129,9 +127,8 @@ passed
                 ngx.HTTP_GET,
                 nil,
                 [[{
-                    "node": {
-                        "dir": true,
-                        "nodes": [
+                    "count": 1,
+                    "list": [
                         {
                             "key": "/apisix/global_rules/1",
                             "value": {
@@ -146,10 +143,7 @@ passed
                             }
                             }
                         }
-                        ],
-                        "key": "/apisix/global_rules"
-                    },
-                    "action": "get"
+                    ]
                 }]]
                 )
 
@@ -203,8 +197,7 @@ passed
                             }
                         },
                         "key": "/apisix/global_rules/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
                 )
 
@@ -264,8 +257,7 @@ passed
                             }
                         },
                         "key": "/apisix/global_rules/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
                 )
 
@@ -295,12 +287,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/global_rules/1',
-                ngx.HTTP_DELETE,
-                nil,
-                [[{
-                    "action": "delete"
-                }]]
-                )
+                ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -319,12 +307,8 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code = t('/apisix/admin/global_rules/1',
-                ngx.HTTP_DELETE,
-                nil,
-                [[{
-                    "action": "delete"
-                }]]
-                )
+                ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code)
         }
     }
@@ -447,7 +431,7 @@ passed
         }
     }
 --- response_body
-{"action":"set","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}}
+{"node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}}
 --- request
 GET /t
 --- no_error_log
@@ -485,7 +469,7 @@ GET /t
         }
     }
 --- response_body
-{"action":"compareAndSwap","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}}
+{"node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}}
 --- request
 GET /t
 --- no_error_log
@@ -521,7 +505,7 @@ GET /t
         }
     }
 --- response_body
-{"action":"get","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}}
+{"node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}}
 --- request
 GET /t
 --- no_error_log
@@ -550,7 +534,7 @@ GET /t
         }
     }
 --- response_body
-{"action":"delete","deleted":"1","key":"/apisix/global_rules/1","node":{}}
+{"deleted":"1","key":"/apisix/global_rules/1","node":{}}
 --- request
 GET /t
 --- no_error_log

@@ -60,7 +60,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"get","count":0,"node":{"dir":true,"key":"/apisix/routes","nodes":[]}}
+{"count":0,"list":[]}
 
 
 
@@ -94,8 +94,7 @@ __DATA__
                             "uri": "/index.html"
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -140,8 +139,7 @@ passed
                             "uri": "/index.html"
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -240,8 +238,7 @@ passed
                             "uri": "/patch_test"
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
             )
 
@@ -293,8 +290,7 @@ passed
                             }
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
             )
 
@@ -323,8 +319,7 @@ passed
                             "methods": ["GET", "DELETE", "PATCH", "POST", "PUT"]
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
             )
 
@@ -353,8 +348,7 @@ passed
                             "methods": ["GET", "POST"]
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
             )
 
@@ -383,8 +377,7 @@ passed
                             ]
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
             )
 
@@ -411,8 +404,7 @@ passed
                             "uri": "/patch_uri_test"
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
             )
 
@@ -459,8 +451,7 @@ passed
                             }
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
             )
 
@@ -743,8 +734,7 @@ passed
                             "enable_websocket": false
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
             )
 
@@ -771,8 +761,7 @@ passed
                             "enable_websocket": true
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
             )
 
