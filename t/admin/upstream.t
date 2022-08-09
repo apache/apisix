@@ -52,8 +52,7 @@ so that we can delete it later)
                             "desc": "new upstream"
                         },
                         "key": "/apisix/upstreams/admin_up"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -94,8 +93,7 @@ passed
                             "desc": "new upstream"
                         },
                         "key": "/apisix/upstreams/admin_up"
-                    },
-                    "action": "get"
+                    }
                 }]]
                 )
 
@@ -118,12 +116,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/upstreams/admin_up',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -142,12 +136,8 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code = t('/apisix/admin/upstreams/not_found',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
 
             ngx.say("[delete] code: ", code)
         }
@@ -183,8 +173,7 @@ GET /t
                             },
                             "type": "roundrobin"
                         }
-                    },
-                    "action": "create"
+                    }
                 }]]
                 )
 
@@ -204,12 +193,8 @@ GET /t
             assert(update_time ~= nil, "update_time is nil")
 
             code, message = t('/apisix/admin/upstreams/' .. id,
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -302,8 +287,7 @@ GET /t
                             "type": "roundrobin"
                         },
                         "key": "/apisix/upstreams/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -435,8 +419,7 @@ passed
                             "type": "chash"
                         },
                         "key": "/apisix/upstreams/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
