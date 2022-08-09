@@ -88,12 +88,12 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests \
 
 ### 请求参数
 
-| 参数名   | 类型                         | 必选项 | 默认值 |  描述                             |
-| -------- | --------------------------- | ------ | ------ |  -------------------------------- |
-| query    | object                      | 否     |        | 给所有请求都携带的 `query string`。 |
-| headers  | object                      | 否     |        | 给所有请求都携带的 `header`。       |
-| timeout  | number                      | 否     | 30000  | 聚合请求的超时时间，单位为 `ms`。    |
-| pipeline | [HttpRequest](#httprequest) | 是     |        | HTTP 请求的详细信息。               |
+| 参数名   | 类型                                 | 必选项 | 默认值 |  描述                             |
+| -------- |------------------------------------| ------ | ------ |  -------------------------------- |
+| query    | object                             | 否     |        | 给所有请求都携带的 `query string`。 |
+| headers  | object                             | 否     |        | 给所有请求都携带的 `header`。       |
+| timeout  | number                             | 否     | 30000  | 聚合请求的超时时间，单位为 `ms`。    |
+| pipeline | array[[HttpRequest](#httprequest)] | 是     |        | HTTP 请求的详细信息。               |
 
 #### HttpRequest
 
