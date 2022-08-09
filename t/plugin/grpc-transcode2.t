@@ -500,12 +500,8 @@ qr/request log: \{.*body":\"\\u0000\\u0000\\u0000\\u0000\\u0002\\b\\u0003\\u0000
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/global_rules/1',
-                ngx.HTTP_DELETE,
-                nil,
-                [[{
-                    "action": "delete"
-                }]]
-                )
+                ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
