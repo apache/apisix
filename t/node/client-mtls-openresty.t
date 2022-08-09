@@ -20,11 +20,7 @@ my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
 my $version = eval { `$nginx_binary -V 2>&1` };
 
 if ($version !~ m/\/apisix-nginx-module/) {
-    if ($version =~ m/\/1.17.8/) {
-        plan(skip_all => "require OpenResty 1.19+");
-    } else {
-        plan('no_plan');
-    }
+    plan('no_plan');
 } else {
     plan(skip_all => "for vanilla OpenResty only");
 }

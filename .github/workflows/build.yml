@@ -28,7 +28,7 @@ jobs:
           - ubuntu-18.04
         os_name:
           - linux_openresty
-          - linux_openresty_1_17
+          - linux_openresty_1_19
         test_dir:
           - t/plugin
           - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/deployment t/discovery t/error_page t/misc
