@@ -19,6 +19,7 @@ local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local cls_sdk = require("apisix.plugins.tencent-cloud-cls.cls-sdk")
+local plugin = require("apisix.plugin")
 local math = math
 local ngx = ngx
 local pairs = pairs
@@ -127,8 +128,12 @@ function _M.log(conf, ctx)
     end
 
     local process = function(entries)
-        return cls_sdk.send_to_cls(conf.secret_id, conf.secret_key,
-                                   conf.cls_host, conf.cls_topic, entries)
+        local sdk, err = cls_sdk.new(conf.cls_host, conf.cls_topic, conf.secret_id, conf.secret_key)
+        if err then
+            core.log.error("init sdk failed err:", err)
+            return false, err
+        end
+        return sdk:send_to_cls(entries)
     end
 
     batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, process)

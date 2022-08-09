@@ -16,8 +16,7 @@
 --
 
 local pb = require "pb"
-local assert = assert
-assert(pb.loadfile("apisix/plugins/tencent-cloud-cls/cls.pb"))
+local protoc = require("protoc").new()
 local http = require("resty.http")
 local socket = require("socket")
 local str_util = require("resty.string")
@@ -40,6 +39,8 @@ local ipairs = ipairs
 local pairs = pairs
 local type = type
 local tostring = tostring
+local setmetatable = setmetatable
+local pcall = pcall
 
 local MAX_SINGLE_VALUE_SIZE = 1 * 1024 * 1024
 local MAX_LOG_GROUP_VALUE_SIZE = 5 * 1024 * 1024 -- 5MB
@@ -112,9 +113,15 @@ local function sign(secret_id, secret_key)
 end
 
 
-local function send_cls_request(host, topic, secret_id, secret_key, pb_data)
-    local http_new = http:new()
-    http_new:set_timeouts(cls_conn_timeout, cls_send_timeout, cls_read_timeout)
+local function send_cls_request(host, topic, secret_id, secret_key, pb_obj)
+    local ok, pb_data = pcall(pb.encode, "cls.LogGroupList", pb_obj)
+    if not ok or not pb_data then
+        core.log.error("failed to encode LogGroupList, err: ", pb_data)
+        return false, pb_data
+    end
+
+    local client = http:new()
+    client:set_timeouts(cls_conn_timeout, cls_send_timeout, cls_read_timeout)
 
     clear_tab(headers_cache)
     headers_cache["Host"] = host
@@ -128,7 +135,7 @@ local function send_cls_request(host, topic, secret_id, secret_key, pb_data)
     local cls_url = "http://" .. host .. cls_api_path .. "?topic_id=" .. topic
     core.log.debug("CLS request URL: ", cls_url)
 
-    local res, err = http_new:request_uri(cls_url, params_cache)
+    local res, err = client:request_uri(cls_url, params_cache)
     if not res then
         return false, err
     end
@@ -178,13 +185,88 @@ local function normalize_log(log)
 end
 
 
-local function send_to_cls(secret_id, secret_key, host, topic_id, logs)
+local _M = { version = 0.1 }
+local mt = { __index = _M }
+
+local pb_state
+local function init_pb_state()
+    pb.state(nil)
+    protoc.reload()
+    local cls_sdk_protoc = protoc.new()
+    if not cls_sdk_protoc.loaded["tencent-cloud-cls/cls.proto"] then
+        -- https://www.tencentcloud.com/document/product/614/42787
+        local ok, err = pcall(cls_sdk_protoc.load, cls_sdk_protoc, [[
+package cls;
+
+message Log
+{
+  message Content
+  {
+    required string key   = 1; // Key of each field group
+    required string value = 2; // Value of each field group
+  }
+  required int64   time     = 1; // Unix timestamp
+  repeated Content contents = 2; // Multiple key-value pairs in one log
+}
+
+message LogTag
+{
+  required string key       = 1;
+  required string value     = 2;
+}
+
+message LogGroup
+{
+  repeated Log    logs        = 1; // Log array consisting of multiple logs
+  optional string contextFlow = 2; // This parameter does not take effect currently
+  optional string filename    = 3; // Log filename
+  optional string source      = 4; // Log source, which is generally the machine IP
+  repeated LogTag logTags     = 5;
+}
+
+message LogGroupList
+{
+  repeated LogGroup logGroupList = 1; // Log group list
+}
+        ]], "tencent-cloud-cls/cls.proto")
+        if not ok then
+            cls_sdk_protoc:reset()
+            return "failed to load cls.proto: ".. err
+        end
+    end
+    pb_state = pb.state(nil)
+end
+
+
+function _M.new(host, topic, secret_id, secret_key)
+    if not pb_state then
+        local err = init_pb_state()
+        if err then
+            return nil, err
+        end
+    end
+    local self = {
+        host = host,
+        topic = topic,
+        secret_id = secret_id,
+        secret_key = secret_key,
+    }
+    return setmetatable(self, mt)
+end
+
+
+function _M.send_to_cls(self, logs)
     clear_tab(log_group_list)
     local now = ngx_now() * 1000
 
+    -- recovery of stored pb_store
+    pb.state(pb_state)
+
     local total_size = 0
     local format_logs = new_tab(#logs, 0)
-    -- sums of all value in a LogGroup should be no more than 5MB
+    -- sums of all value in all LogGroup should be no more than 5MB
+    -- so send whenever size exceed max size
+    local group_list_start = 1
     for i = 1, #logs, 1 do
         local contents, log_size = normalize_log(logs[i])
         if log_size > MAX_LOG_GROUP_VALUE_SIZE then
@@ -197,10 +279,14 @@ local function send_to_cls(secret_id, secret_key, host, topic_id, logs)
                 logs = format_logs,
                 source = host_ip,
             })
+            local ok, err = send_cls_request(self.host, self.topic,
+                                             self.secret_id, self.secret_key, log_group_list_pb)
+            if not ok then
+                return false, err, group_list_start
+            end
+            group_list_start = i
             format_logs = new_tab(#logs - i, 0)
             total_size = 0
-            local data = assert(pb.encode("cls.LogGroupList", log_group_list_pb))
-            send_cls_request(host, topic_id, secret_id, secret_key, data)
             clear_tab(log_group_list)
         end
         insert_tab(format_logs, {
@@ -214,10 +300,9 @@ local function send_to_cls(secret_id, secret_key, host, topic_id, logs)
         logs = format_logs,
         source = host_ip,
     })
-    local data = assert(pb.encode("cls.LogGroupList", log_group_list_pb))
-    return send_cls_request(host, topic_id, secret_id, secret_key, data)
+    local ok, err =  send_cls_request(self.host, self.topic, self.secret_id,
+                                      self.secret_key, log_group_list_pb)
+    return ok, err, group_list_start
 end
 
-return {
-    send_to_cls = send_to_cls
-}
+return _M
