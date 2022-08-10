@@ -105,13 +105,9 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/ssl/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+            local code, message = t('/apisix/admin/ssls/1',
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -175,7 +171,7 @@ GET /t
 
             ngx.say("[push] code: ", code, " message: ", message)
 
-            local id = string.sub(res.node.key, #"/apisix/ssl/" + 1)
+            local id = string.sub(res.node.key, #"/apisix/ssls/" + 1)
             code, message = t.test('/apisix/admin/ssls/' .. id,
                  ngx.HTTP_DELETE
             )
