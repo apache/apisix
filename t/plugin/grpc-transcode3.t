@@ -131,7 +131,7 @@ Content-Type: application/json
         content_by_lua_block {
             local t = require("lib.test_admin").test
 
-            local code, body = t('/apisix/admin/proto/1',
+            local code, body = t('/apisix/admin/protos/1',
                  ngx.HTTP_PUT,
                  [[{
                     "content" : "syntax = \"proto3\";
