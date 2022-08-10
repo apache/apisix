@@ -29,7 +29,7 @@ description: This document contains information about the CNCF OpenFunction Plug
 
 ## Description
 
-The `openfunction` Plugin is used to integrate APISIX with [CNCF OpenWhisk](https://openfunction.dev/) serverless platform.
+The `openfunction` Plugin is used to integrate APISIX with [CNCF OpenFunction](https://openfunction.dev/) serverless platform.
 
 This Plugin can be configured on a Route and requests will be send to the configured OpenWhish API endpoint as the upstream.
 
