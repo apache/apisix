@@ -31,7 +31,7 @@ description: 本文介绍了关于 Apache CNCF OpenFunction 插件的基本信�
 
 `openfunction` 插件用于将开源的分布式无服务器平台 [CNCF OpenFunction](https://openfunction.dev/) 作为动态上游集成至 APISIX。
 
-启用 `openfunction` 插件后，该插件会终止对已配置 URI 的请求，并代表客户端向 OpenFunction 的 function发起一个新的请求，然后 `openfunction` 插件会将响应信息返回至客户端。
+启用 `openfunction` 插件后，该插件会终止对已配置 URI 的请求，并代表客户端向 OpenFunction 的 function 发起一个新的请求，然后 `openfunction` 插件会将响应信息返回至客户端。
 
 ## 属性
 
@@ -39,7 +39,7 @@ description: 本文介绍了关于 Apache CNCF OpenFunction 插件的基本信�
 | ----------------- | ------- | ------ | ------- | ------------ | ------------------------------------------------------------ |
 | function_uri      | string  | 是     |         |              | OpenFunction function uri，例如 `https://localhost:30858/default/function-sample`。     |
 | ssl_verify        | boolean | 否     | true    |              | 当设置为 `true` 时执行 SSL 验证。                            |
-| service_token     | string  | 是     |         |              | OpenFunction service token，其格式为 `xxx:xxx` ，支持ingress controller的basic auth认证方式。 |
+| service_token     | string  | 是     |         |              | OpenFunction service token，其格式为 `xxx:xxx` ，支持 ingress controller 的 basic auth 认证方式。 |
 | timeout           | integer | 否     | 60000ms | [1,60000]ms  | OpenFunction action 和 HTTP 调用超时时间（以毫秒为单位）。          |
 | keepalive         | boolean | 否     | true    |              | 当设置为 `true` 时，保持连接的活动状态以便重复使用。         |
 | keepalive_timeout | integer | 否     | 60000ms | [1000,...]ms | 当连接空闲时，保持该连接处于活动状态的时间（以毫秒为单位）。               |
@@ -51,14 +51,14 @@ description: 本文介绍了关于 Apache CNCF OpenFunction 插件的基本信�
 
 因为 OpenFunction function 调用可能会耗费很长时间来拉取容器镜像和启动容器，所以如果 `timeout` 字段值设置太小，可能会导致大量的失败请求。
 
-
 :::
 
 ## 启用插件
 
 ### 搭建 Apache OpenFunction 测试环境
 
-1. 在使用 `openfunction` 插件之前，你需要通过以下命令运行 OpenFunction 。请确保当前环境中已经安装 Kubernetes 软件。
+1. 在使用 `openfunction` 插件之前，你需要通过以下命令运行 OpenFunction 。详情参考[官方安装指南](https://openfunction.dev/docs/getting-started/installation/) 。
+请确保当前环境中已经安装 Kubernetes 软件。
 
 ```shell
 #add the OpenFunction chart repository
@@ -70,14 +70,13 @@ kubectl create namespace openfunction
 helm install openfunction openfunction/openfunction -n openfunction
 ```
 
-2. 你可以通过以下命令来验证openfunction是否已经安装成功：
+2. 你可以通过以下命令来验证 openfunction 是否已经安装成功：
+
 ```shell
 kubectl get pods -namespace openfunction
 ```
 
 3. 你可以通过官方示例创建函数 [sample](https://github.com/OpenFunction/samples)
-
-
 
 ### 创建路由
 
