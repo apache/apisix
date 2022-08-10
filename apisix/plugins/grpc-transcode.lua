@@ -79,7 +79,8 @@ local schema = {
         },
         -- https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto#L46
         status_detail_type = {
-            description = "the message type of the grpc-status-details-bin's details part, if not given, the details part will not be decoded",
+            description = "the message type of the grpc-status-details-bin's details part, "
+                            .. "if not given, the details part will not be decoded",
             type        = "string",
         },
     },
@@ -192,7 +193,8 @@ function _M.body_filter(conf, ctx)
         return
     end
 
-    local err = response(ctx, proto_obj, conf.service, conf.method, conf.pb_option, conf.show_status_in_body, conf.status_detail_type)
+    local err = response(ctx, proto_obj, conf.service, conf.method, conf.pb_option,
+                         conf.show_status_in_body, conf.status_detail_type)
     if err then
         core.log.error("transform response error: ", err)
         return

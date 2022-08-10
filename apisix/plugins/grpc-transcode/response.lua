@@ -21,6 +21,8 @@ local pb     = require("pb")
 local ngx    = ngx
 local string = string
 local ngx_decode_base64 = ngx.decode_base64
+local ipairs = ipairs
+local pcall  = pcall
 
 
 local function handle_error_response(status_detail_type)
@@ -52,7 +54,8 @@ local function handle_error_response(status_detail_type)
                 local ok, err_or_value = pcall(pb.decode, status_detail_type, detail.value)
                 if not ok then
                     ngx.arg[1] = "failed to decode details in grpc-status-details-bin"
-                    return "failed to decode details in grpc-status-details-bin, err: " .. err_or_value
+                    return "failed to decode details in grpc-status-details-bin, err: "
+                            .. err_or_value
                 end
                 core.table.insert(decoded_details, err_or_value)
             end
@@ -63,7 +66,7 @@ local function handle_error_response(status_detail_type)
         local response, err = core.json.encode(resp_body)
         if not response then
             ngx.arg[1] = "failed to json_encode response body"
-            return "failed to json_encode response body"
+            return "failed to json_encode response body, error: " .. err
         end
 
         ngx.arg[1] = response

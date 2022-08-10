@@ -125,64 +125,7 @@ Content-Type: application/json
 
 
 
-=== TEST 3: set proto(id: 1, draft for how to decode grpc-status-details-bin)
---- config
-    location /t {
-        content_by_lua_block {
-            local pb = require "pb"
-            local protoc = require "protoc"
-            local ngx_decode_base64 = ngx.decode_base64
-
-            protoc.reload()
-
-            -- load schema from text (just for demo, use protoc.new() in real world)
-            assert(protoc:load [[
-            message ErrorDetail {
-                optional int64 code = 1;
-                optional string message = 2;
-                optional string type = 3;
-            }
-
-            message Any {
-                optional string type_url = 1;
-                optional bytes value = 2;
-            }
-
-            message ErrorStatus {
-                optional int32 code = 1;
-                optional string message = 2;
-                repeated Any details = 3;
-            }
-
-            ]])
-
-            local bin_tab = {}
-
-            local encoded_data = "CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20vaGVsbG93b3JsZC5FcnJvckRldGFpbBIpCAESHFRoZSBzZXJ2ZXIgaXMgb3V0IG9mIHNlcnZpY2UaB3NlcnZpY2U"
-            local decoded_data = ngx_decode_base64(encoded_data)
-
-            ngx.say(decoded_data)
-
-            local data = pb.decode("ErrorStatus", decoded_data)
-            ngx.say(require "cjson" .encode(data))
-
-            data = data.details[1].value
-
-            local data = pb.decode("ErrorDetail", data)
-            ngx.say(require "cjson" .encode(data))
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
---- SKIP
-
-
-
-=== TEST 4: set proto (id: 1, get error response from rpc)
+=== TEST 3: set proto (id: 1, get error response from rpc)
 --- config
     location /t {
         content_by_lua_block {
@@ -227,7 +170,7 @@ passed
 
 
 
-=== TEST 5: set routes (id: 1, get error response from rpc)
+=== TEST 4: set routes (id: 1, get error response from rpc)
 --- config
     location /t {
         content_by_lua_block {
@@ -270,7 +213,7 @@ passed
 
 
 
-=== TEST 6: hit route (error response in header)
+=== TEST 5: hit route (error response in header)
 --- config
     location /t {
         content_by_lua_block {
@@ -305,7 +248,7 @@ qr/error/
 
 
 
-=== TEST 7: set routes (id: 1, show error response in body)
+=== TEST 6: set routes (id: 1, show error response in body)
 --- config
     location /t {
         content_by_lua_block {
@@ -349,7 +292,7 @@ passed
 
 
 
-=== TEST 8: hit route (show error status in body)
+=== TEST 7: hit route (show error status in body)
 --- config
     location /t {
         content_by_lua_block {
@@ -385,7 +328,7 @@ grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20
 
 
 
-=== TEST 9: set routes (id: 1, show error details in body)
+=== TEST 8: set routes (id: 1, show error details in body)
 --- config
     location /t {
         content_by_lua_block {
@@ -430,7 +373,7 @@ passed
 
 
 
-=== TEST 10: hit route (show error details in body)
+=== TEST 9: hit route (show error details in body)
 --- config
     location /t {
         content_by_lua_block {
@@ -466,7 +409,7 @@ grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20
 
 
 
-=== TEST 11: set routes (id: 1, show error details in body)
+=== TEST 10: set routes (id: 1, show error details in body)
 --- config
     location /t {
         content_by_lua_block {
@@ -511,7 +454,7 @@ passed
 
 
 
-=== TEST 12: hit route (show error details in body)
+=== TEST 11: hit route (show error details in body)
 --- config
     location /t {
         content_by_lua_block {
@@ -547,7 +490,7 @@ grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20
 
 
 
-=== TEST 13: set routes (id: 1, show error details in body and wrong status_detail_type)
+=== TEST 12: set routes (id: 1, show error details in body and wrong status_detail_type)
 --- config
     location /t {
         content_by_lua_block {
@@ -592,7 +535,7 @@ passed
 
 
 
-=== TEST 14: hit route (show error details in body and wrong status_detail_type)
+=== TEST 13: hit route (show error details in body and wrong status_detail_type)
 --- config
     location /t {
         content_by_lua_block {
