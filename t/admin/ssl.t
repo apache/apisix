@@ -34,7 +34,7 @@ __DATA__
             local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
 
-            local code, body = t.test('/apisix/admin/ssl/1',
+            local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
@@ -42,7 +42,7 @@ __DATA__
                         "value": {
                             "sni": "test.com"
                         },
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -51,7 +51,7 @@ __DATA__
             ngx.status = code
             ngx.say(body)
 
-            local res = assert(etcd.get('/ssl/1'))
+            local res = assert(etcd.get('/ssls/1'))
             local prev_create_time = res.body.node.value.create_time
             assert(prev_create_time ~= nil, "create_time is nil")
             local update_time = res.body.node.value.update_time
@@ -73,7 +73,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/ssl/1',
+            local code, body = t('/apisix/admin/ssls/1',
                 ngx.HTTP_GET,
                 nil,
                 [[{
@@ -83,7 +83,7 @@ passed
                             "key": null
                         },
 
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "get"
                 }]]
@@ -107,7 +107,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/ssl/1',
+            local code, message = t('/apisix/admin/ssls/1',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{
@@ -131,7 +131,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code = t('/apisix/admin/ssl/99999999999999',
+            local code = t('/apisix/admin/ssls/99999999999999',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{
@@ -161,7 +161,7 @@ GET /t
             local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "foo.com"}
 
-            local code, message, res = t.test('/apisix/admin/ssl',
+            local code, message, res = t.test('/apisix/admin/ssls',
                 ngx.HTTP_POST,
                 core.json.encode(data),
                 [[{
@@ -182,8 +182,8 @@ GET /t
 
             ngx.say("[push] code: ", code, " message: ", message)
 
-            local id = string.sub(res.node.key, #"/apisix/ssl/" + 1)
-            code, message = t.test('/apisix/admin/ssl/' .. id,
+            local id = string.sub(res.node.key, #"/apisix/ssls/" + 1)
+            code, message = t.test('/apisix/admin/ssls/' .. id,
                  ngx.HTTP_DELETE,
                  nil,
                  [[{
@@ -214,7 +214,7 @@ GET /t
             local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {sni = "foo.com"}
 
-            local code, body = t.test('/apisix/admin/ssl/1',
+            local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
@@ -222,7 +222,7 @@ GET /t
                         "value": {
                             "sni": "foo.com"
                         },
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -253,7 +253,7 @@ GET /t
             local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "*.foo.com"}
 
-            local code, body = t.test('/apisix/admin/ssl/1',
+            local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
@@ -261,7 +261,7 @@ GET /t
                         "value": {
                             "sni": "*.foo.com"
                         },
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -294,7 +294,7 @@ passed
                 snis = {"*.foo.com", "bar.com"},
             }
 
-            local code, body = t.test('/apisix/admin/ssl/1',
+            local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
@@ -302,7 +302,7 @@ passed
                         "value": {
                             "snis": ["*.foo.com", "bar.com"]
                         },
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -336,7 +336,7 @@ passed
                 exptime = 1588262400 + 60 * 60 * 24 * 365,
             }
 
-            local code, body = t.test('/apisix/admin/ssl/1',
+            local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
@@ -345,7 +345,7 @@ passed
                             "sni": "bar.com",
                             "exptime": 1619798400
                         },
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -375,7 +375,7 @@ passed
             local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
 
-            local code, body = t.test('/apisix/admin/ssl/a-b-c-ABC_0123',
+            local code, body = t.test('/apisix/admin/ssls/a-b-c-ABC_0123',
                 ngx.HTTP_PUT,
                 core.json.encode(data)
             )
@@ -405,7 +405,7 @@ passed
             local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
 
-            local code, body = t.test('/apisix/admin/ssl/a-b-c-ABC_0123',
+            local code, body = t.test('/apisix/admin/ssls/a-b-c-ABC_0123',
                 ngx.HTTP_DELETE
             )
             if code > 300 then
@@ -434,7 +434,7 @@ passed
             local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
 
-            local code, body = t.test('/apisix/admin/ssl/*invalid',
+            local code, body = t.test('/apisix/admin/ssls/*invalid',
                 ngx.HTTP_PUT,
                 core.json.encode(data)
             )
@@ -471,7 +471,7 @@ GET /t
                 keys = {ssl_ecc_key}
             }
 
-            local code, body = t.test('/apisix/admin/ssl/1',
+            local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
@@ -479,7 +479,7 @@ GET /t
                         "value": {
                             "sni": "test.com"
                         },
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -513,7 +513,7 @@ passed
                 keys = {},
             }
 
-            local code, body = t.test('/apisix/admin/ssl/1',
+            local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
@@ -521,7 +521,7 @@ passed
                         "value": {
                             "sni": "test.com"
                         },
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -552,7 +552,7 @@ GET /t
             local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "test.com", labels = { version = "v2", build = "16", env = "production"}}
 
-            local code, body = t.test('/apisix/admin/ssl/1',
+            local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
@@ -566,7 +566,7 @@ GET /t
                             }
                         },
 
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -596,7 +596,7 @@ passed
             local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "test.com", labels = { env = {"production", "release"}}}
 
-            local code, body = t.test('/apisix/admin/ssl/1',
+            local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
@@ -608,7 +608,7 @@ passed
                             }
                         },
 
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -647,7 +647,7 @@ GET /t
                 validity_end = 1603893670
             }
 
-            local code, body = t.test('/apisix/admin/ssl/1',
+            local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
@@ -659,7 +659,7 @@ GET /t
                             "validity_start": 1602873670,
                             "validity_end": 1603893670
                         },
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -683,7 +683,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/ssl/1',
+            local code, message = t('/apisix/admin/ssls/1',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{
@@ -714,7 +714,7 @@ GET /t
             local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
 
-            local code, body, res = t.test('/apisix/admin/ssl',
+            local code, body, res = t.test('/apisix/admin/ssls',
                 ngx.HTTP_POST,
                 core.json.encode(data),
                 [[{
@@ -733,14 +733,14 @@ GET /t
                 return
             end
 
-            local id = string.sub(res.node.key, #"/apisix/ssl/" + 1)
-            local res = assert(etcd.get('/ssl/' .. id))
+            local id = string.sub(res.node.key, #"/apisix/ssls/" + 1)
+            local res = assert(etcd.get('/ssls/' .. id))
             local prev_create_time = res.body.node.value.create_time
             assert(prev_create_time ~= nil, "create_time is nil")
             local update_time = res.body.node.value.update_time
             assert(update_time ~= nil, "update_time is nil")
 
-            local code, body = t.test('/apisix/admin/ssl/' .. id,
+            local code, body = t.test('/apisix/admin/ssls/' .. id,
                 ngx.HTTP_PATCH,
                 core.json.encode({create_time = 0, update_time = 1})
                 )
@@ -751,14 +751,14 @@ GET /t
                 return
             end
 
-            local res = assert(etcd.get('/ssl/' .. id))
+            local res = assert(etcd.get('/ssls/' .. id))
             local create_time = res.body.node.value.create_time
             assert(create_time == 0, "create_time mismatched")
             local update_time = res.body.node.value.update_time
             assert(update_time == 1, "update_time mismatched")
 
             -- clean up
-            local code, body = t.test('/apisix/admin/ssl/' .. id,
+            local code, body = t.test('/apisix/admin/ssls/' .. id,
                 ngx.HTTP_DELETE
             )
             ngx.status = code
@@ -785,12 +785,12 @@ passed
             local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key}
 
-            local code, body = t.test('/apisix/admin/ssl/1',
+            local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
                     "node": {
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]
@@ -821,12 +821,12 @@ GET /t
             local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {type = "client", cert = ssl_cert, key = ssl_key}
 
-            local code, body = t.test('/apisix/admin/ssl/1',
+            local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
                     "node": {
-                        "key": "/apisix/ssl/1"
+                        "key": "/apisix/ssls/1"
                     },
                     "action": "set"
                 }]]

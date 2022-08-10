@@ -118,7 +118,7 @@ hello apisix_backend
                 cert = ssl_cert, key = ssl_key,
                 sni = "test.com",
             }
-            local code, body = t.test('/apisix/admin/ssl/1',
+            local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data)
             )

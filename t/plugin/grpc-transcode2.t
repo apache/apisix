@@ -41,7 +41,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/proto/1',
+            local code, body = t('/apisix/admin/protos/1',
                  ngx.HTTP_PUT,
                  [[{
                     "content" : "syntax = \"proto3\";
@@ -135,7 +135,7 @@ Content-Type: application/json
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/proto/2',
+            local code, body = t('/apisix/admin/protos/2',
                  ngx.HTTP_PUT,
                  [[{
                     "content" : "syntax = \"proto3\";
@@ -240,7 +240,7 @@ failed to encode request data to protobuf
 
             local content = t.read_file("t/grpc_server_example/proto.pb")
             local data = {content = ngx.encode_base64(content)}
-            local code, body = t.test('/apisix/admin/proto/1',
+            local code, body = t.test('/apisix/admin/protos/1',
                  ngx.HTTP_PUT,
                 json.encode(data)
             )
@@ -388,7 +388,7 @@ Undefined service method
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/proto/1',
+            local code, body = t('/apisix/admin/protos/1',
                  ngx.HTTP_PUT,
                  [[{
                     "content" : "syntax = \"proto3\";
@@ -581,7 +581,7 @@ qr/request log: \{.*body":\"\{\\"result\\":3}/
         content_by_lua_block {
             local http = require "resty.http"
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/proto/1',
+            local code, body = t('/apisix/admin/protos/1',
                  ngx.HTTP_PUT,
                  [[{
                     "content" : "syntax = \"proto3\";
@@ -700,7 +700,7 @@ set protobuf option: int64_as_string
         content_by_lua_block {
             local http = require "resty.http"
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/proto/1',
+            local code, body = t('/apisix/admin/protos/1',
                  ngx.HTTP_PUT,
                  [[{
                     "content" : "syntax = \"proto3\";

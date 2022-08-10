@@ -247,7 +247,7 @@ end
 
 function _M.init_worker()
     local err
-    ssl_certificates, err = core.config.new("/ssl", {
+    ssl_certificates, err = core.config.new("/ssls", {
         automatic = true,
         item_schema = core.schema.ssl,
         checker = function (item, schema_type)
@@ -264,7 +264,7 @@ end
 
 function _M.get_by_id(ssl_id)
     local ssl
-    local ssls = core.config.fetch_created_obj("/ssl")
+    local ssls = core.config.fetch_created_obj("/ssls")
     if ssls then
         ssl = ssls:get(tostring(ssl_id))
     end

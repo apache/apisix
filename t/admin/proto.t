@@ -43,7 +43,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/proto/1',
+            local code, message = t('/apisix/admin/protos/1',
                  ngx.HTTP_PUT,
                  [[{
                         "content": "syntax = \"proto3\";
@@ -88,7 +88,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/proto/1',
+            local code, message = t('/apisix/admin/protos/1',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{
@@ -115,7 +115,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/proto/2',
+            local code, message = t('/apisix/admin/protos/2',
                  ngx.HTTP_PUT,
                  [[{
                     "content": "syntax = \"proto3\";
@@ -184,7 +184,7 @@ __DATA__
 
             ngx.sleep(0.1) -- ensure reference is synced from etcd
 
-            code, message = t('/apisix/admin/proto/2',
+            code, message = t('/apisix/admin/protos/2',
                  ngx.HTTP_DELETE,
                  nil,
                  [[{
@@ -207,7 +207,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/proto/1',
+            local code, message = t('/apisix/admin/protos/1',
                  ngx.HTTP_PUT,
                  [[{
                         "content": "syntax = \"proto3\";
