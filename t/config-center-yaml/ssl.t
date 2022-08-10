@@ -108,7 +108,7 @@ __DATA__
 
 === TEST 1: sanity
 --- apisix_yaml
-ssl:
+ssls:
     -
         cert: |
             -----BEGIN CERTIFICATE-----
@@ -181,7 +181,7 @@ server name: "test.com"
 
 === TEST 2: single sni
 --- apisix_yaml
-ssl:
+ssls:
     -
         cert: |
             -----BEGIN CERTIFICATE-----
@@ -252,7 +252,7 @@ server name: "test.com"
 
 === TEST 3: bad cert
 --- apisix_yaml
-ssl:
+ssls:
     -
         cert: |
             -----BEGIN CERTIFICATE-----

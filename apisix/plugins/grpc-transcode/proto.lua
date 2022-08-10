@@ -159,7 +159,7 @@ end
 
 function _M.init()
     local err
-    protos, err = core.config.new("/proto", {
+    protos, err = core.config.new("/protos", {
         automatic = true,
         item_schema = core.schema.proto
     })
