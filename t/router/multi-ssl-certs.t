@@ -190,9 +190,8 @@ location /t {
                     "value": {
                         "sni": "*.test2.com"
                     },
-                    "key": "/apisix/ssl/2"
-                },
-                "action": "set"
+                    "key": "/apisix/ssls/2"
+                }
             }]]
             )
 
@@ -275,9 +274,8 @@ location /t {
                     "value": {
                         "sni": "apisix.dev"
                     },
-                    "key": "/apisix/ssl/3"
-                },
-                "action": "set"
+                    "key": "/apisix/ssls/3"
+                }
             }]]
             )
 
