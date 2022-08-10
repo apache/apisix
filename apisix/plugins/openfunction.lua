@@ -18,6 +18,7 @@
 local core              = require("apisix.core")
 local http              = require("resty.http")
 local ngx_encode_base64 = ngx.encode_base64
+local ngx  = ngx
 
 local schema = {
     type = "object",
