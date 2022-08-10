@@ -82,9 +82,8 @@ passed
                             "key": null
                         },
 
-                        "key": "/apisix/ssl/1"
-                    },
-                    "action": "get"
+                        "key": "/apisix/ssls/1"
+                    }
                 }]]
                 )
 
@@ -130,13 +129,9 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code = t('/apisix/admin/ssl/99999999999999',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+            local code = t('/apisix/admin/ssls/99999999999999',
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code)
         }
     }
@@ -181,12 +176,8 @@ GET /t
             ngx.say("[push] code: ", code, " message: ", message)
 
             local id = string.sub(res.node.key, #"/apisix/ssl/" + 1)
-            code, message = t.test('/apisix/admin/ssl/' .. id,
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
+            code, message = t.test('/apisix/admin/ssls/' .. id,
+                 ngx.HTTP_DELETE
             )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
@@ -220,9 +211,8 @@ GET /t
                         "value": {
                             "sni": "foo.com"
                         },
-                        "key": "/apisix/ssl/1"
-                    },
-                    "action": "set"
+                        "key": "/apisix/ssls/1"
+                    }
                 }]]
                 )
 
@@ -259,9 +249,8 @@ GET /t
                         "value": {
                             "sni": "*.foo.com"
                         },
-                        "key": "/apisix/ssl/1"
-                    },
-                    "action": "set"
+                        "key": "/apisix/ssls/1"
+                    }
                 }]]
                 )
 
@@ -300,9 +289,8 @@ passed
                         "value": {
                             "snis": ["*.foo.com", "bar.com"]
                         },
-                        "key": "/apisix/ssl/1"
-                    },
-                    "action": "set"
+                        "key": "/apisix/ssls/1"
+                    }
                 }]]
                 )
 
@@ -343,9 +331,8 @@ passed
                             "sni": "bar.com",
                             "exptime": 1619798400
                         },
-                        "key": "/apisix/ssl/1"
-                    },
-                    "action": "set"
+                        "key": "/apisix/ssls/1"
+                    }
                 }]]
                 )
 
@@ -477,9 +464,8 @@ GET /t
                         "value": {
                             "sni": "test.com"
                         },
-                        "key": "/apisix/ssl/1"
-                    },
-                    "action": "set"
+                        "key": "/apisix/ssls/1"
+                    }
                 }]]
               )
 
@@ -519,9 +505,8 @@ passed
                         "value": {
                             "sni": "test.com"
                         },
-                        "key": "/apisix/ssl/1"
-                    },
-                    "action": "set"
+                        "key": "/apisix/ssls/1"
+                    }
                 }]]
                 )
 
@@ -564,9 +549,8 @@ GET /t
                             }
                         },
 
-                        "key": "/apisix/ssl/1"
-                    },
-                    "action": "set"
+                        "key": "/apisix/ssls/1"
+                    }
                 }]]
                 )
 
@@ -606,9 +590,8 @@ passed
                             }
                         },
 
-                        "key": "/apisix/ssl/1"
-                    },
-                    "action": "set"
+                        "key": "/apisix/ssls/1"
+                    }
                 }]]
                 )
 
@@ -657,9 +640,8 @@ GET /t
                             "validity_start": 1602873670,
                             "validity_end": 1603893670
                         },
-                        "key": "/apisix/ssl/1"
-                    },
-                    "action": "set"
+                        "key": "/apisix/ssls/1"
+                    }
                 }]]
                 )
 
@@ -681,13 +663,9 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/ssl/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+            local code, message = t('/apisix/admin/ssls/1',
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -787,9 +765,8 @@ passed
                 core.json.encode(data),
                 [[{
                     "node": {
-                        "key": "/apisix/ssl/1"
-                    },
-                    "action": "set"
+                        "key": "/apisix/ssls/1"
+                    }
                 }]]
                 )
 
@@ -823,9 +800,8 @@ GET /t
                 core.json.encode(data),
                 [[{
                     "node": {
-                        "key": "/apisix/ssl/1"
-                    },
-                    "action": "set"
+                        "key": "/apisix/ssls/1"
+                    }
                 }]]
                 )
 

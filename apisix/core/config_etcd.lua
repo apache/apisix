@@ -212,6 +212,8 @@ local function load_full_data(self, dir_res, headers)
         self:upgrade_version(item.modifiedIndex)
 
     else
+        -- here dir_res maybe res.body.node or res.body.list
+        -- we need make values equals to res.body.node.nodes or res.body.list
         local values = (dir_res and dir_res.nodes) or dir_res
         if not values then
             values = {}
