@@ -774,7 +774,7 @@ $ curl http://127.0.0.1:9080/get
 
 ## SSL
 
-*地址*：/apisix/admin/ssl/{id}
+*地址*：/apisix/admin/ssls/{id}
 
 *说明*：SSL.
 
@@ -782,11 +782,11 @@ $ curl http://127.0.0.1:9080/get
 
 | 名字   | 请求 uri               | 请求 body | 说明                            |
 | ------ | ---------------------- | --------- | ------------------------------- |
-| GET    | /apisix/admin/ssl      | 无        | 获取资源列表                    |
-| GET    | /apisix/admin/ssl/{id} | 无        | 获取资源                        |
-| PUT    | /apisix/admin/ssl/{id} | {...}     | 根据 id 创建资源                |
-| POST   | /apisix/admin/ssl      | {...}     | 创建资源，id 由后台服务自动生成 |
-| DELETE | /apisix/admin/ssl/{id} | 无        | 删除资源                        |
+| GET    | /apisix/admin/ssls      | 无        | 获取资源列表                    |
+| GET    | /apisix/admin/ssls/{id} | 无        | 获取资源                        |
+| PUT    | /apisix/admin/ssls/{id} | {...}     | 根据 id 创建资源                |
+| POST   | /apisix/admin/ssls      | {...}     | 创建资源，id 由后台服务自动生成 |
+| DELETE | /apisix/admin/ssls/{id} | 无        | 删除资源                        |
 
 ### body 请求参数
 

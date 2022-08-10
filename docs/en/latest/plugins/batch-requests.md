@@ -87,12 +87,12 @@ This plugin will create an API endpoint in APISIX to handle batch requests.
 
 ### Request
 
-| Name     | Type                        | Required | Default | Description                   |
-| -------- | --------------------------- | -------- | ------- | ----------------------------- |
-| query    | object                      | False    |         | Query string for the request. |
-| headers  | object                      | False    |         | Headers for all the requests. |
-| timeout  | integer                     | False    | 30000   | Timeout in ms.                |
-| pipeline | [HttpRequest](#httprequest) | True     |         | Details of the request.       |
+| Name     | Type                               | Required | Default | Description                   |
+| -------- |------------------------------------| -------- | ------- | ----------------------------- |
+| query    | object                             | False    |         | Query string for the request. |
+| headers  | object                             | False    |         | Headers for all the requests. |
+| timeout  | integer                            | False    | 30000   | Timeout in ms.                |
+| pipeline | array[[HttpRequest](#httprequest)] | True     |         | Details of the request.       |
 
 #### HttpRequest
 

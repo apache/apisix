@@ -45,7 +45,7 @@ __DATA__
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
 
-            local code, message, res = t('/apisix/admin/ssl',
+            local code, message, res = t('/apisix/admin/ssls',
                 ngx.HTTP_GET
             )
 

@@ -14,16 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-use t::APISIX;
-
-my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
-my $version = eval { `$nginx_binary -V 2>&1` };
-
-if ($version =~ m/\/1.17.8/) {
-    plan(skip_all => "require OpenResty 1.19+");
-} else {
-    plan('no_plan');
-}
+use t::APISIX 'no_plan';
 
 add_block_preprocessor(sub {
     my ($block) = @_;

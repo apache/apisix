@@ -366,7 +366,7 @@ function _M.run(route, ctx, plugin_funcs)
 
         local header_changed
         local pass_host = ctx.pass_host
-        if pass_host == "node" and balancer.recreate_request then
+        if pass_host == "node" then
             local host = server.upstream_host
             if host ~= ctx.var.upstream_host then
                 -- retried node has a different host
@@ -377,7 +377,7 @@ function _M.run(route, ctx, plugin_funcs)
 
         local _, run = plugin_funcs("before_proxy")
         -- always recreate request as the request may be changed by plugins
-        if (run or header_changed) and balancer.recreate_request then
+        if run or header_changed then
             balancer.recreate_request()
         end
     end

@@ -126,7 +126,7 @@ if len(sys.argv) >= 5:
         reqParam["client"]["ca"] = clientCert
     if len(sys.argv) >= 6:
         reqParam["client"]["depth"] = int(sys.argv[5])
-resp = requests.put("http://127.0.0.1:9080/apisix/admin/ssl/1", json=reqParam, headers={
+resp = requests.put("http://127.0.0.1:9080/apisix/admin/ssls/1", json=reqParam, headers={
     "X-API-KEY": api_key,
 })
 print(resp.status_code)

@@ -19,7 +19,6 @@ local core = require("apisix.core")
 local discovery = require("apisix.discovery.init").discovery
 local upstream_util = require("apisix.utils.upstream")
 local apisix_ssl = require("apisix.ssl")
-local balancer = require("ngx.balancer")
 local error = error
 local tostring = tostring
 local ipairs = ipairs
@@ -430,7 +429,7 @@ local function check_upstream_conf(in_dp, conf)
 
         local ssl_id = conf.tls and conf.tls.client_cert_id
         if ssl_id then
-            local key = "/ssl/" .. ssl_id
+            local key = "/ssls/" .. ssl_id
             local res, err = core.etcd.get(key)
             if not res then
                 return nil, "failed to fetch ssl info by "
@@ -458,12 +457,6 @@ local function check_upstream_conf(in_dp, conf)
     end
 
     if is_http then
-        if conf.pass_host == "node" and conf.nodes and
-            not balancer.recreate_request and core.table.nkeys(conf.nodes) ~= 1
-        then
-            return false, "only support single node for `node` mode currently"
-        end
-
         if conf.pass_host == "rewrite" and
             (conf.upstream_host == nil or conf.upstream_host == "")
         then

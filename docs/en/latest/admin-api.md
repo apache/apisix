@@ -766,17 +766,17 @@ Currently, the response is returned from etcd.
 
 ## SSL
 
-**API**:/apisix/admin/ssl/{id}
+**API**:/apisix/admin/ssls/{id}
 
 ### Request Methods
 
 | Method | Request URI            | Request Body | Description                                     |
 | ------ | ---------------------- | ------------ | ----------------------------------------------- |
-| GET    | /apisix/admin/ssl      | NULL         | Fetches a list of all configured SSL resources. |
-| GET    | /apisix/admin/ssl/{id} | NULL         | Fetch specified resource by id.                 |
-| PUT    | /apisix/admin/ssl/{id} | {...}        | Creates a resource with the specified id.           |
-| POST   | /apisix/admin/ssl      | {...}        | Creates a resource and assigns a random id.           |
-| DELETE | /apisix/admin/ssl/{id} | NULL         | Removes the resource with the specified id.     |
+| GET    | /apisix/admin/ssls      | NULL         | Fetches a list of all configured SSL resources. |
+| GET    | /apisix/admin/ssls/{id} | NULL         | Fetch specified resource by id.                 |
+| PUT    | /apisix/admin/ssls/{id} | {...}        | Creates a resource with the specified id.           |
+| POST   | /apisix/admin/ssls      | {...}        | Creates a resource and assigns a random id.           |
+| DELETE | /apisix/admin/ssls/{id} | NULL         | Removes the resource with the specified id.     |
 
 ### Request Body Parameters
 

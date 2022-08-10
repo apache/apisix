@@ -58,10 +58,10 @@ APISIX takes in an HTTP request, transcodes it and forwards it to a gRPC service
 
 Before enabling the Plugin, you have to add the content of your `.proto` or `.pb` files to APISIX.
 
-You can use the `/admin/proto/id` endpoint and add the contents of the file to the `content` field:
+You can use the `/admin/protos/id` endpoint and add the contents of the file to the `content` field:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/proto/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/protos/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "content" : "syntax = \"proto3\";
     package helloworld;
@@ -122,7 +122,7 @@ api_key = "edd1c9f034335f136f87ad84b625c8f1" # use a different API key
 reqParam = {
     "content": content,
 }
-resp = requests.put("http://127.0.0.1:9080/apisix/admin/proto/" + id, json=reqParam, headers={
+resp = requests.put("http://127.0.0.1:9080/apisix/admin/protos/" + id, json=reqParam, headers={
     "X-API-KEY": api_key,
 })
 print(resp.status_code)
