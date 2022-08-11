@@ -28,7 +28,9 @@ description: 本文介绍了 Apache APISIX proxy-control 插件的相关操作�
 
 ## 描述
 
-`client-control` 插件能够动态地控制 NGINX 处理客户端的请求的行为。
+`client-control` 插件能够通过设置客户端请求体大小的上限来动态地控制 NGINX 处理客户端的请求。
+
+by setting the size of the request body to control client access.
 
 :::info 重要
 
@@ -73,7 +75,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 \
 curl -i http://127.0.0.1:9080/index.html -d '123'
 ```
 
-在配置插件时设置了 `max_body_size` 为 `1`，如果返回的 HTTP 响应头中带有 `413` 状态码，则表示插件生效：
+因为在配置插件时设置了 `max_body_size` 为 `1`，所以返回的 HTTP 响应头中如果带有 `413` 状态码，则表示插件生效：
 
 ```shell
 HTTP/1.1 413 Request Entity Too Large
@@ -92,7 +94,8 @@ HTTP/1.1 413 Request Entity Too Large
 当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {
