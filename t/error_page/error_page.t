@@ -136,12 +136,8 @@ X-Test-Status: 500
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/routes/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }

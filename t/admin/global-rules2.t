@@ -60,7 +60,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"get","count":0,"node":{"dir":true,"key":"/apisix/global_rules","nodes":[]}}
+{"count":0,"list":[]}
 
 
 
@@ -94,7 +94,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"set","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}}
+{"node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}}
 
 
 
@@ -120,7 +120,7 @@ __DATA__
         }
     }
 --- response_body_like
-{"action":"get","count":1,"node":\{"dir":true,"key":"/apisix/global_rules","nodes":.*
+{"count":1,"list":[{"createdIndex":\d+,"key":"/apisix/global_rules/1".*
 
 
 
@@ -130,12 +130,8 @@ __DATA__
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/global_rules/1',
-                ngx.HTTP_DELETE,
-                nil,
-                [[{
-                    "action": "delete"
-                }]]
-                )
+                ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
