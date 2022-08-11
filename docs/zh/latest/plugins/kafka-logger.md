@@ -1,5 +1,11 @@
 ---
 title: kafka-logger
+keywords:
+  - APISIX
+  - API Gateway
+  - Plugin
+  - Kafka Logger
+description: 通过 Apache APISIX kafka 插件
 ---
 
 <!--
@@ -34,23 +40,23 @@ title: kafka-logger
 
 | 名称             | 类型    | 必选项 | 默认值         | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | -------------- | ------- | ------------------------------------------------ |
-| broker_list      | object  | 必须   |                |         | 要推送的 kafka 的 broker 列表。                  |
-| kafka_topic      | string  | 必须   |                |         | 要推送的 topic。                                 |
-| producer_type    | string  | 可选   | async          | ["async", "sync"]        | 生产者发送消息的模式。          |
-| required_acks          | integer | 可选    | 1              | [0, 1, -1] | 生产者在确认一个请求发送完成之前需要收到的反馈信息的数量。这个参数是为了保证发送请求的可靠性。语义同 kafka 生产者的 acks 参数（如果设置 `acks=0`，则 producer 不会等待服务器的反馈。该消息会被立刻添加到 socket buffer 中并认为已经发送完成。如果设置 `acks=1`，leader 节点会将记录写入本地日志，并且在所有 follower 节点反馈之前就先确认成功。如果设置 `acks=-1`，这就意味着 leader 节点会等待所有同步中的副本确认之后再确认这条记录是否发送完成。）。         |
-| key              | string  | 可选   |                |         | 用于消息的分区分配。                             |
-| timeout          | integer | 可选   | 3              | [1,...] | 发送数据的超时时间。                             |
-| name             | string  | 可选   | "kafka logger" |         | batch processor 的唯一标识。                     |
-| meta_format      | enum    | 可选   | "default"      | ["default"，"origin"] | `default`：获取请求信息以默认的 JSON 编码方式。`origin`：获取请求信息以 HTTP 原始请求方式。[具体示例](#meta_format-参考示例)|
-| include_req_body | boolean | 可选   | false          | [false, true] | 是否包括请求 body。false： 表示不包含请求的 body ；true： 表示包含请求的 body。注意：如果请求 body 没办法完全放在内存中，由于 Nginx 的限制，我们没有办法把它记录下来。|
-| include_req_body_expr | array  | 可选    |           |         | 当 `include_req_body` 开启时，基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 表达式的结果进行记录。如果该选项存在，只有在表达式为真的时候才会记录请求 body。 |
-| include_resp_body| boolean | 可选   | false          | [false, true] | 是否包括响应体。包含响应体，当为`true`。 |
-| include_resp_body_expr | array  | 可选    |           |         | 是否采集响体，基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 该选项需要开启 `include_resp_body`|
-| cluster_name     | integer | 可选   | 1              | [0,...] | kafka 集群的名称。当有两个或多个 kafka 集群时，可以指定不同的名称。只适用于 producer_type 是 async 模式。|
-| producer_batch_num | integer | 可选    | 200 | [1,...] | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的`batch_num`参数，聚合消息批量提交，单位为消息条数 |
-| producer_batch_size | integer | 可选    | 1048576 | [0,...] | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的`batch_size`参数，单位为字节 |
-| producer_max_buffering | integer | 可选    | 50000 | [1,...] | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的`max_buffering`参数，最大缓冲区，单位为条 |
-| producer_time_linger | integer | 可选    | 1 | [1,...] | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的`flush_time`参数，单位为秒 |
+| broker_list      | object  | 是     |                |         | 要推送的 kafka 的 broker 列表。                  |
+| kafka_topic      | string  | 是     |                |         | 要推送的 topic。                                 |
+| producer_type    | string  | 否     | async          | ["async", "sync"]        | 生产者发送消息的模式。          |
+| required_acks    | integer | 否     | 1              | [0, 1, -1] | 生产者在确认一个请求发送完成之前需要收到的反馈信息的数量。这个参数是为了保证发送请求的可靠性。语义同 kafka 生产者的 acks 参数（如果设置 `acks=0`，则 producer 不会等待服务器的反馈。该消息会被立刻添加到 socket buffer 中并认为已经发送完成。如果设置 `acks=1`，leader 节点会将记录写入本地日志，并且在所有 follower 节点反馈之前就先确认成功。如果设置 `acks=-1`，这就意味着 leader 节点会等待所有同步中的副本确认之后再确认这条记录是否发送完成。）。   |
+| key              | string  | 否     |                |         | 用于消息的分区分配。                             |
+| timeout          | integer | 否     | 3              | [1,...] | 发送数据的超时时间。                             |
+| name             | string  | 否     | "kafka logger" |         | batch processor 的唯一标识。                     |
+| meta_format      | enum    | 否     | "default"      | ["default"，"origin"] | `default`：获取请求信息以默认的 JSON 编码方式。`origin`：获取请求信息以 HTTP 原始请求方式。[具体示例](#meta_format-参考示例)|
+| include_req_body | boolean | 否     | false          | [false, true] | 是否包括请求 body。false： 表示不包含请求的 body ；true： 表示包含请求的 body。注意：如果请求 body 没办法完全放在内存中，由于 Nginx 的限制，我们没有办法把它记录下来。|
+| include_req_body_expr | array  | 否    |           |         | 当 `include_req_body` 开启时，基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 表达式的结果进行记录。如果该选项存在，只有在表达式为真的时候才会记录请求 body。 |
+| include_resp_body| boolean | 否     | false          | [false, true] | 是否包括响应体。包含响应体，当为`true`。 |
+| include_resp_body_expr | array      | 否    |           |         | 是否采集响体，基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 该选项需要开启 `include_resp_body`|
+| cluster_name     | integer | 否     | 1              | [0,...] | kafka 集群的名称。当有两个或多个 kafka 集群时，可以指定不同的名称。只适用于 producer_type 是 async 模式。|
+| producer_batch_num | integer | 否   | 200 | [1,...] | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的`batch_num`参数，聚合消息批量提交，单位为消息条数 |
+| producer_batch_size | integer | 否  | 1048576 | [0,...] | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的`batch_size`参数，单位为字节 |
+| producer_max_buffering | integer | 否 | 50000 | [1,...] | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的`max_buffering`参数，最大缓冲区，单位为条 |
+| producer_time_linger | integer | 否 | 1 | [1,...] | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的`flush_time`参数，单位为秒 |
 
 本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
@@ -199,7 +205,8 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/kafka-logger -H 'X-API-K
 当您要禁用 `kafka-logger` 插件时，这很简单，您可以在插件配置中删除相应的 json 配置，无需重新启动服务，它将立即生效：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
