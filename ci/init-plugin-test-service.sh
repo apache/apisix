@@ -43,68 +43,11 @@ docker exec -i rmqnamesrv /home/rocketmq/rocketmq-4.6.0/bin/mqadmin updateTopic 
 docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault secrets enable -path=kv -version=1 kv"
 
 # prepare openfunction env
-prepare_kind_k8s() {
-    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
-    chmod +x ./kind
-    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-    sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-    kind create cluster --name myk8s-01
-}
+docker pull apisixtestaccount123/sample-go-func:v1
+docker pull apisixtestaccount123/sample-go-func:v2
+docker pull apisixtestaccount123/sample-go-func:v3
 
-install_openfuncntion() {
-    curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
-    helm repo add openfunction https://openfunction.github.io/charts/
-    helm repo update
-    kubectl create namespace openfunction
-    helm install openfunction --set global.Keda.enabled=false --set global.Dapr.enabled=false openfunction/openfunction -n openfunction
-    kubectl wait pods --all  --for=condition=Ready --timeout=300s -n openfunction
-    kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission
-    kubectl delete deployment -n keda --all
-    kubectl delete deployment -n dapr-system --all
-    kubectl delete pod -n keda --all
-    kubectl delete pod -n dapr-system --all
-}
+nohup docker run --rm --env="FUNC_CONTEXT={\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}" --env="CONTEXT_MODE=self-host" --name test-header -p 30583:8080 apisixtestaccount123/sample-go-func:v2 >/dev/null 2>&1 &
+nohup docker run --rm --env="FUNC_CONTEXT={\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}" --env="CONTEXT_MODE=self-host" --name test-body -p 30585:8080 apisixtestaccount123/sample-go-func:v1 >/dev/null 2>&1 &
+nohup docker run --rm --env="FUNC_CONTEXT={\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}" --env="CONTEXT_MODE=self-host" --name func-helloworld-go -p 30584:8080 apisixtestaccount123/sample-go-func:v3 >/dev/null 2>&1 &
 
-set_container_registry_secret() {
-    REGISTRY_SERVER=https://index.docker.io/v1/ REGISTRY_USER=apisixtestaccount123 REGISTRY_PASSWORD=apisixtestaccount
-    kubectl create secret docker-registry push-secret \
-        --docker-server=$REGISTRY_SERVER \
-        --docker-username=$REGISTRY_USER \
-        --docker-password=$REGISTRY_PASSWORD
-}
-
-create_functions() {
-    wget https://raw.githubusercontent.com/jackkkkklee/samples/release-0.6/functions/knative/hello-world-go/function-sample.yaml
-    wget https://raw.githubusercontent.com/jackkkkklee/samples/main/functions/knative/hello-world-go/function-sample-test-body.yaml
-
-    kubectl apply -f function-sample.yaml
-    kubectl apply -f function-sample-test-body.yaml
-
-    kubectl set resources deployment -n openfunction --all=true --requests=cpu=40m,memory=100Mi
-    kubectl set resources deployment -n kube-system --all=true --requests=cpu=40m,memory=100Mi
-
-    kubectl wait fn function-sample --for=jsonpath='{.status.build.state}'=Succeeded  --timeout=500s
-    kubectl wait fn function-sample --for=jsonpath='{.status.serving.state}'=Running  --timeout=500s
-    kubectl wait fn test-body --for=jsonpath='{.status.build.state}'=Succeeded  --timeout=500s
-    kubectl wait fn test-body --for=jsonpath='{.status.serving.state}'=Running  --timeout=500s
-
-}
-
-set_ingress_controller() {
-    htpasswd -cb auth test test
-    kubectl create secret generic basic-auth --from-file=auth
-
-    kubectl patch ingress openfunction -p '{"metadata":{"annotations":{"nginx.ingress.kubernetes.io/auth-type":"basic","nginx.ingress.kubernetes.io/auth-secret":"basic-auth","nginx.ingress.kubernetes.io/auth-realm":"Authentication Required - test"}}}'
-    kubectl patch svc ingress-nginx-controller -n ingress-nginx -p $'spec:\n type: NodePort'
-    kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{"spec":{"ports":[{"appProtocol":"http","name":"myhttp","nodePort": 30585,"port":  80,"protocol": "TCP", "targetPort": "http"}]}}'
-  }
-port_forward() {
-    nohup kubectl port-forward --address 0.0.0.0  --namespace=ingress-nginx service/ingress-nginx-controller 30585:80 >/dev/null 2>&1 &
-}
-
-prepare_kind_k8s
-install_openfuncntion
-set_container_registry_secret
-create_functions
-set_ingress_controller
-port_forward
