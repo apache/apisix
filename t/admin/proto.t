@@ -61,15 +61,10 @@ __DATA__
                             // Sends a greeting
                             rpc SayHi (HelloRequest) returns (HelloResponse){}
                         }"
-                }]],
-                [[
-                    {
-                        "action": "set"
-                    }
-                ]]
-                )
+                }]]
+            )
 
-            if code ~= 200 then
+            if code ~= 201 then
                 ngx.status = code
                 ngx.say("[put proto] code: ", code, " message: ", message)
                 return
@@ -79,7 +74,7 @@ __DATA__
         }
     }
 --- response_body
-[put proto] code: 200 message: passed
+[put proto] code: 201 message: passed
 
 
 
@@ -89,12 +84,8 @@ __DATA__
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/protos/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
 
             if code ~= 200 then
                 ngx.status = code
@@ -133,15 +124,10 @@ __DATA__
                         // Sends a greeting
                         rpc SayHi (HelloRequest) returns (HelloResponse){}
                     }"
-                }]],
-                [[
-                    {
-                        "action": "set"
-                    }
-                ]]
-                )
+                }]]
+            )
 
-            if code ~= 200 then
+            if code ~= 201 then
                 ngx.status = code
                 ngx.say("[put proto] code: ", code, " message: ", message)
                 return
@@ -169,13 +155,10 @@ __DATA__
                         },
                         "uri": "/grpc/sayhi",
                         "name": "hi-grpc"
-                }]],
-                [[{
-                    "action": "set"
                 }]]
-                )
+            )
 
-            if code ~= 200 then
+            if code ~= 201 then
                 ngx.status = code
                 ngx.say("[route refer proto] code: ", code, " message: ", message)
                 return
@@ -185,19 +168,15 @@ __DATA__
             ngx.sleep(0.1) -- ensure reference is synced from etcd
 
             code, message = t('/apisix/admin/protos/2',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
 
             ngx.say("[delete proto] code: ", code)
         }
     }
 --- response_body
-[put proto] code: 200 message: passed
-[route refer proto] code: 200 message: passed
+[put proto] code: 201 message: passed
+[route refer proto] code: 201 message: passed
 [delete proto] code: 400
 
 

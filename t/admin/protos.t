@@ -61,15 +61,10 @@ __DATA__
                             // Sends a greeting
                             rpc SayHi (HelloRequest) returns (HelloResponse){}
                         }"
-                }]],
-                [[
-                    {
-                        "action": "set"
-                    }
-                ]]
-                )
+                }]]
+            )
 
-            if code ~= 200 then
+            if code ~= 201 then
                 ngx.status = code
                 ngx.say("[put proto] code: ", code, " message: ", message)
                 return
@@ -79,4 +74,4 @@ __DATA__
         }
     }
 --- response_body
-[put proto] code: 200 message: passed
+[put proto] code: 201 message: passed
