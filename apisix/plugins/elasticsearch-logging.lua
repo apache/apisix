@@ -15,8 +15,8 @@
 -- limitations under the License.
 --
 
-local core            = require("apisix.core")
 local ngx             = ngx
+local core            = require("apisix.core")
 local ngx_now         = ngx.now
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
@@ -26,6 +26,7 @@ local DEFAULT_ELASTICSEARCH_SOURCE = "apache-apisix-elasticsearch-logging"
 
 local plugin_name = "elasticsearch-logging"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
+local str_format = core.string.format
 
 
 local schema = {
@@ -88,58 +89,42 @@ end
 
 
 local function send_to_elasticsearch(conf, entries)
-    local http_new, err = http.new()
-    if not http_new then
-        return false, string.format("create http error: %s", err)
+    local httpc, err = http.new()
+    if not httpc then
+        return false, str_format("create http error: %s", err)
     end
 
-    local m, err = http:parse_uri(conf.endpoint.uri)
-    if not m then
-        return false, "endpoint uri is invalid"
+    httpc:set_timeout(conf.endpoint.timeout * 1000)
+
+    local ssl_verify = conf.endpoint.ssl_verify ~= nil and
+        conf.endpoint.ssl_verify or false
+
+    local body = core.table.concat(entries, "")
+    local headers = {["Content-Type"] = "application/json"}
+    if conf.endpoint.username and conf.endpoint.password then
+        local authorization = "Basic " .. ngx.encode_base64(
+            conf.endpoint.username .. ":" .. conf.endpoint.password
+        )
+        headers["Authorization"] = authorization
     end
 
-    http_new:set_timeout(conf.endpoint.timeout * 1000)
+    core.log.info("conf.endpoint.uri: ", conf.endpoint.uri,
+        ", body: ", body, ", headers: ", core.json.encode(headers))
 
-    local ok, err = http_new:connect({
-        scheme = m[1],
-        host = m[2],
-        port = m[3],
-        ssl_verify = m[1] == "https" and false or conf.endpoint.ssl_verify,
-    })
-
-    if not ok then
-        return false, string.format("failed to connect elasticsearch error: %, \
-        host: %s, port: %d", err, m[2], m[3])
-    end
-
-    local body = table.concat(entries, "")
-    core.log.error("conf.endpoint.uri: ", conf.endpoint.uri, ", body: ", body)
-    core.log.info("conf.endpoint.uri: ", conf.endpoint.uri, ", body: ", body)
-
-    local response, err = http_new:request({
-        path = m[4],
+    local resp, err = httpc:request_uri(conf.endpoint.uri, {
+        ssl_verify = ssl_verify,
         method = "POST",
-        headers = {
-            ["Content-Type"] = "application/json"
-        },
+        headers = headers,
         body = body
     })
-    if not response then
-        return false,  string.format("RequestError: %s", err or "")
+    if not resp then
+        return false,  str_format("RequestError: %s", err or "")
     end
 
-    if response.status ~= 200 then
-        return false, string.format("response status: %d, response body: %s",
-            response.status, response:read_body() or "")
+    if resp.status ~= 200 then
+        return false, str_format("response status: %d, response body: %s",
+        resp.status, resp.body or "")
     end
-
-    local resp_body, err = response:read_body()
-    if not resp_body then
-        return false, string.format("ReadBodyError: ", err)
-    end
-
-    core.log.error("resp_body: ", resp_body)
-    core.log.info("resp_body: ", resp_body)
 
     return true
 end
