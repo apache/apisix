@@ -65,7 +65,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"set","node":{"key":"/apisix/consumers/jack","value":{"username":"jack"}}}
+{"node":{"key":"/apisix/consumers/jack","value":{"username":"jack"}}}
 
 
 
@@ -98,7 +98,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"get","node":{"key":"/apisix/consumers/jack","value":{"username":"jack"}}}
+{"node":{"key":"/apisix/consumers/jack","value":{"username":"jack"}}}
 
 
 
@@ -124,7 +124,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"delete","deleted":"1","key":"/apisix/consumers/jack","node":{}}
+{"deleted":"1","key":"/apisix/consumers/jack","node":{}}
 
 
 
@@ -150,7 +150,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"get","count":0,"node":{"dir":true,"key":"/apisix/consumers","nodes":[]}}
+{"count":0,"list":[]}
 
 
 

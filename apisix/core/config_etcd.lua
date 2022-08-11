@@ -212,14 +212,17 @@ local function load_full_data(self, dir_res, headers)
         self:upgrade_version(item.modifiedIndex)
 
     else
-        if not dir_res.nodes then
-            dir_res.nodes = {}
+        -- here dir_res maybe res.body.node or res.body.list
+        -- we need make values equals to res.body.node.nodes or res.body.list
+        local values = (dir_res and dir_res.nodes) or dir_res
+        if not values then
+            values = {}
         end
 
-        self.values = new_tab(#dir_res.nodes, 0)
-        self.values_hash = new_tab(0, #dir_res.nodes)
+        self.values = new_tab(#values, 0)
+        self.values_hash = new_tab(0, #values)
 
-        for _, item in ipairs(dir_res.nodes) do
+        for _, item in ipairs(values) do
             local key = short_key(self, item.key)
             local data_valid = true
             if type(item.value) ~= "table" then
@@ -302,7 +305,7 @@ local function sync_data(self)
             return false, err
         end
 
-        local dir_res, headers = res.body.node or {}, res.headers
+        local dir_res, headers = res.body.list or {}, res.headers
         log.debug("readdir key: ", self.key, " res: ",
                   json.delay_encode(dir_res))
         if not dir_res then

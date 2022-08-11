@@ -54,8 +54,7 @@ __DATA__
                             "desc": "new service"
                         },
                         "key": "/apisix/services/5eeb3dc90f747328b2930b0b"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -92,8 +91,7 @@ passed
                             "desc": "new service"
                         },
                         "key": "/apisix/services/5eeb3dc90f747328b2930b0b"
-                    },
-                    "action": "get"
+                    }
                 }]]
                 )
 
@@ -116,12 +114,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/services/5eeb3dc90f747328b2930b0b',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -140,12 +134,8 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code = t('/apisix/admin/services/not_found',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
 
             ngx.say("[delete] code: ", code)
         }
@@ -184,8 +174,7 @@ GET /t
                                 "type": "roundrobin"
                             }
                         }
-                    },
-                    "action": "create"
+                    }
                 }]]
                 )
 
@@ -199,12 +188,8 @@ GET /t
 
             local id = string.sub(res.node.key, #"/apisix/services/" + 1)
             code, message = t('/apisix/admin/services/' .. id,
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -244,8 +229,7 @@ GET /t
                                 "type": "roundrobin"
                             }
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -297,8 +281,7 @@ GET /t
                                 }
                             }
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -394,8 +377,7 @@ GET /t
                             "plugins": {}
                         },
                         "key": "/apisix/services/5eeb3dc90f747328b2930b0b"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -601,8 +583,7 @@ GET /t
                             "desc": "new 20 service"
                         },
                         "key": "/apisix/services/5eeb3dc90f747328b2930b0b"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
             )
 
@@ -641,8 +622,7 @@ passed
                             "desc": "new 19 service"
                         },
                         "key": "/apisix/services/5eeb3dc90f747328b2930b0b"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
             )
 

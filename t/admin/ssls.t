@@ -59,8 +59,7 @@ __DATA__
                             "sni": "test.com"
                         },
                         "key": "/apisix/ssls/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
