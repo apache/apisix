@@ -44,7 +44,7 @@ APISIX takes in an HTTP request, transcodes it and forwards it to a gRPC service
 | method    | string                                                 | True     |         | Method name of the gRPC service.     |
 | deadline  | number                                                 | False    | 0       | Deadline for the gRPC service in ms. |
 | pb_option | array[string([pb_option_def](#options-for-pb_option))] | False    |         | protobuf options.                    |
-| show_status_in_body  | boolean                                     | False    | False   | Whether to display the parsed `grpc-status-details-bin` in the response body |
+| show_status_in_body  | boolean                                     | False    | false   | Whether to display the parsed `grpc-status-details-bin` in the response body |
 | status_detail_type | string                                        | False    |         | The message type corresponding to the [details](https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto#L46) part of `grpc-status-details-bin`, if not specified, this part will not be decoded  |
 
 ### Options for pb_option

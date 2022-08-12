@@ -157,24 +157,8 @@ Content-Type: application/json
 
             if code >= 300 then
                 ngx.status = code
+                return
             end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 4: set routes (id: 1, get error response from rpc)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -213,7 +197,7 @@ passed
 
 
 
-=== TEST 5: hit route (error response in header)
+=== TEST 4: hit route (error response in header)
 --- config
     location /t {
         content_by_lua_block {
@@ -248,7 +232,7 @@ qr/error/
 
 
 
-=== TEST 6: set routes (id: 1, show error response in body)
+=== TEST 5: set routes (id: 1, show error response in body)
 --- config
     location /t {
         content_by_lua_block {
@@ -292,7 +276,7 @@ passed
 
 
 
-=== TEST 7: hit route (show error status in body)
+=== TEST 6: hit route (show error status in body)
 --- config
     location /t {
         content_by_lua_block {
@@ -328,7 +312,7 @@ grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20
 
 
 
-=== TEST 8: set routes (id: 1, show error details in body)
+=== TEST 7: set routes (id: 1, show error details in body)
 --- config
     location /t {
         content_by_lua_block {
@@ -373,7 +357,7 @@ passed
 
 
 
-=== TEST 9: hit route (show error details in body)
+=== TEST 8: hit route (show error details in body)
 --- config
     location /t {
         content_by_lua_block {
@@ -409,7 +393,7 @@ grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20
 
 
 
-=== TEST 10: set routes (id: 1, show error details in body and wrong status_detail_type)
+=== TEST 9: set routes (id: 1, show error details in body and wrong status_detail_type)
 --- config
     location /t {
         content_by_lua_block {
@@ -454,7 +438,7 @@ passed
 
 
 
-=== TEST 11: hit route (show error details in body and wrong status_detail_type)
+=== TEST 10: hit route (show error details in body and wrong status_detail_type)
 --- config
     location /t {
         content_by_lua_block {
@@ -481,7 +465,7 @@ grpc-status: 14
 grpc-message: Out of service
 grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20vaGVsbG93b3JsZC5FcnJvckRldGFpbBIpCAESHFRoZSBzZXJ2ZXIgaXMgb3V0IG9mIHNlcnZpY2UaB3NlcnZpY2U
 --- response_body
-failed to decode details in grpc-status-details-bin
+failed to call pb.decode to decode details in grpc-status-details-bin
 --- error_log
-transform response error: failed to decode details in grpc-status-details-bin, err:
+transform response error: failed to call pb.decode to decode details in grpc-status-details-bin, err:
 --- error_code: 503

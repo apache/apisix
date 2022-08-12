@@ -38,7 +38,12 @@ local function handle_error_response(status_detail_type)
         local status_pb_state = grpc_proto.fetch_status_pb_state()
         local old_pb_state = pb.state(status_pb_state)
 
-        local decoded_grpc_status = pb.decode("grpc.status.ErrorStatus", grpc_status)
+        local ok, decoded_grpc_status = pcall(pb.decode, "grpc.status.ErrorStatus", grpc_status)
+        if not ok then
+            ngx.arg[1] = "failed to call pb.decode to decode grpc-status-details-bin"
+            return "failed to call pb.decode to decode grpc-status-details-bin, err: "
+                    .. decoded_grpc_status
+        end
 
         if not decoded_grpc_status then
             ngx.arg[1] = "failed to decode grpc-status-details-bin"
@@ -53,12 +58,19 @@ local function handle_error_response(status_detail_type)
             for _, detail in ipairs(details) do
                 local ok, err_or_value = pcall(pb.decode, status_detail_type, detail.value)
                 if not ok then
-                    ngx.arg[1] = "failed to decode details in grpc-status-details-bin"
-                    return "failed to decode details in grpc-status-details-bin, err: "
+                    ngx.arg[1] = "failed to call pb.decode to decode details in grpc-status-details-bin"
+                    return "failed to call pb.decode to decode details in grpc-status-details-bin, err: "
                             .. err_or_value
                 end
+
+                if not err_or_value then
+                    ngx.arg[1] = "failed to decode details in grpc-status-details-bin"
+                    return "failed to decode details in grpc-status-details-bin"
+                end
+
                 core.table.insert(decoded_details, err_or_value)
             end
+
             decoded_grpc_status.details = decoded_details
         end
 
