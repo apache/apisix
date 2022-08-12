@@ -31,7 +31,7 @@ By default, the Admin API listens to port `9080` (`9443` for HTTPS) when APISIX 
 
 The Admin API has made some breaking changes in V3 version, as well as supporting additional features.
 
-### Response Body Format
+### Support new response body format
 
 1. Remove `action` field in response body;
 2. Adjust the response body structure when fetching the list of resources, the new response body structure like:
@@ -50,14 +50,14 @@ The Admin API has made some breaking changes in V3 version, as well as supportin
 }
 ```
 
-### Paging
+### Support paging query
 
 Paging query is supported when getting the resource list, paging parameters include:
 
 | parameter | Default | Valid range | Description                  |
 | --------- | ------  | ----------- | ---------------------------- |
-| page      | 1       | >=1         | Number of pages              |
-| page_size |         | 10 ~ 500    | Number of resources per page |
+| page      | 1       | [1, ...]    | Number of pages              |
+| page_size |         | [10, 500]   | Number of resources per page |
 
 The example is as follows:
 
@@ -86,7 +86,7 @@ Resources that support paging queries:
 - Stream Route
 - Upstream
 
-### Filter
+### Support filtering query
 
 When getting a list of resources, it supports filtering resources based on `name`, `label`, `uri`.
 
