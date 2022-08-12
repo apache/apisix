@@ -40,7 +40,7 @@ This Plugin can be configured on a Route and requests will be send to the config
 | function_uri      | string  | True     |         |              | function uri. For example, `https://localhost:30858/default/function-sample`.                              |
 | ssl_verify        | boolean | False    | true    |              | When set to `true` verifies the SSL certificate.                                                           |
 | service_token     | string  | False    |         |              | The token format is 'xx:xx' which support basic auth for ingress controller, .                                      |
-| timeout           | integer | False    | 60000ms | [1, 60000]ms | OpenFunction action and HTTP call timeout in ms.                                                              |
+| timeout           | integer | False    | 3000ms | [100, ...]ms | OpenFunction action and HTTP call timeout in ms.                                                              |
 | keepalive         | boolean | False    | true    |              | When set to `true` keeps the connection alive for reuse.                                                   |
 | keepalive_timeout | integer | False    | 60000ms | [1000,...]ms | Time is ms for connection to remain idle without closing.                                                  |
 | keepalive_pool    | integer | False    | 5       | [1,...]      | Maximum number of requests that can be sent on this connection before closing it.                          |

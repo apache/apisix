@@ -40,7 +40,7 @@ description: 本文介绍了关于 Apache CNCF OpenFunction 插件的基本信�
 | function_uri      | string  | 是     |         |              | OpenFunction function uri，例如 `https://localhost:30858/default/function-sample`。     |
 | ssl_verify        | boolean | 否     | true    |              | 当设置为 `true` 时执行 SSL 验证。                            |
 | service_token     | string  | 是     |         |              | OpenFunction service token，其格式为 `xxx:xxx` ，支持 ingress controller 的 basic auth 认证方式。 |
-| timeout           | integer | 否     | 60000ms | [1,60000]ms  | OpenFunction action 和 HTTP 调用超时时间（以毫秒为单位）。          |
+| timeout           | integer | 否     | 3000ms | [100,...]ms  | OpenFunction action 和 HTTP 调用超时时间（以毫秒为单位）。          |
 | keepalive         | boolean | 否     | true    |              | 当设置为 `true` 时，保持连接的活动状态以便重复使用。         |
 | keepalive_timeout | integer | 否     | 60000ms | [1000,...]ms | 当连接空闲时，保持该连接处于活动状态的时间（以毫秒为单位）。               |
 | keepalive_pool    | integer | 否     | 5       | [1,...]      | 连接断开之前，可接收的最大请求数。                           |
