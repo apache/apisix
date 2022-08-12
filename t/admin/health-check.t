@@ -46,8 +46,7 @@ add_block_preprocessor(sub {
         node = {
             value = req_data,
             key = "/apisix/routes/1",
-        },
-        action = "set",
+        }
     }
 _EOC_
 

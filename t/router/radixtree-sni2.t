@@ -54,8 +54,7 @@ location /t {
                         "sni": "test.com"
                     },
                     "key": "/apisix/ssls/1"
-                },
-                "action": "set"
+                }
             }]]
         )
         ngx.status = code
@@ -176,8 +175,7 @@ location /t {
                         "sni": "*.test2.com"
                     },
                     "key": "/apisix/ssls/1"
-                },
-                "action": "set"
+                }
             }]]
             )
 

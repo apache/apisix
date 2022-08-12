@@ -43,8 +43,7 @@ __DATA__
                             "sni": "test.com"
                         },
                         "key": "/apisix/ssls/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -84,8 +83,7 @@ passed
                         },
 
                         "key": "/apisix/ssls/1"
-                    },
-                    "action": "get"
+                    }
                 }]]
                 )
 
@@ -108,12 +106,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/ssls/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -132,12 +126,8 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code = t('/apisix/admin/ssls/99999999999999',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code)
         }
     }
@@ -169,8 +159,7 @@ GET /t
                         "value": {
                             "sni": "foo.com"
                         }
-                    },
-                    "action": "create"
+                    }
                 }]]
                 )
 
@@ -184,11 +173,7 @@ GET /t
 
             local id = string.sub(res.node.key, #"/apisix/ssls/" + 1)
             code, message = t.test('/apisix/admin/ssls/' .. id,
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
+                 ngx.HTTP_DELETE
             )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
@@ -223,8 +208,7 @@ GET /t
                             "sni": "foo.com"
                         },
                         "key": "/apisix/ssls/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -262,8 +246,7 @@ GET /t
                             "sni": "*.foo.com"
                         },
                         "key": "/apisix/ssls/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -303,8 +286,7 @@ passed
                             "snis": ["*.foo.com", "bar.com"]
                         },
                         "key": "/apisix/ssls/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -346,8 +328,7 @@ passed
                             "exptime": 1619798400
                         },
                         "key": "/apisix/ssls/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -480,8 +461,7 @@ GET /t
                             "sni": "test.com"
                         },
                         "key": "/apisix/ssls/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
               )
 
@@ -522,8 +502,7 @@ passed
                             "sni": "test.com"
                         },
                         "key": "/apisix/ssls/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -567,8 +546,7 @@ GET /t
                         },
 
                         "key": "/apisix/ssls/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -609,8 +587,7 @@ passed
                         },
 
                         "key": "/apisix/ssls/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -660,8 +637,7 @@ GET /t
                             "validity_end": 1603893670
                         },
                         "key": "/apisix/ssls/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -684,12 +660,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/ssls/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -722,8 +694,7 @@ GET /t
                         "value": {
                             "sni": "test.com"
                         }
-                    },
-                    "action": "create"
+                    }
                 }]]
                 )
 
@@ -791,8 +762,7 @@ passed
                 [[{
                     "node": {
                         "key": "/apisix/ssls/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -827,8 +797,7 @@ GET /t
                 [[{
                     "node": {
                         "key": "/apisix/ssls/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 

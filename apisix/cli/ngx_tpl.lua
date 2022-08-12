@@ -308,28 +308,6 @@ http {
     {% end %}
     {% end %}
 
-    {% if enabled_plugins["proxy-cache"] then %}
-    # for proxy cache
-    {% for _, cache in ipairs(proxy_cache.zones) do %}
-    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
-    proxy_cache_path {* cache.disk_path *} levels={* cache.cache_levels *} keys_zone={* cache.name *}:{* cache.memory_size *} inactive=1d max_size={* cache.disk_size *} use_temp_path=off;
-    {% else %}
-    lua_shared_dict {* cache.name *} {* cache.memory_size *};
-    {% end %}
-    {% end %}
-    {% end %}
-
-    {% if enabled_plugins["proxy-cache"] then %}
-    # for proxy cache
-    map $upstream_cache_zone $upstream_cache_zone_info {
-    {% for _, cache in ipairs(proxy_cache.zones) do %}
-    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
-        {* cache.name *} {* cache.disk_path *},{* cache.cache_levels *};
-    {% end %}
-    {% end %}
-    }
-    {% end %}
-
     {% if enabled_plugins["error-log-logger"] then %}
         lua_capture_error_log  10m;
     {% end %}
@@ -582,6 +560,27 @@ http {
 
     {% if conf_server then %}
     {* conf_server *}
+    {% end %}
+
+    {% if deployment_role ~= "control_plane" then %}
+
+    {% if enabled_plugins["proxy-cache"] then %}
+    # for proxy cache
+    {% for _, cache in ipairs(proxy_cache.zones) do %}
+    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
+    proxy_cache_path {* cache.disk_path *} levels={* cache.cache_levels *} keys_zone={* cache.name *}:{* cache.memory_size *} inactive=1d max_size={* cache.disk_size *} use_temp_path=off;
+    {% else %}
+    lua_shared_dict {* cache.name *} {* cache.memory_size *};
+    {% end %}
+    {% end %}
+
+    map $upstream_cache_zone $upstream_cache_zone_info {
+    {% for _, cache in ipairs(proxy_cache.zones) do %}
+    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
+        {* cache.name *} {* cache.disk_path *},{* cache.cache_levels *};
+    {% end %}
+    {% end %}
+    }
     {% end %}
 
     server {
@@ -856,6 +855,8 @@ http {
             }
         }
     }
+    {% end %}
+
     # http end configuration snippet starts
     {% if http_end_configuration_snippet then %}
     {* http_end_configuration_snippet *}

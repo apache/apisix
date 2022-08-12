@@ -45,8 +45,7 @@ location /t {
                         "sni": "www.test.com"
                     },
                     "key": "/apisix/ssls/1"
-                },
-                "action": "set"
+                }
             }]]
             )
 
@@ -232,8 +231,7 @@ location /t {
                         "sni": "*.test.com"
                     },
                     "key": "/apisix/ssls/1"
-                },
-                "action": "set"
+                }
             }]]
             )
 
@@ -346,8 +344,7 @@ location /t {
                         "sni": "test.com"
                     },
                     "key": "/apisix/ssls/1"
-                },
-                "action": "set"
+                }
             }]]
             )
 
@@ -460,8 +457,7 @@ location /t {
                         "sni": "*.test2.com"
                     },
                     "key": "/apisix/ssls/1"
-                },
-                "action": "set"
+                }
             }]]
             )
 
@@ -588,8 +584,7 @@ location /t {
                         "status": 0
                     },
                     "key": "/apisix/ssls/1"
-                },
-                "action": "compareAndSwap"
+                }
             }]]
             )
 
@@ -669,8 +664,7 @@ location /t {
                         "status": 1
                     },
                     "key": "/apisix/ssls/1"
-                },
-                "action": "compareAndSwap"
+                }
             }]]
             )
 
@@ -753,8 +747,7 @@ location /t {
                         "snis": ["test2.com", "*.test2.com"]
                     },
                     "key": "/apisix/ssls/1"
-                },
-                "action": "set"
+                }
             }]]
             )
 
