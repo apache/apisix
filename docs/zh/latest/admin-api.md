@@ -36,7 +36,7 @@ Admin API 在 V3 版本中做了一些不向下兼容的调整，以及支持更
 ### 响应体格式
 
 1. 移除响应体中的 `action` 字段；
-2. 调整获取资源列表时的响应体结构，新的响应体结构示例：
+2. 调整获取资源列表时的响应体结构，新的响应体结构示例如下：
 
 ```json
 {
@@ -61,10 +61,11 @@ Admin API 在 V3 版本中做了一些不向下兼容的调整，以及支持更
 | page      | 1      | >=1      | 页数          |
 | page_size |        | 10 ~ 500 | 每页资源数量   |
 
-示例：
+示例如下：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes?page=1&page_size=10 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes?page=1&page_size=10 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
   "count": 1,
   "list": [
@@ -75,7 +76,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes?page=1&page_size=10 -H 'X-API-K
 }
 ```
 
-支持分页查询的资源：
+目前支持分页查询的资源如下：
 
 - Consumer
 - Global Rules
@@ -98,10 +99,11 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes?page=1&page_size=10 -H 'X-API-K
 | uri   | 仅在 Route 资源上支持。如果 Route 的 `uri` 等于查询的 uri 或 `uris` 包含查询的 uri，则该 Route 资源出现在查询结果中。 |
 
 当启用了多个过滤参数时，对不同过滤参数的查询结果取交集。
-下面的示例将返回一个路由列表，该路由列表中的所有路由满足：路由的 `name` 包含字符串 "test"，`uri` 包含字符串 "foo"，对路由的 `label` 没有限制，因为查询的 label 是空字符串
+下述示例将返回一个路由列表，该路由列表中的所有路由满足以下条件：路由的 `name` 包含字符串 "test"；`uri` 包含字符串 "foo"；对路由的 `label` 没有限制，因为查询的 label 是空字符串。
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes?name=test&uri=foo&label= -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes?name=test&uri=foo&label= \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
   "count": 1,
   "list": [

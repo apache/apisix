@@ -29,7 +29,7 @@ By default, the Admin API listens to port `9080` (`9443` for HTTPS) when APISIX 
 
 ## V3
 
-The Admin API has made some breaking changes, as well as supporting additional features.
+The Admin API has made some breaking changes in V3 version, as well as supporting additional features.
 
 ### Response Body Format
 
@@ -59,10 +59,11 @@ Paging query is supported when getting the resource list, paging parameters incl
 | page      | 1       | >=1         | Number of pages              |
 | page_size |         | 10 ~ 500    | Number of resources per page |
 
-e.g.
+The example is as follows:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes?page=1&page_size=10 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes?page=1&page_size=10 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
   "count": 1,
   "list": [
@@ -97,10 +98,11 @@ When getting a list of resources, it supports filtering resources based on `name
 
 When multiple filter parameters are enabled, use the intersection of the query results for different filter parameters.
 
-The following example will return a list of routes, and all routes in the list satisfy: the `name` of the route contains the string "test", the `uri` contains the string "foo", and there is no restriction on the `label` of the route, since the label of the query is the empty string
+The following example will return a list of routes, and all routes in the list satisfy: the `name` of the route contains the string "test", the `uri` contains the string "foo", and there is no restriction on the `label` of the route, since the label of the query is the empty string.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes?name=test&uri=foo&label= -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9080/apisix/admin/routes?name=test&uri=foo&label= \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
   "count": 1,
   "list": [
