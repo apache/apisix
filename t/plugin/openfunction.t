@@ -210,7 +210,17 @@ POST /hello
 
 
 
-=== TEST 10: reset route to non-existent function_uri
+=== TEST 10: check higher priority of user-specific Authorization header
+--- request
+POST /hello
+--- more_headers
+Authorization: user-token-xxx
+--- response_body chomp
+[user-token-xxx]
+
+
+
+=== TEST 11: reset route to non-existent function_uri
 --- config
     location /t {
         content_by_lua_block {
@@ -242,7 +252,7 @@ passed
 
 
 
-=== TEST 11: hit route (with non-existent function_uri)
+=== TEST 12: hit route (with non-existent function_uri)
 --- request
 POST /hello
 test
