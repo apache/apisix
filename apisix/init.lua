@@ -316,7 +316,8 @@ local function common_phase(phase_name)
     return plugin.run_plugin(phase_name, nil, api_ctx)
 end
 
-
+    local error = error
+    local nkeys = require("table.nkeys")
 function _M.http_access_phase()
     local ngx_ctx = ngx.ctx
 
