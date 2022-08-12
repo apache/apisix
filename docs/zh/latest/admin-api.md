@@ -29,6 +29,91 @@ Admin API 是为 Apache APISIX 服务的一组 API，我们可以将参数传递
 
 在下面出现的 `X-API-KEY` 指的是 `conf/config.yaml` 文件中的 `apisix.admin_key.key`，它是 Admin API 的访问 token。
 
+## V3
+
+Admin API 在 V3 版本中做了一些不向下兼容的调整，以及支持更多特性。
+
+### 支持新的响应体格式
+
+1. 移除响应体中的 `action` 字段；
+2. 调整获取资源列表时的响应体结构，新的响应体结构示例如下：
+
+```json
+{
+    "count":2,
+    "list":[
+        {
+            ...
+        },
+        {
+            ...
+        }
+    ]
+}
+```
+
+### 支持分页查询
+
+获取资源列表时支持分页查询，分页参数包括：
+
+| 参数       | 默认值 | 范围     | 说明           |
+| --------- | ------ | -------- | ------------ |
+| page      | 1      | [1, ...] | 页数          |
+| page_size |        | [10, 500]| 每页资源数量   |
+
+示例如下：
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes?page=1&page_size=10 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+  "count": 1,
+  "list": [
+    {
+      ...
+    }
+  ]
+}
+```
+
+目前支持分页查询的资源如下：
+
+- Consumer
+- Global Rules
+- Plugin Config
+- Proto
+- Route
+- Service
+- SSL
+- Stream Route
+- Upstream
+
+### 支持过滤资源
+
+获取资源列表时支持根据 `name`, `label`, `uri` 过滤资源。
+
+| 参数  | 说明                                                                                                      |
+| ----- | ---------------------------------------------------------------------------------------------------      |
+| name  | 根据资源的 `name` 属性进行查询，如果资源本身没有 `name` 属性则不会出现在查询结果中。                                 |
+| label | 根据资源的 `label` 属性进行查询，如果资源本身没有 `labe`l 属性则不会出现在查询结果中。                               |
+| uri   | 仅在 Route 资源上支持。如果 Route 的 `uri` 等于查询的 uri 或 `uris` 包含查询的 uri，则该 Route 资源出现在查询结果中。 |
+
+当启用了多个过滤参数时，对不同过滤参数的查询结果取交集。
+下述示例将返回一个路由列表，该路由列表中的所有路由满足以下条件：路由的 `name` 包含字符串 "test"；`uri` 包含字符串 "foo"；对路由的 `label` 没有限制，因为查询的 label 是空字符串。
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes?name=test&uri=foo&label= \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+  "count": 1,
+  "list": [
+    {
+      ...
+    }
+  ]
+}
+```
+
 ## Route
 
 *地址*：/apisix/admin/routes/{id}?ttl=0
