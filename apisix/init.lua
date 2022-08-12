@@ -322,6 +322,10 @@ function _M.http_access_phase()
 
     -- always fetch table from the table pool, we don't need a reused api_ctx
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+    if nkeys(api_ctx) != 0 then
+        error("hit the wrong case")
+        api_ctx = {}
+    end
     ngx_ctx.api_ctx = api_ctx
 
     if not verify_tls_client(api_ctx) then
