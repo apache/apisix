@@ -47,7 +47,6 @@ APISIX 接收 HTTP 请求后，首先对请求进行转码，并将转码后的�
 | show_status_in_body  | boolean                                 | 否    | False    | 是否在返回体中展示解析过的 `grpc-status-details-bin` |
 | status_detail_type | string                                    | 否    |        | `grpc-status-details-bin` 中 [details](https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto#L46) 部分对应的 message type，如果不指定，此部分不进行解码  |
 
-
 ### pb_option 的选项
 
 | 类型            | 有效值                                                                                     |
@@ -253,6 +252,7 @@ Trailer: grpc-message
 ```
 
 ## 在返回体中展示 `grpc-status-details-bin`
+
 如果 gRPC 服务返回了错误，返回头中可能存在 `grpc-status-details-bin` 字段对错误进行描述，你可以解码该字段，并展示在返回体中。
 
 上传 proto 文件：

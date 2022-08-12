@@ -409,88 +409,7 @@ grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20
 
 
 
-=== TEST 10: set routes (id: 1, show error details in body)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "methods": ["GET", "POST"],
-                    "uri": "/grpctest",
-                    "plugins": {
-                        "grpc-transcode": {
-                            "proto_id": "1",
-                            "service": "helloworld.Greeter",
-                            "method": "GetErrResp",
-                            "show_status_in_body": true,
-                            "status_detail_type": "helloworld.ErrorDetail"
-                        }
-                    },
-                    "upstream": {
-                        "scheme": "grpc",
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:50051": 1
-                        }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 11: hit route (show error details in body)
---- config
-    location /t {
-        content_by_lua_block {
-            local json = require("toolkit.json")
-            local t = require("lib.test_admin").test
-
-            local code, body, headers = t('/grpctest?name=world',
-                ngx.HTTP_GET
-            )
-
-            ngx.status = code
-
-            ngx.header['grpc-status'] = headers['grpc-status']
-            ngx.header['grpc-message'] = headers['grpc-message']
-            ngx.header['grpc-status-details-bin'] = headers['grpc-status-details-bin']
-
-            body = json.decode(body)
-            body = json.encode(body)
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_headers
-grpc-status: 14
-grpc-message: Out of service
-grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20vaGVsbG93b3JsZC5FcnJvckRldGFpbBIpCAESHFRoZSBzZXJ2ZXIgaXMgb3V0IG9mIHNlcnZpY2UaB3NlcnZpY2U
---- response_body
-{"error":{"code":14,"details":[{"code":1,"message":"The server is out of service","type":"service"}],"message":"Out of service"}}
---- no_error_log
-[error]
---- error_code: 503
-
-
-
-=== TEST 12: set routes (id: 1, show error details in body and wrong status_detail_type)
+=== TEST 10: set routes (id: 1, show error details in body and wrong status_detail_type)
 --- config
     location /t {
         content_by_lua_block {
@@ -535,7 +454,7 @@ passed
 
 
 
-=== TEST 13: hit route (show error details in body and wrong status_detail_type)
+=== TEST 11: hit route (show error details in body and wrong status_detail_type)
 --- config
     location /t {
         content_by_lua_block {

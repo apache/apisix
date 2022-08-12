@@ -47,7 +47,6 @@ APISIX takes in an HTTP request, transcodes it and forwards it to a gRPC service
 | show_status_in_body  | boolean                                     | False    | False   | Whether to display the parsed `grpc-status-details-bin` in the response body |
 | status_detail_type | string                                        | False    |         | The message type corresponding to the [details](https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto#L46) part of `grpc-status-details-bin`, if not specified, this part will not be decoded  |
 
-
 ### Options for pb_option
 
 | Type            | Valid values                                                                              |
@@ -252,6 +251,7 @@ Trailer: grpc-message
 ```
 
 ## Show `grpc-status-details-bin` in response body
+
 If the gRPC service returns an error, there may be a `grpc-status-details-bin` field in the return header describing the error, which you can decode and display in the return body.
 
 Upload the proto file：
