@@ -53,7 +53,7 @@ The `timeout` attribute sets the time taken by the OpenFunction to execute, and 
 
 ## Enabling the Plugin
 
-Before configuring the Plugin, you need to have OpenFunction running. For details, please refer to [Installation](https://openfunction.dev/docs/getting-started/installation/).
+Before configuring the plugin, you need to have OpenFunction running. For details, please refer to [Installation](https://openfunction.dev/docs/getting-started/installation/).
 The example below shows OpenFunction installed in Helm:
 
 ```shell
