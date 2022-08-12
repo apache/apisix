@@ -26,8 +26,7 @@ local pcall  = pcall
 
 
 local function handle_error_response(status_detail_type)
-    local headers = ngx.resp.get_headers()
-    local grpc_status = headers["grpc-status-details-bin"]
+    local grpc_status = ngx.header["grpc-status-details-bin"]
     if grpc_status then
         grpc_status = ngx_decode_base64(grpc_status)
         if grpc_status == nil then
