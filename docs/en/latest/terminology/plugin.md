@@ -82,7 +82,7 @@ Some common configurations can be applied to plugins through the `_meta` configu
 |--------------|------|-------------|
 | error_response | string/object  | Custom error response |
 | priority       | integer        | Custom plugin priority |
-| filter  | array | Depending on the requested parameters, it is decided at runtime whether the plugin should be executed. Something like this: {{var, operator, val}, {var, operator, val}, ...}}. For example: `{"arg_version", "==", "v2"}`, indicating that the current request parameter `version` is `v2`. The variables here are consistent with NGINX internal variables. For details on supported operators, please see [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
+| filter  | array | Depending on the requested parameters, it is decided at runtime whether the plugin should be executed. Something like this: `{{var, operator, val}, {var, operator, val}, ...}}`. For example: `{"arg_version", "==", "v2"}`, indicating that the current request parameter `version` is `v2`. The variables here are consistent with NGINX internal variables. For details on supported operators, please see [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
 
 ### Custom error response
 
