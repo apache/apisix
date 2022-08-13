@@ -209,7 +209,7 @@ services:
       discovery.type: single-node
       ELASTIC_USERNAME: elastic
       ELASTIC_PASSWORD: 123456
-      xpack.security.enabled: true
+      xpack.security.enabled: 'true'
 
 
 networks:

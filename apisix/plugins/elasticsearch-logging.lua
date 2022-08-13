@@ -27,6 +27,7 @@ local DEFAULT_ELASTICSEARCH_SOURCE = "apache-apisix-elasticsearch-logging"
 local plugin_name = "elasticsearch-logging"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local str_format = core.string.format
+local str_sub = string.sub
 
 
 local schema = {
@@ -102,7 +103,8 @@ local function send_to_elasticsearch(conf, entries)
         return false, str_format("create http error: %s", err)
     end
 
-    local uri = conf.endpoint.uri .. (string.sub(conf.endpoint.uri, -1) == "/" and "_bulk" or "/_bulk")
+    local uri = conf.endpoint.uri ..
+        (str_sub(conf.endpoint.uri, -1) == "/" and "_bulk" or "/_bulk")
     local body = core.table.concat(entries, "")
     local headers = {["Content-Type"] = "application/json"}
     if conf.endpoint.username and conf.endpoint.password then

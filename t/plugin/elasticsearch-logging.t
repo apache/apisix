@@ -47,13 +47,13 @@ __DATA__
                 -- full configuration
                 {
                     endpoint = {
-                        "uri": "http://127.0.0.1:9200",
-                        "index": "services",
-                        "type": "collector",
-                        "timeout": 60,
-                        "username": "elastic",
-                        "password": "123456",
-                        "ssl_verify": false
+                        uri = "http://127.0.0.1:9200",
+                        index = "services",
+                        type = "collector",
+                        timeout = 60,
+                        username = "elastic",
+                        password = "123456",
+                        ssl_verify = false
                     },
                     max_retry_count = 0,
                     retry_delay = 1,
@@ -64,27 +64,27 @@ __DATA__
                 -- minimize configuration
                 {
                     endpoint = {
-                        "uri": "http://127.0.0.1:9200",
-				        "index": "services"
+                        uri = "http://127.0.0.1:9200",
+                        index = "services"
                     }
                 },
                 -- property "uri" is required
                 {
                     endpoint = {
-                        "index": "services",
+                        index = "services",
                     }
                 },
                 -- property "index" is required
                 {
                     endpoint = {
-                        "uri": "http://127.0.0.1:9200",
+                        uri = "http://127.0.0.1:9200",
                     }
                 },
                 -- property "uri" validation failed
                 {
                     endpoint = {
-                        "uri": "127.0.0.1:9200",
-				        "index": "services"
+                        uri = "127.0.0.1:9200",
+                        index = "services"
                     }
                 }
             }
@@ -123,10 +123,10 @@ property "endpoint" validation failed: property "uri" validation failed.*
                     }
                 },
                 plugins = {
-                    ["splunk-hec-logging"] = {
+                    ["elasticsearch-logging"] = {
                         endpoint = {
-                            uri = "http://127.0.0.1:18088/services/collector",
-                            "index": "services"
+                            uri = "http://127.0.0.1:9200",
+                            index = "services"
                         },
                         batch_max_size = 1,
                         inactive_timeout = 1
