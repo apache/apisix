@@ -129,6 +129,7 @@ openwhisk
 serverless-post-function
 ext-plugin-post-req
 ext-plugin-post-resp
+elasticsearch-logging
 
 
 
