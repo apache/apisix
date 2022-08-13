@@ -36,13 +36,21 @@ local schema = {
             type = "object",
             properties = {
                 uri = core.schema.uri_def,
+                index = { type = "string"},
+                type = { type = "string"},
+                username = { type = "string"},
+                password = { type = "string"},
                 timeout = {
                     type = "integer",
                     minimum = 1,
                     default = 10
+                },
+                ssl_verify = {
+                    type = "boolean",
+                    default = true
                 }
             },
-            required = { "uri" }
+            required = { "uri", "index" }
         },
     },
     required = { "endpoint" },
@@ -94,11 +102,7 @@ local function send_to_elasticsearch(conf, entries)
         return false, str_format("create http error: %s", err)
     end
 
-    httpc:set_timeout(conf.endpoint.timeout * 1000)
-
-    local ssl_verify = conf.endpoint.ssl_verify ~= nil and
-        conf.endpoint.ssl_verify or false
-
+    local uri = conf.endpoint.uri .. (string.sub(conf.endpoint.uri, -1) == "/" and "_bulk" or "/_bulk")
     local body = core.table.concat(entries, "")
     local headers = {["Content-Type"] = "application/json"}
     if conf.endpoint.username and conf.endpoint.password then
@@ -108,11 +112,11 @@ local function send_to_elasticsearch(conf, entries)
         headers["Authorization"] = authorization
     end
 
-    core.log.info("conf.endpoint.uri: ", conf.endpoint.uri,
-        ", body: ", body, ", headers: ", core.json.encode(headers))
+    core.log.info("uri: ", uri, ", body: ", body, ", headers: ", core.json.encode(headers))
 
-    local resp, err = httpc:request_uri(conf.endpoint.uri, {
-        ssl_verify = ssl_verify,
+    httpc:set_timeout(conf.endpoint.timeout * 1000)
+    local resp, err = httpc:request_uri(uri, {
+        ssl_verify = conf.endpoint.ssl_verify,
         method = "POST",
         headers = headers,
         body = body
