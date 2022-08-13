@@ -43,11 +43,11 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 | timeout                | integer | 否     | 3              | [1,...]               | 发送数据的超时时间。                             |
 | name                   | string  | 否     | "kafka logger" |                       | batch processor 的唯一标识。                     |
 | meta_format            | enum    | 否     | "default"      | ["default"，"origin"] | `default`：获取请求信息以默认的 JSON 编码方式。`origin`：获取请求信息以 HTTP 原始请求方式。更多信息，请参考[meta_format](#meta_format-参考示例)。|
-| include_req_body       | boolean | 否     | false          | [false, true]         | 当设置为 `true` 时，包含请求的 body。**注意**：如果请求 `body` 无法完全存放在内存中，由于 NGINX 的限制，APISIX 无法将它记录下来。|
+| include_req_body       | boolean | 否     | false          | [false, true]         | 当设置为 `true` 时，包含请求体。**注意**：如果请求体无法完全存放在内存中，由于 NGINX 的限制，APISIX 无法将它记录下来。|
 | include_req_body_expr  | array   | 否     |                |                       | 当 `include_req_body` 属性设置为 `true` 时进行过滤。只有当此处设置的表达式计算结果为 `true` 时，才会记录请求体。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
 | include_resp_body      | boolean | 否     | false          | [false, true]         | 当设置为 `true` 时，包含响应体。 |
-| include_resp_body_expr | array   | 否     |                |                       | 当 `include_resp_body` 属性设置为 `true` 时进行过滤。只有当此处设置的表达式计算结果为 `true` 时才会记录响应正文。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。|
-| cluster_name           | integer | 否     | 1              | [0,...]               | Kafka 集群的名称，当有两个及以上 Kafka 集群时使用。只有当 `producer_type` 设为 `async` 模式时才可以使用。|
+| include_resp_body_expr | array   | 否     |                |                       | 当 `include_resp_body` 属性设置为 `true` 时进行过滤。只有当此处设置的表达式计算结果为 `true` 时才会记录响应体。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。|
+| cluster_name           | integer | 否     | 1              | [0,...]               | Kafka 集群的名称，当有两个及以上 Kafka 集群时使用。只有当 `producer_type` 设为 `async` 模式时才可以使用该属性。|
 | producer_batch_num     | integer | 否     | 200            | [1,...]               | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的 `batch_num` 参数，聚合消息批量提交，单位为消息条数。 |
 | producer_batch_size    | integer | 否     | 1048576        | [0,...]               | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的 `batch_size` 参数，单位为字节。 |
 | producer_max_buffering | integer | 否     | 50000          | [1,...]               | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的 `max_buffering` 参数，表示最大缓冲区，单位为条。 |
@@ -55,7 +55,7 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 
 :::tip 提示
 
-该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 5 秒钟或队列中的数据达到 1000 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
+该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 :::
 
 ::: info 注意
