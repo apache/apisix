@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - Kafka Logger
-description: 通过 Apache APISIX kafka 插件
+description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作为 JSON 对象推送到 Apache Kafka 集群中。可用作 `ngx_lua` NGINX 模块的 Kafka 客户端驱动程序。
 ---
 
 <!--
@@ -29,9 +29,7 @@ description: 通过 Apache APISIX kafka 插件
 
 ## 描述
 
-`kafka-logger` 插件用于将日志作为JSON对象推送到 Apache Kafka 集群中。可用作 `ngx_lua` NGINX 模块的 Kafka 客户端驱动程序。
-
-该插件提供了将日志数据请求作为 JSON 对象推送给外部 Kafka 集群。
+`kafka-logger` 插件用于将日志作为 JSON 对象推送到 Apache Kafka 集群中。可用作 `ngx_lua` NGINX 模块的 Kafka 客户端驱动程序。
 
 ## 属性
 
@@ -57,8 +55,7 @@ description: 通过 Apache APISIX kafka 插件
 
 :::tip 提示
 
-本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
-
+该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 5 秒钟或队列中的数据达到 1000 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 :::
 
 ::: info 注意
