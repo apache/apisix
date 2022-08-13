@@ -90,7 +90,6 @@ In this configuration, a response code of `500` or `503` three times within a ce
 
 Once you have configured the Plugin as shown above, you can test it out by sending a request.
 
-
 ```shell
 curl -i -X POST "http://127.0.0.1:9080/hello"
 ```
