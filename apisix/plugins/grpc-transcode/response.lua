@@ -37,7 +37,7 @@ local function handle_error_response(status_detail_type)
         local status_pb_state = grpc_proto.fetch_status_pb_state()
         local old_pb_state = pb.state(status_pb_state)
 
-        local ok, decoded_grpc_status = pcall(pb.decode, "grpc.status.ErrorStatus", grpc_status)
+        local ok, decoded_grpc_status = pcall(pb.decode, "grpc_status.ErrorStatus", grpc_status)
         if not ok then
             ngx.arg[1] = "failed to call pb.decode to decode grpc-status-details-bin"
             return "failed to call pb.decode to decode grpc-status-details-bin, err: "
