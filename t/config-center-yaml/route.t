@@ -303,3 +303,23 @@ GET /hello
 --- error_code: 404
 --- error_log
 failed to check item data of [routes]
+
+
+
+=== TEST 12: route with methods
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /hello
+    methods: [GET, PUT, POST]
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+PUT /hello
+--- response_body
+hello world
