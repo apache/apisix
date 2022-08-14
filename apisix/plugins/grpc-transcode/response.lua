@@ -57,9 +57,10 @@ local function handle_error_response(status_detail_type)
             for _, detail in ipairs(details) do
                 local ok, err_or_value = pcall(pb.decode, status_detail_type, detail.value)
                 if not ok then
-                    ngx.arg[1] = "failed to call pb.decode to decode details in grpc-status-details-bin"
-                    return "failed to call pb.decode to decode details in grpc-status-details-bin, err: "
-                            .. err_or_value
+                    ngx.arg[1] = "failed to call pb.decode to decode details in "
+                                 .. "grpc-status-details-bin"
+                    return "failed to call pb.decode to decode details in "
+                           .. "grpc-status-details-bin, err: " .. err_or_value
                 end
 
                 if not err_or_value then
