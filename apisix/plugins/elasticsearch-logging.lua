@@ -75,8 +75,8 @@ local function get_logger_entry(conf)
     local entry = log_util.get_full_log(ngx, conf)
     return core.json.encode({
             create = {
-                _index = "services",
-                _type = "collector"
+                _index = conf.endpoint.index,
+                _type = conf.endpoint.type
             }
         }) .. "\n" ..
         core.json.encode({
