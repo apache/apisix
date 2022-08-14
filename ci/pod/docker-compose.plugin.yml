@@ -198,7 +198,7 @@ services:
       SPLUNK_HEC_SSL: "False"
 
   # Elasticsearch Logging Service
-  elasticsearch:
+  elasticsearch-noauth:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.1
     restart: unless-stopped
     ports:
@@ -207,8 +207,21 @@ services:
     environment:
       ES_JAVA_OPTS: -Xms512m -Xmx512m
       discovery.type: single-node
+      xpack.security.enabled: 'false'
+
+  elasticsearch-auth:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.1
+    restart: unless-stopped
+    ports:
+      - "9201:9201"
+      - "9301:9301"
+    environment:
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      discovery.type: single-node
       ELASTIC_USERNAME: elastic
       ELASTIC_PASSWORD: 123456
+      http.port: 9201
+      transport.tcp.port: 9301
       xpack.security.enabled: 'true'
 
 

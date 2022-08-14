@@ -20,6 +20,7 @@ use t::APISIX 'no_plan';
 repeat_each(1);
 no_long_string();
 no_root_location();
+no_shuffle();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
@@ -38,7 +39,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: configuration verification
+=== TEST 1: sanity
 --- config
     location /t {
         content_by_lua_block {
@@ -151,3 +152,148 @@ GET /hello
 --- wait: 2
 --- response_body
 hello world
+
+
+
+=== TEST 4: set route (auth)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logging"] = {
+                        endpoint = {
+                            uri = "http://127.0.0.1:9201",
+                            index = "services",
+                            username = "elastic",
+                            password = "123456"
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 5: test route (auth success)
+--- request
+GET /hello
+--- wait: 2
+--- response_body
+hello world
+
+
+
+=== TEST 6: set route (no auth)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logging"] = {
+                        endpoint = {
+                            uri = "http://127.0.0.1:9201",
+                            index = "services"
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: test route (no auth, failed)
+--- request
+GET /hello
+--- wait: 2
+--- response_body
+hello world
+--- error_log
+Batch Processor[elasticsearch-logging] failed to process entries
+Batch Processor[elasticsearch-logging] exceeded the max_retry_count
+
+
+
+=== TEST 8: set route (error auth)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logging"] = {
+                        endpoint = {
+                            uri = "http://127.0.0.1:9201",
+                            index = "services",
+                            username = "elastic",
+                            password = "111111"
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: test route (error auth failed)
+--- request
+GET /hello
+--- wait: 2
+--- response_body
+hello world
+--- error_log
+Batch Processor[elasticsearch-logging] failed to process entries
+Batch Processor[elasticsearch-logging] exceeded the max_retry_count

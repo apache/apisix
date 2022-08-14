@@ -108,6 +108,7 @@ grpc-web
 public-api
 prometheus
 datadog
+elasticsearch-logging
 echo
 loggly
 http-logger
@@ -129,7 +130,6 @@ openwhisk
 serverless-post-function
 ext-plugin-post-req
 ext-plugin-post-resp
-elasticsearch-logging
 
 
 

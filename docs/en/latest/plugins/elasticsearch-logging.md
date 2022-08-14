@@ -59,13 +59,13 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "plugins":{
         "splunk-hec-logging":{
             "endpoint":{
-				"uri": "http://127.0.0.1:9200",
-				"index": "services",
-				"type": "collector",
-				"timeout": 60,
-				"username": "elastic",
-				"password": "123456",
-				"ssl_verify": false
+                "uri": "http://127.0.0.1:9200",
+                "index": "services",
+                "type": "collector",
+                "timeout": 60,
+                "username": "elastic",
+                "password": "123456",
+                "ssl_verify": false
             },
             "buffer_duration":60,
             "max_retry_count":0,
@@ -95,7 +95,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
         "splunk-hec-logging":{
             "endpoint":{
                 "uri": "http://127.0.0.1:9200",
-				"index": "services"
+                "index": "services"
             }
         }
     },
