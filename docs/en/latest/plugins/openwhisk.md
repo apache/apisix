@@ -69,6 +69,10 @@ docker run --rm -d \
 docker exec openwhisk waitready
 ```
 
+Install the [openwhisk-cli](https://github.com/apache/openwhisk-cli) utility.
+
+You can download the released executable binaries wsk for Linux systems from the [openwhisk-cli](https://github.com/apache/openwhisk-cli) repository.
+
 You can then create an action to test:
 
 ```shell
