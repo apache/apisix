@@ -160,7 +160,7 @@ end
 local status_pb_state
 local function init_status_pb_state()
     -- clear current pb state
-    pb.state(nil)
+    local old_pb_state = pb.state(nil)
 
     -- initialize protoc compiler
     protoc.reload()
@@ -177,7 +177,7 @@ local function init_status_pb_state()
         end
     end
 
-    status_pb_state = pb.state(nil)
+    status_pb_state = pb.state(old_pb_state)
 end
 
 
