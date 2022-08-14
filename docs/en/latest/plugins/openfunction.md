@@ -35,15 +35,16 @@ This Plugin can be configured on a Route and requests will be send to the config
 
 ## Attributes
 
-| Name              | Type    | Required | Default | Valid values | Description                                                                                                |
-| ----------------- | ------- | -------- | ------- | ------------ | ---------------------------------------------------------------------------------------------------------- |
-| function_uri      | string  | True     |         |              | function uri. For example, `https://localhost:30858/default/function-sample`.                              |
-| ssl_verify        | boolean | False    | true    |              | When set to `true` verifies the SSL certificate.                                                           |
-| service_token     | string  | False    |         |              | The token format is 'xx:xx' which support basic auth for ingress controller, .                                      |
-| timeout           | integer | False    | 3000ms | [100, ...]ms | OpenFunction action and HTTP call timeout in ms.                                                              |
-| keepalive         | boolean | False    | true    |              | When set to `true` keeps the connection alive for reuse.                                                   |
-| keepalive_timeout | integer | False    | 60000ms | [1000,...]ms | Time is ms for connection to remain idle without closing.                                                  |
-| keepalive_pool    | integer | False    | 5       | [1,...]      | Maximum number of requests that can be sent on this connection before closing it.                          |
+| Name                        | Type    | Required | Default | Valid values | Description                                                                                                |
+| --------------------------- | ------- | -------- | ------- | ------------ | ---------------------------------------------------------------------------------------------------------- |
+| function_uri                | string  | True     |         |              | function uri. For example, `https://localhost:30858/default/function-sample`.                              |
+| ssl_verify                  | boolean | False    | true    |              | When set to `true` verifies the SSL certificate.                                                           |
+| authorization               | object  | False    |         |              | Authorization credentials to access functions of OpenFunction.                                      |
+| authorization.service_token | string  | False    |         |              | The token format is 'xx:xx' which support basic auth for ingress controller, .                                      |
+| timeout                     | integer | False    | 3000ms  | [100, ...]ms | OpenFunction action and HTTP call timeout in ms.                                                              |
+| keepalive                   | boolean | False    | true    |              | When set to `true` keeps the connection alive for reuse.                                                   |
+| keepalive_timeout           | integer | False    | 60000ms | [1000,...]ms | Time is ms for connection to remain idle without closing.                                                  |
+| keepalive_pool              | integer | False    | 5       | [1,...]      | Maximum number of requests that can be sent on this connection before closing it.                          |
 
 :::note
 
@@ -69,7 +70,7 @@ helm install openfunction openfunction/openfunction -n openfunction
 You can then verify if OpenFunction is ready:
 
 ```shell
-kubectl get pods --namespace openfunction
+kubectl get pods -namespace openfunction
 ```
 
 You can then create a function follow the [sample](https://github.com/OpenFunction/samples)
@@ -83,7 +84,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "plugins": {
         "openfunction": {
             "function_uri": "http://localhost:3233/default/function-sample/test",
-            "service_token": "foo:foo"
+            "authorization": {
+                "service_token": "test:test"
+            }
         }
     }
 }'
@@ -94,7 +97,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 Once you have configured the Plugin, you can send a request to the Route and it will invoke the configured function:
 
 ```shell
-curl -i http://127.0.0.1:9080/hello
+curl -i http://127.0.0.1:9080/hello -X POST -d'test'
 ```
 
 This will give back the response from the function:
