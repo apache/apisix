@@ -114,7 +114,7 @@ HTTP/1.1 200 OK
 hello, world
 ```
 
-- 登录 Kibana 控制台检索查看日志
+现在，你可以登录 Kibana 控制台检索查看相关日志。
 
 ![kibana search view](../../../assets/images/plugin/elasticsearch-admin-cn.png)
 
