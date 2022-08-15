@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - Kafka Logger
-description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作为 JSON 对象推送到 Apache Kafka 集群中。可用作 `ngx_lua` NGINX 模块的 Kafka 客户端驱动程序。
+description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作为 JSON 对象推送到 Apache Kafka 集群中。
 ---
 
 <!--
@@ -53,12 +53,9 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 | producer_max_buffering | integer | 否     | 50000          | [1,...]               | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的 `max_buffering` 参数，表示最大缓冲区，单位为条。 |
 | producer_time_linger   | integer | 否     | 1              | [1,...]               | 对应 [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) 中的 `flush_time` 参数，单位为秒。|
 
-:::tip 提示
-
 该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
-:::
 
-::: info 注意
+:::tip 提示
 
 数据首先写入缓冲区。当缓冲区超过 `batch_max_size` 或 `buffer_duration` 设置的值时，则会将数据发送到 Kafka 服务器并刷新缓冲区。
 
@@ -128,7 +125,7 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 | ---------------- | ------- | ------ | ------------- |------------------------------------------------ |
 | log_format       | object  | 否   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
-:::info 注意
+:::note 注意
 
 该设置全局生效。如果指定了 `log_format`，则所有绑定 `kafka-logger` 的路由或服务都将使用该日志格式。
 
