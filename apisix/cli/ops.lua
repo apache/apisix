@@ -651,11 +651,6 @@ Please modify "admin_key" in conf/config.yaml .
         sys_conf["worker_processes"] = floor(tonumber(env_worker_processes))
     end
 
-    if sys_conf["http"]["lua_shared_dicts"] then
-        stderr:write("lua_shared_dicts is deprecated, " ..
-                     "use custom_lua_shared_dict instead\n")
-    end
-
     local exported_vars = file.get_exported_vars()
     if exported_vars then
         if not sys_conf["envs"] then
