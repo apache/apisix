@@ -43,11 +43,18 @@ docker exec -i rmqnamesrv /home/rocketmq/rocketmq-4.6.0/bin/mqadmin updateTopic 
 docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault secrets enable -path=kv -version=1 kv"
 
 # prepare openfunction env
-docker pull apisixtestaccount123/sample-go-func:v1
-docker pull apisixtestaccount123/sample-go-func:v2
-docker pull apisixtestaccount123/sample-go-func:v3
+wget https://github.com/buildpacks/pack/releases/download/v0.27.0/pack-v0.27.0-linux.tgz
+tar -zxvf pack-v0.27.0-linux.tgz
 
-nohup docker run --rm --env="FUNC_CONTEXT={\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}" --env="CONTEXT_MODE=self-host" --name test-header -p 30583:8080 apisixtestaccount123/sample-go-func:v2 >/dev/null 2>&1 &
-nohup docker run --rm --env="FUNC_CONTEXT={\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}" --env="CONTEXT_MODE=self-host" --name test-body -p 30585:8080 apisixtestaccount123/sample-go-func:v1 >/dev/null 2>&1 &
-nohup docker run --rm --env="FUNC_CONTEXT={\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}" --env="CONTEXT_MODE=self-host" --name func-helloworld-go -p 30584:8080 apisixtestaccount123/sample-go-func:v3 >/dev/null 2>&1 &
+# please fork and repalce this(./samples/functions/knative/hello-world-go) if you want to update function
+git clone https://github.com/OpenFunction/samples.git
+git clone https://github.com/jackkkkklee/my-samples.git
 
+./pack build test-uri-image --path ./samples/functions/knative/hello-world-go  --builder openfunction/builder-go:v2.4.0-1.17 --env FUNC_NAME="HelloWorld"  --env FUNC_CLEAR_SOURCE=true --env FUNC_GOPROXY="https://goproxy.cn"
+./pack build test-body-image --path ./my-samples/functions/knative/hello-world-go --builder openfunction/builder-go:v2.4.0-1.17 --env FUNC_NAME="HelloWorld"  --env FUNC_CLEAR_SOURCE=true --env FUNC_GOPROXY="https://goproxy.cn"
+git -C my-samples switch release-0.6
+./pack build test-header-image --path ./my-samples/functions/knative/hello-world-go  --builder openfunction/builder-go:v2.4.0-1.17 --env FUNC_NAME="HelloWorld"  --env FUNC_CLEAR_SOURCE=true --env FUNC_GOPROXY="https://goproxy.cn"
+
+nohup docker run --rm --env="FUNC_CONTEXT={\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}" --env="CONTEXT_MODE=self-host" --name test-uri -p 30584:8080  test-uri-image >/dev/null 2>&1 &
+nohup docker run --rm --env="FUNC_CONTEXT={\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}" --env="CONTEXT_MODE=self-host" --name test-header -p 30583:8080 test-header-image >/dev/null 2>&1 &
+nohup docker run --rm --env="FUNC_CONTEXT={\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}" --env="CONTEXT_MODE=self-host" --name test-body -p 30585:8080 test-body-image >/dev/null 2>&1 &
