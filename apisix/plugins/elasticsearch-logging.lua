@@ -124,7 +124,7 @@ local function send_to_elasticsearch(conf, entries)
         body = body
     })
     if not resp then
-        return false,  str_format("RequestError: %s", err or "")
+        return nil,  err
     end
 
     if resp.status ~= 200 then
