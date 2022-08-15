@@ -59,7 +59,7 @@ The example below shows how you can configure the Plugin on a specific Route:
 
 ```shell
 curl "http://127.0.0.1:9080/apisix/admin/routes/1" \
-  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "api-breaker": {
@@ -114,7 +114,7 @@ To disable the `api-breaker` Plugin, you can delete the corresponding JSON confi
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 \
-  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "upstream": {
