@@ -302,11 +302,6 @@ http {
     lua_shared_dict {*cache_key*} {*cache_size*};
     {% end %}
     {% end %}
-    {% if http.lua_shared_dicts then %}
-    {% for cache_key, cache_size in pairs(http.lua_shared_dicts) do %}
-    lua_shared_dict {*cache_key*} {*cache_size*};
-    {% end %}
-    {% end %}
 
     {% if enabled_plugins["error-log-logger"] then %}
         lua_capture_error_log  10m;
