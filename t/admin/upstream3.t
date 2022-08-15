@@ -60,7 +60,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"get","count":0,"node":{"dir":true,"key":"/apisix/upstreams","nodes":[]}}
+{"count":0,"list":[]}
 
 
 
@@ -148,8 +148,7 @@ __DATA__
                             "desc": "new upstream"
                         },
                         "key": "/apisix/upstreams/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
             )
 
@@ -188,8 +187,7 @@ passed
                             "desc": "new 21 upstream"
                         },
                         "key": "/apisix/upstreams/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
             )
 
@@ -299,8 +297,7 @@ passed
                             "desc": "new upstream 24"
                         },
                         "key": "/apisix/upstreams/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
             )
 
@@ -331,8 +328,7 @@ passed
                             "desc": "new 25 upstream"
                         },
                         "key": "/apisix/upstreams/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
             )
 

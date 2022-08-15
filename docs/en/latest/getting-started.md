@@ -189,7 +189,6 @@ This response indicates that APISIX is running successfully:
 ```json
 {
   "count":0,
-  "action":"get",
   "node":{
     "key":"/apisix/services",
     "nodes":[],

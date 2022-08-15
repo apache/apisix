@@ -52,10 +52,10 @@ init_kv=(
 "/apisix/global_rules/ init_dir"
 "/apisix/plugin_metadata/ init_dir"
 "/apisix/plugins/ init_dir"
-"/apisix/proto/ init_dir"
+"/apisix/protos/ init_dir"
 "/apisix/routes/ init_dir"
 "/apisix/services/ init_dir"
-"/apisix/ssl/ init_dir"
+"/apisix/ssls/ init_dir"
 "/apisix/stream_routes/ init_dir"
 "/apisix/upstreams/ init_dir"
 )

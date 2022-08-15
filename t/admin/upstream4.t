@@ -62,8 +62,7 @@ __DATA__
                             "name": "test upstream name"
                         },
                         "key": "/apisix/upstreams/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
             )
 
@@ -259,8 +258,7 @@ passed
                             }
                         },
                         "key": "/apisix/upstreams/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -295,8 +293,7 @@ passed
                             }
                         },
                         "key": "/apisix/upstreams/1"
-                    },
-                    "action": "get"
+                    }
                 }]]
                 )
 
@@ -335,8 +332,7 @@ passed
                             }
                         },
                         "key": "/apisix/upstreams/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
                 )
 
@@ -405,8 +401,7 @@ passed
                             "create_time": 1705252779
                         },
                         "key": "/apisix/upstreams/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
             )
 
@@ -455,8 +450,7 @@ passed
                             "create_time": 1705252779
                         },
                         "key": "/apisix/upstreams/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
             )
 
@@ -503,8 +497,7 @@ passed
                             "update_time": 1602893670
                         },
                         "key": "/apisix/upstreams/up_create_update_time"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -523,12 +516,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/upstreams/up_create_update_time',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -658,10 +647,8 @@ passed
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.print("[delete] code: ", code, " message: ", message)
         }
     }
@@ -677,10 +664,8 @@ passed
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/routes/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -696,10 +681,8 @@ passed
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/services/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -715,10 +698,8 @@ passed
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }

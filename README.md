@@ -199,7 +199,7 @@ Using AWS's eight-core server, APISIX's QPS reaches 140,000 with a latency of on
 
 - [European eFactory Platform: API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
 - [Copernicus Reference System Software](https://github.com/COPRS/infrastructure/wiki/Networking-trade-off)
-- [More Stories](https://apisix.apache.org/blog/tags/user-case)
+- [More Stories](https://apisix.apache.org/blog/tags/case-studies/)
 
 ## Who Uses APISIX API Gateway?
 

@@ -72,7 +72,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"create","node":{"value":{"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
+{"node":{"value":{"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
 
 
 
@@ -107,7 +107,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"set","node":{"key":"/apisix/services/1","value":{"id":"1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
+{"node":{"key":"/apisix/services/1","value":{"id":"1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
 
 
 
@@ -142,7 +142,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"compareAndSwap","node":{"key":"/apisix/services/1","value":{"id":"1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
+{"node":{"key":"/apisix/services/1","value":{"id":"1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
 
 
 
@@ -174,7 +174,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"get","node":{"key":"/apisix/services/1","value":{"id":"1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
+{"node":{"key":"/apisix/services/1","value":{"id":"1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
 
 
 
@@ -199,7 +199,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"delete","deleted":"1","key":"/apisix/services/1","node":{}}
+{"deleted":"1","key":"/apisix/services/1","node":{}}
 
 
 
@@ -262,10 +262,8 @@ passed
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/services/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.print("[delete] code: ", code, " message: ", message)
         }
     }
@@ -281,10 +279,8 @@ passed
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/routes/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -300,10 +296,8 @@ passed
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/services/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }

@@ -60,8 +60,7 @@ __DATA__
                             }
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -102,8 +101,7 @@ passed
                             }
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "get"
+                    }
                 }]]
                 )
 
@@ -126,12 +124,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/routes/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -150,12 +144,8 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code = t('/apisix/admin/routes/not_found',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code)
         }
     }
@@ -200,8 +190,7 @@ GET /t
                                 "type": "roundrobin"
                             }
                         }
-                    },
-                    "action": "create"
+                    }
                 }]]
                 )
 
@@ -221,12 +210,8 @@ GET /t
             assert(update_time ~= nil, "update_time is nil")
 
             code, message = t('/apisix/admin/routes/' .. id,
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -269,8 +254,7 @@ GET /t
                                 "type": "roundrobin"
                             }
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -330,8 +314,7 @@ GET /t
                                 }
                             }
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -726,8 +709,7 @@ GET /t
                             }
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 

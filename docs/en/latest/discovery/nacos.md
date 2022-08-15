@@ -92,8 +92,7 @@ The formatted response as below:
       "priority": 0,
       "uri": "\/nacos\/*"
     }
-  },
-  "action": "set"
+  }
 }
 ```
 
@@ -148,8 +147,7 @@ The formatted response as below:
       "priority": 0,
       "uri": "\/nacosWithNamespaceId\/*"
     }
-  },
-  "action": "set"
+  }
 }
 ```
 
@@ -197,8 +195,7 @@ The formatted response as below:
       "priority": 0,
       "uri": "\/nacosWithGroupName\/*"
     }
-  },
-  "action": "set"
+  }
 }
 ```
 
@@ -248,7 +245,6 @@ The formatted response as below:
       "priority": 0,
       "uri": "\/nacosWithNamespaceIdAndGroupName\/*"
     }
-  },
-  "action": "set"
+  }
 }
 ```
