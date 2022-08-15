@@ -215,17 +215,4 @@ if ! echo "$out" | grep 'property "host" validation failed'; then
     exit 1
 fi
 
-echo '
-etcd:
-    prefix: "/apisix/"
-    host:
-        - https://127.0.0.1
-' > conf/config.yaml
-
-out=$(make init 2>&1 || true)
-if ! echo "$out" | grep 'property "prefix" validation failed'; then
-    echo "failed: should check etcd schema during init"
-    exit 1
-fi
-
 echo "passed: check etcd schema during init"
