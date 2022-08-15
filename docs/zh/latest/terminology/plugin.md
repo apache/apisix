@@ -68,7 +68,19 @@ local _M = {
 
 ## 插件通用配置
 
-一些通用的配置可以应用于插件配置。比如说。
+通过 `_meta` 配置项可以将一些通用的配置应用于插件，具体配置项如下：
+
+| 名称         | 类型 | 描述           |
+|--------------|------|----------------|
+| error_response | string/object  | 自定义错误响应。 |
+| priority       | integer        | 自定义插件优先级。 |
+| filter  | array   | 根据请求的参数，在运行时控制插件是否执行。此配置由一个或多个 {var, operator, val} 元素组成列表，类似：{{var, operator, val}, {var, operator, val}, ...}}。例如 `{"arg_version", "==", "v2"}`，表示当前请求参数 `version` 是 `v2`。这里的 `var` 与 NGINX 内部自身变量命名是保持一致。操作符的具体用法请看[lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 operator-list 部分。|
+
+### 自定义错误响应
+
+通过 `error_response` 配置，可以将任意插件的错误响应配置成一个固定的值，避免因为插件内置的错误响应信息而带来困扰。
+
+如下配置表示将 `jwt-auth` 插件的错误响应自定义为 '{"message": "Missing credential in request"}'。
 
 ```json
 {
@@ -82,33 +94,9 @@ local _M = {
 }
 ```
 
-上面的配置意味着将 jwt-auth 插件的错误响应自定义为 '{"message": "Missing credential in request"}'。
-
-```
-{
-    "jwt-auth": {
-        "_meta": {
-            "filter": {
-                {"arg_version", "==", "v2"}
-            }
-        }
-    }
-}
-```
-
-这个配置示例意味着只有在请求参数中 `version` 等于 `v2` 时 `jwt-auth` 插件才会执行。
-
-### 在 `_meta` 下的插件通用配置
-
-| 名称         | 类型 | 描述           |
-|--------------|------|----------------|
-| error_response | string/object  | 自定义错误响应 |
-| priority       | integer        | 自定义插件优先级 |
-| filter  | array   | 根据请求的参数，在运行时控制插件是否执行。由一个或多个{var, operator, val}元素组成列表，类似这样：{{var, operator, val}, {var, operator, val}, ...}}。例如：`{"arg_name", "==", "json"}`，表示当前请求参数 name 是 json。这里的 var 与 Nginx 内部自身变量命名是保持一致。操作符的具体用法请看[lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 operator-list 部分。|
-
 ### 自定义插件优先级
 
-所有插件都有默认优先级，但是可以自定义插件优先级来改变插件执行顺序。
+所有插件都有默认优先级，但你仍可以通过 `priority` 配置项来自定义插件优先级，从而改变插件执行顺序。
 
 ```json
  {
@@ -141,6 +129,106 @@ serverless-pre-function 的默认优先级是 10000，serverless-post-function �
 
 - 自定义插件优先级只会影响插件实例绑定的主体，不会影响该插件的所有实例。比如上面的插件配置属于路由 A ，路由 B 上的插件 serverless-post-function 和 serverless-post-function 插件执行顺序不会受到影响，会使用默认优先级。
 - 自定义插件优先级不适用于 consumer 上配置的插件的 rewrite 阶段。路由上配置的插件的 rewrite 阶段将会优先运行，然后才会运行 consumer 上除 auth 插件之外的其他插件的 rewrite 阶段。
+
+### 动态控制插件是否执行
+
+默认情况下，在路由中指定的插件都会被执行。但是我们可以通过 `filter` 配置项为插件添加一个过滤器，通过过滤器的执行结果控制插件是否执行。
+
+如下配置表示，只有当请求查询参数中 `version` 值为 `v2` 时，`proxy-rewrite` 插件才会执行。
+
+```json
+{
+    "proxy-rewrite": {
+        "_meta": {
+            "filter": [
+                ["arg_version", "==", "v2"]
+            ]
+        },
+        "uri": "/anything"
+    }
+}
+```
+
+使用下述配置创建一条完整的路由：
+
+```json
+{
+    "uri": "/get",
+    "plugins": {
+        "proxy-rewrite": {
+            "_meta": {
+                "filter": [
+                    ["arg_version", "==", "v2"]
+                ]
+            },
+            "uri": "/anything"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.org:80": 1
+        }
+    }
+}
+```
+
+当请求中不带任何参数时，`proxy-rewrite` 插件不会执行，请求将被转发到上游的 `/get`:
+
+```shell
+curl -v /dev/null http://127.0.0.1:9080/get -H"host:httpbin.org"
+```
+
+```shell
+< HTTP/1.1 200 OK
+......
+< Server: APISIX/2.15.0
+<
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "httpbin.org",
+    "User-Agent": "curl/7.79.1",
+    "X-Amzn-Trace-Id": "Root=1-62eb6eec-46c97e8a5d95141e621e07fe",
+    "X-Forwarded-Host": "httpbin.org"
+  },
+  "origin": "127.0.0.1, 117.152.66.200",
+  "url": "http://httpbin.org/get"
+}
+```
+
+当请求中携带参数 `version=v2` 时，`proxy-rewrite` 插件执行，请求将被转发到上游的 `/anything`:
+
+```shell
+curl -v /dev/null http://127.0.0.1:9080/get?version=v2 -H"host:httpbin.org"
+```
+
+```shell
+< HTTP/1.1 200 OK
+......
+< Server: APISIX/2.15.0
+<
+{
+  "args": {
+    "version": "v2"
+  },
+  "data": "",
+  "files": {},
+  "form": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "httpbin.org",
+    "User-Agent": "curl/7.79.1",
+    "X-Amzn-Trace-Id": "Root=1-62eb6f02-24a613b57b6587a076ef18b4",
+    "X-Forwarded-Host": "httpbin.org"
+  },
+  "json": null,
+  "method": "GET",
+  "origin": "127.0.0.1, 117.152.66.200",
+  "url": "http://httpbin.org/anything?version=v2"
+}
+```
 
 ## 热加载
 
