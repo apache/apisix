@@ -43,7 +43,7 @@ title: elasticsearch-logging
 
 ## 启用插件
 
-下面例子展示了如何为指定路由开启 `elasticsearch-logging` 插件。
+你可以通过如下命令在指定路由上启用 `elasticsearch-logging` 插件：
 
 ### 完整配置
 
