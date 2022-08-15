@@ -214,7 +214,7 @@ POST /hello
 --- request
 POST /hello
 --- more_headers
-Authorization: user-token-xxx
+authorization: user-token-xxx
 --- response_body chomp
 [user-token-xxx]
 
