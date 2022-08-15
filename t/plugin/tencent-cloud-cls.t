@@ -32,6 +32,25 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
+    my $http_config = $block->http_config // <<_EOC_;
+    server {
+        listen 10420;
+        location /structuredlog {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local data = ngx.req.get_body_data()
+                local headers = ngx.req.get_headers()
+                ngx.log(ngx.WARN, "tencent-cloud-cls body: ", data)
+                for k, v in pairs(headers) do
+                    ngx.log(ngx.WARN, "tencent-cloud-cls headers: " .. k .. ":" .. v)
+                end
+                ngx.say("ok")
+            }
+        }
+    }
+_EOC_
+
+    $block->set_value("http_config", $http_config);
 });
 
 run_tests;
@@ -94,10 +113,15 @@ done
                  [[{
                         "plugins": {
                             "tencent-cloud-cls": {
-                                "cls_host": "ap-guangzhou.cls.tencentyun.com",
+                                "cls_host": "127.0.0.1:10420",
                                 "cls_topic": "143b5d70-139b-4aec-b54e-bb97756916de",
                                 "secret_id": "secret_id",
-                                "secret_key": "secret_key"
+                                "secret_key": "secret_key",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2
                             }
                         },
                         "upstream": {
