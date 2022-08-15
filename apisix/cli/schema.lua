@@ -215,7 +215,6 @@ local config_schema = {
                 },
                 prefix = {
                     type = "string",
-                    pattern = [[^/[^/]+$]]
                 },
                 host = {
                     type = "array",
