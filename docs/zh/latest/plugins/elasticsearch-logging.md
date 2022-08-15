@@ -40,7 +40,7 @@ title: elasticsearch-logging
 | endpoint.ssl_verify | 可选     | true                 | 当设置为 `true` 则允许 SSL 验证，参考 [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake) |
 | endpoint.timeout    | 可选     | 10                   | 发送给 Elasticsearch 请求超时时间                            |
 
-本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](https://file+.vscode-resource.vscode-cdn.net/y%3A/apisix/docs/zh/latest/batch-processor.md#配置) 配置部分。
+本插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ## 如何开启
 
