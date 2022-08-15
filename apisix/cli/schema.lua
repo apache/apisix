@@ -47,7 +47,6 @@ local etcd_schema = {
         },
         prefix = {
             type = "string",
-            pattern = [[^/[^/]+$]]
         },
         host = {
             type = "array",
