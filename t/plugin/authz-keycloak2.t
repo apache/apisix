@@ -582,49 +582,7 @@ true
 
 
 
-=== TEST 14: add plugin with lazy_load_paths and http_method_as_scope (using audience)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "authz-keycloak": {
-                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/uma2-configuration",
-                                "audience": "course_management",
-                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
-                                "lazy_load_paths": true,
-                                "http_method_as_scope": true
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1982": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/course/foo"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 15: Get access token for teacher and access view course route.
+=== TEST 14: Get access token for teacher and access view course route.
 --- config
     location /t {
         content_by_lua_block {
@@ -672,7 +630,7 @@ true
 
 
 
-=== TEST 16: Get access token for student and access view course route.
+=== TEST 15: Get access token for student and access view course route.
 --- config
     location /t {
         content_by_lua_block {
