@@ -45,7 +45,7 @@ title: elasticsearch-logging
 
 你可以通过如下命令在指定路由上启用 `elasticsearch-logging` 插件：
 
-### 完整配置
+### 完整配置示例
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
