@@ -21,6 +21,7 @@
 
 local table        = require("apisix.core.table")
 local config_local = require("apisix.core.config_local")
+local config_util  = require("apisix.core.config_util")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local etcd_apisix  = require("apisix.core.etcd")
@@ -314,12 +315,7 @@ local function sync_data(self)
 
         if self.values then
             for i, val in ipairs(self.values) do
-                if val and val.clean_handlers then
-                    for _, clean_handler in ipairs(val.clean_handlers) do
-                        clean_handler(val)
-                    end
-                    val.clean_handlers = nil
-                end
+                config_util.fire_all_clean_handlers(val)
             end
 
             self.values = nil
@@ -406,11 +402,8 @@ local function sync_data(self)
         local pre_index = self.values_hash[key]
         if pre_index then
             local pre_val = self.values[pre_index]
-            if pre_val and pre_val.clean_handlers then
-                for _, clean_handler in ipairs(pre_val.clean_handlers) do
-                    clean_handler(pre_val)
-                end
-                pre_val.clean_handlers = nil
+            if pre_val then
+                config_util.fire_all_clean_handlers(pre_val)
             end
 
             if res.value then
