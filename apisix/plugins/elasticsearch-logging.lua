@@ -128,7 +128,7 @@ local function send_to_elasticsearch(conf, entries)
     end
 
     if resp.status ~= 200 then
-        return false, str_format("response status: %d, response body: %s",
+        return false, str_format("elasticsearch server returned status status: %d, body: %s",
         resp.status, resp.body or "")
     end
 
