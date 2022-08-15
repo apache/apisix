@@ -27,7 +27,7 @@ description: This document describes the information about the Apache APISIX pro
 
 ## Description
 
-The `proxy-mirror` Plugin can be used to mirror client requests.
+The `proxy-mirror` Plugin can be used to mirror client requests. Traffic mirroring duplicates the real online traffic to the mirroring service. This enables specific analysis of the online traffic or request content without interrupting the online service.
 
 :::note
 
@@ -87,11 +87,13 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  \
 
 We can specify the `timeout` for subrequests in `plugin_attr` in `conf/config.yaml`. This is useful in connection reuse scenarios when mirroring traffic to a very slow backend service.
 
+Since mirror requests are implemented as sub-requests, delays in sub-requests will block the original request until the sub-requests are completed. So you can configure the timeout time to protect the sub-requests from excessive delays that affect the original requests.
+
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
 | connect | string | 60s | Connection timeout for mirror request to upstream. |
 | read | string | 60s | Reading timeout for mirror request to upstream. |
-| send | string | 60s | Sending timeout for mirror requests to upstream. |
+| send | string | 60s | The time that APISIX maintains the connection with the mirror server; if APISIX does not send a request within this time, the connection is closed. |
 
 ```yaml
 plugin_attr:
