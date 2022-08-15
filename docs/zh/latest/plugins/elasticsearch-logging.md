@@ -120,7 +120,7 @@ hello, world
 
 ## 禁用插件
 
-禁用 `elasticsearch-logging` 插件非常简单，只需将 `elasticsearch-logging` 对应的 `JSON` 配置移除即可。
+当你需要禁用该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：```
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
