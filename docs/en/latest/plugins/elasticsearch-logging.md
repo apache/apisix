@@ -2,6 +2,7 @@
 title: elasticsearch-logging
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - Elasticsearch-logging
 description: This document contains information about the Apache APISIX elasticsearch-logging Plugin.
