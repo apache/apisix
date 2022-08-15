@@ -114,7 +114,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 Once you have configured the Route to use the Plugin, when you make a request to APISIX, it will be logged in your Elasticsearch server:
 
 ```shell
-$ curl -i http://127.0.0.1:9080/elasticsearch.do?q=hello
+curl -i http://127.0.0.1:9080/elasticsearch.do?q=hello
 HTTP/1.1 200 OK
 ...
 hello, world
