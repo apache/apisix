@@ -58,16 +58,15 @@ __DATA__
                         "value": {
                             "sni": "test.com"
                         },
-                        "key": "/apisix/ssl/1"
-                    },
-                    "action": "set"
+                        "key": "/apisix/ssls/1"
+                    }
                 }]]
                 )
 
             ngx.status = code
             ngx.say(body)
 
-            local res = assert(etcd.get('/ssl/1'))
+            local res = assert(etcd.get('/ssls/1'))
             local prev_create_time = res.body.node.value.create_time
             assert(prev_create_time ~= nil, "create_time is nil")
             local update_time = res.body.node.value.update_time

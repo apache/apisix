@@ -58,7 +58,7 @@ __DATA__
                     ca = ("test.com"):rep(128),
                 }
             }
-            local code, body = t.test('/apisix/admin/ssl/1',
+            local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 json.encode(data)
             )
@@ -92,7 +92,7 @@ GET /t
                 client = {
                 }
             }
-            local code, body = t.test('/apisix/admin/ssl/1',
+            local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 json.encode(data)
             )
@@ -173,7 +173,7 @@ GET /t
                     depth = 2,
                 }
             }
-            local code, body = t.test('/apisix/admin/ssl/1',
+            local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 json.encode(data)
             )

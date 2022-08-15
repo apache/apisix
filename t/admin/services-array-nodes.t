@@ -58,8 +58,7 @@ __DATA__
                             "desc": "new service"
                         },
                         "key": "/apisix/services/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -98,8 +97,7 @@ passed
                             "desc": "new service"
                         },
                         "key": "/apisix/services/1"
-                    },
-                    "action": "get"
+                    }
                 }]]
                 )
 

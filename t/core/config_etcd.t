@@ -248,7 +248,7 @@ etcd auth failed
             local config = core.config.new()
             local res = config:getkey("/routes/")
             if res and res.status == 200 and res.body
-               and res.body.node and res.body.node.key == "/apisix/routes" then
+               and res.body.count and tonumber(res.body.count) >= 1 then
                 ngx.say("passed")
               else
                 ngx.say("failed")

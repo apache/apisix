@@ -1148,8 +1148,7 @@ base64_secret required but the secret is not in base64 format
                                 }
                             }
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 

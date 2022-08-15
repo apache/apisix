@@ -254,7 +254,7 @@ qr/failed to new websocket: bad "upgrade" request header: nil/
             local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {cert = ssl_cert, key = ssl_key, sni = "127.0.0.1"}
 
-            local code, body = t.test('/apisix/admin/ssl/1',
+            local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data)
             )

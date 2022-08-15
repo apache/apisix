@@ -429,7 +429,7 @@ local function check_upstream_conf(in_dp, conf)
 
         local ssl_id = conf.tls and conf.tls.client_cert_id
         if ssl_id then
-            local key = "/ssl/" .. ssl_id
+            local key = "/ssls/" .. ssl_id
             local res, err = core.etcd.get(key)
             if not res then
                 return nil, "failed to fetch ssl info by "

@@ -541,7 +541,13 @@ Please modify "admin_key" in conf/config.yaml .
     end
 
     if yaml_conf.deployment and yaml_conf.deployment.role then
-        env.deployment_role = yaml_conf.deployment.role
+        local role = yaml_conf.deployment.role
+        env.deployment_role = role
+
+        if role == "control_plane" and not admin_server_addr then
+            local listen = node_listen[1]
+            admin_server_addr = str_format("%s:%s", listen.ip, listen.port)
+        end
     end
 
     -- Using template.render
@@ -550,6 +556,7 @@ Please modify "admin_key" in conf/config.yaml .
         lua_cpath = env.pkg_cpath_org,
         os_name = util.trim(util.execute_cmd("uname")),
         apisix_lua_home = env.apisix_home,
+        deployment_role = env.deployment_role,
         use_apisix_openresty = use_apisix_openresty,
         error_log = {level = "warn"},
         enable_http = enable_http,

@@ -119,7 +119,7 @@ location /t {
                 },
                 "uri": "/index.html"
             }]],
-            [[{"action": "create"}]]
+            [[{}]]
             )
 
         if code >= 300 then
@@ -203,8 +203,7 @@ location /t {
                             "priority": 0
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -242,8 +241,7 @@ passed
                             "priority": 1
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -394,8 +392,7 @@ passed
                             "name": "test name"
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -683,8 +680,7 @@ failed to read request body: request size 1678025 is greater than the maximum si
                             }
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -729,8 +725,7 @@ passed
                             }
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
             )
 
@@ -801,8 +796,7 @@ passed
                             "update_time": 1602893670
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -821,12 +815,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/routes/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }

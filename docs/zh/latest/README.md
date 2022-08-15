@@ -221,6 +221,8 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 - [腾讯云：为什么选择 Apache APISIX 来实现 k8s ingress controller?](https://www.upyun.com/opentalk/448.html)
 - [思必驰：为什么我们重新写了一个 k8s ingress controller?](https://mp.weixin.qq.com/s/bmm2ibk2V7-XYneLo9XAPQ)
 
+更多用户案例，请查看 [Case Studies](https://apisix.apache.org/zh/blog/tags/case-studies/)。
+
 ## APISIX 的用户有哪些？
 
 有很多公司和组织把 APISIX 用于学习、研究、生产环境和商业产品中，包括：

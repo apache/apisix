@@ -43,8 +43,7 @@ __DATA__
                             "username": "jack",
                             "desc": "new consumer"
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -96,8 +95,7 @@ passed
                                 }
                             }
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -139,8 +137,7 @@ passed
                                 }
                             }
                         }
-                    },
-                    "action": "get"
+                    }
                 }]]
                 )
 
@@ -164,10 +161,8 @@ passed
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/consumers/jack',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+                 ngx.HTTP_DELETE
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -189,11 +184,8 @@ passed
             local t = require("lib.test_admin").test
             local code = t('/apisix/admin/consumers/not_found',
                  ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 nil
+            )
             ngx.say("[delete] code: ", code)
         }
     }
@@ -221,8 +213,7 @@ GET /t
                         "value": {
                             "id": "jack"
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -267,8 +258,7 @@ GET /t
                                 "version":"v2"
                             }
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -360,8 +350,7 @@ GET /t
                             "create_time": 1602883670,
                             "update_time": 1602893670
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -385,10 +374,8 @@ passed
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/consumers/pony',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+                 ngx.HTTP_DELETE
+            )
 
             ngx.status = code
             ngx.say(body)
