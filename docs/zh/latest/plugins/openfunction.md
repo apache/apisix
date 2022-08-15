@@ -5,7 +5,7 @@ keywords:
   - Plugin
   - OpenFunction
   - openfunction
-description: 本文介绍了关于 Apache CNCF OpenFunction 插件的基本信息及使用方法。
+description: 本文介绍了关于 CNCF OpenFunction 插件的基本信息及使用方法。
 ---
 
 <!--
