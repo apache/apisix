@@ -85,7 +85,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-### Minimal configuration
+### Minimal configuration example
 
 The example below shows a bare minimum configuration of the Plugin on a Route:
 
