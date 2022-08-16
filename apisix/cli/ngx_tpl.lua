@@ -348,10 +348,7 @@ http {
     # error_page
     error_page 500 @50x.html;
 
-    {% if real_ip_header then %}
-    real_ip_header {* real_ip_header *};
-    {% print("\nDeprecated: apisix.real_ip_header has been moved to nginx_config.http.real_ip_header. apisix.real_ip_header will be removed in the future version. Please use nginx_config.http.real_ip_header first.\n\n") %}
-    {% elseif http.real_ip_header then %}
+    {% if http.real_ip_header then %}
     real_ip_header {* http.real_ip_header *};
     {% end %}
 
