@@ -2,7 +2,7 @@
 title: clickhouse-logger
 keywords:
   - APISIX
-  - API Gateway
+  - API 网关
   - Plugin
   - ClickHouse
 description: 本文介绍了 API 网关 Apache APISIX 如何使用 udp-logger 插件，并将日志数据发送到 TCP 服务器的步骤。
