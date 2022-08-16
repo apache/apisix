@@ -44,8 +44,6 @@ Logs can be set as JSON objects.
 | flush_limit      | integer | False    | 4096         | [1, ...]      | Maximum size of the buffer (KB) and the current message before it is flushed and written to the server.                  |
 | drop_limit       | integer | False    | 1048576      |               | Maximum size of the buffer (KB) and the current message before the current message is dropped because of the size limit. |
 | sock_type        | string  | False    | "tcp"        | ["tcp", "udp] | Transport layer protocol to use.                                                                                         |
-| max_retry_times  | integer | False    |              | [1, ...]      | Deprecated. Use `max_retry_count` instead. Maximum number of retries if a connection to a log server fails.              |
-| retry_interval   | integer | False    |              | [0, ...]      | Deprecated. Use `retry_delay` instead. Time in ms before retrying the connection to the log server.                      |
 | pool_size        | integer | False    | 5            | [5, ...]      | Keep-alive pool size used by `sock:keepalive`.                                                                           |
 | include_req_body | boolean | False    | false        |               | When set to `true` includes the request body in the log.                                                                 |
 
