@@ -43,7 +43,7 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 | bearer_only                          | boolean | 否     | false                 |               | 当设置为 `true` 时，将仅检查请求头中的令牌（Token）。                                               |
 | logout_path                          | string  | 否     | "/logout"             |               | 登出路径。                                                                                        |
 | post_logout_redirect_uri             | string  | 否     |                       |               | 调用登出接口后想要跳转的 URL。                                                                     |
-| redirect_uri                         | string  | 否     | "ngx.var.request_uri" |               | 身份提供者重定向返回的 URI。                                                                       |
+| redirect_uri                         | string  | 否     |                       |               | 身份提供者重定向返回的 URI。如果缺失，则 APISIX 将在当前 URI 之后追加 `.apisix/redirect` 作为默认的 `redirect_uri`。注意，OP 也需要适当配置以允许这种形式的 `redirect_uri`。 |
 | timeout                              | integer | 否     | 3                     | [1,...]       | 请求超时时间，单位为秒                                                                             |
 | ssl_verify                           | boolean | 否     | false                 | [true, false] | 当设置为 `true` 时，验证身份提供者的 SSL 证书。                                                     |
 | introspection_endpoint               | string  | 否     |                       |               | 身份服务器的令牌认证端点。                                                                    |
@@ -195,3 +195,4 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 
 - `redirect_uri` 需要能被当前 APISIX 所在路由捕获，比如当前路由的 `uri` 是 `/api/v1/*`, `redirect_uri` 可以填写为 `/api/v1/callback`；
 - `redirect_uri`（`scheme:host`）的 `scheme` 和 `host` 是身份认证服务视角下访问 APISIX 所需的值。
+- 另请参考[此 GitHub 问题](https://github.com/apache/apisix/issues/2426), 尤其是下述评论: [@starsz](https://github.com/apache/apisix/issues/2426#issuecomment-1091021687), [@david-woelfle](https://github.com/apache/apisix/issues/2426#issuecomment-1090675455), [@liweitianux (1)](https://github.com/apache/apisix/issues/2426#issuecomment-1206107085), [@liweitianux (2)](https://github.com/apache/apisix/issues/2426#issuecomment-1207423283)
