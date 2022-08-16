@@ -597,20 +597,6 @@ _EOC_
 
             more_clear_headers Date;
         }
-
-        location \@50x.html {
-            set \$from_error_page 'true';
-            content_by_lua_block {
-                require("apisix.error_handling").handle_500()
-            }
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
-        }
     }
 
     $a6_ngx_directives
