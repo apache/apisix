@@ -198,8 +198,7 @@ function _M.init(env, args)
         local retry_time = 0
 
         local etcd = yaml_conf.etcd
-        -- TODO: remove deprecated health_check_retry option in APISIX v3
-        local max_retry = tonumber(etcd.startup_retry or etcd.health_check_retry) or 2
+        local max_retry = tonumber(etcd.startup_retry) or 2
         while retry_time < max_retry do
             res, err = request(version_url, yaml_conf)
             -- In case of failure, request returns nil followed by an error message.
