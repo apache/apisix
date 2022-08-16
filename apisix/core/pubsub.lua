@@ -42,16 +42,11 @@ local function init_pb_state()
     -- initialize protoc compiler
     protoc.reload()
     local pubsub_protoc = protoc.new()
-
-    -- compile the protobuf file on initial load module
-    -- ensure that each worker is loaded once
-    if not pubsub_protoc.loaded["pubsub.proto"] then
-        pubsub_protoc:addpath("apisix/include/apisix/model")
-        local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
-        if not ok then
-            pubsub_protoc:reset()
-            return "failed to load pubsub protocol: " .. err
-        end
+    pubsub_protoc:addpath("apisix/include/apisix/model")
+    local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
+    if not ok then
+        pubsub_protoc:reset()
+        return "failed to load pubsub protocol: " .. err
     end
 
     pb_state = pb.state(nil)
