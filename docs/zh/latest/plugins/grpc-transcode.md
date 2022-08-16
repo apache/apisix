@@ -45,7 +45,7 @@ APISIX 接收 HTTP 请求后，首先对请求进行转码，并将转码后的�
 | deadline  | number                                             | 否    | 0      | gRPC 服务的 deadline，单位为：ms。 |
 | pb_option | array[string([pb_option_def](#pb_option-的选项))]    | 否    |        | proto 编码过程中的转换选项。       |
 | show_status_in_body  | boolean                                 | 否    | false    | 是否在返回体中展示解析过的 `grpc-status-details-bin` |
-| status_detail_type | string                                    | 否    |        | `grpc-status-details-bin` 中 [details](https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto#L46) 部分对应的 message type，如果不指定，此部分不进行解码  |
+| status_detail_type | string                                    | 否    |        | `grpc-status-details-bin` 中 [details](https://github.com/googleapis/googleapis/blob/b7cb84f5d42e6dba0fdcc2d8689313f6a8c9d7b9/google/rpc/status.proto#L46) 部分对应的 message type，如果不指定，此部分不进行解码  |
 
 ### pb_option 的选项
 

@@ -188,8 +188,6 @@ Content-Type: application/json
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 --- no_error_log
@@ -218,8 +216,6 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_headers
 grpc-status: 14
 grpc-message: Out of service
@@ -267,8 +263,6 @@ qr/error/
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 --- no_error_log
@@ -298,8 +292,6 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_headers
 grpc-status: 14
 grpc-message: Out of service
@@ -348,8 +340,6 @@ grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 --- no_error_log
@@ -379,8 +369,6 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_headers
 grpc-status: 14
 grpc-message: Out of service
@@ -429,8 +417,6 @@ grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 --- no_error_log
@@ -458,8 +444,6 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_headers
 grpc-status: 14
 grpc-message: Out of service

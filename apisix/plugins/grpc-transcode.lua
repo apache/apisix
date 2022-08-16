@@ -77,7 +77,7 @@ local schema = {
             type        = "boolean",
             default     = false
         },
-        -- https://github.com/googleapis/googleapis/blob/master/google/rpc/status.proto#L46
+        -- https://github.com/googleapis/googleapis/blob/b7cb84f5d42e6dba0fdcc2d8689313f6a8c9d7b9/google/rpc/status.proto#L46
         status_detail_type = {
             description = "the message type of the grpc-status-details-bin's details part, "
                             .. "if not given, the details part will not be decoded",
