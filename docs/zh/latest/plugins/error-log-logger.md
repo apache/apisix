@@ -47,10 +47,6 @@ description: API 网关 Apache APISIX error-log-logger 插件用于将 APISIX �
 | clickhouse.password              | String  | 否     |                                |               | ClickHouse 的密码。                                                                |
 | clickhouse.database              | String  | 否     |                                |               | ClickHouse 的用于接收日志的数据库。                                                |
 | clickhouse.logtable              | String  | 否     |                                |               | ClickHouse 的用于接收日志的表。                                                    |
-| host                             | string  | 否     |                                |               | 已弃用，请改用 `tcp.host`。                                                         |
-| port                             | integer | 否     |                                | [0,...]       | 已弃用，请改用 `tcp.port`。                                                         |
-| tls                              | boolean | 否     | false                          | [false, true] | 已弃用，请改用 `tcp.tls`。                                                          |
-| tls_server_name                  | string  | 否     |                                |               | 已弃用，请改用 `tcp.tls_server_name`。                                              |
 | timeout                          | integer | 否     | 3                              | [1,...]       | 连接和发送数据超时间，以秒为单位。                                                   |
 | keepalive                        | integer | 否     | 30                             | [1,...]       | 复用连接时，连接保持的时间，以秒为单位。                                             |
 | level                            | string  | 否     | WARN                           |               | 进行错误日志筛选的级别，缺省 WARN，取值 ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"]，其中 ERR 与 ERROR 级别一致。 |

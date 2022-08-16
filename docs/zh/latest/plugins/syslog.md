@@ -45,8 +45,6 @@ description: API 网关 Apache APISIX syslog 插件可用于将日志推送到 S
 | flush_limit      | integer | 否     | 4096         | [1, ...]      | 如果缓冲的消息的大小加上当前消息的大小达到（> =）此限制（以字节为单位），则缓冲的日志消息将被写入日志服务器，默认为 4096（4KB）。              |
 | drop_limit       | integer | 否     | 1048576      |               | 如果缓冲的消息的大小加上当前消息的大小大于此限制（以字节为单位），则由于缓冲区大小有限，当前的日志消息将被丢弃，默认为 1048576（1MB）。        |
 | sock_type        | string  | 否     | "tcp"        | ["tcp","udp"] | 用于传输层的 IP 协议类型。                                                                                                               |
-| max_retry_times  | integer | 否     |              | [1, ...]      | 已废弃，请改用 `max_retry_count`。                                                                                                      |
-| retry_interval   | integer | 否     |              | [0, ...]      | 已废弃，请改用 `retry_delay`。                                                                                                          |
 | max_retry_count  | integer | 否     |              | [1, ...]      | 连接到日志服务器失败或将日志消息发送到日志服务器失败后的最大重试次数。                                                                      |
 | retry_delay      | integer | 否     |              | [0, ...]      | 重试连接到日志服务器或重试向日志服务器发送日志消息之前的时间延迟（以毫秒为单位）。                                                           |
 | pool_size        | integer | 否     | 5            | [5, ...]      | `sock：keepalive` 使用的 Keepalive 池大小。                                                                                              |
