@@ -1001,7 +1001,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/list" -H 'X-API-KEY: edd
 ["zipkin","request-id",...]
 
 $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
-{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+{"$comment":"this is a mark for our injected plugin schema","properties":{"header":{"default":"apikey","type":"string"},"hide_credentials":{"default":false,"type":"boolean"},"_meta":{"properties":{"filter":{"type":"array","description":"filter determines whether the plugin needs to be executed at runtime"},"disable":{"type":"boolean"},"error_response":{"oneOf":[{"type":"string"},{"type":"object"}]},"priority":{"type":"integer","description":"priority of plugins by customized order"}},"type":"object"},"query":{"default":"apikey","type":"string"}},"type":"object"}
 ```
 
 **API**: /apisix/admin/plugins?all=true
