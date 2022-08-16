@@ -15,8 +15,6 @@
 -- limitations under the License.
 --
 local core      = require("apisix.core")
-local upstream  = require("apisix.upstream")
-local ipmatcher = require("resty.ipmatcher")
 local bit       = require("bit")
 local ngx       = ngx
 local str_byte  = string.byte
