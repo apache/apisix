@@ -345,6 +345,9 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/zipkin
 	$(ENV_INSTALL) apisix/plugins/zipkin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/zipkin/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/tencent-cloud-cls
+	$(ENV_INSTALL) apisix/plugins/tencent-cloud-cls/*.lua $(ENV_INST_LUADIR)/apisix/plugins/tencent-cloud-cls/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/ssl/router
 	$(ENV_INSTALL) apisix/ssl/router/*.lua $(ENV_INST_LUADIR)/apisix/ssl/router/
 
