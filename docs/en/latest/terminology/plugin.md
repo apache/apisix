@@ -76,7 +76,19 @@ ip-restriction exits with http status code 403
 
 ## Plugin common configuration
 
-Some common configurations can be applied to the plugin configuration. For example,
+Some common configurations can be applied to plugins through the `_meta` configuration items, the specific configuration items are as follows:
+
+| Name         | Type | Description |
+|--------------|------|-------------|
+| error_response | string/object  | Custom error response |
+| priority       | integer        | Custom plugin priority |
+| filter  | array | Depending on the requested parameters, it is decided at runtime whether the plugin should be executed. Something like this: `{{var, operator, val}, {var, operator, val}, ...}}`. For example: `{"arg_version", "==", "v2"}`, indicating that the current request parameter `version` is `v2`. The variables here are consistent with NGINX internal variables. For details on supported operators, please see [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
+
+### Custom error response
+
+Through the `error_response` configuration, you can configure the error response of any plugin to a fixed value to avoid troubles caused by the built-in error response information of the plugin.
+
+The configuration below means to customize the error response of the `jwt-auth` plugin to '{"message": "Missing credential in request"}'.
 
 ```json
 {
@@ -90,33 +102,9 @@ Some common configurations can be applied to the plugin configuration. For examp
 }
 ```
 
-the configuration above means customizing the error response from the jwt-auth plugin to '{"message": "Missing credential in request"}'.
+### Custom plugin priority
 
-```
-{
-    "jwt-auth": {
-        "_meta": {
-            "filter": {
-                {"arg_version", "==", "v2"}
-            }
-        }
-    }
-}
-```
-
-This configuration example means that the `jwt-auth` plugin will only execute if `version` in the request parameter equals `v2`.
-
-### Plugin common configuration under `_meta`
-
-| Name         | Type | Description |
-|--------------|------|-------------|
-| error_response | string/object  | Custom error response |
-| priority       | integer        | Custom plugin priority |
-| filter  | array | Depending on the requested parameters, it is decided at runtime whether the plugin should be executed. List of variables to match for filtering requests for conditional traffic split. It is in the format {variable operator value}. For example, `{"arg_name", "==", "json"}`. The variables here are consistent with Nginx internal variables. For details on supported operators, please see [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
-
-### Custom Plugin priority
-
-All plugins have a default priority, but it is possible to customize the plugin priority to change the plugin's execution order.
+All plugins have default priorities, but through the `priority` configuration item you can customize the plugin priority and change the plugin execution order.
 
 ```json
  {
@@ -151,6 +139,106 @@ The above configuration means setting the priority of the serverless-pre-functio
 - Custom plugin priority does not apply to the rewrite phase of some plugins configured on the consumer. The rewrite phase of plugins configured on the route will be executed first, and then the rewrite phase of plugins (exclude auth plugins) from the consumer will be executed.
 
 :::
+
+### Dynamically control whether the plugin is executed
+
+By default, all plugins specified in the route will be executed. But we can add a filter to the plugin through the `filter` configuration item, and control whether the plugin is executed through the execution result of the filter.
+
+The configuration below means that the `proxy-rewrite` plugin will only be executed if the `version` value in the request query parameters is `v2`.
+
+```json
+{
+    "proxy-rewrite": {
+        "_meta": {
+            "filter": [
+                ["arg_version", "==", "v2"]
+            ]
+        },
+        "uri": "/anything"
+    }
+}
+```
+
+Create a complete route with the below configuration:
+
+```json
+{
+    "uri": "/get",
+    "plugins": {
+        "proxy-rewrite": {
+            "_meta": {
+                "filter": [
+                    ["arg_version", "==", "v2"]
+                ]
+            },
+            "uri": "/anything"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.org:80": 1
+        }
+    }
+}
+```
+
+When the request does not have any parameters, the `proxy-rewrite` plugin will not be executed, the request will be proxy to the upstream `/get`:
+
+```shell
+curl -v /dev/null http://127.0.0.1:9080/get -H"host:httpbin.org"
+```
+
+```shell
+< HTTP/1.1 200 OK
+......
+< Server: APISIX/2.15.0
+<
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "httpbin.org",
+    "User-Agent": "curl/7.79.1",
+    "X-Amzn-Trace-Id": "Root=1-62eb6eec-46c97e8a5d95141e621e07fe",
+    "X-Forwarded-Host": "httpbin.org"
+  },
+  "origin": "127.0.0.1, 117.152.66.200",
+  "url": "http://httpbin.org/get"
+}
+```
+
+When the parameter `version=v2` is carried in the request, the `proxy-rewrite` plugin is executed, and the request will be proxy to the upstream `/anything`:
+
+```shell
+curl -v /dev/null http://127.0.0.1:9080/get?version=v2 -H"host:httpbin.org"
+```
+
+```shell
+< HTTP/1.1 200 OK
+......
+< Server: APISIX/2.15.0
+<
+{
+  "args": {
+    "version": "v2"
+  },
+  "data": "",
+  "files": {},
+  "form": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "httpbin.org",
+    "User-Agent": "curl/7.79.1",
+    "X-Amzn-Trace-Id": "Root=1-62eb6f02-24a613b57b6587a076ef18b4",
+    "X-Forwarded-Host": "httpbin.org"
+  },
+  "json": null,
+  "method": "GET",
+  "origin": "127.0.0.1, 117.152.66.200",
+  "url": "http://httpbin.org/anything?version=v2"
+}
+```
 
 ## Hot reload
 
