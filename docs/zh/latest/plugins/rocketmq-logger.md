@@ -149,7 +149,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/rocketmq-logger \
 {"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
 ```
 
-## 如何启用
+## 启用插件
 
 你可以通过如下命令在指定路由上启用 `rocketmq-logger` 插件：
 
@@ -173,7 +173,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 }'
 ```
 
-该插件还支持一次推送到多个 nameserver，示例如下：
+该插件还支持一次推送到多个 `nameserver`，示例如下：
 
 ```json
 [
