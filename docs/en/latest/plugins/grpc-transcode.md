@@ -252,7 +252,7 @@ Trailer: grpc-message
 
 ## Show `grpc-status-details-bin` in response body
 
-If the gRPC service returns an error, there may be a `grpc-status-details-bin` field in the return header describing the error, which you can decode and display in the return body.
+If the gRPC service returns an error, there may be a `grpc-status-details-bin` field in the response header describing the error, which you can decode and display in the response body.
 
 Upload the proto file：
 

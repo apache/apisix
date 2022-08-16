@@ -190,8 +190,6 @@ Content-Type: application/json
     }
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -222,8 +220,6 @@ grpc-message: Out of service
 grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20vaGVsbG93b3JsZC5FcnJvckRldGFpbBIpCAESHFRoZSBzZXJ2ZXIgaXMgb3V0IG9mIHNlcnZpY2UaB3NlcnZpY2U
 --- response_body_unlike eval
 qr/error/
---- no_error_log
-[error]
 --- error_code: 503
 
 
@@ -265,8 +261,6 @@ qr/error/
     }
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -298,8 +292,6 @@ grpc-message: Out of service
 grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20vaGVsbG93b3JsZC5FcnJvckRldGFpbBIpCAESHFRoZSBzZXJ2ZXIgaXMgb3V0IG9mIHNlcnZpY2UaB3NlcnZpY2U
 --- response_body
 {"error":{"code":14,"details":[{"type_url":"type.googleapis.com/helloworld.ErrorDetail","value":"\b\u0001\u0012\u001cThe server is out of service\u001a\u0007service"}],"message":"Out of service"}}
---- no_error_log
-[error]
 --- error_code: 503
 
 
@@ -342,8 +334,6 @@ grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20
     }
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -375,8 +365,6 @@ grpc-message: Out of service
 grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20vaGVsbG93b3JsZC5FcnJvckRldGFpbBIpCAESHFRoZSBzZXJ2ZXIgaXMgb3V0IG9mIHNlcnZpY2UaB3NlcnZpY2U
 --- response_body
 {"error":{"code":14,"details":[{"code":1,"message":"The server is out of service","type":"service"}],"message":"Out of service"}}
---- no_error_log
-[error]
 --- error_code: 503
 
 
@@ -419,8 +407,6 @@ grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20
     }
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 

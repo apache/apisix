@@ -229,7 +229,7 @@ local function init_status_pb_state()
         -- initialize protoc compiler
         protoc.reload()
         local status_protoc = protoc.new()
-        -- do not use loadfile here, it can not load proto file when use relative address
+        -- do not use loadfile here, it can not load the proto file when using a relative address
         -- after luarocks install apisix
         local ok, err = status_protoc:load(grpc_status_proto, "grpc_status.proto")
         if not ok then
