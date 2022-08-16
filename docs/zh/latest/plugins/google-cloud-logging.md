@@ -23,7 +23,7 @@ title: google-cloud-logging
 
 ## 描述
 
-`google-cloud-logging` 插件用于将 `Apache APISIX` 的请求日志发送到 [Google Cloud Logging Service](https://cloud.google.com/logging/)。
+`google-cloud-logging` 插件 用于将 `Apache APISIX` 的请求日志发送到 [Google Cloud Logging Service](https://cloud.google.com/logging/)。
 
 该插件提供了将请求的日志数据以批处理队列的形式推送到谷歌云日志服务的功能。
 
