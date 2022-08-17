@@ -699,3 +699,25 @@ X-A: 127.0.0.1
 X-B: from 127.0.0.1 to 127.0.0.1:1980
 --- no_error_log
 [error]
+
+
+=== TEST 25: set an nil body with setting body_base64 to false
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.response-rewrite")
+            local ok, err = plugin.check_schema({
+                            body_base64 = false
+            })
+            if not ok then
+                ngx.say(err)
+                return
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
