@@ -47,7 +47,7 @@ description: API 网关 Apache APISIX loggly 插件可用于将日志转发到 S
 
 该插件支持使用批处理器来聚合并批量处理条目（日志或数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
-如果要生成用户令牌, 请在 Loggly 系统中的 `<your assigned subdomain>/loggly.com/tokens` 设置，或者在系统中单击 `Logs > Source setup > Customer tokens`。
+如果要生成用户令牌，请在 Loggly 系统中的 `<your assigned subdomain>/loggly.com/tokens` 设置，或者在系统中单击 `Logs > Source setup > Customer tokens`。
 
 ## 插件元数据设置
 
