@@ -51,6 +51,7 @@ This Plugin can be configured on a Route and requests will be send to the config
 The `timeout` attribute sets the time taken by the OpenFunction to execute, and the timeout for the HTTP client in APISIX. OpenFunction calls may take time to pull the runtime image and start the container. So, if the value is set too small, it may cause a large number of requests to fail.
 
 :::
+
 ## Prerequisites
 
 Before configuring the plugin, you need to have OpenFunction running.
