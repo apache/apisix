@@ -92,7 +92,7 @@ Since mirror requests are implemented as sub-requests, delays in sub-requests wi
 | Name | Type | Default | Description |
 | --- | --- | --- | --- |
 | connect | string | 60s | Connection timeout for mirror request to upstream. |
-| read | string | 60s | Reading timeout for mirror request to upstream. |
+| read | string | 60s | The time that APISIX maintains the connection with the mirror server; if APISIX does not receive a response from the mirror server within this time, the connection is closed. |
 | send | string | 60s | The time that APISIX maintains the connection with the mirror server; if APISIX does not send a request within this time, the connection is closed. |
 
 ```yaml

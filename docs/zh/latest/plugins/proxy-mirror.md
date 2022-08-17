@@ -74,7 +74,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  \
 | 名称 | 类型 | 默认值 | 描述 |
 | --- | --- | --- | --- |
 | connect | string | 60s | 镜像请求到上游的连接超时时间。 |
-| read | string | 60s | 镜像请求到上游的读超时时间。 |
+| read | string | 60s | APISIX 与镜像服务器维持连接的时间；如果在该时间内，APISIX 没有收到镜像服务器的响应，则关闭连接。 |
 | send | string | 60s | APISIX 与镜像服务器维持连接的时间；如果在该时间内，APISIX 没有发送请求，则关闭连接。 |
 
 ```yaml
