@@ -94,7 +94,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Example usage
 
-Once you have configured the Plugin, you can send a request to the Route and it will invoke the configured function:
+Once you have configured the plugin, you can send a request to the Route and it will invoke the configured function:
 
 ```shell
 curl -i http://127.0.0.1:9080/hello -X POST -d'test'
