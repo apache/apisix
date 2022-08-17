@@ -68,7 +68,7 @@ local schema = {
             default = true
         }
     },
-    required = { "endpoint", "field" },
+    required = { "endpoint_addr", "field" },
 }
 
 
@@ -115,8 +115,8 @@ local function send_to_elasticsearch(conf, entries)
         return false, str_format("create http error: %s", err)
     end
 
-    local uri = conf.endpoint.uri ..
-        (str_byte(conf.endpoint.uri, -1) == str_byte("/") and "_bulk" or "/_bulk")
+    local uri = conf.endpoint_addr ..
+        (str_byte(conf.endpoint_addr, -1) == str_byte("/") and "_bulk" or "/_bulk")
     local body = core.table.concat(entries, "")
     local headers = {["Content-Type"] = "application/json"}
     if conf.xpack and conf.xpack.username and conf.xpack.password then
@@ -130,7 +130,7 @@ local function send_to_elasticsearch(conf, entries)
 
     httpc:set_timeout(conf.timeout * 1000)
     local resp, err = httpc:request_uri(uri, {
-        ssl_verify = conf.endpoint.ssl_verify,
+        ssl_verify = conf.ssl_verify,
         method = "POST",
         headers = headers,
         body = body

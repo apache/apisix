@@ -47,15 +47,17 @@ __DATA__
             local configs = {
                 -- full configuration
                 {
-                    endpoint = {
-                        uri = "http://127.0.0.1:9200",
+                    endpoint_addr = "http://127.0.0.1:9200",
+                    field = {
                         index = "services",
-                        type = "collector",
-                        timeout = 60,
-                        username = "elastic",
-                        password = "123456",
-                        ssl_verify = false
+                        type = "collector"
                     },
+                    xpack = {
+                        username = "elastic",
+                        password = "123456"
+                    },
+                    ssl_verify = false,
+                    timeout = 60,
                     max_retry_count = 0,
                     retry_delay = 1,
                     buffer_duration = 60,
@@ -64,29 +66,25 @@ __DATA__
                 },
                 -- minimize configuration
                 {
-                    endpoint = {
-                        uri = "http://127.0.0.1:9200",
+                    endpoint_addr = "http://127.0.0.1:9200",
+                    field = {
                         index = "services"
                     }
                 },
-                -- property "uri" is required
+                -- property "endpoint_addr" is required
                 {
-                    endpoint = {
-                        index = "services",
+                    field = {
+                        index = "services"
                     }
+                },
+                -- property "field" is required
+                {
+                    endpoint_addr = "http://127.0.0.1:9200",
                 },
                 -- property "index" is required
                 {
-                    endpoint = {
-                        uri = "http://127.0.0.1:9200",
-                    }
-                },
-                -- property "uri" validation failed
-                {
-                    endpoint = {
-                        uri = "127.0.0.1:9200",
-                        index = "services"
-                    }
+                    endpoint_addr = "http://127.0.0.1:9200",
+                    field = {}
                 }
             }
 
@@ -104,9 +102,9 @@ __DATA__
 --- response_body_like
 passed
 passed
-property "endpoint" validation failed: property "uri" is required
-property "endpoint" validation failed: property "index" is required
-property "endpoint" validation failed: property "uri" validation failed.*
+property "endpoint_addr" is required
+property "field" is required
+property "field" validation failed: property "index" is required
 
 
 
@@ -125,8 +123,8 @@ property "endpoint" validation failed: property "uri" validation failed.*
                 },
                 plugins = {
                     ["elasticsearch-logger"] = {
-                        endpoint = {
-                            uri = "http://127.0.0.1:9200",
+                        endpoint_addr = "http://127.0.0.1:9200",
+                        field = {
                             index = "services"
                         },
                         batch_max_size = 1,
@@ -170,9 +168,11 @@ hello world
                 },
                 plugins = {
                     ["elasticsearch-logger"] = {
-                        endpoint = {
-                            uri = "http://127.0.0.1:9201",
-                            index = "services",
+                        endpoint_addr = "http://127.0.0.1:9201",
+                        field = {
+                            index = "services"
+                        },
+                        xpack = {
                             username = "elastic",
                             password = "123456"
                         },
@@ -217,8 +217,8 @@ hello world
                 },
                 plugins = {
                     ["elasticsearch-logger"] = {
-                        endpoint = {
-                            uri = "http://127.0.0.1:9201",
+                        endpoint_addr = "http://127.0.0.1:9201",
+                        field = {
                             index = "services"
                         },
                         batch_max_size = 1,
@@ -265,9 +265,11 @@ Batch Processor[elasticsearch-logger] exceeded the max_retry_count
                 },
                 plugins = {
                     ["elasticsearch-logger"] = {
-                        endpoint = {
-                            uri = "http://127.0.0.1:9201",
-                            index = "services",
+                        endpoint_addr = "http://127.0.0.1:9201",
+                        field = {
+                            index = "services"
+                        },
+                        xpack = {
                             username = "elastic",
                             password = "111111"
                         },
