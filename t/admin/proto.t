@@ -142,7 +142,7 @@ __DATA__
                         "plugins": {
                             "grpc-transcode": {
                             "_meta": {
-                                "disble": false
+                                "disable": false
                             },
                             "method": "SayHi",
                             "proto_id": 2,

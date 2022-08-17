@@ -77,6 +77,10 @@ local function custom_sort_plugin(l, r)
 end
 
 local function check_disable(plugin_conf)
+    if not plugin_conf then
+        return nil
+    end
+
     if not plugin_conf._meta then
        return nil
     end
@@ -440,7 +444,8 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
         if not disable and matched then
             if plugin_obj.run_policy == "prefer_route" and route_plugin_conf ~= nil then
                 local plugin_conf_in_route = route_plugin_conf[name]
-                if plugin_conf_in_route and not disable then
+                local disable_in_route = check_disable(plugin_conf_in_route)
+                if plugin_conf_in_route and not disable_in_route then
                     goto continue
                 end
             end
