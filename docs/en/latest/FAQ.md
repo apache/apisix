@@ -267,15 +267,16 @@ To configure Apache APISIX to listen on multiple ports, you can:
         - 9082
    ```
 
-   Similarly for HTTPS requests, modify the parameter `ssl.listen_port` in `conf/config.yaml`:
+   Similarly for HTTPS requests, modify the parameter `ssl.listen` in `conf/config.yaml`:
 
    ```
    apisix:
      ssl:
-       listen_port:
-         - 9443
-         - 9444
-         - 9445
+       enable: true
+       listen:
+         - port: 9443
+         - port: 9444
+         - port: 9445
    ```
 
 2. Reload or restart Apache APISIX.

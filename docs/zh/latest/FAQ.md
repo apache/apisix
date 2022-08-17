@@ -270,15 +270,16 @@ nginx_config:
        - 9082
    ```
 
-   处理 HTTPS 请求也类似，修改 `conf/config.yaml` 中 HTTPS 端口监听的参数 `ssl.listen_port`，示例：
+   处理 HTTPS 请求也类似，修改 `conf/config.yaml` 中 HTTPS 端口监听的参数 `ssl.listen`，示例：
 
    ```
    apisix:
      ssl:
-       listen_port:
-         - 9443
-         - 9444
-         - 9445
+       enable: true
+       listen:
+         - port: 9443
+         - port: 9444
+         - port: 9445
    ```
 
 2. 重启或者重新加载 APISIX。
