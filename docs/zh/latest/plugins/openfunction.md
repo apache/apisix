@@ -40,7 +40,7 @@ description: 本文介绍了关于 CNCF OpenFunction 插件的基本信息及使
 | function_uri                | string  | 是     |         |              | OpenFunction function uri，例如 `https://localhost:30858/default/function-sample`。     |
 | ssl_verify                  | boolean | 否     | true    |              | 当设置为 `true` 时执行 SSL 验证。                            |
 | authorization               | object  | 否     |         |              | 访问 OpenFunction 的函数的授权凭证。|
-| authorization.service_token | string  | 否     |         |              | OpenFunction service token，其格式为 `xxx:xxx` ，支持 ingress controller 的 basic auth 认证方式。 |
+| authorization.service_token | string  | 否     |         |              | OpenFunction service token，其格式为 `xxx:xxx` ，支持函数入口的 basic auth 认证方式。 |
 | timeout                     | integer | 否     | 3000ms  | [100,...]ms  | OpenFunction action 和 HTTP 调用超时时间（以毫秒为单位）。          |
 | keepalive                   | boolean | 否     | true    |              | 当设置为 `true` 时，保持连接的活动状态以便重复使用。         |
 | keepalive_timeout           | integer | 否     | 60000ms | [1000,...]ms | 当连接空闲时，保持该连接处于活动状态的时间（以毫秒为单位）。               |
@@ -54,12 +54,11 @@ description: 本文介绍了关于 CNCF OpenFunction 插件的基本信息及使
 
 :::
 
-## 启用插件
+## 先决条件
 
-### 搭建 Apache OpenFunction 测试环境
-
-1. 在使用 `openfunction` 插件之前，你需要通过以下命令运行 OpenFunction 。详情参考[官方安装指南](https://openfunction.dev/docs/getting-started/installation/) 。
-请确保当前环境中已经安装 Kubernetes 软件。
+1. 在使用 `openfunction` 插件之前，你需要通过以下命令运行 OpenFunction 。
+详情参考[官方安装指南](https://openfunction.dev/docs/getting-started/installation/) 。
+请确保当前环境中已经安装对应版本的 Kubernetes 集群。
 
 ```shell
 #add the OpenFunction chart repository
@@ -74,12 +73,21 @@ helm install openfunction openfunction/openfunction -n openfunction
 2. 你可以通过以下命令来验证 openfunction 是否已经安装成功：
 
 ```shell
-kubectl get pods -namespace openfunction
+kubectl get pods --namespace openfunction
 ```
 
 3. 你可以通过官方示例创建函数 [sample](https://github.com/OpenFunction/samples)
+构建函数时，需要将函数容器镜像推送到容器仓库，如 Docker Hub 或 Quay.io。要做到这一点，首先需要输入如下命令为容器仓库生成一个密钥。
 
-### 创建路由
+```shell
+REGISTRY_SERVER=https://index.docker.io/v1/ REGISTRY_USER=<your_registry_user> REGISTRY_PASSWORD=<your_registry_password>
+kubectl create secret docker-registry push-secret \
+    --docker-server=$REGISTRY_SERVER \
+    --docker-username=$REGISTRY_USER \
+    --docker-password=$REGISTRY_PASSWORD
+```
+
+## 启用插件
 
 通过以下命令创建一个路由，并在配置文件中添加 `openfunction` 插件：
 
