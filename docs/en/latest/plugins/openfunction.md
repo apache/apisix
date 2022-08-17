@@ -58,7 +58,7 @@ Before configuring the plugin, you need to have OpenFunction running. For detail
 The example below shows OpenFunction installed in Helm:
 
 ```shell
-#add the OpenFunction chart repository
+# add the OpenFunction chart repository
 helm repo add openfunction https://openfunction.github.io/charts/
 helm repo update
 
