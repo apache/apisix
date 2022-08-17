@@ -23,9 +23,8 @@ local openfunction_authz_schema = {
 
 local function request_processor(conf, ctx, params)
     local headers = params.headers or {}
-    -- setting authorization headers if not already set
-    if not headers["authorization"] and conf.authorization
-            and conf.authorization.service_token then
+    -- setting authorization headers if authorization.service_token exists
+    if  conf.authorization and conf.authorization.service_token then
         headers["authorization"] = "Basic " .. ngx_encode_base64(conf.authorization.service_token)
     end
 

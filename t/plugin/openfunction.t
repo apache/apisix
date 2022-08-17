@@ -167,7 +167,7 @@ Hello, test!
 
 
 
-=== TEST 8: reset route with test-body function with service_token
+=== TEST 8: reset route with test-header function with service_token
 --- config
     location /t {
         content_by_lua_block {
@@ -210,7 +210,39 @@ POST /hello
 
 
 
-=== TEST 10: check higher priority of user-specific Authorization header
+=== TEST 10: reset route with test-header function without service_token
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openfunction": {
+                                "function_uri": "http://127.0.0.1:30583/"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {},
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: hit route with user-specific Authorization header
 --- request
 POST /hello
 --- more_headers
@@ -220,7 +252,7 @@ authorization: user-token-xxx
 
 
 
-=== TEST 11: reset route to non-existent function_uri
+=== TEST 12: reset route to non-existent function_uri
 --- config
     location /t {
         content_by_lua_block {
@@ -252,7 +284,7 @@ passed
 
 
 
-=== TEST 12: hit route (with non-existent function_uri)
+=== TEST 13: hit route (with non-existent function_uri)
 --- request
 POST /hello
 test
