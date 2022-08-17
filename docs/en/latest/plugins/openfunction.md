@@ -70,7 +70,7 @@ helm install openfunction openfunction/openfunction -n openfunction
 You can then verify if OpenFunction is ready:
 
 ```shell
-kubectl get pods -namespace openfunction
+kubectl get pods --namespace openfunction
 ```
 
 You can then create a function follow the [sample](https://github.com/OpenFunction/samples)
