@@ -606,7 +606,6 @@ passed
                 [[{
                     "methods": ["GET", "POST"],
                     "uri": "/grpctest",
-                    "service_protocol": "grpc",
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",
@@ -771,7 +770,6 @@ failed to encode request data to protobuf
                 [[{
                     "methods": ["GET", "POST"],
                     "uri": "/grpctest",
-                    "service_protocol": "grpc",
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",

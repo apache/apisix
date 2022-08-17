@@ -610,9 +610,6 @@ _M.route = {
 
         service_id = id_schema,
         upstream_id = id_schema,
-        service_protocol = {
-            enum = {"grpc", "http"}
-        },
 
         enable_websocket = {
             description = "enable websocket for request",
