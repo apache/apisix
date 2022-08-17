@@ -655,7 +655,7 @@ GET /t
                             "rejected_code": 503,
                             "key": "remote_addr",
                             "_meta": {
-                                "diable": true
+                                "disble": true
                             }
                         }
                     },
