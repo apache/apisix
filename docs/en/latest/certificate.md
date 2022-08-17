@@ -233,7 +233,9 @@ apisix:
     - name: admin
       key: edd1c9f034335f136f87ad84b625c8f1
       role: admin
-  port_admin: 9180
+  admin_listen:
+    ip: 127.0.0.1
+    port: 9180
   https_admin: true
 
   admin_api_mtls:

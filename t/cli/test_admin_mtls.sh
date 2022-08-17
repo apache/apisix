@@ -23,7 +23,9 @@
 
 echo '
 apisix:
-    port_admin: 9180
+    admin_listen:
+        ip: 127.0.0.1
+        port: 9180
     https_admin: true
 
     admin_api_mtls:

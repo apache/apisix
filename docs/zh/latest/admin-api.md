@@ -120,7 +120,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes?name=test&uri=foo&label= \
 
 *说明*：Route 字面意思就是路由，通过定义一些规则来匹配客户端的请求，然后根据匹配结果加载并执行相应的插件，并把请求转发给到指定 Upstream。
 
-注意：在启用 `Admin API` 时，它会占用前缀为 `/apisix/admin` 的 API。因此，为了避免您设计 API 与 `/apisix/admin` 冲突，建议为 Admin API 使用其他端口，您可以在 `conf/config.yaml` 中通过 `port_admin` 进行自定义 Admin API 端口。
+注意：在启用 `Admin API` 时，它会占用前缀为 `/apisix/admin` 的 API。因此，为了避免您设计 API 与 `/apisix/admin` 冲突，建议为 Admin API 使用其他端口，您可以在 `conf/config.yaml` 中通过 `admin_listen` 进行自定义 Admin API 端口。
 
 ### 请求方法
 

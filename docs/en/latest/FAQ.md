@@ -365,7 +365,9 @@ You can follow the steps below to configure this:
 
 ```yaml
 apisix:
-  port_admin: 9180 # use a separate port
+  admin_listen: # use a separate port
+    ip: 127.0.0.1
+    port: 9180
 ```
 
 2. Add a proxy Route for the Apache APISIX dashboard:

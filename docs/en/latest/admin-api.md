@@ -119,7 +119,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes?name=test&uri=foo&label= \
 
 [Routes](./terminology/route.md) match the client's request based on defined rules, loads and executes the corresponding [plugins](#plugin), and forwards the request to the specified [Upstream](#upstream).
 
-**Note**: When the Admin API is enabled, to avoid conflicts with your design API, use a different port for the Admin API. This can be set in your configuration file by changing the `port_admin` key.
+**Note**: When the Admin API is enabled, to avoid conflicts with your design API, use a different port for the Admin API. This can be set in your configuration file by changing the `admin_listen` key.
 
 ### Request Methods
 

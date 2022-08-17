@@ -133,9 +133,6 @@ local config_schema = {
                         }
                     }
                 },
-                port_admin = {
-                    type = "integer",
-                },
                 https_admin = {
                     type = "boolean",
                 },
