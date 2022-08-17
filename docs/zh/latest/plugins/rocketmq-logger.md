@@ -2,10 +2,10 @@
 title: rocketmq-logger
 keywords:
   - APISIX
-  - API Gateway
+  - API 网关
   - Plugin
-  - RocketMQ Logger
-description:  API 网关 Apache APISIX 的 rocketmq-logger 插件用于将日志作为 JSON 对象推送到 Apache RocketMQ 集群中。
+  - RocketMQ
+description: API 网关 Apache APISIX 的 rocketmq-logger 插件用于将日志作为 JSON 对象推送到 Apache RocketMQ 集群中。
 ---
 
 <!--
@@ -36,7 +36,7 @@ description:  API 网关 Apache APISIX 的 rocketmq-logger 插件用于将日志
 | 名称                   | 类型     | 必选项 | 默认值            | 有效值                 | 描述                                              |
 | ---------------------- | ------- | ------ | ----------------  | ------------- ------- | ------------------------------------------------ |
 | nameserver_list        | object  | 是     |                   |                       | RocketMQ 的 nameserver 列表。                     |
-| topic                  | string  | 是     |                   |                       | 要推送的 topic 目标。                             |
+| topic                  | string  | 是     |                   |                       | 要推送的 topic 名称。                             |
 | key                    | string  | 否     |                   |                       | 发送消息的 keys。                                 |
 | tag                    | string  | 否     |                   |                       | 发送消息的 tags。                                 |
 | timeout                | integer | 否     | 3                 | [1,...]               | 发送数据的超时时间。                              |
