@@ -520,10 +520,6 @@ function _M.http_access_phase()
         core.log.info("enabled websocket for route: ", route.value.id)
     end
 
-    if route.value.service_protocol == "grpc" then
-        api_ctx.upstream_scheme = "grpc"
-    end
-
     -- load balancer is not required by kafka upstream, so the upstream
     -- node selection process is intercepted and left to kafka to
     -- handle on its own
