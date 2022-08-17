@@ -46,34 +46,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: rewrite scheme but the node doesn't have port
---- apisix_yaml
-routes:
-  -
-    id: 1
-    uri: /hello
-    upstream_id: 1
-    plugins:
-        proxy-rewrite:
-            scheme: "https"
-  -
-    id: 2
-    uri: /hello_chunked
-    upstream_id: 1
-upstreams:
-  -
-    id: 1
-    nodes:
-        "127.0.0.1": 1
-    type: roundrobin
-#END
---- error_code: 503
---- error_log
-Can't detect upstream's scheme
-
-
-
-=== TEST 2: access $upstream_uri before proxy-rewrite
+=== TEST 1: access $upstream_uri before proxy-rewrite
 --- apisix_yaml
 global_rules:
   -
@@ -107,7 +80,7 @@ scheme: http
 
 
 
-=== TEST 3: default X-Forwarded-Proto
+=== TEST 2: default X-Forwarded-Proto
 --- apisix_yaml
 routes:
   -
@@ -128,7 +101,7 @@ X-Forwarded-Proto: http
 
 
 
-=== TEST 4: pass X-Forwarded-Proto
+=== TEST 3: pass X-Forwarded-Proto
 --- apisix_yaml
 routes:
   -
@@ -151,7 +124,7 @@ X-Forwarded-Proto: https
 
 
 
-=== TEST 5: customize X-Forwarded-Proto
+=== TEST 4: customize X-Forwarded-Proto
 --- apisix_yaml
 routes:
   -
@@ -178,7 +151,7 @@ X-Forwarded-Proto: https
 
 
 
-=== TEST 6: make sure X-Forwarded-Proto hit the `core.request.header` cache
+=== TEST 5: make sure X-Forwarded-Proto hit the `core.request.header` cache
 --- apisix_yaml
 routes:
   -
@@ -211,7 +184,7 @@ localhost
 
 
 
-=== TEST 7: pass duplicate  X-Forwarded-Proto
+=== TEST 6: pass duplicate  X-Forwarded-Proto
 --- apisix_yaml
 routes:
   -
