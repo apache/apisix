@@ -108,7 +108,7 @@ grpc-web
 public-api
 prometheus
 datadog
-elasticsearch-logging
+elasticsearch-logger
 echo
 loggly
 http-logger

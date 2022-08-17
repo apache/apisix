@@ -15,46 +15,60 @@
 -- limitations under the License.
 --
 
-local ngx             = ngx
 local core            = require("apisix.core")
-local ngx_now         = ngx.now
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
+local plugin          = require("apisix.plugin")
 
-local DEFAULT_ELASTICSEARCH_SOURCE = "apache-apisix-elasticsearch-logging"
+local ngx             = ngx
+local str_format      = core.string.format
+local str_byte        = string.byte
 
-local plugin_name = "elasticsearch-logging"
+local plugin_name = "elasticsearch-logger"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
-local str_format = core.string.format
-local str_sub = string.sub
 
 
 local schema = {
     type = "object",
     properties = {
-        endpoint = {
+        meta_format = {
+            type = "string",
+            default = "default",
+            enum = {"default", "origin"},
+        },
+        endpoint_addr = core.schema.uri_def,
+        field = {
             type = "object",
             properties = {
-                uri = core.schema.uri_def,
                 index = { type = "string"},
-                type = { type = "string"},
-                username = { type = "string"},
-                password = { type = "string"},
-                timeout = {
-                    type = "integer",
-                    minimum = 1,
-                    default = 10
-                },
-                ssl_verify = {
-                    type = "boolean",
-                    default = true
-                }
+                type = { type = "string"}
             },
-            required = { "uri", "index" }
+            required = {"index"}
         },
+        xpack = {
+            type = "object",
+            properties = {
+                username = {
+                    type = "string",
+                },
+                password = {
+                    type = "string",
+                },
+            },
+            required = {"username", "password"},
+        },
+        timeout = {
+            type = "integer",
+            minimum = 1,
+            default = 10
+        },
+        ssl_verify = {
+            type = "boolean",
+            default = true
+        }
     },
-    required = { "endpoint" },
+    required = { "endpoint", "field" },
 }
 
 
@@ -71,29 +85,27 @@ function _M.check_schema(conf)
 end
 
 
-local function get_logger_entry(conf)
-    local entry = log_util.get_full_log(ngx, conf)
+local function get_logger_entry(conf, ctx)
+    local entry
+    local metadata = plugin.plugin_metadata(plugin_name)
+    core.log.info("metadata: ", core.json.delay_encode(metadata))
+    if metadata and metadata.value.log_format
+    and core.table.nkeys(metadata.value.log_format) > 0
+    then
+        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
+        core.log.info("custom log format entry: ", core.json.delay_encode(entry))
+    else
+        entry = log_util.get_full_log(ngx, conf)
+        core.log.info("full log entry: ", core.json.delay_encode(entry))
+    end
+
     return core.json.encode({
             create = {
-                _index = conf.endpoint.index,
-                _type = conf.endpoint.type
+                _index = conf.field.index,
+                _type = conf.field.type
             }
         }) .. "\n" ..
-        core.json.encode({
-            time = ngx_now(),
-            host = entry.server.hostname,
-            source = DEFAULT_ELASTICSEARCH_SOURCE,
-            request_url = entry.request.url,
-            request_method = entry.request.method,
-            request_headers = entry.request.headers,
-            request_query = entry.request.querystring,
-            request_size = entry.request.size,
-            response_headers = entry.response.headers,
-            response_status = entry.response.status,
-            response_size = entry.response.size,
-            latency = entry.latency,
-            upstream = entry.upstream,
-        }) .. "\n"
+        core.json.encode(entry) .. "\n"
 end
 
 
@@ -104,19 +116,19 @@ local function send_to_elasticsearch(conf, entries)
     end
 
     local uri = conf.endpoint.uri ..
-        (str_sub(conf.endpoint.uri, -1) == "/" and "_bulk" or "/_bulk")
+        (str_byte(conf.endpoint.uri, -1) == str_byte("/") and "_bulk" or "/_bulk")
     local body = core.table.concat(entries, "")
     local headers = {["Content-Type"] = "application/json"}
-    if conf.endpoint.username and conf.endpoint.password then
+    if conf.xpack and conf.xpack.username and conf.xpack.password then
         local authorization = "Basic " .. ngx.encode_base64(
-            conf.endpoint.username .. ":" .. conf.endpoint.password
+            conf.xpack.username .. ":" .. conf.xpack.password
         )
         headers["Authorization"] = authorization
     end
 
-    core.log.info("uri: ", uri, ", body: ", body, ", headers: ", core.json.encode(headers))
+    core.log.info("uri: ", uri, ", body: ", body)
 
-    httpc:set_timeout(conf.endpoint.timeout * 1000)
+    httpc:set_timeout(conf.timeout * 1000)
     local resp, err = httpc:request_uri(uri, {
         ssl_verify = conf.endpoint.ssl_verify,
         method = "POST",
@@ -124,11 +136,11 @@ local function send_to_elasticsearch(conf, entries)
         body = body
     })
     if not resp then
-        return nil,  err
+        return false, err
     end
 
     if resp.status ~= 200 then
-        return false, str_format("elasticsearch server returned status status: %d, body: %s",
+        return false, str_format("elasticsearch server returned status: %d, body: %s",
         resp.status, resp.body or "")
     end
 
@@ -137,7 +149,7 @@ end
 
 
 function _M.log(conf, ctx)
-    local entry = get_logger_entry(conf)
+    local entry = get_logger_entry(conf, ctx)
 
     if batch_processor_manager:add_entry(conf, entry) then
         return

@@ -154,7 +154,7 @@
                 "plugins/splunk-hec-logging",
                 "plugins/file-logger",
                 "plugins/loggly",
-                "plugins/elasticsearch-logging"
+                "plugins/elasticsearch-logger"
               ]
             }
           ]

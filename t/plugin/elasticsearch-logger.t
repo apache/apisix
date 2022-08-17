@@ -90,7 +90,7 @@ __DATA__
                 }
             }
 
-            local plugin = require("apisix.plugins.elasticsearch-logging")
+            local plugin = require("apisix.plugins.elasticsearch-logger")
             for i = 1, #configs do
                 ok, err = plugin.check_schema(configs[i])
                 if err then
@@ -124,7 +124,7 @@ property "endpoint" validation failed: property "uri" validation failed.*
                     }
                 },
                 plugins = {
-                    ["elasticsearch-logging"] = {
+                    ["elasticsearch-logger"] = {
                         endpoint = {
                             uri = "http://127.0.0.1:9200",
                             index = "services"
@@ -169,7 +169,7 @@ hello world
                     }
                 },
                 plugins = {
-                    ["elasticsearch-logging"] = {
+                    ["elasticsearch-logger"] = {
                         endpoint = {
                             uri = "http://127.0.0.1:9201",
                             index = "services",
@@ -216,7 +216,7 @@ hello world
                     }
                 },
                 plugins = {
-                    ["elasticsearch-logging"] = {
+                    ["elasticsearch-logger"] = {
                         endpoint = {
                             uri = "http://127.0.0.1:9201",
                             index = "services"
@@ -245,8 +245,8 @@ GET /hello
 --- response_body
 hello world
 --- error_log
-Batch Processor[elasticsearch-logging] failed to process entries
-Batch Processor[elasticsearch-logging] exceeded the max_retry_count
+Batch Processor[elasticsearch-logger] failed to process entries
+Batch Processor[elasticsearch-logger] exceeded the max_retry_count
 
 
 
@@ -264,7 +264,7 @@ Batch Processor[elasticsearch-logging] exceeded the max_retry_count
                     }
                 },
                 plugins = {
-                    ["elasticsearch-logging"] = {
+                    ["elasticsearch-logger"] = {
                         endpoint = {
                             uri = "http://127.0.0.1:9201",
                             index = "services",
@@ -295,5 +295,5 @@ GET /hello
 --- response_body
 hello world
 --- error_log
-Batch Processor[elasticsearch-logging] failed to process entries
-Batch Processor[elasticsearch-logging] exceeded the max_retry_count
+Batch Processor[elasticsearch-logger] failed to process entries
+Batch Processor[elasticsearch-logger] exceeded the max_retry_count

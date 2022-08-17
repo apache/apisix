@@ -1,11 +1,11 @@
 ---
-title: elasticsearch-logging
+title: elasticsearch-logger
 keywords:
   - APISIX
   - API Gateway
   - Plugin
   - Elasticsearch-logging
-description: This document contains information about the Apache APISIX elasticsearch-logging Plugin.
+description: This document contains information about the Apache APISIX elasticsearch-logger Plugin.
 ---
 
 <!--
@@ -29,7 +29,7 @@ description: This document contains information about the Apache APISIX elastics
 
 ## Description
 
-The `elasticsearch-logging` Plugin is used to forward logs to [Elasticsearch](https://www.elastic.co/guide/en/welcome-to-elastic/current/getting-started-general-purpose.html) for analysis and storage.
+The `elasticsearch-logger` Plugin is used to forward logs to [Elasticsearch](https://www.elastic.co/guide/en/welcome-to-elastic/current/getting-started-general-purpose.html) for analysis and storage.
 
 When the Plugin is enabled, APISIX will serialize the request context information to [Elasticsearch Bulk format](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html#docs-bulk) and submit it to the batch queue. When the maximum batch size is exceeded, the data in the queue is pushed to Elasticsearch. See [batch processor](../batch-processor.md) for more details.
 
@@ -127,7 +127,7 @@ You should be able to login and search these logs from your Kibana discover:
 
 ## Disable Plugin
 
-To disable the `elasticsearch-logging` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To disable the `elasticsearch-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
