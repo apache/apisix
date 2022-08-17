@@ -348,10 +348,7 @@ http {
     # error_page
     error_page 500 @50x.html;
 
-    {% if real_ip_header then %}
-    real_ip_header {* real_ip_header *};
-    {% print("\nDeprecated: apisix.real_ip_header has been moved to nginx_config.http.real_ip_header. apisix.real_ip_header will be removed in the future version. Please use nginx_config.http.real_ip_header first.\n\n") %}
-    {% elseif http.real_ip_header then %}
+    {% if http.real_ip_header then %}
     real_ip_header {* http.real_ip_header *};
     {% end %}
 
@@ -359,12 +356,7 @@ http {
     real_ip_recursive {* http.real_ip_recursive *};
     {% end %}
 
-    {% if real_ip_from then %}
-    {% print("\nDeprecated: apisix.real_ip_from has been moved to nginx_config.http.real_ip_from. apisix.real_ip_from will be removed in the future version. Please use nginx_config.http.real_ip_from first.\n\n") %}
-    {% for _, real_ip in ipairs(real_ip_from) do %}
-    set_real_ip_from {*real_ip*};
-    {% end %}
-    {% elseif http.real_ip_from then %}
+    {% if http.real_ip_from then %}
     {% for _, real_ip in ipairs(http.real_ip_from) do %}
     set_real_ip_from {*real_ip*};
     {% end %}
