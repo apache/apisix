@@ -26,7 +26,6 @@ apisix:
     node_listen: 9080
     enable_admin: true
     admin_listen:
-        ip: 127.0.0.1
         port: 9180
     stream_proxy:
         only: false

@@ -29,7 +29,6 @@ apisix:
         admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
         admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
     admin_listen:
-        ip: 127.0.0.1
         port: 9180
     https_admin: true
 " > conf/config.yaml
@@ -175,7 +174,6 @@ echo "pass: show WARNING message if the user used default token and allow any IP
 echo '
 apisix:
   admin_listen:
-    ip: 127.0.0.1
     port: 9180
 ' > conf/config.yaml
 
