@@ -42,10 +42,8 @@ The `delay` attribute delays a request and executes of the subsequent Plugins.
 | abort.http_status | integer | required    |         | [200, ...] | HTTP status code of the response to return to the client.                                                                                                   |
 | abort.body        | string  | optional    |         |            | Body of the response returned to the client. Nginx variables like `client addr: $remote_addr\n` can be used in the body.                                    |
 | abort.percentage  | integer | optional    |         | [0, 100]   | Percentage of requests to be aborted.                                                                                                                       |
-| abort.vars        | array[] | optional    |         |            | Rules which are matched before executing fault injection. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for a list of available expressions. |
 | delay.duration    | number  | required    |         |            | Duration of the delay. Can be decimal.                                                                                                                      |
 | delay.percentage  | integer | optional    |         | [0, 100]   | Percentage of requests to be delayed.                                                                                                                       |
-| delay.vars        | array[] | optional    |         |            | Rules which are matched before executing fault injection. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for a list of available expressions.  |
 
 :::info IMPORTANT
 
@@ -55,7 +53,7 @@ To use the `fault-injection` Plugin one of `abort` or `delay` must be specified.
 
 :::tip
 
-`vars` can have expressions from [lua-resty-expr](https://github.com/api7/lua-resty-expr) and can flexibly implement AND/OR relationship between rules. For example:
+By using the [filter](../terminology/plugin.md#dynamically-control-whether-the-plugin-is-executed) in plugin common configuration, it can flexibly implement AND/OR relationship between rules. For example:
 
 ```json
 [
@@ -120,29 +118,29 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-You can also enable the Plugin with both `abort` and `delay` which can have `vars` for matching:
+You can also enable the Plugin with both `abort` and `delay` which can have `filter` for matching:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "fault-injection": {
-            "abort": {
-                "http_status": 403,
-                "body": "Fault Injection!\n",
-                "vars": [
+            "_meta": [
+                "filter": [
                     [
                         [ "arg_name","==","jack" ]
-                    ]
-                ]
-            },
-            "delay": {
-                "duration": 2,
-                "vars": [
+                    ],
                     [
                         [ "http_age","==","18" ]
                     ]
                 ]
+            ],
+            "abort": {
+                "http_status": 403,
+                "body": "Fault Injection!\n"
+            },
+            "delay": {
+                "duration": 2
             }
         }
     },
@@ -199,21 +197,23 @@ sys     0m0.010s
 
 ### Fault injection with criteria matching
 
-You can enable the `fault-injection` Plugin with the `vars` attribute to set specific rules:
+You can enable the `fault-injection` Plugin with the `filter` attribute to set specific rules:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "fault-injection": {
+            "_meta": [
+                "filter": [
+                    [
+                        [ "arg_name","==","jack" ]
+                    ]
+                ]
+            ],
             "abort": {
                     "http_status": 403,
-                    "body": "Fault Injection!\n",
-                    "vars": [
-                        [
-                            [ "arg_name","==","jack" ]
-                        ]
-                    ]
+                    "body": "Fault Injection!\n"
             }
         }
     },

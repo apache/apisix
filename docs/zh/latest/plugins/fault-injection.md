@@ -38,10 +38,8 @@ description: 本文介绍了关于 Apache APISIX `fault-injection` 插件的基�
 | abort.http_status | integer | 是   |  [200, ...] | 返回给客户端的 HTTP 状态码 |
 | abort.body        | string  | 否   |             | 返回给客户端的响应数据。支持使用 NGINX 变量，如 `client addr: $remote_addr\n`|
 | abort.percentage  | integer | 否   |  [0, 100]   | 将被中断的请求占比         |
-| abort.vars        | array[] | 否   |             | 执行故障注入的规则，当规则匹配通过后才会执行故障注。`vars` 是一个表达式的列表，来自 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)。 |
 | delay.duration    | number  | 是   |             | 延迟时间，可以指定小数     |
 | delay.percentage  | integer | 否   |  [0, 100]   | 将被延迟的请求占比         |
-| delay.vars        | array[] | 否   |             | 执行请求延迟的规则，当规则匹配通过后才会延迟请求。`vars` 是一个表达式列表，来自 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)。   |
 
 :::info IMPORTANT
 
@@ -55,7 +53,7 @@ description: 本文介绍了关于 Apache APISIX `fault-injection` 插件的基�
 
 :::tip
 
-`vars` 是由 [`lua-resty-expr`](https://github.com/api7/lua-resty-expr) 的表达式组成的列表，它可以灵活的实现规则之间的 AND/OR 关系，示例如下：：
+通过插件通用配置中的 [filter](../../../en/latest/terminology/plugin.md#dynamically-control-whether-the-plugin-is-executed)) 的表达式组成的列表，它可以灵活的实现规则之间的 AND/OR 关系，示例如下：
 
 ```json
 [
@@ -122,7 +120,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 }'
 ```
 
-还可以同时为指定路由启用 `fault-injection` 插件，并指定 `abort` 属性和 `delay` 属性的 `vars` 规则。如下所示：
+还可以在启用 `fault-injection` 插件时同时指定 `abort` 和 `delay` 属性，并配置 `filter` 规则。如下所示：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  \
@@ -130,22 +128,22 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  \
 {
     "plugins": {
         "fault-injection": {
-            "abort": {
-                "http_status": 403,
-                "body": "Fault Injection!\n",
-                "vars": [
+            "_meta": [
+                "filter": [
                     [
                         [ "arg_name","==","jack" ]
-                    ]
-                ]
-            },
-            "delay": {
-                "duration": 2,
-                "vars": [
+                    ],
                     [
                         [ "http_age","==","18" ]
                     ]
                 ]
+            ],
+            "abort": {
+                "http_status": 403,
+                "body": "Fault Injection!\n"
+            },
+            "delay": {
+                "duration": 2
             }
         }
     },
@@ -202,7 +200,7 @@ sys     0m0.010s
 
 ### 标准匹配的故障注入
 
-你可以在 `fault-injection` 插件中使用 `vars` 规则设置特定规则：
+你可以在 `fault-injection` 插件中使用 `filter` 设置特定规则：
 
 ```Shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  \
@@ -210,14 +208,16 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  \
 {
     "plugins": {
         "fault-injection": {
+            "_meta": [
+                "filter": [
+                    [
+                        [ "arg_name","==","jack" ]
+                    ]
+                ]
+            ],
             "abort": {
                     "http_status": 403,
-                    "body": "Fault Injection!\n",
-                    "vars": [
-                        [
-                            [ "arg_name","==","jack" ]
-                        ]
-                    ]
+                    "body": "Fault Injection!\n"
             }
         }
     },
