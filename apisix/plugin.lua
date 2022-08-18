@@ -770,12 +770,6 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
     end
 
     if plugin_obj.check_schema then
-        local disable = check_disable(plugin_conf)
-        if disable ~= nil then
-            plugin_conf._meta.disable = nil
-        end
-
-
         local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
         if not ok then
             return false, "failed to check the configuration of plugin "
@@ -787,10 +781,6 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
             if not ok then
                 return nil, "failed to validate the 'vars' expression: " .. err
             end
-        end
-
-        if disable ~= nil then
-            plugin_conf._meta.disable = disable
         end
     end
 
@@ -839,19 +829,10 @@ local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plug
         end
 
         if plugin_obj.check_schema then
-            local disable = check_disable(plugin_conf)
-            if disable ~= nil then
-                plugin_conf._meta.disable = nil
-            end
-
             local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
             if not ok then
                 return false, "failed to check the configuration of "
                               .. "stream plugin [" .. name .. "]: " .. err
-            end
-
-            if disable ~= nil then
-                plugin_conf._meta.disable = disable
             end
         end
 

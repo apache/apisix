@@ -87,7 +87,7 @@ Some common configurations can be applied to plugins through the `_meta` configu
 
 ### Disable the plugin
 
-Through the `disable` configuration, you can add a new plugin with disabled status and the request will not go through the plugin. This feature is used in the APISIX Dashboard.
+Through the `disable` configuration, you can add a new plugin with disabled status and the request will not go through the plugin.
 
 ```json
 {
