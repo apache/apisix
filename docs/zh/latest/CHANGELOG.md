@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.13.3](#2133)
 - [2.13.2](#2132)
 - [2.13.1](#2131)
 - [2.13.0](#2130)
@@ -55,6 +56,19 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.13.3
+
+### Bugfix
+
+- 当代理到上游之前发生 500 错误时，代理到上游之后运行的插件不应被跳过 [#7703](https://github.com/apache/apisix/pull/7703)
+- 当 consumer 上绑定了多个插件且该插件定义了 rewrite 方法时，避免抛出异常 [#7531](https://github.com/apache/apisix/pull/7531)
+- 升级 lua-resty-etcd 到 1.8.3。该版本修复了若干问题。 [#7565](https://github.com/apache/apisix/pull/7565)
+- Kubernetes 服务发现在重试时应当清除上一次尝试时遗留的状态 [#7506](https://github.com/apache/apisix/pull/7506)
+- 默认配置下，http-logger 不再发送空 Authorization 头 [#7444](https://github.com/apache/apisix/pull/7444)
+- 修复 limit-count 插件不能同时配置 group 和 disable 的问题 [#7384](https://github.com/apache/apisix/pull/7384)
+- 让 request-id 插件优先执行，这样 tracing 插件可以用到 request id [#7281](https://github.com/apache/apisix/pull/7281)
+- 避免因为内存地址相同，而在 LRU cache 中认为两个不同的 upstream 是一样的 [#7213](https://github.com/apache/apisix/pull/7213)
 
 ## 2.13.2
 
