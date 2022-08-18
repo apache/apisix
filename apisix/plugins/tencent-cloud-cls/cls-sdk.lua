@@ -42,6 +42,7 @@ local tostring = tostring
 local setmetatable = setmetatable
 local pcall = pcall
 
+-- api doc https://www.tencentcloud.com/document/product/614/16873
 local MAX_SINGLE_VALUE_SIZE = 1 * 1024 * 1024
 local MAX_LOG_GROUP_VALUE_SIZE = 5 * 1024 * 1024 -- 5MB
 
@@ -113,50 +114,6 @@ local function sign(secret_id, secret_key)
 end
 
 
-local function send_cls_request(host, topic, secret_id, secret_key, pb_obj)
-    local ok, pb_data = pcall(pb.encode, "cls.LogGroupList", pb_obj)
-    if not ok or not pb_data then
-        core.log.error("failed to encode LogGroupList, err: ", pb_data)
-        return false, pb_data
-    end
-
-    local client = http:new()
-    client:set_timeouts(cls_conn_timeout, cls_send_timeout, cls_read_timeout)
-
-    clear_tab(headers_cache)
-    headers_cache["Host"] = host
-    headers_cache["Content-Type"] = "application/x-protobuf"
-    headers_cache["Authorization"] = sign(secret_id, secret_key, cls_api_path)
-
-    -- TODO: support lz4/zstd compress
-    params_cache.method = "POST"
-    params_cache.body = pb_data
-
-    local cls_url = "http://" .. host .. cls_api_path .. "?topic_id=" .. topic
-    core.log.debug("CLS request URL: ", cls_url)
-
-    local res, err = client:request_uri(cls_url, params_cache)
-    if not res then
-        return false, err
-    end
-
-    if res.status ~= 200 then
-        err = fmt("got wrong status: %s, headers: %s, body, %s",
-                  res.status, json.encode(res.headers), res.body)
-        -- 413, 404, 401, 403 are not retryable
-        if res.status == 413 or res.status == 404 or res.status == 401 or res.status == 403 then
-            core.log.error(err, ", not retryable")
-            return true
-        end
-
-        return false, err
-    end
-
-    core.log.debug("CLS report success")
-    return true
-end
-
-
 -- normalized log data for CLS API
 local function normalize_log(log)
     local normalized_log = {}
@@ -193,9 +150,8 @@ local function init_pb_state()
     pb.state(nil)
     protoc.reload()
     local cls_sdk_protoc = protoc.new()
-    if not cls_sdk_protoc.loaded["tencent-cloud-cls/cls.proto"] then
-        -- https://www.tencentcloud.com/document/product/614/42787
-        local ok, err = pcall(cls_sdk_protoc.load, cls_sdk_protoc, [[
+    -- proto file in https://www.tencentcloud.com/document/product/614/42787
+    local ok, err = pcall(cls_sdk_protoc.load, cls_sdk_protoc, [[
 package cls;
 
 message Log
@@ -229,10 +185,9 @@ message LogGroupList
   repeated LogGroup logGroupList = 1; // Log group list
 }
         ]], "tencent-cloud-cls/cls.proto")
-        if not ok then
-            cls_sdk_protoc:reset()
-            return "failed to load cls.proto: ".. err
-        end
+    if not ok then
+        cls_sdk_protoc:reset()
+        return "failed to load cls.proto: ".. err
     end
     pb_state = pb.state(nil)
 end
@@ -252,6 +207,50 @@ function _M.new(host, topic, secret_id, secret_key)
         secret_key = secret_key,
     }
     return setmetatable(self, mt)
+end
+
+
+function _M.send_cls_request(self, pb_obj)
+    local ok, pb_data = pcall(pb.encode, "cls.LogGroupList", pb_obj)
+    if not ok or not pb_data then
+        core.log.error("failed to encode LogGroupList, err: ", pb_data)
+        return false, pb_data
+    end
+
+    local client = http:new()
+    client:set_timeouts(cls_conn_timeout, cls_send_timeout, cls_read_timeout)
+
+    clear_tab(headers_cache)
+    headers_cache["Host"] = self.host
+    headers_cache["Content-Type"] = "application/x-protobuf"
+    headers_cache["Authorization"] = sign(self.secret_id, self.secret_key, cls_api_path)
+
+    -- TODO: support lz4/zstd compress
+    params_cache.method = "POST"
+    params_cache.body = pb_data
+
+    local cls_url = "http://" .. self.host .. cls_api_path .. "?topic_id=" .. self.topic
+    core.log.debug("CLS request URL: ", cls_url)
+
+    local res, err = client:request_uri(cls_url, params_cache)
+    if not res then
+        return false, err
+    end
+
+    if res.status ~= 200 then
+        err = fmt("got wrong status: %s, headers: %s, body, %s",
+                res.status, json.encode(res.headers), res.body)
+        -- 413, 404, 401, 403 are not retryable
+        if res.status == 413 or res.status == 404 or res.status == 401 or res.status == 403 then
+            core.log.error(err, ", not retryable")
+            return true
+        end
+
+        return false, err
+    end
+
+    core.log.debug("CLS report success")
+    return true
 end
 
 
@@ -279,8 +278,7 @@ function _M.send_to_cls(self, logs)
                 logs = format_logs,
                 source = host_ip,
             })
-            local ok, err = send_cls_request(self.host, self.topic,
-                                             self.secret_id, self.secret_key, log_group_list_pb)
+            local ok, err = self:send_cls_request(log_group_list_pb)
             if not ok then
                 return false, err, group_list_start
             end
@@ -300,8 +298,7 @@ function _M.send_to_cls(self, logs)
         logs = format_logs,
         source = host_ip,
     })
-    local ok, err =  send_cls_request(self.host, self.topic, self.secret_id,
-                                      self.secret_key, log_group_list_pb)
+    local ok, err = self:send_cls_request(log_group_list_pb)
     return ok, err, group_list_start
 end
 

@@ -48,6 +48,21 @@ add_block_preprocessor(sub {
             }
         }
     }
+    server {
+        listen 10421;
+        location /structuredlog {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local data = ngx.req.get_body_data()
+                local headers = ngx.req.get_headers()
+                ngx.log(ngx.WARN, "tencent-cloud-cls body: ", data)
+                for k, v in pairs(headers) do
+                    ngx.log(ngx.WARN, "tencent-cloud-cls headers: " .. k .. ":" .. v)
+                end
+                ngx.exit(500)
+            }
+        }
+    }
 _EOC_
 
     $block->set_value("http_config", $http_config);
@@ -103,7 +118,59 @@ done
 
 
 
-=== TEST 3: add plugin
+=== TEST 3: add plugin for incorrect server
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "tencent-cloud-cls": {
+                                "cls_host": "127.0.0.1:10421",
+                                "cls_topic": "143b5d70-139b-4aec-b54e-bb97756916de",
+                                "secret_id": "secret_id",
+                                "secret_key": "secret_key",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: incorrect server
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- error_log
+Batch Processor[tencent-cloud-cls] failed to process entries [1/1]: got wrong status: 500
+--- wait: 0.5
+
+
+=== TEST 5: add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -145,7 +212,75 @@ passed
 
 
 
-=== TEST 4: access local server
+=== TEST 6: access local server
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- error_log
+Batch Processor[tencent-cloud-cls] successfully processed the entries
+--- wait: 0.5
+
+
+
+=== TEST 7: verify request
+--- extra_init_by_lua
+    local cls = require("apisix.plugins.tencent-cloud-cls.cls-sdk")
+    cls.send_to_cls = function(self, logs)
+        if (#logs ~= 1) then
+            ngx.log(ngx.ERR, "unexpected logs length: ", #logs)
+            return
+        end
+        return true
+    end
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- error_log
+Batch Processor[tencent-cloud-cls] successfully processed the entries
+--- wait: 0.5
+
+
+
+=== TEST 8: verify cls api request
+--- extra_init_by_lua
+    local cls = require("apisix.plugins.tencent-cloud-cls.cls-sdk")
+    cls.send_cls_request = function(self, pb_obj)
+        if (#pb_obj.logGroupList ~= 1) then
+            ngx.log(ngx.ERR, "unexpected logGroupList length: ", #pb_obj.logGroupList)
+            return false
+        end
+        local log_group = pb_obj.logGroupList[1]
+        if #log_group.logs ~= 1 then
+            ngx.log(ngx.ERR, "unexpected logs length: ", #log_group.logs)
+            return false
+        end
+        local log = log_group.logs[1]
+        for k, v in ipairs(log.contents) do
+            ngx.log(ngx.ERR, "key:", v.key, ",value:", v.value)
+        end
+        return true
+    end
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- error_log
+Batch Processor[tencent-cloud-cls] successfully processed the entries
+--- wait: 0.5
+
+
+=== TEST 7: verify request
+--- extra_init_by_lua
+    local cls = require("apisix.plugins.tencent-cloud-cls.cls-sdk")
+    cls.send_to_cls = function(self, logs)
+        if (#logs ~= 1) then
+            ngx.log(ngx.ERR, "unexpected logs length: ", #logs)
+            return
+        end
+        return true
+    end
 --- request
 GET /opentracing
 --- response_body
