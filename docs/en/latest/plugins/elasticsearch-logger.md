@@ -71,7 +71,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
                 "password":"123456"
             },
             "ssl_verify":false,
-			"timeout": 60,
+            "timeout": 60,
             "retry_delay":1,
             "buffer_duration":60,
             "max_retry_count":0,
