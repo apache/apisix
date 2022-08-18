@@ -210,20 +210,23 @@ local config_schema = {
                             type = "string",
                         },
                         listen = {
-                            type = "object",
-                            properties = {
-                                ip = {
-                                    type = "string",
-                                },
-                                port = {
-                                    type = "integer",
-                                    minimum = 1,
-                                    maximum = 65535
-                                },
-                                enable_http2 = {
-                                    type = "boolean",
+                            type = "array",
+                            items = {
+                                type = "object",
+                                properties = {
+                                    ip = {
+                                        type = "string",
+                                    },
+                                    port = {
+                                        type = "integer",
+                                        minimum = 1,
+                                        maximum = 65535
+                                    },
+                                    enable_http2 = {
+                                        type = "boolean",
+                                    }
                                 }
-                            },
+                            }
                         }
                     }
                 },
