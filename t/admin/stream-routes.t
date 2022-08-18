@@ -59,8 +59,7 @@ __DATA__
                             "desc": "new route"
                         },
                         "key": "/apisix/stream_routes/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -105,8 +104,7 @@ passed
                             "desc": "new route"
                         },
                         "key": "/apisix/stream_routes/1"
-                    },
-                    "action": "get"
+                    }
                 }]]
                 )
 
@@ -129,12 +127,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/stream_routes/1',
-                ngx.HTTP_DELETE,
-                nil,
-                [[{
-                    "action": "delete"
-                }]]
-                )
+                ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -177,8 +171,7 @@ GET /t
                             },
                             "desc": "new route"
                         }
-                    },
-                    "action": "create"
+                    }
                 }]]
                 )
 
@@ -201,11 +194,7 @@ GET /t
             assert(id ~= nil, "id is nil")
 
             code, message = t('/apisix/admin/stream_routes/' .. id,
-                ngx.HTTP_DELETE,
-                nil,
-                [[{
-                    "action": "delete"
-                }]]
+                ngx.HTTP_DELETE
             )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
@@ -232,12 +221,19 @@ GET /t
                     "plugins": {
                         "mqtt-proxy": {
                             "protocol_name": "MQTT",
-                            "protocol_level": 4,
-                            "upstream": {
-                                "ip": "127.0.0.1",
-                                "port": 1980
-                            }
+                            "protocol_level": 4
                         }
+                    },
+                    "upstream": {
+                        "type": "chash",
+                        "key": "mqtt_client_id",
+                        "nodes": [
+                            {
+                                "host": "127.0.0.1",
+                                "port": 1980,
+                                "weight": 1
+                            }
+                        ]
                     }
                 }]]
                 )
@@ -271,12 +267,19 @@ passed
                     "plugins": {
                         "mqtt-proxy": {
                             "protocol_name": "MQTT",
-                            "protocol_level": 4,
-                            "upstream": {
-                                "ip": "127.0.0.1",
-                                "port": 1980
-                            }
+                            "protocol_level": 4
                         }
+                    },
+                    "upstream": {
+                        "type": "chash",
+                        "key": "mqtt_client_id",
+                        "nodes": [
+                            {
+                                "host": "127.0.0.1",
+                                "port": 1980,
+                                "weight": 1
+                            }
+                        ]
                     }
                 }]]
                 )
@@ -302,12 +305,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/stream_routes/1',
-                ngx.HTTP_DELETE,
-                nil,
-                [[{
-                    "action": "delete"
-                }]]
-                )
+                ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -453,7 +452,7 @@ GET /t
         }
     }
 --- response_body
-{"action":"create","node":{"value":{"remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
+{"node":{"value":{"remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
 --- request
 GET /t
 --- no_error_log
@@ -493,7 +492,7 @@ GET /t
         }
     }
 --- response_body
-{"action":"set","node":{"key":"/apisix/stream_routes/1","value":{"id":"1","remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
+{"node":{"key":"/apisix/stream_routes/1","value":{"id":"1","remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
 --- request
 GET /t
 --- no_error_log
@@ -528,7 +527,7 @@ GET /t
         }
     }
 --- response_body
-{"action":"get","node":{"key":"/apisix/stream_routes/1","value":{"id":"1","remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
+{"node":{"key":"/apisix/stream_routes/1","value":{"id":"1","remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
 --- request
 GET /t
 --- no_error_log
@@ -557,7 +556,7 @@ GET /t
         }
     }
 --- response_body
-{"action":"delete","deleted":"1","key":"/apisix/stream_routes/1","node":{}}
+{"deleted":"1","key":"/apisix/stream_routes/1","node":{}}
 --- request
 GET /t
 --- no_error_log

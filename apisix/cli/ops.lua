@@ -235,14 +235,9 @@ Please modify "admin_key" in conf/config.yaml .
         util.die("can not find openresty\n")
     end
 
-    local need_ver = "1.17.8"
+    local need_ver = "1.19.3"
     if not version_greater_equal(or_ver, need_ver) then
         util.die("openresty version must >=", need_ver, " current ", or_ver, "\n")
-    end
-
-    local use_openresty_1_17 = false
-    if not version_greater_equal(or_ver, "1.19.3") then
-        use_openresty_1_17 = true
     end
 
     local or_info = util.execute_cmd("openresty -V 2>&1")
@@ -324,9 +319,6 @@ Please modify "admin_key" in conf/config.yaml .
             admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0",
                                         yaml_conf.apisix.admin_listen.ip,
                                         9180, yaml_conf.apisix.admin_listen.port)
-        elseif yaml_conf.apisix.port_admin then
-            admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0", nil,
-                                        9180, yaml_conf.apisix.port_admin)
         end
     end
 
@@ -546,16 +538,22 @@ Please modify "admin_key" in conf/config.yaml .
     end
 
     if yaml_conf.deployment and yaml_conf.deployment.role then
-        env.deployment_role = yaml_conf.deployment.role
+        local role = yaml_conf.deployment.role
+        env.deployment_role = role
+
+        if role == "control_plane" and not admin_server_addr then
+            local listen = node_listen[1]
+            admin_server_addr = str_format("%s:%s", listen.ip, listen.port)
+        end
     end
 
     -- Using template.render
     local sys_conf = {
-        use_openresty_1_17 = use_openresty_1_17,
         lua_path = env.pkg_path_org,
         lua_cpath = env.pkg_cpath_org,
         os_name = util.trim(util.execute_cmd("uname")),
         apisix_lua_home = env.apisix_home,
+        deployment_role = env.deployment_role,
         use_apisix_openresty = use_apisix_openresty,
         error_log = {level = "warn"},
         enable_http = enable_http,
@@ -648,11 +646,6 @@ Please modify "admin_key" in conf/config.yaml .
     local env_worker_processes = getenv("APISIX_WORKER_PROCESSES")
     if env_worker_processes then
         sys_conf["worker_processes"] = floor(tonumber(env_worker_processes))
-    end
-
-    if sys_conf["http"]["lua_shared_dicts"] then
-        stderr:write("lua_shared_dicts is deprecated, " ..
-                     "use custom_lua_shared_dict instead\n")
     end
 
     local exported_vars = file.get_exported_vars()

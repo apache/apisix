@@ -51,7 +51,6 @@ __DATA__
                             "proxy-rewrite": {
                                 "uri": "/plugin_proxy_rewrite",
                                 "method": "POST",
-                                "scheme": "http",
                                 "host": "apisix.iresty.com"
                             }
                         },
@@ -97,7 +96,6 @@ plugin_proxy_rewrite get method: POST
                             "proxy-rewrite": {
                                 "uri": "/plugin_proxy_rewrite",
                                 "method": "GET",
-                                "scheme": "http",
                                 "host": "apisix.iresty.com"
                             }
                         },
@@ -138,8 +136,7 @@ plugin_proxy_rewrite get method: GET
             local ok, err = plugin.check_schema({
                 uri = '/apisix/home',
                 method = 'GET1',
-                host = 'apisix.iresty.com',
-                scheme = 'http'
+                host = 'apisix.iresty.com'
             })
             if not ok then
                 ngx.say(err)
@@ -167,7 +164,6 @@ done
                             "proxy-rewrite": {
                                 "uri": "/plugin_proxy_rewrite",
                                 "method": "POST",
-                                "scheme": "http",
                                 "host": "apisix.iresty.com",
                                 "headers":{
                                     "x-api-version":"v1"

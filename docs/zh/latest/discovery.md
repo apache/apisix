@@ -206,7 +206,7 @@ Transfer-Encoding: chunked
 Connection: keep-alive
 Server: APISIX web server
 
-{"node":{"value":{"uri":"\/user\/*","upstream": {"service_name": "USER-SERVICE", "type": "roundrobin", "discovery_type": "eureka"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925},"action":"create"}
+{"node":{"value":{"uri":"\/user\/*","upstream": {"service_name": "USER-SERVICE", "type": "roundrobin", "discovery_type": "eureka"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925}}
 ```
 
 因为上游的接口 URL 可能会有冲突，通常会在网关通过前缀来进行区分：

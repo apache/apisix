@@ -38,8 +38,8 @@ apisix:
                                     # yaml: fetch the config value from local yaml file `/your_path/conf/apisix.yaml`
 
   #proxy_protocol:                  # Proxy Protocol configuration
-  #listen_http_port: 9181           # The port with proxy protocol for http, it differs from node_listen and port_admin.
-                                    # This port can only receive http request with proxy protocol, but node_listen & port_admin
+  #listen_http_port: 9181           # The port with proxy protocol for http, it differs from node_listen and admin_listen.
+                                    # This port can only receive http request with proxy protocol, but node_listen & admin_listen
                                     # can only receive http request. If you enable proxy protocol, you must use this port to
                                     # receive http request with proxy protocol
   #listen_https_port: 9182          # The port with proxy protocol for https
@@ -77,13 +77,14 @@ apisix:
   #admin_listen:                # use a separate port
   #  ip: 127.0.0.1              # Specific IP, if not set, the default value is `0.0.0.0`.
   #  port: 9180
-  #port_admin: 9180             # Not recommend: This parameter should be set via the `admin_listen`.
   #https_admin: true            # enable HTTPS when use a separate port for Admin API.
                                 # Admin API will use conf/apisix_admin_api.crt and conf/apisix_admin_api.key as certificate.
-  admin_api_mtls:               # Depends on `port_admin` and `https_admin`.
+  admin_api_mtls:               # Depends on `admin_listen` and `https_admin`.
     admin_ssl_cert: ""          # Path of your self-signed server side cert.
     admin_ssl_cert_key: ""      # Path of your self-signed server side key.
     admin_ssl_ca_cert: ""       # Path of your self-signed ca cert.The CA is used to sign all admin api callers' certificates.
+
+  admin_api_version: v3        # The version of admin api, latest version is v3.
 
   # Default token when use API to call for Admin API.
   # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
@@ -523,6 +524,20 @@ plugin_attr:
     export_addr:
       ip: 127.0.0.1
       port: 9091
+    #metrics:
+    #  http_status:
+    #    # extra labels from nginx variables
+    #    extra_labels:
+    #      # the label name doesn't need to be the same as variable name
+    #      # below labels are only examples, you could add any valid variables as you need
+    #      - upstream_addr: $upstream_addr
+    #      - upstream_status: $upstream_status
+    #  http_latency:
+    #    extra_labels:
+    #      - upstream_addr: $upstream_addr
+    #  bandwidth:
+    #    extra_labels:
+    #      - upstream_addr: $upstream_addr
   server-info:
     report_ttl: 60   # live time for server info in etcd (unit: second)
   dubbo-proxy:

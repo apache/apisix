@@ -47,7 +47,6 @@ local etcd_schema = {
         },
         prefix = {
             type = "string",
-            pattern = [[^/[^/]+$]]
         },
         host = {
             type = "array",
@@ -133,9 +132,6 @@ local config_schema = {
                             uniqueItems = true,
                         }
                     }
-                },
-                port_admin = {
-                    type = "integer",
                 },
                 https_admin = {
                     type = "boolean",

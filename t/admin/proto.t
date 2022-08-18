@@ -43,7 +43,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/proto/1',
+            local code, message = t('/apisix/admin/protos/1',
                  ngx.HTTP_PUT,
                  [[{
                         "content": "syntax = \"proto3\";
@@ -61,15 +61,10 @@ __DATA__
                             // Sends a greeting
                             rpc SayHi (HelloRequest) returns (HelloResponse){}
                         }"
-                }]],
-                [[
-                    {
-                        "action": "set"
-                    }
-                ]]
-                )
+                }]]
+            )
 
-            if code ~= 200 then
+            if code ~= 201 then
                 ngx.status = code
                 ngx.say("[put proto] code: ", code, " message: ", message)
                 return
@@ -79,7 +74,7 @@ __DATA__
         }
     }
 --- response_body
-[put proto] code: 200 message: passed
+[put proto] code: 201 message: passed
 
 
 
@@ -88,13 +83,9 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/proto/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+            local code, message = t('/apisix/admin/protos/1',
+                 ngx.HTTP_DELETE
+            )
 
             if code ~= 200 then
                 ngx.status = code
@@ -115,7 +106,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/proto/2',
+            local code, message = t('/apisix/admin/protos/2',
                  ngx.HTTP_PUT,
                  [[{
                     "content": "syntax = \"proto3\";
@@ -133,15 +124,10 @@ __DATA__
                         // Sends a greeting
                         rpc SayHi (HelloRequest) returns (HelloResponse){}
                     }"
-                }]],
-                [[
-                    {
-                        "action": "set"
-                    }
-                ]]
-                )
+                }]]
+            )
 
-            if code ~= 200 then
+            if code ~= 201 then
                 ngx.status = code
                 ngx.say("[put proto] code: ", code, " message: ", message)
                 return
@@ -155,7 +141,9 @@ __DATA__
                         "methods": ["GET"],
                         "plugins": {
                             "grpc-transcode": {
-                            "disable": false,
+                            "_meta": {
+                                "disable": false
+                            },
                             "method": "SayHi",
                             "proto_id": 2,
                             "service": "proto.Hello"
@@ -169,13 +157,10 @@ __DATA__
                         },
                         "uri": "/grpc/sayhi",
                         "name": "hi-grpc"
-                }]],
-                [[{
-                    "action": "set"
                 }]]
-                )
+            )
 
-            if code ~= 200 then
+            if code ~= 201 then
                 ngx.status = code
                 ngx.say("[route refer proto] code: ", code, " message: ", message)
                 return
@@ -184,20 +169,16 @@ __DATA__
 
             ngx.sleep(0.1) -- ensure reference is synced from etcd
 
-            code, message = t('/apisix/admin/proto/2',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+            code, message = t('/apisix/admin/protos/2',
+                 ngx.HTTP_DELETE
+            )
 
             ngx.say("[delete proto] code: ", code)
         }
     }
 --- response_body
-[put proto] code: 200 message: passed
-[route refer proto] code: 200 message: passed
+[put proto] code: 201 message: passed
+[route refer proto] code: 201 message: passed
 [delete proto] code: 400
 
 
@@ -207,7 +188,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/proto/1',
+            local code, message = t('/apisix/admin/protos/1',
                  ngx.HTTP_PUT,
                  [[{
                         "content": "syntax = \"proto3\";

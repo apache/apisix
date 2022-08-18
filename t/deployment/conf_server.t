@@ -14,16 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-use t::APISIX;
-
-my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
-my $version = eval { `$nginx_binary -V 2>&1` };
-
-if ($version =~ m/\/1.17.8/) {
-    plan(skip_all => "require OpenResty 1.19+");
-} else {
-    plan('no_plan');
-}
+use t::APISIX 'no_plan';
 
 add_block_preprocessor(sub {
     my ($block) = @_;
@@ -124,8 +115,6 @@ deployment:
             - http://[::1]:2379
 --- error_log
 dns resolve localhost, result:
---- no_error_log
-[error]
 --- response_body
 foo
 
@@ -236,8 +225,6 @@ OK
 --- error_log
 x.com is resolved to: 127.0.0.3
 x.com is resolved to: 127.0.0.2
---- no_error_log
-[error]
 
 
 

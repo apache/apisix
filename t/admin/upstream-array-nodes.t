@@ -54,8 +54,7 @@ __DATA__
                             "desc": "new upstream"
                         },
                         "key": "/apisix/upstreams/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -92,8 +91,7 @@ passed
                             "desc": "new upstream"
                         },
                         "key": "/apisix/upstreams/1"
-                    },
-                    "action": "get"
+                    }
                 }]]
                 )
 
@@ -116,12 +114,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -140,12 +134,8 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code = t('/apisix/admin/upstreams/not_found',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
 
             ngx.say("[delete] code: ", code)
         }
@@ -184,8 +174,7 @@ GET /t
                             }],
                             "type": "roundrobin"
                         }
-                    },
-                    "action": "create"
+                    }
                 }]]
                 )
 
@@ -199,12 +188,8 @@ GET /t
 
             local id = string.sub(res.node.key, #"/apisix/upstreams/" + 1)
             code, message = t('/apisix/admin/upstreams/' .. id,
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }

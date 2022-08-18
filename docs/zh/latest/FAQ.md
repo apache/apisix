@@ -368,7 +368,9 @@ make: *** [deps] Error 1
 
 ```yaml
 apisix:
-  port_admin: 9180 # use a separate port
+  admin_listen: # use a separate port
+    ip: 127.0.0.1
+    port: 9180
 ```
 
 2、添加 APISIX Dashboard 的代理路由：

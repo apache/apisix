@@ -56,7 +56,9 @@ __DATA__
                         "username": "test",
                         "plugins": {
                             "key-auth": {
-                                "disable": false,
+                                "_meta": {
+                                    "disable": false
+                                },
                                 "key": "test-key"
                             }
                         }
@@ -68,7 +70,9 @@ __DATA__
                         "name": "s1",
                         "plugins": {
                             "key-auth": {
-                                "disable": false
+                                "_meta": {
+                                    "disable": false
+                                }
                             }
                         }
                     }]],

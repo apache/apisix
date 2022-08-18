@@ -48,10 +48,6 @@ title: error-log-logger
 | clickhouse.password              | String  | 可选   |                                |                  |  clickhouse 的密码                                                          |
 | clickhouse.database              | String  | 可选   |                                |                  |  clickhouse 的用于接收 log 的数据库                                             |
 | clickhouse.logtable              | String  | 可选   |                                |                  |  clickhouse 的用于接收 log 的表                                             |
-| host                             | string  | 可选   |                                |                  | (`弃用`，替换成`tcp.host`) TCP 服务的 IP 地址或主机名                           |
-| port                             | integer | 可选   |                                | [0,...]          | (`弃用`，替换成`tcp.port`) 目标端口                                         |
-| tls                              | boolean | 可选   | false                          |                  | (`弃用`，替换成`tcp.tls`) 用于控制是否执行 SSL 验证                             |
-| tls_server_name                  | string  | 可选   |                                |                  | (`弃用`，替换成`tcp.tls_server_name`) TLS 服务名称标记                       |
 | timeout                          | integer | 可选   | 3                              | [1,...]          | 连接和发送数据超时间（以秒为单位）|
 | keepalive                        | integer | 可选   | 30                             | [1,...]          | 复用连接时，连接保持的时间（以秒为单位）|
 | level                            | string  | 可选   | WARN                           |                  | 进行错误日志筛选的级别，缺省 WARN，取值 ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"]，其中 ERR 与 ERROR 级别一致                                     |

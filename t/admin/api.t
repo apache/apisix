@@ -24,7 +24,7 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     if (!$block->request) {
-        $block->set_value("request", "GET /t");
+        $block->set_value("request", "GET /apisix/admin/routes");
     }
 
     if (!$block->no_error_log && !$block->error_log) {
@@ -37,19 +37,8 @@ run_tests;
 __DATA__
 
 === TEST 1: Server header for admin API
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require("resty.http")
-            local httpc = http.new()
-            uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
-                  .. ":" .. ngx.var.server_port .. "/apisix/admin/routes"
-            local res, err = httpc:request_uri(uri)
-            ngx.say(res.headers["Server"])
-        }
-    }
---- response_body eval
-qr/APISIX\//
+--- response_headers_like
+Server: APISIX/(.*)
 
 
 
@@ -58,16 +47,38 @@ qr/APISIX\//
 apisix:
   node_listen: 1984
   enable_server_tokens: false
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require("resty.http")
-            local httpc = http.new()
-            uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
-                  .. ":" .. ngx.var.server_port .. "/apisix/admin/routes"
-            local res, err = httpc:request_uri(uri)
-            ngx.say(res.headers["Server"])
-        }
-    }
---- response_body
-APISIX
+--- error_code: 401
+--- response_headers
+Server: APISIX
+
+
+
+=== TEST 3: Version header for admin API (without apikey)
+--- yaml_config
+apisix:
+  admin_api_version: default
+--- error_code: 401
+--- response_headers
+! X-API-VERSION
+
+
+
+=== TEST 4: Version header for admin API (v2)
+--- yaml_config
+apisix:
+  admin_api_version: v2 # default may change
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+--- response_headers
+X-API-VERSION: v2
+
+
+
+=== TEST 5: Version header for admin API (v3)
+--- yaml_config
+apisix:
+  admin_api_version: v3
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+--- response_headers
+X-API-VERSION: v3

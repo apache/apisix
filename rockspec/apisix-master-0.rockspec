@@ -34,7 +34,7 @@ dependencies = {
     "lua-resty-ctxdump = 0.1-0",
     "lua-resty-dns-client = 6.0.2",
     "lua-resty-template = 2.0",
-    "lua-resty-etcd = 1.8.2",
+    "lua-resty-etcd = 1.8.3",
     "api7-lua-resty-http = 0.2.0",
     "lua-resty-balancer = 0.04",
     "lua-resty-ngxvar = 0.5.2",
@@ -60,7 +60,7 @@ dependencies = {
     "binaryheap = 0.4",
     "api7-dkjson = 0.1.1",
     "resty-redis-cluster = 1.02-4",
-    "lua-resty-expr = 1.3.1",
+    "lua-resty-expr = 1.3.2",
     "graphql = 0.0.2",
     "argparse = 0.7.1-1",
     "luasocket = 3.0rc1-2",
@@ -77,7 +77,8 @@ dependencies = {
     "net-url = 0.9-1",
     "xml2lua = 1.5-2",
     "nanoid = 0.1-1",
-    "lua-resty-mediador = 0.1.2-1"
+    "lua-resty-mediador = 0.1.2-1",
+    "lua-resty-ldap = 0.1.0-0"
 }
 
 build = {

@@ -79,3 +79,32 @@ GET /test/hello?o=apache
 --- response_headers
 Location: http://test.com/hello?q=apisix&o=apache
 --- error_code: 302
+
+
+
+=== TEST 3: compatible with old version configuration
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "host": "foo.com",
+                    "plugins": {
+                        "redirect": {
+                            "http_to_https": true,
+                            "append_query_string": false
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed

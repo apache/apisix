@@ -76,6 +76,21 @@ local function custom_sort_plugin(l, r)
     return l._meta.priority > r._meta.priority
 end
 
+local function check_disable(plugin_conf)
+    if not plugin_conf then
+        return nil
+    end
+
+    if not plugin_conf._meta then
+       return nil
+    end
+
+    if type(plugin_conf._meta) ~= "table" then
+        return nil
+    end
+
+    return plugin_conf._meta.disable
+end
 
 local PLUGIN_TYPE_HTTP = 1
 local PLUGIN_TYPE_STREAM = 2
@@ -143,14 +158,6 @@ local function load_plugin(name, plugins_list, plugin_type)
     local plugin_injected_schema = core.schema.plugin_injected_schema
 
     if plugin.schema['$comment'] ~= plugin_injected_schema['$comment'] then
-        if properties.disable then
-            core.log.error("invalid plugin [", name,
-                           "]: found forbidden 'disable' field in the schema")
-            return
-        end
-
-        properties.disable = plugin_injected_schema.disable
-
         if properties._meta then
             core.log.error("invalid plugin [", name,
                            "]: found forbidden '_meta' field in the schema")
@@ -161,7 +168,6 @@ local function load_plugin(name, plugins_list, plugin_type)
         -- new injected fields should be added under `_meta`
         -- 1. so we won't break user's code when adding any new injected fields
         -- 2. the semantics is clear, especially in the doc and in the caller side
-        -- TODO: move the `disable` to `_meta` too
 
         plugin.schema['$comment'] = plugin_injected_schema['$comment']
     end
@@ -434,10 +440,12 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
         end
 
         local matched = meta_filter(ctx, name, plugin_conf)
-        if not plugin_conf.disable and matched then
+        local disable = check_disable(plugin_conf)
+        if not disable and matched then
             if plugin_obj.run_policy == "prefer_route" and route_plugin_conf ~= nil then
                 local plugin_conf_in_route = route_plugin_conf[name]
-                if plugin_conf_in_route and not plugin_conf_in_route.disable then
+                local disable_in_route = check_disable(plugin_conf_in_route)
+                if plugin_conf_in_route and not disable_in_route then
                     goto continue
                 end
             end
@@ -515,7 +523,8 @@ function _M.stream_filter(user_route, plugins)
         local name = plugin_obj.name
         local plugin_conf = user_plugin_conf[name]
 
-        if type(plugin_conf) == "table" and not plugin_conf.disable then
+        local disable = check_disable(plugin_conf)
+        if type(plugin_conf) == "table" and not disable then
             core.table.insert(plugins, plugin_obj)
             core.table.insert(plugins, plugin_conf)
         end
@@ -761,9 +770,6 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
     end
 
     if plugin_obj.check_schema then
-        local disable = plugin_conf.disable
-        plugin_conf.disable = nil
-
         local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
         if not ok then
             return false, "failed to check the configuration of plugin "
@@ -776,8 +782,6 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
                 return nil, "failed to validate the 'vars' expression: " .. err
             end
         end
-
-        plugin_conf.disable = disable
     end
 
     return true
@@ -825,16 +829,11 @@ local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plug
         end
 
         if plugin_obj.check_schema then
-            local disable = plugin_conf.disable
-            plugin_conf.disable = nil
-
             local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
             if not ok then
                 return false, "failed to check the configuration of "
                               .. "stream plugin [" .. name .. "]: " .. err
             end
-
-            plugin_conf.disable = disable
         end
 
         ::CONTINUE::

@@ -39,6 +39,8 @@ local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
 local service_fetch = require("apisix.http.service").get
 local latency_details = require("apisix.utils.log-util").latency_details_in_ms
 local xrpc = require("apisix.stream.xrpc")
+local unpack = unpack
+local next = next
 
 
 local ngx_capture
@@ -63,6 +65,31 @@ local function gen_arr(...)
     end
 
     return inner_tab_arr
+end
+
+local extra_labels_tbl = {}
+
+local function extra_labels(name, ctx)
+    clear_tab(extra_labels_tbl)
+
+    local attr = plugin.plugin_attr("prometheus")
+    local metrics = attr.metrics
+
+    if metrics and metrics[name] and metrics[name].extra_labels then
+        local labels = metrics[name].extra_labels
+        for _, kv in ipairs(labels) do
+            local val, v = next(kv)
+            if ctx then
+                val = ctx.var[v:sub(2)]
+                if val == nil then
+                    val = ""
+                end
+            end
+            core.table.insert(extra_labels_tbl, val)
+        end
+    end
+
+    return extra_labels_tbl
 end
 
 
@@ -138,15 +165,17 @@ function _M.http_init(prometheus_enabled_in_stream)
     -- no consumer in request.
     metrics.status = prometheus:counter("http_status",
             "HTTP status codes per service in APISIX",
-            {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node"})
+            {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node",
+            unpack(extra_labels("http_status"))})
 
     metrics.latency = prometheus:histogram("http_latency",
         "HTTP request latency in milliseconds per service in APISIX",
-        {"type", "route", "service", "consumer", "node"}, DEFAULT_BUCKETS)
+        {"type", "route", "service", "consumer", "node", unpack(extra_labels("http_latency"))},
+        DEFAULT_BUCKETS)
 
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
-            {"type", "route", "service", "consumer", "node"})
+            {"type", "route", "service", "consumer", "node", unpack(extra_labels("bandwidth"))})
 
     if prometheus_enabled_in_stream then
         init_stream_metrics()
@@ -208,25 +237,35 @@ function _M.http_log(conf, ctx)
 
     metrics.status:inc(1,
         gen_arr(vars.status, route_id, matched_uri, matched_host,
-                service_id, consumer_name, balancer_ip))
+                service_id, consumer_name, balancer_ip,
+                unpack(extra_labels("http_status", ctx))))
 
     local latency, upstream_latency, apisix_latency = latency_details(ctx)
+    local latency_extra_label_values = extra_labels("http_latency", ctx)
+
     metrics.latency:observe(latency,
-        gen_arr("request", route_id, service_id, consumer_name, balancer_ip))
+        gen_arr("request", route_id, service_id, consumer_name, balancer_ip,
+        unpack(latency_extra_label_values)))
 
     if upstream_latency then
         metrics.latency:observe(upstream_latency,
-            gen_arr("upstream", route_id, service_id, consumer_name, balancer_ip))
+            gen_arr("upstream", route_id, service_id, consumer_name, balancer_ip,
+            unpack(latency_extra_label_values)))
     end
 
     metrics.latency:observe(apisix_latency,
-        gen_arr("apisix", route_id, service_id, consumer_name, balancer_ip))
+        gen_arr("apisix", route_id, service_id, consumer_name, balancer_ip,
+        unpack(latency_extra_label_values)))
+
+    local bandwidth_extra_label_values = extra_labels("bandwidth", ctx)
 
     metrics.bandwidth:inc(vars.request_length,
-        gen_arr("ingress", route_id, service_id, consumer_name, balancer_ip))
+        gen_arr("ingress", route_id, service_id, consumer_name, balancer_ip,
+        unpack(bandwidth_extra_label_values)))
 
     metrics.bandwidth:inc(vars.bytes_sent,
-        gen_arr("egress", route_id, service_id, consumer_name, balancer_ip))
+        gen_arr("egress", route_id, service_id, consumer_name, balancer_ip,
+        unpack(bandwidth_extra_label_values)))
 end
 
 

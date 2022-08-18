@@ -20,6 +20,7 @@
 -- @module core.config_xds
 
 local config_local      = require("apisix.core.config_local")
+local config_util       = require("apisix.core.config_util")
 local string            = require("apisix.core.string")
 local log               = require("apisix.core.log")
 local json              = require("apisix.core.json")
@@ -151,12 +152,7 @@ local function sync_data(self)
 
     if self.values then
         for _, val in ipairs(self.values) do
-            if val and val.clean_handlers then
-                for _, clean_handler in ipairs(val.clean_handlers) do
-                    clean_handler(val)
-                end
-                val.clean_handlers = nil
-            end
+            config_util.fire_all_clean_handlers(val)
         end
         self.values = nil
         self.values_hash = nil

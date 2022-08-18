@@ -78,7 +78,8 @@ echo '
 apisix:
     node_listen: 9080
     enable_admin: true
-    port_admin: 9180
+    admin_listen:
+        port: 9180
     stream_proxy:
         tcp:
             - "localhost:9100"
@@ -211,19 +212,6 @@ etcd:
 
 out=$(make init 2>&1 || true)
 if ! echo "$out" | grep 'property "host" validation failed'; then
-    echo "failed: should check etcd schema during init"
-    exit 1
-fi
-
-echo '
-etcd:
-    prefix: "/apisix/"
-    host:
-        - https://127.0.0.1
-' > conf/config.yaml
-
-out=$(make init 2>&1 || true)
-if ! echo "$out" | grep 'property "prefix" validation failed'; then
     echo "failed: should check etcd schema during init"
     exit 1
 fi
