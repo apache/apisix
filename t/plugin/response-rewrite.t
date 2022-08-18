@@ -701,6 +701,7 @@ X-B: from 127.0.0.1 to 127.0.0.1:1980
 [error]
 
 
+
 === TEST 25: set an nil body with setting body_base64 to false
 --- config
     location /t {
