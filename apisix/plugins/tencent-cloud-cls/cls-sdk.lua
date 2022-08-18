@@ -147,7 +147,7 @@ local mt = { __index = _M }
 
 local pb_state
 local function init_pb_state()
-    pb.state(nil)
+    local old_pb_state = pb.state(nil)
     protoc.reload()
     local cls_sdk_protoc = protoc.new()
     -- proto file in https://www.tencentcloud.com/document/product/614/42787
@@ -187,9 +187,10 @@ message LogGroupList
         ]], "tencent-cloud-cls/cls.proto")
     if not ok then
         cls_sdk_protoc:reset()
+        pb.state(old_pb_state)
         return "failed to load cls.proto: ".. err
     end
-    pb_state = pb.state(nil)
+    pb_state = pb.state(old_pb_state)
 end
 
 
@@ -210,7 +211,19 @@ function _M.new(host, topic, secret_id, secret_key)
 end
 
 
+local function do_request_uri(uri, params)
+    local client = http:new()
+    client:set_timeouts(cls_conn_timeout, cls_send_timeout, cls_read_timeout)
+    local res, err = client:request_uri(uri, params)
+    client:close()
+    return res, err
+end
+
+
 function _M.send_cls_request(self, pb_obj)
+    -- recovery of stored pb_store
+    pb.state(pb_state)
+
     local ok, pb_data = pcall(pb.encode, "cls.LogGroupList", pb_obj)
     if not ok or not pb_data then
         core.log.error("failed to encode LogGroupList, err: ", pb_data)
@@ -232,7 +245,7 @@ function _M.send_cls_request(self, pb_obj)
     local cls_url = "http://" .. self.host .. cls_api_path .. "?topic_id=" .. self.topic
     core.log.debug("CLS request URL: ", cls_url)
 
-    local res, err = client:request_uri(cls_url, params_cache)
+    local res, err = do_request_uri(cls_url, params_cache)
     if not res then
         return false, err
     end
@@ -257,9 +270,6 @@ end
 function _M.send_to_cls(self, logs)
     clear_tab(log_group_list)
     local now = ngx_now() * 1000
-
-    -- recovery of stored pb_store
-    pb.state(pb_state)
 
     local total_size = 0
     local format_logs = new_tab(#logs, 0)

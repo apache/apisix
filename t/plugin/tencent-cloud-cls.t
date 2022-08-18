@@ -271,20 +271,39 @@ Batch Processor[tencent-cloud-cls] successfully processed the entries
 --- wait: 0.5
 
 
-=== TEST 7: verify request
---- extra_init_by_lua
-    local cls = require("apisix.plugins.tencent-cloud-cls.cls-sdk")
-    cls.send_to_cls = function(self, logs)
-        if (#logs ~= 1) then
-            ngx.log(ngx.ERR, "unexpected logs length: ", #logs)
-            return
-        end
-        return true
-    end
+=== TEST 9: plugin metadata
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.tencent-cloud-cls")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/tencent-cloud-cls',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "log_format": {
+                            "host": "$host",
+                            "@timestamp": "$time_iso8601",
+                            "client_ip": "$remote_addr"
+                        }
+                }]]
+                )
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 10: log use log_format
 --- request
 GET /opentracing
 --- response_body
 opentracing
 --- error_log
-Batch Processor[tencent-cloud-cls] successfully processed the entries
+"@timestamp":[true,"time_iso8601"]
 --- wait: 0.5
