@@ -57,6 +57,9 @@ The `timeout` attribute sets the time taken by the OpenFunction to execute, and 
 Before configuring the plugin, you need to have OpenFunction running.
 Installation of OpenFunction requires a certain version Kubernetes cluster.
 For details, please refer to [Installation](https://openfunction.dev/docs/getting-started/installation/).
+
+### Install OpenFunction via Helm Chart
+
 The example below shows OpenFunction installed in Helm:
 
 ```shell
@@ -74,6 +77,8 @@ You can then verify if OpenFunction is ready:
 ```shell
 kubectl get pods --namespace openfunction
 ```
+
+### Create and push a function
 
 You can then create a function follow the [sample](https://github.com/OpenFunction/samples)
 

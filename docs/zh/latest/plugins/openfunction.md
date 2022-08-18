@@ -56,9 +56,11 @@ description: 本文介绍了关于 CNCF OpenFunction 插件的基本信息及使
 
 ## 先决条件
 
-1. 在使用 `openfunction` 插件之前，你需要通过以下命令运行 OpenFunction 。
+在使用 `openfunction` 插件之前，你需要通过以下命令运行 OpenFunction 。
 详情参考[官方安装指南](https://openfunction.dev/docs/getting-started/installation/) 。
 请确保当前环境中已经安装对应版本的 Kubernetes 集群。
+
+### 通过 Helm Chart 安装 OpenFunction
 
 ```shell
 #add the OpenFunction chart repository
@@ -70,13 +72,15 @@ kubectl create namespace openfunction
 helm install openfunction openfunction/openfunction -n openfunction
 ```
 
-2. 你可以通过以下命令来验证 openfunction 是否已经安装成功：
+你可以通过以下命令来验证 openfunction 是否已经安装成功：
 
 ```shell
 kubectl get pods --namespace openfunction
 ```
 
-3. 你可以通过官方示例创建函数 [sample](https://github.com/OpenFunction/samples)
+### 创建并推送 function
+
+你可以通过官方示例创建函数 [sample](https://github.com/OpenFunction/samples) 。
 构建函数时，需要将函数容器镜像推送到容器仓库，如 Docker Hub 或 Quay.io。要做到这一点，首先需要输入如下命令为容器仓库生成一个密钥。
 
 ```shell
