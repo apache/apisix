@@ -141,7 +141,9 @@ __DATA__
                         "methods": ["GET"],
                         "plugins": {
                             "grpc-transcode": {
-                            "disable": false,
+                            "_meta": {
+                                "disable": false
+                            },
                             "method": "SayHi",
                             "proto_id": 2,
                             "service": "proto.Hello"
