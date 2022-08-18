@@ -135,8 +135,6 @@ apisix:
     listen:                       # APISIX listening port in https.
       - port: 9443
         enable_http2: true
-    #   - port: 9444
-    #     enable_http2: true      # If not set, the default value is `false`.
     #   - ip: 127.0.0.3           # Specific IP, If not set, the default value is `0.0.0.0`.
     #     port: 9445
     #     enable_http2: true
