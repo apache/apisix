@@ -46,6 +46,7 @@ local function init_pb_state()
     local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
     if not ok then
         pubsub_protoc:reset()
+        pb.state(old_pb_state)
         return "failed to load pubsub protocol: " .. err
     end
 
