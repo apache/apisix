@@ -203,6 +203,10 @@
         },
         {
           "type": "doc",
+          "id": "plugin-develop"
+        },
+        {
+          "type": "doc",
           "id": "debug-mode"
         }
       ]

@@ -1,5 +1,6 @@
 ---
-title: Plugin Develop
+title: Plugin Development
+description: Cloud Native API Gateway Apache APISIX supports using Lua, Rust, WASM, Golang, Python, JavaScript to develop custom plugins.
 ---
 
 <!--
@@ -21,169 +22,208 @@ title: Plugin Develop
 #
 -->
 
-This documentation is about developing plugin in Lua. For other languages,
-see [external plugin](./external-plugin.md).
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
-## where to put your plugins
+Apache APISIX supports using Lua or [other languages](https://apisix.apache.org/docs/apisix/external-plugin/) to develop custom plugins, and we can find all built-in plugins [here](https://github.com/apache/apisix/tree/master/apisix/plugins).
 
-There are two ways to add new features based on APISIX.
+![External Plugin](https://raw.githubusercontent.com/apache/apisix/release/2.15/docs/assets/images/external-plugin.png)
 
-1. modify the source of APISIX and redistribute it (not so recommended)
-1. setup the `extra_lua_path` and `extra_lua_cpath` in `conf/config.yaml` to load your own code. Your own code will be loaded instead of the builtin one with the same name, so you can use this way to override the builtin behavior if needed.
+Let's use the [example-plugin](https://github.com/apache/apisix/blob/master/apisix/plugins/example-plugin.lua) plugin to explain how to develop the custom plugin.
 
-For example, you can create a directory structure like this:
+## Prerequisite
 
+### Dependencies
+
+Before developing a custom plugin, please check if the custom logic has dependencies.
+
+For example, the [openid-connect](https://github.com/apache/apisix/blob/master/apisix/plugins/openid-connect.lua) plugin needs `Nginx shared memory` functionality, we have to inject Nginx snippet like the following to make it work as expected:
+
+```yaml title="conf/config.yaml"
+nginx_config:
+  http_configuration_snippet: |
+    lua_shared_dict discovery             1m; # cache for discovery metadata documents
+    lua_shared_dict jwks                  1m; # cache for JWKs
+    lua_shared_dict introspection        10m; # cache for JWT verification results
 ```
-├── example
-│   └── apisix
-│       ├── plugins
-│       │   └── 3rd-party.lua
-│       └── stream
-│           └── plugins
-│               └── 3rd-party.lua
-```
 
-:::note
+### Lua Language
 
-If you need to customize the directory of plugin, please create a subdirectory of `/apisix/plugins` under this directory.
+:::tip
+
+Read [Why Apache APISIX chooses Nginx and Lua to build API Gateway](https://apisix.apache.org/blog/2021/08/25/why-apache-apisix-chose-nginx-and-lua/) to know why.
 
 :::
 
-Then add this configuration into your `conf/config.yaml`:
+APISIX uses the [Lua](http://www.lua.org/docs.html) language to implement [built-in plugins](https://github.com/apache/apisix/tree/master/apisix/plugins), but we can also rely on [Plugin Runner](https://apisix.apache.org/docs/apisix/external-plugin) to use [WASM](https://apisix.apache.org/docs/apisix/wasm/), Rust, [Golang](https://apisix.apache.org/docs/go-plugin-runner/getting-started/), [Java](https://apisix.apache.org/docs/java-plugin-runner/development/), [Python](https://apisix.apache.org/docs/python-plugin-runner/getting-started/), and [Node.js](https://github.com/zenozeng/apisix-javascript-plugin-runner) to implement plugins.
 
-```yaml
-apisix:
-    ...
-    extra_lua_path: "/path/to/example/?.lua"
-```
+## Structure
 
-Now using `require "apisix.plugins.3rd-party"` will load your plugin, just like `require "apisix.plugins.jwt-auth"` will load the `jwt-auth` plugin.
+In APISIX, we use a standalone `.lua` file to contain all custom logics usually.
 
-Sometimes you may want to override a method instead of a whole file. In this case, you can configure `lua_module_hook` in `conf/config.yaml`
-to introduce your hook.
+```lua title="apisix/plugins/example-plugin.lua"
+local schema = {}
 
-Assumed your configuration is:
+local metadata_schema = {}
 
-```yaml
-apisix:
-    ...
-    extra_lua_path: "/path/to/example/?.lua"
-    lua_module_hook: "my_hook"
-```
-
-The `example/my_hook.lua` will be loaded when APISIX starts, and you can use this hook to replace a method in APISIX.
-The example of [my_hook.lua](https://github.com/apache/apisix/blob/master/example/my_hook.lua) can be found under the `example` directory of this project.
-
-## check dependencies
-
-if you have dependencies on external libraries, check the dependent items. if your plugin needs to use shared memory, it
-needs to declare via [customizing Nginx configuration](./customize-nginx-configuration.md), for example :
-
-```yaml
-# put this in config.yaml:
-nginx_config:
-    http_configuration_snippet: |
-        # for openid-connect plugin
-        lua_shared_dict discovery             1m; # cache for discovery metadata documents
-        lua_shared_dict jwks                  1m; # cache for JWKs
-        lua_shared_dict introspection        10m; # cache for JWT verification results
-```
-
-The plugin itself provides the init method. It is convenient for plugins to perform some initialization after
-the plugin is loaded.
-
-Note : if the dependency of some plugin needs to be initialized when Nginx start, you may need to add logic to the initialization
-method "http_init" in the file __apisix/init.lua__, and you may need to add some processing on generated part of Nginx
-configuration file in __apisix/cli/ngx_tpl.lua__ file. But it is easy to have an impact on the overall situation according to the
-existing plugin mechanism, **we do not recommend this unless you have a complete grasp of the code**.
-
-## name, priority and the others
-
-Determine the name and priority of the plugin, and add to conf/config.yaml. For example, for the example-plugin plugin,
-you need to specify the plugin name in the code (the name is the unique identifier of the plugin and cannot be
-duplicate), you can see the code in file "__apisix/plugins/example-plugin.lua__" :
-
-```lua
 local plugin_name = "example-plugin"
 
 local _M = {
-    version = 0.1,
-    priority = 0,
-    name = plugin_name,
-    schema = schema,
-    metadata_schema = metadata_schema,
+  version = 0.1,
+  priority = 0,
+  name = plugin_name,
+  schema = schema,
+  metadata_schema = metadata_schema,
+}
+
+
+function _M.check_schema(conf, schema_type)
+  ...
+end
+
+
+function _M.init()
+  ...
+end
+
+
+function _M.destroy()
+  ...
+end
+
+
+function _M.rewrite(conf, ctx)
+  ...
+end
+
+
+function _M.access(conf, ctx)
+  ...
+end
+
+
+function _M.body_filter(conf, ctx)
+  ...
+end
+
+
+function _M.delayed_body_filter(conf, ctx)
+  ...
+end
+
+
+function _M.control_api()
+  ...
+end
+
+
+return _M
+```
+
+## Attributes
+
+### Basic
+
+#### `_M.name` {#attribute-name}
+
+The custom plugin's name, all plugins should **pick a unique name**.
+
+#### `_M.version` {#attribute-version}
+
+The custom plugin's version, APISIX's built-in plugins use `0.1` as version currently.
+
+#### `_M.priority` {#attribute-priority}
+
+Each plugin should pick a unique priority, please check the `conf/config-default.yaml` file to get all plugins' priority.
+
+:::tip
+
+As shown in the example above, the plugin can perform different actions at different execution phases. When different plugins perform actions in the same phase, the plugin with higher priority will be executed first.
+
+:::
+
+When setting the priority, in order to avoid unexpected cases caused by prioritizing the execution of built-in plugins, it is recommended to set the priority range from `1 to 99`.
+
+#### `_M.type` (optional) {#attribute-type}
+
+:::tip
+
+<!-- TODO: depends on what? -->
+
+1. Not all Authentication plugins must have the `_M.type = "auth"` attribute, e.g., [authz-keycloak](https://github.com/apache/apisix/blob/master/apisix/plugins/authz-keycloak.lua).
+2. Don't forget to work with the [\_M.consumer_schema](#consumer_schema) attribute.
+
+:::
+
+Please check the built-in `Authentication` plugins for reference, e.g., [basic-auth](https://github.com/apache/apisix/blob/master/apisix/plugins/basic-auth.lua#L56), [key-auth](https://github.com/apache/apisix/blob/master/apisix/plugins/key-auth.lua#L57), [jwt-auth](https://github.com/apache/apisix/blob/master/apisix/plugins/jwt-auth.lua#L125).
+
+#### `_M.run_policy` (optional) {#attribute-run_policy}
+
+If set `_M.run_policy = "prefer_route"`, then when we enable the same plugin both at the [Global](https://apisix.apache.org/docs/apisix/admin-api/#global-rule) level and the `Route` level, only the `Route` level will work.
+
+#### `_M.init()` (optional) {#attribute-init}
+
+The `_M.init()` function executes after the plugin is loaded.
+
+#### `_M.destroy()` (optional) {#attribute-destroy}
+
+The `_M.destroy()` function executes after the plugin is unloaded.
+
+### Schema
+
+APISIX uses the [jsonschema](https://github.com/api7/jsonschema) project to validate JSON documents (e.g., Route Rule Configuration).
+
+We will continue using the [example-plugin](https://github.com/apache/apisix/blob/master/apisix/plugins/example-plugin.lua) plugin to explain this section.
+
+#### `_M.schema` {#attribute-schema}
+
+The [JSONSchema](https://github.com/api7/jsonschema) rules saved by the `_M.schema` attribute will be used to verify whether the plugin configuration meets the requirements or not.
+
+:::tip
+
+Not each plugin needs a schema to validate the configuration, it depends on the business requirements.
+
+```lua title="Example Schema"
+local schema = {}
+```
+
+For this kind of plugin, we only need to set empty object in the plugin configuration.
+
+```json title="Example Configuration"
+{
+  "example-plugin": {}
 }
 ```
 
-Note: The priority of the new plugin cannot be same to any existing ones, you can use the `/v1/schema` method of [control API](./control-api.md#get-v1schema) to view the priority of all plugins. In addition, plugins with higher priority value will be executed first in a given phase (see the definition of `phase` in [choose-phase-to-run](#choose-phase-to-run)). For example, the priority of example-plugin is 0 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the example-plugin plugin. It's recommended to use priority 1 ~ 99 for your plugin unless you want it to run before some builtin plugins.
+:::
 
-In the "__conf/config-default.yaml__" configuration file, the enabled plugins (all specified by plugin name) are listed.
-
-```yaml
-plugins:                          # plugin list
-  - limit-req
-  - limit-count
-  - limit-conn
-  - key-auth
-  - prometheus
-  - node-status
-  - jwt-auth
-  - zipkin
-  - ip-restriction
-  - grpc-transcode
-  - serverless-pre-function
-  - serverless-post-function
-  - openid-connect
-  - proxy-rewrite
-  - redirect
-  ...
-```
-
-Note: the order of the plugins is not related to the order of execution.
-
-To enable your plugin, copy this plugin list into `conf/config.yaml`, and add your plugin name. For instance:
-
-```yaml
-apisix:
-  admin_key:
-    - name: "admin"
-      key: edd1c9f034335f136f87ad84b625c8f1 # using fixed API token has security risk, please update it when you deploy to production environment
-      role: admin
-
-plugins: # copied from config-default.yaml
-  ...
-  - your-plugin
-```
-
-If your plugin has a new code directory of its own, and you need to redistribute it with the APISIX source code, you will need to modify the `Makefile` to create directory, such as:
-
-```
-$(INSTALL) -d $(INST_LUADIR)/apisix/plugins/skywalking
-$(INSTALL) apisix/plugins/skywalking/*.lua $(INST_LUADIR)/apisix/plugins/skywalking/
-```
-
-There are other fields in the `_M` which affect the plugin's behavior.
-
-```lua
-local _M = {
-    ...
-    type = 'auth',
-    run_policy = 'prefer_route',
+```lua title="apisix/plugins/example-plugin.lua"
+local schema = {
+  type = "object",
+  properties = {
+    i = {type = "number", minimum = 0},
+    s = {type = "string"},
+    t = {type = "array", minItems = 1},
+    ip = {type = "string"},
+    port = {type = "integer"},
+  },
+  required = {"i"},
 }
 ```
 
-`run_policy` field can be used to control the behavior of the plugin execution.
-When this field set to `prefer_route`, and the plugin has been configured both
-in the global and at the route level, only the route level one will take effect.
+The `schema.properties` attribute shows that this plugin has 5 properties:
 
-`type` field is required to be set to `auth` if your plugin needs to work with consumer. See the section below.
+1. `i`: This property is a **Number**, and its minimum is **0**.
+2. `s`: This property is a **String**.
+3. `t`: This property is an **Array**, and it must contain at least **1** iterm.
+4. `ip`: This property is a **String**.
+5. `port`: This property is an **Integer**.
 
-## schema and check
+The `schema.required` attribute shows that this plugin must contain the **i** property in the configuration data.
 
-Write [JSON Schema](https://json-schema.org) descriptions and check functions. Similarly, take the example-plugin plugin as an example to see its
-configuration data:
+Here are 2 valid configuration examples:
 
-```json
+```json title="Example 1"
 {
   "example-plugin": {
     "i": 1,
@@ -193,113 +233,107 @@ configuration data:
 }
 ```
 
-Let's look at its schema description :
-
-```lua
-local schema = {
-    type = "object",
-    properties = {
-        i = {type = "number", minimum = 0},
-        s = {type = "string"},
-        t = {type = "array", minItems = 1},
-        ip = {type = "string"},
-        port = {type = "integer"},
-    },
-    required = {"i"},
-}
-```
-
-The schema defines a non-negative number `i`, a string `s`, a non-empty array of `t`, and `ip` / `port`. Only `i` is required.
-
-At the same time, we need to implement the __check_schema(conf)__ method to complete the specification verification.
-
-```lua
-function _M.check_schema(conf, schema_type)
-    return core.schema.check(schema, conf)
-end
-```
-
-Note: the project has provided the public method "__core.schema.check__", which can be used directly to complete JSON
-verification.
-
-In addition, if the plugin needs to use some metadata, we can define the plugin `metadata_schema`, and then we can dynamically manage these metadata through the `admin api`. Example:
-
-```lua
-local metadata_schema = {
-    type = "object",
-    properties = {
-        ikey = {type = "number", minimum = 0},
-        skey = {type = "string"},
-    },
-    required = {"ikey", "skey"},
-}
-
-local plugin_name = "example-plugin"
-
-local _M = {
-    version = 0.1,
-    priority = 0,        -- TODO: add a type field, may be a good idea
-    name = plugin_name,
-    schema = schema,
-    metadata_schema = metadata_schema,
-}
-```
-
-You might have noticed the key-auth plugin has `type = 'auth'` in its definition.
-When we set the type of plugin to `auth`, it means that this plugin is an authentication plugin.
-
-An authentication plugin needs to choose a consumer after execution. For example, in key-auth plugin, it calls the `consumer.attach_consumer` to attach a consumer, which is chosen via the `apikey` header.
-
-To interact with the `consumer` resource, this type of plugin needs to provide a `consumer_schema` to check the `plugins` configuration in the `consumer`.
-
-Here is the consumer configuration for key-auth plugin:
-
-```json
+```json title="Example 2"
 {
-  "username": "Joe",
-  "plugins": {
-    "key-auth": {
-      "key": "Joe's key"
-    }
+  "example-plugin": {
+    "i": 1
   }
 }
 ```
 
-It will be used when you try to create a [Consumer](https://github.com/apache/apisix/blob/master/docs/en/latest/admin-api.md#consumer)
+#### `_M.metadata_schema` {#metadata_schema}
 
-To validate the configuration, the plugin uses a schema like this:
+Apache APISIX provides the Plugin Metadata mechanism to store global configuration of plugins, e.g., sensitive key/secret, shared configuration. We could use the [Plugin Metadata API](https://apisix.apache.org/docs/apisix/admin-api/#plugin-metadata) to operate it dynamically.
 
-```lua
-local consumer_schema = {
-    type = "object",
-    properties = {
-        key = {type = "string"},
-    },
-    required = {"key"},
+The `_M.metadata_schema` attribute is similar with the `_M.schema` attribute, we could set schema rules to validate the [Plugin Metadata API](https://apisix.apache.org/docs/apisix/admin-api/#plugin-metadata)'s request body.
+
+```lua title="apisix/plugins/example-plugin.lua"
+local metadata_schema = {
+  type = "object",
+  properties = {
+    ikey = {type = "number", minimum = 0},
+    skey = {type = "string"},
+  },
+  required = {"ikey", "skey"},
 }
 ```
 
-Note the difference between key-auth's __check_schema(conf)__ method to example-plugin's:
+#### `_M.consumer_schema` {#consumer_schema}
 
-```lua
--- key-auth
+Apache APISIX provides the [Consumer](https://apisix.apache.org/docs/apisix/terminology/consumer/) entity to bind with a human, a 3rd party service or a client, because they consume services managed by APISIX.
+
+Usually, we will use the `_M.consumer_schema` field in **Authentication** plugins, e.g., [basic-auth](https://github.com/apache/apisix/blob/master/apisix/plugins/basic-auth.lua), [jwt-auth](https://github.com/apache/apisix/blob/master/apisix/plugins/jwt-auth.lua), [key-auth](https://github.com/apache/apisix/blob/master/apisix/plugins/key-auth.lua).
+
+:::tip
+
+Don't forget to work with the [\_M.type](#attribute-type) attribute.
+
+:::
+
+```lua title="apisix/plugins/basic-auth.lua"
+local consumer_schema = {
+  type = "object",
+  title = "work with consumer object",
+  properties = {
+    username = { type = "string" },
+    password = { type = "string" },
+  },
+  required = {"username", "password"},
+}
+```
+
+```json title="Create a Consumer with the basic-auth plugin"
+curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+  "username": "foo",
+  "plugins": {
+    "basic-auth": {
+      "username": "foo",
+      "password": "bar"
+    }
+  }
+}'
+```
+
+#### `_M.check_schema()` {#check_schema}
+
+After setting the [\_M.schema](#attribute-schema) attribute, the [\_M.metadata_schema](#metadata_schema) attribute (optional), and the [\_M.consumer_schema](#consumer_schema) attribute (optional), we need to use the `_M.check_schema` function to validate configurations.
+
+:::tip
+
+We could visit [all built-in plugins](https://github.com/apache/apisix/blob/master/apisix/plugins) for reference.
+
+:::
+
+Apache APISIX provides a public validate function [core.schema.check](https://github.com/apache/apisix/blob/master/apisix/core/schema.lua#L59), usually the `_M.check_schema` function has three kinds of implementations:
+
+```lua title="Example: Normal Plugin"
 function _M.check_schema(conf, schema_type)
-    if schema_type == core.schema.TYPE_CONSUMER then
-        return core.schema.check(consumer_schema, conf)
-    else
-        return core.schema.check(schema, conf)
-    end
+  return core.schema.check(schema, conf)
 end
 ```
 
-```lua
--- example-plugin
+```lua title="Example: Metadata Plugin"
 function _M.check_schema(conf, schema_type)
-    return core.schema.check(schema, conf)
+  if schema_type == core.schema.TYPE_METADATA then
+    return core.schema.check(metadata_schema, conf)
+  end
+  return core.schema.check(schema, conf)
 end
 ```
 
-## choose phase to run
+```lua title="Example: Authentication plugin"
+function _M.check_schema(conf, schema_type)
+  if schema_type == core.schema.TYPE_CONSUMER then
+    return core.schema.check(consumer_schema, conf)
+  end
+  return core.schema.check(schema, conf)
+end
+```
+
+### Execution Phases
+
+![OpenResty-Execution-Phases](https://moonbingbing.gitbooks.io/openresty-best-practices/content/images/openresty_phases.png)
 
 Determine which phase to run, generally access or rewrite. If you don't know the [OpenResty lifecycle](https://github.com/openresty/lua-nginx-module/blob/master/README.markdown#directives), it's
 recommended to know it in advance. For example key-auth is an authentication plugin, thus the authentication should be completed
@@ -314,13 +348,27 @@ function _M.log(conf, ctx)
 end
 ```
 
-**Note : we can't invoke `ngx.exit`, `ngx.redirect` or `core.respond.exit` in rewrite phase and access phase. if need to exit, just return the status and body, the plugin engine will make the exit happen with the returned status and body. [example](https://github.com/apache/apisix/blob/35269581e21473e1a27b11cceca6f773cad0192a/apisix/plugins/limit-count.lua#L177)**
+:::note
+We can't invoke `ngx.exit`, `ngx.redirect` or `core.respond.exit` in rewrite phase and access phase. if need to exit, just return the status and body, the plugin engine will make the exit happen with the returned status and body. [example](https://github.com/apache/apisix/blob/35269581e21473e1a27b11cceca6f773cad0192a/apisix/plugins/limit-count.lua#L177)
+:::
 
-### extra phase
+#### `_M.rewrite`
+
+TBD
+
+#### `_M.access`
+
+TBD
+
+#### `_M.body_filter`
+
+TBD
+
+#### `_M.delayed_body_filter`
 
 Besides OpenResty's phases, we also provide extra phases to satisfy specific purpose:
 
-* `delayed_body_filter`
+- `delayed_body_filter`
 
 ```lua
 function _M.delayed_body_filter(conf, ctx)
@@ -329,69 +377,11 @@ function _M.delayed_body_filter(conf, ctx)
 end
 ```
 
-## implement the logic
+## Logics
 
-Write the logic of the plugin in the corresponding phase. There are two parameters `conf` and `ctx` in the phase method, take the `limit-conn` plugin configuration as an example.
+TBD
 
-```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "id": 1,
-    "plugins": {
-        "limit-conn": {
-            "conn": 1,
-            "burst": 0,
-            "default_conn_delay": 0.1,
-            "rejected_code": 503,
-            "key": "remote_addr"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
-
-### conf parameter
-
-The `conf` parameter is the relevant configuration information of the plugin, you can use `core.log.warn(core.json.encode(conf))` to output it to `error.log` for viewing, as shown below:
-
-```lua
-function _M.access(conf, ctx)
-    core.log.warn(core.json.encode(conf))
-    ......
-end
-```
-
-conf:
-
-```json
-{
-  "rejected_code": 503,
-  "burst": 0,
-  "default_conn_delay": 0.1,
-  "conn": 1,
-  "key": "remote_addr"
-}
-```
-
-### ctx parameter
-
-The `ctx` parameter caches data information related to the request. You can use `core.log.warn(core.json.encode(ctx, true))` to output it to `error.log` for viewing, as shown below :
-
-```lua
-function _M.access(conf, ctx)
-    core.log.warn(core.json.encode(ctx, true))
-    ......
-end
-```
-
-## register public API
+### Public API
 
 A plugin can register API which exposes to the public. Take jwt-auth plugin as an example, this plugin registers `GET /apisix/plugin/jwt/sign` to allow client to sign its key:
 
@@ -413,7 +403,7 @@ end
 
 Note that the public API will not be exposed by default, you will need to use the [public-api plugin](plugins/public-api.md) to expose it.
 
-## register control API
+### Control API
 
 If you only want to expose the API to the localhost or intranet, you can expose it via [Control API](./control-api.md).
 
@@ -449,13 +439,13 @@ curl -i -X GET "http://127.0.0.1:9090/v1/plugin/example-plugin/hello"
 
 [Read more about control API introduction](./control-api.md)
 
-## register custom variable
+### Custom variable
 
 We can use variables in many places of APISIX. For example, customizing log format in http-logger, using it as the key of `limit-*` plugins. In some situations, the builtin variables are not enough. Therefore, APISIX allows developers to register their variables globally, and use them as normal builtin variables.
 
 For instance, let's register a variable called `a6_labels_zone` to fetch the value of the `zone` label in a route:
 
-```
+```lua
 local core = require "apisix.core"
 
 core.ctx.register_var("a6_labels_zone", function(ctx)
@@ -471,56 +461,82 @@ After that, any get operation to `$a6_labels_zone` will call the registered gett
 
 Note that the custom variables can't be used in features that depend on the Nginx directive, like `access_log_format`.
 
-## write test case
+## Testcases
 
-For functions, write and improve the test cases of various dimensions, do a comprehensive test for your plugin! The
-test cases of plugins are all in the "__t/plugin__" directory. You can go ahead to find out. APISIX uses
-[****test-nginx****](https://github.com/openresty/test-nginx) as the test framework. A test case (.t file) is usually
-divided into prologue and data parts by \__data\__. Here we will briefly introduce the data part, that is, the part
-of the real test case. For example, the key-auth plugin:
+TBD
 
-```perl
-=== TEST 1: sanity
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.key-auth")
-            local ok, err = plugin.check_schema({key = 'test-key'}, core.schema.TYPE_CONSUMER)
-            if not ok then
-                ngx.say(err)
-            end
+## Usage
 
-            ngx.say("done")
-        }
-    }
---- request
-GET /t
---- response_body
-done
---- no_error_log
-[error]
+### Load plugins
+
+Apache APISIX's built-in plugins are under the `path/to/apisix/plugins` directory, and it supports two ways to load custom plugins.
+
+:::tip
+
+1. If the custom plugin has the same name (`_M.name`) as a built-in plugin, the custom plugin will override the built-in plugin.
+<!-- TODO: Does Tip 2 work for "extra_lua_path"? -->
+2. We could use `require "apisix.plugins.<_M.name>"` in Lua to require the custom plugin.
+
+:::
+
+<!-- Why recommended? -->
+<Tabs>
+  <TabItem value="config.yaml" label="Update config.yaml (recommended)" default>
+
+1. Add the following snippet in the `config.yaml` file to load custom Lua files. For example:
+
+```yaml title="conf/config.yaml"
+apisix:
+  extra_lua_path: "/path/to/?.lua"
+  extra_lua_cpath: "/path/to/?.lua"
 ```
 
-A test case consists of three parts :
+2. Restart APISIX instance.
 
-- __Program code__ : configuration content of Nginx location
-- __Input__ : http request information
-- __Output check__ : status, header, body, error log check
+</TabItem>
+<TabItem value="update-source-codes" label="Update source codes">
 
-When we request __/t__, which config in the configuration file, the Nginx will call "__content_by_lua_block__" instruction to
-complete the Lua script, and finally return. The assertion of the use case is response_body return "done",
-"__no_error_log__" means to check the "__error.log__" of Nginx. There must be no ERROR level record. The log files for the unit test
-are located in the following folder: 't/servroot/logs'.
+1. Open the [path/to/apisix/plugins](https://github.com/apache/apisix/blob/master/apisix/plugins) directory, edit a built-in plugin or add a new plugin.
+2. For example, add the `3rd-party` plugin:
 
-The above test case represents a simple scenario. Most scenarios will require multiple steps to validate. To do this, create multiple tests `=== TEST 1`, `=== TEST 2`, and so on. These tests will be executed sequentially, allowing you to break down scenarios into a sequence of atomic steps.
+```
+├── apisix
+│   └── apisix
+│       ├── plugins
+│       │   └── 3rd-party.lua
+│       └── stream
+│           └── plugins
+│               └── 3rd-party.lua
+```
 
-Additionally, there are some convenience testing endpoints which can be found [here](https://github.com/apache/apisix/blob/master/t/lib/server.lua#L36). For example, see [proxy-rewrite](https://github.com/apache/apisix/blob/master/t/plugin/proxy-rewrite.lua). In test 42, the upstream `uri` is made to redirect `/test?new_uri=hello` to `/hello` (which always returns `hello world`). In test 43, the response body is confirmed to equal `hello world`, meaning the proxy-rewrite configuration added with test 42 worked correctly.
+3. [Rebuild APISIX](./building-apisix.md) or distribute it in different formats.
 
-Refer the following [document](building-apisix.md) to setup the testing framework.
+</TabItem>
+</Tabs>
 
-### attach the test-nginx execution process:
+### Enable plugins
 
-According to the path we configured in the makefile and some configuration items at the front of each __.t__ file, the
-framework will assemble into a complete nginx.conf file. "__t/servroot__" is the working directory of Nginx and start the
-Nginx instance. according to the information provided by the test case, initiate the http request and check that the
-return items of HTTP include HTTP status, HTTP response header, HTTP response body and so on.
+<!-- TODO: check all reload/restart APISIX text's description; How? -->
+
+After loading the custom plugins, we need to explicitly add them to the `config.yaml` file and restart APISIX.
+
+:::tip
+
+APISIX can't merge the `plugins` attribute from `config.yaml` to `config-default.yaml` file, please copy **all plugin names** to the `config.yaml` file.
+
+:::
+
+```yaml title="config.yaml"
+plugins:                           # plugin list (sorted by priority)
+  - real-ip
+  - ...
+  - 3rd-party                      # Custom plugin names
+```
+
+### Disable plugins
+
+TBD
+
+### Unload plugins
+
+TBD
