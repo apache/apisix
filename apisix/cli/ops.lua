@@ -319,9 +319,6 @@ Please modify "admin_key" in conf/config.yaml .
             admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0",
                                         yaml_conf.apisix.admin_listen.ip,
                                         9180, yaml_conf.apisix.admin_listen.port)
-        elseif yaml_conf.apisix.port_admin then
-            admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0", nil,
-                                        9180, yaml_conf.apisix.port_admin)
         end
     end
 

@@ -28,7 +28,8 @@ apisix:
     admin_api_mtls:
         admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
         admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
-    port_admin: 9180
+    admin_listen:
+        port: 9180
     https_admin: true
 " > conf/config.yaml
 
@@ -169,10 +170,11 @@ fi
 
 echo "pass: show WARNING message if the user used default token and allow any IP to access"
 
-# port_admin set
+# admin_listen set
 echo '
 apisix:
-  port_admin: 9180
+  admin_listen:
+    port: 9180
 ' > conf/config.yaml
 
 rm logs/error.log
@@ -192,7 +194,7 @@ if grep -E 'using uninitialized ".+" variable while logging request' logs/error.
     exit 1
 fi
 
-echo "pass: uninitialized variable not found during writing access log (port_admin set)"
+echo "pass: uninitialized variable not found during writing access log (admin_listen set)"
 
 # Admin API can only be used with etcd config_center
 echo '
