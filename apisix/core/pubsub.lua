@@ -34,7 +34,7 @@ local mt = { __index = _M }
 local pb_state
 local function init_pb_state()
     -- clear current pb state
-    pb.state(nil)
+    local old_pb_state = pb.state(nil)
 
     -- set int64 rule for pubsub module
     pb.option("int64_as_string")
@@ -46,10 +46,11 @@ local function init_pb_state()
     local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
     if not ok then
         pubsub_protoc:reset()
+        pb.state(old_pb_state)
         return "failed to load pubsub protocol: " .. err
     end
 
-    pb_state = pb.state(nil)
+    pb_state = pb.state(old_pb_state)
 end
 
 
