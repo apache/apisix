@@ -1,5 +1,12 @@
 ---
 title: elasticsearch-logger
+keywords:
+  - APISIX
+  - API 网关
+  - 插件
+  - Elasticsearch-logger
+  - 日志
+description: 本文介绍了 API 网关 Apache APISIX 的 elasticsearch-logger 插件。使用该插件可以将 APISIX 的日志数据推送到 Elasticserach。
 ---
 
 <!--
@@ -29,22 +36,23 @@ title: elasticsearch-logger
 
 ## 属性
 
-| 名称                | 是否必需 | 默认值               | 描述                                                         |
-| ------------------- | -------- | -------------------- | ------------------------------------------------------------ |
-| endpoint            | 必选     |                      | Elasticsearch 端点配置信息                                   |
-| endpoint.uri        | 必选     |                      | Elasticsearch API                                            |
-| endpoint.index      | 必选     |                      | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field) |
-| endpoint.type       | 可选     | Elasticsearch 默认值 | Elasticsearch [_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field) |
-| endpoint.username   | 可选     |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username |
-| endpoint.password   | 可选     |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password |
-| endpoint.ssl_verify | 可选     | true                 | 当设置为 `true` 则允许 SSL 验证，参考 [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake) |
-| endpoint.timeout    | 可选     | 10                   | 发送给 Elasticsearch 请求超时时间                            |
+| 名称          | 是否必需 | 默认值               | 描述                                                         |
+| ------------- | -------- | -------------------- | ------------------------------------------------------------ |
+| endpoint_addr | 必选     |                      | Elasticsearch API                                            |
+| field         | 必选     |                      | Elasticsearch `field`配置信息                                |
+| field.index   | 必选     |                      | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field) |
+| field.type    | 可选     | Elasticsearch 默认值 | Elasticsearch [_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field) |
+| auth          | 可选     |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 配置信息 |
+| auth.username | 可选     |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username |
+| auth.password | 可选     |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password |
+| ssl_verify    | 可选     | true                 | 当设置为 `true` 则允许 SSL 验证，参考 [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake) |
+| timeout       | 可选     | 10                   | 发送给 Elasticsearch 请求超时时间                            |
 
 本插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ## 启用插件
 
-你可以通过如下命令在指定路由上启用 `elasticsearch-logging` 插件：
+你可以通过如下命令在指定路由上启用 `elasticsearch-logger` 插件：
 
 ### 完整配置示例
 
@@ -53,21 +61,24 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins":{
-        "splunk-hec-logging":{
-            "endpoint":{
-                "uri": "http://127.0.0.1:9200",
-                "index": "services",
-                "type": "collector",
-                "timeout": 60,
-                "username": "elastic",
-                "password": "123456",
-                "ssl_verify": false
+        "elasticsearch-logger":{
+            "endpoint_addr":"http://127.0.0.1:9200",
+            "field":{
+                "index":"services",
+                "type":"collector"
             },
+            "auth":{
+                "username":"elastic",
+                "password":"123456"
+            },
+            "ssl_verify":false,
+			"timeout": 60,
+            "retry_delay":1,
             "buffer_duration":60,
             "max_retry_count":0,
-            "retry_delay":1,
-            "inactive_timeout":2,
-            "batch_max_size":10
+            "batch_max_size":1000,
+            "inactive_timeout":5,
+            "name":"elasticsearch-logger"
         }
     },
     "upstream":{
@@ -87,10 +98,10 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins":{
-        "splunk-hec-logging":{
-            "endpoint":{
-                "uri": "http://127.0.0.1:9200",
-                "index": "services"
+        "elasticsearch-logger":{
+            "endpoint_addr":"http://127.0.0.1:9200",
+            "field":{
+                "index":"services"
             }
         }
     },
@@ -106,7 +117,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 
 ## 测试插件
 
-- 向配置 `elasticsearch-logger` 插件的路由发送请求
+向配置 `elasticsearch-logger` 插件的路由发送请求
 
 ```shell
 curl -i http://127.0.0.1:9080/elasticsearch.do?q=hello
@@ -118,6 +129,52 @@ hello, world
 现在，你可以登录 Kibana 控制台检索查看相关日志。
 
 ![kibana search view](../../../assets/images/plugin/elasticsearch-admin-cn.png)
+
+## 插件元数据设置
+
+| 名称       | 类型   | 必选项 | 默认值                                                       | 有效值 | 描述                                                         |
+| ---------- | ------ | ------ | ------------------------------------------------------------ | ------ | ------------------------------------------------------------ |
+| log_format | object | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |        | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](https://github.com/apache/apisix/blob/master/docs/en/latest/apisix-variable.md) 或 [Nginx 内置变量](http://nginx.org/en/docs/varindex.html)。请注意，**该设置是全局生效的**，因此在指定 log_format 后，将对所有绑定 kafka-logger 的 Route 或 Service 生效。 |
+
+### 设置日志格式示例
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/kafka-logger \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "log_format": {
+        "host": "$host",
+        "@timestamp": "$time_iso8601",
+        "client_ip": "$remote_addr"
+    }
+}'
+```
+
+在日志收集处，将得到类似下面的日志：
+
+```json
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+```
+
+向配置 `elasticsearch-logger` 插件的路由发送请求
+
+```shell
+curl -i http://127.0.0.1:9080/elasticsearch.do?q=hello
+HTTP/1.1 200 OK
+...
+hello, world
+```
+
+现在，你可以登录 Kibana 控制台检索查看相关元数据日志。
+
+![kibana search view](../../../assets/images/plugin/elasticsearch-admin-metadata-cn.png)
+
+### 禁用插件元数据
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/kafka-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{}'
+```
 
 ## 禁用插件
 

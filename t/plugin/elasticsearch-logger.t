@@ -52,7 +52,7 @@ __DATA__
                         index = "services",
                         type = "collector"
                     },
-                    xpack = {
+                    auth = {
                         username = "elastic",
                         password = "123456"
                     },
@@ -172,7 +172,7 @@ hello world
                         field = {
                             index = "services"
                         },
-                        xpack = {
+                        auth = {
                             username = "elastic",
                             password = "123456"
                         },
@@ -269,7 +269,7 @@ Batch Processor[elasticsearch-logger] exceeded the max_retry_count
                         field = {
                             index = "services"
                         },
-                        xpack = {
+                        auth = {
                             username = "elastic",
                             password = "111111"
                         },

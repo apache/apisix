@@ -4,7 +4,7 @@ keywords:
   - APISIX
   - API Gateway
   - Plugin
-  - Elasticsearch-logging
+  - Elasticsearch-logger
 description: This document contains information about the Apache APISIX elasticsearch-logger Plugin.
 ---
 
@@ -35,16 +35,17 @@ When the Plugin is enabled, APISIX will serialize the request context informatio
 
 ## Attributes
 
-| Name                | Required | Default                     | Description                                                  |
-| ------------------- | -------- | --------------------------- | ------------------------------------------------------------ |
-| endpoint            | True     |                             | Elasticsearch endpoint configurations.                       |
-| endpoint.uri        | True     |                             | Elasticsearch API endpoint.                                  |
-| endpoint.index      | True     |                             | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field) |
-| endpoint.type       | False    | Elasticsearch default value | Elasticsearch [_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field) |
-| endpoint.username   | False    |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username |
-| endpoint.password   | False    |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password |
-| endpoint.ssl_verify | False    | true                        | When set to `true` enables SSL verification as per [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake). |
-| endpoint.timeout    | False    | 10                          | Elasticsearch send data timeout in seconds.                  |
+| Name          | Required | Default                     | Description                                                  |
+| ------------- | -------- | --------------------------- | ------------------------------------------------------------ |
+| endpoint_addr | True     |                             | Elasticsearch API                                            |
+| field         | True     |                             | Elasticsearch `field` configuration                          |
+| field.index   | True     |                             | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field) |
+| field.type    | False    | Elasticsearch default value | Elasticsearch [_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field) |
+| auth          | False    |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) configuration |
+| auth.username | False    |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username |
+| auth.password | False    |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password |
+| ssl_verify    | False    | true                        | When set to `true` enables SSL verification as per [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake). |
+| timeout       | False    | 10                          | Elasticsearch send data timeout in seconds.                  |
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
@@ -55,24 +56,28 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 The example below shows a complete configuration of the Plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins":{
-        "splunk-hec-logging":{
-            "endpoint":{
-                "uri": "http://127.0.0.1:9200",
-                "index": "services",
-                "type": "collector",
-                "timeout": 60,
-                "username": "elastic",
-                "password": "123456",
-                "ssl_verify": false
+        "elasticsearch-logger":{
+            "endpoint_addr":"http://127.0.0.1:9200",
+            "field":{
+                "index":"services",
+                "type":"collector"
             },
+            "auth":{
+                "username":"elastic",
+                "password":"123456"
+            },
+            "ssl_verify":false,
+			"timeout": 60,
+            "retry_delay":1,
             "buffer_duration":60,
             "max_retry_count":0,
-            "retry_delay":1,
-            "inactive_timeout":2,
-            "batch_max_size":10
+            "batch_max_size":1000,
+            "inactive_timeout":5,
+            "name":"elasticsearch-logger"
         }
     },
     "upstream":{
@@ -90,13 +95,14 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 The example below shows a bare minimum configuration of the Plugin on a Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins":{
-        "splunk-hec-logging":{
-            "endpoint":{
-                "uri": "http://127.0.0.1:9200",
-                "index": "services"
+        "elasticsearch-logger":{
+            "endpoint_addr":"http://127.0.0.1:9200",
+            "field":{
+                "index":"services"
             }
         }
     },
@@ -125,12 +131,68 @@ You should be able to login and search these logs from your Kibana discover:
 
 ![kibana search view](../../../assets/images/plugin/elasticsearch-admin-en.png)
 
+## Metadata
+
+You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
+
+| Name       | Type   | Required | Default                                                      | Description                                                  |
+| ---------- | ------ | -------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](https://github.com/apache/apisix/blob/master/docs/en/latest/apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+
+:::info IMPORTANT
+
+Configuring the Plugin metadata is global in scope. This means that it will take effect on all Routes and Services which use the `kafka-logger` Plugin.
+
+:::
+
+The example below shows how you can configure through the Admin API:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/elasticsearch-logger \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "log_format": {
+        "host": "$host",
+        "@timestamp": "$time_iso8601",
+        "client_ip": "$remote_addr"
+    }
+}'
+```
+
+With this configuration, your logs would be formatted as shown below:
+
+```shell
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+```
+
+ make a request to APISIX again:
+
+```shell
+curl -i http://127.0.0.1:9080/elasticsearch.do?q=hello
+HTTP/1.1 200 OK
+...
+hello, world
+```
+
+You should be able to search these logs from your Kibana discover:
+
+![kibana search view](../../../assets/images/plugin/elasticsearch-admin-metadata-en.png)
+
+### Disable Metadata
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/kafka-logger \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{}'
+```
+
 ## Disable Plugin
 
 To disable the `elasticsearch-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins":{},
     "upstream":{
