@@ -234,6 +234,7 @@ local function init_status_pb_state()
         local ok, err = status_protoc:load(grpc_status_proto, "grpc_status.proto")
         if not ok then
             status_protoc:reset()
+            pb.state(old_pb_state)
             return "failed to load grpc status protocol: " .. err
         end
 
