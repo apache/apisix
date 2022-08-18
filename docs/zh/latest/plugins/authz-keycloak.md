@@ -72,7 +72,7 @@ description: 本文介绍了关于 Apache APISIX `authz-keycloak` 插件的基�
     - 使用 `discovery` 属性后，`authz-keycloak` 插件就可以从其 URL 中发现 Keycloak API 的端点。该 URL 指向 Keyloak 针对相应领域授权服务的发现文档。
     - 如果发现文档可用，则插件将根据该文档确定令牌端点 URL。如果 URL 存在，则 `token_endpoint` 和 `resource_registration_endpoint` 的值将被其覆盖。
 - Client ID and secret
-    - 该插件需配置 `client_id` 属性来标识自身，如果两者都已经配置，则 `client_id` 优先级更高。
+    - 该插件需配置 `client_id` 属性来标识自身。
     - 如果 `lazy_load_paths` 属性被设置为 `true`，那么该插件还需要从 Keycloak 中获得一个自身访问令牌。在这种情况下，如果客户端对 Keycloak 的访问是加密的，就需要配置 `client_secret` 属性。
 - Policy enforcement mode
     - `policy_enforcement_mode` 属性指定了在处理发送到服务器的授权请求时，该插件如何执行策略。

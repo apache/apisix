@@ -76,8 +76,6 @@ If set, the `token_endpoint` and `resource_registration_endpoint` will override 
 
 The Plugin needs the `client_id` attribute for identification and to specify the context in which to evaluate permissions when interacting with Keycloak.
 
-If both are configured, `client_id` is preferred.
-
 If the `lazy_load_paths` attribute is set to true, then the Plugin additionally needs to obtain an access token for itself from Keycloak. In such cases, if the client access to Keycloak is confidential, you need to configure the `client_secret` attribute.
 
 ### Policy enforcement mode
