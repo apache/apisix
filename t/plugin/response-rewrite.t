@@ -718,6 +718,6 @@ X-B: from 127.0.0.1 to 127.0.0.1:1980
 --- request
 GET /t
 --- response_body
-passed
+
 --- no_error_log
 [error]
