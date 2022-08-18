@@ -63,7 +63,7 @@ local function handle_error_response(status_detail_type)
                     err_msg = "failed to call pb.decode to decode details in "
                            .. "grpc-status-details-bin"
                     ngx.arg[1] = err_msg
-                    return err_msg .. err_or_value
+                    return err_msg .. ", err: " .. err_or_value
                 end
 
                 if not err_or_value then
