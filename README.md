@@ -187,7 +187,7 @@ Using AWS's eight-core server, APISIX's QPS reaches 140,000 with a latency of on
 
 [Benchmark script](benchmark/run.sh) has been open sourced, welcome to try and contribute.
 
-[The APISIX APISIX Gateway also works perfectly in AWS graviton3 C7g.](https://apisix.apache.org/blog/2022/06/07/installation-performance-test-of-apigateway-apisix-on-aws-graviton3)
+[APISIX also works perfectly in AWS graviton3 C7g.](https://apisix.apache.org/blog/2022/06/07/installation-performance-test-of-apigateway-apisix-on-aws-graviton3)
 
 ## Contributor Over Time
 
