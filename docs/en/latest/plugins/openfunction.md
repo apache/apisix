@@ -92,7 +92,7 @@ kubectl create secret docker-registry push-secret \
     --docker-password=$REGISTRY_PASSWORD
 ```
 
-## Enabling the Plugin
+## Enable the Plugin
 
 You can now configure the Plugin on a specific Route and point to this running OpenFunction service:
 
