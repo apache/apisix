@@ -93,10 +93,10 @@ sudo yum install ./apisix/*.rpm
   curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-dependencies.sh -sL | bash -
   ```
 
-2. 创建一个名为 `apisix-2.13.2` 的目录。
+2. 创建一个名为 `apisix-2.13.3` 的目录。
 
   ```shell
-  APISIX_VERSION='2.13.2'
+  APISIX_VERSION='2.13.3'
   mkdir apisix-${APISIX_VERSION}
   ```
 
@@ -158,7 +158,7 @@ sudo yum install ./apisix/*.rpm
 
 #### 通过源码包安装 LTS 版本
 
-目前 Apache APISIX 的 LTS 版本为 `2.13.2`，将“[通过源码包安装](#通过源码包安装)”中的 `APISIX_VERSION` 设置成该版本号，其他步骤按顺序进行即可。
+目前 Apache APISIX 的 LTS 版本为 `2.13.3`，将“[通过源码包安装](#通过源码包安装)”中的 `APISIX_VERSION` 设置成该版本号，其他步骤按顺序进行即可。
 
 ## 步骤2：安装 etcd
 

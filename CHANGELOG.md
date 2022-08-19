@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.13.3](#2133)
 - [2.13.2](#2132)
 - [2.13.1](#2131)
 - [2.13.0](#2130)
@@ -55,6 +56,19 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.13.3
+
+### Bugfix
+
+- the phases after proxy didn't run when 500 error happens before proxy: [#7703](https://github.com/apache/apisix/pull/7703)
+- avoid error when multiple plugins associated with consumer and have rewrite phase: [#7531](https://github.com/apache/apisix/pull/7531)
+- upgrade lua-resty-etcd to 1.8.3 which fixes various issues: [#7565](https://github.com/apache/apisix/pull/7565)
+- clear remain state from the latest try before retrying in Kubernetes discovery: [#7506](https://github.com/apache/apisix/pull/7506)
+- don't send empty Authorization header by default in http-logger: [#7444](https://github.com/apache/apisix/pull/7444)
+- ensure both `group` and `disable` configurations can be used in limit-count: [#7384](https://github.com/apache/apisix/pull/7384)
+- adjust the execution priority of request-id so the tracing plugins can use the request id: [#7281](https://github.com/apache/apisix/pull/7281)
+- distinguish different upstreams in the LRU cache even they have the same memory addr: [#7213](https://github.com/apache/apisix/pull/7213)
 
 ## 2.13.2
 
