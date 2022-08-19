@@ -126,14 +126,14 @@ hello, test!
 
 ### 配置路径转发
 
-`OpenFunction` 插件还支持URL路径转发，同时将请求代理到上游的 OpenFunction API 端点。基本请求路径的扩展被附加到插件配置中指定的 `function_uri` 。
+`OpenFunction` 插件还支持 URL 路径转发，同时将请求代理到上游的 OpenFunction API 端点。基本请求路径的扩展被附加到插件配置中指定的 `function_uri` 。
 
 :::info IMPORTANT
 
 路由上配置的 `uri` 必须以 `*` 结尾，此功能才能正常工作。 APISIX 路由是严格匹配的，`*` 表示此 URI 的任何子路径都将匹配到同一路由。
 :::
 
-下面的示例配置了此功能:
+下面的示例配置了此功能：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
