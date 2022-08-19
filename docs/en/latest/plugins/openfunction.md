@@ -78,7 +78,7 @@ You can then verify if OpenFunction is ready:
 kubectl get pods --namespace openfunction
 ```
 
-### Create and push a function
+### Create and Push a Function
 
 You can then create a function follow the [sample](https://github.com/OpenFunction/samples)
 
