@@ -78,7 +78,7 @@ helm install openfunction openfunction/openfunction -n openfunction
 kubectl get pods --namespace openfunction
 ```
 
-### 创建并推送 function
+### 创建并推送函数
 
 你可以通过官方示例创建函数 [sample](https://github.com/OpenFunction/samples) 。
 构建函数时，需要将函数容器镜像推送到容器仓库，如 Docker Hub 或 Quay.io。要做到这一点，首先需要输入如下命令为容器仓库生成一个密钥。
