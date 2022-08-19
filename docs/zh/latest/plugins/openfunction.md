@@ -124,6 +124,42 @@ curl -i http://127.0.0.1:9080/hello -X POST -d'test'
 hello, test!
 ```
 
+### 配置路径转发
+
+`OpenFunction` 插件还支持URL路径转发，同时将请求代理到上游的 OpenFunction API 端点。基本请求路径的扩展被附加到插件配置中指定的 `function_uri` 。
+
+:::info IMPORTANT
+
+路由上配置的 `uri` 必须以 `*` 结尾，此功能才能正常工作。 APISIX 路由是严格匹配的，`*` 表示此 URI 的任何子路径都将匹配到同一路由。
+:::
+
+下面的示例配置了此功能:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello/*",
+    "plugins": {
+        "openfunction": {
+            "function_uri": "http://localhost:3233/default/function-sample",
+            "authorization": {
+                "service_token": "test:test"
+            }
+        }
+    }
+}'
+```
+
+现在，对路径 `hello/123` 的任何请求都将调用 OpenFunction 插件设置的对应的函数，并转发添加的路径：
+
+```shell
+curl  http://127.0.0.1:9080/hello/123
+```
+
+```shell
+Hello, 123!
+```
+
 ## 禁用插件
 
 当你需要禁用 `openfunction` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：

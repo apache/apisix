@@ -293,3 +293,43 @@ Content-Type: application/x-www-form-urlencoded
 --- error_code: 404
 --- response_body_like eval
 qr/not found/
+
+
+
+=== TEST 14: reset route with test-uri function and path forwarding
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openfunction": {
+                                "function_uri": "http://127.0.0.1:30584"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {},
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: hit route with GET method
+--- request
+GET /hello/openfunction
+--- response_body
+Hello, openfunction!

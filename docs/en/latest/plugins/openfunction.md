@@ -116,13 +116,50 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 Once you have configured the plugin, you can send a request to the Route and it will invoke the configured function:
 
 ```shell
-curl -i http://127.0.0.1:9080/hello -X POST -d'test'
+curl -i http://127.0.0.1:9080/hello
 ```
 
 This will give back the response from the function:
 
 ```
 hello, test!
+```
+
+### Configuring path forwarding
+
+The `OpenFunction` Plugins also supports URL path forwarding while proxying requests to the OpenFunction API endpoints upstream. Extensions to the base request path gets appended to the `function_uri` specified in the Plugin configuration.
+
+:::info IMPORTANT
+
+The `uri` configured on a Route must end with `*` for this feature to work properly. APISIX Routes are matched strictly and the `*` implies that any subpath to this URI would be matched to the same Route.
+
+:::
+
+The example below configures this feature:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/hello/*",
+    "plugins": {
+        "openfunction": {
+            "function_uri": "http://localhost:3233/default/function-sample",
+            "authorization": {
+                "service_token": "test:test"
+            }
+        }
+    }
+}'
+```
+
+Now, any requests to the path `hello/123` will invoke the OpenFunction ,and the added path is forwarded:
+
+```shell
+curl  http://127.0.0.1:9080/hello/123
+```
+
+```shell
+Hello, 123!
 ```
 
 ## Disable Plugin
