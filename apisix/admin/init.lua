@@ -76,7 +76,7 @@ local function check_token(ctx)
 
     local admin
     for i, row in ipairs(local_conf.apisix.admin_key) do
-        if req_token == row.key then
+        if req_token == tostring(row.key) then
             admin = row
             break
         end
