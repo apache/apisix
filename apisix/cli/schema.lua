@@ -225,7 +225,8 @@ local config_schema = {
                                     enable_http2 = {
                                         type = "boolean",
                                     }
-                                }
+                                },
+                                required = {"ip", "port"},
                             }
                         }
                     }
