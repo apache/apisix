@@ -69,7 +69,11 @@ __DATA__
                             "schema": {
                                 "type":"object",
                                 "properties": {
-                                    "disable": {"type": "boolean"}
+                                    "_meta": {
+                                         "properties": {
+                                             "disable": {"type": "boolean"}
+                                         }
+                                    }
                                 }
                             },
                             "metadata_schema": {"type":"object"}
@@ -84,7 +88,11 @@ __DATA__
                             "schema": {
                                 "type":"object",
                                 "properties": {
-                                    "disable": {"type": "boolean"}
+                                    "_meta": {
+                                         "properties": {
+                                             "disable": {"type": "boolean"}
+                                         }
+                                    }
                                 }
                             },
                             "priority": 1000

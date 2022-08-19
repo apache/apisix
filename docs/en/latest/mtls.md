@@ -36,7 +36,9 @@ The clients will provide their certificates to the server and the server will ch
 2. Modify configuration items in `conf/config.yaml`:
 
 ```yaml
-  port_admin: 9180
+  admin_listen:
+    ip: 127.0.0.1
+    port: 9180
   https_admin: true
 
   admin_api_mtls:

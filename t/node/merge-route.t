@@ -180,7 +180,9 @@ qr/1980/
                             "time_window": 60,
                             "rejected_code": 503,
                             "key": "remote_addr",
-                            "disable": true
+                            "_meta": {
+                                "disable": true
+                            }
                         }
                     },
                     "uri": "/server_port",
