@@ -271,6 +271,7 @@ Batch Processor[tencent-cloud-cls] successfully processed the entries
 --- wait: 0.5
 
 
+
 === TEST 9: plugin metadata
 --- config
     location /t {
