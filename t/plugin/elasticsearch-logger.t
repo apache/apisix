@@ -17,6 +17,7 @@
 
 use t::APISIX 'no_plan';
 
+log_level('debug');
 repeat_each(1);
 no_long_string();
 no_root_location();
@@ -139,6 +140,8 @@ property "field" validation failed: property "index" is required
             ngx.say(body)
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -150,6 +153,8 @@ GET /hello
 --- wait: 2
 --- response_body
 hello world
+--- error_log
+Batch Processor[elasticsearch-logger] successfully processed the entries
 
 
 
@@ -188,6 +193,8 @@ hello world
             ngx.say(body)
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -199,6 +206,8 @@ GET /hello
 --- wait: 2
 --- response_body
 hello world
+--- error_log
+Batch Processor[elasticsearch-logger] successfully processed the entries
 
 
 
@@ -233,6 +242,8 @@ hello world
             ngx.say(body)
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -285,6 +296,8 @@ Batch Processor[elasticsearch-logger] exceeded the max_retry_count
             ngx.say(body)
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -299,3 +312,122 @@ hello world
 --- error_log
 Batch Processor[elasticsearch-logger] failed to process entries
 Batch Processor[elasticsearch-logger] exceeded the max_retry_count
+
+
+
+=== TEST 10: add plugin metadata
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/elasticsearch-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "log_format": {
+                        "custom_host": "$host",
+                        "custom_timestamp": "$time_iso8601",
+                        "custom_client_ip": "$remote_addr"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: set route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addr = "http://127.0.0.1:9201",
+                        field = {
+                            index = "services"
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 12: hit route and report custom elasticsearch logger
+--- extra_yaml_config
+nginx_config:
+    error_log_level:  info
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 2
+--- error_log
+custom log format entry:
+
+
+
+=== TEST 13: hit route and check custom elasticsearch logger
+--- extra_init_by_lua
+    local core = require("apisix.core")
+    local http = require("resty.http")
+    local ngx_re = require("ngx.re")
+    http.request_uri = function(self, uri, params)
+        if not params.body or type(params.body) ~= "string" then
+            return nil, "invalid params body"
+        end
+
+        local arr = ngx_re.split(params.body, "\n")
+        if not arr or #arr ~= 2 then
+            return nil, "invalid params body"
+        end
+
+        entry = core.json.decode(arr[2])
+        if not entry["custom_host"] then
+            return nil, "invalid params body"
+        end
+
+        core.log.error("check elasticsearch custom body success")
+        return {
+            status = 200,
+            body = "success"
+        }, nil
+    end
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 2
+--- error_log
+check elasticsearch custom body success
