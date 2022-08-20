@@ -25,6 +25,7 @@ local ngx = ngx
 local ngx_time = ngx.time
 local ngx_update_time = ngx.update_time
 local lfs = require("lfs")
+local assert = assert
 local type = type
 local io_open = io.open
 local os_date = os.date
@@ -219,18 +220,29 @@ local function init_default_logs(logs_info, log_type)
 end
 
 
+local function file_size (file)
+    local current = file:seek()      -- get current position
+    local size = file:seek("end")    -- get file size
+    file:seek("set", current)        -- restore position
+    return size
+end
+
+
 local function rotate()
     local interval = INTERVAL
     local max_kept = MAX_KEPT
+    local max_size = -1
     local attr = plugin.plugin_attr(plugin_name)
     if attr then
         interval = attr.interval or interval
         max_kept = attr.max_kept or max_kept
+        max_size = attr.max_size or max_size
         enable_compression = attr.enable_compression or enable_compression
     end
 
     core.log.info("rotate interval:", interval)
     core.log.info("rotate max keep:", max_kept)
+    core.log.info("rotate max size:", max_size)
 
     if not default_logs then
         -- first init default log filepath and filename
@@ -251,7 +263,18 @@ local function rotate()
     if now_time < rotate_time then
         -- did not reach the rotate time
         core.log.info("rotate time: ", rotate_time, " now time: ", now_time)
-        return
+
+        local log_file = assert(io_open(default_logs[DEFAULT_ACCESS_LOG_FILENAME].file, "r"))
+        local access_log_file_size = file_size(log_file)
+        log_file:close()
+
+        log_file = assert(io_open(default_logs[DEFAULT_ERROR_LOG_FILENAME].file, "r"))
+        local error_log_file_size = file_size(log_file)
+        log_file:close()
+
+        if max_size <= 0 or access_log_file_size < max_size and error_log_file_size < max_size then
+            return
+        end
     end
 
     local now_date = os_date("%Y-%m-%d_%H-%M-%S", now_time)
