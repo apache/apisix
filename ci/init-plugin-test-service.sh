@@ -46,7 +46,7 @@ docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' 
 wget https://github.com/buildpacks/pack/releases/download/v0.27.0/pack-v0.27.0-linux.tgz
 tar -zxvf pack-v0.27.0-linux.tgz
 
-# please fork and repalce this(./samples/functions/knative/hello-world-go) if you want to update function
+# please fork and replace this(./samples/functions/knative/hello-world-go) if you want to update function
 git clone https://github.com/OpenFunction/samples.git
 git clone https://github.com/jackkkkklee/my-samples.git
 
