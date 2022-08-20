@@ -141,7 +141,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 :::info IMPORTANT
 
-Configuring the Plugin metadata is global in scope. This means that it will take effect on all Routes and Services which use the `kafka-logger` Plugin.
+Configuring the Plugin metadata is global in scope. This means that it will take effect on all Routes and Services which use the `elasticsearch-logger` Plugin.
 
 :::
 
@@ -182,8 +182,8 @@ You should be able to search these logs from your Kibana discover:
 ### Disable Metadata
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/kafka-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{}'
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/elasticsearch-logger \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 ```
 
 ## Disable Plugin
