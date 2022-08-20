@@ -251,7 +251,7 @@ function _M.access(conf, ctx)
         -- Here we use plugin-level conf version to prevent the counter from being resetting
         -- because of the change elsewhere.
         -- A route which reuses a previous route's ID will inherits its counter.
-        key = ctx.conf_type .. apisix_plugin.conf_version(conf) .. ':' .. key
+        key = ctx.conf_type .. ctx.conf_id .. ':' .. apisix_plugin.conf_version(conf) .. ':' .. key
     else
         key = conf.group .. ':' .. key
     end
