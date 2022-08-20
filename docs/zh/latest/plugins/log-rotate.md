@@ -32,6 +32,7 @@ title: log-rotate
 | -------- | ------- | ------ | ------- | ------ | ------------------------------------------------------ |
 | interval | integer | 必须   | 60 * 60 |        | 每间隔多长时间切分一次日志，秒为单位                   |
 | max_kept | integer | 必须   | 24 * 7  |        | 最多保留多少份历史日志，超过指定数量后，自动删除老文件 |
+| max_size | integer | 可选   | -1      |        | 日志文件超过指定大小时进行切分，单位为 Byte |
 | enable_compression | boolean | 可选    | false |       | 是否启用日志文件压缩（gzip）。该功能需要安装 `tar` 。    |
 
 开启该插件后，就会按照参数自动切分日志文件了。比如下面的例子是根据 `interval: 10` 和 `max_kept: 10` 得到的样本。
@@ -93,6 +94,7 @@ plugin_attr:
     log-rotate:
         interval: 3600    # rotate interval (unit: second)
         max_kept: 168     # max number of log files will be kept
+        max_size: -1      # max size of log files will be kept
         enable_compression: false    # enable log file compression(gzip) or not, default false
 ```
 
