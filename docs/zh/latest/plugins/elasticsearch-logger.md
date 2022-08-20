@@ -36,17 +36,17 @@ description: 本文介绍了 API 网关 Apache APISIX 的 elasticsearch-logger �
 
 ## 属性
 
-| 名称          | 是否必需 | 默认值               | 描述                                                         |
-| ------------- | -------- | -------------------- | ------------------------------------------------------------ |
-| endpoint_addr | 必选     |                      | Elasticsearch API                                            |
-| field         | 必选     |                      | Elasticsearch `field`配置信息                                |
-| field.index   | 必选     |                      | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field) |
-| field.type    | 可选     | Elasticsearch 默认值 | Elasticsearch [_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field) |
-| auth          | 可选     |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 配置信息 |
-| auth.username | 可选     |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username |
-| auth.password | 可选     |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password |
-| ssl_verify    | 可选     | true                 | 当设置为 `true` 则允许 SSL 验证，参考 [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake) |
-| timeout       | 可选     | 10                   | 发送给 Elasticsearch 请求超时时间                            |
+| 名称          | 类型    | 是否必需 | 默认值               | 描述                                                         |
+| ------------- | ------- | -------- | -------------------- | ------------------------------------------------------------ |
+| endpoint_addr | string  | 是       |                      | Elasticsearch API                                            |
+| field         | array   | 是       |                      | Elasticsearch `field`配置信息                                |
+| field.index   | string  | 是       |                      | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field) |
+| field.type    | string  | 否       | Elasticsearch 默认值 | Elasticsearch [_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field) |
+| auth          | array   | 否       |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 配置信息 |
+| auth.username | string  | 否       |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username |
+| auth.password | string  | 否       |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password |
+| ssl_verify    | boolean | 否       | true                 | 当设置为 `true` 则允许 SSL 验证，参考 [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake) |
+| timeout       | integer | 否       | 10                   | 发送给 Elasticsearch 请求超时时间                            |
 
 本插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
