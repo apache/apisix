@@ -272,7 +272,7 @@ local function rotate()
         local error_log_file_size = file_size(log_file)
         log_file:close()
 
-        if max_size <= 0 or access_log_file_size < max_size and error_log_file_size < max_size then
+        if max_size <= 0 or (access_log_file_size < max_size and error_log_file_size < max_size) then
             return
         end
     end
