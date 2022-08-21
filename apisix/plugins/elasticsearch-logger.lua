@@ -51,11 +51,11 @@ local schema = {
             properties = {
                 username = {
                     type = "string",
-                    minItems = 1
+                    minLength = 1
                 },
                 password = {
                     type = "string",
-                    minItems = 1
+                    minLength = 1
                 },
             },
             required = {"username", "password"},

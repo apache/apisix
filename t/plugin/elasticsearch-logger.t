@@ -114,6 +114,12 @@ property "field" validation failed: property "index" is required
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/elasticsearch-logger',
+                ngx.HTTP_DELETE,
+                 nil,
+                 [[{"action": "delete"}]]
+                 )
+
             local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
                 uri = "/hello",
                 upstream = {
@@ -140,21 +146,55 @@ property "field" validation failed: property "index" is required
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
 
 
 === TEST 3: test route (success write)
+--- extra_init_by_lua
+    local core = require("apisix.core")
+    local http = require("resty.http")
+    local ngx_re = require("ngx.re")
+    local log_util = require("apisix.utils.log-util")
+    log_util.get_full_log = function(ngx, conf)
+        return {
+            test = "test"
+        }
+    end
+
+    http.request_uri = function(self, uri, params)
+        if not params.body or type(params.body) ~= "string" then
+            return nil, "invalid params body"
+        end
+
+        local arr = ngx_re.split(params.body, "\n")
+        if not arr or #arr ~= 2 then
+            return nil, "invalid params body"
+        end
+
+        local entry = core.json.decode(arr[2])
+        local origin_entry = log_util.get_full_log(ngx, {})
+        for k, v in pairs(origin_entry) do
+            local vv = entry[k]
+            if not vv or vv ~= v then
+                return nil, "invalid params body"
+            end
+        end
+
+        core.log.error("check elasticsearch full log body success")
+        return {
+            status = 200,
+            body = "success"
+        }, nil
+    end
 --- request
 GET /hello
 --- wait: 2
 --- response_body
 hello world
 --- error_log
-Batch Processor[elasticsearch-logger] successfully processed the entries
+check elasticsearch full log body success
 
 
 
@@ -193,8 +233,6 @@ Batch Processor[elasticsearch-logger] successfully processed the entries
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
@@ -242,8 +280,6 @@ Batch Processor[elasticsearch-logger] successfully processed the entries
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
@@ -296,8 +332,6 @@ Batch Processor[elasticsearch-logger] exceeded the max_retry_count
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
@@ -321,8 +355,7 @@ Batch Processor[elasticsearch-logger] exceeded the max_retry_count
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/plugin_metadata/elasticsearch-logger',
-                ngx.HTTP_PUT,
-                [[{
+                ngx.HTTP_PUT, [[{
                     "log_format": {
                         "custom_host": "$host",
                         "custom_timestamp": "$time_iso8601",
@@ -335,22 +368,7 @@ Batch Processor[elasticsearch-logger] exceeded the max_retry_count
                 ngx.status = code
             end
             ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
 
-
-
-=== TEST 11: set route
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
                 uri = "/hello",
                 upstream = {
@@ -377,32 +395,24 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
---- response_body
+--- response_body_like
+passed
 passed
 
 
 
-=== TEST 12: hit route and report custom elasticsearch logger
---- extra_yaml_config
-nginx_config:
-    error_log_level:  info
---- request
-GET /hello
---- response_body
-hello world
---- wait: 2
---- error_log
-custom log format entry:
-
-
-
-=== TEST 13: hit route and check custom elasticsearch logger
+=== TEST 11: hit route and check custom elasticsearch logger
 --- extra_init_by_lua
     local core = require("apisix.core")
     local http = require("resty.http")
     local ngx_re = require("ngx.re")
+    local log_util = require("apisix.utils.log-util")
+    log_util.get_custom_format_log = function(ctx, format)
+        return {
+            test = "test"
+        }
+    end
+
     http.request_uri = function(self, uri, params)
         if not params.body or type(params.body) ~= "string" then
             return nil, "invalid params body"
@@ -413,9 +423,13 @@ custom log format entry:
             return nil, "invalid params body"
         end
 
-        entry = core.json.decode(arr[2])
-        if not entry["custom_host"] then
-            return nil, "invalid params body"
+        local entry = core.json.decode(arr[2])
+        local origin_entry = log_util.get_custom_format_log(nil, nil)
+        for k, v in pairs(origin_entry) do
+            local vv = entry[k]
+            if not vv or vv ~= v then
+                return nil, "invalid params body"
+            end
         end
 
         core.log.error("check elasticsearch custom body success")
