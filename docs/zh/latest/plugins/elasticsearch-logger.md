@@ -43,8 +43,8 @@ description: 本文介绍了 API 网关 Apache APISIX 的 elasticsearch-logger �
 | field.index   | string  | 是       |                      | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field) |
 | field.type    | string  | 否       | Elasticsearch 默认值 | Elasticsearch [_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field) |
 | auth          | array   | 否       |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 配置信息 |
-| auth.username | string  | 否       |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username |
-| auth.password | string  | 否       |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password |
+| auth.username | string  | 是       |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username |
+| auth.password | string  | 是       |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password |
 | ssl_verify    | boolean | 否       | true                 | 当设置为 `true` 则允许 SSL 验证，参考 [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake) |
 | timeout       | integer | 否       | 10                   | 发送给 Elasticsearch 请求超时时间                            |
 

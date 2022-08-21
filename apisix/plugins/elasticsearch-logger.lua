@@ -51,9 +51,11 @@ local schema = {
             properties = {
                 username = {
                     type = "string",
+                    minItems = 1
                 },
                 password = {
                     type = "string",
+                    minItems = 1
                 },
             },
             required = {"username", "password"},
@@ -119,7 +121,7 @@ local function send_to_elasticsearch(conf, entries)
         (str_byte(conf.endpoint_addr, -1) == str_byte("/") and "_bulk" or "/_bulk")
     local body = core.table.concat(entries, "")
     local headers = {["Content-Type"] = "application/json"}
-    if conf.auth and conf.auth.username and conf.auth.password then
+    if conf.auth then
         local authorization = "Basic " .. ngx.encode_base64(
             conf.auth.username .. ":" .. conf.auth.password
         )
