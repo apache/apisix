@@ -80,7 +80,6 @@ plugin_attr:
       data_machine_interval: 10
 ```
 
-
 ## Enabling the Plugin
 
 The example below enables the Plugin on a specific Route:

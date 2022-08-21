@@ -44,7 +44,6 @@ description: 本文介绍了 Apache APISIX request-id 插件的相关操作，�
 | include_in_response | boolean | 否 | true          |                       | 当设置为 `true` 时，将 unique ID 加入返回头。 |
 | algorithm           | string  | 否 | "uuid"         | ["uuid", "snowflake", "nanoid"] | 指定的 unique ID 生成算法。 |
 
-
 ### 使用 snowflake 算法生成 unique ID
 
 :::caution 警告
