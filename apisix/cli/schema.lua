@@ -205,6 +205,25 @@ local config_schema = {
                     properties = {
                         ssl_trusted_certificate = {
                             type = "string",
+                        },
+                        listen = {
+                            type = "array",
+                            items = {
+                                type = "object",
+                                properties = {
+                                    ip = {
+                                        type = "string",
+                                    },
+                                    port = {
+                                        type = "integer",
+                                        minimum = 1,
+                                        maximum = 65535
+                                    },
+                                    enable_http2 = {
+                                        type = "boolean",
+                                    }
+                                }
+                            }
                         }
                     }
                 },
