@@ -197,6 +197,34 @@ services:
       SPLUNK_HEC_TOKEN: "BD274822-96AA-4DA6-90EC-18940FB2414C"
       SPLUNK_HEC_SSL: "False"
 
+  # The function services of OpenFunction
+  test-header:
+    image: test-header-image:latest
+    restart: unless-stopped
+    ports:
+      - "30583:8080"
+    environment:
+      CONTEXT_MODE: "self-host"
+      FUNC_CONTEXT: "{\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}"
+
+  test-uri:
+    image: test-uri-image:latest
+    restart: unless-stopped
+    ports:
+      - "30584:8080"
+    environment:
+      CONTEXT_MODE: "self-host"
+      FUNC_CONTEXT: "{\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}"
+
+  test-body:
+    image: test-body-image:latest
+    restart: unless-stopped
+    ports:
+      - "30585:8080"
+    environment:
+      CONTEXT_MODE: "self-host"
+      FUNC_CONTEXT: "{\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}"
+
 
 networks:
   apisix_net:
