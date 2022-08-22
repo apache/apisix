@@ -105,9 +105,9 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger \
 }'
 ```
 
-### 如何设置接收日志的 ClickHouse 数据库
+### 配置 ClickHouse 数据库
 
-该插件支持将错误日志作为字符串发送到 ClickHouse 服务器中表的 `data` 字段。
+该插件支持将错误日志作为字符串发送到 ClickHouse 服务器中对应表的 `data` 字段。
 
 你可以按照如下方式进行配置：
 
@@ -127,7 +127,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger \
 
 ## 禁用插件
 
-当你不在需要该插件是，只需要在 `./conf/config.yaml` 中删除或注释该插件即可。
+当你不再需要该插件时，只需要在 `./conf/config.yaml` 中删除或注释该插件即可。
 
 ```yaml
 plugins:                          # plugin list

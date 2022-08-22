@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Plugin
   - 日志切分
-description: 云原生 API 网关 Apache APISIX log-rotate 插件用于定期在日志目录下的访问日志和错误日志的定期切分。
+description: 云原生 API 网关 Apache APISIX log-rotate 插件用于定期切分日志目录下的访问日志和错误日志。
 ---
 
 <!--
@@ -99,7 +99,7 @@ plugin_attr:
 
 ## 禁用插件
 
-当你不在需要该插件是，只需要在 `./conf/config.yaml` 中删除或注释该插件即可。
+当你不再需要该插件时，只需要在 `./conf/config.yaml` 中删除或注释该插件即可。
 
 ```yaml
 plugins:

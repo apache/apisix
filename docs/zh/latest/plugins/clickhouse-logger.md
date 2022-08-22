@@ -49,7 +49,7 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 clickhouse-lo
 
 ## 配置插件元数据
 
-`skywalking-logger` 也支持自定义日志格式，与 [http-logger](./http-logger.md) 插件类似。
+`clickhouse-logger` 也支持自定义日志格式，与 [http-logger](./http-logger.md) 插件类似。
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
@@ -93,7 +93,8 @@ CREATE TABLE default.test (
 你可以通过以下命令在指定路由中启用该插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
       "plugins": {
             "clickhouse-logger": {
