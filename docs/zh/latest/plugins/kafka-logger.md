@@ -39,7 +39,7 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 | kafka_topic            | string  | 是     |                |                       | 需要推送的 topic。                                 |
 | producer_type          | string  | 否     | async          | ["async", "sync"]     | 生产者发送消息的模式。          |
 | required_acks          | integer | 否     | 1              | [0, 1, -1]            | 生产者在确认一个请求发送完成之前需要收到的反馈信息的数量。该参数是为了保证发送请求的可靠性。该属性的配置与 Kafka `acks` 属性相同，具体配置请参考 [Apache Kafka 文档](https://kafka.apache.org/documentation/#producerconfigs_acks)。  |
-| key                    | string  | 否     |                |                       | 用于消息的分区分配的密钥。                             |
+| key                    | string  | 否     |                |                       | 用于消息分区而分配的密钥。                             |
 | timeout                | integer | 否     | 3              | [1,...]               | 发送数据的超时时间。                             |
 | name                   | string  | 否     | "kafka logger" |                       | batch processor 的唯一标识。                     |
 | meta_format            | enum    | 否     | "default"      | ["default"，"origin"] | `default`：获取请求信息以默认的 JSON 编码方式。`origin`：获取请求信息以 HTTP 原始请求方式。更多信息，请参考 [meta_format](#meta_format-参考示例)。|
