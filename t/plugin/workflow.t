@@ -392,50 +392,52 @@ GET /hello?foo=bar
 --- config
     location /t {
         content_by_lua_block {
+            local json = require("toolkit.json")
             local t = require("lib.test_admin").test
+            local data = {
+                uri = "/*",
+                plugins = {
+                    workflow = {
+                        rules = {
+                            {
+                                case = {
+                                    {"uri", "==", "/hello"}
+                                },
+                                actions = {
+                                    {
+                                        "return",
+                                        {
+                                            code = 403
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                case = {
+                                    {"uri", "==", "/hello2"}
+                                },
+                                actions = {
+                                    {
+                                        "return",
+                                        {
+                                            code = 401
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            }
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "workflow": {
-                                "rules": [
-                                    {
-                                        "case": [
-                                            ["uri", "==", "/hello"]
-                                        ],
-                                        "actions": [
-                                            [
-                                                "return",
-                                                {
-                                                    "code": 403
-                                                }
-                                            ]
-                                        ]
-                                    },
-                                    {
-                                        "case": [
-                                            ["uri", "==", "/hello2"]
-                                        ],
-                                        "actions": [
-                                            [
-                                                "return",
-                                                {
-                                                    "code": 401
-                                                }
-                                            ]
-                                        ]
-                                    }
-                                ]
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/*"
-                }]]
+                 json.encode(data)
             )
 
             if code >= 300 then
@@ -470,50 +472,52 @@ GET /hello2
 --- config
     location /t {
         content_by_lua_block {
+            local json = require("toolkit.json")
             local t = require("lib.test_admin").test
+            local data = {
+                uri = "/*",
+                plugins = {
+                    workflow = {
+                        rules = {
+                            {
+                                case = {
+                                    {"arg_foo", "==", "bar"}
+                                },
+                                actions = {
+                                    {
+                                        "return",
+                                        {
+                                            code = 403
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                case = {
+                                    {"uri", "==", "/hello"}
+                                },
+                                actions = {
+                                    {
+                                        "return",
+                                        {
+                                            code = 401
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            }
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "workflow": {
-                                "rules": [
-                                    {
-                                        "case": [
-                                           ["arg_foo", "==", "bar"]
-                                        ],
-                                        "actions": [
-                                            [
-                                                "return",
-                                                {
-                                                    "code": 403
-                                                }
-                                            ]
-                                        ]
-                                    },
-                                    {
-                                        "case": [
-                                            ["uri", "==", "/hello"]
-                                        ],
-                                        "actions": [
-                                            [
-                                                "return",
-                                                {
-                                                    "code": 401
-                                                }
-                                            ]
-                                        ]
-                                    }
-                                ]
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/*"
-                }]]
+                 json.encode(data)
             )
 
             if code >= 300 then
