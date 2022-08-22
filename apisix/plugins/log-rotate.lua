@@ -50,6 +50,7 @@ local default_logs
 local enable_compression = false
 local DEFAULT_ACCESS_LOG_FILENAME = "access.log"
 local DEFAULT_ERROR_LOG_FILENAME = "error.log"
+local SIGUSR1 = 10
 
 local schema = {
     type = "object",
@@ -222,11 +223,15 @@ local function rotate_file(files, now_time, max_kept)
             return
         end
 
-        core.log.warn("send USR1 signal to master process [",
-                      process.get_master_pid(), "] for reopening log file")
-        local ok, err = signal.kill(process.get_master_pid(), signal.signum("USR1"))
-        if not ok then
-            core.log.error("failed to send USR1 signal for reopening log file: ", err)
+        local pid = process.get_master_pid()
+
+        core.log.warn("send USR1 signal to master process [", pid, "] for reopening log file")
+
+        if (pid) then
+            local ok, err = signal.kill(pid, signal.signum("USR1") or SIGUSR1)
+            if not ok then
+                core.log.error("failed to send USR1 signal for reopening log file: ", err)
+            end
         end
 
         if enable_compression then
@@ -237,7 +242,7 @@ local function rotate_file(files, now_time, max_kept)
         local log_list, log_dir = scan_log_folder(file)
         for i = max_kept + 1, #log_list do
             local path = log_dir .. log_list[i]
-            ok, err = os_remove(path)
+            local ok, err = os_remove(path)
             if err then
                core.log.error("remove old log file: ", path, " log: ", err, "  res:", ok)
             end
