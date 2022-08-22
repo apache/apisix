@@ -430,6 +430,7 @@ plugins:                          # plugin list (sorted by priority)
   - proxy-mirror                   # priority: 1010
   - proxy-cache                    # priority: 1009
   - proxy-rewrite                  # priority: 1008
+  - workflow                       # priority: 1006
   - api-breaker                    # priority: 1005
   - limit-conn                     # priority: 1003
   - limit-count                    # priority: 1002
