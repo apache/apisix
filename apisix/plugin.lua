@@ -608,7 +608,7 @@ function _M.merge_service_route(service_conf, route_conf)
 end
 
 
-local function merge_consumer_route(route_conf, consumer_conf)
+local function merge_consumer_route(route_conf, consumer_conf, consumer_group_conf)
     if not consumer_conf.plugins or
        core.table.nkeys(consumer_conf.plugins) == 0
     then
@@ -628,23 +628,42 @@ local function merge_consumer_route(route_conf, consumer_conf)
         new_route_conf.value.plugins[name] = conf
     end
 
+    if consumer_group_conf then
+        for name, conf in pairs(consumer_group_conf.value.plugins) do
+            if new_route_conf.value.plugins[name] == nil then
+                conf._from_consumer = true
+            end
+            new_route_conf.value.plugins[name] = conf
+        end
+    end
+
     core.log.info("merged conf : ", core.json.delay_encode(new_route_conf))
     return new_route_conf
 end
 
 
-function _M.merge_consumer_route(route_conf, consumer_conf, api_ctx)
+function _M.merge_consumer_route(route_conf, consumer_conf, consumer_group_conf, api_ctx)
     core.log.info("route conf: ", core.json.delay_encode(route_conf))
     core.log.info("consumer conf: ", core.json.delay_encode(consumer_conf))
+    core.log.info("consumer conf: ", core.json.delay_encode(consumer_group_conf))
 
     local flag = tostring(route_conf) .. tostring(consumer_conf)
+    if consumer_group_conf then
+        flag = flag .. tostring(consumer_group_conf)
+    end
     local new_conf = merged_route(flag, nil,
-                        merge_consumer_route, route_conf, consumer_conf)
+                        merge_consumer_route, route_conf, consumer_conf, consumer_group_conf)
 
     api_ctx.conf_type = api_ctx.conf_type .. "&consumer"
     api_ctx.conf_version = api_ctx.conf_version .. "&" ..
                            api_ctx.consumer_ver
     api_ctx.conf_id = api_ctx.conf_id .. "&" .. api_ctx.consumer_name
+
+    if consumer_group_conf then
+        api_ctx.conf_type = api_ctx.conf_type .. "&consumer_group"
+        api_ctx.conf_version = api_ctx.conf_version .. "&" .. consumer_group_conf.modifiedIndex
+        api_ctx.conf_id = api_ctx.conf_id .. "&" .. consumer_group_conf.value.id
+    end
 
     return new_conf, new_conf ~= route_conf
 end
