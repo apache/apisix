@@ -74,32 +74,7 @@ done
 
 
 
-=== TEST 3: minimal valid configuration with audience
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.authz-keycloak")
-            local ok, err = plugin.check_schema({
-                                audience = "foo",
-                                discovery = "https://host.domain/auth/realms/foo/.well-known/uma2-configuration"
-                            })
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- request
-GET /t
---- response_body
-done
---- no_error_log
-[error]
-
-
-
-=== TEST 4: minimal valid configuration w/o discovery when lazy_load_paths=true
+=== TEST 3: minimal valid configuration w/o discovery when lazy_load_paths=true
 --- config
     location /t {
         content_by_lua_block {
@@ -126,7 +101,7 @@ done
 
 
 
-=== TEST 5: minimal valid configuration with discovery when lazy_load_paths=true
+=== TEST 4: minimal valid configuration with discovery when lazy_load_paths=true
 --- config
     location /t {
         content_by_lua_block {
@@ -152,7 +127,7 @@ done
 
 
 
-=== TEST 6: full schema check
+=== TEST 5: full schema check
 --- config
     location /t {
         content_by_lua_block {
@@ -162,7 +137,6 @@ done
                                 token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token",
                                 resource_registration_endpoint = "https://host.domain/auth/realms/foo/authz/protection/resource_set",
                                 client_id = "University",
-                                audience = "University",
                                 client_secret = "secret",
                                 grant_type = "urn:ietf:params:oauth:grant-type:uma-ticket",
                                 policy_enforcement_mode = "ENFORCING",
@@ -197,7 +171,7 @@ done
 
 
 
-=== TEST 7: token_endpoint and discovery both missing
+=== TEST 6: token_endpoint and discovery both missing
 --- config
     location /t {
         content_by_lua_block {
@@ -220,7 +194,7 @@ done
 
 
 
-=== TEST 8: client_id and audience both missing
+=== TEST 7: client_id missing
 --- config
     location /t {
         content_by_lua_block {
@@ -236,14 +210,14 @@ done
 --- request
 GET /t
 --- response_body
-allOf 2 failed: object matches none of the required: ["client_id"] or ["audience"]
+property "client_id" is required
 done
 --- no_error_log
 [error]
 
 
 
-=== TEST 9: resource_registration_endpoint and discovery both missing and lazy_load_paths is true
+=== TEST 8: resource_registration_endpoint and discovery both missing and lazy_load_paths is true
 --- config
     location /t {
         content_by_lua_block {
@@ -263,14 +237,14 @@ done
 --- request
 GET /t
 --- response_body
-allOf 3 failed: object matches none of the required
+allOf 2 failed: object matches none of the required
 done
 --- no_error_log
 [error]
 
 
 
-=== TEST 10: Add https endpoint with ssl_verify true (default)
+=== TEST 9: Add https endpoint with ssl_verify true (default)
 --- config
     location /t {
         content_by_lua_block {
@@ -312,7 +286,7 @@ passed
 
 
 
-=== TEST 11: TEST with fake token and https endpoint
+=== TEST 10: TEST with fake token and https endpoint
 --- config
     location /t {
         content_by_lua_block {
@@ -345,7 +319,7 @@ Error while sending authz request to https://127.0.0.1:8443/auth/realms/Universi
 
 
 
-=== TEST 12: Add https endpoint with ssl_verify false
+=== TEST 11: Add https endpoint with ssl_verify false
 --- config
     location /t {
         content_by_lua_block {
@@ -388,7 +362,7 @@ passed
 
 
 
-=== TEST 13: TEST for https based token verification with ssl_verify false
+=== TEST 12: TEST for https based token verification with ssl_verify false
 --- config
     location /t {
         content_by_lua_block {
@@ -418,7 +392,7 @@ Request denied: HTTP 401 Unauthorized. Body: {"error":"HTTP 401 Unauthorized"}
 
 
 
-=== TEST 14: set enforcement mode is "ENFORCING", lazy_load_paths and permissions use default values
+=== TEST 13: set enforcement mode is "ENFORCING", lazy_load_paths and permissions use default values
 --- config
     location /t {
         content_by_lua_block {
@@ -460,7 +434,7 @@ passed
 
 
 
-=== TEST 15: test for permission is empty and enforcement mode is "ENFORCING".
+=== TEST 14: test for permission is empty and enforcement mode is "ENFORCING".
 --- config
     location /t {
         content_by_lua_block {
@@ -485,7 +459,7 @@ GET /t
 
 
 
-=== TEST 16: set enforcement mode is "ENFORCING", lazy_load_paths and permissions use default values , access_denied_redirect_uri is "http://127.0.0.1/test"
+=== TEST 15: set enforcement mode is "ENFORCING", lazy_load_paths and permissions use default values , access_denied_redirect_uri is "http://127.0.0.1/test"
 --- config
     location /t {
         content_by_lua_block {
@@ -528,7 +502,7 @@ passed
 
 
 
-=== TEST 17: test for permission is empty and enforcement mode is "ENFORCING" , access_denied_redirect_uri is "http://127.0.0.1/test".
+=== TEST 16: test for permission is empty and enforcement mode is "ENFORCING" , access_denied_redirect_uri is "http://127.0.0.1/test".
 --- config
     location /t {
         content_by_lua_block {
@@ -555,7 +529,7 @@ Location: http://127.0.0.1/test
 
 
 
-=== TEST 18: Add https endpoint with password_grant_token_generation_incoming_uri
+=== TEST 17: Add https endpoint with password_grant_token_generation_incoming_uri
 --- config
     location /t {
         content_by_lua_block {
@@ -629,7 +603,7 @@ true
 
 
 
-=== TEST 19: no username or password
+=== TEST 18: no username or password
 --- config
     location /t {
         content_by_lua_block {
