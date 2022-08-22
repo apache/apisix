@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Plugin
   - UDP Logger
-description: 本文介绍了 API 网关 Apache APISIX 如何使用 udp-logger 插件，并将日志数据发送到 TCP 服务器的步骤。
+description: 本文介绍了 API 网关 Apache APISIX 如何使用 udp-logger 插件将日志数据发送到 TCP 服务器。
 ---
 
 <!--

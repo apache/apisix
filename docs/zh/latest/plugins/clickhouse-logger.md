@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Plugin
   - ClickHouse
-description: 本文介绍了 API 网关 Apache APISIX 如何使用 udp-logger 插件，并将日志数据发送到 TCP 服务器的步骤。
+description: 本文介绍了 API 网关 Apache APISIX 如何使用 clickhouse-logger 插件将日志数据发送到 ClickHouse 数据库中。
 ---
 
 <!--
@@ -43,7 +43,7 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 udp-logger �
 | password         | string  | 是     |                     |              | ClickHouse 的密码 。                                      |
 | timeout          | integer | 否     | 3                   | [1,...]      | 发送请求后保持连接活动的时间。                             |
 | name             | string  | 否     | "clickhouse logger" |              | 标识 logger 的唯一标识符。                                |
-| ssl_verify       | boolean | 否     | true                | [true,false] | 验证证书。                                                |
+| ssl_verify       | boolean | 否     | true                | [true,false] | 当设置为 `true` 时，验证证书。                                                |
 
 该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
@@ -53,13 +53,7 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 udp-logger �
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 否   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX](../apisix-variable.md) 或 [NGINX](http://nginx.org/en/docs/varindex.html) 变量。|
-
-:::info 重要
-
-该配置全局生效。如果你指定了 `log_format`，该配置就会对所有绑定 `skywalking-logger` 的路由或服务生效。
-
-:::
+| log_format       | object  | 否   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX](../apisix-variable.md) 或 [NGINX](http://nginx.org/en/docs/varindex.html) 变量。该配置全局生效。如果你指定了 `log_format`，该配置就会对所有绑定 `skywalking-logger` 的路由或服务生效。|
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/clickhouse-logger \
@@ -73,7 +67,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/clickhouse-logger \
 }'
 ```
 
-你必须在 ClickHouse 数据库中创建一个表来存储日志：
+首先，你需要在 ClickHouse 数据库中创建一个表来存储日志：
 
 ```sql
 CREATE TABLE default.test (
@@ -86,7 +80,7 @@ CREATE TABLE default.test (
 ) ENGINE = MergeTree()
 ```
 
-在 ClickHouse 上执行`select * from default.test;`，将得到类似下面的数据：
+在 ClickHouse 中执行`select * from default.test;`，将得到类似下面的数据：
 
 ```
 ┌─host──────┬─client_ip─┬─route_id─┬─@timestamp────────────────┐
@@ -96,7 +90,7 @@ CREATE TABLE default.test (
 
 ## 启用插件
 
-如果配置多个 endpoints，日志将会随机写入到各个 endpoints。你可以通过以下命令在指定路由中启用该插件：
+你可以通过以下命令在指定路由中启用该插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -119,6 +113,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
       "uri": "/hello"
 }'
 ```
+
+:::note 注意
+
+如果配置多个 `endpoints`，日志将会随机写入到各个 `endpoints`。
+
+:::
 
 ## 测试插件
 

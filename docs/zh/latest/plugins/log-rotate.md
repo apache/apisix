@@ -4,8 +4,8 @@ keywords:
   - APISIX
   - API 网关
   - Plugin
-  - log-rotate
-description: API 网关 Apache APISIX `log-rotate` 插件用于定期在日志目录下的访问日志和错误日志的定期切分。
+  - 日志切分
+description: 云原生 API 网关 Apache APISIX log-rotate 插件用于定期在日志目录下的访问日志和错误日志的定期切分。
 ---
 
 <!--
@@ -29,9 +29,9 @@ description: API 网关 Apache APISIX `log-rotate` 插件用于定期在日志�
 
 ## 描述
 
-`log-rotate` 插件用于定期在日志目录下的访问日志和错误日志的定期切分。
+`log-rotate` 插件用于定期切分日志目录下的访问日志和错误日志。
 
-你可以配置日志轮换的频率以及要保留的日志数量。当日志数量超过限制时，旧的日志会被自动删除。
+你可以自定义日志轮换的频率以及要保留的日志数量。当日志数量超过限制时，旧的日志会被自动删除。
 
 ## 参数
 
@@ -39,9 +39,9 @@ description: API 网关 Apache APISIX `log-rotate` 插件用于定期在日志�
 | ------------------ | ------- | ------ | ------- | ------------- | ---------------------------------------------------------------------------- |
 | interval           | integer | 是     | 60 * 60 |               | 每间隔多长时间切分一次日志，以秒为单位。                                        |
 | max_kept           | integer | 是     | 24 * 7  |               | 最多保留多少份历史日志，超过指定数量后，自动删除老文件。                         |
-| enable_compression | boolean | 否     | false   | [false, true] | 当设置为 `true` 时，启用日志文件压缩（gzip）。该功能需要在系统中安装 `tar` 。     |
+| enable_compression | boolean | 否     | false   | [false, true] | 当设置为 `true` 时，启用日志文件压缩。该功能需要在系统中安装 `tar` 。     |
 
-开启该插件后，就会按照参数自动切分日志文件了。比如下面的例子是根据 `interval: 10` 和 `max_kept: 10` 得到的样本。
+开启该插件后，就会按照参数自动切分日志文件了。比如以下示例是根据 `interval: 10` 和 `max_kept: 10` 得到的样本。
 
 ```shell
 ll logs
@@ -61,7 +61,7 @@ total 44K
 -rw-r--r--. 1 resty resty 1.5K Mar 20 21:31 error.log
 ```
 
-当开启日志文件压缩时，日志文件将如下所示：
+当开启日志文件压缩时，日志文件名称如下所示：
 
 ```shell
 ll logs
@@ -81,9 +81,9 @@ total 10.5K
 
 ## 启用插件
 
-该插件默认为禁用状态，你可以在 `./conf/config.yaml` 中启用 `log-rotate` 插件，不需要在任何路由或服务中绑定。
+**该插件默认为禁用状态**，你可以在 `./conf/config.yaml` 中启用 `log-rotate` 插件，不需要在任何路由或服务中绑定。
 
-```yaml
+```yaml title=“./conf/config.yaml”
 plugins:
     # the plugins you enabled
     - log-rotate
@@ -99,7 +99,7 @@ plugin_attr:
 
 ## 禁用插件
 
-在如果你不再该插件，只需要将配置文件 `./conf/config.yaml` 中的 `log-rotate` 删除即可。
+当你不在需要该插件是，只需要在 `./conf/config.yaml` 中删除或注释该插件即可。
 
 ```yaml
 plugins:

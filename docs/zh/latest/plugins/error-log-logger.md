@@ -55,7 +55,7 @@ description: API 网关 Apache APISIX error-log-logger 插件用于将 APISIX �
 
 ## 启用插件
 
-该插件属于 APISIX 全局性插件，你可以在 `./conf/config.yaml` 中启用插件 `error-log-logger` 即可，不需要在任何路由或服务中绑定。你可以参考如下示例启用插件：
+该插件默认为禁用状态，你可以在 `./conf/config.yaml` 中启用 `error-log-logger` 插件。你可以参考如下示例启用插件：
 
 ```yaml title=“./conf/config.yaml”
 plugins:                          # plugin list
@@ -67,6 +67,12 @@ plugins:                          # plugin list
 ```
 
 完成插件配置后，你需要重新加载 APISIX，插件才会生效。
+
+:::note 注意
+
+该插件属于 APISIX 全局性插件，不需要在任何路由或服务中绑定。
+
+:::
 
 ### 配置 TCP 服务器地址
 
@@ -121,7 +127,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger \
 
 ## 禁用插件
 
-在 `conf/config.yaml` 中删除或注释掉插件 `error-log-logger` 即可。
+当你不在需要该插件是，只需要在 `./conf/config.yaml` 中删除或注释该插件即可。
 
 ```yaml
 plugins:                          # plugin list
