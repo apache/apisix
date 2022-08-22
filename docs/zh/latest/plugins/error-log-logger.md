@@ -41,7 +41,7 @@ description: API 网关 Apache APISIX error-log-logger 插件用于将 APISIX �
 | tcp.tls_server_name              | string  | 否     |                                |               | TLS 服务名称标记。                                                                 |
 | skywalking.endpoint_addr         | string  | 否     | http://127.0.0.1:12900/v3/logs |               | SkyWalking 的 HTTP endpoint 地址，例如：http://127.0.0.1:12800。                   |
 | skywalking.service_name          | string  | 否     | APISIX                         |               | SkyWalking 上报的 service 名称。                                                   |
-| skywalking.service_instance_name | String  | 否     | APISIX Instance Name           |               | SkyWalking 上报的 service 实例名，如果希望直接获取本机主机名则设置为 `$hostname`。   |
+| skywalking.service_instance_name | String  | 否     | APISIX Instance Name           |               | SkyWalking 上报的 service 实例名，如果希望直接获取本机主机名请设置为 `$hostname`。   |
 | clickhouse.endpoint_addr         | String  | 否     | http://127.0.0.1:8213          |               | ClickHouse 的 HTTP endpoint 地址，例如 `http://127.0.0.1:8213`。                   |
 | clickhouse.user                  | String  | 否     | default                        |               | ClickHouse 的用户名。                                                              |
 | clickhouse.password              | String  | 否     |                                |               | ClickHouse 的密码。                                                                |
@@ -49,7 +49,7 @@ description: API 网关 Apache APISIX error-log-logger 插件用于将 APISIX �
 | clickhouse.logtable              | String  | 否     |                                |               | ClickHouse 的用于接收日志的表。                                                    |
 | timeout                          | integer | 否     | 3                              | [1,...]       | 连接和发送数据超时间，以秒为单位。                                                   |
 | keepalive                        | integer | 否     | 30                             | [1,...]       | 复用连接时，连接保持的时间，以秒为单位。                                             |
-| level                            | string  | 否     | WARN                           |               | 进行错误日志筛选的级别，缺省 WARN，取值 ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"]，其中 ERR 与 ERROR 级别一致。 |
+| level                            | string  | 否     | WARN                           |               | 进行错误日志筛选的级别，默认为 `WARN`，取值 ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"]，其中 `ERR` 与 `ERROR` 级别一致。 |
 
 本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
