@@ -41,7 +41,7 @@ description: 本文介绍了 Apache APISIX request-validation 插件的相关操
 
 :::note 注意
 
-`header_schema` 与 `body_schema` 至少填写其中一个。
+需保证 `header_schema` 与 `body_schema` 配置项中，至少填写其中一个。
 
 :::
 
