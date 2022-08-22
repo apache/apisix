@@ -39,7 +39,7 @@ You can configure how often the logs are rotated and how many logs to keep. When
 |--------------------|---------|----------|---------|------------------------------------------------------------------------------------------------|
 | interval           | integer | True     | 60 * 60 | Time in seconds specifying how often to rotate the logs.                                       |
 | max_kept           | integer | True     | 24 * 7  | Maximum number of historical logs to keep. If this number is exceeded, older logs are deleted. |
-| max_size           | integer | False    | -1      | Max size(Bytes) of log files to be rotated, size check would be skipped with a value less than 0. |
+| max_size           | integer | False    | -1      | Max size(Bytes) of log files to be rotated, size check would be skipped with a value less than 0 or time is up specified by interval. |
 | enable_compression | boolean | False    | false   | When set to `true`, compresses the log file (gzip). Requires `tar` to be installed.            |
 
 ## Enabling the Plugin

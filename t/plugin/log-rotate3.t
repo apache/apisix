@@ -76,10 +76,10 @@ __DATA__
                 end
             end
 
-            if not has_split_access_file or not has_split_error_file then
-               ngx.status = 500
-            else
+            if not has_split_access_file and has_split_error_file then
                ngx.status = 200
+            else
+               ngx.status = 500
             end
         }
     }
@@ -108,7 +108,7 @@ start xxxxxx
 --- config
     location /t {
         content_by_lua_block {
-            ngx.sleep(2)
+            ngx.sleep(1)
 
             local default_logs = {}
             for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
