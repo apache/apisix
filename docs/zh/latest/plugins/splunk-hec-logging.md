@@ -34,8 +34,6 @@ description: API 网关 Apache APISIX 的 splunk-hec-logging 插件可用于将�
 
 启用该插件后 APISIX 将在 `Log Phase` 获取请求上下文信息并序列化为 [Splunk Event Data 格式](https://docs.splunk.com/Documentation/Splunk/latest/Data/FormateventsforHTTPEventCollector#Event_metadata) 后提交到批处理队列中，当触发批处理队列每批次最大处理容量或刷新缓冲区的最大时间时会将队 列中的数据提交到 `Splunk HEC` 中。
 
-关于 Batch-Processor 信息，请参考 [Batch-Processor](../batch-processor.md)。
-
 ## 属性
 
 | 名称                | 必选项  | 默认值 | 描述                                                                                                                                                               |
