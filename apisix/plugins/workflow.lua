@@ -58,6 +58,10 @@ local _M = {
     schema = schema
 }
 
+local support_action = {
+    ["return"] = true,
+}
+
 
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
@@ -73,6 +77,11 @@ function _M.check_schema(conf)
 
         local actions = rule.actions
         for _, action in ipairs(actions) do
+
+            if not support_action[action[1]] then
+                return false, "unsupported action: " .. action[1]
+            end
+
             if action[1] == "return" then
                 if not action[2].code then
                     return false, "bad actions, code is needed if action is return"
@@ -81,11 +90,7 @@ function _M.check_schema(conf)
                 if type(action[2].code) ~= "number" then
                     return false, "bad code, the required type of code is number"
                 end
-
-                return true
             end
-
-            return false, "unsupported action: " .. action[1]
        end
     end
 
