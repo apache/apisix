@@ -74,15 +74,27 @@ local schema = {
 }
 
 
+local metadata_schema = {
+    type = "object",
+    properties = {
+        log_format = log_util.metadata_schema_log_format,
+    },
+}
+
+
 local _M = {
     version = 0.1,
     priority = 413,
     name = plugin_name,
     schema = batch_processor_manager:wrap_schema(schema),
+    metadata_schema = metadata_schema,
 }
 
 
-function _M.check_schema(conf)
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
     return core.schema.check(schema, conf)
 end
 
