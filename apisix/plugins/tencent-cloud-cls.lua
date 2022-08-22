@@ -32,7 +32,6 @@ local schema = {
     properties = {
         cls_host = { type = "string" },
         cls_topic = { type = "string" },
-        -- https://console.cloud.tencent.com/capi
         secret_id = { type = "string" },
         secret_key = { type = "string" },
         sample_ratio = {
