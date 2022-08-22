@@ -133,7 +133,10 @@ local function scan_log_folder(log_file_name)
     for file in lfs.dir(log_dir) do
         local n = get_last_index(file, "__")
         if n ~= nil then
-            tab_insert(t, file)
+            local log_type = file:sub(n + 2)
+            if log_type == log_file_name then
+                tab_insert(t, file)
+            end
         end
     end
 
@@ -235,7 +238,7 @@ local function rotate_file(files, now_time, max_kept)
         end
 
         if enable_compression then
-            compression_file(file)
+            compression_file(new_file)
         end
 
         -- clean the oldest file
