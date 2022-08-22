@@ -221,12 +221,19 @@ GET /t
                     "plugins": {
                         "mqtt-proxy": {
                             "protocol_name": "MQTT",
-                            "protocol_level": 4,
-                            "upstream": {
-                                "ip": "127.0.0.1",
-                                "port": 1980
-                            }
+                            "protocol_level": 4
                         }
+                    },
+                    "upstream": {
+                        "type": "chash",
+                        "key": "mqtt_client_id",
+                        "nodes": [
+                            {
+                                "host": "127.0.0.1",
+                                "port": 1980,
+                                "weight": 1
+                            }
+                        ]
                     }
                 }]]
                 )
@@ -260,12 +267,19 @@ passed
                     "plugins": {
                         "mqtt-proxy": {
                             "protocol_name": "MQTT",
-                            "protocol_level": 4,
-                            "upstream": {
-                                "ip": "127.0.0.1",
-                                "port": 1980
-                            }
+                            "protocol_level": 4
                         }
+                    },
+                    "upstream": {
+                        "type": "chash",
+                        "key": "mqtt_client_id",
+                        "nodes": [
+                            {
+                                "host": "127.0.0.1",
+                                "port": 1980,
+                                "weight": 1
+                            }
+                        ]
                     }
                 }]]
                 )

@@ -43,7 +43,7 @@ The technical architecture of Apache APISIX:
 
 - Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe to the mailing list.
 - QQ Group - 552030619, 781365357
-- Slack Workspace - [invitation link](https://join.slack.com/t/the-asf/shared_invite/zt-vlfbf7ch-HkbNHiU_uDlcH_RvaHv9gQ) (Please open an [issue](https://apisix.apache.org/docs/general/submit-issue) if this link is expired), and then join the #apisix channel (Channels -> Browse channels -> search for "apisix").
+- Slack Workspace - [invitation link](https://join.slack.com/t/the-asf/shared_invite/zt-1egxjz7lw-lWl142XNDopj4FlqNMUM5g) (Please open an [issue](https://apisix.apache.org/docs/general/submit-issue) if this link is expired), and then join the #apisix channel (Channels -> Browse channels -> search for "apisix").
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
 - [Documentation](https://apisix.apache.org/docs/)
 - [Discussions](https://github.com/apache/apisix/discussions)
@@ -187,7 +187,7 @@ Using AWS's eight-core server, APISIX's QPS reaches 140,000 with a latency of on
 
 [Benchmark script](benchmark/run.sh) has been open sourced, welcome to try and contribute.
 
-[The APISIX APISIX Gateway also works perfectly in AWS graviton3 C7g.](https://apisix.apache.org/blog/2022/06/07/installation-performance-test-of-apigateway-apisix-on-aws-graviton3)
+[APISIX also works perfectly in AWS graviton3 C7g.](https://apisix.apache.org/blog/2022/06/07/installation-performance-test-of-apigateway-apisix-on-aws-graviton3)
 
 ## Contributor Over Time
 
@@ -199,7 +199,7 @@ Using AWS's eight-core server, APISIX's QPS reaches 140,000 with a latency of on
 
 - [European eFactory Platform: API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
 - [Copernicus Reference System Software](https://github.com/COPRS/infrastructure/wiki/Networking-trade-off)
-- [More Stories](https://apisix.apache.org/blog/tags/user-case)
+- [More Stories](https://apisix.apache.org/blog/tags/case-studies/)
 
 ## Who Uses APISIX API Gateway?
 

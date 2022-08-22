@@ -22,7 +22,6 @@ github:
       - api-gateway
       - cloud-native
       - nginx
-      - lua
       - luajit
       - apigateway
       - microservices

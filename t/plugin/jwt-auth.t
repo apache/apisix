@@ -517,7 +517,7 @@ property "key" is required
                 ngx.HTTP_GET,
                 nil,
                 [[
-                {"properties":{"disable":{"type":"boolean"}},"type":"object"}
+                {"properties":{},"type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -535,7 +535,7 @@ property "key" is required
                 ngx.HTTP_GET,
                 nil,
                 [[
-                {"properties":{"disable":{"type":"boolean"}},"type":"object"}
+                {"properties":{},"type":"object"}
                 ]]
                 )
             ngx.status = code

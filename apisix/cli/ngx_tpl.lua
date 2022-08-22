@@ -302,33 +302,6 @@ http {
     lua_shared_dict {*cache_key*} {*cache_size*};
     {% end %}
     {% end %}
-    {% if http.lua_shared_dicts then %}
-    {% for cache_key, cache_size in pairs(http.lua_shared_dicts) do %}
-    lua_shared_dict {*cache_key*} {*cache_size*};
-    {% end %}
-    {% end %}
-
-    {% if enabled_plugins["proxy-cache"] then %}
-    # for proxy cache
-    {% for _, cache in ipairs(proxy_cache.zones) do %}
-    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
-    proxy_cache_path {* cache.disk_path *} levels={* cache.cache_levels *} keys_zone={* cache.name *}:{* cache.memory_size *} inactive=1d max_size={* cache.disk_size *} use_temp_path=off;
-    {% else %}
-    lua_shared_dict {* cache.name *} {* cache.memory_size *};
-    {% end %}
-    {% end %}
-    {% end %}
-
-    {% if enabled_plugins["proxy-cache"] then %}
-    # for proxy cache
-    map $upstream_cache_zone $upstream_cache_zone_info {
-    {% for _, cache in ipairs(proxy_cache.zones) do %}
-    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
-        {* cache.name *} {* cache.disk_path *},{* cache.cache_levels *};
-    {% end %}
-    {% end %}
-    }
-    {% end %}
 
     {% if enabled_plugins["error-log-logger"] then %}
         lua_capture_error_log  10m;
@@ -375,10 +348,7 @@ http {
     # error_page
     error_page 500 @50x.html;
 
-    {% if real_ip_header then %}
-    real_ip_header {* real_ip_header *};
-    {% print("\nDeprecated: apisix.real_ip_header has been moved to nginx_config.http.real_ip_header. apisix.real_ip_header will be removed in the future version. Please use nginx_config.http.real_ip_header first.\n\n") %}
-    {% elseif http.real_ip_header then %}
+    {% if http.real_ip_header then %}
     real_ip_header {* http.real_ip_header *};
     {% end %}
 
@@ -386,12 +356,7 @@ http {
     real_ip_recursive {* http.real_ip_recursive *};
     {% end %}
 
-    {% if real_ip_from then %}
-    {% print("\nDeprecated: apisix.real_ip_from has been moved to nginx_config.http.real_ip_from. apisix.real_ip_from will be removed in the future version. Please use nginx_config.http.real_ip_from first.\n\n") %}
-    {% for _, real_ip in ipairs(real_ip_from) do %}
-    set_real_ip_from {*real_ip*};
-    {% end %}
-    {% elseif http.real_ip_from then %}
+    {% if http.real_ip_from then %}
     {% for _, real_ip in ipairs(http.real_ip_from) do %}
     set_real_ip_from {*real_ip*};
     {% end %}
@@ -584,6 +549,27 @@ http {
     {* conf_server *}
     {% end %}
 
+    {% if deployment_role ~= "control_plane" then %}
+
+    {% if enabled_plugins["proxy-cache"] then %}
+    # for proxy cache
+    {% for _, cache in ipairs(proxy_cache.zones) do %}
+    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
+    proxy_cache_path {* cache.disk_path *} levels={* cache.cache_levels *} keys_zone={* cache.name *}:{* cache.memory_size *} inactive=1d max_size={* cache.disk_size *} use_temp_path=off;
+    {% else %}
+    lua_shared_dict {* cache.name *} {* cache.memory_size *};
+    {% end %}
+    {% end %}
+
+    map $upstream_cache_zone $upstream_cache_zone_info {
+    {% for _, cache in ipairs(proxy_cache.zones) do %}
+    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
+        {* cache.name *} {* cache.disk_path *},{* cache.cache_levels *};
+    {% end %}
+    {% end %}
+    }
+    {% end %}
+
     server {
         {% for _, item in ipairs(node_listen) do %}
         listen {* item.ip *}:{* item.port *} default_server {% if item.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
@@ -597,7 +583,7 @@ http {
         listen {* proxy_protocol.listen_http_port *} default_server proxy_protocol;
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_https_port then %}
-        listen {* proxy_protocol.listen_https_port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} proxy_protocol;
+        listen {* proxy_protocol.listen_https_port *} ssl default_server proxy_protocol;
         {% end %}
 
         server_name _;
@@ -856,6 +842,8 @@ http {
             }
         }
     }
+    {% end %}
+
     # http end configuration snippet starts
     {% if http_end_configuration_snippet then %}
     {* http_end_configuration_snippet *}

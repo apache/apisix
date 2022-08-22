@@ -27,13 +27,99 @@ By default, the Admin API listens to port `9080` (`9443` for HTTPS) when APISIX 
 
 **Note**: Mentions of `X-API-KEY` in this document refers to `apisix.admin_key.key`—the access token for Admin API—in your configuration file.
 
+## V3
+
+The Admin API has made some breaking changes in V3 version, as well as supporting additional features.
+
+### Support new response body format
+
+1. Remove `action` field in response body;
+2. Adjust the response body structure when fetching the list of resources, the new response body structure like:
+
+```json
+{
+    "count":2,
+    "list":[
+        {
+            ...
+        },
+        {
+            ...
+        }
+    ]
+}
+```
+
+### Support paging query
+
+Paging query is supported when getting the resource list, paging parameters include:
+
+| parameter | Default | Valid range | Description                  |
+| --------- | ------  | ----------- | ---------------------------- |
+| page      | 1       | [1, ...]    | Number of pages              |
+| page_size |         | [10, 500]   | Number of resources per page |
+
+The example is as follows:
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes?page=1&page_size=10 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+  "count": 1,
+  "list": [
+    {
+      ...
+    }
+  ]
+}
+```
+
+Resources that support paging queries:
+
+- Consumer
+- Global Rules
+- Plugin Config
+- Proto
+- Route
+- Service
+- SSL
+- Stream Route
+- Upstream
+
+### Support filtering query
+
+When getting a list of resources, it supports filtering resources based on `name`, `label`, `uri`.
+
+| parameter | parameter                                                    |
+| --------- | ------------------------------------------------------------ |
+| name      | Query resource by their `name`, which will not appear in the query results if the resource itself does not have `name`. |
+| label     | Query resource by their `label`, which will not appear in the query results if the resource itself does not have `label`. |
+| uri       | Supported on Route resources only. If the `uri` of a Route is equal to the uri of the query or if the `uris` contains the uri of the query, the Route resource appears in the query results. |
+
+When multiple filter parameters are enabled, use the intersection of the query results for different filter parameters.
+
+The following example will return a list of routes, and all routes in the list satisfy: the `name` of the route contains the string "test", the `uri` contains the string "foo", and there is no restriction on the `label` of the route, since the label of the query is the empty string.
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes?name=test&uri=foo&label= \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+  "count": 1,
+  "list": [
+    {
+      ...
+    }
+  ]
+}
+```
+
 ## Route
 
 **API**: /apisix/admin/routes/{id}?ttl=0
 
 [Routes](./terminology/route.md) match the client's request based on defined rules, loads and executes the corresponding [plugins](#plugin), and forwards the request to the specified [Upstream](#upstream).
 
-**Note**: When the Admin API is enabled, to avoid conflicts with your design API, use a different port for the Admin API. This can be set in your configuration file by changing the `port_admin` key.
+**Note**: When the Admin API is enabled, to avoid conflicts with your design API, use a different port for the Admin API. This can be set in your configuration file by changing the `admin_listen` key.
 
 ### Request Methods
 
@@ -915,7 +1001,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/list" -H 'X-API-KEY: edd
 ["zipkin","request-id",...]
 
 $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
-{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+{"$comment":"this is a mark for our injected plugin schema","properties":{"header":{"default":"apikey","type":"string"},"hide_credentials":{"default":false,"type":"boolean"},"_meta":{"properties":{"filter":{"type":"array","description":"filter determines whether the plugin needs to be executed at runtime"},"disable":{"type":"boolean"},"error_response":{"oneOf":[{"type":"string"},{"type":"object"}]},"priority":{"type":"integer","description":"priority of plugins by customized order"}},"type":"object"},"query":{"default":"apikey","type":"string"}},"type":"object"}
 ```
 
 **API**: /apisix/admin/plugins?all=true

@@ -20,6 +20,7 @@
 -- @module core.config_yaml
 
 local config_local = require("apisix.core.config_local")
+local config_util  = require("apisix.core.config_util")
 local yaml         = require("tinyyaml")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
@@ -142,12 +143,7 @@ local function sync_data(self)
 
     if self.values then
         for _, item in ipairs(self.values) do
-            if item.clean_handlers then
-                for _, clean_handler in ipairs(item.clean_handlers) do
-                    clean_handler(item)
-                end
-                item.clean_handlers = nil
-            end
+            config_util.fire_all_clean_handlers(item)
         end
         self.values = nil
     end
