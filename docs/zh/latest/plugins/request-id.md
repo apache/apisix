@@ -49,7 +49,7 @@ description: 本文介绍了 Apache APISIX request-id 插件的相关操作，�
 :::caution 警告
 
 - 当使用 `snowflake` 算法时，请确保 APISIX 有权限写入 etcd。
-- 在决定使用 `snowflake` 算法时，请先阅读一下文档。因为一旦启用配置信息则不可随意调整配置信息，否则可能会导致生成重复的 ID。
+- 在决定使用 `snowflake` 算法时，请先阅读本文档了解一些配置细节。因为一旦启用相关配置信息，则不可随意调整，否则可能会导致生成重复的 ID。
 
 :::
 
@@ -123,7 +123,8 @@ X-Request-Id: fe32076a-d0a5-49a6-a361-6c244c1df956
 当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/5 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
     "plugins": {
