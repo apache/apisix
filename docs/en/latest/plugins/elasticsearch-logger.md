@@ -121,15 +121,69 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 Once you have configured the Route to use the Plugin, when you make a request to APISIX, it will be logged in your Elasticsearch server:
 
 ```shell
-curl -i http://127.0.0.1:9080/elasticsearch.do?q=hello
+curl -i http://127.0.0.1:9080/elasticsearch.do\?q\=hello
 HTTP/1.1 200 OK
 ...
 hello, world
 ```
 
-You should be able to login and search these logs from your Kibana discover:
+You should be able to get the log from elasticsearch:
 
-![kibana search view](../../../assets/images/plugin/elasticsearch-admin-en.png)
+```shell
+curl -X GET "http://127.0.0.1:9200/services/_search" | jq .
+{
+  "took": 0,
+   ...
+    "hits": [
+      {
+        "_index": "services",
+        "_type": "_doc",
+        "_id": "M1qAxYIBRmRqWkmH4Wya",
+        "_score": 1,
+        "_source": {
+          "apisix_latency": 0,
+          "route_id": "1",
+          "server": {
+            "version": "2.15.0",
+            "hostname": "apisix"
+          },
+          "request": {
+            "size": 102,
+            "uri": "/elasticsearch.do?q=hello",
+            "querystring": {
+              "q": "hello"
+            },
+            "headers": {
+              "user-agent": "curl/7.29.0",
+              "host": "127.0.0.1:9080",
+              "accept": "*/*"
+            },
+            "url": "http://127.0.0.1:9080/elasticsearch.do?q=hello",
+            "method": "GET"
+          },
+          "service_id": "",
+          "latency": 0,
+          "upstream": "127.0.0.1:1980",
+          "upstream_latency": 1,
+          "client_ip": "127.0.0.1",
+          "start_time": 1661170929107,
+          "response": {
+            "size": 192,
+            "headers": {
+              "date": "Mon, 22 Aug 2022 12:22:09 GMT",
+              "server": "APISIX/2.15.0",
+              "content-type": "text/plain; charset=utf-8",
+              "connection": "close",
+              "transfer-encoding": "chunked"
+            },
+            "status": 200
+          }
+        }
+      }
+    ]
+  }
+}
+```
 
 ## Metadata
 
@@ -169,15 +223,42 @@ With this configuration, your logs would be formatted as shown below:
  make a request to APISIX again:
 
 ```shell
-curl -i http://127.0.0.1:9080/elasticsearch.do?q=hello
+curl -i http://127.0.0.1:9080/elasticsearch.do\?q\=hello
 HTTP/1.1 200 OK
 ...
 hello, world
 ```
 
-You should be able to search these logs from your Kibana discover:
+You should be able to get this log from elasticsearch:
 
-![kibana search view](../../../assets/images/plugin/elasticsearch-admin-metadata-en.png)
+```shell
+curl -X GET "http://127.0.0.1:9200/services/_search" | jq .
+{
+  "took": 0,
+  ...
+  "hits": {
+    "total": {
+      "value": 1,
+      "relation": "eq"
+    },
+    "max_score": 1,
+    "hits": [
+      {
+        "_index": "services",
+        "_type": "_doc",
+        "_id": "NVqExYIBRmRqWkmH4WwG",
+        "_score": 1,
+        "_source": {
+          "@timestamp": "2022-08-22T20:26:31+08:00",
+          "client_ip": "127.0.0.1",
+          "host": "127.0.0.1",
+          "route_id": "1"
+        }
+      }
+    ]
+  }
+}
+```
 
 ### Disable Metadata
 
