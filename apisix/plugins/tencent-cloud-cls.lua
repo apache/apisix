@@ -112,6 +112,7 @@ function _M.log(conf, ctx)
     if metadata and metadata.value.log_format
             and core.table.nkeys(metadata.value.log_format) > 0
     then
+        core.log.debug("using custom format log")
         entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
     else
         entry = log_util.get_full_log(ngx, conf)

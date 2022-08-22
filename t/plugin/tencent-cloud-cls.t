@@ -52,13 +52,6 @@ add_block_preprocessor(sub {
         listen 10421;
         location /structuredlog {
             content_by_lua_block {
-                ngx.req.read_body()
-                local data = ngx.req.get_body_data()
-                local headers = ngx.req.get_headers()
-                ngx.log(ngx.WARN, "tencent-cloud-cls body: ", data)
-                for k, v in pairs(headers) do
-                    ngx.log(ngx.WARN, "tencent-cloud-cls headers: " .. k .. ":" .. v)
-                end
                 ngx.exit(500)
             }
         }
@@ -258,8 +251,9 @@ Batch Processor[tencent-cloud-cls] successfully processed the entries
             return false
         end
         local log = log_group.logs[1]
-        for k, v in ipairs(log.contents) do
-            ngx.log(ngx.ERR, "key:", v.key, ",value:", v.value)
+        if #log.contents == 0 then
+            ngx.log(ngx.ERR, "unexpected contents length: ", #log.contents)
+            return false
         end
         return true
     end
@@ -267,9 +261,8 @@ Batch Processor[tencent-cloud-cls] successfully processed the entries
 GET /opentracing
 --- response_body
 opentracing
---- error_log
-Batch Processor[tencent-cloud-cls] successfully processed the entries
---- wait: 0.5
+--- no_error_log
+[error]
 
 
 
@@ -307,5 +300,5 @@ GET /opentracing
 --- response_body
 opentracing
 --- error_log
-"@timestamp":[true,"time_iso8601"]
+using custom format log
 --- wait: 0.5
