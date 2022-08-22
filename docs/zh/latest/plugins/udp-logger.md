@@ -41,7 +41,7 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 udp-logger �
 | port             | integer | 是     |              | [0,...] | 目标端口。                                         |
 | timeout          | integer | 否     | 1000         | [1,...] | 发送数据超时间。                                   |
 | name             | string  | 否     | "udp logger" |         | 用于识别批处理器。                                 |
-| include_req_body | boolean | 否     |              |         | 当设置为 `true` 时，将请求体包含在日志中。           |
+| include_req_body | boolean | 否     |              |         | 当设置为 `true` 时，日志中将包含请求体。           |
 
 该插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
