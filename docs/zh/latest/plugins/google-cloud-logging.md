@@ -30,7 +30,7 @@ description: API 网关 Apache APISIX 的 google-cloud-logging 插件可用于�
 
 ## 描述
 
-`google-cloud-logging` 插件可用于将请求日志发送到 [Google Cloud Logging Service](https://cloud.google.com/logging/)。
+`google-cloud-logging` 插件可用于将请求日志发送到 [Google Cloud Logging Service](https://cloud.google.com/logging/) 进行分析和存储。
 
 ## 属性
 
@@ -130,7 +130,7 @@ HTTP/1.1 200 OK
 hello, world
 ```
 
-访问成功后，你可以登录[谷歌云日志服务](https://console.cloud.google.com/logs/viewer)查看相关日志。
+访问成功后，你可以登录 [Google Cloud Logging Service](https://console.cloud.google.com/logs/viewer) 查看相关日志。
 
 ## 禁用插件
 

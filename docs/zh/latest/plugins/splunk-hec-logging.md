@@ -32,7 +32,7 @@ description: API 网关 Apache APISIX 的 splunk-hec-logging 插件可用于将�
 
 `splunk-hec-logging` 插件可用于将请求日志转发到 Splunk HTTP 事件收集器（HEC）中进行分析和存储。
 
-启用该插件后 APISIX 将在 `Log Phase` 获取请求上下文信息并序列化为 [Splunk Event Data 格式](https://docs.splunk.com/Documentation/Splunk/latest/Data/FormateventsforHTTPEventCollector#Event_metadata) 后提交到批处理队列中，当触发批处理队列每批次最大处理容量或刷新缓冲区的最大时间时会将队 列中的数据提交到 `Splunk HEC` 中。
+启用该插件后，APISIX 将在 `Log Phase` 获取请求上下文信息，并将其序列化为 [Splunk Event Data 格式](https://docs.splunk.com/Documentation/Splunk/latest/Data/FormateventsforHTTPEventCollector#Event_metadata) 后提交到批处理队列中，当触发批处理队列每批次最大处理容量或刷新缓冲区的最大时间时会将队列中的数据提交到 `Splunk HEC` 中。
 
 ## 属性
 
@@ -45,7 +45,7 @@ description: API 网关 Apache APISIX 的 splunk-hec-logging 插件可用于将�
 | endpoint.timeout    | 否     | 10     | Splunk HEC 数据提交超时时间（以秒为单位）。                                                                                                                             |
 | ssl_verify          | 否     | true   | 当设置为 `true` 时，启用 `SSL` 验证。                                                                                                                                 |
 
-本插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免该插件频繁地提交数据。默认情况下每 5 秒钟或队列中的数据达到 1000 条时，批处理器会自动提交数据，如需了解更多信息或自定义配置，请参考 [Batch-Processor](../batch-processor.md#配置)。
+本插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免该插件频繁地提交数据。默认情况下每 `5` 秒钟或队列中的数据达到 `1000` 条时，批处理器会自动提交数据，如需了解更多信息或自定义配置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
 ## 启用插件
 

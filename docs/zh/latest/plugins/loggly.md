@@ -31,7 +31,7 @@ description: API 网关 Apache APISIX loggly 插件可用于将日志转发到 S
 
 `loggly` 插件可用于将日志转发到 [SolarWinds Loggly](https://www.solarwinds.com/loggly) 进行分析和存储。
 
-当启用插件时，APISIX 会将请求上下文信息并序列化为 [Loggly Syslog](https://documentation.solarwinds.com/en/success_center/loggly/content/admin/streaming-syslog-without-using-files.htm?cshid=loggly_streaming-syslog-without-using-files) 的数据格式，即具有 [RFC5424](https://datatracker.ietf.org/doc/html/rfc5424) 兼容标头的 Syslog。
+当启用插件时，APISIX 会将请求上下文信息序列化为符合 [Loggly Syslog](https://documentation.solarwinds.com/en/success_center/loggly/content/admin/streaming-syslog-without-using-files.htm?cshid=loggly_streaming-syslog-without-using-files) 的数据格式，即具有 [RFC5424](https://datatracker.ietf.org/doc/html/rfc5424) 兼容标头的 Syslog。
 
 ## 属性
 
@@ -51,7 +51,7 @@ description: API 网关 Apache APISIX loggly 插件可用于将日志转发到 S
 
 ## 插件元数据设置
 
-您还可以通过插件元数据配置插件。详细配置如下：
+你还可以通过插件元数据配置插件。详细配置如下：
 
 | 名称       | 类型    | 必选项 | 默认值               | 有效值                           | 描述                                                                |
 |------------|---------|-------|----------------------|--------------------------------|---------------------------------------------------------------------|
