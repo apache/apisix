@@ -583,7 +583,7 @@ http {
         listen {* proxy_protocol.listen_http_port *} default_server proxy_protocol;
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_https_port then %}
-        listen {* proxy_protocol.listen_https_port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} proxy_protocol;
+        listen {* proxy_protocol.listen_https_port *} ssl default_server proxy_protocol;
         {% end %}
 
         server_name _;
