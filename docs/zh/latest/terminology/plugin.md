@@ -23,12 +23,10 @@ title: Plugin
 
 `Plugin` 表示将在 `HTTP` 请求/响应生命周期期间执行的插件配置。
 
-`Plugin` 配置可直接绑定在 `Route` 上，也可以被绑定在 `Service` 或 `Consumer`上。而对于同一个插件的配置，只能有一份是有效的，配置选择优先级总是 `Consumer` > `Route` > `Service`。
+`Plugin` 配置可直接绑定在 `Route` 上，也可以被绑定在 `Service`、`Consumer` 或 `Plugin Config` 上。而对于同一个插件的配置，只能有一份是有效的，配置选择优先级总是 `Consumer` > `Route` > `Plugin Config` > `Service`。
 
 在 `conf/config.yaml` 中，可以声明本地 APISIX 节点都支持哪些插件。这是个白名单机制，不在该白名单的插件配置，都将会被自动忽略。这个特性可用于临时关闭或打开特定插件，应对突发情况非常有效。
 如果你想在现有插件的基础上新增插件，注意需要拷贝 `conf/config-default.yaml` 的插件节点内容到 `conf/config.yaml` 的插件节点中。
-
-插件的配置可以被直接绑定在指定 Route 中，也可以被绑定在 Service 中，不过 Route 中的插件配置优先级更高。
 
 一个插件在一次请求中只会执行一次，即使被同时绑定到多个不同对象中（比如 Route 或 Service）。
 插件运行先后顺序是根据插件自身的优先级来决定的，例如：
