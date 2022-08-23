@@ -101,6 +101,7 @@ end
 
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
+
     if not ok then
         return false, err
     end
@@ -113,6 +114,10 @@ function _M.check_schema(conf)
                                       conf.regex_uri[1], conf.regex_uri[2], err)
             return false, msg
         end
+    end
+
+    if conf.http_to_https and conf.append_query_string then
+        return false, "only one of `http_to_https` and `append_query_string` can be configured."
     end
 
     return true
@@ -161,11 +166,6 @@ local function get_port(attr)
         return port
     end
 
-    port = ssl["listen_port"]
-    if port then
-        return port
-    end
-
     local ports = ssl["listen"]
     if ports and #ports > 0 then
         local idx = math_random(1, #ports)
@@ -192,8 +192,6 @@ function _M.rewrite(conf, ctx)
     local proxy_proto = core.request.header(ctx, "X-Forwarded-Proto")
     local _scheme = proxy_proto or core.request.get_scheme(ctx)
     if conf.http_to_https and _scheme == "http" then
-        -- TODO： add test case
-        -- PR: https://github.com/apache/apisix/pull/1958
         if ret_port == nil or ret_port == 443 or ret_port <= 0 or ret_port > 65535  then
             uri = "https://$host$request_uri"
         else

@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local template = require("resty.template")
+local pl_path = require("pl.path")
 local ipairs = ipairs
 
 
@@ -22,42 +23,140 @@ local ipairs = ipairs
 local _M = {}
 
 
-function _M.generate_conf_server(conf)
-    if not (conf.deployment and conf.deployment.role == "traditional") then
-        return nil
+function _M.generate_conf_server(env, conf)
+    if not (conf.deployment and (
+        conf.deployment.role == "traditional" or
+        conf.deployment.role == "control_plane"))
+    then
+        return nil, nil
     end
 
     -- we use proxy even the role is traditional so that we can test the proxy in daily dev
-    local servers = conf.deployment.etcd.host
+    local etcd = conf.deployment.etcd
+    local servers = etcd.host
+    local enable_https = false
+    local prefix = "https://"
+    if servers[1]:find(prefix, 1, true) then
+        enable_https = true
+    end
+    -- there is not a compatible way to verify upstream TLS like the one we do in cosocket
+    -- so here we just ignore it as the verification is already done in the init phase
     for i, s in ipairs(servers) do
-        local prefix = "http://"
-        -- TODO: support https
-        if s:find(prefix, 1, true) then
-            servers[i] = s:sub(#prefix + 1)
+        if (s:find(prefix, 1, true) ~= nil) ~= enable_https then
+            return nil, "all nodes in the etcd cluster should enable/disable TLS together"
+        end
+
+        local _, to = s:find("://", 1, true)
+        if not to then
+            return nil, "bad etcd endpoint format"
+        end
+    end
+
+    local control_plane
+    if conf.deployment.role == "control_plane" then
+        control_plane = conf.deployment.role_control_plane.conf_server
+        control_plane.cert = pl_path.abspath(control_plane.cert)
+        control_plane.cert_key = pl_path.abspath(control_plane.cert_key)
+
+        if control_plane.client_ca_cert then
+            control_plane.client_ca_cert = pl_path.abspath(control_plane.client_ca_cert)
+        end
+    end
+
+    local trusted_ca_cert
+    if conf.deployment.certs then
+        if conf.deployment.certs.trusted_ca_cert then
+            trusted_ca_cert = pl_path.abspath(conf.deployment.certs.trusted_ca_cert)
         end
     end
 
     local conf_render = template.compile([[
     upstream apisix_conf_backend {
-        {% for _, addr in ipairs(servers) do %}
-        server {* addr *};
-        {% end %}
+        server 0.0.0.0:80;
+        balancer_by_lua_block {
+            local conf_server = require("apisix.conf_server")
+            conf_server.balancer()
+        }
     }
-    server {
-        listen unix:./conf/config_listen.sock;
-        access_log off;
-        location / {
-            set $upstream_scheme             'http';
 
-            proxy_pass $upstream_scheme://apisix_conf_backend;
+    {% if trusted_ca_cert then %}
+    lua_ssl_trusted_certificate {* trusted_ca_cert *};
+    {% end %}
+
+    server {
+        {% if control_plane then %}
+        listen {* control_plane.listen *} ssl;
+        ssl_certificate {* control_plane.cert *};
+        ssl_certificate_key {* control_plane.cert_key *};
+
+        {% if control_plane.client_ca_cert then %}
+        ssl_verify_client on;
+        ssl_client_certificate {* control_plane.client_ca_cert *};
+        {% end %}
+
+        {% else %}
+        listen unix:{* home *}/conf/config_listen.sock;
+        {% end %}
+
+        access_log off;
+
+        set $upstream_host '';
+
+        access_by_lua_block {
+            local conf_server = require("apisix.conf_server")
+            conf_server.access()
+        }
+
+        location / {
+            {% if enable_https then %}
+            proxy_pass https://apisix_conf_backend;
+            proxy_ssl_protocols TLSv1.2 TLSv1.3;
+            proxy_ssl_server_name on;
+
+            {% if sni then %}
+            proxy_ssl_name {* sni *};
+            {% else %}
+            proxy_ssl_name $upstream_host;
+            {% end %}
+
+            {% if client_cert then %}
+            proxy_ssl_certificate {* client_cert *};
+            proxy_ssl_certificate_key {* client_cert_key *};
+            {% end %}
+
+            {% else %}
+            proxy_pass http://apisix_conf_backend;
+            {% end %}
 
             proxy_http_version 1.1;
             proxy_set_header Connection "";
+            proxy_set_header Host $upstream_host;
+            proxy_next_upstream error timeout non_idempotent http_500 http_502 http_503 http_504;
+        }
+
+        log_by_lua_block {
+            local conf_server = require("apisix.conf_server")
+            conf_server.log()
         }
     }
     ]])
+
+    local tls = etcd.tls
+    local client_cert
+    local client_cert_key
+    if tls and tls.cert then
+        client_cert = pl_path.abspath(tls.cert)
+        client_cert_key = pl_path.abspath(tls.key)
+    end
+
     return conf_render({
-        servers = servers
+        sni = tls and tls.sni,
+        home = env.apisix_home or ".",
+        control_plane = control_plane,
+        enable_https = enable_https,
+        client_cert = client_cert,
+        client_cert_key = client_cert_key,
+        trusted_ca_cert = trusted_ca_cert,
     })
 end
 

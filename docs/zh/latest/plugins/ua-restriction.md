@@ -1,5 +1,10 @@
 ---
 title: ua-restriction
+keywords:
+  - APISIX
+  - API Gateway
+  - UA restriction
+description: 本文介绍了 Apache APISIX ua-restriction 插件的使用方法，通过该插件可以将指定的 User-Agent 列入白名单或黑名单来限制对服务或路由的访问。
 ---
 
 <!--
@@ -23,22 +28,28 @@ title: ua-restriction
 
 ## 描述
 
-`ua-restriction` 可以通过将指定 `User-Agent` 列入白名单或黑名单的方式来限制对服务或接口的访问。
+`ua-restriction` 插件可以通过将指定 `User-Agent` 列入白名单或黑名单的方式来限制对服务或路由的访问。
+
+一种常见的场景是用来设置爬虫规则。`User-Agent` 是客户端在向服务器发送请求时的身份标识，用户可以将一些爬虫程序的请求头列入 `ua-restriction` 插件的白名单或黑名单中。
 
 ## 属性
 
-| 参数名    | 类型          | 可选项 | 默认值 | 有效值 | 描述                             |
+| 名称    | 类型          | 必选项 | 默认值 | 有效值 | 描述                             |
 | --------- | ------------- | ------ | ------ | ------ | -------------------------------- |
-| bypass_missing  | boolean       | 可选    | false   |       | User-Agent 不存在时是否绕过检查 |
-| allowlist | array[string] | 可选   |        |        | 加入白名单的 User-Agent |
-| denylist | array[string] | 可选   |        |        | 加入黑名单的 User-Agent |
-| message | string | 可选   | Not allowed. | 长度限制：[1, 1024] | 在未允许的 User-Agent 访问的情况下返回的信息 |
+| allowlist | array[string] | 否   |        |        | 加入白名单的 `User-Agent`。 |
+| denylist  | array[string] | 否   |        |        | 加入黑名单的 `User-Agent`。 |
+| message | string  | 否   | "Not allowed" | [1, 1024] | 当未允许的 `User-Agent` 访问时返回的信息。 |
+| bypass_missing | boolean       | 否    | false   |       | 当设置为 `true` 时，如果 `User-Agent` 请求头不存在或格式有误时，将绕过检查。 |
 
-白名单或黑名单可以同时启用，此插件对 User-Agent 的检查先后顺序依次如下：白名单、黑名单。`message` 可以由用户自定义。
+:::note
 
-## 如何启用
+`allowlist` 和 `denylist` 可以同时启用。同时启用时，插件会根据 `User-Agent` 先检查 `allowlist`，再检查 `denylist`。
 
-下面是一个示例，在指定的 route 上开启了 `ua-restriction` 插件：
+:::
+
+## 启用插件
+
+以下示例展示了如何在指定路由上启用并配置 `ua-restriction` 插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -66,7 +77,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-当未允许的 User-Agent 访问时，默认返回 `{"message":"Not allowed"}`。如果你想使用自定义的 `message`，可以在插件部分进行配置：
+当未允许的 `User-Agent` 访问时，默认返回 `{"message":"Not allowed"}`。如果你想使用自定义的 `message`，可以在 `plugins` 部分进行配置：
 
 ```json
 "plugins": {
@@ -82,26 +93,39 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-通过正常的 UA 访问：
+通过上述命令启用插件后，你可以先发起一个简单的请求测试：
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html --header 'User-Agent: YourApp/2.0.0'
-HTTP/1.1 200 OK
+curl http://127.0.0.1:9080/index.html -i
 ```
 
-通过爬虫 User-Agent 访问：
+返回的 HTTP 响应头中带有 `200` 状态码，代表请求成功：
 
 ```shell
-$ curl http://127.0.0.1:9080/index.html --header 'User-Agent: Twitterspider/2.0'
+HTTP/1.1 200 OK
+...
+```
+
+接下来，请求的同时指定处于 `denylist` 中的 `User-Agent`，如 `Twitterspider/2.0`：
+
+```shell
+curl http://127.0.0.1:9080/index.html --header 'User-Agent: Twitterspider/2.0'
+```
+
+返回的 HTTP 响应头中带有 `403` 状态码，请求失败，代表插件生效：
+
+```shell
 HTTP/1.1 403 Forbidden
+...
+{"message":"Not allowed"}
 ```
 
 ## 禁用插件
 
-当你想去掉 `ua-restriction` 插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
+当你需要禁用 `ua-restriction` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},
@@ -113,5 +137,3 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335
     }
 }'
 ```
-
-现在就已移除 `ua-restriction` 插件，其它插件的开启和移除也类似。

@@ -27,6 +27,7 @@ require("jit.opt").start("minstitch=2", "maxtrace=4000",
 
 require("apisix.patch").patch()
 local core            = require("apisix.core")
+local conf_server     = require("apisix.conf_server")
 local plugin          = require("apisix.plugin")
 local plugin_config   = require("apisix.plugin_config")
 local script          = require("apisix.script")
@@ -40,7 +41,6 @@ local apisix_ssl      = require("apisix.ssl")
 local upstream_util   = require("apisix.utils.upstream")
 local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
-local ngx_balancer    = require("ngx.balancer")
 local debug           = require("apisix.debug")
 local pubsub_kafka    = require("apisix.pubsub.kafka")
 local ngx             = ngx
@@ -56,7 +56,6 @@ local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
 local pairs           = pairs
-local type            = type
 local control_api_router
 
 local is_http = false
@@ -96,6 +95,7 @@ function _M.http_init(args)
     end
 
     xrpc.init()
+    conf_server.init()
 end
 
 
@@ -218,23 +218,16 @@ local function set_upstream_host(api_ctx, picked_server)
         return
     end
 
-    local nodes_count = up_conf.nodes and #up_conf.nodes or 0
-    if nodes_count == 1 or ngx_balancer.recreate_request then
-        api_ctx.var.upstream_host = picked_server.upstream_host
-    end
+    api_ctx.var.upstream_host = picked_server.upstream_host
 end
 
 
 local function set_upstream_headers(api_ctx, picked_server)
     set_upstream_host(api_ctx, picked_server)
 
-    local hdr = core.request.header(api_ctx, "X-Forwarded-Proto")
-    if hdr then
-        if type(hdr) == "table" then
-            api_ctx.var.var_x_forwarded_proto = hdr[1]
-        else
-            api_ctx.var.var_x_forwarded_proto = hdr
-        end
+    local proto = api_ctx.var.http_x_forwarded_proto
+    if proto then
+        api_ctx.var.var_x_forwarded_proto = proto
     end
 end
 
@@ -424,6 +417,10 @@ function _M.http_access_phase()
     api_ctx.route_id = route.value.id
     api_ctx.route_name = route.value.name
 
+    local ref = ctxdump.stash_ngx_ctx()
+    core.log.info("stash ngx ctx: ", ref)
+    ngx_var.ctx_ref = ref
+
     -- run global rule
     plugin.run_global_rules(api_ctx, router.global_rules, nil)
 
@@ -450,9 +447,10 @@ function _M.http_access_phase()
             if changed then
                 api_ctx.matched_route = route
                 core.table.clear(api_ctx.plugins)
-                api_ctx.plugins = plugin.filter(api_ctx, route, api_ctx.plugins)
+                local phase = "rewrite_in_consumer"
+                api_ctx.plugins = plugin.filter(api_ctx, route, api_ctx.plugins, nil, phase)
                 -- rerun rewrite phase for newly added plugins in consumer
-                plugin.run_plugin("rewrite_in_consumer", api_ctx.plugins, api_ctx)
+                plugin.run_plugin(phase, api_ctx.plugins, api_ctx)
             end
         end
         plugin.run_plugin("access", plugins, api_ctx)
@@ -526,10 +524,6 @@ function _M.http_access_phase()
         core.log.info("enabled websocket for route: ", route.value.id)
     end
 
-    if route.value.service_protocol == "grpc" then
-        api_ctx.upstream_scheme = "grpc"
-    end
-
     -- load balancer is not required by kafka upstream, so the upstream
     -- node selection process is intercepted and left to kafka to
     -- handle on its own
@@ -555,10 +549,6 @@ function _M.http_access_phase()
 
     -- run the before_proxy method in access phase first to avoid always reinit request
     common_phase("before_proxy")
-
-    local ref = ctxdump.stash_ngx_ctx()
-    core.log.info("stash ngx ctx: ", ref)
-    ngx_var.ctx_ref = ref
 
     local up_scheme = api_ctx.upstream_scheme
     if up_scheme == "grpcs" or up_scheme == "grpc" then

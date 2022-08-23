@@ -19,26 +19,31 @@
 --
 -- @module core.etcd
 
-local fetch_local_conf = require("apisix.core.config_local").local_conf
-local array_mt         = require("apisix.core.json").array_mt
-local etcd             = require("resty.etcd")
-local clone_tab        = require("table.clone")
-local health_check     = require("resty.etcd.health_check")
-local ipairs           = ipairs
-local setmetatable     = setmetatable
-local string           = string
-local tonumber         = tonumber
+local fetch_local_conf  = require("apisix.core.config_local").local_conf
+local array_mt          = require("apisix.core.json").array_mt
+local v3_adapter        = require("apisix.admin.v3_adapter")
+local etcd              = require("resty.etcd")
+local clone_tab         = require("table.clone")
+local health_check      = require("resty.etcd.health_check")
+local ipairs            = ipairs
+local setmetatable      = setmetatable
+local string            = string
+local tonumber          = tonumber
+local ngx_config_prefix = ngx.config.prefix()
+local ngx_socket_tcp    = ngx.socket.tcp
+
+
+local is_http = ngx.config.subsystem == "http"
 local _M = {}
 
 
--- this function create the etcd client instance used in the Admin API
-local function new()
-    local local_conf, err = fetch_local_conf()
-    if not local_conf then
-        return nil, nil, err
-    end
+local function has_mtls_support()
+    local s = ngx_socket_tcp()
+    return s.tlshandshake ~= nil
+end
 
-    local etcd_conf = clone_tab(local_conf.etcd)
+
+local function _new(etcd_conf)
     local prefix = etcd_conf.prefix
     etcd_conf.http_host = etcd_conf.host
     etcd_conf.host = nil
@@ -63,23 +68,104 @@ local function new()
         end
     end
 
-    -- enable etcd health check retry for curr worker
-    if not health_check.conf then
-        health_check.init({
-            max_fails = #etcd_conf.http_host,
-            retry = true,
-        })
-    end
-
-    local etcd_cli
-    etcd_cli, err = etcd.new(etcd_conf)
+    local etcd_cli, err = etcd.new(etcd_conf)
     if not etcd_cli then
         return nil, nil, err
     end
 
     return etcd_cli, prefix
 end
+
+
+local function new()
+    local local_conf, err = fetch_local_conf()
+    if not local_conf then
+        return nil, nil, err
+    end
+
+    local etcd_conf = clone_tab(local_conf.etcd)
+    local proxy_by_conf_server = false
+
+    if local_conf.deployment then
+        if local_conf.deployment.role == "traditional"
+            -- we proxy the etcd requests in traditional mode so we can test the CP's behavior in
+            -- daily development. However, a stream proxy can't be the CP.
+            -- Hence, generate a HTTP conf server to proxy etcd requests in stream proxy is
+            -- unnecessary and inefficient.
+            and is_http
+        then
+            local sock_prefix = ngx_config_prefix
+            etcd_conf.unix_socket_proxy =
+                "unix:" .. sock_prefix .. "/conf/config_listen.sock"
+            etcd_conf.host = {"http://127.0.0.1:2379"}
+            proxy_by_conf_server = true
+
+        elseif local_conf.deployment.role == "control_plane" then
+            local addr = local_conf.deployment.role_control_plane.conf_server.listen
+            etcd_conf.host = {"https://" .. addr}
+            etcd_conf.tls = {
+                verify = false,
+            }
+
+            if has_mtls_support() and local_conf.deployment.certs.cert then
+                local cert = local_conf.deployment.certs.cert
+                local cert_key = local_conf.deployment.certs.cert_key
+                etcd_conf.tls.cert = cert
+                etcd_conf.tls.key = cert_key
+            end
+
+            proxy_by_conf_server = true
+
+        elseif local_conf.deployment.role == "data_plane" then
+            if has_mtls_support() and local_conf.deployment.certs.cert then
+                local cert = local_conf.deployment.certs.cert
+                local cert_key = local_conf.deployment.certs.cert_key
+
+                if not etcd_conf.tls then
+                    etcd_conf.tls = {}
+                end
+
+                etcd_conf.tls.cert = cert
+                etcd_conf.tls.key = cert_key
+            end
+        end
+    end
+
+    -- if an unhealthy etcd node is selected in a single admin read/write etcd operation,
+    -- the retry mechanism for health check can select another healthy etcd node
+    -- to complete the read/write etcd operation.
+    if proxy_by_conf_server then
+        -- health check is done in conf server
+        health_check.disable()
+    elseif not health_check.conf then
+        health_check.init({
+            max_fails = 1,
+            retry = true,
+        })
+    end
+
+    return _new(etcd_conf)
+end
 _M.new = new
+
+
+---
+-- Create an etcd client which will connect to etcd without being proxyed by conf server.
+-- This method is used in init_worker phase when the conf server is not ready.
+--
+-- @function core.etcd.new_without_proxy
+-- @treturn table|nil the etcd client, or nil if failed.
+-- @treturn string|nil the configured prefix of etcd keys, or nil if failed.
+-- @treturn nil|string the error message.
+function _M.new_without_proxy()
+    local local_conf, err = fetch_local_conf()
+    if not local_conf then
+        return nil, nil, err
+    end
+
+    local etcd_conf = clone_tab(local_conf.etcd)
+    return _new(etcd_conf)
+end
 
 
 -- convert ETCD v3 entry to v2 one
@@ -133,7 +219,7 @@ function _M.get_format(res, real_key, is_dir, formatter)
         return not_found(res)
     end
 
-    res.body.action = "get"
+    v3_adapter.to_v3(res.body, "get")
 
     if formatter then
         return formatter(res)
@@ -161,6 +247,7 @@ function _M.get_format(res, real_key, is_dir, formatter)
     end
 
     res.body.kvs = nil
+    v3_adapter.to_v3_list(res.body)
     return res
 end
 
@@ -234,10 +321,14 @@ local function set(key, value, ttl)
         return nil, err
     end
 
+    if res.body.error then
+        return nil, res.body.error
+    end
+
     res.headers["X-Etcd-Index"] = res.body.header.revision
 
     -- etcd v3 set would not return kv info
-    res.body.action = "set"
+    v3_adapter.to_v3(res.body, "set")
     res.body.node = {}
     res.body.node.key = prefix .. key
     res.body.node.value = value
@@ -300,7 +391,7 @@ function _M.atomic_set(key, value, ttl, mod_revision)
 
     res.headers["X-Etcd-Index"] = res.body.header.revision
     -- etcd v3 set would not return kv info
-    res.body.action = "compareAndSwap"
+    v3_adapter.to_v3(res.body, "compareAndSwap")
     res.body.node = {
         key = key,
         value = value,
@@ -338,7 +429,7 @@ function _M.push(key, value, ttl)
         return nil, err
     end
 
-    res.body.action = "create"
+    v3_adapter.to_v3(res.body, "create")
     return res, nil
 end
 
@@ -362,7 +453,7 @@ function _M.delete(key)
     end
 
     -- etcd v3 set would not return kv info
-    res.body.action = "delete"
+    v3_adapter.to_v3(res.body, "delete")
     res.body.node = {}
     res.body.key = prefix .. key
 
@@ -382,7 +473,7 @@ end
 -- --   etcdserver = "3.5.0"
 -- -- }
 function _M.server_version()
-    local etcd_cli, err = new()
+    local etcd_cli, _, err = new()
     if not etcd_cli then
         return nil, err
     end

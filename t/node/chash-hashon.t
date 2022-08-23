@@ -60,8 +60,7 @@ __DATA__
                                 }
                             }
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -91,8 +90,7 @@ __DATA__
                                 }
                             }
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
             ngx.say(code .. " " ..body)

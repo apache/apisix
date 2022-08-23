@@ -62,7 +62,6 @@ __DATA__
     }
 --- request
 GET /t
---- error_code: 500
 --- error_log eval
 qr /insufficient credentials code: 401/
 

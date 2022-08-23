@@ -1,13 +1,11 @@
 {
-  "version": "2.14.1",
+  "version": "2.15.0",
   "sidebar": [
     {
       "type": "category",
       "label": "Architecture Design",
       "items": [
         "architecture-design/apisix",
-        "architecture-design/plugin-config",
-        "architecture-design/debug-mode",
         "architecture-design/deployment-role"
       ]
     },
@@ -19,6 +17,7 @@
         "terminology/consumer",
         "terminology/global-rule",
         "terminology/plugin",
+        "terminology/plugin-config",
         "terminology/route",
         "terminology/router",
         "terminology/script",
@@ -49,7 +48,8 @@
             "plugins/real-ip",
             "plugins/server-info",
             "plugins/ext-plugin-pre-req",
-            "plugins/ext-plugin-post-req"
+            "plugins/ext-plugin-post-req",
+            "plugins/ext-plugin-post-resp"
           ]
         },
         {
@@ -170,7 +170,7 @@
         },
         {
           "type": "category",
-          "label": "Other Protocols",
+          "label": "Other protocols",
           "items": [
             "plugins/dubbo-proxy",
             "plugins/mqtt-proxy",
@@ -194,6 +194,20 @@
       ]
     },
     {
+      "type": "category",
+      "label": "Development",
+      "items": [
+        {
+          "type": "doc",
+          "id": "building-apisix"
+        },
+        {
+          "type": "doc",
+          "id": "debug-mode"
+        }
+      ]
+    },
+    {
       "type": "doc",
       "id": "FAQ"
     },
@@ -210,7 +224,7 @@
             "discovery/consul_kv",
             "discovery/nacos",
             "discovery/eureka",
-            "discovery/zookeeper",
+            "discovery/control-plane-service-discovery",
             "discovery/kubernetes"
           ]
         },

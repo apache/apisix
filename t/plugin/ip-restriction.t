@@ -587,7 +587,9 @@ qr/failed to validate item 1: object matches none of the required/
                             "blacklist": [
                                 "127.0.0.0/24"
                             ],
-                            "disable": true
+                            "_meta": {
+                                "disable": true
+                            }
                         }
                     }
                 }]]

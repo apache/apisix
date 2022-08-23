@@ -56,7 +56,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 如果找不到对应的 Plugin config，该路由上的请求会报 503 错误。
 
 如果这个路由已经配置了 `plugins`，那么 Plugin config 里面的插件配置会合并进去。
-相同的插件会覆盖掉 `plugins` 原有的插件。
+相同的插件不会覆盖掉 `plugins` 原有的插件。
 
 举个例子：
 
@@ -94,7 +94,6 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "plugins": {
         "proxy-rewrite": {
             "uri": "/test/add",
-            "scheme": "https",
             "host": "apisix.iresty.com"
         },
         "limit-count": {
@@ -127,11 +126,10 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
         },
         "proxy-rewrite": {
             "uri": "/test/add",
-            "scheme": "https",
             "host": "apisix.iresty.com"
         },
         "limit-count": {
-            "count": 2,
+            "count": 20,
             "time_window": 60,
             "rejected_code": 503
         }

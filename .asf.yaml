@@ -22,11 +22,11 @@ github:
       - api-gateway
       - cloud-native
       - nginx
-      - lua
       - luajit
       - apigateway
       - microservices
       - api
+      - apis
       - loadbalancing
       - reverse-proxy
       - api-management
@@ -36,6 +36,9 @@ github:
       - devops
       - kubernetes
       - docker
+      - kubernetes-ingress
+      - kubernetes-ingress-controller
+      - service-mesh
 
     enabled_merge_buttons:
       squash:  true
@@ -48,6 +51,10 @@ github:
       master:
         required_pull_request_reviews:
           dismiss_stale_reviews: true
+          require_code_owner_reviews: true
+          required_approving_review_count: 2
+      release/2.15:
+        required_pull_request_reviews:
           require_code_owner_reviews: true
           required_approving_review_count: 2
       release/2.14:

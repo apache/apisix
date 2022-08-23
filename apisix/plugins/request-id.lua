@@ -64,7 +64,7 @@ local attr_schema = {
 
 local _M = {
     version = 0.1,
-    priority = 11010,
+    priority = 12015,
     name = plugin_name,
     schema = schema
 }

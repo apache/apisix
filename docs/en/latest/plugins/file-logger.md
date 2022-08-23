@@ -1,5 +1,11 @@
 ---
 title: file-logger
+keywords:
+  - APISIX
+  - API Gateway
+  - Plugin
+  - File Logger
+description: This document contains information about the Apache APISIX file-logger Plugin.
 ---
 
 <!--
@@ -23,17 +29,45 @@ title: file-logger
 
 ## Description
 
-`file-logger` is a plugin that pushes a stream of log data to a specified location. For example, the output path can be customized: `logs/file.log`.
+The `file-logger` Plugin is used to push log streams to a specific location.
 
 ## Attributes
 
-| Name             | Type    | Requirement | Default        | Valid  | Description                                             |
-| ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| path              | string  | required   |               |         | Customise the output file path                   |
+| Name | Type   | Required | Description   |
+| ---- | ------ | -------- | ------------- |
+| path | string | True     | Log file path. |
 
-## How To Enable
+## Metadata
 
-This is an example of how to enable the `file-logger` plugin for a specific route.
+You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
+
+| Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
+| ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+
+The example below shows how you can configure through the Admin API:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/file-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+  "log_format": {
+    "host": "$host",
+    "@timestamp": "$time_iso8601",
+    "client_ip": "$remote_addr"
+  }
+}'
+```
+
+With this configuration, your logs would be formatted as shown below:
+
+```shell
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+```
+
+## Enabling the Plugin
+
+The example below shows how you can enable the Plugin on a specific Route:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -53,52 +87,22 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Test Plugin
+## Example usage
 
-> success:
-
-```shell
-$ curl -i http://127.0.0.1:9080/hello
-HTTP/1.1 200 OK
-...
-hello, world
-```
-
-You can then find the `file.log` file in the corresponding `logs` directory.
-
-## Metadata
-
-| Name             | Type    | Requirement | Default       | Valid   | Description                                                                              |
-| ---------------- | ------- | ----------- | ------------- | ------- | ---------------------------------------------------------------------------------------- |
-| log_format       | object  | optional    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | Log format declared as key value pair in JSON format. Only string is supported in the `value` part. If the value starts with `$`, it means to get [APISIX variable](../apisix-variable.md) or [Nginx variable](http://nginx.org/en/docs/varindex.html). |
-
-### Example
+Now, if you make a request, it will be logged in the path you specified:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/file-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-  "log_format": {
-    "host": "$host",
-    "@timestamp": "$time_iso8601",
-    "client_ip": "$remote_addr"
-  }
-}'
+curl -i http://127.0.0.1:9080/hello
 ```
 
-It is expected to see some logs like that:
-
-```shell
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
-```
+You will be able to find the `file.log` file in the configured `logs` directory.
 
 ## Disable Plugin
 
-Remove the corresponding json configuration in the plugin configuration to disable the `file-logger`.
-APISIX plugins are hot-reloaded, therefore no need to restart APISIX.
+To disable the `file-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "methods": ["GET"],
   "uri": "/hello",

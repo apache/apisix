@@ -82,7 +82,7 @@ return function (apisix_home, pkg_cpath_org, pkg_path_org)
     -- pre-transform openresty path
     res, err = util.execute_cmd("command -v openresty")
     if not res then
-        error("failed to exec ulimit cmd \'command -v openresty\', err: " .. err)
+        error("failed to exec cmd \'command -v openresty\', err: " .. err)
     end
     local openresty_path_abs = util.trim(res)
 

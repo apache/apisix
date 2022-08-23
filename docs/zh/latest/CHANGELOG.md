@@ -23,8 +23,11 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.15.0](#2150)
 - [2.14.1](#2141)
 - [2.14.0](#2140)
+- [2.13.3](#2133)
+- [2.13.2](#2132)
 - [2.13.1](#2131)
 - [2.13.0](#2130)
 - [2.12.1](#2121)
@@ -58,9 +61,60 @@ title: CHANGELOG
 - [0.7.0](#070)
 - [0.6.0](#060)
 
+## 2.15.0
+
+### Change
+
+- grpc 状态码 OUT_OF_RANGE 如今会在 grpc-transcode 插件中作为 http 状态码 400: [#7419](https://github.com/apache/apisix/pull/7419)
+- 重命名 `etcd.health_check_retry` 配置项为 `startup_retry`。 [#7304](https://github.com/apache/apisix/pull/7304)
+- 移除 `upstream.enable_websocket`。该配置已于 2020 年标记成已过时。 [#7222](https://github.com/apache/apisix/pull/7222)
+
+### Core
+
+- 支持动态启用插件 [#7453](https://github.com/apache/apisix/pull/7453)
+- 支持动态指定插件执行顺序 [#7273](https://github.com/apache/apisix/pull/7273)
+- 支持 Upstream 对象从 SSL 对象中引用证书 [#7221](https://github.com/apache/apisix/pull/7221)
+- 允许在插件中使用自定义错误 [#7128](https://github.com/apache/apisix/pull/7128)
+- xRPC Redis 代理增加 metrics: [#7183](https://github.com/apache/apisix/pull/7183)
+- 引入 deployment role 概念来简化 APISIX 的部署：
+    - [#7405](https://github.com/apache/apisix/pull/7405)
+    - [#7417](https://github.com/apache/apisix/pull/7417)
+    - [#7392](https://github.com/apache/apisix/pull/7392)
+    - [#7365](https://github.com/apache/apisix/pull/7365)
+    - [#7249](https://github.com/apache/apisix/pull/7249)
+
+### Plugin
+
+- prometheus 指标中提供 ngx.shared.dict 统计信息 [#7412](https://github.com/apache/apisix/pull/7412)
+- 允许在 proxy-rewrite 插件中使用客户端发过来的原始 URL [#7401](https://github.com/apache/apisix/pull/7401)
+- openid-connect 插件支持 PKCE： [#7370](https://github.com/apache/apisix/pull/7370)
+- sls-logger 插件支持自定义日志格式 [#7328](https://github.com/apache/apisix/pull/7328)
+- kafka-logger 插件支持更多的 Kafka 客户端配置 [#7266](https://github.com/apache/apisix/pull/7266)
+- openid-connect 插件支持暴露 refresh token [#7220](https://github.com/apache/apisix/pull/7220)
+- 移植 prometheus 插件到 stream 子系统 [#7174](https://github.com/apache/apisix/pull/7174)
+
+### Bugfix
+
+- Kubernetes 服务发现在重试时应当清除上一次尝试时遗留的状态 [#7506](https://github.com/apache/apisix/pull/7506)
+- redirect 插件禁止同时启用冲突的 http_to_https 和 append_query_string 配置 [#7433](https://github.com/apache/apisix/pull/7433)
+- 默认配置下，http-logger 不再发送空 Authorization 头 [#7444](https://github.com/apache/apisix/pull/7444)
+- 修复 limit-count 插件不能同时配置 group 和 disable 的问题 [#7384](https://github.com/apache/apisix/pull/7384)
+- 让 request-id 插件优先执行，这样 tracing 插件可以用到 request id [#7281](https://github.com/apache/apisix/pull/7281)
+- 更正 grpc-transcode 插件中对 repeated Message 的处理。 [#7231](https://github.com/apache/apisix/pull/7231)
+- 允许 proxy-cache 插件 cache key 出现缺少的值。 [#7168](https://github.com/apache/apisix/pull/7168)
+- 减少 chash 负载均衡节点权重过大时额外的内存消耗。 [#7103](https://github.com/apache/apisix/pull/7103)
+- proxy-cache 插件 method 不匹配时不应该返回缓存结果。 [#7111](https://github.com/apache/apisix/pull/7111)
+- 上游 keepalive 应考虑 TLS 参数：
+    - [#7054](https://github.com/apache/apisix/pull/7054)
+    - [#7466](https://github.com/apache/apisix/pull/7466)
+- 重定向插件在将 HTTP 重定向到 HTTPS 时设置了正确的端口。
+    - [#7065](https://github.com/apache/apisix/pull/7065)
+
 ## 2.14.1
 
-**这是一个 LTS 维护版本，您可以在 `release/2.14` 分支中看到 CHANGELOG。**
+### Bugfix
+
+- `real_ip_from` 中配置 "unix: " 不应该导致 batch-requests 插件无法使用 [#7106](https://github.com/apache/apisix/pull/7106)
 
 ## 2.14.0
 
@@ -117,6 +171,14 @@ title: CHANGELOG
     - [#7065](https://github.com/apache/apisix/pull/7065)
     - [#6686](https://github.com/apache/apisix/pull/6686)
 - Admin API 拒绝未知的 stream 插件。[#6813](https://github.com/apache/apisix/pull/6813)
+
+## 2.13.3
+
+**这是一个 LTS 维护版本，您可以在 `release/2.13` 分支中看到 CHANGELOG。**
+
+## 2.13.2
+
+**这是一个 LTS 维护版本，您可以在 `release/2.13` 分支中看到 CHANGELOG。**
 
 ## 2.13.1
 

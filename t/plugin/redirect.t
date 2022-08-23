@@ -443,12 +443,13 @@ Location: https://foo.com:8443/hello
 
 
 
-=== TEST 19: redirect(port using `apisix.ssl.listen_port`)
+=== TEST 19: redirect(port using `apisix.ssl.listen`)
 --- yaml_config
 apisix:
     ssl:
         enable: true
-        listen_port: 9445
+        listen:
+            - port: 9445
 --- request
 GET /hello
 --- more_headers
@@ -649,7 +650,7 @@ location /t {
         local ssl_key =  t.read_file("t/certs/apisix.key")
         local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
 
-        local code, body = t.test('/apisix/admin/ssl/1',
+        local code, body = t.test('/apisix/admin/ssls/1',
             ngx.HTTP_PUT,
             core.json.encode(data)
             )
@@ -1114,3 +1115,38 @@ X-Forwarded-Proto: http
 --- error_code: 301
 --- response_headers
 Location: https://foo.com:9443/hello
+
+
+
+=== TEST 47: wrong configure, enable http_to_https with append_query_string
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "host": "foo.com",
+                    "plugins": {
+                        "redirect": {
+                            "http_to_https": true,
+                            "append_query_string": true
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/error_msg":"failed to check the configuration of plugin redirect err: only one of `http_to_https` and `append_query_string` can be configured."/
+--- no_error_log
+[error]

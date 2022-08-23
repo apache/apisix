@@ -109,7 +109,8 @@ done
                                 "redirect_uri": "https://iresty.com",
                                 "ssl_verify": false,
                                 "timeout": 10,
-                                "scope": "apisix"
+                                "scope": "apisix",
+                                "use_pkce": false
                             }
                         },
                         "upstream": {
@@ -918,7 +919,7 @@ OIDC introspection failed: invalid token
 --- request
 GET /t
 --- response_body
-{"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","introspection_endpoint_auth_method":"client_secret_basic","logout_path":"/logout","realm":"apisix","scope":"openid","set_access_token_header":true,"set_id_token_header":true,"set_refresh_token_header":false,"set_userinfo_header":true,"ssl_verify":false,"timeout":3}
+{"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","introspection_endpoint_auth_method":"client_secret_basic","logout_path":"/logout","realm":"apisix","scope":"openid","set_access_token_header":true,"set_id_token_header":true,"set_refresh_token_header":false,"set_userinfo_header":true,"ssl_verify":false,"timeout":3,"use_pkce":false}
 --- no_error_log
 [error]
 
@@ -1183,5 +1184,82 @@ passed
 GET /t
 --- response_body_like
 http://127.0.0.1:.*/hello
+--- no_error_log
+[error]
+
+
+
+=== TEST 30: Switch route URI back to `/hello` and enable pkce.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                                "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
+                                "redirect_uri": "https://iresty.com",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "scope": "apisix",
+                                "use_pkce": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 31: Access route w/o bearer token. Should redirect to authentication endpoint of ID provider with code_challenge parameters.
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            ngx.status = res.status
+            local location = res.headers['Location']
+            if location and string.find(location, 'https://samples.auth0.com/authorize') ~= -1 and
+                string.find(location, 'scope=apisix') ~= -1 and
+                string.find(location, 'client_id=kbyuFDidLLm280LIwVFiazOqjO3ty8KH') ~= -1 and
+                string.find(location, 'response_type=code') ~= -1 and
+                string.find(location, 'redirect_uri=https://iresty.com') ~= -1 and
+                string.match(location, '.*code_challenge=.*') and
+                string.match(location, '.*code_challenge_method=S256.*') then
+                ngx.say(true)
+            end
+        }
+    }
+--- request
+GET /t
+--- timeout: 10s
+--- response_body
+true
+--- error_code: 302
 --- no_error_log
 [error]

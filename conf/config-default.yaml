@@ -38,8 +38,8 @@ apisix:
                                     # yaml: fetch the config value from local yaml file `/your_path/conf/apisix.yaml`
 
   #proxy_protocol:                  # Proxy Protocol configuration
-  #listen_http_port: 9181           # The port with proxy protocol for http, it differs from node_listen and port_admin.
-                                    # This port can only receive http request with proxy protocol, but node_listen & port_admin
+  #listen_http_port: 9181           # The port with proxy protocol for http, it differs from node_listen and admin_listen.
+                                    # This port can only receive http request with proxy protocol, but node_listen & admin_listen
                                     # can only receive http request. If you enable proxy protocol, you must use this port to
                                     # receive http request with proxy protocol
   #listen_https_port: 9182          # The port with proxy protocol for https
@@ -77,13 +77,14 @@ apisix:
   #admin_listen:                # use a separate port
   #  ip: 127.0.0.1              # Specific IP, if not set, the default value is `0.0.0.0`.
   #  port: 9180
-  #port_admin: 9180             # Not recommend: This parameter should be set via the `admin_listen`.
   #https_admin: true            # enable HTTPS when use a separate port for Admin API.
                                 # Admin API will use conf/apisix_admin_api.crt and conf/apisix_admin_api.key as certificate.
-  admin_api_mtls:               # Depends on `port_admin` and `https_admin`.
+  admin_api_mtls:               # Depends on `admin_listen` and `https_admin`.
     admin_ssl_cert: ""          # Path of your self-signed server side cert.
     admin_ssl_cert_key: ""      # Path of your self-signed server side key.
     admin_ssl_ca_cert: ""       # Path of your self-signed ca cert.The CA is used to sign all admin api callers' certificates.
+
+  admin_api_version: v3        # The version of admin api, latest version is v3.
 
   # Default token when use API to call for Admin API.
   # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
@@ -131,14 +132,11 @@ apisix:
   ssl:
     enable: true
     listen:                       # APISIX listening port in https.
-      - 9443
-    #   - port: 9444
-    #     enable_http2: true      # If not set, the default value is `false`.
+      - port: 9443
+        enable_http2: true
     #   - ip: 127.0.0.3           # Specific IP, If not set, the default value is `0.0.0.0`.
     #     port: 9445
     #     enable_http2: true
-    enable_http2: true            # Not recommend: This parameter should be set via the `listen`.
-    # listen_port: 9443           # Not recommend: This parameter should be set via the `listen`.
     #ssl_trusted_certificate: /path/to/ca-cert  # Specifies a file path with trusted CA certificates in the PEM format
                                                 # used to verify the certificate when APISIX needs to do SSL/TLS handshaking
                                                 # with external services (e.g. etcd)
@@ -281,15 +279,15 @@ etcd:
     - "http://127.0.0.1:2379"     # multiple etcd address, if your etcd cluster enables TLS, please use https scheme,
                                   # e.g. https://127.0.0.1:2379.
   prefix: /apisix                 # apisix configurations prefix
-  timeout: 30                     # 30 seconds
+  #timeout: 30                    # 30 seconds
   #resync_delay: 5                # when sync failed and a rest is needed, resync after the configured seconds plus 50% random jitter
   #health_check_timeout: 10       # etcd retry the unhealthy nodes after the configured seconds
-  health_check_retry: 2           # etcd retry time that only affects the health check, default 2
+  startup_retry: 2                # the number of retry to etcd during the startup, default to 2
   #user: root                     # root username for etcd
   #password: 5tHkHhYkjr6cQY       # root password for etcd
   tls:
     # To enable etcd client certificate you need to build APISIX-Base, see
-    # https://apisix.apache.org/docs/apisix/FAQ#how-do-i-build-the-apisix-base-environment?
+    # https://apisix.apache.org/docs/apisix/FAQ#how-do-i-build-the-apisix-base-environment
     #cert: /path/to/cert          # path of certificate used by the etcd client
     #key: /path/to/key            # path of key used by the etcd client
 
@@ -324,6 +322,70 @@ etcd:
 #      connect: 2000              # default 2000ms
 #      send: 2000                 # default 2000ms
 #      read: 5000                 # default 5000ms
+#  nacos:
+#    host:
+#      - "http://${username}:${password}@${host1}:${port1}"
+#    prefix: "/nacos/v1/"
+#    fetch_interval: 30    # default 30 sec
+#    weight: 100           # default 100
+#    timeout:
+#      connect: 2000       # default 2000 ms
+#      send: 2000          # default 2000 ms
+#      read: 5000          # default 5000 ms
+#  consul_kv:
+#    servers:
+#      - "http://127.0.0.1:8500"
+#      - "http://127.0.0.1:8600"
+#    prefix: "upstreams"
+#    skip_keys:                    # if you need to skip special keys
+#      - "upstreams/unused_api/"
+#    timeout:
+#      connect: 2000               # default 2000 ms
+#      read: 2000                  # default 2000 ms
+#      wait: 60                    # default 60 sec
+#    weight: 1                     # default 1
+#    fetch_interval: 3             # default 3 sec, only take effect for keepalive: false way
+#    keepalive: true               # default true, use the long pull way to query consul servers
+#    default_server:               # you can define default server when missing hit
+#      host: "127.0.0.1"
+#      port: 20999
+#      metadata:
+#        fail_timeout: 1           # default 1 ms
+#        weight: 1                 # default 1
+#        max_fails: 1              # default 1
+#    dump:                         # if you need, when registered nodes updated can dump into file
+#       path: "logs/consul_kv.dump"
+#       expire: 2592000            # unit sec, here is 30 day
+#  kubernetes:
+#    service:
+#      schema: https                     #apiserver schema, options [http, https], default https
+#      host: ${KUBERNETES_SERVICE_HOST}  #apiserver host, options [ipv4, ipv6, domain, environment variable], default ${KUBERNETES_SERVICE_HOST}
+#      port: ${KUBERNETES_SERVICE_PORT}  #apiserver port, options [port number, environment variable], default ${KUBERNETES_SERVICE_PORT}
+#    client:
+#      # serviceaccount token or path of serviceaccount token_file
+#      token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
+#      # token: |-
+#       # eyJhbGciOiJSUzI1NiIsImtpZCI6Ikx5ME1DNWdnbmhQNkZCNlZYMXBsT3pYU3BBS2swYzBPSkN3ZnBESGpkUEEif
+#       # 6Ikx5ME1DNWdnbmhQNkZCNlZYMXBsT3pYU3BBS2swYzBPSkN3ZnBESGpkUEEifeyJhbGciOiJSUzI1NiIsImtpZCI
+#    # kubernetes discovery plugin support use namespace_selector
+#    # you can use one of [equal, not_equal, match, not_match] filter namespace
+#    namespace_selector:
+#      # only save endpoints with namespace equal default
+#      equal: default
+#      # only save endpoints with namespace not equal default
+#      #not_equal: default
+#      # only save endpoints with namespace match one of [default, ^my-[a-z]+$]
+#      #match:
+#      #- default
+#      #- ^my-[a-z]+$
+#      # only save endpoints with namespace not match one of [default, ^my-[a-z]+$ ]
+#      #not_match:
+#      #- default
+#      #- ^my-[a-z]+$
+#    # kubernetes discovery plugin support use label_selector
+#    # for the expression of label_selector, please refer to https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+#    label_selector: |-
+#      first="a",second="b"
 
 graphql:
   max_size: 1048576               # the maximum size limitation of graphql in bytes, default 1MiB
@@ -335,11 +397,11 @@ plugins:                          # plugin list (sorted by priority)
   - real-ip                        # priority: 23000
   - client-control                 # priority: 22000
   - proxy-control                  # priority: 21990
+  - request-id                     # priority: 12015
   - zipkin                         # priority: 12011
   #- skywalking                    # priority: 12010
   #- opentelemetry                 # priority: 12009
   - ext-plugin-pre-req             # priority: 12000
-  - request-id                     # priority: 11010
   - fault-injection                # priority: 11000
   - mocking                        # priority: 10900
   - serverless-pre-function        # priority: 10000
@@ -458,6 +520,20 @@ plugin_attr:
     export_addr:
       ip: 127.0.0.1
       port: 9091
+    #metrics:
+    #  http_status:
+    #    # extra labels from nginx variables
+    #    extra_labels:
+    #      # the label name doesn't need to be the same as variable name
+    #      # below labels are only examples, you could add any valid variables as you need
+    #      - upstream_addr: $upstream_addr
+    #      - upstream_status: $upstream_status
+    #  http_latency:
+    #    extra_labels:
+    #      - upstream_addr: $upstream_addr
+    #  bandwidth:
+    #    extra_labels:
+    #      - upstream_addr: $upstream_addr
   server-info:
     report_ttl: 60   # live time for server info in etcd (unit: second)
   dubbo-proxy:

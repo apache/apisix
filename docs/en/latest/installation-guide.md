@@ -43,6 +43,7 @@ APISIX can be installed by the different methods listed below:
     {label: 'Docker', value: 'docker'},
     {label: 'Helm', value: 'helm'},
     {label: 'RPM', value: 'rpm'},
+    {label: 'Source Code', value: 'source code'},
   ]}>
 <TabItem value="docker">
 
@@ -167,6 +168,12 @@ Run `apisix help` to get a list of all available operations.
 :::
 
 </TabItem>
+
+<TabItem value="source code">
+
+If you want to build APISIX from source, please refer to [Building APISIX from source](./building-apisix.md).
+
+</TabItem>
 </Tabs>
 
 ## Installing etcd
@@ -185,7 +192,7 @@ It would be installed automatically if you choose the Docker or Helm install met
 <TabItem value="linux">
 
 ```shell
-ETCD_VERSION='3.4.18'
+ETCD_VERSION='3.5.4'
 wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
 tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
   cd etcd-v${ETCD_VERSION}-linux-amd64 && \
@@ -206,6 +213,48 @@ brew services start etcd
 </Tabs>
 
 ## Next steps
+
+### Configuring APISIX
+
+You can configure your APISIX deployment in two ways:
+
+1. By directly changing your configuration file (`conf/config.yaml`).
+2. By using the `--config` or the `-c` flag to pass the path to your configuration file while starting APISIX.
+
+   ```shell
+   apisix start -c <path to config file>
+   ```
+
+APISIX will use the configurations added in this configuration file and will fall back to the default configuration if anything is not configured.
+
+For example, to configure the default listening port to be `8000` without changing other configurations, your configuration file could look like this:
+
+```yaml title="conf/config.yaml"
+apisix:
+  node_listen: 8000
+```
+
+Now, if you decide you want to change the etcd address to `http://foo:2379`, you can add it to your configuration file. This will not change other configurations.
+
+```yaml title="conf/config.yaml"
+apisix:
+  node_listen: 8000
+
+etcd:
+  host: "http://foo:2379"
+```
+
+:::warning
+
+APISIX's default configuration can be found in `conf/config-default.yaml` file and it should not be modified. It is bound to the source code and the configuration should only be changed by the methods mentioned above.
+
+:::
+
+:::warning
+
+The `conf/nginx.conf` file is automatically generated and should not be modified.
+
+:::
 
 ### Updating Admin API key
 

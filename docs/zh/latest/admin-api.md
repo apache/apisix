@@ -29,13 +29,98 @@ Admin API 是为 Apache APISIX 服务的一组 API，我们可以将参数传递
 
 在下面出现的 `X-API-KEY` 指的是 `conf/config.yaml` 文件中的 `apisix.admin_key.key`，它是 Admin API 的访问 token。
 
+## V3
+
+Admin API 在 V3 版本中做了一些不向下兼容的调整，以及支持更多特性。
+
+### 支持新的响应体格式
+
+1. 移除响应体中的 `action` 字段；
+2. 调整获取资源列表时的响应体结构，新的响应体结构示例如下：
+
+```json
+{
+    "count":2,
+    "list":[
+        {
+            ...
+        },
+        {
+            ...
+        }
+    ]
+}
+```
+
+### 支持分页查询
+
+获取资源列表时支持分页查询，分页参数包括：
+
+| 参数       | 默认值 | 范围     | 说明           |
+| --------- | ------ | -------- | ------------ |
+| page      | 1      | [1, ...] | 页数          |
+| page_size |        | [10, 500]| 每页资源数量   |
+
+示例如下：
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes?page=1&page_size=10 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+  "count": 1,
+  "list": [
+    {
+      ...
+    }
+  ]
+}
+```
+
+目前支持分页查询的资源如下：
+
+- Consumer
+- Global Rules
+- Plugin Config
+- Proto
+- Route
+- Service
+- SSL
+- Stream Route
+- Upstream
+
+### 支持过滤资源
+
+获取资源列表时支持根据 `name`, `label`, `uri` 过滤资源。
+
+| 参数  | 说明                                                                                                      |
+| ----- | ---------------------------------------------------------------------------------------------------      |
+| name  | 根据资源的 `name` 属性进行查询，如果资源本身没有 `name` 属性则不会出现在查询结果中。                                 |
+| label | 根据资源的 `label` 属性进行查询，如果资源本身没有 `labe`l 属性则不会出现在查询结果中。                               |
+| uri   | 仅在 Route 资源上支持。如果 Route 的 `uri` 等于查询的 uri 或 `uris` 包含查询的 uri，则该 Route 资源出现在查询结果中。 |
+
+当启用了多个过滤参数时，对不同过滤参数的查询结果取交集。
+下述示例将返回一个路由列表，该路由列表中的所有路由满足以下条件：路由的 `name` 包含字符串 "test"；`uri` 包含字符串 "foo"；对路由的 `label` 没有限制，因为查询的 label 是空字符串。
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes?name=test&uri=foo&label= \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+  "count": 1,
+  "list": [
+    {
+      ...
+    }
+  ]
+}
+```
+
 ## Route
 
 *地址*：/apisix/admin/routes/{id}?ttl=0
 
 *说明*：Route 字面意思就是路由，通过定义一些规则来匹配客户端的请求，然后根据匹配结果加载并执行相应的插件，并把请求转发给到指定 Upstream。
 
-注意：在启用 `Admin API` 时，它会占用前缀为 `/apisix/admin` 的 API。因此，为了避免您设计 API 与 `/apisix/admin` 冲突，建议为 Admin API 使用其他端口，您可以在 `conf/config.yaml` 中通过 `port_admin` 进行自定义 Admin API 端口。
+注意：在启用 `Admin API` 时，它会占用前缀为 `/apisix/admin` 的 API。因此，为了避免您设计 API 与 `/apisix/admin` 冲突，建议为 Admin API 使用其他端口，您可以在 `conf/config.yaml` 中通过 `admin_listen` 进行自定义 Admin API 端口。
 
 ### 请求方法
 
@@ -110,7 +195,7 @@ route 对象 json 配置内容：
         "send": 3,
         "read": 3
     },
-    "filter_func": "",                    # 用户自定义的过滤函数，非必填
+    "filter_func": ""                     # 用户自定义的过滤函数，非必填
 }
 ```
 
@@ -467,7 +552,7 @@ consumer 对象 json 配置内容：
 {
     "plugins": {},          # 指定 consumer 绑定的插件
     "username": "name",     # 必填
-    "desc": "hello world",  # consumer 描述
+    "desc": "hello world"   # consumer 描述
 }
 ```
 
@@ -496,7 +581,7 @@ HTTP/1.1 200 OK
 Date: Thu, 26 Dec 2019 08:17:49 GMT
 ...
 
-{"node":{"value":{"username":"jack","plugins":{"key-auth":{"key":"auth-one"},"limit-count":{"time_window":60,"count":2,"rejected_code":503,"key":"remote_addr","policy":"local"}}},"createdIndex":64,"key":"\/apisix\/consumers\/jack","modifiedIndex":64},"prevNode":{"value":"{\"username\":\"jack\",\"plugins\":{\"key-auth\":{\"key\":\"auth-one\"},\"limit-count\":{\"time_window\":60,\"count\":2,\"rejected_code\":503,\"key\":\"remote_addr\",\"policy\":\"local\"}}}","createdIndex":63,"key":"\/apisix\/consumers\/jack","modifiedIndex":63},"action":"set"}
+{"node":{"value":{"username":"jack","plugins":{"key-auth":{"key":"auth-one"},"limit-count":{"time_window":60,"count":2,"rejected_code":503,"key":"remote_addr","policy":"local"}}},"createdIndex":64,"key":"\/apisix\/consumers\/jack","modifiedIndex":64},"prevNode":{"value":"{\"username\":\"jack\",\"plugins\":{\"key-auth\":{\"key\":\"auth-one\"},\"limit-count\":{\"time_window\":60,\"count\":2,\"rejected_code\":503,\"key\":\"remote_addr\",\"policy\":\"local\"}}}","createdIndex":63,"key":"\/apisix\/consumers\/jack","modifiedIndex":63}}
 ```
 
 从 `v2.2` 版本之后，同一个 consumer 可以绑定多个认证插件。
@@ -532,7 +617,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 | 名字           | 可选项                             | 类型           | 说明                                                                                                                                                                                                                                                                                                                                                        | 示例                                             |
 | -------------- | ---------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | type           | 必需                               | 枚举           | 负载均衡算法                                                                                                                                                                                                                                                                                                                                                            |                                      |     |
-| nodes          | 必需，不能和 `service_name` 一起用 | Node           | 哈希表或数组。当它是哈希表时，内部元素的 key 是上游机器地址列表，格式为`地址 +（可选的）端口`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。value 则是节点的权重。当它是数组时，数组中每个元素都是一个哈希表，其中包含 `host`、`weight` 以及可选的 `port`、`priority`。`nodes` 可以为空，这通常用作占位符。客户端命中这样的上游会返回 502。                                        | `192.168.1.100:80`                               |
+| nodes          | 必需，不能和 `service_name` 一起用 | Node           | 哈希表或数组。当它是哈希表时，内部元素的 key 是上游机器地址列表，格式为`地址 +（可选的）端口`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。对于哈希表的情况，如果 key 是 IPv6 地址加端口，则必须用中括号将 IPv6 地址括起来。value 则是节点的权重。当它是数组时，数组中每个元素都是一个哈希表，其中包含 `host`、`weight` 以及可选的 `port`、`priority`。`nodes` 可以为空，这通常用作占位符。客户端命中这样的上游会返回 502。                                        | `192.168.1.100:80`, `[::1]:80`                               |
 | service_name   | 必需，不能和 `nodes` 一起用        | string         | 服务发现时使用的服务名，见[集成服务发现注册中心](./discovery.md)                                                                                                                                                                                                                                                                                            | `a-bootiful-client`                              |
 | discovery_type | 必需，如果设置了 `service_name`    | string         | 服务发现类型，见 [集成服务发现注册中心](./discovery.md)                                                                                                                                                                                                                                                                                                      | `eureka`                                         |
 | key            | 条件必需                           | 匹配类型       | 该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，永远返回相同 id，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自 URL 的请求参数，[Nginx 变量列表](http://nginx.org/en/docs/varindex.html) |                                                  |
@@ -583,7 +668,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 
 `keepalive_pool` 允许 upstream 对象有自己单独的连接池。
 它下属的字段，比如 `requests`，可以用了配置上游连接保持的参数。
-这个特性需要 APISIX 运行于 [APISIX-Base](./FAQ.md#如何构建-APISIX-Base-环境？)。
+这个特性需要 APISIX 运行于 [APISIX-Base](./FAQ.md#如何构建-apisix-base-环境)。
 
 **upstream 对象 json 配置内容：**
 
@@ -594,7 +679,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
     "timeout": {                # 设置连接、发送消息、接收消息的超时时间，每项都为 15 秒
         "connect":15,
         "send":15,
-        "read":15,
+        "read":15
     },
     "nodes": {"host:80": 100},  # 上游机器地址列表，格式为`地址 + 端口`
                                 # 等价于 "nodes": [ {"host":"host", "port":80, "weight": 100} ],
@@ -774,7 +859,7 @@ $ curl http://127.0.0.1:9080/get
 
 ## SSL
 
-*地址*：/apisix/admin/ssl/{id}
+*地址*：/apisix/admin/ssls/{id}
 
 *说明*：SSL.
 
@@ -782,11 +867,11 @@ $ curl http://127.0.0.1:9080/get
 
 | 名字   | 请求 uri               | 请求 body | 说明                            |
 | ------ | ---------------------- | --------- | ------------------------------- |
-| GET    | /apisix/admin/ssl      | 无        | 获取资源列表                    |
-| GET    | /apisix/admin/ssl/{id} | 无        | 获取资源                        |
-| PUT    | /apisix/admin/ssl/{id} | {...}     | 根据 id 创建资源                |
-| POST   | /apisix/admin/ssl      | {...}     | 创建资源，id 由后台服务自动生成 |
-| DELETE | /apisix/admin/ssl/{id} | 无        | 删除资源                        |
+| GET    | /apisix/admin/ssls      | 无        | 获取资源列表                    |
+| GET    | /apisix/admin/ssls/{id} | 无        | 获取资源                        |
+| PUT    | /apisix/admin/ssls/{id} | {...}     | 根据 id 创建资源                |
+| POST   | /apisix/admin/ssls      | {...}     | 创建资源，id 由后台服务自动生成 |
+| DELETE | /apisix/admin/ssls/{id} | 无        | 删除资源                        |
 
 ### body 请求参数
 
@@ -934,7 +1019,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/list" -H 'X-API-KEY: edd
 ["zipkin","request-id",...]
 
 $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
-{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+{"$comment":"this is a mark for our injected plugin schema","properties":{"header":{"default":"apikey","type":"string"},"hide_credentials":{"default":false,"type":"boolean"},"_meta":{"properties":{"filter":{"type":"array","description":"filter determines whether the plugin needs to be executed at runtime"},"disable":{"type":"boolean"},"error_response":{"oneOf":[{"type":"string"},{"type":"object"}]},"priority":{"type":"integer","description":"priority of plugins by customized order"}},"type":"object"},"query":{"default":"apikey","type":"string"}},"type":"object"}
 ```
 
 *地址*：/apisix/admin/plugins?all=true

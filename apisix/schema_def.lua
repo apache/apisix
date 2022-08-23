@@ -610,9 +610,6 @@ _M.route = {
 
         service_id = id_schema,
         upstream_id = id_schema,
-        service_protocol = {
-            enum = {"grpc", "http"}
-        },
 
         enable_websocket = {
             description = "enable websocket for request",
@@ -940,18 +937,27 @@ _M.id_schema = id_schema
 
 _M.plugin_injected_schema = {
     ["$comment"] = "this is a mark for our injected plugin schema",
-    disable = {
-        type = "boolean",
-    },
     _meta = {
         type = "object",
         properties = {
+            disable = {
+                type = "boolean",
+            },
             error_response = {
                 oneOf = {
                     { type = "string" },
                     { type = "object" },
                 }
             },
+            priority = {
+                description = "priority of plugins by customized order",
+                type = "integer",
+            },
+            filter = {
+                description = "filter determines whether the plugin "..
+                                "needs to be executed at runtime",
+                type  = "array",
+            }
         }
     }
 }

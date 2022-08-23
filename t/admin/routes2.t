@@ -205,7 +205,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"action":"create","node":{"value":{"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/not_unwanted_data_post"}}}
+{"node":{"value":{"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/not_unwanted_data_post"}}}
 --- no_error_log
 [error]
 
@@ -247,7 +247,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"action":"set","node":{"key":"/apisix/routes/1","value":{"id":1,"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index.html"}}}
+{"node":{"key":"/apisix/routes/1","value":{"id":1,"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index.html"}}}
 --- no_error_log
 [error]
 
@@ -288,7 +288,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"action":"compareAndSwap","node":{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index"}}}
+{"node":{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index"}}}
 --- no_error_log
 [error]
 
@@ -324,7 +324,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"action":"get","node":{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index"}}}
+{"node":{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index"}}}
 --- no_error_log
 [error]
 
@@ -353,7 +353,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"action":"delete","deleted":"1","key":"/apisix/routes/1","node":{}}
+{"deleted":"1","key":"/apisix/routes/1","node":{}}
 --- no_error_log
 [error]
 
@@ -567,8 +567,7 @@ GET /t
                             }
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 

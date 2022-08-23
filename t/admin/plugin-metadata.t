@@ -43,8 +43,7 @@ __DATA__
                             "skey": "val",
                             "ikey": 1
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -78,8 +77,7 @@ passed
                             "skey": "val2",
                             "ikey": 2
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -99,8 +97,7 @@ passed
                             "skey": "val2",
                             "ikey": 2
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -133,8 +130,7 @@ passed
                             "skey": "val2",
                             "ikey": 2
                         }
-                    },
-                    "action": "get"
+                    }
                 }]]
                 )
 
@@ -158,10 +154,8 @@ passed
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/plugin_metadata/example-plugin',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+                 ngx.HTTP_DELETE
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -182,12 +176,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code = t('/apisix/admin/plugin_metadata/not_found',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code)
         }
     }
@@ -211,8 +201,7 @@ GET /t
                 [[{
                     "node": {
                         "value": "sdf"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -241,8 +230,7 @@ GET /t
                 [[{
                     "node": {
                         "value": "sdf"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -276,8 +264,7 @@ GET /t
                             "skey": "val",
                             "ikey": 1
                         }
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -322,7 +309,7 @@ qr/\{"error_msg":"invalid configuration: property \\"ikey\\" is required"\}/
         }
     }
 --- response_body
-{"action":"set","node":{"key":"/apisix/plugin_metadata/example-plugin","value":{"ikey":1,"skey":"val"}}}
+{"node":{"key":"/apisix/plugin_metadata/example-plugin","value":{"ikey":1,"skey":"val"}}}
 --- request
 GET /t
 --- no_error_log
@@ -354,7 +341,7 @@ GET /t
         }
     }
 --- response_body
-{"action":"get","node":{"key":"/apisix/plugin_metadata/example-plugin","value":{"ikey":1,"skey":"val"}}}
+{"node":{"key":"/apisix/plugin_metadata/example-plugin","value":{"ikey":1,"skey":"val"}}}
 --- request
 GET /t
 --- no_error_log
@@ -383,7 +370,7 @@ GET /t
         }
     }
 --- response_body
-{"action":"delete","deleted":"1","key":"/apisix/plugin_metadata/example-plugin","node":{}}
+{"deleted":"1","key":"/apisix/plugin_metadata/example-plugin","node":{}}
 --- request
 GET /t
 --- no_error_log

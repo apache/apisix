@@ -249,3 +249,64 @@ property "block_rules" validation failed
 --- response_body
 hello
 hello world
+
+
+
+=== TEST 5: don't override the plugin in the route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, err = t('/apisix/admin/plugin_configs/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/hello"
+                        },
+                        "response-rewrite": {
+                            "body": "hello"
+                        }
+                    }
+                }]]
+            )
+            if code > 300 then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            local code, err = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/helloaa",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "plugin_config_id": 1,
+                    "plugins": {
+                        "response-rewrite": {
+                            "body": "world"
+                        }
+                    }
+                }]]
+            )
+            if code > 300 then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.sleep(0.1)
+
+            local code, err, org_body = t('/helloaa')
+            if code > 300 then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say(org_body)
+        }
+    }
+--- response_body
+world

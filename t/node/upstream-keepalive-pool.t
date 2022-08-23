@@ -635,3 +635,106 @@ qr/lua balancer: keepalive create pool, .*/
 qr/^lua balancer: keepalive create pool, crc32: \S+, size: 8
 lua balancer: keepalive create pool, crc32: \S+, size: 4
 $/
+
+
+
+=== TEST 14: upstreams with SNI, then without SNI
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local test = require("lib.test_admin").test
+            local json = require("toolkit.json")
+
+            local code, body = test('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "scheme": "https",
+                    "type": "roundrobin",
+                    "nodes": {
+                        "127.0.0.1:1983": 1
+                    },
+                    "pass_host": "rewrite",
+                    "upstream_host": "a.com",
+                    "keepalive_pool": {
+                        "size": 4
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+
+            local data = {
+                scheme = "http",
+                type = "roundrobin",
+                nodes = {
+                    ["127.0.0.1:1980"] = 1,
+                },
+                pass_host = "rewrite",
+                upstream_host = "b.com",
+                keepalive_pool = {
+                    size = 8
+                }
+            }
+            local code, body = test('/apisix/admin/upstreams/2',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+
+            for i = 1, 2 do
+                local code, body = test('/apisix/admin/routes/' .. i,
+                    ngx.HTTP_PUT,
+                    [[{
+                        "uri":"/hello/]] .. i .. [[",
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/hello"
+                            }
+                        },
+                        "upstream_id": ]] .. i .. [[
+                    }]])
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.print(body)
+                    return
+                end
+            end
+        }
+    }
+--- response_body
+
+
+
+=== TEST 15: hit
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+            for i = 0, 1 do
+                local idx = i % 2 + 1
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri .. "/hello/" .. idx)
+                local res, err = httpc:request_uri(uri)
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                ngx.print(res.body)
+            end
+        }
+    }
+--- grep_error_log eval
+qr/lua balancer: keepalive create pool, .*/
+--- grep_error_log_out eval
+qr/^lua balancer: keepalive create pool, crc32: \S+, size: 4
+lua balancer: keepalive create pool, crc32: \S+, size: 8
+$/
