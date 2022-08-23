@@ -285,8 +285,6 @@ opentracing
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 --- no_error_log
@@ -295,10 +293,44 @@ passed
 
 
 === TEST 10: log use log_format
+--- extra_init_by_lua
+    local cls = require("apisix.plugins.tencent-cloud-cls.cls-sdk")
+    cls.send_cls_request = function(self, pb_obj)
+        if (#pb_obj.logGroupList ~= 1) then
+            ngx.log(ngx.ERR, "unexpected logGroupList length: ", #pb_obj.logGroupList)
+            return false
+        end
+        local log_group = pb_obj.logGroupList[1]
+        if #log_group.logs ~= 1 then
+            ngx.log(ngx.ERR, "unexpected logs length: ", #log_group.logs)
+            return false
+        end
+        local log = log_group.logs[1]
+        if #log.contents == 0 then
+            ngx.log(ngx.ERR, "unexpected contents length: ", #log.contents)
+            return false
+        end
+        local has_host, has_timestamp, has_client_ip = false, false, false
+        for i, tag in ipairs(log.contents) do
+            if tag.key == "host" then
+                has_host = true
+            end
+            if tag.key == "@timestamp" then
+                has_timestamp = true
+            end
+            if tag.key == "client_ip" then
+                has_client_ip = true
+            end
+        end
+        if not(has_host and has_timestamp and has_client_ip) then
+            return false
+        end
+        return true
+    end
 --- request
 GET /opentracing
 --- response_body
 opentracing
---- error_log
-using custom format log
+--- no_error_log
+[error]
 --- wait: 0.5
