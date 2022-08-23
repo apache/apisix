@@ -79,14 +79,12 @@ end
 
 
 function _M.access(conf, ctx)
-    -- sample if set
     ctx.cls_sample = false
     if conf.sample_ratio == 1 or math.random() < conf.sample_ratio then
         core.log.debug("cls sampled")
         ctx.cls_sample = true
         return
     end
-    core.log.debug("cls not sampled")
 end
 
 
