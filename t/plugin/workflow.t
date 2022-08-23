@@ -98,7 +98,7 @@ qr/property "actions" is required/
 
 
 
-=== TEST 3: actions have at least 2 items
+=== TEST 3: actions have at least 1 items
 --- config
     location /t {
         content_by_lua_block {
@@ -111,7 +111,6 @@ qr/property "actions" is required/
                         },
                         actions = {
                             {
-                                "return"
                             }
                         }
                     }
@@ -126,7 +125,7 @@ qr/property "actions" is required/
         }
     }
 --- response_body eval
-qr/expect array to have at least 2 items/
+qr/expect array to have at least 1 items/
 
 
 
@@ -160,8 +159,8 @@ qr/expect array to have at least 2 items/
             ngx.say("done")
         }
     }
---- response_body
-bad actions, code is needed if action is return
+--- response_body eval
+qr/property "code" is required/
 
 
 
@@ -195,8 +194,8 @@ bad actions, code is needed if action is return
             ngx.say("done")
         }
     }
---- response_body
-bad code, the required type of code is number
+--- response_body eval
+qr/property "code" validation failed: wrong type: expected integer, got string/
 
 
 
@@ -385,6 +384,8 @@ GET /hello?foo=bad
 --- request
 GET /hello?foo=bar
 --- error_code: 403
+--- response_body
+{"error_msg":"rejected by workflow"}
 
 
 

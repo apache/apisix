@@ -39,7 +39,7 @@ local schema = {
                         type = "array",
                         items = {
                             type = "array",
-                            minItems = 2
+                            minItems = 1
                         }
                     }
                 },
@@ -58,8 +58,31 @@ local _M = {
     schema = schema
 }
 
+
+local return_schema = {
+    type = "object",
+    properties = {
+        code = {
+            type = "integer",
+            minimum = 100,
+            maximum = 599
+        }
+    },
+    required = {"code"}
+}
+
+
+local function exit(conf)
+    local code = tonumber(conf.code)
+    return code, {error_msg = "rejected by workflow"}
+end
+
+
 local support_action = {
-    ["return"] = true,
+    ["return"] = {
+        handler  = exit,
+        schema   = return_schema,
+    },
 }
 
 
@@ -82,14 +105,9 @@ function _M.check_schema(conf)
                 return false, "unsupported action: " .. action[1]
             end
 
-            if action[1] == "return" then
-                if not action[2].code then
-                    return false, "bad actions, code is needed if action is return"
-                end
-
-                if type(action[2].code) ~= "number" then
-                    return false, "bad code, the required type of code is number"
-                end
+            local ok, err = core.schema.check(support_action[action[1]].schema, action[2])
+            if not ok then
+                return false, "failed to validate the '" .. action[1] .. "' action: " .. err
             end
        end
     end
@@ -100,10 +118,7 @@ end
 
 local function do_action(actions)
     for _, action in ipairs(actions) do
-        if action[1] == "return" then
-            local code = tonumber(action[2].code)
-            return core.response.exit(code)
-        end
+        return support_action[action[1]].handler(action[2])
    end
 end
 
@@ -114,7 +129,7 @@ function _M.access(conf, ctx)
         local expr, _ = expr.new(rule.case)
         match_result = expr:eval(ctx.var)
         if match_result then
-            do_action(rule.actions)
+            return do_action(rule.actions)
         end
     end
 end
