@@ -127,7 +127,7 @@ hello, test!
 
 ### Configuring path forwarding
 
-The `OpenFunction` Plugins also supports URL path forwarding while proxying requests to the OpenFunction API endpoints upstream. Extensions to the base request path gets appended to the `function_uri` specified in the Plugin configuration.
+The `OpenFunction` Plugin also supports transforming the URL path while proxying requests to the OpenFunction API endpoints. Extensions to the base request path get appended to the `function_uri` specified in the Plugin configuration.
 
 :::info IMPORTANT
 
