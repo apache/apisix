@@ -230,9 +230,6 @@ function _M.send_cls_request(self, pb_obj)
         return false, pb_data
     end
 
-    local client = http:new()
-    client:set_timeouts(cls_conn_timeout, cls_send_timeout, cls_read_timeout)
-
     clear_tab(headers_cache)
     headers_cache["Host"] = self.host
     headers_cache["Content-Type"] = "application/x-protobuf"
