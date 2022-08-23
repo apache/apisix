@@ -18,7 +18,6 @@ local core       = require("apisix.core")
 local expr       = require("resty.expr.v1")
 local ipairs     = ipairs
 local tonumber   = tonumber
-local type       = type
 
 local schema = {
     type = "object",
@@ -116,20 +115,15 @@ function _M.check_schema(conf)
 end
 
 
-local function do_action(actions)
-    for _, action in ipairs(actions) do
-        return support_action[action[1]].handler(action[2])
-   end
-end
-
-
 function _M.access(conf, ctx)
     local match_result
     for _, rule in ipairs(conf.rules) do
         local expr, _ = expr.new(rule.case)
         match_result = expr:eval(ctx.var)
         if match_result then
-            return do_action(rule.actions)
+            -- only one action is currently supported
+            local action = rule.actions[1]
+            return support_action[action[1]].handler(action[2])
         end
     end
 end
