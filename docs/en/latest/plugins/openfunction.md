@@ -40,7 +40,7 @@ This Plugin can be configured on a Route and requests will be sent to the config
 | function_uri                | string  | True     |         |              | function uri. For example, `https://localhost:30858/default/function-sample`.                              |
 | ssl_verify                  | boolean | False    | true    |              | When set to `true` verifies the SSL certificate.                                                           |
 | authorization               | object  | False    |         |              | Authorization credentials to access functions of OpenFunction.                                      |
-| authorization.service_token | string  | False    |         |              | The token format is 'xx:xx' which support basic auth for function entry points.                                      |
+| authorization.service_token | string  | False    |         |              | The token format is 'xx:xx' which supports basic auth for function entry points.                                      |
 | timeout                     | integer | False    | 3000ms  | [100, ...]ms | OpenFunction action and HTTP call timeout in ms.                                                              |
 | keepalive                   | boolean | False    | true    |              | When set to `true` keeps the connection alive for reuse.                                                   |
 | keepalive_timeout           | integer | False    | 60000ms | [1000,...]ms | Time is ms for connection to remain idle without closing.                                                  |
@@ -80,9 +80,9 @@ kubectl get pods --namespace openfunction
 
 ### Create and Push a Function
 
-You can then create a function follow the [sample](https://github.com/OpenFunction/samples)
+You can then create a function following the [sample](https://github.com/OpenFunction/samples)
 
-When building a function, you’ll need to push your function container image to a container registry like Docker Hub or Quay.io. To do that you’ll need to generate a secret for your container registry first.
+You'll need to push your function container image to a container registry like Docker Hub or Quay.io when building a function. To do that, you'll need to generate a secret for your container registry first.
 
 ```shell
 REGISTRY_SERVER=https://index.docker.io/v1/ REGISTRY_USER=<your_registry_user> REGISTRY_PASSWORD=<your_registry_password>
@@ -152,7 +152,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-Now, any requests to the path `hello/123` will invoke the OpenFunction ,and the added path is forwarded:
+Now, any requests to the path `hello/123` will invoke the OpenFunction, and the added path is forwarded:
 
 ```shell
 curl  http://127.0.0.1:9080/hello/123
