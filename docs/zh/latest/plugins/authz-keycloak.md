@@ -46,8 +46,7 @@ description: 本文介绍了关于 Apache APISIX `authz-keycloak` 插件的基�
 | discovery                                    | string        | 否    |                                               | https://host.domain/auth/realms/foo/.well-known/uma2-configuration | Keycloak 授权服务的 [discovery document](https://www.keycloak.org/docs/14.0/authorization_services/#_service_authorization_api) 的 URL。                                                                                                |
 | token_endpoint                               | string        | 否    |                                               | https://host.domain/auth/realms/foo/protocol/openid-connect/token  | 接受 OAuth2 兼容 token 的接口，需要支持 `urn:ietf:params:oauth:grant-type:uma-ticket` 授权类型。                                                                                       |
 | resource_registration_endpoint               | string        | 否    |                                               | https://host.domain/auth/realms/foo/authz/protection/resource_set  | 符合 UMA 的资源注册端点。如果提供，则覆盖发现中的值。                                                                                                                 |
-| client_id                                    | string        | 否    |                                               |                                                                    | 客户端正在寻求访问的资源服务器的标识符。需要 `client_id` 或 `audience`。                                                                                                                            |
-| audience                                     | string        | 否    |                                               |                                                                    | 遗留参数。现在被 `client_id` 替换，以保持向后兼容性。需要 `client_id` 或 `audience`。                                                                                                                          |
+| client_id                                    | string        | 是    |                                               |                                                                    | 客户端正在寻求访问的资源服务器的标识符。                                                                                                                                          |
 | client_secret                                | string        | 否    |                                               |                                                                    | 客户端密码（如果需要）。                                                                                                                                                                                                                       |
 | grant_type                                   | string        | 否    | "urn:ietf:params:oauth:grant-type:uma-ticket" | ["urn:ietf:params:oauth:grant-type:uma-ticket"]                    |                                                                                                                                                                                                                                                       |
 | policy_enforcement_mode                      | string        | 否    | "ENFORCING"                                   | ["ENFORCING", "PERMISSIVE"]                                        |                                                                                                                                                                                                                                                       |
@@ -73,7 +72,7 @@ description: 本文介绍了关于 Apache APISIX `authz-keycloak` 插件的基�
     - 使用 `discovery` 属性后，`authz-keycloak` 插件就可以从其 URL 中发现 Keycloak API 的端点。该 URL 指向 Keyloak 针对相应领域授权服务的发现文档。
     - 如果发现文档可用，则插件将根据该文档确定令牌端点 URL。如果 URL 存在，则 `token_endpoint` 和 `resource_registration_endpoint` 的值将被其覆盖。
 - Client ID and secret
-    - 该插件需配置 `client_id` 或 `audience`（用于向后兼容）属性来标识自身，如果两者都已经配置，则 `client_id` 优先级更高。
+    - 该插件需配置 `client_id` 属性来标识自身。
     - 如果 `lazy_load_paths` 属性被设置为 `true`，那么该插件还需要从 Keycloak 中获得一个自身访问令牌。在这种情况下，如果客户端对 Keycloak 的访问是加密的，就需要配置 `client_secret` 属性。
 - Policy enforcement mode
     - `policy_enforcement_mode` 属性指定了在处理发送到服务器的授权请求时，该插件如何执行策略。
@@ -138,7 +137,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
         "authz-keycloak": {
             "token_endpoint": "http://127.0.0.1:8090/auth/realms/${realm}/protocol/openid-connect/token",
             "permissions": ["resource name#scope name"],
-            "audience": "Client ID"
+            "client_id": "Client ID"
         }
     },
     "upstream": {

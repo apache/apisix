@@ -26,6 +26,7 @@ title: CHANGELOG
 - [2.15.0](#2150)
 - [2.14.1](#2141)
 - [2.14.0](#2140)
+- [2.13.3](#2133)
 - [2.13.2](#2132)
 - [2.13.1](#2131)
 - [2.13.0](#2130)
@@ -170,6 +171,10 @@ title: CHANGELOG
     - [#7065](https://github.com/apache/apisix/pull/7065)
     - [#6686](https://github.com/apache/apisix/pull/6686)
 - Admin API 拒绝未知的 stream 插件。[#6813](https://github.com/apache/apisix/pull/6813)
+
+## 2.13.3
+
+**这是一个 LTS 维护版本，您可以在 `release/2.13` 分支中看到 CHANGELOG。**
 
 ## 2.13.2
 
