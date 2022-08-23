@@ -28,11 +28,11 @@ description: 本文介绍了 Apache APISIX request-id 插件的相关操作，�
 
 ## 描述
 
-`request-id` 插件通过 APISIX 为每一个请求代理添加 unique ID，以用于追踪 API 请求。
+`request-id` 插件通过 APISIX 为每一个请求代理添加 unique ID 用于追踪 API 请求。
 
 :::note 注意
 
-如果请求已经有了配置好 `header_name` 属性的请求头，该插件将不会为请求添加 unique ID。
+如果请求已经配置了 `header_name` 属性的请求头，该插件将不会为请求添加 unique ID。
 
 :::
 
@@ -49,7 +49,7 @@ description: 本文介绍了 Apache APISIX request-id 插件的相关操作，�
 :::caution 警告
 
 - 当使用 `snowflake` 算法时，请确保 APISIX 有权限写入 etcd。
-- 在决定使用 `snowflake` 算法时，请先阅读本文档了解一些配置细节。因为一旦启用相关配置信息，则不可随意调整，否则可能会导致生成重复的 ID。
+- 在决定使用 `snowflake` 算法时，请仔细阅读本文档了解配置细节。因为一旦启用相关配置信息后，就不能随意调整，否则可能会导致生成重复的 ID。
 
 :::
 
@@ -64,7 +64,7 @@ description: 本文介绍了 Apache APISIX request-id 插件的相关操作，�
 | data_machine_ttl           | integer  | 否 | 30             | etcd 中 `data_machine` 注册有效时间，以秒为单位。 |
 | data_machine_interval      | integer  | 否 | 10             | etcd 中 `data_machine` 续约间隔时间，以秒为单位。 |
 
-要使用 `snowflake` 算法，你必须先在配置文件 `conf/config.yaml` 中启用：
+如果你需要使用 `snowflake` 算法，请务必在配置文件 `./conf/config.yaml` 中添加以下参数：
 
 ```yaml title="conf/config.yaml"
 plugin_attr:
