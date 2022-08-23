@@ -222,9 +222,9 @@ end
 
 function _M.send_cls_request(self, pb_obj)
     -- recovery of stored pb_store
-    pb.state(pb_state)
-
+    local old_pb_state = pb.state(pb_state)
     local ok, pb_data = pcall(pb.encode, "cls.LogGroupList", pb_obj)
+    pb_state = pb.state(old_pb_state)
     if not ok or not pb_data then
         core.log.error("failed to encode LogGroupList, err: ", pb_data)
         return false, pb_data
