@@ -261,8 +261,6 @@ Batch Processor[tencent-cloud-cls] successfully processed the entries
 GET /opentracing
 --- response_body
 opentracing
---- no_error_log
-[error]
 
 
 
@@ -287,8 +285,6 @@ opentracing
     }
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -331,6 +327,4 @@ passed
 GET /opentracing
 --- response_body
 opentracing
---- no_error_log
-[error]
 --- wait: 0.5
