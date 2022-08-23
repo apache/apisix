@@ -41,7 +41,7 @@ description: 本文介绍了 Apache APISIX request-validation 插件的相关操
 
 :::note 注意
 
-需保证 `header_schema` 与 `body_schema` 配置项中，至少填写其中一个。
+启用该插件时，至少需要配置 `header_schema` 和 `body_schema` 属性中的任意一个，两者也可以同时使用。
 
 :::
 
@@ -76,7 +76,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 \
 }'
 ```
 
-以下示例展示了不同的验证场景下的 `request-validation` 插件 JSON 配置：
+以下示例展示了不同验证场景下该插件的 JSON 配置：
 
 ### 枚举（Enum）验证
 
