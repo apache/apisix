@@ -125,7 +125,8 @@ This will give back the response from the function:
 hello, test!
 ```
 
-### Configuring path forwarding
+### Configure Path Transforming
+
 
 The `OpenFunction` Plugin also supports transforming the URL path while proxying requests to the OpenFunction API endpoints. Extensions to the base request path get appended to the `function_uri` specified in the Plugin configuration.
 
