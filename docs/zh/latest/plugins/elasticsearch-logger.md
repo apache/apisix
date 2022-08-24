@@ -30,9 +30,9 @@ description: 本文介绍了 API 网关 Apache APISIX 的 elasticsearch-logger �
 
 ## 描述
 
-`elasticsearch-logger` 插件用于将 `Apache APISIX` 的请求日志转发到 `Elasticsearch` 中进行分析和存储，启用该插件后 `Apache APISIX` 将在 `Log Phase` 获取请求上下文信息并序列化为 [Bulk 格式](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html#docs-bulk) 后提交到批处理队列中，当触发批处理队列每批次最大处理容量或刷新缓冲区的最大时间时会将队列中的数据提交到 `Elaticsearch` 中。
+`elasticsearch-logger` 插件用于将 `Apache APISIX` 的请求日志转发到 `Elasticsearch` 中进行分析和存储。
 
-有关 `Apache APISIX` 的 `Batch-Processor` 的更多信息，请参考： [Batch-Processor](https://file+.vscode-resource.vscode-cdn.net/y%3A/apisix/docs/zh/latest/batch-processor.md)
+启用该插件后 APISIX 将在 `Log Phase` 获取请求上下文信息并序列化为 [Bulk 格式](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html#docs-bulk) 后提交到批处理队列中，当触发批处理队列每批次最大处理容量或刷新缓冲区的最大时间时会将队列中的数据提交到 Elaticsearch 中。更多信息，请参考 [Batch-Processor](./batch-processor.md)。
 
 ## 属性
 
