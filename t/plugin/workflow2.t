@@ -14,6 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+BEGIN {
+    if ($ENV{TEST_NGINX_CHECK_LEAK}) {
+        $SkipReason = "unavailable for the hup tests";
+
+    } else {
+        $ENV{TEST_NGINX_USE_HUP} = 1;
+        undef $ENV{TEST_NGINX_USE_STAP};
+    }
+}
+
 use t::APISIX 'no_plan';
 
 repeat_each(1);
@@ -108,3 +119,89 @@ passed
 ["GET /hello", "GET /hello1", "GET /hello1"]
 --- error_code eval
 [403, 200, 503]
+
+
+
+=== TEST 3: the conf in actions is isolation
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local data = {
+                uri = "/*",
+                plugins = {
+                    workflow = {
+                        rules = {
+                            {
+                                case = {
+                                    {"uri", "==", "/hello"}
+                                },
+                                actions = {
+                                    {
+                                        "limit-count",
+                                        {
+                                            count = 3,
+                                            time_window = 60,
+                                            rejected_code = 503,
+                                            key = "remote_addr"
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                case = {
+                                    {"uri", "==", "/hello1"}
+                                },
+                                actions = {
+                                    {
+                                        "limit-count",
+                                        {
+                                            count = 3,
+                                            time_window = 60,
+                                            rejected_code = 503,
+                                            key = "remote_addr"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            }
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: cross-hit case 1 and case 2, up limit by isolation
+--- pipelined_requests eval
+["GET /hello", "GET /hello1", "GET /hello", "GET /hello1"]
+--- error_code eval
+[200, 200, 200, 200]
+
+
+
+=== TEST 5: cross-hit case 1 and case 2, up limit by isolation 2
+--- pipelined_requests eval
+["GET /hello", "GET /hello1", "GET /hello", "GET /hello1"]
+--- error_code eval
+[200, 200, 503, 503]

@@ -20,7 +20,6 @@ local apisix_plugin = require("apisix.plugin")
 local tab_insert = table.insert
 local ipairs = ipairs
 local pairs = pairs
-local tostring = tostring
 
 
 local plugin_name = "limit-count"
@@ -202,6 +201,27 @@ local function create_limit_obj(conf)
 end
 
 
+local function gen_limit_key(conf, ctx, key)
+    if conf.group then
+        return conf.group .. ':' .. key
+    end
+
+    -- here we add a separator ':' to mark the boundary of the prefix and the key itself
+    -- Here we use plugin-level conf version to prevent the counter from being resetting
+    -- because of the change elsewhere.
+    -- A route which reuses a previous route's ID will inherits its counter.
+    local new_key = ctx.conf_type .. ctx.conf_id .. ':' .. apisix_plugin.conf_version(conf)
+                    .. ':' .. key
+    if conf._vid then
+        -- conf has _vid means it's from workflow plugin, add _vid to the key
+        -- so that the counter is unique per action.
+        return new_key .. ':' .. conf._vid
+    end
+
+    return new_key
+end
+
+
 function _M.rate_limit(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
 
@@ -244,18 +264,7 @@ function _M.rate_limit(conf, ctx)
         key = ctx.var["remote_addr"]
     end
 
-    -- here we add a separator ':' to mark the boundary of the prefix and the key itself
-    if not conf.group then
-        -- Here we use plugin-level conf version to prevent the counter from being resetting
-        -- because of the change elsewhere.
-        -- A route which reuses a previous route's ID will inherits its counter.
-        local conf_mem_addr = tostring(conf):sub(#"table: " + 1)
-        key = ctx.conf_type .. apisix_plugin.conf_version(conf)
-              .. ':' .. conf_mem_addr .. ':' .. key
-    else
-        key = conf.group .. ':' .. key
-    end
-
+    key = gen_limit_key(conf, ctx, key)
     core.log.info("limit key: ", key)
 
     local delay, remaining = lim:incoming(key, true)

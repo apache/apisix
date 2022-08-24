@@ -99,7 +99,7 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    for _, rule in ipairs(conf.rules) do
+    for idx, rule in ipairs(conf.rules) do
         local ok, err = expr.new(rule.case)
         if not ok then
             return false, "failed to validate the 'case' expression: " .. err
@@ -116,6 +116,9 @@ function _M.check_schema(conf)
             if not ok then
                 return false, "failed to validate the '" .. action[1] .. "' action: " .. err
             end
+
+            -- use the action's idx as an identifier to isolate between confs
+            action[2]["_vid"] = idx
        end
     end
 
