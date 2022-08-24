@@ -133,7 +133,7 @@ local function send_to_elasticsearch(conf, entries)
     end
 
     local uri = conf.endpoint_addr ..
-        (str_byte(conf.endpoint_addr, -1) == str_byte("/") and "_bulk" or "/_bulk")
+                (str_byte(conf.endpoint_addr, -1) == str_byte("/") and "_bulk" or "/_bulk")
     local body = core.table.concat(entries, "")
     local headers = {["Content-Type"] = "application/json"}
     if conf.auth then
