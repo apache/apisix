@@ -319,9 +319,6 @@ Please modify "admin_key" in conf/config.yaml .
             admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0",
                                         yaml_conf.apisix.admin_listen.ip,
                                         9180, yaml_conf.apisix.admin_listen.port)
-        elseif yaml_conf.apisix.port_admin then
-            admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0", nil,
-                                        9180, yaml_conf.apisix.port_admin)
         end
     end
 
@@ -428,46 +425,28 @@ Please modify "admin_key" in conf/config.yaml .
     local ssl_listen = {}
     -- listen in https, support multiple ports, support specific IP
     for _, value in ipairs(yaml_conf.apisix.ssl.listen) do
-        if type(value) == "number" then
-            listen_table_insert(ssl_listen, "https", "0.0.0.0", value,
-                    yaml_conf.apisix.ssl.enable_http2, yaml_conf.apisix.enable_ipv6)
-        elseif type(value) == "table" then
-            local ip = value.ip
-            local port = value.port
-            local enable_ipv6 = false
-            local enable_http2 = (value.enable_http2 or yaml_conf.apisix.ssl.enable_http2)
+        local ip = value.ip
+        local port = value.port
+        local enable_ipv6 = false
+        local enable_http2 = value.enable_http2
 
-            if ip == nil then
-                ip = "0.0.0.0"
-                if yaml_conf.apisix.enable_ipv6 then
-                    enable_ipv6 = true
-                end
-            end
-
-            if port == nil then
-                port = 9443
-            end
-
-            if enable_http2 == nil then
-                enable_http2 = false
-            end
-
-            listen_table_insert(ssl_listen, "https", ip, port,
-                    enable_http2, enable_ipv6)
-        end
-    end
-
-    -- listen in https, compatible with the original style
-    if type(yaml_conf.apisix.ssl.listen_port) == "number" then
-        listen_table_insert(ssl_listen, "https", "0.0.0.0", yaml_conf.apisix.ssl.listen_port,
-                yaml_conf.apisix.ssl.enable_http2, yaml_conf.apisix.enable_ipv6)
-    elseif type(yaml_conf.apisix.ssl.listen_port) == "table" then
-        for _, value in ipairs(yaml_conf.apisix.ssl.listen_port) do
-            if type(value) == "number" then
-                listen_table_insert(ssl_listen, "https", "0.0.0.0", value,
-                        yaml_conf.apisix.ssl.enable_http2, yaml_conf.apisix.enable_ipv6)
+        if ip == nil then
+            ip = "0.0.0.0"
+            if yaml_conf.apisix.enable_ipv6 then
+                enable_ipv6 = true
             end
         end
+
+        if port == nil then
+            port = 9443
+        end
+
+        if enable_http2 == nil then
+            enable_http2 = false
+        end
+
+        listen_table_insert(ssl_listen, "https", ip, port,
+                enable_http2, enable_ipv6)
     end
 
     yaml_conf.apisix.ssl.listen = ssl_listen
@@ -541,7 +520,13 @@ Please modify "admin_key" in conf/config.yaml .
     end
 
     if yaml_conf.deployment and yaml_conf.deployment.role then
-        env.deployment_role = yaml_conf.deployment.role
+        local role = yaml_conf.deployment.role
+        env.deployment_role = role
+
+        if role == "control_plane" and not admin_server_addr then
+            local listen = node_listen[1]
+            admin_server_addr = str_format("%s:%s", listen.ip, listen.port)
+        end
     end
 
     -- Using template.render
@@ -550,6 +535,7 @@ Please modify "admin_key" in conf/config.yaml .
         lua_cpath = env.pkg_cpath_org,
         os_name = util.trim(util.execute_cmd("uname")),
         apisix_lua_home = env.apisix_home,
+        deployment_role = env.deployment_role,
         use_apisix_openresty = use_apisix_openresty,
         error_log = {level = "warn"},
         enable_http = enable_http,
@@ -642,11 +628,6 @@ Please modify "admin_key" in conf/config.yaml .
     local env_worker_processes = getenv("APISIX_WORKER_PROCESSES")
     if env_worker_processes then
         sys_conf["worker_processes"] = floor(tonumber(env_worker_processes))
-    end
-
-    if sys_conf["http"]["lua_shared_dicts"] then
-        stderr:write("lua_shared_dicts is deprecated, " ..
-                     "use custom_lua_shared_dict instead\n")
     end
 
     local exported_vars = file.get_exported_vars()

@@ -98,7 +98,6 @@ to a Route as shown below,
     "plugins": {
         "proxy-rewrite": {
             "uri": "/test/add",
-            "scheme": "https",
             "host": "apisix.iresty.com"
         },
         "limit-count": {
@@ -131,7 +130,6 @@ the effective configuration will be as the one shown below:
         },
         "proxy-rewrite": {
             "uri": "/test/add",
-            "scheme": "https",
             "host": "apisix.iresty.com"
         },
         "limit-count": {

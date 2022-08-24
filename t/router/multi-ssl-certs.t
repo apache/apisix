@@ -45,8 +45,7 @@ location /t {
                         "sni": "www.test.com"
                     },
                     "key": "/apisix/ssls/1"
-                },
-                "action": "set"
+                }
             }]]
             )
 
@@ -192,8 +191,7 @@ location /t {
                         "sni": "*.test2.com"
                     },
                     "key": "/apisix/ssls/2"
-                },
-                "action": "set"
+                }
             }]]
             )
 
@@ -277,8 +275,7 @@ location /t {
                         "sni": "apisix.dev"
                     },
                     "key": "/apisix/ssls/3"
-                },
-                "action": "set"
+                }
             }]]
             )
 

@@ -16,12 +16,12 @@
 --
 
 package = "apisix"
-version = "master-0"
+version = "2.13.3-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/apache/apisix",
-    branch = "master",
+    branch = "2.13.3",
 }
 
 description = {
@@ -43,31 +43,31 @@ dependencies = {
     "api7-lua-resty-jwt = 0.2.4",
     "lua-resty-hmac-ffi = 0.05",
     "lua-resty-cookie = 0.1.0",
-    "lua-resty-session = 3.10",
+    "lua-resty-session = 2.24",
     "opentracing-openresty = 0.1",
-    "lua-resty-radixtree = 2.8.2",
+    "lua-resty-radixtree = 2.8.1",
     "lua-protobuf = 0.3.4",
-    "lua-resty-openidc = 1.7.5",
+    "lua-resty-openidc = 1.7.2-1",
     "luafilesystem = 1.7.0-2",
     "api7-lua-tinyyaml = 0.4.2",
-    "nginx-lua-prometheus = 0.20220527",
+    "nginx-lua-prometheus = 0.20220127",
     "jsonschema = 0.9.8",
     "lua-resty-ipmatcher = 0.6.1",
-    "lua-resty-kafka = 0.20-0",
-    "lua-resty-logger-socket = 2.0.1-0",
+    "lua-resty-kafka = 0.07",
+    "lua-resty-logger-socket = 2.0-0",
     "skywalking-nginx-lua = 0.6.0",
     "base64 = 1.5-2",
     "binaryheap = 0.4",
     "api7-dkjson = 0.1.1",
     "resty-redis-cluster = 1.02-4",
-    "lua-resty-expr = 1.3.2",
+    "lua-resty-expr = 1.3.1",
     "graphql = 0.0.2",
     "argparse = 0.7.1-1",
     "luasocket = 3.0rc1-2",
     "luasec = 0.9-1",
     "lua-resty-consul = 0.3-2",
     "penlight = 1.9.2-1",
-    "ext-plugin-proto = 0.5.0",
+    "ext-plugin-proto = 0.4.0",
     "casbin = 1.41.1",
     "api7-snowflake = 2.0-1",
     "inspect == 3.1.1",
@@ -76,9 +76,6 @@ dependencies = {
     "opentelemetry-lua = 0.1-3",
     "net-url = 0.9-1",
     "xml2lua = 1.5-2",
-    "nanoid = 0.1-1",
-    "lua-resty-mediador = 0.1.2-1",
-    "lua-resty-ldap = 0.1.0-0"
 }
 
 build = {

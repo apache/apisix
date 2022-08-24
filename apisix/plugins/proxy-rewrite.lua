@@ -68,11 +68,6 @@ local schema = {
             type        = "string",
             pattern     = [[^[0-9a-zA-Z-.]+(:\d{1,5})?$]],
         },
-        scheme = {
-            description = "new scheme for upstream",
-            type    = "string",
-            enum    = {"http", "https"}
-        },
         headers = {
             description = "new headers for request",
             type = "object",
@@ -160,9 +155,6 @@ function _M.rewrite(conf, ctx)
         if conf[name] then
             ctx.var[upstream_vars[name]] = conf[name]
         end
-    end
-    if conf["scheme"] then
-        ctx.upstream_scheme = conf["scheme"]
     end
 
     local upstream_uri = ctx.var.uri

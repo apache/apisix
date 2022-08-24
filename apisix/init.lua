@@ -417,6 +417,10 @@ function _M.http_access_phase()
     api_ctx.route_id = route.value.id
     api_ctx.route_name = route.value.name
 
+    local ref = ctxdump.stash_ngx_ctx()
+    core.log.info("stash ngx ctx: ", ref)
+    ngx_var.ctx_ref = ref
+
     -- run global rule
     plugin.run_global_rules(api_ctx, router.global_rules, nil)
 
@@ -520,10 +524,6 @@ function _M.http_access_phase()
         core.log.info("enabled websocket for route: ", route.value.id)
     end
 
-    if route.value.service_protocol == "grpc" then
-        api_ctx.upstream_scheme = "grpc"
-    end
-
     -- load balancer is not required by kafka upstream, so the upstream
     -- node selection process is intercepted and left to kafka to
     -- handle on its own
@@ -549,10 +549,6 @@ function _M.http_access_phase()
 
     -- run the before_proxy method in access phase first to avoid always reinit request
     common_phase("before_proxy")
-
-    local ref = ctxdump.stash_ngx_ctx()
-    core.log.info("stash ngx ctx: ", ref)
-    ngx_var.ctx_ref = ref
 
     local up_scheme = api_ctx.upstream_scheme
     if up_scheme == "grpcs" or up_scheme == "grpc" then

@@ -282,9 +282,6 @@ stream_routes:
       mqtt-proxy:
         protocol_name: "MQTT"
         protocol_level: 4
-        upstream:
-          ip: "127.0.0.1"
-          port: 1995
 upstreams:
   - nodes:
       "127.0.0.1:1995": 1

@@ -64,8 +64,7 @@ __DATA__
                             }
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -108,8 +107,7 @@ passed
                             }
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "get"
+                    }
                 }]]
                 )
 

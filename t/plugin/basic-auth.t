@@ -340,7 +340,7 @@ GET /t
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","type":"object"}
+{"properties":{},"title":"work with route or service object","type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -384,7 +384,7 @@ GET /t
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","type":"object"}
+{"properties":{},"title":"work with route or service object","type":"object"}
                 ]]
                 )
             ngx.status = code

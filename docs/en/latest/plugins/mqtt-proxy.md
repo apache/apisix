@@ -39,10 +39,6 @@ This Plugin supports both the protocols [3.1.*](http://docs.oasis-open.org/mqtt/
 |----------------|---------|------------|-----------------------------------------------------------------------------------|
 | protocol_name  | string  | True       | Name of the protocol. Generally `MQTT`.                                           |
 | protocol_level | integer | True       | Level of the protocol. It should be `4` for MQTT `3.1.*` and `5` for MQTT `5.0`.  |
-| upstream       | object  | Deprecated | Use separate Upstream in the Route instead.                                       |
-| upstream.host  | string  | True       | IP or host of the upstream to forward the current request to.                     |
-| upstream.ip    | string  | Deprecated | Use `host` instead. IP address of the upstream to forward the current request to. |
-| upstream.port  | number  | True       | Port of the upstream to forward the current request to.                           |
 
 ## Enabling the Plugin
 

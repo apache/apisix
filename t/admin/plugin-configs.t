@@ -69,8 +69,7 @@ __DATA__
                             }
                         },
                         "key": "/apisix/plugin_configs/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -110,8 +109,7 @@ passed
                             }
                         },
                         "key": "/apisix/plugin_configs/1"
-                    },
-                    "action": "get"
+                    }
                 }]]
                 )
 
@@ -133,9 +131,8 @@ passed
                 ngx.HTTP_GET,
                 nil,
                 [[{
-                    "node": {
-                        "dir": true,
-                        "nodes": [
+                    "count": 1,
+                    "list": [
                         {
                             "key": "/apisix/plugin_configs/1",
                             "value": {
@@ -150,10 +147,7 @@ passed
                             }
                             }
                         }
-                        ],
-                        "key": "/apisix/plugin_configs"
-                    },
-                    "action": "get"
+                    ]
                 }]]
                 )
 
@@ -203,8 +197,7 @@ passed
                             }
                         },
                         "key": "/apisix/plugin_configs/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
                 )
 
@@ -260,8 +253,7 @@ passed
                             }
                         },
                         "key": "/apisix/plugin_configs/1"
-                    },
-                    "action": "compareAndSwap"
+                    }
                 }]]
                 )
 
@@ -348,8 +340,7 @@ passed
                             "desc": "blah"
                         },
                         "key": "/apisix/plugin_configs/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -393,8 +384,7 @@ passed
                             "desc": "blah"
                         },
                         "key": "/apisix/plugin_configs/1"
-                    },
-                    "action": "get"
+                    }
                 }]]
                 )
 
@@ -502,10 +492,8 @@ passed
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/plugin_configs/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.print(body)
         }
     }
@@ -521,10 +509,8 @@ passed
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say(body)
         }
     }
@@ -540,10 +526,8 @@ passed
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/plugin_configs/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say(body)
         }
     }
