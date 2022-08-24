@@ -171,6 +171,9 @@ local function filter(body, args)
             table.remove(body.list, i)
         end
     end
+
+    -- recalculate the amount of filtered data
+    body.count = #body.list
 end
 
 
