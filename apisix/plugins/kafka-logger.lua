@@ -51,6 +51,16 @@ local schema = {
                 },
             },
         },
+        sasl_config = {
+            type = "object",
+            description = "sasl config",
+            properties = {
+                mechanism = { type = "string", description = "mechanism" },
+                password =  { type = "string", description = "password" },
+                user = { type = "string", description = "user" },
+                strategy = { type = "string", description = "strategy" }
+            }
+        },
         kafka_topic = {type = "string"},
         producer_type = {
             type = "string",
@@ -205,7 +215,8 @@ function _M.log(conf, ctx)
     for host, port in pairs(conf.broker_list) do
         local broker = {
             host = host,
-            port = port
+            port = port,
+            sasl_config = conf.sasl_config or nil
         }
         core.table.insert(broker_list, broker)
     end
