@@ -86,6 +86,13 @@ __DATA__
                 {
                     endpoint_addr = "http://127.0.0.1:9200",
                     field = {}
+                },
+                -- property "endpoint" must not end with "/"
+                {
+                    endpoint_addr = "http://127.0.0.1:9200/",
+                    field = {
+                        index = "services"
+                    }
                 }
             }
 
@@ -106,6 +113,7 @@ passed
 property "endpoint_addr" is required
 property "field" is required
 property "field" validation failed: property "index" is required
+property "endpoint_addr" validation failed: failed to match pattern "\[\^/\]\$" with "http://127.0.0.1:9200/"
 
 
 
