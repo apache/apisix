@@ -14,10 +14,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core       = require("apisix.core")
-local expr       = require("resty.expr.v1")
-local ipairs     = ipairs
-local tonumber   = tonumber
+local core        = require("apisix.core")
+local limit_count = require("apisix.plugins.limit-count.init")
+local expr        = require("resty.expr.v1")
+local ipairs      = ipairs
 
 local schema = {
     type = "object",
@@ -72,8 +72,12 @@ local return_schema = {
 
 
 local function exit(conf)
-    local code = tonumber(conf.code)
-    return code, {error_msg = "rejected by workflow"}
+    return conf.code, {error_msg = "rejected by workflow"}
+end
+
+
+local function rate_limit(conf, ctx)
+    return limit_count.rate_limit(conf, ctx)
 end
 
 
@@ -82,6 +86,10 @@ local support_action = {
         handler  = exit,
         schema   = return_schema,
     },
+    ["limit-count"] = {
+        handler  = rate_limit,
+        schema   = limit_count.schema,
+    }
 }
 
 
@@ -123,7 +131,7 @@ function _M.access(conf, ctx)
         if match_result then
             -- only one action is currently supported
             local action = rule.actions[1]
-            return support_action[action[1]].handler(action[2])
+            return support_action[action[1]].handler(action[2], ctx)
         end
     end
 end

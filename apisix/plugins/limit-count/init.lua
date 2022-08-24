@@ -250,9 +250,8 @@ function _M.rate_limit(conf, ctx)
         -- because of the change elsewhere.
         -- A route which reuses a previous route's ID will inherits its counter.
         local conf_mem_addr = tostring(conf):sub(#"table: " + 1)
-        key = ctx.conf_type .. ctx.conf_id .. ':' .. apisix_plugin.conf_version(conf)
+        key = ctx.conf_type .. apisix_plugin.conf_version(conf)
               .. ':' .. conf_mem_addr .. ':' .. key
-
     else
         key = conf.group .. ':' .. key
     end
@@ -260,8 +259,6 @@ function _M.rate_limit(conf, ctx)
     core.log.info("limit key: ", key)
 
     local delay, remaining = lim:incoming(key, true)
-    ngx.log(ngx.WARN, "delay : ", require("inspect")(delay))
-    ngx.log(ngx.WARN, "remaining : ", require("inspect")(remaining))
     if not delay then
         local err = remaining
         if err == "rejected" then

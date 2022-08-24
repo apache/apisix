@@ -552,3 +552,240 @@ GET /hello?foo=bad
 GET /hello1
 --- response_body
 hello1 world
+
+
+
+=== TEST 20: sanity(limit-count)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.workflow")
+            local ok, err = plugin.check_schema({
+                rules = {
+                    {
+                        case = {
+                            {"uri", "==", "/hello"}
+                        },
+                        actions = {
+                            {
+                                "limit-count",
+                                {count = 2, time_window = 60, rejected_code = 503, key = 'remote_addr'}
+                            }
+                        }
+                    }
+                }
+            })
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+
+
+
+=== TEST 21: bad config, no time_window(limit-count)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.workflow")
+            local ok, err = plugin.check_schema({
+                rules = {
+                    {
+                        case = {
+                            {"uri", "==", "/hello"}
+                        },
+                        actions = {
+                            {
+                                "limit-count",
+                                {count = 2}
+                            }
+                        }
+                    }
+                }
+            })
+            if not ok then
+                ngx.say(err)
+                return
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body eval
+qr/property "time_window" is required/
+
+
+
+=== TEST 22: bad config, no count(limit-count)
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.workflow")
+            local ok, err = plugin.check_schema({
+                rules = {
+                    {
+                        case = {
+                            {"uri", "==", "/hello"}
+                        },
+                        actions = {
+                            {
+                                "limit-count",
+                                {time_window = 60}
+                            }
+                        }
+                    }
+                }
+            })
+            if not ok then
+                ngx.say(err)
+                return
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body eval
+qr/property "count" is required/
+
+
+
+=== TEST 23: set actions as limit-count
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "workflow": {
+                                "rules": [
+                                    {
+                                        "case": [
+                                            ["uri", "==", "/hello"]
+                                        ],
+                                        "actions": [
+                                            [
+                                                "limit-count",
+                                                {
+                                                    "count": 3,
+                                                    "time_window": 60,
+                                                    "rejected_code": 503,
+                                                    "key": "remote_addr"
+                                                }
+                                            ]
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 24: up the limit
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 200, 200, 503]
+
+
+
+=== TEST 25: the conf in actions is isolation
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local data = {
+                uri = "/*",
+                plugins = {
+                    workflow = {
+                        rules = {
+                            {
+                                case = {
+                                    {"uri", "==", "/hello"}
+                                },
+                                actions = {
+                                    {
+                                        "limit-count",
+                                        {
+                                            count = 3,
+                                            time_window = 60,
+                                            rejected_code = 503,
+                                            key = "remote_addr"
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                case = {
+                                    {"uri", "==", "/hello1"}
+                                },
+                                actions = {
+                                    {
+                                        "limit-count",
+                                        {
+                                            count = 3,
+                                            time_window = 60,
+                                            rejected_code = 503,
+                                            key = "remote_addr"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            }
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 26: cross-hit case 1 and case 2, up limit by isolation
+--- pipelined_requests eval
+["GET /hello", "GET /hello1", "GET /hello", "GET /hello1",
+"GET /hello", "GET /hello1", "GET /hello", "GET /hello1"]
+--- error_code eval
+[200, 200, 200, 200, 200, 200, 503, 503]
