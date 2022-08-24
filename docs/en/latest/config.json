@@ -2,12 +2,16 @@
   "version": "2.15.0",
   "sidebar": [
     {
-      "type": "category",
-      "label": "Architecture Design",
-      "items": [
-        "architecture-design/apisix",
-        "architecture-design/deployment-role"
-      ]
+      "type": "doc",
+      "id": "getting-started"
+    },
+    {
+      "type": "doc",
+      "id": "installation-guide"
+    },
+    {
+      "type": "doc",
+      "id": "architecture-design/apisix"
     },
     {
       "type": "category",
@@ -24,14 +28,6 @@
         "terminology/service",
         "terminology/upstream"
       ]
-    },
-    {
-      "type": "doc",
-      "id": "getting-started"
-    },
-    {
-      "type": "doc",
-      "id": "installation-guide"
     },
     {
       "type": "category",
@@ -243,6 +239,10 @@
             "xrpc/redis",
             "xrpc"
           ]
+        },
+        {
+          "type": "doc",
+          "id": "deployment-modes"
         },
         {
           "type": "doc",

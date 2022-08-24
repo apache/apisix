@@ -256,6 +256,10 @@ The `conf/nginx.conf` file is automatically generated and should not be modified
 
 :::
 
+### APISIX deployment modes
+
+APISIX has three different deployment modes for different use cases. To learn more and configure deployment modes, see the [documentation](./deployment-modes.md).
+
 ### Updating Admin API key
 
 It is recommended to modify the Admin API key to ensure security.

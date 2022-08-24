@@ -47,11 +47,7 @@ description: 本文介绍了 API 网关 Apache APISIX 的 http-logger 插件。�
 | concat_method          | string  | 否     | "json"        | ["json", "new_line"] | 枚举类型： **json**：对所有待发日志使用 `json.encode` 编码。**new_line**：对每一条待发日志单独使用 `json.encode` 编码并使用 `\n` 连接起来。 |
 | ssl_verify             | boolean | 否     | false          | [false, true]       | 当设置为 `true` 时验证证书。 |
 
-:::note 注意
-
-本插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免该插件频繁地提交数据。默认情况下每 `5` 秒钟或队列中的数据达到 `1000` 条时，批处理器会自动提交数据，如需了解更多信息或自定义配置，请参考 [Batch Processor](../batch-processor.md#配置)。
-
-:::
+该插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免该插件频繁地提交数据。默认情况下每 `5` 秒钟或队列中的数据达到 `1000` 条时，批处理器会自动提交数据，如需了解更多信息或自定义配置，请参考 [Batch Processor](../batch-processor.md#配置)。
 
 ## 插件元数据
 
