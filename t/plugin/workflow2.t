@@ -192,7 +192,7 @@ passed
 
 
 
-=== TEST 4: cross-hit case 1 and case 2, up limit by isolation
+=== TEST 4: cross-hit case 1 and case 2, trigger actions by isolation
 --- pipelined_requests eval
 ["GET /hello", "GET /hello1", "GET /hello", "GET /hello1"]
 --- error_code eval
@@ -205,3 +205,81 @@ passed
 ["GET /hello", "GET /hello1", "GET /hello", "GET /hello1"]
 --- error_code eval
 [200, 200, 503, 503]
+
+
+
+=== TEST 6: change case 2 conf in actions, up limit by isolation
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local data = {
+                uri = "/*",
+                plugins = {
+                    workflow = {
+                        rules = {
+                            {
+                                case = {
+                                    {"uri", "==", "/hello"}
+                                },
+                                actions = {
+                                    {
+                                        "limit-count",
+                                        {
+                                            count = 1,
+                                            time_window = 60,
+                                            rejected_code = 503,
+                                            key = "remote_addr"
+                                        }
+                                    }
+                                }
+                            },
+                            {
+                                case = {
+                                    {"uri", "==", "/hello1"}
+                                },
+                                actions = {
+                                    {
+                                        "limit-count",
+                                        {
+                                            count = 2,
+                                            time_window = 60,
+                                            rejected_code = 503,
+                                            key = "remote_addr"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            }
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: case 2 up limit by isolation
+--- pipelined_requests eval
+["GET /hello", "GET /hello1", "GET /hello", "GET /hello1"]
+--- error_code eval
+[503, 200, 503, 503]
