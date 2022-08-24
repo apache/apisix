@@ -99,4 +99,9 @@ function _M.get_plugins_list()
 end
 
 
+function _M.check_conf(id, conf)
+    return check_schema(conf)
+end
+
+
 return _M

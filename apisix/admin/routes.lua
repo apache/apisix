@@ -308,4 +308,7 @@ function _M.patch(id, conf, sub_path, args)
 end
 
 
+_M.check_conf = check_conf
+
+
 return _M

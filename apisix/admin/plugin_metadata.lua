@@ -136,4 +136,7 @@ function _M.delete(key)
 end
 
 
+_M.check_conf = check_conf
+
+
 return _M

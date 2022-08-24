@@ -176,4 +176,7 @@ function _M.patch(id, conf, sub_path)
 end
 
 
+_M.check_conf = check_conf
+
+
 return _M

@@ -130,6 +130,7 @@ local function run()
     local uri_segs = core.utils.split_uri(ngx.var.uri)
     core.log.info("uri: ", core.json.delay_encode(uri_segs))
 
+    local check_only = false
     -- /apisix/admin/schema/route
     local seg_res, seg_id = uri_segs[4], uri_segs[5]
     local seg_sub_path = core.table.concat(uri_segs, "/", 6)
@@ -137,6 +138,10 @@ local function run()
         -- /apisix/admin/schema/plugins/limit-count
         seg_res, seg_id = uri_segs[5], uri_segs[6]
         seg_sub_path = core.table.concat(uri_segs, "/", 7)
+
+    elseif seg_res == "check_conf" then
+        check_only = true
+        seg_res, seg_id = uri_segs[5], uri_segs[6]
     end
 
     if seg_res == "stream_routes" then
@@ -150,12 +155,15 @@ local function run()
     end
 
     local resource = resources[seg_res]
-    if not resource then
+    if not resource or (check_only and seg_res == "schema") then
         core.response.exit(404, {error_msg = "not found"})
     end
 
     local method = str_lower(get_method())
-    if not resource[method] then
+    if not check_only and not resource[method] then
+        core.response.exit(404, {error_msg = "not found"})
+    end
+    if check_only and method ~= "post" then
         core.response.exit(404, {error_msg = "not found"})
     end
 
@@ -174,6 +182,14 @@ local function run()
         end
 
         req_body = data
+    end
+
+    if check_only then
+        local ok, err = resource.check_conf(seg_id, req_body, true)
+        if not ok then
+            return core.response.exit(400, err)
+        end
+        return core.response.exit(200)
     end
 
     local uri_args = ngx.req.get_uri_args() or {}

@@ -129,4 +129,7 @@ function _M.delete(consumer_name)
 end
 
 
+_M.check_conf = check_conf
+
+
 return _M
