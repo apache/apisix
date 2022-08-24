@@ -815,3 +815,66 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST 16: pagination data count
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(0.5)
+
+            local code, body, res = t('/apisix/admin/routes', ngx.HTTP_GET)
+            res = json.decode(res)
+            assert(res.count == #res.list)
+
+            local code, body, res = t('/apisix/admin/routes/?label=', ngx.HTTP_GET)
+            res = json.decode(res)
+            assert(res.count == #res.list)
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed

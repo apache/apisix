@@ -171,9 +171,6 @@ local function filter(body, args)
             table.remove(body.list, i)
         end
     end
-
-    -- recalculate the amount of filtered data
-    body.count = #body.list
 end
 
 
@@ -186,6 +183,9 @@ function _M.filter(body)
 
     pagination(body, args)
     filter(body, args)
+
+    -- recalculate the amount of filtered data
+    body.count = #body.list
 end
 
 
