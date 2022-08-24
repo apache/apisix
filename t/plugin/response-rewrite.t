@@ -708,7 +708,8 @@ X-B: from 127.0.0.1 to 127.0.0.1:1980
         content_by_lua_block {
             local plugin = require("apisix.plugins.response-rewrite")
             local ok, err = plugin.check_schema({
-                            body_base64 = false
+                            body_base64 = false,
+                            body = ""
             })
             if not ok then
                 ngx.say(err)
