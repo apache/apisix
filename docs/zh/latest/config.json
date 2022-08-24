@@ -155,7 +155,6 @@
                 "plugins/file-logger",
                 "plugins/loggly",
                 "plugins/elasticsearch-logger"
-                
               ]
             }
           ]

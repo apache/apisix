@@ -37,7 +37,10 @@ local schema = {
             default = "default",
             enum = {"default", "origin"},
         },
-        endpoint_addr = core.schema.uri_def,
+        endpoint_addr = {
+            type = "string",
+            pattern = "[^/]$",
+        },
         field = {
             type = "object",
             properties = {
