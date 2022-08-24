@@ -93,6 +93,7 @@ authz-keycloak
 proxy-mirror
 proxy-cache
 proxy-rewrite
+workflow
 api-breaker
 limit-conn
 limit-count
