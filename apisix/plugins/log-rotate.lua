@@ -44,13 +44,13 @@ local local_conf
 local plugin_name = "log-rotate"
 local INTERVAL = 60 * 60    -- rotate interval (unit: second)
 local MAX_KEPT = 24 * 7     -- max number of log files will be kept
+local MAX_SIZE = -1         -- max size of file will be rotated
 local COMPRESSION_FILE_SUFFIX = ".tar.gz" -- compression file suffix
 local rotate_time
 local default_logs
 local enable_compression = false
 local DEFAULT_ACCESS_LOG_FILENAME = "access.log"
 local DEFAULT_ERROR_LOG_FILENAME = "error.log"
-local SIGUSR1 = 10
 
 local schema = {
     type = "object",
@@ -227,11 +227,12 @@ local function rotate_file(files, now_time, max_kept)
         end
 
         local pid = process.get_master_pid()
+        local sig_user1 = signal.signum("USR1")
 
         core.log.warn("send USR1 signal to master process [", pid, "] for reopening log file")
 
-        if (pid) then
-            local ok, err = signal.kill(pid, signal.signum("USR1") or SIGUSR1)
+        if (pid and sig_user1) then
+            local ok, err = signal.kill(pid, sig_user1)
             if not ok then
                 core.log.error("failed to send USR1 signal for reopening log file: ", err)
             end
@@ -257,7 +258,7 @@ end
 local function rotate()
     local interval = INTERVAL
     local max_kept = MAX_KEPT
-    local max_size = -1
+    local max_size = MAX_SIZE
     local attr = plugin.plugin_attr(plugin_name)
     if attr then
         interval = attr.interval or interval
@@ -292,16 +293,14 @@ local function rotate()
 
         -- reset rotate time
         rotate_time = rotate_time + interval
-    else
-        if max_size > 0 then
-            local access_log_file_size = file_size(default_logs[DEFAULT_ACCESS_LOG_FILENAME].file)
-            local error_log_file_size = file_size(default_logs[DEFAULT_ERROR_LOG_FILENAME].file)
-            if access_log_file_size >= max_size then
-                rotate_file({DEFAULT_ACCESS_LOG_FILENAME}, now_time, max_kept)
-            end
-            if error_log_file_size >= max_size then
-                rotate_file({DEFAULT_ERROR_LOG_FILENAME}, now_time, max_kept)
-            end
+    elseif max_size > 0 then
+        local access_log_file_size = file_size(default_logs[DEFAULT_ACCESS_LOG_FILENAME].file)
+        local error_log_file_size = file_size(default_logs[DEFAULT_ERROR_LOG_FILENAME].file)
+        if access_log_file_size >= max_size then
+            rotate_file({DEFAULT_ACCESS_LOG_FILENAME}, now_time, max_kept)
+        end
+        if error_log_file_size >= max_size then
+            rotate_file({DEFAULT_ERROR_LOG_FILENAME}, now_time, max_kept)
         end
     end
 end
