@@ -54,7 +54,7 @@ description: 本文介绍了 API 网关 Apache APISIX 的 openfunction 插件的
 
 :::
 
-## 先决条件
+## 前提条件
 
 在使用 `openfunction` 插件之前，你需要通过以下命令运行 OpenFunction 。
 详情参考[官方安装指南](https://openfunction.dev/docs/getting-started/installation/) 。
