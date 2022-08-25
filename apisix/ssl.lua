@@ -197,6 +197,10 @@ function _M.check_ssl_conf(in_dp, conf)
         return nil, err
     end
 
+    if conf.type == "client" then
+        return true
+    end
+
     local numcerts = conf.certs and #conf.certs or 0
     local numkeys = conf.keys and #conf.keys or 0
     if numcerts ~= numkeys then

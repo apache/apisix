@@ -21,6 +21,7 @@ local file = require("apisix.cli.file")
 local schema = require("apisix.cli.schema")
 local ngx_tpl = require("apisix.cli.ngx_tpl")
 local cli_ip = require("apisix.cli.ip")
+local snippet = require("apisix.cli.snippet")
 local profile = require("apisix.core.profile")
 local template = require("resty.template")
 local argparse = require("argparse")
@@ -65,6 +66,7 @@ stop:       stop the apisix server
 quit:       stop the apisix server gracefully
 restart:    restart the apisix server
 reload:     reload the apisix server
+test:       test the generated nginx.conf
 version:    print the version of apisix
 ]])
 end
@@ -233,14 +235,9 @@ Please modify "admin_key" in conf/config.yaml .
         util.die("can not find openresty\n")
     end
 
-    local need_ver = "1.17.8"
+    local need_ver = "1.19.3"
     if not version_greater_equal(or_ver, need_ver) then
         util.die("openresty version must >=", need_ver, " current ", or_ver, "\n")
-    end
-
-    local use_openresty_1_17 = false
-    if not version_greater_equal(or_ver, "1.19.3") then
-        use_openresty_1_17 = true
     end
 
     local or_info = util.execute_cmd("openresty -V 2>&1")
@@ -322,9 +319,6 @@ Please modify "admin_key" in conf/config.yaml .
             admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0",
                                         yaml_conf.apisix.admin_listen.ip,
                                         9180, yaml_conf.apisix.admin_listen.port)
-        elseif yaml_conf.apisix.port_admin then
-            admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0", nil,
-                                        9180, yaml_conf.apisix.port_admin)
         end
     end
 
@@ -431,46 +425,28 @@ Please modify "admin_key" in conf/config.yaml .
     local ssl_listen = {}
     -- listen in https, support multiple ports, support specific IP
     for _, value in ipairs(yaml_conf.apisix.ssl.listen) do
-        if type(value) == "number" then
-            listen_table_insert(ssl_listen, "https", "0.0.0.0", value,
-                    yaml_conf.apisix.ssl.enable_http2, yaml_conf.apisix.enable_ipv6)
-        elseif type(value) == "table" then
-            local ip = value.ip
-            local port = value.port
-            local enable_ipv6 = false
-            local enable_http2 = (value.enable_http2 or yaml_conf.apisix.ssl.enable_http2)
+        local ip = value.ip
+        local port = value.port
+        local enable_ipv6 = false
+        local enable_http2 = value.enable_http2
 
-            if ip == nil then
-                ip = "0.0.0.0"
-                if yaml_conf.apisix.enable_ipv6 then
-                    enable_ipv6 = true
-                end
-            end
-
-            if port == nil then
-                port = 9443
-            end
-
-            if enable_http2 == nil then
-                enable_http2 = false
-            end
-
-            listen_table_insert(ssl_listen, "https", ip, port,
-                    enable_http2, enable_ipv6)
-        end
-    end
-
-    -- listen in https, compatible with the original style
-    if type(yaml_conf.apisix.ssl.listen_port) == "number" then
-        listen_table_insert(ssl_listen, "https", "0.0.0.0", yaml_conf.apisix.ssl.listen_port,
-                yaml_conf.apisix.ssl.enable_http2, yaml_conf.apisix.enable_ipv6)
-    elseif type(yaml_conf.apisix.ssl.listen_port) == "table" then
-        for _, value in ipairs(yaml_conf.apisix.ssl.listen_port) do
-            if type(value) == "number" then
-                listen_table_insert(ssl_listen, "https", "0.0.0.0", value,
-                        yaml_conf.apisix.ssl.enable_http2, yaml_conf.apisix.enable_ipv6)
+        if ip == nil then
+            ip = "0.0.0.0"
+            if yaml_conf.apisix.enable_ipv6 then
+                enable_ipv6 = true
             end
         end
+
+        if port == nil then
+            port = 9443
+        end
+
+        if enable_http2 == nil then
+            enable_http2 = false
+        end
+
+        listen_table_insert(ssl_listen, "https", ip, port,
+                enable_http2, enable_ipv6)
     end
 
     yaml_conf.apisix.ssl.listen = ssl_listen
@@ -538,13 +514,28 @@ Please modify "admin_key" in conf/config.yaml .
         proxy_mirror_timeouts = yaml_conf.plugin_attr["proxy-mirror"].timeout
     end
 
+    local conf_server, err = snippet.generate_conf_server(env, yaml_conf)
+    if err then
+        util.die(err, "\n")
+    end
+
+    if yaml_conf.deployment and yaml_conf.deployment.role then
+        local role = yaml_conf.deployment.role
+        env.deployment_role = role
+
+        if role == "control_plane" and not admin_server_addr then
+            local listen = node_listen[1]
+            admin_server_addr = str_format("%s:%s", listen.ip, listen.port)
+        end
+    end
+
     -- Using template.render
     local sys_conf = {
-        use_openresty_1_17 = use_openresty_1_17,
         lua_path = env.pkg_path_org,
         lua_cpath = env.pkg_cpath_org,
         os_name = util.trim(util.execute_cmd("uname")),
         apisix_lua_home = env.apisix_home,
+        deployment_role = env.deployment_role,
         use_apisix_openresty = use_apisix_openresty,
         error_log = {level = "warn"},
         enable_http = enable_http,
@@ -557,6 +548,7 @@ Please modify "admin_key" in conf/config.yaml .
         control_server_addr = control_server_addr,
         prometheus_server_addr = prometheus_server_addr,
         proxy_mirror_timeouts = proxy_mirror_timeouts,
+        conf_server = conf_server,
     }
 
     if not yaml_conf.apisix then
@@ -636,11 +628,6 @@ Please modify "admin_key" in conf/config.yaml .
     local env_worker_processes = getenv("APISIX_WORKER_PROCESSES")
     if env_worker_processes then
         sys_conf["worker_processes"] = floor(tonumber(env_worker_processes))
-    end
-
-    if sys_conf["http"]["lua_shared_dicts"] then
-        stderr:write("lua_shared_dicts is deprecated, " ..
-                     "use custom_lua_shared_dict instead\n")
     end
 
     local exported_vars = file.get_exported_vars()
@@ -802,7 +789,10 @@ local function start(env, ...)
     end
 
     init(env)
-    init_etcd(env, args)
+
+    if env.deployment_role ~= "data_plane" then
+        init_etcd(env, args)
+    end
 
     util.execute_cmd(env.openresty_args)
 end

@@ -198,3 +198,49 @@ hello world
 --- response_body
 passed
 --- timeout: 5
+
+
+
+=== TEST 8: add log format
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/sls-logger',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "log_format": {
+                        "host": "$host",
+                        "client_ip": "$remote_addr"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: access
+--- extra_init_by_lua
+    local json = require("toolkit.json")
+    local rfc5424 = require("apisix.plugins.slslog.rfc5424")
+    local old_f = rfc5424.encode
+    rfc5424.encode = function(facility, severity, hostname, appname, pid, project,
+                   logstore, access_key_id, access_key_secret, msg)
+        local r = json.decode(msg)
+        assert(r.client_ip == "127.0.0.1", r.client_ip)
+        assert(r.host == "localhost", r.host)
+        return old_f(facility, severity, hostname, appname, pid, project,
+                     logstore, access_key_id, access_key_secret, msg)
+    end
+--- request
+GET /hello
+--- response_body
+hello world

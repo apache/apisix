@@ -25,6 +25,7 @@ service Greeter {
   rpc SayHello (HelloRequest) returns (HelloReply) {}
   rpc Plus (PlusRequest) returns (PlusReply) {}
   rpc SayHelloAfterDelay (HelloRequest) returns (HelloReply) {}
+  rpc SayMultipleHello(MultipleHelloRequest) returns (MultipleHelloReply) {}
 
   // Server side streaming.
   rpc SayHelloServerStream (HelloRequest) returns (stream HelloReply) {}
@@ -34,6 +35,7 @@ service Greeter {
 
   // Bidirectional streaming.
   rpc SayHelloBidirectionalStream (stream HelloRequest) returns (stream HelloReply) {}
+
 }
 
 enum Gender {
@@ -67,4 +69,17 @@ message PlusRequest {
 
 message PlusReply {
   int64 result = 1;
+}
+
+message MultipleHelloRequest {
+  string name = 1;
+  repeated string items = 2;
+  repeated Gender genders = 3;
+  repeated Person persons = 4;
+}
+
+message MultipleHelloReply{
+  string message = 1;
+  repeated string items = 2;
+  repeated Gender genders = 3;
 }

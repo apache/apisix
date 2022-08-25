@@ -84,7 +84,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 - **全动态能力**
 
     - [热更新和热插件](terminology/plugin.md)：无需重启服务，就可以持续更新配置和插件。
-    - [代理请求重写](plugins/proxy-rewrite.md)：支持重写请求上游的`host`、`uri`、`schema`、`enable_websocket`、`headers`信息。
+    - [代理请求重写](plugins/proxy-rewrite.md)：支持重写请求上游的`host`、`uri`、`schema`、`method`、`headers`信息。
     - [输出内容重写](plugins/response-rewrite.md)：支持自定义修改返回内容的 `status code`、`body`、`headers`。
     - [Serverless](plugins/serverless.md)：在 APISIX 的每一个阶段，你都可以添加并调用自己编写的函数。
     - 动态负载均衡：动态支持有权重的 round-robin 负载平衡。
@@ -220,6 +220,8 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 - [HelloTalk：基于 OpenResty 和 Apache APISIX 的全球化探索之路](https://www.upyun.com/opentalk/447.html)
 - [腾讯云：为什么选择 Apache APISIX 来实现 k8s ingress controller?](https://www.upyun.com/opentalk/448.html)
 - [思必驰：为什么我们重新写了一个 k8s ingress controller?](https://mp.weixin.qq.com/s/bmm2ibk2V7-XYneLo9XAPQ)
+
+更多用户案例，请查看 [Case Studies](https://apisix.apache.org/zh/blog/tags/case-studies/)。
 
 ## APISIX 的用户有哪些？
 

@@ -28,8 +28,6 @@ local schema = {
     properties = {
         host = {type = "string"},
         port = {type = "integer"},
-        max_retry_times = {type = "integer", minimum = 1},
-        retry_interval = {type = "integer", minimum = 0},
         flush_limit = {type = "integer", minimum = 1, default = 4096},
         drop_limit = {type = "integer", default = 1048576},
         timeout = {type = "integer", minimum = 1, default = 3000},
@@ -59,8 +57,6 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    conf.max_retry_count = conf.max_retry_times or conf.max_retry_count
-    conf.retry_delay = conf.retry_interval or conf.retry_delay
     return true
 end
 

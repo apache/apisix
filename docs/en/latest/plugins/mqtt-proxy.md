@@ -1,5 +1,11 @@
 ---
 title: mqtt-proxy
+keywords:
+  - APISIX
+  - API Gateway
+  - Plugin
+  - MQTT Proxy
+description: This document contains information about the Apache APISIX mqtt-proxy Plugin. The `mqtt-proxy` Plugin is used for dynamic load balancing with `client_id` of MQTT.
 ---
 
 <!--
@@ -23,28 +29,22 @@ title: mqtt-proxy
 
 ## Description
 
-The plugin `mqtt-proxy` only works in stream model, it help you to dynamic load
-balance by `client_id` of MQTT.
+The `mqtt-proxy` Plugin is used for dynamic load balancing with `client_id` of MQTT. It only works in stream model.
 
-And this plugin both support MQTT protocol [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) and [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
+This Plugin supports both the protocols [3.1.*](http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html) and [5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html).
 
 ## Attributes
 
-| Name           | Type    | Requirement | Default | Valid | Description                                                                            |
-| -------------- | ------- | ----------- | ------- | ----- | -------------------------------------------------------------------------------------- |
-| protocol_name  | string  | required    |         |       | Name of protocol, should be `MQTT` in normal.                                          |
-| protocol_level | integer | required    |         |       | Level of protocol, it should be `4` for MQTT `3.1.*`. it should be `5` for MQTT `5.0`. |
-| upstream       | object  | deprecated  |         |       | Use separate upstream in the route instead.                                            |
-| upstream.host  | string  | required    |         |       | the IP or host of upstream, will forward current request to.                           |
-| upstream.ip    | string  | deprecated  |         |       | Use "host" instead. IP address of upstream, will forward current request to.|
-| upstream.port  | number  | required    |         |       | Port of upstream, will forward current request to.                                     |
+| Name           | Type    | Required   | Description                                                                       |
+|----------------|---------|------------|-----------------------------------------------------------------------------------|
+| protocol_name  | string  | True       | Name of the protocol. Generally `MQTT`.                                           |
+| protocol_level | integer | True       | Level of the protocol. It should be `4` for MQTT `3.1.*` and `5` for MQTT `5.0`.  |
 
-## How To Enable
+## Enabling the Plugin
 
-To enable this plugin, we need to enable the stream_proxy configuration in `conf/config.yaml` first.
-For example, the following configuration represents listening on the 9100 TCP port.
+To enable the Plugin, you need to first enable the `stream_proxy` configuration in your configuration file (`conf/config.yaml`). The below configuration represents listening on the `9100` TCP port:
 
-```yaml
+```yaml title="conf/config.yaml"
     ...
     router:
         http: 'radixtree_uri'
@@ -57,9 +57,9 @@ For example, the following configuration represents listening on the 9100 TCP po
     ...
 ```
 
-Then send the MQTT request to port 9100.
+You can now send the MQTT request to port `9100`.
 
-Creates a stream route, and enable plugin `mqtt-proxy`.
+You can now create a stream Route and enable the `mqtt-proxy` Plugin:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -81,9 +81,13 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 }'
 ```
 
-In case Docker is used in combination with MacOS `host.docker.internal` is the right parameter for `host`.
+:::note
 
-This plugin exposes a variable `mqtt_client_id`, and we can use it to load balance via the client id. For example:
+If you are using Docker in macOS, then `host.docker.internal` is the right parameter for the `host` attribute.
+
+:::
+
+This Plugin exposes a variable `mqtt_client_id` which can be used for load balancing as shown below:
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -113,12 +117,45 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 }'
 ```
 
-MQTT connections with different client ID will be forwarded to different node via the consistent hash algorithm. If the client ID is missing, we will balance via client IP instead.
+MQTT connections with different client ID will be forwarded to different nodes based on the consistent hash algorithm. If client ID is missing, client IP is used instead for load balancing.
 
-## Delete Plugin
+## Enabling mTLS with mqtt-proxy plugin
+
+Stream proxies use TCP connections and can accept TLS. Follow the guide about [how to accept tls over tcp connections](../stream-proxy.md/#accept-tls-over-tcp-connection) to open a stream proxy with enabled TLS.
+
+The `mqtt-proxy` plugin is enabled through TCP communications on the specified port for the stream proxy, and will also require clients to authenticate via TLS if `tls` is set to `true`.
+
+Configure `ssl` providing the CA certificate and the server certificate, together with a list of SNIs. Steps to protect `stream_routes` with `ssl` are equivalent to the ones to [protect Routes](../mtls.md/#protect-route).
+
+### Create a stream_route using mqtt-proxy plugin and mTLS
+
+Here is an example of how create a stream_route which is using the `mqtt-proxy` plugin, providing the CA certificate, the client certificate and the client key (for self-signed certificates which are not trusted by your host, use the `-k` flag):
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+curl 127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "plugins": {
+        "mqtt-proxy": {
+            "protocol_name": "MQTT",
+            "protocol_level": 4
+        }
+    },
+    "sni": "${your_sni_name}",
+    "upstream": {
+        "nodes": {
+            "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+    }
+}'
 ```
 
-The `mqtt-proxy` plugin has been deleted now.
+The `sni` name must match one or more of the SNIs provided to the SSL object that you created with the CA and server certificates.
+
+## Disable Plugin
+
+To disable the `mqtt-proxy` Plugin you can remove the corresponding configuration as shown below:
+
+```shell
+curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+```

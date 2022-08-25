@@ -93,8 +93,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
       "priority": 0,
       "uri": "\/nacos\/*"
     }
-  },
-  "action": "set"
+  }
 }
 ```
 
@@ -150,8 +149,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f
       "priority": 0,
       "uri": "\/nacosWithNamespaceId\/*"
     }
-  },
-  "action": "set"
+  }
 }
 ```
 
@@ -200,8 +198,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/3 -H 'X-API-KEY: edd1c9f034335f
       "priority": 0,
       "uri": "\/nacosWithGroupName\/*"
     }
-  },
-  "action": "set"
+  }
 }
 ```
 
@@ -252,7 +249,6 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/4 -H 'X-API-KEY: edd1c9f034335f
       "priority": 0,
       "uri": "\/nacosWithNamespaceIdAndGroupName\/*"
     }
-  },
-  "action": "set"
+  }
 }
 ```

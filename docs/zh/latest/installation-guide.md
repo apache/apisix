@@ -44,6 +44,7 @@ import TabItem from '@theme/TabItem';
     {label: 'Docker', value: 'docker'},
     {label: 'Helm', value: 'helm'},
     {label: 'RPM', value: 'rpm'},
+    {label: 'Source Code', value: 'source code'},
   ]}>
 <TabItem value="docker">
 
@@ -170,6 +171,12 @@ apisix start
 :::
 
 </TabItem>
+
+<TabItem value="source code">
+
+如果你想要使用源码构建 APISIX，请参考[源码安装 APISIX](./building-apisix.md)。
+
+</TabItem>
 </Tabs>
 
 ## 安装 etcd
@@ -188,7 +195,7 @@ APISIX 使用 [etcd](https://github.com/etcd-io/etcd) 作为配置中心进行�
 <TabItem value="linux">
 
 ```shell
-ETCD_VERSION='3.4.18'
+ETCD_VERSION='3.5.4'
 wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
 tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
   cd etcd-v${ETCD_VERSION}-linux-amd64 && \
@@ -210,13 +217,45 @@ brew services start etcd
 
 ## 后续操作
 
+### 配置 APISIX
+
+通过修改本地 `./conf/config.yaml` 文件，或者在启动 APISIX 时使用 `-c` 或 `--config` 添加文件路径参数 `apisix start -c <path string>`，完成对 APISIX 服务本身的基本配置。
+
+比如将 APISIX 默认监听端口修改为 8000，其他配置保持默认，在 `./conf/config.yaml` 中只需这样配置：
+
+```yaml title=“./conf/config.yaml”
+apisix:
+  node_listen: 8000 # APISIX listening port
+```
+
+比如指定 APISIX 默认监听端口为 8000，并且设置 etcd 地址为 `http://foo:2379`，其他配置保持默认。在 `./conf/config.yaml` 中只需这样配置：
+
+```yaml title=“./conf/config.yaml”
+apisix:
+  node_listen: 8000 # APISIX listening port
+
+etcd:
+  host: "http://foo:2379" # etcd address
+```
+
+:::warning
+
+APISIX 的默认配置可以在 `./conf/config-default.yaml` 文件中看到，该文件与 APISIX 源码强绑定，请不要手动修改 `./conf/config-default.yaml` 文件。如果需要自定义任何配置，都应在 `./conf/config.yaml` 文件中完成。
+:::
+
+:::warning
+
+请不要手动修改 APISIX 安装目录下的 `./conf/nginx.conf` 文件。当 APISIX 启动时，会根据 `config.yaml` 的配置自动生成新的 `nginx.conf` 并自动启动服务。
+
+:::
+
 ### 更新 Admin API key
 
 建议修改 Admin API 的 key，保护 APISIX 的安全。
 
 请参考如下信息更新配置文件：
 
-```yaml title="conf/config.yaml"
+```yaml title="./conf/config.yaml"
 apisix:
   admin_key
     -

@@ -78,7 +78,8 @@ echo '
 apisix:
     node_listen: 9080
     enable_admin: true
-    port_admin: 9180
+    admin_listen:
+        port: 9180
     stream_proxy:
         tcp:
             - "localhost:9100"
@@ -202,3 +203,17 @@ if echo "$out" | grep "missing loopback or unspecified in the nginx_config.http.
 fi
 
 echo "passed: check the realip configuration for batch-requests"
+
+echo '
+etcd:
+    host:
+        - 127.0.0.1
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'property "host" validation failed'; then
+    echo "failed: should check etcd schema during init"
+    exit 1
+fi
+
+echo "passed: check etcd schema during init"

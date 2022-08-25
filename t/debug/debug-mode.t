@@ -43,9 +43,9 @@ done
 --- error_log
 loaded plugin and sort by priority: 23000 name: real-ip
 loaded plugin and sort by priority: 22000 name: client-control
+loaded plugin and sort by priority: 12015 name: request-id
 loaded plugin and sort by priority: 12011 name: zipkin
 loaded plugin and sort by priority: 12000 name: ext-plugin-pre-req
-loaded plugin and sort by priority: 11010 name: request-id
 loaded plugin and sort by priority: 11000 name: fault-injection
 loaded plugin and sort by priority: 10000 name: serverless-pre-function
 loaded plugin and sort by priority: 4000 name: cors
@@ -321,12 +321,19 @@ passed
                     "plugins": {
                         "mqtt-proxy": {
                             "protocol_name": "MQTT",
-                            "protocol_level": 4,
-                            "upstream": {
-                                "ip": "127.0.0.1",
-                                "port": 1995
-                            }
+                            "protocol_level": 4
                         }
+                    },
+                    "upstream": {
+                        "type": "chash",
+                        "key": "mqtt_client_id",
+                        "nodes": [
+                            {
+                                "host": "127.0.0.1",
+                                "port": 1995,
+                                "weight": 1
+                            }
+                        ]
                     }
                 }]]
                 )

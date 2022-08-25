@@ -26,6 +26,7 @@ local set_more_tries   = balancer.set_more_tries
 local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
 local ngx_now          = ngx.now
+local str_byte         = string.byte
 
 
 local module_name = "balancer"
@@ -195,6 +196,12 @@ local function pick_server(route, ctx)
     core.log.info("ctx: ", core.json.delay_encode(ctx, true))
     local up_conf = ctx.upstream_conf
 
+    for _, node in ipairs(up_conf.nodes) do
+        if core.utils.parse_ipv6(node.host) and str_byte(node.host, 1) ~= str_byte("[") then
+            node.host = '[' .. node.host .. ']'
+        end
+    end
+
     local nodes_count = #up_conf.nodes
     if nodes_count == 1 then
         local node = up_conf.nodes[1]
@@ -302,6 +309,7 @@ do
             local size = keepalive_pool.size
             local requests = keepalive_pool.requests
 
+            core.table.clear(pool_opt)
             pool_opt.pool_size = size
 
             local scheme = up_conf.scheme
@@ -358,7 +366,7 @@ function _M.run(route, ctx, plugin_funcs)
 
         local header_changed
         local pass_host = ctx.pass_host
-        if pass_host == "node" and balancer.recreate_request then
+        if pass_host == "node" then
             local host = server.upstream_host
             if host ~= ctx.var.upstream_host then
                 -- retried node has a different host
@@ -369,7 +377,7 @@ function _M.run(route, ctx, plugin_funcs)
 
         local _, run = plugin_funcs("before_proxy")
         -- always recreate request as the request may be changed by plugins
-        if (run or header_changed) and balancer.recreate_request then
+        if run or header_changed then
             balancer.recreate_request()
         end
     end

@@ -133,10 +133,6 @@ local function path_is_multi_type(path, type_val)
         return true
     end
 
-    if path == "apisix->ssl->listen_port" and type_val == "number" then
-        return true
-    end
-
     return false
 end
 
@@ -248,6 +244,35 @@ function _M.read_yaml_conf(apisix_home)
                     return nil, err
                 end
             end
+        end
+    end
+
+    if default_conf.deployment then
+        if default_conf.deployment.role == "traditional" then
+            default_conf.etcd = default_conf.deployment.etcd
+
+        elseif default_conf.deployment.role == "control_plane" then
+            default_conf.etcd = default_conf.deployment.etcd
+            default_conf.apisix.enable_admin = true
+
+        elseif default_conf.deployment.role == "data_plane" then
+            if default_conf.deployment.role_data_plane.config_provider == "yaml" then
+                default_conf.apisix.config_center = "yaml"
+            else
+                default_conf.etcd = default_conf.deployment.role_data_plane.control_plane
+            end
+            default_conf.apisix.enable_admin = false
+        end
+
+        if default_conf.etcd and default_conf.deployment.certs then
+            -- copy certs configuration to keep backward compatible
+            local certs = default_conf.deployment.certs
+            local etcd = default_conf.etcd
+            if not etcd.tls then
+                etcd.tls = {}
+            end
+            etcd.tls.cert = certs.cert
+            etcd.tls.key = certs.cert_key
         end
     end
 

@@ -73,6 +73,11 @@ local schema = {
         },
         public_key = {type = "string"},
         token_signing_alg_values_expected = {type = "string"},
+        use_pkce = {
+            description = "when set to true the PKEC(Proof Key for Code Exchange) will be used.",
+            type = "boolean",
+            default = false
+        },
         set_access_token_header = {
             description = "Whether the access token should be added as a header to the request " ..
                 "for downstream",
@@ -96,6 +101,12 @@ local schema = {
                 "header to the request for downstream.",
             type = "boolean",
             default = true
+        },
+        set_refresh_token_header = {
+            description = "Whether the refresh token should be added in the X-Refresh-Token " ..
+                "header to the request for downstream.",
+            type = "boolean",
+            default = false
         }
     },
     required = {"client_id", "client_secret", "discovery"}
@@ -260,7 +271,7 @@ function _M.rewrite(plugin_conf, ctx)
         conf.ssl_verify = "no"
     end
 
-    local response, err
+    local response, err, session, _
 
     if conf.bearer_only or conf.introspection_endpoint or conf.public_key then
         -- An introspection endpoint or a public key has been configured. Try to
@@ -298,7 +309,7 @@ function _M.rewrite(plugin_conf, ctx)
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err = openidc.authenticate(conf)
+        response, err, _, session  = openidc.authenticate(conf)
 
         if err then
             core.log.error("OIDC authentication failed: ", err)
@@ -307,7 +318,8 @@ function _M.rewrite(plugin_conf, ctx)
 
         if response then
             -- If the openidc module has returned a response, it may contain,
-            -- respectively, the access token, the ID token, and the userinfo.
+            -- respectively, the access token, the ID token, the refresh token,
+            -- and the userinfo.
             -- Add respective headers to the request, if so configured.
 
             -- Add configured access token header, maybe.
@@ -323,6 +335,11 @@ function _M.rewrite(plugin_conf, ctx)
             if response.user and conf.set_userinfo_header then
                 core.request.set_header(ctx, "X-Userinfo",
                     ngx_encode_base64(core.json.encode(response.user)))
+            end
+
+            -- Add X-Refresh-Token header, maybe.
+            if session.data.refresh_token and conf.set_refresh_token_header then
+                core.request.set_header(ctx, "X-Refresh-Token", session.data.refresh_token)
             end
         end
     end

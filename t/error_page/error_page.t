@@ -136,12 +136,8 @@ X-Test-Status: 500
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/routes/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -198,3 +194,58 @@ qr/(stash|fetch) ngx ctx/
 --- grep_error_log_out
 stash ngx ctx
 fetch ngx ctx
+
+
+
+=== TEST 11: check if the phases after proxy are run when 500 happens before proxy
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "serverless-post-function": {
+                            "functions" : ["return function() if ngx.var.http_x_test_status ~= nil then;ngx.exit(tonumber(ngx.var.http_x_test_status));end;end"]
+                        },
+                        "serverless-pre-function": {
+                            "phase": "log",
+                            "functions" : ["return function() ngx.log(ngx.WARN, 'run log phase in error_page') end"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: hit
+--- request
+GET /hello
+--- more_headers
+X-Test-Status: 500
+--- error_code: 500
+--- response_body_like
+.*apisix.apache.org.*
+--- error_log
+run log phase in error_page

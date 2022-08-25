@@ -19,7 +19,6 @@ local core = require("apisix.core")
 local discovery = require("apisix.discovery.init").discovery
 local upstream_util = require("apisix.utils.upstream")
 local apisix_ssl = require("apisix.ssl")
-local balancer = require("ngx.balancer")
 local error = error
 local tostring = tostring
 local ipairs = ipairs
@@ -333,14 +332,24 @@ function _M.set_by_route(route, api_ctx)
 
     local scheme = up_conf.scheme
     if (scheme == "https" or scheme == "grpcs") and up_conf.tls then
+
+        local client_cert, client_key
+        if up_conf.tls.client_cert_id then
+            client_cert = api_ctx.upstream_ssl.cert
+            client_key = api_ctx.upstream_ssl.key
+        else
+            client_cert = up_conf.tls.client_cert
+            client_key = up_conf.tls.client_key
+        end
+
         -- the sni here is just for logging
         local sni = api_ctx.var.upstream_host
-        local cert, err = apisix_ssl.fetch_cert(sni, up_conf.tls.client_cert)
+        local cert, err = apisix_ssl.fetch_cert(sni, client_cert)
         if not ok then
             return 503, err
         end
 
-        local key, err = apisix_ssl.fetch_pkey(sni, up_conf.tls.client_key)
+        local key, err = apisix_ssl.fetch_pkey(sni, client_key)
         if not ok then
             return 503, err
         end
@@ -418,6 +427,29 @@ local function check_upstream_conf(in_dp, conf)
             return false, "invalid configuration: " .. err
         end
 
+        local ssl_id = conf.tls and conf.tls.client_cert_id
+        if ssl_id then
+            local key = "/ssls/" .. ssl_id
+            local res, err = core.etcd.get(key)
+            if not res then
+                return nil, "failed to fetch ssl info by "
+                                    .. "ssl id [" .. ssl_id .. "]: " .. err
+            end
+
+            if res.status ~= 200 then
+                return nil, "failed to fetch ssl info by "
+                                    .. "ssl id [" .. ssl_id .. "], "
+                                    .. "response code: " .. res.status
+            end
+            if res.body and res.body.node and
+                res.body.node.value and res.body.node.value.type ~= "client" then
+
+                return nil, "failed to fetch ssl info by "
+                                    .. "ssl id [" .. ssl_id .. "], "
+                                    .. "wrong ssl type"
+            end
+        end
+
         -- encrypt the key in the admin
         if conf.tls and conf.tls.client_key then
             conf.tls.client_key = apisix_ssl.aes_encrypt_pkey(conf.tls.client_key)
@@ -425,12 +457,6 @@ local function check_upstream_conf(in_dp, conf)
     end
 
     if is_http then
-        if conf.pass_host == "node" and conf.nodes and
-            not balancer.recreate_request and core.table.nkeys(conf.nodes) ~= 1
-        then
-            return false, "only support single node for `node` mode currently"
-        end
-
         if conf.pass_host == "rewrite" and
             (conf.upstream_host == nil or conf.upstream_host == "")
         then

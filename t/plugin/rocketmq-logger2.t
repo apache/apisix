@@ -208,9 +208,8 @@ qr/failed to send data to rocketmq topic: .*, nameserver_list: \{"127.0.0.127":9
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/plugin_metadata/rocketmq-logger',
-                ngx.HTTP_DELETE,
-                nil,
-                [[{"action": "delete"}]])
+                ngx.HTTP_DELETE
+            )
         }
     }
 --- response_body

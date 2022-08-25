@@ -19,7 +19,7 @@ header:
     spdx-id: Apache-2.0
     copyright-owner: Apache Software Foundation
 
-  license-location-threshold: 250
+  license-location-threshold: 360
 
   paths-ignore:
     - '.gitignore'

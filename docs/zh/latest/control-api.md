@@ -208,3 +208,40 @@ APISIX 中一些插件添加了自己的 control API。如果你对他们感兴�
 在 http 子系统中触发一次全量 GC
 
 注意，当你启用 stream proxy 时，APISIX 将为 stream 子系统运行另一个 Lua 虚拟机。它不会触发这个 Lua 虚拟机中的全量 GC。
+
+### GET /v1/plugin_metadatas
+
+引入自 3.0.0 版本
+
+打印所有插件的元数据：
+
+```json
+[
+    {
+        "log_format": {
+            "upstream_response_time": "$upstream_response_time"
+        },
+        "id": "file-logger"
+    },
+    {
+        "ikey": 1,
+        "skey": "val",
+        "id": "example-plugin"
+    }
+]
+```
+
+### GET /v1/plugin_metadata/{plugin_name}
+
+引入自 3.0.0 版本
+
+打印指定插件的元数据：
+
+```json
+{
+    "log_format": {
+        "upstream_response_time": "$upstream_response_time"
+    },
+    "id": "file-logger"
+}
+```

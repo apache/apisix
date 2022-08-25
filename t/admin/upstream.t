@@ -52,8 +52,7 @@ so that we can delete it later)
                             "desc": "new upstream"
                         },
                         "key": "/apisix/upstreams/admin_up"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -94,8 +93,7 @@ passed
                             "desc": "new upstream"
                         },
                         "key": "/apisix/upstreams/admin_up"
-                    },
-                    "action": "get"
+                    }
                 }]]
                 )
 
@@ -118,12 +116,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/upstreams/admin_up',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -142,12 +136,8 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code = t('/apisix/admin/upstreams/not_found',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
 
             ngx.say("[delete] code: ", code)
         }
@@ -183,8 +173,7 @@ GET /t
                             },
                             "type": "roundrobin"
                         }
-                    },
-                    "action": "create"
+                    }
                 }]]
                 )
 
@@ -204,12 +193,8 @@ GET /t
             assert(update_time ~= nil, "update_time is nil")
 
             code, message = t('/apisix/admin/upstreams/' .. id,
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -302,8 +287,7 @@ GET /t
                             "type": "roundrobin"
                         },
                         "key": "/apisix/upstreams/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -435,8 +419,7 @@ passed
                             "type": "chash"
                         },
                         "key": "/apisix/upstreams/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -625,5 +608,138 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"wrong upstream id, do not need it"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: client_cert/client_key and client_cert_id cannot appear at the same time
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local data = {
+                nodes = {
+                    ["127.0.0.1:8080"] = 1
+                },
+                type = "roundrobin",
+                tls = {
+                    client_cert_id = 1,
+                    client_cert = ssl_cert,
+                    client_key = ssl_key
+                }
+            }
+            local code, body = t.test('/apisix/admin/upstreams',
+                 ngx.HTTP_POST,
+                 core.json.encode(data)
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/{"error_msg":"invalid configuration: property \\\"tls\\\" validation failed: failed to validate dependent schema for \\\"client_cert|client_key\\\": value wasn't supposed to match schema"}/
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: tls.client_cert_id does not exist
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local data = {
+                nodes = {
+                    ["127.0.0.1:8080"] = 1
+                },
+                type = "roundrobin",
+                tls = {
+                    client_cert_id = 9999999
+                }
+            }
+            local code, body = t.test('/apisix/admin/upstreams',
+                 ngx.HTTP_POST,
+                 core.json.encode(data)
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to fetch ssl info by ssl id [9999999], response code: 404"}
+--- no_error_log
+[error]
+
+
+
+=== TEST 21: tls.client_cert_id exist with wrong ssl type
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+            local ssl_cert = t.read_file("t/certs/mtls_client.crt")
+            local ssl_key = t.read_file("t/certs/mtls_client.key")
+            local data = {
+                sni = "test.com",
+                cert = ssl_cert,
+                key = ssl_key
+            }
+            local code, body = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+
+            local data = {
+                upstream = {
+                    scheme = "https",
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1983"] = 1
+                    },
+                    tls = {
+                        client_cert_id = 1
+                    }
+                },
+                uri = "/hello"
+            }
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to fetch ssl info by ssl id [1], wrong ssl type"}
 --- no_error_log
 [error]

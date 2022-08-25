@@ -23,8 +23,11 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.15.0](#2150)
 - [2.14.1](#2141)
 - [2.14.0](#2140)
+- [2.13.3](#2133)
+- [2.13.2](#2132)
 - [2.13.1](#2131)
 - [2.13.0](#2130)
 - [2.12.1](#2121)
@@ -58,11 +61,60 @@ title: Changelog
 - [0.7.0](#070)
 - [0.6.0](#060)
 
+## 2.15.0
+
+### Change
+
+- We now map the grpc error code OUT_OF_RANGE to http code 400 in grpc-transcode plugin: [#7419](https://github.com/apache/apisix/pull/7419)
+- Rename health_check_retry configuration in etcd section of `config-default.yaml` to startup_retry: [#7304](https://github.com/apache/apisix/pull/7304)
+- Remove `upstream.enable_websocket` which is deprecated since 2020: [#7222](https://github.com/apache/apisix/pull/7222)
+
+### Core
+
+- Support running plugins conditionally: [#7453](https://github.com/apache/apisix/pull/7453)
+- Allow users to specify plugin execution priority: [#7273](https://github.com/apache/apisix/pull/7273)
+- Support getting upstream certificate from ssl object: [#7221](https://github.com/apache/apisix/pull/7221)
+- Allow customizing error response in the plugin: [#7128](https://github.com/apache/apisix/pull/7128)
+- Add metrics to xRPC Redis proxy: [#7183](https://github.com/apache/apisix/pull/7183)
+- Introduce deployment role to simplify the deployment of APISIX:
+    - [#7405](https://github.com/apache/apisix/pull/7405)
+    - [#7417](https://github.com/apache/apisix/pull/7417)
+    - [#7392](https://github.com/apache/apisix/pull/7392)
+    - [#7365](https://github.com/apache/apisix/pull/7365)
+    - [#7249](https://github.com/apache/apisix/pull/7249)
+
+### Plugin
+
+- Add ngx.shared.dict statistic in promethues plugin: [#7412](https://github.com/apache/apisix/pull/7412)
+- Allow using unescaped raw URL in proxy-rewrite plugin: [#7401](https://github.com/apache/apisix/pull/7401)
+- Add PKCE support to the openid-connect plugin: [#7370](https://github.com/apache/apisix/pull/7370)
+- Support custom log format in sls-logger plugin: [#7328](https://github.com/apache/apisix/pull/7328)
+- Export some params for kafka-client in kafka-logger plugin: [#7266](https://github.com/apache/apisix/pull/7266)
+- Add support for capturing OIDC refresh tokens in openid-connect plugin: [#7220](https://github.com/apache/apisix/pull/7220)
+- Add prometheus plugin in stream subsystem: [#7174](https://github.com/apache/apisix/pull/7174)
+
+### Bugfix
+
+- clear remain state from the latest try before retrying in Kubernetes discovery: [#7506](https://github.com/apache/apisix/pull/7506)
+- the query string was repeated twice when enabling both http_to_https and append_query_string in the redirect plugin: [#7433](https://github.com/apache/apisix/pull/7433)
+- don't send empty Authorization header by default in http-logger: [#7444](https://github.com/apache/apisix/pull/7444)
+- ensure both `group` and `disable` configurations can be used in limit-count: [#7384](https://github.com/apache/apisix/pull/7384)
+- adjust the execution priority of request-id so the tracing plugins can use the request id: [#7281](https://github.com/apache/apisix/pull/7281)
+- correct the transcode of repeated Message in grpc-transcode: [#7231](https://github.com/apache/apisix/pull/7231)
+- var missing in proxy-cache cache key should be ignored: [#7168](https://github.com/apache/apisix/pull/7168)
+- reduce memory usage when abnormal weights are given in chash: [#7103](https://github.com/apache/apisix/pull/7103)
+- cache should be bypassed when the method mismatch in proxy-cache: [#7111](https://github.com/apache/apisix/pull/7111)
+- Upstream keepalive should consider TLS param:
+    - [#7054](https://github.com/apache/apisix/pull/7054)
+    - [#7466](https://github.com/apache/apisix/pull/7466)
+- The redirect plugin sets a correct port during redirecting HTTP to HTTPS:
+    - [#7065](https://github.com/apache/apisix/pull/7065)
+
 ## 2.14.1
 
-**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.14` branch.**
+### Bugfix
 
-[https://github.com/apache/apisix/blob/release/2.14/CHANGELOG.md#2141](https://github.com/apache/apisix/blob/release/2.14/CHANGELOG.md#2141)
+- The "unix:" in the `real_ip_from` configuration should not break the batch-requests plugin: [#7106](https://github.com/apache/apisix/pull/7106)
 
 ## 2.14.0
 
@@ -119,6 +171,18 @@ title: Changelog
     - [#7065](https://github.com/apache/apisix/pull/7065)
     - [#6686](https://github.com/apache/apisix/pull/6686)
 - Admin API rejects unknown stream plugin: [#6813](https://github.com/apache/apisix/pull/6813)
+
+## 2.13.3
+
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.13` branch.**
+
+[https://github.com/apache/apisix/blob/release/2.13/CHANGELOG.md#2133](https://github.com/apache/apisix/blob/release/2.13/CHANGELOG.md#2133)
+
+## 2.13.2
+
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.13` branch.**
+
+[https://github.com/apache/apisix/blob/release/2.13/CHANGELOG.md#2132](https://github.com/apache/apisix/blob/release/2.13/CHANGELOG.md#2132)
 
 ## 2.13.1
 

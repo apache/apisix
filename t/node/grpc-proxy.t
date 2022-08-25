@@ -102,13 +102,13 @@ apikey: user-key
 upstreams:
     - id: 1
       type: roundrobin
+      scheme: grpc
       nodes:
         "127.0.0.1:9088": 1
 routes:
     - id: 1
       methods:
           - POST
-      service_protocol: grpc
       uri: "/hello"
       upstream_id: 1
 #END
@@ -130,7 +130,6 @@ routes:
     - id: 1
       methods:
           - POST
-      service_protocol: grpc
       uri: "/hello"
       plugins:
           key-auth:
@@ -139,6 +138,7 @@ routes:
                   - jack
       upstream:
           type: roundrobin
+          scheme: grpc
           nodes:
               "127.0.0.1:9088": 1
 #END

@@ -70,8 +70,7 @@ __DATA__
                             }
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 
@@ -173,8 +172,7 @@ qr/404 Not Found/
                             }
                         },
                         "key": "/apisix/routes/1"
-                    },
-                    "action": "set"
+                    }
                 }]]
                 )
 

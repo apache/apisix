@@ -174,9 +174,7 @@ failed to parse domain: httpbin.orgx
 
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_DELETE,
-                nil,
-                [[{"action": "delete"}]]
+                ngx.HTTP_DELETE
             )
 
             if code >= 300 then
@@ -202,9 +200,7 @@ passed
 
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                ngx.HTTP_DELETE,
-                nil,
-                [[{"action": "delete"}]]
+                ngx.HTTP_DELETE
             )
 
             if code >= 300 then

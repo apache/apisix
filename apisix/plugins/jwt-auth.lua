@@ -60,7 +60,7 @@ local consumer_schema = {
         secret = {type = "string"},
         algorithm = {
             type = "string",
-            enum = {"HS256", "HS512", "RS256"},
+            enum = {"HS256", "HS512", "RS256", "ES256"},
             default = "HS256"
         },
         exp = {type = "integer", minimum = 1, default = 86400},
@@ -71,6 +71,11 @@ local consumer_schema = {
         vault = {
             type = "object",
             properties = {}
+        },
+        lifetime_grace_period = {
+            type = "integer",
+            minimum = 0,
+            default = 0
         }
     },
     dependencies = {
@@ -89,7 +94,7 @@ local consumer_schema = {
                         public_key = {type = "string"},
                         private_key= {type = "string"},
                         algorithm = {
-                            enum = {"RS256"},
+                            enum = {"RS256", "ES256"},
                         },
                     },
                     required = {"public_key", "private_key"},
@@ -101,7 +106,7 @@ local consumer_schema = {
                             properties = {}
                         },
                         algorithm = {
-                            enum = {"RS256"},
+                            enum = {"RS256", "ES256"},
                         },
                     },
                     required = {"vault"},
@@ -161,7 +166,7 @@ function _M.check_schema(conf, schema_type)
         return true
     end
 
-    if conf.algorithm ~= "RS256" and not conf.secret then
+    if conf.algorithm ~= "RS256" and conf.algorithm ~= "ES256" and not conf.secret then
         conf.secret = ngx_encode_base64(resty_random.bytes(32, true))
     elseif conf.base64_secret then
         if ngx_decode_base64(conf.secret) == nil then
@@ -169,7 +174,7 @@ function _M.check_schema(conf, schema_type)
         end
     end
 
-    if conf.algorithm == "RS256" then
+    if conf.algorithm == "RS256" or conf.algorithm == "ES256" then
         -- Possible options are a) both are in vault, b) both in schema
         -- c) one in schema, another in vault.
         if not conf.public_key then
@@ -235,7 +240,7 @@ local function get_secret(conf, consumer_name)
 end
 
 
-local function get_rsa_keypair(conf, consumer_name)
+local function get_rsa_or_ecdsa_keypair(conf, consumer_name)
     local public_key = conf.public_key
     local private_key = conf.private_key
     -- if keys are present in conf, no need to query vault (fallback)
@@ -304,8 +309,10 @@ local function sign_jwt_with_HS(key, consumer, payload)
 end
 
 
-local function sign_jwt_with_RS256(key, consumer, payload)
-    local public_key, private_key, err = get_rsa_keypair(consumer.auth_conf, consumer.username)
+local function sign_jwt_with_RS256_ES256(key, consumer, payload)
+    local public_key, private_key, err = get_rsa_or_ecdsa_keypair(
+        consumer.auth_conf, consumer.username
+    )
     if not public_key then
         core.log.error("failed to sign jwt, err: ", err)
         core.response.exit(503, "failed to sign jwt")
@@ -340,12 +347,12 @@ local function algorithm_handler(consumer, method_only)
         end
 
         return get_secret(consumer.auth_conf, consumer.username)
-    elseif consumer.auth_conf.algorithm == "RS256" then
+    elseif consumer.auth_conf.algorithm == "RS256" or consumer.auth_conf.algorithm == "ES256"  then
         if method_only then
-            return sign_jwt_with_RS256
+            return sign_jwt_with_RS256_ES256
         end
 
-        local public_key, _, err = get_rsa_keypair(consumer.auth_conf, consumer.username)
+        local public_key, _, err = get_rsa_or_ecdsa_keypair(consumer.auth_conf, consumer.username)
         return public_key, err
     end
 end
@@ -389,7 +396,10 @@ function _M.rewrite(conf, ctx)
         core.log.error("failed to retrieve secrets, err: ", err)
         return 503, {message = "failed to verify jwt"}
     end
-    jwt_obj = jwt:verify_jwt_obj(auth_secret, jwt_obj)
+    local claim_specs = jwt:get_default_validation_options(jwt_obj)
+    claim_specs.lifetime_grace_period = consumer.auth_conf.lifetime_grace_period
+
+    jwt_obj = jwt:verify_jwt_obj(auth_secret, jwt_obj, claim_specs)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
 
     if not jwt_obj.verified then

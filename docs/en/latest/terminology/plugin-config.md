@@ -1,5 +1,10 @@
 ---
 title: Plugin Config
+keywords:
+  - API gateway
+  - Apache APISIX
+  - Plugin Config
+description: Plugin Config in Apache APISIX.
 ---
 
 <!--
@@ -23,11 +28,10 @@ title: Plugin Config
 
 Plugin Configs are used to extract commonly used [Plugin](./plugin.md) configurations and can be bound directly to a [Route](./route.md).
 
-The example below illustrates how this can be used:
+The example below illustrates how to create a Plugin Config and bind it to a Route:
 
 ```shell
-# create a plugin config
-$ curl http://127.0.0.1:9080/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9080/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "desc": "blah",
     "plugins": {
@@ -38,9 +42,10 @@ $ curl http://127.0.0.1:9080/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9
         }
     }
 }'
+```
 
-# bind it to route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+```shell
+curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uris": ["/index.html"],
     "plugin_config_id": 1,
@@ -55,7 +60,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 
 When APISIX can't find the Plugin Config with the `id`, the requests reaching this Route are terminated with a status code of 503.
 
-If a Route already has the `plugins` field configured, the plugins in the Plugin Config will effectively be merged to it. The same plugin in the Plugin Config will override the ones configured directly in the Route.
+If a Route already has the `plugins` field configured, the plugins in the Plugin Config will effectively be merged to it. The same plugin in the Plugin Config will not override the ones configured directly in the Route.
 
 For example, if we configure a Plugin Config as shown below
 
@@ -93,7 +98,6 @@ to a Route as shown below,
     "plugins": {
         "proxy-rewrite": {
             "uri": "/test/add",
-            "scheme": "https",
             "host": "apisix.iresty.com"
         },
         "limit-count": {
@@ -126,11 +130,10 @@ the effective configuration will be as the one shown below:
         },
         "proxy-rewrite": {
             "uri": "/test/add",
-            "scheme": "https",
             "host": "apisix.iresty.com"
         },
         "limit-count": {
-            "count": 2,
+            "count": 20,
             "time_window": 60,
             "rejected_code": 503
         }

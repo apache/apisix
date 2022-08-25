@@ -17,6 +17,9 @@
 local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
+local plugin = require("apisix.plugin")
+
+
 local plugin_name = "sls-logger"
 local ngx = ngx
 local rf5424 = require("apisix.plugins.slslog.rfc5424")
@@ -127,10 +130,15 @@ end
 
 -- log phase in APISIX
 function _M.log(conf, ctx)
-    local entry = log_util.get_full_log(ngx, conf)
-    if not entry.route_id then
-        core.log.error("failed to obtain the route id for sys logger")
-        return
+    local metadata = plugin.plugin_metadata(plugin_name)
+    local entry
+
+    if metadata and metadata.value.log_format
+       and core.table.nkeys(metadata.value.log_format) > 0
+    then
+        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
+    else
+        entry = log_util.get_full_log(ngx, conf)
     end
 
     local json_str, err = core.json.encode(entry)

@@ -1,5 +1,5 @@
 {
-  "version": "2.14.1",
+  "version": "2.15.0",
   "sidebar": [
     {
       "type": "category",
@@ -48,7 +48,8 @@
             "plugins/real-ip",
             "plugins/server-info",
             "plugins/ext-plugin-post-req",
-            "plugins/ext-plugin-pre-req"
+            "plugins/ext-plugin-pre-req",
+            "plugins/ext-plugin-post-resp"
           ]
         },
         {
@@ -91,7 +92,8 @@
             "plugins/ua-restriction",
             "plugins/referer-restriction",
             "plugins/consumer-restriction",
-            "plugins/csrf"
+            "plugins/csrf",
+            "plugins/public-api"
           ]
         },
         {
@@ -150,7 +152,8 @@
                 "plugins/sls-logger",
                 "plugins/google-cloud-logging",
                 "plugins/splunk-hec-logging",
-                "plugins/file-logger"
+                "plugins/file-logger",
+                "plugins/loggly"
               ]
             }
           ]
@@ -190,6 +193,16 @@
       ]
     },
     {
+      "type": "category",
+      "label": "Development",
+      "items": [
+        {
+          "type": "doc",
+          "id": "building-apisix"
+        }
+      ]
+    },
+    {
       "type": "doc",
       "id": "FAQ"
     },
@@ -205,7 +218,7 @@
             "discovery/dns",
             "discovery/nacos",
             "discovery/eureka",
-            "discovery/zookeeper",
+            "discovery/control-plane-service-discovery",
             "discovery/kubernetes"
           ]
         },

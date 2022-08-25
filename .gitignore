@@ -77,6 +77,10 @@ t/fuzzing/__pycache__/
 boofuzz-results/
 *.pyc
 *.wasm
+t/grpc_server_example/grpc_server_example
+t/plugin/grpc-web/grpc-web-server
+t/plugin/grpc-web/node_modules/
+
 # release tar package
 *.tgz
 release/*

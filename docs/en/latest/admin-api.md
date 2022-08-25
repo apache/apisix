@@ -27,13 +27,99 @@ By default, the Admin API listens to port `9080` (`9443` for HTTPS) when APISIX 
 
 **Note**: Mentions of `X-API-KEY` in this document refers to `apisix.admin_key.key`—the access token for Admin API—in your configuration file.
 
+## V3
+
+The Admin API has made some breaking changes in V3 version, as well as supporting additional features.
+
+### Support new response body format
+
+1. Remove `action` field in response body;
+2. Adjust the response body structure when fetching the list of resources, the new response body structure like:
+
+```json
+{
+    "count":2,
+    "list":[
+        {
+            ...
+        },
+        {
+            ...
+        }
+    ]
+}
+```
+
+### Support paging query
+
+Paging query is supported when getting the resource list, paging parameters include:
+
+| parameter | Default | Valid range | Description                  |
+| --------- | ------  | ----------- | ---------------------------- |
+| page      | 1       | [1, ...]    | Number of pages              |
+| page_size |         | [10, 500]   | Number of resources per page |
+
+The example is as follows:
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes?page=1&page_size=10 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+  "count": 1,
+  "list": [
+    {
+      ...
+    }
+  ]
+}
+```
+
+Resources that support paging queries:
+
+- Consumer
+- Global Rules
+- Plugin Config
+- Proto
+- Route
+- Service
+- SSL
+- Stream Route
+- Upstream
+
+### Support filtering query
+
+When getting a list of resources, it supports filtering resources based on `name`, `label`, `uri`.
+
+| parameter | parameter                                                    |
+| --------- | ------------------------------------------------------------ |
+| name      | Query resource by their `name`, which will not appear in the query results if the resource itself does not have `name`. |
+| label     | Query resource by their `label`, which will not appear in the query results if the resource itself does not have `label`. |
+| uri       | Supported on Route resources only. If the `uri` of a Route is equal to the uri of the query or if the `uris` contains the uri of the query, the Route resource appears in the query results. |
+
+When multiple filter parameters are enabled, use the intersection of the query results for different filter parameters.
+
+The following example will return a list of routes, and all routes in the list satisfy: the `name` of the route contains the string "test", the `uri` contains the string "foo", and there is no restriction on the `label` of the route, since the label of the query is the empty string.
+
+```shell
+$ curl http://127.0.0.1:9080/apisix/admin/routes?name=test&uri=foo&label= \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+  "count": 1,
+  "list": [
+    {
+      ...
+    }
+  ]
+}
+```
+
 ## Route
 
 **API**: /apisix/admin/routes/{id}?ttl=0
 
 [Routes](./terminology/route.md) match the client's request based on defined rules, loads and executes the corresponding [plugins](#plugin), and forwards the request to the specified [Upstream](#upstream).
 
-**Note**: When the Admin API is enabled, to avoid conflicts with your design API, use a different port for the Admin API. This can be set in your configuration file by changing the `port_admin` key.
+**Note**: When the Admin API is enabled, to avoid conflicts with your design API, use a different port for the Admin API. This can be set in your configuration file by changing the `admin_listen` key.
 
 ### Request Methods
 
@@ -103,7 +189,7 @@ Example configuration:
         "send": 3,
         "read": 3
     },
-    "filter_func": "",                    # User-defined filtering function
+    "filter_func": ""                     # User-defined filtering function
 }
 ```
 
@@ -458,7 +544,7 @@ Example Configuration:
 {
     "plugins": {},          # Bound plugin
     "username": "name",     # Consumer name
-    "desc": "hello world",  # Consumer desc
+    "desc": "hello world"   # Consumer desc
 }
 ```
 
@@ -486,7 +572,7 @@ HTTP/1.1 200 OK
 Date: Thu, 26 Dec 2019 08:17:49 GMT
 ...
 
-{"node":{"value":{"username":"jack","plugins":{"key-auth":{"key":"auth-one"},"limit-count":{"time_window":60,"count":2,"rejected_code":503,"key":"remote_addr","policy":"local"}}},"createdIndex":64,"key":"\/apisix\/consumers\/jack","modifiedIndex":64},"prevNode":{"value":"{\"username\":\"jack\",\"plugins\":{\"key-auth\":{\"key\":\"auth-one\"},\"limit-count\":{\"time_window\":60,\"count\":2,\"rejected_code\":503,\"key\":\"remote_addr\",\"policy\":\"local\"}}}","createdIndex":63,"key":"\/apisix\/consumers\/jack","modifiedIndex":63},"action":"set"}
+{"node":{"value":{"username":"jack","plugins":{"key-auth":{"key":"auth-one"},"limit-count":{"time_window":60,"count":2,"rejected_code":503,"key":"remote_addr","policy":"local"}}},"createdIndex":64,"key":"\/apisix\/consumers\/jack","modifiedIndex":64},"prevNode":{"value":"{\"username\":\"jack\",\"plugins\":{\"key-auth\":{\"key\":\"auth-one\"},\"limit-count\":{\"time_window\":60,\"count\":2,\"rejected_code\":503,\"key\":\"remote_addr\",\"policy\":\"local\"}}}","createdIndex":63,"key":"\/apisix\/consumers\/jack","modifiedIndex":63}}
 ```
 
 Since `v2.2`, we can bind multiple authentication plugins to the same consumer.
@@ -524,7 +610,7 @@ In addition to the equalization algorithm selections, Upstream also supports pas
 | Name                        | Optional                                    | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Example                                                                                                                                    |
 | --------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
 | type                        | required                                    | Load balancing algorithm to be used.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |                                                                                                                                            |
-| nodes                       | required, can't be used with `service_name` | IP addresses (with optional ports) of the Upstream nodes represented as a hash table or an array. In the hash table, the key is the IP address and the value is the weight of the node for the load balancing algorithm. In the array, each item is a hash table with keys `host`, `weight`, and the optional `port` and `priority`. Empty nodes are treated as placeholders and clients trying to access this Upstream will receive a 502 response.                                                                                                                                                                                                                                                                             | `192.168.1.100:80`                                                                                                                         |
+| nodes                       | required, can't be used with `service_name` | IP addresses (with optional ports) of the Upstream nodes represented as a hash table or an array. In the hash table, the key is the IP address and the value is the weight of the node for the load balancing algorithm. For hash table case, if the key is IPv6 address with port, then the IPv6 address must be quoted with square brackets. In the array, each item is a hash table with keys `host`, `weight`, and the optional `port` and `priority`. Empty nodes are treated as placeholders and clients trying to access this Upstream will receive a 502 response.                                                                                                                                                                                                                                                                             | `192.168.1.100:80`, `[::1]:80`                                                                                                                         |
 | service_name                | required, can't be used with `nodes`        | Service name used for [service discovery](discovery.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `a-bootiful-client`                                                                                                                        |
 | discovery_type              | required, if `service_name` is used         | The type of service [discovery](discovery.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `eureka`                                                                                                                                   |
 | hash_on                     | optional                                    | Only valid if the `type` is `chash`. Supports Nginx variables (`vars`), custom headers (`header`), `cookie` and `consumer`. Defaults to `vars`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
@@ -541,8 +627,9 @@ In addition to the equalization algorithm selections, Upstream also supports pas
 | labels                      | optional                                    | Attributes of the Upstream specified as key-value pairs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | {"version":"v2","build":"16","env":"production"}                                                                                           |
 | create_time                 | optional                                    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | 1602883670                                                                                                                                 |
 | update_time                 | optional                                    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | 1602883670                                                                                                                                 |
-| tls.client_cert             | optional                                    | Sets the client certificate while connecting to a TLS Upstream.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
-| tls.client_key              | optional                                    | Sets the client private key while connecting to a TLS Upstream.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
+| tls.client_cert             | optional, can't be used with `tls.client_cert_id`       | Sets the client certificate while connecting to a TLS Upstream.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
+| tls.client_key              | optional, can't be used with `tls.client_cert_id`       | Sets the client private key while connecting to a TLS Upstream.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
+| tls.client_cert_id          | optional, can't be used with `tls.client_cert` and `tls.client_key`       | Set the referenced [SSL](#ssl) id.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
 | keepalive_pool.size         | optional                                    | Sets `keepalive` directive dynamically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |                                                                                                                                            |
 | keepalive_pool.idle_timeout | optional                                    | Sets `keepalive_timeout` directive dynamically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
 | keepalive_pool.requests     | optional                                    | Sets `keepalive_requests` directive dynamically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |                                                                                                                                            |
@@ -564,11 +651,13 @@ The following should be considered when setting the `hash_on` value:
 - When set to `vars_combinations`, the `key` is required. The value of the key can be a combination of any of the [Nginx variables](http://nginx.org/en/docs/varindex.html) like `$request_uri$remote_addr`.
 - When no value is set for either `hash_on` or `key`, the key defaults to `remote_addr`.
 
-The features described below requires APISIX to be run on [APISIX-Base](./FAQ.md#how-do-i-build-the-apisix-base-environment?):
+The features described below requires APISIX to be run on [APISIX-Base](./FAQ.md#how-do-i-build-the-apisix-base-environment):
 
 You can set the `scheme` to `tls`, which means "TLS over TCP".
 
 To use mTLS to communicate with Upstream, you can use the `tls.client_cert/key` in the same format as SSL's `cert` and `key` fields.
+
+Or you can reference SSL object by `tls.client_cert_id` to set SSL cert and key. The SSL object can be referenced only if the `type` field is `client`, otherwise the request will be rejected by APISIX. In addition, only `cert` and `key` will be used in the SSL object.
 
 To allow Upstream to have a separate connection pool, use `keepalive_pool`. It can be configured by modifying its child fields.
 
@@ -581,7 +670,7 @@ Example Configuration:
     "timeout": {                # Set the timeout for connecting, sending and receiving messages, each is 15 seconds.
         "connect":15,
         "send":15,
-        "read":15,
+        "read":15
     },
     "nodes": {"host:80": 100},  # Upstream machine address list, the format is `Address + Port`
                                 # is the same as "nodes": [ {"host": "host", "port": 80, "weight": 100} ],
@@ -591,7 +680,7 @@ Example Configuration:
     "key": "",
     "name": "upstream-for-test",
     "desc": "hello world",
-    "scheme": "http",           # The scheme used when communicating with upstream, the default is `http`
+    "scheme": "http"            # The scheme used when communicating with upstream, the default is `http`
 }
 ```
 
@@ -763,17 +852,17 @@ Currently, the response is returned from etcd.
 
 ## SSL
 
-**API**:/apisix/admin/ssl/{id}
+**API**:/apisix/admin/ssls/{id}
 
 ### Request Methods
 
 | Method | Request URI            | Request Body | Description                                     |
 | ------ | ---------------------- | ------------ | ----------------------------------------------- |
-| GET    | /apisix/admin/ssl      | NULL         | Fetches a list of all configured SSL resources. |
-| GET    | /apisix/admin/ssl/{id} | NULL         | Fetch specified resource by id.                 |
-| PUT    | /apisix/admin/ssl/{id} | {...}        | Creates a resource with the specified id.           |
-| POST   | /apisix/admin/ssl      | {...}        | Creates a resource and assigns a random id.           |
-| DELETE | /apisix/admin/ssl/{id} | NULL         | Removes the resource with the specified id.     |
+| GET    | /apisix/admin/ssls      | NULL         | Fetches a list of all configured SSL resources. |
+| GET    | /apisix/admin/ssls/{id} | NULL         | Fetch specified resource by id.                 |
+| PUT    | /apisix/admin/ssls/{id} | {...}        | Creates a resource with the specified id.           |
+| POST   | /apisix/admin/ssls      | {...}        | Creates a resource and assigns a random id.           |
+| DELETE | /apisix/admin/ssls/{id} | NULL         | Removes the resource with the specified id.     |
 
 ### Request Body Parameters
 
@@ -789,6 +878,7 @@ Currently, the response is returned from etcd.
 | labels       | False    | Match Rules              | Attributes of the resource specified as key-value pairs.                                                       | {"version":"v2","build":"16","env":"production"} |
 | create_time  | False    | Auxiliary                | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.         | 1602883670                                       |
 | update_time  | False    | Auxiliary                | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.         | 1602883670                                       |
+| type         | False    | Auxiliary            | Identifies the type of certificate, default  `server`.                                                                             | `client` Indicates that the certificate is a client certificate, which is used when APISIX accesses the upstream; `server` Indicates that the certificate is a server-side certificate, which is used by APISIX when verifying client requests.     |
 | status       | False    | Auxiliary                | Enables the current SSL. Set to `1` (enabled) by default.                                                      | `1` to enable, `0` to disable                    |
 
 Example Configuration:
@@ -911,7 +1001,7 @@ $ curl "http://127.0.0.1:9080/apisix/admin/plugins/list" -H 'X-API-KEY: edd
 ["zipkin","request-id",...]
 
 $ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
-{"properties":{"disable":{"type":"boolean"}},"additionalProperties":false,"type":"object"}
+{"$comment":"this is a mark for our injected plugin schema","properties":{"header":{"default":"apikey","type":"string"},"hide_credentials":{"default":false,"type":"boolean"},"_meta":{"properties":{"filter":{"type":"array","description":"filter determines whether the plugin needs to be executed at runtime"},"disable":{"type":"boolean"},"error_response":{"oneOf":[{"type":"string"},{"type":"object"}]},"priority":{"type":"integer","description":"priority of plugins by customized order"}},"type":"object"},"query":{"default":"apikey","type":"string"}},"type":"object"}
 ```
 
 **API**: /apisix/admin/plugins?all=true

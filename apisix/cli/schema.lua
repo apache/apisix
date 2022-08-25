@@ -22,6 +22,49 @@ local require = require
 
 
 local _M = {}
+local etcd_schema = {
+    type = "object",
+    properties = {
+        resync_delay = {
+            type = "integer",
+        },
+        user = {
+            type = "string",
+        },
+        password = {
+            type = "string",
+        },
+        tls = {
+            type = "object",
+            properties = {
+                cert = {
+                    type = "string",
+                },
+                key = {
+                    type = "string",
+                },
+            },
+        },
+        prefix = {
+            type = "string",
+        },
+        host = {
+            type = "array",
+            items = {
+                type = "string",
+                pattern = [[^https?://]]
+            },
+            minItems = 1,
+        },
+        timeout = {
+            type = "integer",
+            default = 30,
+            minimum = 1,
+            description = "etcd connection timeout in seconds",
+        }
+    },
+    required = {"prefix", "host"}
+}
 local config_schema = {
     type = "object",
     properties = {
@@ -89,9 +132,6 @@ local config_schema = {
                             uniqueItems = true,
                         }
                     }
-                },
-                port_admin = {
-                    type = "integer",
                 },
                 https_admin = {
                     type = "boolean",
@@ -165,6 +205,25 @@ local config_schema = {
                     properties = {
                         ssl_trusted_certificate = {
                             type = "string",
+                        },
+                        listen = {
+                            type = "array",
+                            items = {
+                                type = "object",
+                                properties = {
+                                    ip = {
+                                        type = "string",
+                                    },
+                                    port = {
+                                        type = "integer",
+                                        minimum = 1,
+                                        maximum = 65535
+                                    },
+                                    enable_http2 = {
+                                        type = "boolean",
+                                    }
+                                }
+                            }
                         }
                     }
                 },
@@ -190,31 +249,7 @@ local config_schema = {
                 }
             }
         },
-        etcd = {
-            type = "object",
-            properties = {
-                resync_delay = {
-                    type = "integer",
-                },
-                user = {
-                    type = "string",
-                },
-                password = {
-                    type = "string",
-                },
-                tls = {
-                    type = "object",
-                    properties = {
-                        cert = {
-                            type = "string",
-                        },
-                        key = {
-                            type = "string",
-                        },
-                    }
-                }
-            }
-        },
+        etcd = etcd_schema,
         wasm = {
             type = "object",
             properties = {
@@ -243,6 +278,96 @@ local config_schema = {
                 }
             }
         },
+        deployment = {
+            type = "object",
+            properties = {
+                role = {
+                    enum = {"traditional", "control_plane", "data_plane", "standalone"}
+                }
+            },
+            required = {"role"},
+        },
+    }
+}
+local deployment_schema = {
+    traditional = {
+        properties = {
+            etcd = etcd_schema,
+            role_traditional = {
+                properties = {
+                    config_provider = {
+                        enum = {"etcd"}
+                    },
+                },
+                required = {"config_provider"}
+            }
+        },
+        required = {"etcd"}
+    },
+    control_plane = {
+        properties = {
+            etcd = etcd_schema,
+            role_control_plane = {
+                properties = {
+                    config_provider = {
+                        enum = {"etcd"}
+                    },
+                    conf_server = {
+                        properties = {
+                            listen = {
+                                type = "string",
+                                default = "0.0.0.0:9280",
+                            },
+                            cert = { type = "string" },
+                            cert_key = { type = "string" },
+                            client_ca_cert = { type = "string" },
+                        },
+                        required = {"cert", "cert_key"}
+                    },
+                },
+                required = {"config_provider", "conf_server"}
+            },
+            certs = {
+                properties = {
+                    cert = { type = "string" },
+                    cert_key = { type = "string" },
+                    trusted_ca_cert = { type = "string" },
+                },
+                dependencies = {
+                    cert = {
+                        required = {"cert_key"},
+                    },
+                },
+                default = {},
+            },
+        },
+        required = {"etcd", "role_control_plane"}
+    },
+    data_plane = {
+        properties = {
+            role_data_plane = {
+                properties = {
+                    config_provider = {
+                        enum = {"control_plane", "yaml"}
+                    },
+                },
+                required = {"config_provider"}
+            },
+            certs = {
+                properties = {
+                    cert = { type = "string" },
+                    cert_key = { type = "string" },
+                    trusted_ca_cert = { type = "string" },
+                },
+                dependencies = {
+                    cert = {
+                        required = {"cert_key"},
+                    },
+                },
+                default = {},
+            },
+        },
+        required = {"role_data_plane"}
     }
 }
 
@@ -264,6 +389,15 @@ function _M.validate(yaml_conf)
                     return false, "invalid discovery " .. kind .. " configuration: " .. err
                 end
             end
+        end
+    end
+
+    if yaml_conf.deployment then
+        local role = yaml_conf.deployment.role
+        local validator = jsonschema.generate_validator(deployment_schema[role])
+        local ok, err = validator(yaml_conf.deployment)
+        if not ok then
+            return false, "invalid deployment " .. role .. " configuration: " .. err
         end
     end
 

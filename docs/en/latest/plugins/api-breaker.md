@@ -2,10 +2,9 @@
 title: api-breaker
 keywords:
   - APISIX
-  - Plugin
+  - API Gateway
   - API Breaker
-  - api-breaker
-description: This document contains information about the Apache APISIX api-breaker Plugin.
+description: This document describes the information about the Apache APISIX api-breaker Plugin, you can use it to protect Upstream services.
 ---
 
 <!--
@@ -31,11 +30,15 @@ description: This document contains information about the Apache APISIX api-brea
 
 The `api-breaker` Plugin implements circuit breaker functionality to protect Upstream services.
 
+:::note
+
 Whenever the Upstream service responds with a status code from the configured `unhealthy.http_statuses` list for the configured `unhealthy.failures` number of times, the Upstream service will be considered unhealthy.
 
 The request is then retried in 2, 4, 8, 16 ... seconds until the `max_breaker_sec`.
 
 In an unhealthy state, if the Upstream service responds with a status code from the configured list `healthy.http_statuses` for `healthy.successes` times, the service is considered healthy again.
+
+:::
 
 ## Attributes
 
@@ -43,10 +46,10 @@ In an unhealthy state, if the Upstream service responds with a status code from 
 |-------------------------|----------------|----------|---------|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | break_response_code     | integer        | True     |         | [200, ..., 599] | HTTP error code to return when Upstream is unhealthy.                                                                                                                                                                                        |
 | break_response_body     | string         | False    |         |                 | Body of the response message to return when Upstream is unhealthy.                                                                                                                                                                           |
-| break_response_headers  | array[object]  | False    |         |                 | Headers of the response message to return when Upstream is unhealthy. Can only be configured when the `break_response_body` attribute is configured. The values can contain Nginx variables. For example, `$remote_addr` and `$balancer_ip`. |
+| break_response_headers  | array[object]  | False    |         | [{"key":"header_name","value":"can contain Nginx $var"}] | Headers of the response message to return when Upstream is unhealthy. Can only be configured when the `break_response_body` attribute is configured. The values can contain APISIX variables. For example, we can use `{"key":"X-Client-Addr","value":"$remote_addr:$remote_port"}`. |
 | max_breaker_sec         | integer        | False    | 300     | >=3             | Maximum time in seconds for circuit breaking.                                                                                                                                                                                                |
 | unhealthy.http_statuses | array[integer] | False    | [500]   | [500, ..., 599] | Status codes of Upstream to be considered unhealthy.                                                                                                                                                                                         |
-| unhealthy.failures      | integer        | False    | 3       | >=1             | Number of consecutive failures for the Upstream service to be considered unhealthy.                                                                                                                                                          |
+| unhealthy.failures      | integer        | False    | 3       | >=1             | Number of failures within a certain period of time for the Upstream service to be considered unhealthy.                                                                                                                                                          |
 | healthy.http_statuses   | array[integer] | False    | [200]   | [200, ..., 499] | Status codes of Upstream to be considered healthy.                                                                                                                                                                                           |
 | healthy.successes       | integer        | False    | 3       | >=1             | Number of consecutive healthy requests for the Upstream service to be considered healthy.                                                                                                                                                    |
 
@@ -55,7 +58,8 @@ In an unhealthy state, if the Upstream service responds with a status code from 
 The example below shows how you can configure the Plugin on a specific Route:
 
 ```shell
-curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl "http://127.0.0.1:9080/apisix/admin/routes/1" \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "api-breaker": {
@@ -80,23 +84,28 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H 'X-API-KEY: edd1c9f034335f
 }'
 ```
 
-In this configuration, a response code of 500 or 503 three times in a row triggers the unhealthy status of the Upstream service. A response code of 200 restores its healthy status.
+In this configuration, a response code of `500` or `503` three times within a certain period of time triggers the unhealthy status of the Upstream service. A response code of `200` restores its healthy status.
 
 ## Example usage
 
-Once you have configured the Plugin as shown above, you can test it out by sending a request. If the Upstream service responds with an unhealthy response code, you will receive the configured response code (`break_response_code`).
+Once you have configured the Plugin as shown above, you can test it out by sending a request.
 
 ```shell
 curl -i -X POST "http://127.0.0.1:9080/hello"
 ```
 
+If the Upstream service responds with an unhealthy response code, you will receive the configured response code (`break_response_code`).
+
 ```shell
 HTTP/1.1 502 Bad Gateway
-Content-Type: application/octet-stream
-Connection: keep-alive
-Server: APISIX/1.5
-
-... ...
+...
+<html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>openresty</center>
+</body>
+</html>
 ```
 
 ## Disable Plugin
@@ -104,7 +113,8 @@ Server: APISIX/1.5
 To disable the `api-breaker` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "upstream": {

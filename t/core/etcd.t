@@ -415,3 +415,23 @@ qr/init_by_lua:\d+: \S+/
 init_by_lua:12: ab
 init_by_lua:19: 200
 init_by_lua:26: 404
+
+
+
+=== TEST 8: error handling in server_version
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd_lib = require("resty.etcd")
+            etcd_lib.new = function()
+                return nil, "ouch"
+            end
+            local etcd = require("apisix.core.etcd")
+            local res, err = etcd.server_version()
+            ngx.say(err)
+        }
+    }
+--- request
+GET /t
+--- response_body
+ouch

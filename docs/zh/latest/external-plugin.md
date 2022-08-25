@@ -32,6 +32,7 @@ APISIX 支持使用 Lua 语言编写插件，这种类型的插件在 APISIX 内
 ![external-plugin](../../assets/images/external-plugin.png)
 
 当你在 APISIX 中配置了一个 Plugin Runner ，APISIX 将以子进程的方式运行该 Plugin Runner 。
+
 该子进程与 APISIX 进程从属相同用户。当重启或者重新加载 APISIX 时，该 Plugin Runner 也将被重启。
 
 一旦你为指定路由配置了 `ext-plugin-*` 插件，

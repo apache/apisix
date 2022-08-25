@@ -36,7 +36,9 @@ The clients will provide their certificates to the server and the server will ch
 2. Modify configuration items in `conf/config.yaml`:
 
 ```yaml
-  port_admin: 9180
+  admin_listen:
+    ip: 127.0.0.1
+    port: 9180
   https_admin: true
 
   admin_api_mtls:
@@ -66,7 +68,7 @@ curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /
 
 ### How to configure
 
-You need to build [APISIX-Base](./FAQ.md#how-do-i-build-the-apisix-base-environment?) and configure `etcd.tls` section if you want APISIX to work on an etcd cluster with mTLS enabled.
+You need to build [APISIX-Base](./FAQ.md#how-do-i-build-the-apisix-base-environment) and configure `etcd.tls` section if you want APISIX to work on an etcd cluster with mTLS enabled.
 
 ```yaml
 etcd:
@@ -126,7 +128,7 @@ if len(sys.argv) >= 5:
         reqParam["client"]["ca"] = clientCert
     if len(sys.argv) >= 6:
         reqParam["client"]["depth"] = int(sys.argv[5])
-resp = requests.put("http://127.0.0.1:9080/apisix/admin/ssl/1", json=reqParam, headers={
+resp = requests.put("http://127.0.0.1:9080/apisix/admin/ssls/1", json=reqParam, headers={
     "X-API-KEY": api_key,
 })
 print(resp.status_code)
