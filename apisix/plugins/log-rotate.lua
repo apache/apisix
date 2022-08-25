@@ -227,15 +227,10 @@ local function rotate_file(files, now_time, max_kept)
         end
 
         local pid = process.get_master_pid()
-        local sig_user1 = signal.signum("USR1")
-
         core.log.warn("send USR1 signal to master process [", pid, "] for reopening log file")
-
-        if (pid and sig_user1) then
-            local ok, err = signal.kill(pid, sig_user1)
-            if not ok then
-                core.log.error("failed to send USR1 signal for reopening log file: ", err)
-            end
+        local ok, err = signal.kill(pid, signal.signum("USR1"))
+        if not ok then
+            core.log.error("failed to send USR1 signal for reopening log file: ", err)
         end
 
         if enable_compression then
@@ -248,7 +243,7 @@ local function rotate_file(files, now_time, max_kept)
             local path = log_dir .. log_list[i]
             local ok, err = os_remove(path)
             if err then
-               core.log.error("remove old log file: ", path, " log: ", err, "  res:", ok)
+               core.log.error("remove old log file: ", path, " err: ", err, "  res:", ok)
             end
         end
     end
