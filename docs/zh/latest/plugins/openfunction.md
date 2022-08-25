@@ -40,7 +40,7 @@ description: 本文介绍了 API 网关 Apache APISIX 的 openfunction 插件的
 | function_uri                | string  | 是     |         |              | OpenFunction function uri，例如 `https://localhost:30858/default/function-sample`。     |
 | ssl_verify                  | boolean | 否     | true    |              | 当设置为 `true` 时执行 SSL 验证。                            |
 | authorization               | object  | 否     |         |              | 访问 OpenFunction 的函数的授权凭证。|
-| authorization.service_token | string  | 否     |         |              | OpenFunction service token，其格式为 `xxx:xxx` ，支持函数入口的 basic auth 认证方式。 |
+| authorization.service_token | string  | 否     |         |              | OpenFunction service token，其格式为 `xxx:xxx`，支持函数入口的 basic auth 认证方式。 |
 | timeout                     | integer | 否     | 3000 ms  | [100,...] ms  | OpenFunction action 和 HTTP 调用超时时间，以毫秒为单位。          |
 | keepalive                   | boolean | 否     | true    |              | 当设置为 `true` 时，保持连接的活动状态以便重复使用。         |
 | keepalive_timeout           | integer | 否     | 60000 ms | [1000,...] ms | 当连接空闲时，保持该连接处于活动状态的时间，以毫秒为单位。               |
