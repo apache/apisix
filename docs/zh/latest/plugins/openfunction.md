@@ -107,7 +107,7 @@ hello, test!
 
 ### 配置路径转发
 
-`OpenFunction` 插件还支持 URL 路径转发，同时将请求代理到上游的 OpenFunction API 端点。基本请求路径的扩展(如路由 `/hello/*` 中 `*` 的部分)会被添加到插件配置中指定的 `function_uri`。
+`OpenFunction` 插件还支持 URL 路径转发，同时将请求代理到上游的 OpenFunction API 端点。基本请求路径的扩展（如路由 `/hello/*` 中 `*` 的部分）会被添加到插件配置中指定的 `function_uri`。
 
 :::info 重要
 
