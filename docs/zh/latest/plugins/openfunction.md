@@ -128,7 +128,7 @@ hello, test!
 
 `OpenFunction` 插件还支持 URL 路径转发，同时将请求代理到上游的 OpenFunction API 端点。基本请求路径的扩展被附加到插件配置中指定的 `function_uri` 。
 
-:::info IMPORTANT
+:::info 重要
 
 路由上配置的 `uri` 必须以 `*` 结尾，此功能才能正常工作。 APISIX 路由是严格匹配的，`*` 表示此 URI 的任何子路径都将匹配到同一路由。
 :::
