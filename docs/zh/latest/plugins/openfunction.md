@@ -41,9 +41,9 @@ description: 本文介绍了 API 网关 Apache APISIX 的 openfunction 插件的
 | ssl_verify                  | boolean | 否     | true    |              | 当设置为 `true` 时执行 SSL 验证。                            |
 | authorization               | object  | 否     |         |              | 访问 OpenFunction 的函数的授权凭证。|
 | authorization.service_token | string  | 否     |         |              | OpenFunction service token，其格式为 `xxx:xxx`，支持函数入口的 basic auth 认证方式。 |
-| timeout                     | integer | 否     | 3000 ms  | [100,...] ms  | OpenFunction action 和 HTTP 调用超时时间，以毫秒为单位。          |
+| timeout                     | integer | 否     | 3000 ms | [100,...] ms | OpenFunction action 和 HTTP 调用超时时间，以毫秒为单位。          |
 | keepalive                   | boolean | 否     | true    |              | 当设置为 `true` 时，保持连接的活动状态以便重复使用。         |
-| keepalive_timeout           | integer | 否     | 60000 ms | [1000,...] ms | 当连接空闲时，保持该连接处于活动状态的时间，以毫秒为单位。               |
+| keepalive_timeout           | integer | 否     | 60000 ms| [1000,...] ms| 当连接空闲时，保持该连接处于活动状态的时间，以毫秒为单位。               |
 | keepalive_pool              | integer | 否     | 5       | [1,...]      | 连接断开之前，可接收的最大请求数。                           |
 
 :::note 注意
@@ -56,31 +56,13 @@ description: 本文介绍了 API 网关 Apache APISIX 的 openfunction 插件的
 
 ## 前提条件
 
-在使用 `openfunction` 插件之前，你需要通过以下命令运行 OpenFunction。详情参考 [OpenFunction 安装指南](https://openfunction.dev/docs/getting-started/installation/)。
+在使用 `openfunction` 插件之前，你需要通过以下命令运行 OpenFunction。详情参考 [OpenFunction 安装指南](https://openfunction.dev/docs/getting-started/installation/) 。
 
 请确保当前环境中已经安装对应版本的 Kubernetes 集群。
 
-### 通过 Helm Chart 安装 OpenFunction
-
-```shell
-#add the OpenFunction chart repository
-helm repo add openfunction https://openfunction.github.io/charts/
-helm repo update
-
-#install the OpenFunction chart
-kubectl create namespace openfunction
-helm install openfunction openfunction/openfunction -n openfunction
-```
-
-你可以通过以下命令来验证 openfunction 是否已经安装成功：
-
-```shell
-kubectl get pods --namespace openfunction
-```
-
 ### 创建并推送函数
 
-你可以参考 [OpenFunction 官方示例](https://github.com/OpenFunction/samples) 创建函数。构建函数时，你需要使用以下命令为容器仓库生成一个密钥，才可以将函数容器镜像推送到容器仓库( 例如 Docker Hub 或 Quay.io）。
+你可以参考 [OpenFunction 官方示例](https://github.com/OpenFunction/samples) 创建函数。构建函数时，你需要使用以下命令为容器仓库生成一个密钥，才可以将函数容器镜像推送到容器仓库 ( 例如 Docker Hub 或 Quay.io）。
 
 ```shell
 REGISTRY_SERVER=https://index.docker.io/v1/ REGISTRY_USER=<your_registry_user> REGISTRY_PASSWORD=<your_registry_password>
@@ -92,7 +74,7 @@ kubectl create secret docker-registry push-secret \
 
 ## 启用插件
 
-通过以下命令创建一个路由，并在配置文件中添加 `openfunction` 插件：
+你可以通过以下命令在指定路由中启用该插件：
 
 ```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -109,7 +91,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-### 测试请求
+## 测试插件
 
 使用 `curl` 命令测试：
 
@@ -125,7 +107,7 @@ hello, test!
 
 ### 配置路径转发
 
-`OpenFunction` 插件还支持 URL 路径转发，同时将请求代理到上游的 OpenFunction API 端点。基本请求路径的扩展被附加到插件配置中指定的 `function_uri` 。
+`OpenFunction` 插件还支持 URL 路径转发，同时将请求代理到上游的 OpenFunction API 端点。基本请求路径的扩展(如路由 `/hello/*` 中 `*` 的部分)会被添加到插件配置中指定的 `function_uri`。
 
 :::info 重要
 

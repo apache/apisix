@@ -5,7 +5,7 @@ keywords:
   - Plugin
   - OpenFunction
   - openfunction
-description: This document contains information about the CNCF OpenFunction Plugin.
+description: This document contains information about the Apache APISIX openfunction Plugin.
 ---
 
 <!--
@@ -41,9 +41,9 @@ This Plugin can be configured on a Route and requests will be sent to the config
 | ssl_verify                  | boolean | False    | true    |              | When set to `true` verifies the SSL certificate.                                                           |
 | authorization               | object  | False    |         |              | Authorization credentials to access functions of OpenFunction.                                      |
 | authorization.service_token | string  | False    |         |              | The token format is 'xx:xx' which supports basic auth for function entry points.                                      |
-| timeout                     | integer | False    | 3000ms  | [100, ...]ms | OpenFunction action and HTTP call timeout in ms.                                                              |
+| timeout                     | integer | False    | 3000 ms | [100, ...] ms| OpenFunction action and HTTP call timeout in ms.                                                              |
 | keepalive                   | boolean | False    | true    |              | When set to `true` keeps the connection alive for reuse.                                                   |
-| keepalive_timeout           | integer | False    | 60000ms | [1000,...]ms | Time is ms for connection to remain idle without closing.                                                  |
+| keepalive_timeout           | integer | False    | 60000 ms| [1000,...] ms| Time is ms for connection to remain idle without closing.                                                  |
 | keepalive_pool              | integer | False    | 5       | [1,...]      | Maximum number of requests that can be sent on this connection before closing it.                          |
 
 :::note
@@ -58,26 +58,6 @@ Before configuring the plugin, you need to have OpenFunction running.
 Installation of OpenFunction requires a certain version Kubernetes cluster.
 For details, please refer to [Installation](https://openfunction.dev/docs/getting-started/installation/).
 
-### Install OpenFunction via Helm Chart
-
-The example below shows OpenFunction installed in Helm:
-
-```shell
-# add the OpenFunction chart repository
-helm repo add openfunction https://openfunction.github.io/charts/
-helm repo update
-
-#install the OpenFunction chart
-kubectl create namespace openfunction
-helm install openfunction openfunction/openfunction -n openfunction
-```
-
-You can then verify if OpenFunction is ready:
-
-```shell
-kubectl get pods --namespace openfunction
-```
-
 ### Create and Push a Function
 
 You can then create a function following the [sample](https://github.com/OpenFunction/samples)
@@ -85,7 +65,7 @@ You can then create a function following the [sample](https://github.com/OpenFun
 You'll need to push your function container image to a container registry like Docker Hub or Quay.io when building a function. To do that, you'll need to generate a secret for your container registry first.
 
 ```shell
-REGISTRY_SERVER=https://index.docker.io/v1/ REGISTRY_USER=<your_registry_user> REGISTRY_PASSWORD=<your_registry_password>
+REGISTRY_SERVER=https://index.docker.io/v1/ REGISTRY_USER= ${your_registry_user} REGISTRY_PASSWORD= ${your_registry_password}
 kubectl create secret docker-registry push-secret \
     --docker-server=$REGISTRY_SERVER \
     --docker-username=$REGISTRY_USER \
