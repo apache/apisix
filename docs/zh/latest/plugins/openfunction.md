@@ -80,8 +80,7 @@ kubectl get pods --namespace openfunction
 
 ### 创建并推送函数
 
-你可以通过官方示例创建函数 [sample](https://github.com/OpenFunction/samples) 。
-构建函数时，需要将函数容器镜像推送到容器仓库，如 Docker Hub 或 Quay.io。要做到这一点，首先需要输入如下命令为容器仓库生成一个密钥。
+你可以参考 [OpenFunction 官方示例](https://github.com/OpenFunction/samples) 创建函数。构建函数时，你需要使用以下命令为容器仓库生成一个密钥，才可以将函数容器镜像推送到容器仓库( 例如 Docker Hub 或 Quay.io）。
 
 ```shell
 REGISTRY_SERVER=https://index.docker.io/v1/ REGISTRY_USER=<your_registry_user> REGISTRY_PASSWORD=<your_registry_password>
