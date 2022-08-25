@@ -46,7 +46,7 @@ description: 本文介绍了 API 网关 Apache APISIX 的 openfunction 插件的
 | keepalive_timeout           | integer | 否     | 60000 ms | [1000,...] ms | 当连接空闲时，保持该连接处于活动状态的时间，以毫秒为单位。               |
 | keepalive_pool              | integer | 否     | 5       | [1,...]      | 连接断开之前，可接收的最大请求数。                           |
 
-:::note
+:::note 注意
 
 `timeout` 字段规定了 OpenFunction function 的最大执行时间，以及 APISIX 中 HTTP 客户端的请求超时时间。
 
