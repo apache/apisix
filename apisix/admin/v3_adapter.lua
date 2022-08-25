@@ -185,7 +185,7 @@ function _M.filter(body)
     filter(body, args)
 
     -- recalculate the amount of filtered data
-    body.count = #body.list
+    body.count = body.list and #body.list or 0
 end
 
 
