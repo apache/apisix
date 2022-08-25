@@ -56,8 +56,8 @@ description: 本文介绍了 API 网关 Apache APISIX 的 openfunction 插件的
 
 ## 前提条件
 
-在使用 `openfunction` 插件之前，你需要通过以下命令运行 OpenFunction 。
-详情参考[官方安装指南](https://openfunction.dev/docs/getting-started/installation/) 。
+在使用 `openfunction` 插件之前，你需要通过以下命令运行 OpenFunction。详情参考 [OpenFunction 安装指南](https://openfunction.dev/docs/getting-started/installation/)。
+
 请确保当前环境中已经安装对应版本的 Kubernetes 集群。
 
 ### 通过 Helm Chart 安装 OpenFunction
