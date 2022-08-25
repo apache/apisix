@@ -123,6 +123,7 @@ syslog
 udp-logger
 file-logger
 clickhouse-logger
+tencent-cloud-cls
 example-plugin
 aws-lambda
 azure-functions
