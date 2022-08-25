@@ -33,6 +33,8 @@ __DATA__
 GET /t
 --- error_code: 404
 
+
+
 === TEST 2: set env "APISIX_PROFILE" to Empty String
 --- config
     location /t {
