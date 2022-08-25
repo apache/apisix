@@ -50,7 +50,7 @@ description: 本文介绍了 API 网关 Apache APISIX 的 openfunction 插件的
 
 `timeout` 字段规定了 OpenFunction function 的最大执行时间，以及 APISIX 中 HTTP 客户端的请求超时时间。
 
-因为 OpenFunction function 调用可能会耗费很长时间来拉取容器镜像和启动容器，所以如果 `timeout` 字段值设置太小，可能会导致大量的失败请求。
+因为 OpenFunction function 调用可能会耗费很长时间来拉取容器镜像和启动容器，如果 `timeout` 字段的值设置太小，可能会导致大量请求失败。
 
 :::
 
