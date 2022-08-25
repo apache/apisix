@@ -65,7 +65,7 @@ Admin API 在 V3 版本中做了一些不向下兼容的调整，以及支持更
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes?page=1&page_size=10 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET -i -d '
 {
   "count": 1,
   "list": [
@@ -103,7 +103,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes?page=1&page_size=10 \
 
 ```shell
 $ curl http://127.0.0.1:9080/apisix/admin/routes?name=test&uri=foo&label= \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET -i -d '
 {
   "count": 1,
   "list": [
