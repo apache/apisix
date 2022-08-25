@@ -222,15 +222,26 @@ local function gen_limit_key(conf, ctx, key)
 end
 
 
+local function gen_limit_obj(conf, ctx)
+    if conf.group then
+        return lrucache(conf.group, "", create_limit_obj, conf)
+    end
+
+    local extra_key
+    if conf._vid then
+        extra_key = conf.policy .. '#' .. conf._vid
+    else
+        extra_key = conf.policy
+    end
+
+    return core.lrucache.plugin_ctx(lrucache, ctx, extra_key, create_limit_obj, conf)
+end
+
+
 function _M.rate_limit(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
 
-    local lim, err
-    if not conf.group then
-        lim, err = core.lrucache.plugin_ctx(lrucache, ctx, conf.policy, create_limit_obj, conf)
-    else
-        lim, err = lrucache(conf.group, "", create_limit_obj, conf)
-    end
+    local lim, err = gen_limit_obj(conf, ctx)
 
     if not lim then
         core.log.error("failed to fetch limit.count object: ", err)

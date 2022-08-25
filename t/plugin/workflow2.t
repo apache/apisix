@@ -208,7 +208,7 @@ passed
 
 
 
-=== TEST 6: change case 2 conf in actions, up limit by isolation
+=== TEST 6: different actions with different limit count conf, up limit by isolation
 --- config
     location /t {
         content_by_lua_block {
@@ -278,8 +278,8 @@ passed
 
 
 
-=== TEST 7: case 2 up limit by isolation
+=== TEST 7: case 1 up limit, case 2 psssed
 --- pipelined_requests eval
 ["GET /hello", "GET /hello1", "GET /hello", "GET /hello1"]
 --- error_code eval
-[503, 200, 503, 503]
+[200, 200, 503, 200]
