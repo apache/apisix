@@ -118,7 +118,8 @@ function _M.check_schema(conf)
             end
 
             if action[1] == "limit-count" and action[2]["group"] then
-                return false, "failed to validate the '" .. action[1] .. "' action: group is not supported in workflow"
+                return false, "failed to validate the '" .. action[1]
+                              .. "' action: group is not supported in workflow"
             end
 
             -- use the action's idx as an identifier to isolate between confs
