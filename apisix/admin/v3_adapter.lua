@@ -181,11 +181,13 @@ function _M.filter(body)
 
     local args = request.get_uri_args()
 
-    pagination(body, args)
     filter(body, args)
 
-    -- recalculate the amount of filtered data
-    body.count = body.list and #body.list or 0
+    -- recalculate the total amount of filtered data and remove count field
+    body.total = body.list and #body.list or 0
+    body.count = nil
+
+    pagination(body, args)
 end
 
 
