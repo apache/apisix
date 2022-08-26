@@ -21,6 +21,7 @@ local plugin = require("apisix.plugin")
 local process = require("ngx.process")
 local signal = require("resty.signal")
 local shell = require("resty.shell")
+local ipairs = ipairs
 local ngx = ngx
 local ngx_time = ngx.time
 local ngx_update_time = ngx.update_time
@@ -43,6 +44,7 @@ local local_conf
 local plugin_name = "log-rotate"
 local INTERVAL = 60 * 60    -- rotate interval (unit: second)
 local MAX_KEPT = 24 * 7     -- max number of log files will be kept
+local MAX_SIZE = -1         -- max size of file will be rotated
 local COMPRESSION_FILE_SUFFIX = ".tar.gz" -- compression file suffix
 local rotate_time
 local default_logs
@@ -123,34 +125,22 @@ local function tab_sort_comp(a, b)
 end
 
 
-local function scan_log_folder()
-    local t = {
-        access = {},
-        error = {},
-    }
+local function scan_log_folder(log_file_name)
+    local t = {}
 
-    local log_dir, access_name = get_log_path_info("access.log")
-    local _, error_name = get_log_path_info("error.log")
-
-    if enable_compression then
-        access_name = access_name .. COMPRESSION_FILE_SUFFIX
-        error_name = error_name .. COMPRESSION_FILE_SUFFIX
-    end
+    local log_dir, _ = get_log_path_info(log_file_name)
 
     for file in lfs.dir(log_dir) do
         local n = get_last_index(file, "__")
         if n ~= nil then
             local log_type = file:sub(n + 2)
-            if log_type == access_name then
-                tab_insert(t.access, file)
-            elseif log_type == error_name then
-                tab_insert(t.error, file)
+            if log_type == log_file_name then
+                tab_insert(t, file)
             end
         end
     end
 
-    tab_sort(t.access, tab_sort_comp)
-    tab_sort(t.error, tab_sort_comp)
+    tab_sort(t, tab_sort_comp)
     return t, log_dir
 end
 
@@ -219,18 +209,62 @@ local function init_default_logs(logs_info, log_type)
 end
 
 
+local function file_size(file)
+    local attr = lfs.attributes(file)
+    if attr then
+        return attr.size
+    end
+    return 0
+end
+
+
+local function rotate_file(files, now_time, max_kept)
+    for _, file in ipairs(files) do
+        local now_date = os_date("%Y-%m-%d_%H-%M-%S", now_time)
+        local new_file = rename_file(default_logs[file], now_date)
+        if not new_file then
+            return
+        end
+
+        local pid = process.get_master_pid()
+        core.log.warn("send USR1 signal to master process [", pid, "] for reopening log file")
+        local ok, err = signal.kill(pid, signal.signum("USR1"))
+        if not ok then
+            core.log.error("failed to send USR1 signal for reopening log file: ", err)
+        end
+
+        if enable_compression then
+            compression_file(new_file)
+        end
+
+        -- clean the oldest file
+        local log_list, log_dir = scan_log_folder(file)
+        for i = max_kept + 1, #log_list do
+            local path = log_dir .. log_list[i]
+            local ok, err = os_remove(path)
+            if err then
+               core.log.error("remove old log file: ", path, " err: ", err, "  res:", ok)
+            end
+        end
+    end
+end
+
+
 local function rotate()
     local interval = INTERVAL
     local max_kept = MAX_KEPT
+    local max_size = MAX_SIZE
     local attr = plugin.plugin_attr(plugin_name)
     if attr then
         interval = attr.interval or interval
         max_kept = attr.max_kept or max_kept
+        max_size = attr.max_size or max_size
         enable_compression = attr.enable_compression or enable_compression
     end
 
     core.log.info("rotate interval:", interval)
     core.log.info("rotate max keep:", max_kept)
+    core.log.info("rotate max size:", max_size)
 
     if not default_logs then
         -- first init default log filepath and filename
@@ -248,53 +282,22 @@ local function rotate()
         return
     end
 
-    if now_time < rotate_time then
-        -- did not reach the rotate time
-        core.log.info("rotate time: ", rotate_time, " now time: ", now_time)
-        return
-    end
+    if now_time >= rotate_time then
+        local files = {DEFAULT_ACCESS_LOG_FILENAME, DEFAULT_ERROR_LOG_FILENAME}
+        rotate_file(files, now_time, max_kept)
 
-    local now_date = os_date("%Y-%m-%d_%H-%M-%S", now_time)
-    local access_new_file = rename_file(default_logs[DEFAULT_ACCESS_LOG_FILENAME], now_date)
-    local error_new_file = rename_file(default_logs[DEFAULT_ERROR_LOG_FILENAME], now_date)
-    if not access_new_file and not error_new_file then
         -- reset rotate time
         rotate_time = rotate_time + interval
-        return
-    end
-
-    core.log.warn("send USR1 signal to master process [",
-                  process.get_master_pid(), "] for reopening log file")
-    local ok, err = signal.kill(process.get_master_pid(), signal.signum("USR1"))
-    if not ok then
-        core.log.error("failed to send USR1 signal for reopening log file: ", err)
-    end
-
-    if enable_compression then
-        compression_file(access_new_file)
-        compression_file(error_new_file)
-    end
-
-    -- clean the oldest file
-    local log_list, log_dir = scan_log_folder()
-    for i = max_kept + 1, #log_list.error do
-        local path = log_dir .. log_list.error[i]
-        ok, err = os_remove(path)
-        if err then
-           core.log.error("remove old error file: ", path, " err: ", err, "  res:", ok)
+    elseif max_size > 0 then
+        local access_log_file_size = file_size(default_logs[DEFAULT_ACCESS_LOG_FILENAME].file)
+        local error_log_file_size = file_size(default_logs[DEFAULT_ERROR_LOG_FILENAME].file)
+        if access_log_file_size >= max_size then
+            rotate_file({DEFAULT_ACCESS_LOG_FILENAME}, now_time, max_kept)
+        end
+        if error_log_file_size >= max_size then
+            rotate_file({DEFAULT_ERROR_LOG_FILENAME}, now_time, max_kept)
         end
     end
-
-    for i = max_kept + 1, #log_list.access do
-        local path = log_dir .. log_list.access[i]
-        ok, err = os_remove(path)
-        if err then
-           core.log.error("remove old error file: ", path, " err: ", err, "  res:", ok)
-        end
-    end
-
-    -- reset rotate time
-    rotate_time = rotate_time + interval
 end
 
 
