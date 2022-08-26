@@ -17,7 +17,6 @@
 local core        = require("apisix.core")
 local expr        = require("resty.expr.v1")
 local re_compile  = require("resty.core.regex").re_match_compile
-local ngx_resp    = require "ngx.resp"
 local plugin_name = "response-rewrite"
 local ngx         = ngx
 local re_match    = ngx.re.match
