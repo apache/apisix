@@ -71,6 +71,15 @@ local return_schema = {
 }
 
 
+local function check_return_schema(conf)
+    local ok, err = core.schema.check(return_schema, conf)
+    if not ok then
+        return false, err
+    end
+    return true
+end
+
+
 local function exit(conf)
     return conf.code, {error_msg = "rejected by workflow"}
 end
@@ -83,12 +92,12 @@ end
 
 local support_action = {
     ["return"] = {
-        handler  = exit,
-        schema   = return_schema,
+        handler        = exit,
+        check_schema   = check_return_schema,
     },
     ["limit-count"] = {
-        handler  = rate_limit,
-        schema   = limit_count.schema,
+        handler        = rate_limit,
+        check_schema   = limit_count.check_schema,
     }
 }
 
@@ -112,18 +121,12 @@ function _M.check_schema(conf)
                 return false, "unsupported action: " .. action[1]
             end
 
-            local ok, err = core.schema.check(support_action[action[1]].schema, action[2])
+            -- use the action's idx as an identifier to isolate between confs
+            action[2]["_vid"] = idx
+            local ok, err = support_action[action[1]].check_schema(action[2], plugin_name)
             if not ok then
                 return false, "failed to validate the '" .. action[1] .. "' action: " .. err
             end
-
-            if action[1] == "limit-count" and action[2]["group"] then
-                return false, "failed to validate the '" .. action[1]
-                              .. "' action: group is not supported in workflow"
-            end
-
-            -- use the action's idx as an identifier to isolate between confs
-            action[2]["_vid"] = idx
        end
     end
 

@@ -547,7 +547,7 @@ hello1 world
 done
 failed to validate the 'limit-count' action: property "time_window" is required
 failed to validate the 'limit-count' action: property "count" is required
-failed to validate the 'limit-count' action: group is not supported in workflow
+failed to validate the 'limit-count' action: group is not supported
 
 
 
