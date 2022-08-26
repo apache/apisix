@@ -183,11 +183,13 @@ function _M.filter(body)
 
     filter(body, args)
 
-    -- recalculate the total amount of filtered data and remove count field
+    -- calculate the total amount of filtered data
     body.total = body.list and #body.list or 0
-    body.count = nil
 
     pagination(body, args)
+
+    -- recalculate the current page count
+    body.count = body.list and #body.list or 0
 end
 
 
