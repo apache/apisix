@@ -353,18 +353,18 @@ function _M.header_filter(conf, ctx)
     local field_cnt = #hdr_op.add
     for i = 1, field_cnt, 2 do
         local val = core.utils.resolve_var(hdr_op.add[i+1], ctx.var)
-        ngx_resp.add_header(hdr_op.add[i], val)
+        core.response.add_header(hdr_op.add[i], val)
     end
 
     local field_cnt = #hdr_op.set
     for i = 1, field_cnt, 2 do
         local val = core.utils.resolve_var(hdr_op.set[i+1], ctx.var)
-        ngx.header[hdr_op.set[i]] = val
+        core.response.set_header(hdr_op.set[i], val)
     end
 
     local field_cnt = #hdr_op.remove
     for i = 1, field_cnt do
-        ngx.header[hdr_op.remove[i]] = nil
+        core.response.set_header(hdr_op.remove[i], nil)
     end
 end
 
