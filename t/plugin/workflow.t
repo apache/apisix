@@ -37,238 +37,143 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: sanity
+=== TEST 1: schema check
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.workflow")
-            local ok, err = plugin.check_schema({
-                rules = {
-                    {
-                        case = {
-                            {"uri", "==", "/hello"}
-                        },
-                        actions = {
-                            {
-                                "return",
+            local data = {
+                {
+                    rules = {
+                        {
+                            case = {
+                                {"uri", "==", "/hello"}
+                            },
+                            actions = {
                                 {
-                                    code = 403
+                                    "return",
+                                    {
+                                        code = 403
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    rules = {
+                        {
+                            case = {
+                                {"uri", "==", "/hello"}
+                            }
+                        }
+                    }
+                },
+                {
+                    rules = {
+                        {
+                            case = {
+                                {"uri", "==", "/hello"}
+                            },
+                            actions = {
+                                {
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    rules = {
+                        {
+                            case = {
+                                {"uri", "==", "/hello"}
+                            },
+                            actions = {
+                                {
+                                    "return",
+                                    {
+                                        status = 403
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    rules = {
+                        {
+                            case = {
+                                {"uri", "==", "/hello"}
+                            },
+                            actions = {
+                                {
+                                    "return",
+                                    {
+                                        code = "403"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    rules = {
+                        {
+                            case = {
+
+                            },
+                            actions = {
+                                {
+                                    "return",
+                                    {
+                                        code = 403
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    rules = {
+                        {
+                            case = {
+                                {"uri", "==", "/hello"}
+                            },
+                            actions = {
+                                {
+                                    "fake",
+                                    {
+                                        code = 403
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            })
-            if not ok then
-                ngx.say(err)
-            end
+            }
 
-            ngx.say("done")
+            for _, conf in ipairs(data) do
+                local ok, err = plugin.check_schema(conf)
+                if not ok then
+                    ngx.say(err)
+                else
+                    ngx.say("done")
+                end
+            end
         }
     }
 --- response_body
 done
-
-
-
-=== TEST 2: missing actions
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.workflow")
-            local ok, err = plugin.check_schema({
-                rules = {
-                    {
-                        case = {
-                            {"uri", "==", "/hello"}
-                        }
-                    }
-                }
-            })
-            if not ok then
-                ngx.say(err)
-                return
-            end
-
-            ngx.say("done")
-        }
-    }
---- response_body eval
-qr/property "actions" is required/
-
-
-
-=== TEST 3: actions have at least 1 items
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.workflow")
-            local ok, err = plugin.check_schema({
-                rules = {
-                    {
-                        case = {
-                            {"uri", "==", "/hello"}
-                        },
-                        actions = {
-                            {
-                            }
-                        }
-                    }
-                }
-            })
-            if not ok then
-                ngx.say(err)
-                return
-            end
-
-            ngx.say("done")
-        }
-    }
---- response_body eval
-qr/expect array to have at least 1 items/
-
-
-
-=== TEST 4: code is needed if action is return
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.workflow")
-            local ok, err = plugin.check_schema({
-                rules = {
-                    {
-                        case = {
-                            {"uri", "==", "/hello"}
-                        },
-                        actions = {
-                            {
-                                "return",
-                                {
-                                    status = 403
-                                }
-                            }
-                        }
-                    }
-                }
-            })
-            if not ok then
-                ngx.say(err)
-                return
-            end
-
-            ngx.say("done")
-        }
-    }
---- response_body eval
-qr/property "code" is required/
-
-
-
-=== TEST 5: the required type of code is number
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.workflow")
-            local ok, err = plugin.check_schema({
-                rules = {
-                    {
-                        case = {
-                            {"uri", "==", "/hello"}
-                        },
-                        actions = {
-                            {
-                                "return",
-                                {
-                                    code = "403"
-                                }
-                            }
-                        }
-                    }
-                }
-            })
-            if not ok then
-                ngx.say(err)
-                return
-            end
-
-            ngx.say("done")
-        }
-    }
---- response_body eval
-qr/property "code" validation failed: wrong type: expected integer, got string/
-
-
-
-=== TEST 6: bad conf of case
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.workflow")
-            local ok, err = plugin.check_schema({
-                rules = {
-                    {
-                        case = {
-
-                        },
-                        actions = {
-                            {
-                                "return",
-                                {
-                                    code = 403
-                                }
-                            }
-                        }
-                    }
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- response_body eval
-qr/property "case" validation failed: expect array to have at least 1 items/
-
-
-
-=== TEST 7: unsupported action
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.workflow")
-            local ok, err = plugin.check_schema({
-                rules = {
-                    {
-                        case = {
-                            {"uri", "==", "/hello"}
-                        },
-                        actions = {
-                            {
-                                "fake",
-                                {
-                                    code = 403
-                                }
-                            }
-                        }
-                    }
-                }
-            })
-            if not ok then
-                ngx.say(err)
-                return
-            end
-
-            ngx.say("done")
-        }
-    }
---- response_body
+property "rules" validation failed: failed to validate item 1: property "actions" is required
+property "rules" validation failed: failed to validate item 1: property "actions" validation failed: failed to validate item 1: expect array to have at least 1 items
+failed to validate the 'return' action: property "code" is required
+failed to validate the 'return' action: property "code" validation failed: wrong type: expected integer, got string
+property "rules" validation failed: failed to validate item 1: property "case" validation failed: expect array to have at least 1 items
 unsupported action: fake
 
 
 
-=== TEST 8: set plugin
+=== TEST 2: set plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -317,14 +222,14 @@ passed
 
 
 
-=== TEST 9: trigger workflow
+=== TEST 3: trigger workflow
 --- request
 GET /hello
 --- error_code: 403
 
 
 
-=== TEST 10: multiple conditions in one case
+=== TEST 4: multiple conditions in one case
 --- config
     location /t {
         content_by_lua_block {
@@ -374,13 +279,13 @@ passed
 
 
 
-=== TEST 11: missing match the only case
+=== TEST 5: missing match the only case
 --- request
 GET /hello?foo=bad
 
 
 
-=== TEST 12: trigger workflow
+=== TEST 6: trigger workflow
 --- request
 GET /hello?foo=bar
 --- error_code: 403
@@ -389,7 +294,7 @@ GET /hello?foo=bar
 
 
 
-=== TEST 13: multiple cases with different actions
+=== TEST 7: multiple cases with different actions
 --- config
     location /t {
         content_by_lua_block {
@@ -453,21 +358,21 @@ passed
 
 
 
-=== TEST 14: trigger one case
+=== TEST 8: trigger one case
 --- request
 GET /hello
 --- error_code: 403
 
 
 
-=== TEST 15: trigger another case
+=== TEST 9: trigger another case
 --- request
 GET /hello2
 --- error_code: 401
 
 
 
-=== TEST 16: match case in order
+=== TEST 10: match case in order
 # rules is an array, match in the order of the index of the array,
 # when cases are matched, actions are executed and do not continue
 --- config
@@ -533,21 +438,21 @@ passed
 
 
 
-=== TEST 17: both case 1&2 matched, trigger the first cases
+=== TEST 11: both case 1&2 matched, trigger the first cases
 --- request
 GET /hello?foo=bar
 --- error_code: 403
 
 
 
-=== TEST 18: case 1 mismatched, trigger the second cases
+=== TEST 12: case 1 mismatched, trigger the second cases
 --- request
 GET /hello?foo=bad
 --- error_code: 401
 
 
 
-=== TEST 19: all cases mismatched, pass to upstream
+=== TEST 13: all cases mismatched, pass to upstream
 --- request
 GET /hello1
 --- response_body
@@ -555,105 +460,98 @@ hello1 world
 
 
 
-=== TEST 20: sanity(limit-count)
+=== TEST 14: schema check(limit-count)
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.workflow")
-            local ok, err = plugin.check_schema({
-                rules = {
-                    {
-                        case = {
-                            {"uri", "==", "/hello"}
-                        },
-                        actions = {
-                            {
-                                "limit-count",
-                                {count = 2, time_window = 60, rejected_code = 503, key = 'remote_addr'}
+            local data = {
+                {
+                    rules = {
+                        {
+                            case = {
+                                {"uri", "==", "/hello"}
+                            },
+                            actions = {
+                                {
+                                    "limit-count",
+                                    {count = 2, time_window = 60, rejected_code = 503, key = 'remote_addr'}
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    rules = {
+                        {
+                            case = {
+                                {"uri", "==", "/hello"}
+                            },
+                            actions = {
+                                {
+                                    "limit-count",
+                                    {count = 2}
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    rules = {
+                        {
+                            case = {
+                                {"uri", "==", "/hello"}
+                            },
+                            actions = {
+                                {
+                                    "limit-count",
+                                    {time_window = 60}
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    rules = {
+                        {
+                            case = {
+                                {"uri", "==", "/hello"}
+                            },
+                            actions = {
+                                {
+                                    "limit-count",
+                                    {
+                                        count = 2,
+                                        time_window = 60,
+                                        rejected_code = 503,
+                                        group = "services_1"
+                                    }
+                                }
                             }
                         }
                     }
                 }
-            })
-            if not ok then
-                ngx.say(err)
-            end
+            }
 
-            ngx.say("done")
+            for _, conf in ipairs(data) do
+                local ok, err = plugin.check_schema(conf)
+                if not ok then
+                    ngx.say(err)
+                else
+                    ngx.say("done")
+                end
+            end
         }
     }
 --- response_body
 done
+failed to validate the 'limit-count' action: property "time_window" is required
+failed to validate the 'limit-count' action: property "count" is required
+failed to validate the 'limit-count' action: group is not supported in workflow
 
 
 
-=== TEST 21: bad config, no time_window(limit-count)
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.workflow")
-            local ok, err = plugin.check_schema({
-                rules = {
-                    {
-                        case = {
-                            {"uri", "==", "/hello"}
-                        },
-                        actions = {
-                            {
-                                "limit-count",
-                                {count = 2}
-                            }
-                        }
-                    }
-                }
-            })
-            if not ok then
-                ngx.say(err)
-                return
-            end
-
-            ngx.say("done")
-        }
-    }
---- response_body eval
-qr/property "time_window" is required/
-
-
-
-=== TEST 22: bad config, no count(limit-count)
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.workflow")
-            local ok, err = plugin.check_schema({
-                rules = {
-                    {
-                        case = {
-                            {"uri", "==", "/hello"}
-                        },
-                        actions = {
-                            {
-                                "limit-count",
-                                {time_window = 60}
-                            }
-                        }
-                    }
-                }
-            })
-            if not ok then
-                ngx.say(err)
-                return
-            end
-
-            ngx.say("done")
-        }
-    }
---- response_body eval
-qr/property "count" is required/
-
-
-
-=== TEST 23: set actions as limit-count
+=== TEST 15: set actions as limit-count
 --- config
     location /t {
         content_by_lua_block {
@@ -705,7 +603,7 @@ passed
 
 
 
-=== TEST 24: up the limit
+=== TEST 16: up the limit
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -713,7 +611,7 @@ passed
 
 
 
-=== TEST 25: the conf in actions is isolation
+=== TEST 17: the conf in actions is isolation
 --- config
     location /t {
         content_by_lua_block {
@@ -783,7 +681,7 @@ passed
 
 
 
-=== TEST 26: cross-hit case 1 and case 2, up limit by isolation
+=== TEST 18: cross-hit case 1 and case 2, up limit by isolation
 --- pipelined_requests eval
 ["GET /hello", "GET /hello1", "GET /hello", "GET /hello1",
 "GET /hello", "GET /hello1", "GET /hello", "GET /hello1"]
