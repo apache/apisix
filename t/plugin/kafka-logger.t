@@ -602,14 +602,14 @@ qr/partition_id: 2/]
         content_by_lua_block {
             local producer = require "resty.kafka.producer"
             local broker_list = {
-                { 
+                {
                     host = "127.0.0.1",
                     port = 9092,
-                    sasl_config = { 
-                        mechanism = "PLAIN", 
+                    sasl_config = {
+                        mechanism = "PLAIN",
                         strategy = "sasl",
-                        user = "admin", 
-                        password = "admin-secret" 
+                        user = "admin",
+                        password = "admin-secret"
                     }
                 }
             }
