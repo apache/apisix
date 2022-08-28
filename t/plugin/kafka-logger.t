@@ -620,5 +620,5 @@ qr/partition_id: 2/]
 GET /t
 --- response_body_like
 .*offset.*
---- no_error_log
+--- error_log
 [error]
