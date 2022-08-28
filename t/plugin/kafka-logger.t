@@ -615,7 +615,7 @@ qr/partition_id: 2/]
             }
             local message = "halo world"
             local p = producer:new(broker_list)
-            local offset, err = p:send("test", nil, message)
+            local offset, err = p:send("test2", nil, message)
             if not offset then
                 ngx.say("send err:", err)
                 return
