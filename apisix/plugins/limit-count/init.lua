@@ -148,7 +148,7 @@ function _M.check_schema(conf)
     end
 
     if conf.group then
-        -- means that call by some plugin noe support
+        -- means that call by some plugin not support
         if conf._vid then
             return false, "group is not supported"
         end
