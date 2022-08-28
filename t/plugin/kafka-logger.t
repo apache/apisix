@@ -600,7 +600,7 @@ qr/partition_id: 2/]
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
-        content_by_lua '
+        content_by_lua_block {
             local producer = require "resty.kafka.producer"
             local broker_list = {
                 { host = "127.0.0.1", port = 9092 ,
@@ -614,7 +614,7 @@ qr/partition_id: 2/]
                 return
             end
             ngx.say("offset: ", tostring(offset))
-        ';
+        }
     }
 --- request
 GET /t
