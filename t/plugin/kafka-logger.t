@@ -592,3 +592,33 @@ qr/partition_id: 2/]
 [qr/partition_id: 1/,
 qr/partition_id: 0/,
 qr/partition_id: 2/]
+
+
+
+
+=== TEST 20: sasl simple send
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua '
+            local producer = require "resty.kafka.producer"
+            local broker_list = {
+                { host = "127.0.0.1", port = 9092 ,
+                sasl_config = { mechanism="PLAIN", user="admin", password = "admin-secret" },},
+            }
+            local message = "halo world"
+            local p = producer:new(broker_list)
+            local offset, err = p:send("test", nil, message)
+            if not offset then
+                ngx.say("send err:", err)
+                return
+            end
+            ngx.say("offset: ", tostring(offset))
+        ';
+    }
+--- request
+GET /t
+--- response_body_like
+.*offset.*
+--- no_error_log
+[error]
