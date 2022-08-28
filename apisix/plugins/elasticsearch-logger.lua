@@ -23,7 +23,6 @@ local plugin          = require("apisix.plugin")
 
 local ngx             = ngx
 local str_format      = core.string.format
-local str_byte        = string.byte
 
 local plugin_name = "elasticsearch-logger"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
@@ -132,8 +131,7 @@ local function send_to_elasticsearch(conf, entries)
         return false, str_format("create http error: %s", err)
     end
 
-    local uri = conf.endpoint_addr ..
-                (str_byte(conf.endpoint_addr, -1) == str_byte("/") and "_bulk" or "/_bulk")
+    local uri = conf.endpoint_addr .. "/_bulk"
     local body = core.table.concat(entries, "")
     local headers = {["Content-Type"] = "application/json"}
     if conf.auth then
