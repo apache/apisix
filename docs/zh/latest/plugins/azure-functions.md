@@ -68,7 +68,7 @@ description: 本文介绍了关于 Apache APISIX azure-functions 插件的基本
 如果你想添加一个新的 API 密钥，请向 `/apisix/admin/plugin_metadata` 端点发出请求，并附上所需的元数据。示例如下：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/azure-functions -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/azure-functions -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "master_apikey" : "<Your Azure master access key>"
 }'
@@ -79,7 +79,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/azure-functions -H 'X-AP
 以下示例展示了如何在指定路由上启用 `azure-functions` 插件。请确保你的 Azure Functions 已提前部署好，并正常提供服务。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "azure-functions": {
@@ -152,7 +152,7 @@ Hello, APISIX
 以下示例展示了如何通过配置文件实现路径转发：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "azure-functions": {
@@ -188,7 +188,7 @@ Hello, APISIX
 当你需要禁用 `azure-functions` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/azure",
     "plugins": {},

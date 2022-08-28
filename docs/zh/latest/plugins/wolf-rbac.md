@@ -64,7 +64,7 @@ description: 本文介绍了关于 Apache APISIX `wolf-rbac` 插件的基本信�
 首先需要创建一个 Consumer 并配置该插件，如下所示：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers  \
+curl http://127.0.0.1:9180/apisix/admin/consumers  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "username":"wolf_rbac",
@@ -87,7 +87,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers  \
 然后你需要添加 `wolf-rbac` 插件到 Route 或 Service 中。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -117,7 +117,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  \
 你可以使用 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露 API.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/wal \
+curl http://127.0.0.1:9180/apisix/admin/routes/wal \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/apisix/plugin/wolf-rbac/login",
@@ -273,7 +273,7 @@ HTTP/1.1 200 OK
 当你需要禁用 `wolf-rbac` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],

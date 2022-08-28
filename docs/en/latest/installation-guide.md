@@ -278,7 +278,7 @@ apisix:
 Now, to access the Admin API, you can use the new key:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes?api_key=newsupersecurekey -i
+curl http://127.0.0.1:9180/apisix/admin/routes?api_key=newsupersecurekey -i
 ```
 
 ### Adding APISIX systemd unit file

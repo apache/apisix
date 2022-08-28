@@ -46,6 +46,11 @@ There will be a conf server that listens on the UNIX socket and acts as a proxy 
 An example configuration of the traditional deployment mode is shown below:
 
 ```yaml title="conf/config.yaml"
+apisix:
+    node_listen:
+        - port: 9080
+    admin_listen:
+        port: 9180
 deployment:
     role: traditional
     role_traditional:
@@ -56,6 +61,11 @@ deployment:
        prefix: /apisix
        timeout: 30
 ```
+
+The instance of APISIX deployed as the traditional role will:
+
+1. Listen on port `9080` to handle user requests, controlled by `node_listen`.
+2. Listen on port `9180` to handle Admin API requests, controlled by `admin_listen`.
 
 ## Decoupled
 

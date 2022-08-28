@@ -79,7 +79,7 @@ plugins:                          # plugin list
 你可以通过配置插件元数据来设置 TCP 服务器地址，如下所示：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger \
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "tcp": {
@@ -95,7 +95,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger \
 通过以下配置插件元数据设置 SkyWalking OAP 服务器地址，如下所示：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger \
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "skywalking": {
@@ -112,7 +112,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger \
 你可以按照如下方式进行配置：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger \
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "clickhouse": {
