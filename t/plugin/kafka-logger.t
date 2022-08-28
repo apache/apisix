@@ -595,7 +595,6 @@ qr/partition_id: 2/]
 
 
 
-
 === TEST 20: sasl simple send
 --- http_config eval: $::HttpConfig
 --- config
@@ -608,7 +607,7 @@ qr/partition_id: 2/]
                     port = 9092,
                     sasl_config = { 
                         mechanism = "PLAIN", 
-                        strategy = "sasl"
+                        strategy = "sasl",
                         user = "admin", 
                         password = "admin-secret" 
                     }
@@ -628,5 +627,5 @@ qr/partition_id: 2/]
 GET /t
 --- response_body_like
 .*offset.*
---- error_log
+--- error_log_like eval
 [error]
