@@ -757,7 +757,7 @@ passed
 
 
 
-=== TEST 15: filtered data count
+=== TEST 15: filtered data total
 --- config
     location /t {
         content_by_lua_block {
@@ -783,7 +783,7 @@ passed
 
 
 
-=== TEST 16: pagination data count
+=== TEST 16: pagination data total
 --- config
     location /t {
         content_by_lua_block {
