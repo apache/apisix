@@ -57,7 +57,7 @@ description: 本文介绍了 API 网关 Apache APISIX 的 elasticsearch-logger �
 ### 完整配置示例
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins":{
@@ -94,7 +94,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 ### 最小化配置示例
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins":{
@@ -193,7 +193,7 @@ curl -X GET "http://127.0.0.1:9200/services/_search" | jq .
 ### 设置日志格式示例
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/elasticsearch-logger \
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "log_format": {
@@ -254,7 +254,7 @@ curl -X GET "http://127.0.0.1:9200/services/_search" | jq .
 ### 禁用插件元数据
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/elasticsearch-logger \
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 ```
 
@@ -263,7 +263,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/elasticsearch-logger \
 当你需要禁用该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins":{},

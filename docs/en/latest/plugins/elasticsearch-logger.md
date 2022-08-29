@@ -56,7 +56,7 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 The example below shows a complete configuration of the Plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins":{
@@ -95,7 +95,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 The example below shows a bare minimum configuration of the Plugin on a Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins":{
@@ -202,7 +202,7 @@ Configuring the Plugin metadata is global in scope. This means that it will take
 The example below shows how you can configure through the Admin API:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/elasticsearch-logger \
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "log_format": {
@@ -263,7 +263,7 @@ curl -X GET "http://127.0.0.1:9200/services/_search" | jq .
 ### Disable Metadata
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/elasticsearch-logger \
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 ```
 
@@ -272,7 +272,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/elasticsearch-logger \
 To disable the `elasticsearch-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins":{},

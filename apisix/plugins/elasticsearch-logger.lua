@@ -31,11 +31,6 @@ local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
-        meta_format = {
-            type = "string",
-            default = "default",
-            enum = {"default", "origin"},
-        },
         endpoint_addr = {
             type = "string",
             pattern = "[^/]$",
@@ -133,7 +128,7 @@ local function send_to_elasticsearch(conf, entries)
 
     local uri = conf.endpoint_addr .. "/_bulk"
     local body = core.table.concat(entries, "")
-    local headers = {["Content-Type"] = "application/json"}
+    local headers = {["Content-Type"] = "application/x-ndjson"}
     if conf.auth then
         local authorization = "Basic " .. ngx.encode_base64(
             conf.auth.username .. ":" .. conf.auth.password
