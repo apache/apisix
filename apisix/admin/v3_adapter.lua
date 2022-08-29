@@ -199,7 +199,7 @@ function _M.filter(body)
 
         pagination(body, args)
 
-        -- remove the count field returned by etcd 
+        -- remove the count field returned by etcd
         -- we don't need a field that reflects the length of the currently returned data,
         -- it doesn't make sense
         body.count = nil
