@@ -594,6 +594,36 @@ The differences between the two are described in the table below:
 | Used when there are property changes that needs to be propagated across all configuration instances of a Plugin. | Used when you need to reuse a common set of configuration instances so that it can be extracted to a `plugin-config` and bound to different Routes. |
 | Takes effect on all the entities bound to the configuration instances of the Plugin.                             | Takes effect on Routes bound to the `plugin-config`.                                                                                                |
 
+## After deploying Apache APISIX, how to detect the survival of the APISIX data plane?
+
+You can create a route named `health-info` and enable the [fault-injection](https://github.com/apache/apisix/blob/master/docs/en/latest/plugins/fault-injection.md) plugin (where YOUR-TOKEN is the user's own token; 127.0.0.1 is the ip address of the control plane, which can be modified by yourself):
+
+```bash
+curl http://127.0.0.1:9180/apisix/admin/routes/status \
+-H 'X-API-KEY: YOUR-TOKEN' -X PUT -d '
+{
+   "plugins": {
+     "fault-injection": {
+       "abort": {
+        "http_status": 200,
+        "body": "fine"
+       }
+     }
+   },
+   "uri": "/status"
+}'
+````
+
+Ways of identifying:
+
+Access the `/status` of the Apache APISIX data plane to detect APISIX. If the response code is 200, it means APISIX is alive.
+
+:::note
+
+This method only detects whether the APISIX data plane is alive or not. It does not mean that the routing and other functions of APISIX are normal. These require more routing-level detection.
+
+:::
+
 ## Where can I find more answers?
 
 You can find more answers on:
