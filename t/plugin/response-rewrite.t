@@ -740,11 +740,9 @@ passed
 
 
 
-=== TEST 26: hit
+=== TEST 26: hit set empty body
 --- request
 GET /with_empty_body
---- response_body
-hello
 --- no_error_log
 [error]
 
