@@ -743,9 +743,6 @@ passed
 === TEST 26: hit
 --- request
 GET /with_empty_body
---- response_headers
-X-A: 127.0.0.1
-X-B: from 127.0.0.1 to 127.0.0.1:1980
 --- no_error_log
 [error]
 
