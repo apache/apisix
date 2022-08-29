@@ -743,6 +743,7 @@ passed
 === TEST 26: hit
 --- request
 GET /with_empty_body
+--- response_body
 --- no_error_log
 [error]
 
