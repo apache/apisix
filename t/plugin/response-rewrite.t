@@ -702,7 +702,7 @@ X-B: from 127.0.0.1 to 127.0.0.1:1980
 
 
 
-=== TEST 25: set body with  ""
+=== TEST 25: set empty body
 --- config
     location /t {
         content_by_lua_block {
