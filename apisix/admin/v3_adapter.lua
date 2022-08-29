@@ -181,15 +181,31 @@ function _M.filter(body)
 
     local args = request.get_uri_args()
 
-    filter(body, args)
+    if body.deleted then
+        body.node = nil
+    end
 
-    -- calculate the total amount of filtered data
-    body.total = body.list and #body.list or 0
+    -- strip node wrapping for single query, create, and update scenarios.
+    if body.node then
+        body = body.node
+    end
 
-    pagination(body, args)
+    -- filter and paging logic for list query only
+    if body.list then
+        filter(body, args)
 
-    -- recalculate the current page count
-    body.count = body.list and #body.list or 0
+        -- calculate the total amount of filtered data
+        body.total = body.list and #body.list or 0
+
+        pagination(body, args)
+
+        -- remove the count field returned by etcd 
+        -- we don't need a field that reflects the length of the currently returned data,
+        -- it doesn't make sense
+        body.count = nil
+    end
+
+    return body
 end
 
 
