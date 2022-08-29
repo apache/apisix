@@ -702,24 +702,43 @@ X-B: from 127.0.0.1 to 127.0.0.1:1980
 
 
 
-=== TEST 25: set an nil body with setting body_base64 to false
+=== TEST 25: set header(rewrite body with "")
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.response-rewrite")
-            local ok, err = plugin.check_schema({
-                            body_base64 = false,
-                            body = ""
-            })
-            if not ok then
-                ngx.say(err)
-                return
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "response-rewrite": {
+                            "headers" : {
+                                "X-Server-id": 3,
+                                "X-Server-status": "on",
+                                "Content-Type": ""
+                            },
+                            "body": ""
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/with_header"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
             end
+            ngx.say(body)
         }
     }
 --- request
 GET /t
 --- response_body
-
+passed
 --- no_error_log
 [error]
