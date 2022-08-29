@@ -595,7 +595,7 @@ apisix:
 | 对绑定到 Plugin 的配置实例的所有实体生效。                           | 对绑定到 `plugin-config` 的路由生效。                                                                                               |
 | 对绑定到 Plugin 的配置实例的所有实体生效。                           | 对绑定到 `plugin-config` 的路由生效。                                                                                               |
 
-## 部署了 Apache APISIX之后，如何检测APISIX 数据平面的存活情况（如何探活）?
+## 部署了 Apache APISIX 之后，如何检测 APISIX 数据平面的存活情况（如何探活）?
 
 可以创建一个名为 `health-info` 的路由，并开启 [fault-injection](https://github.com/apache/apisix/blob/master/docs/zh/latest/plugins/fault-injection.md) 插件（其中 YOUR-TOKEN 是用户自己的 token；127.0.0.1 是控制平面的 ip 地址，可以自行修改）:
 
