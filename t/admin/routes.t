@@ -45,22 +45,20 @@ __DATA__
                     "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/index.html",
-                            "desc": "new route",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    }
+                    "value": {
+                        "methods": [
+                            "GET"
+                        ],
+                        "uri": "/index.html",
+                        "desc": "new route",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
+                        }
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
                 )
 
@@ -86,22 +84,20 @@ passed
                  ngx.HTTP_GET,
                  nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/index.html",
-                            "desc": "new route",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    }
+                    "value": {
+                        "methods": [
+                            "GET"
+                        ],
+                        "uri": "/index.html",
+                        "desc": "new route",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
+                        }
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
                 )
 
@@ -177,18 +173,16 @@ GET /t
                         "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/index.html",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
-                            }
+                    "value": {
+                        "methods": [
+                            "GET"
+                        ],
+                        "uri": "/index.html",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
                         }
                     }
                 }]]
@@ -201,8 +195,7 @@ GET /t
             end
 
             ngx.say("[push] code: ", code, " message: ", message)
-
-            local id = string.sub(res.node.key, #"/apisix/routes/" + 1)
+            local id = string.sub(res.key, #"/apisix/routes/" + 1)
             local res = assert(etcd.get('/routes/' .. id))
             local create_time = res.body.node.value.create_time
             assert(create_time ~= nil, "create_time is nil")
@@ -244,15 +237,13 @@ GET /t
                         "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "uri": "/index.html",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
-                            }
+                    "value": {
+                        "uri": "/index.html",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
                         }
                     }
                 }]]
@@ -302,16 +293,14 @@ GET /t
                     "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "uri": "/index.html",
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 2,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
+                    "value": {
+                        "uri": "/index.html",
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
                             }
                         }
                     }
@@ -699,19 +688,17 @@ GET /t
                         "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "host": "*.foo.com",
-                            "uri": "/index.html",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    }
+                    "value": {
+                        "host": "*.foo.com",
+                        "uri": "/index.html",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
+                        }
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
                 )
 

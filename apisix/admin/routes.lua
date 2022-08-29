@@ -187,7 +187,7 @@ function _M.put(id, conf, sub_path, args)
         return 503, {error_msg = err}
     end
 
-    return res.status, res.body
+    return res.status, v3_adapter.filter(res.body)
 end
 
 
@@ -204,8 +204,7 @@ function _M.get(id)
     end
 
     utils.fix_count(res.body, id)
-    v3_adapter.filter(res.body)
-    return res.status, res.body
+    return res.status, v3_adapter.filter(res.body)
 end
 
 
@@ -223,7 +222,7 @@ function _M.post(id, conf, sub_path, args)
         return 503, {error_msg = err}
     end
 
-    return res.status, res.body
+    return res.status, v3_adapter.filter(res.body)
 end
 
 
@@ -240,7 +239,7 @@ function _M.delete(id)
         return 503, {error_msg = err}
     end
 
-    return res.status, res.body
+    return res.status, v3_adapter.filter(res.body)
 end
 
 
@@ -304,7 +303,7 @@ function _M.patch(id, conf, sub_path, args)
         return 503, {error_msg = err}
     end
 
-    return res.status, res.body
+    return res.status, v3_adapter.filter(res.body)
 end
 
 
