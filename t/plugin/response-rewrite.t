@@ -702,7 +702,7 @@ X-B: from 127.0.0.1 to 127.0.0.1:1980
 
 
 
-=== TEST 25: set header(rewrite body with "")
+=== TEST 25: set body with  ""
 --- config
     location /t {
         content_by_lua_block {
@@ -712,11 +712,6 @@ X-B: from 127.0.0.1 to 127.0.0.1:1980
                  [[{
                     "plugins": {
                         "response-rewrite": {
-                            "headers" : {
-                                "X-Server-id": 3,
-                                "X-Server-status": "on",
-                                "Content-Type": ""
-                            },
                             "body": ""
                         }
                     },
