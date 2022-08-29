@@ -64,7 +64,7 @@ __DATA__
                     },
                     "key": "/apisix/routes/1"
                 }]]
-            ) 
+            )
 
             ngx.status = code
             ngx.say(body)
