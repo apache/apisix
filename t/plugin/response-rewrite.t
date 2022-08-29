@@ -744,6 +744,7 @@ passed
 --- request
 GET /with_empty_body
 --- response_body
+
 --- no_error_log
 [error]
 
