@@ -712,7 +712,7 @@ X-B: from 127.0.0.1 to 127.0.0.1:1980
                  [[{
                     "plugins": {
                         "response-rewrite": {
-                            "body": ""
+                            "body": "hello"
                         }
                     },
                     "upstream": {
@@ -732,7 +732,7 @@ X-B: from 127.0.0.1 to 127.0.0.1:1980
         }
     }
 --- request
-GET /t
+GET /with_empty_body
 --- response_body
 passed
 --- no_error_log
@@ -744,7 +744,7 @@ passed
 --- request
 GET /with_empty_body
 --- response_body
-
+hello
 --- no_error_log
 [error]
 
