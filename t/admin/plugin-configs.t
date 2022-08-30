@@ -57,19 +57,17 @@ __DATA__
                     }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 2,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
                             }
-                        },
-                        "key": "/apisix/plugin_configs/1"
-                    }
+                        }
+                    },
+                    "key": "/apisix/plugin_configs/1"
                 }]]
                 )
 
@@ -97,19 +95,17 @@ passed
                 ngx.HTTP_GET,
                 nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 2,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
                             }
-                        },
-                        "key": "/apisix/plugin_configs/1"
-                    }
+                        }
+                    },
+                    "key": "/apisix/plugin_configs/1"
                 }]]
                 )
 
@@ -131,20 +127,20 @@ passed
                 ngx.HTTP_GET,
                 nil,
                 [[{
-                    "count": 1,
+                    "total": 1,
                     "list": [
                         {
                             "key": "/apisix/plugin_configs/1",
                             "value": {
-                            "plugins": {
-                                "limit-count": {
-                                "time_window": 60,
-                                "policy": "local",
-                                "count": 2,
-                                "key": "remote_addr",
-                                "rejected_code": 503
+                                "plugins": {
+                                    "limit-count": {
+                                    "time_window": 60,
+                                    "policy": "local",
+                                    "count": 2,
+                                    "key": "remote_addr",
+                                    "rejected_code": 503
+                                    }
                                 }
-                            }
                             }
                         }
                     ]
@@ -185,19 +181,17 @@ passed
                     }
                 }}]],
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 3,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "count": 3,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
                             }
-                        },
-                        "key": "/apisix/plugin_configs/1"
-                    }
+                        }
+                    },
+                    "key": "/apisix/plugin_configs/1"
                 }]]
                 )
 
@@ -241,19 +235,17 @@ passed
                     }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 2,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
                             }
-                        },
-                        "key": "/apisix/plugin_configs/1"
-                    }
+                        }
+                    },
+                    "key": "/apisix/plugin_configs/1"
                 }]]
                 )
 
@@ -324,23 +316,21 @@ passed
                     "desc": "blah"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 2,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
-                            },
-                            "labels": {
-                                "你好": "世界"
-                            },
-                            "desc": "blah"
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
+                            }
                         },
-                        "key": "/apisix/plugin_configs/1"
-                    }
+                        "labels": {
+                            "你好": "世界"
+                        },
+                        "desc": "blah"
+                    },
+                    "key": "/apisix/plugin_configs/1"
                 }]]
                 )
 
@@ -368,23 +358,21 @@ passed
                 ngx.HTTP_GET,
                 nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 2,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
-                            },
-                            "labels": {
-                                "你好": "世界"
-                            },
-                            "desc": "blah"
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
+                            }
                         },
-                        "key": "/apisix/plugin_configs/1"
-                    }
+                        "labels": {
+                            "你好": "世界"
+                        },
+                        "desc": "blah"
+                    },
+                    "key": "/apisix/plugin_configs/1"
                 }]]
                 )
 

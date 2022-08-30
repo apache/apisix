@@ -60,7 +60,7 @@ __DATA__
         }
     }
 --- response_body
-{"count":0,"list":[]}
+{"list":[],"total":0}
 
 
 
@@ -82,19 +82,17 @@ __DATA__
                     "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "remote_addr": "127.0.0.1",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
+                    "value": {
+                        "remote_addr": "127.0.0.1",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
                             },
-                            "uri": "/index.html"
+                            "type": "roundrobin"
                         },
-                        "key": "/apisix/routes/1"
-                    }
+                        "uri": "/index.html"
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
                 )
 
@@ -127,19 +125,17 @@ passed
                     "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "remote_addr": "127.0.0.0/24",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
+                    "value": {
+                        "remote_addr": "127.0.0.0/24",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
                             },
-                            "uri": "/index.html"
+                            "type": "roundrobin"
                         },
-                        "key": "/apisix/routes/1"
-                    }
+                        "uri": "/index.html"
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
                 )
 
@@ -233,12 +229,10 @@ passed
                     "uri": "/patch_test"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "uri": "/patch_test"
-                        },
-                        "key": "/apisix/routes/1"
-                    }
+                    "value": {
+                        "uri": "/patch_test"
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
             )
 
@@ -275,22 +269,20 @@ passed
                     "desc": "new route"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/patch_test",
-                            "desc": "new route",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.2:8080": 1
-                                },
-                                "type": "roundrobin"
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    }
+                    "value": {
+                        "methods": [
+                            "GET"
+                        ],
+                        "uri": "/patch_test",
+                        "desc": "new route",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.2:8080": 1
+                            },
+                            "type": "roundrobin"
+                        }
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
             )
 
@@ -314,12 +306,10 @@ passed
                     "methods": ["GET", "DELETE", "PATCH", "POST", "PUT"]
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "methods": ["GET", "DELETE", "PATCH", "POST", "PUT"]
-                        },
-                        "key": "/apisix/routes/1"
-                    }
+                    "value": {
+                        "methods": ["GET", "DELETE", "PATCH", "POST", "PUT"]
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
             )
 
@@ -343,12 +333,10 @@ passed
                     "methods": ["GET", "POST"]
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "methods": ["GET", "POST"]
-                        },
-                        "key": "/apisix/routes/1"
-                    }
+                    "value": {
+                        "methods": ["GET", "POST"]
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
             )
 
@@ -370,14 +358,12 @@ passed
                 ngx.HTTP_PATCH,
                 '["POST"]',
                 [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "POST"
-                            ]
-                        },
-                        "key": "/apisix/routes/1"
-                    }
+                    "value": {
+                        "methods": [
+                            "POST"
+                        ]
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
             )
 
@@ -399,12 +385,10 @@ passed
                 ngx.HTTP_PATCH,
                 '"/patch_uri_test"',
                 [[{
-                    "node": {
-                        "value": {
-                            "uri": "/patch_uri_test"
-                        },
-                        "key": "/apisix/routes/1"
-                    }
+                    "value": {
+                        "uri": "/patch_uri_test"
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
             )
 
@@ -436,22 +420,20 @@ passed
                     "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/index.html",
-                            "desc": "new route",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    }
+                    "value": {
+                        "methods": [
+                            "GET"
+                        ],
+                        "uri": "/index.html",
+                        "desc": "new route",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
+                        }
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
             )
 
@@ -483,10 +465,8 @@ passed
                     "desc": "new route"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "hosts": ["foo.com", "*.bar.com"]
-                        }
+                    "value": {
+                        "hosts": ["foo.com", "*.bar.com"]
                     }
                 }]]
                 )
@@ -550,10 +530,8 @@ passed
                     "desc": "new route"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "remote_addrs": ["127.0.0.1", "192.0.0.1/8", "::1", "fe80::/32"]
-                        }
+                    "value": {
+                        "remote_addrs": ["127.0.0.1", "192.0.0.1/8", "::1", "fe80::/32"]
                     }
                 }]]
                 )
@@ -586,10 +564,8 @@ passed
                     "desc": "new route"
                 }]=],
                 [=[{
-                    "node": {
-                        "value": {
-                            "vars": [["arg_name", "==", "json"], ["arg_age", ">", 18]]
-                        }
+                    "value": {
+                        "vars": [["arg_name", "==", "json"], ["arg_age", ">", 18]]
                     }
                 }]=]
                 )
@@ -621,10 +597,8 @@ passed
                     }
                 }]=],
                 [=[{
-                    "node": {
-                        "value": {
-                            "filter_func": "function(vars) return vars.arg_name == 'json' end"
-                        }
+                    "value": {
+                        "filter_func": "function(vars) return vars.arg_name == 'json' end"
                     }
                 }]=]
                 )
@@ -729,12 +703,10 @@ passed
                 ngx.HTTP_PATCH,
                 'false',
                 [[{
-                    "node": {
-                        "value": {
-                            "enable_websocket": false
-                        },
-                        "key": "/apisix/routes/1"
-                    }
+                    "value": {
+                        "enable_websocket": false
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
             )
 
@@ -756,12 +728,10 @@ passed
                 ngx.HTTP_PATCH,
                 'true',
                 [[{
-                    "node": {
-                        "value": {
-                            "enable_websocket": true
-                        },
-                        "key": "/apisix/routes/1"
-                    }
+                    "value": {
+                        "enable_websocket": true
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
             )
 

@@ -58,24 +58,8 @@ __DATA__
                 }
             }
 
-            local expected = {
-                node = {
-                    value = {
-                        plugins = {
-                            ["google-cloud-logging"] = {
-                                max_retry_count = 0,
-                                retry_delay = 1,
-                                buffer_duration = 60,
-                                batch_max_size = 1000,
-                                inactive_timeout = 5,
-                            }
-                        }
-                    }
-                }
-            }
-
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config, expected)
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
 
             if code >= 300 then
                 ngx.status = code

@@ -38,12 +38,11 @@ __DATA__
                      "desc": "new consumer"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "desc": "new consumer"
-                        }
-                    }
+                    "value": {
+                        "username": "jack",
+                        "desc": "new consumer"
+                    },
+                    "key": "/apisix/consumers/jack"
                 }]]
                 )
 
@@ -85,17 +84,16 @@ passed
                         }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "desc": "new consumer",
-                            "plugins": {
-                                "key-auth": {
-                                    "key": "auth-one"
-                                }
+                    "value": {
+                        "username": "jack",
+                        "desc": "new consumer",
+                        "plugins": {
+                            "key-auth": {
+                                "key": "auth-one"
                             }
                         }
-                    }
+                    },
+                    "key": "/apisix/consumers/jack"
                 }]]
                 )
 
@@ -127,17 +125,16 @@ passed
                  ngx.HTTP_GET,
                  nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "desc": "new consumer",
-                            "plugins": {
-                                "key-auth": {
-                                    "key": "auth-one"
-                                }
+                    "value": {
+                        "username": "jack",
+                        "desc": "new consumer",
+                        "plugins": {
+                            "key-auth": {
+                                "key": "auth-one"
                             }
                         }
-                    }
+                    },
+                    "key": "/apisix/consumers/jack"
                 }]]
                 )
 
@@ -209,10 +206,8 @@ GET /t
                      "id":"jack"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "id": "jack"
-                        }
+                    "value": {
+                        "id": "jack"
                     }
                 }]]
                 )
@@ -248,17 +243,16 @@ GET /t
                      }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "desc": "new consumer",
-                            "labels": {
-                                "build":"16",
-                                "env":"production",
-                                "version":"v2"
-                            }
+                    "value": {
+                        "username": "jack",
+                        "desc": "new consumer",
+                        "labels": {
+                            "build":"16",
+                            "env":"production",
+                            "version":"v2"
                         }
-                    }
+                    },
+                    "key": "/apisix/consumers/jack"
                 }]]
                 )
 
@@ -343,14 +337,13 @@ GET /t
                      "update_time": 1602893670
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "pony",
-                            "desc": "new consumer",
-                            "create_time": 1602883670,
-                            "update_time": 1602893670
-                        }
-                    }
+                    "value": {
+                        "username": "pony",
+                        "desc": "new consumer",
+                        "create_time": 1602883670,
+                        "update_time": 1602893670
+                    },
+                    "key": "/apisix/consumers/pony"
                 }]]
                 )
 

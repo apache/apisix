@@ -46,20 +46,18 @@ __DATA__
                     "desc": "new route"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "remote_addr": "127.0.0.1",
-                            "desc": "test-desc",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
+                    "value": {
+                        "remote_addr": "127.0.0.1",
+                        "desc": "test-desc",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
                             },
-                            "desc": "new route"
+                            "type": "roundrobin"
                         },
-                        "key": "/apisix/stream_routes/1"
-                    }
+                        "desc": "new route"
+                    },
+                    "key": "/apisix/stream_routes/1"
                 }]]
                 )
 
@@ -92,19 +90,17 @@ passed
                  ngx.HTTP_GET,
                  nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "remote_addr": "127.0.0.1",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
+                    "value": {
+                        "remote_addr": "127.0.0.1",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
                             },
-                            "desc": "new route"
+                            "type": "roundrobin"
                         },
-                        "key": "/apisix/stream_routes/1"
-                    }
+                        "desc": "new route"
+                    },
+                    "key": "/apisix/stream_routes/1"
                 }]]
                 )
 
@@ -126,9 +122,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/stream_routes/1',
-                ngx.HTTP_DELETE
-            )
+            local code, message = t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -160,17 +154,15 @@ GET /t
                     "desc": "new route"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "remote_addr": "127.0.0.1",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
+                    "value": {
+                        "remote_addr": "127.0.0.1",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
                             },
-                            "desc": "new route"
-                        }
+                            "type": "roundrobin"
+                        },
+                        "desc": "new route"
                     }
                 }]]
                 )
@@ -183,7 +175,7 @@ GET /t
 
             ngx.say("[push] code: ", code, " message: ", message)
 
-            local id = string.sub(res.node.key, #"/apisix/stream_routes/" + 1)
+            local id = string.sub(res.key, #"/apisix/stream_routes/" + 1)
 
             local ret = assert(etcd.get('/stream_routes/' .. id))
             local create_time = ret.body.node.value.create_time
@@ -193,9 +185,7 @@ GET /t
             id = ret.body.node.value.id
             assert(id ~= nil, "id is nil")
 
-            code, message = t('/apisix/admin/stream_routes/' .. id,
-                ngx.HTTP_DELETE
-            )
+            code, message = t('/apisix/admin/stream_routes/' .. id, ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -304,9 +294,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/stream_routes/1',
-                ngx.HTTP_DELETE
-            )
+            local code, message = t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -356,9 +344,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/stream_routes/a-b-c-ABC_0123',
-                ngx.HTTP_DELETE
-            )
+            local code, body = t('/apisix/admin/stream_routes/a-b-c-ABC_0123', ngx.HTTP_DELETE)
             if code >= 300 then
                 ngx.status = code
             end
@@ -432,7 +418,7 @@ GET /t
 
             res = json.decode(res)
             -- clean data
-            local id = string.sub(res.node.key, #"/apisix/stream_routes/" + 1)
+            local id = string.sub(res.key, #"/apisix/stream_routes/" + 1)
             local code, message = t('/apisix/admin/stream_routes/' .. id,
                  ngx.HTTP_DELETE
                 )
@@ -443,16 +429,19 @@ GET /t
                 return
             end
 
-            res.node.key = nil
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
-            assert(res.node.value.id ~= nil)
-            res.node.value.id = nil
+            assert(res.key ~= nil)
+            res.key = nil
+            assert(res.value.create_time ~= nil)
+            res.value.create_time = nil
+            assert(res.value.update_time ~= nil)
+            res.value.update_time = nil
+            assert(res.value.id ~= nil)
+            res.value.id = nil
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"node":{"value":{"remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
+{"value":{"remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}
 --- request
 GET /t
 --- no_error_log
@@ -486,13 +475,15 @@ GET /t
             end
 
             res = json.decode(res)
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
+            assert(res.value.create_time ~= nil)
+            res.value.create_time = nil
+            assert(res.value.update_time ~= nil)
+            res.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"node":{"key":"/apisix/stream_routes/1","value":{"id":"1","remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
+{"key":"/apisix/stream_routes/1","value":{"id":"1","remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}
 --- request
 GET /t
 --- no_error_log
@@ -517,17 +508,19 @@ GET /t
             end
 
             res = json.decode(res)
-            assert(res.count ~= nil)
-            assert(res.node.value.create_time ~= nil)
-            assert(res.node.value.update_time ~= nil)
-            res.count = nil
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
+            assert(res.createdIndex ~= nil)
+            res.createdIndex = nil
+            assert(res.modifiedIndex ~= nil)
+            res.modifiedIndex = nil
+            assert(res.value.create_time ~= nil)
+            res.value.create_time = nil
+            assert(res.value.update_time ~= nil)
+            res.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"node":{"key":"/apisix/stream_routes/1","value":{"id":"1","remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}}
+{"key":"/apisix/stream_routes/1","value":{"id":"1","remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}
 --- request
 GET /t
 --- no_error_log
@@ -556,7 +549,7 @@ GET /t
         }
     }
 --- response_body
-{"deleted":"1","key":"/apisix/stream_routes/1","node":{}}
+{"deleted":"1","key":"/apisix/stream_routes/1"}
 --- request
 GET /t
 --- no_error_log
