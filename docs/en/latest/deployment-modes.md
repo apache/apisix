@@ -89,7 +89,7 @@ deployment:
         trusted_ca_cert: /path/to/ca-cert
 ```
 
-The instance of APISIX deployeas the control plane will:
+The instance of APISIX deployed as the control plane will:
 
 1. Listen on port `9180` and handle Admin API requests.
 2. Provide the conf server which will listen on port `9280`. Both the control plane and the data plane will connect to this via HTTPS enforced by mTLS.
