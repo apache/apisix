@@ -250,7 +250,7 @@ make init
 make run
 
 # initialize node-status public API routes #1
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0.1:9080/apisix/admin/routes/node-status \
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0.1:9180/apisix/admin/routes/node-status \
     -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" \
     -d "{
         \"uri\": \"/apisix/status\",
@@ -277,7 +277,7 @@ make init
 sleep 1
 
 # initialize node-status public API routes #2
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0.1:9080/apisix/admin/routes/node-status \
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0.1:9180/apisix/admin/routes/node-status \
     -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" \
     -d "{
         \"uri\": \"/apisix/status\",

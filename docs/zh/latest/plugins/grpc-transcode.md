@@ -61,7 +61,7 @@ APISIX 接收 HTTP 请求后，首先对请求进行转码，并将转码后的�
 可以使用 `/admin/protos/id` 接口将文件的内容添加到 `content` 字段：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/protos/1 \
+curl http://127.0.0.1:9180/apisix/admin/protos/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "content" : "syntax = \"proto3\";
@@ -123,7 +123,7 @@ api_key = "edd1c9f034335f136f87ad84b625c8f1" # use your API key
 reqParam = {
     "content": content,
 }
-resp = requests.put("http://127.0.0.1:9080/apisix/admin/protos/" + id, json=reqParam, headers={
+resp = requests.put("http://127.0.0.1:9180/apisix/admin/protos/" + id, json=reqParam, headers={
     "X-API-KEY": api_key,
 })
 print(resp.status_code)
@@ -149,7 +149,7 @@ chmod +x ./upload_pb.py
 现在我们可以在指定路由中启用 `grpc-transcode` 插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -206,7 +206,7 @@ Proxy-Connection: keep-alive
 你也可以配置 `pb_option`，如下所示：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/23 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/23 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/zeebe/WorkflowInstanceCreate",
@@ -254,7 +254,7 @@ Trailer: grpc-message
 当你需要禁用 `grpc-transcode` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/grpctest",
     "plugins": {},

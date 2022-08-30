@@ -32,3 +32,21 @@ __DATA__
 --- request
 GET /t
 --- error_code: 404
+
+
+
+=== TEST 2: set env "APISIX_PROFILE" to Empty String
+--- config
+    location /t {
+        content_by_lua_block {
+            local profile = require("apisix.core.profile")
+            profile.apisix_home = "./test/"
+            profile.profile = ""
+            local local_conf_path = profile:yaml_path("config")
+            ngx.say(local_conf_path)
+        }
+    }
+--- request
+GET /t
+--- response_body
+./test/conf/config.yaml

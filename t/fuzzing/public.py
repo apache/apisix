@@ -30,6 +30,10 @@ def apisix_pwd():
     return os.environ.get("APISIX_FUZZING_PWD") or \
             (str(Path.home()) + "/work/apisix/apisix")
 
+def connect_admin():
+    conn = http.client.HTTPConnection("127.0.0.1", port=9180)
+    return conn
+
 def check_log():
     boofuzz_log = cur_dir() + "/test.log"
     apisix_errorlog = apisix_pwd() + "/logs/error.log"

@@ -484,7 +484,7 @@ http {
     }
     {% end %}
 
-    {% if enable_admin and admin_server_addr then %}
+    {% if enable_admin then %}
     server {
         {%if https_admin then%}
         listen {* admin_server_addr *} ssl;
@@ -620,27 +620,6 @@ http {
             access_log off;
             stub_status;
         }
-
-        {% if enable_admin and not admin_server_addr then %}
-        location /apisix/admin {
-            set $upstream_scheme             'http';
-            set $upstream_host               $http_host;
-            set $upstream_uri                '';
-
-            {%if allow_admin then%}
-                {% for _, allow_ip in ipairs(allow_admin) do %}
-                allow {*allow_ip*};
-                {% end %}
-                deny all;
-            {%else%}
-                allow all;
-            {%end%}
-
-            content_by_lua_block {
-                apisix.http_admin()
-            }
-        }
-        {% end %}
 
         {% if ssl.enable then %}
         ssl_certificate_by_lua_block {

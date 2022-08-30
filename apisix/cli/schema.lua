@@ -136,6 +136,16 @@ local config_schema = {
                 https_admin = {
                     type = "boolean",
                 },
+                admin_listen = {
+                    properties = {
+                        listen = { type = "string" },
+                        port = { type = "integer" },
+                    },
+                    default = {
+                        listen = "0.0.0.0",
+                        port = 9180,
+                    }
+                },
                 stream_proxy = {
                     type = "object",
                     properties = {

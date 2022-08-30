@@ -40,12 +40,10 @@ location /t {
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "sni": "www.test.com"
-                    },
-                    "key": "/apisix/ssls/1"
-                }
+                "value": {
+                    "sni": "www.test.com"
+                },
+                "key": "/apisix/ssls/1"
             }]]
             )
 
@@ -186,12 +184,10 @@ location /t {
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "sni": "*.test2.com"
-                    },
-                    "key": "/apisix/ssls/2"
-                }
+                "value": {
+                    "sni": "*.test2.com"
+                },
+                "key": "/apisix/ssls/2"
             }]]
             )
 
@@ -270,12 +266,10 @@ location /t {
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "sni": "apisix.dev"
-                    },
-                    "key": "/apisix/ssls/3"
-                }
+                "value": {
+                    "sni": "apisix.dev"
+                },
+                "key": "/apisix/ssls/3"
             }]]
             )
 
