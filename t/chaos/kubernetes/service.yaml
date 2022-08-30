@@ -32,10 +32,10 @@ spec:
       port: 9443
       protocol: TCP
       targetPort: 9443
-      # - name: admin-port
-      #   port: 9180
-      #   protocol: TCP
-      #   targetPort: 9180
+    - name: admin-port
+      port: 9180
+      protocol: TCP
+      targetPort: 9180
   selector:
     app: apisix-gw
   type: NodePort

@@ -50,7 +50,7 @@ with open(sys.argv[2]) as f:
     key = f.read()
 sni = sys.argv[3]
 api_key = "edd1c9f034335f136f87ad84b625c8f1"
-resp = requests.put("http://127.0.0.1:9080/apisix/admin/ssls/1", json={
+resp = requests.put("http://127.0.0.1:9180/apisix/admin/ssls/1", json={
     "cert": cert,
     "key": key,
     "snis": [sni],
@@ -66,7 +66,7 @@ print(resp.text)
 ./ssl.py t.crt t.key test.com
 
 # create Router object
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/hello",
     "hosts": ["test.com"],
@@ -111,7 +111,7 @@ Here is an example, note that the value we pass as `sni` is `*.test.com`.
 ```shell
 ./ssl.py t.crt t.key '*.test.com'
 
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/hello",
     "hosts": ["*.test.com"],
