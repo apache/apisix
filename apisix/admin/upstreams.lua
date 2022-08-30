@@ -19,7 +19,6 @@ local get_routes = require("apisix.router").http_routes
 local get_services = require("apisix.http.service").services
 local apisix_upstream = require("apisix.upstream")
 local utils = require("apisix.admin.utils")
-local v3_adapter = require("apisix.admin.v3_adapter")
 local tostring = tostring
 local ipairs = ipairs
 local type = type
@@ -27,6 +26,7 @@ local type = type
 
 local _M = {
     version = 0.2,
+    need_v3_filter = true,
 }
 
 
@@ -83,7 +83,7 @@ function _M.put(id, conf)
         return 503, {error_msg = err}
     end
 
-    return res.status, v3_adapter.filter(res.body)
+    return res.status, res.body
 end
 
 
@@ -100,7 +100,7 @@ function _M.get(id)
     end
 
     utils.fix_count(res.body, id)
-    return res.status, v3_adapter.filter(res.body)
+    return res.status, res.body
 end
 
 
@@ -118,7 +118,7 @@ function _M.post(id, conf)
         return 503, {error_msg = err}
     end
 
-    return res.status, v3_adapter.filter(res.body)
+    return res.status, res.body
 end
 
 
@@ -162,7 +162,7 @@ function _M.delete(id)
         return 503, {error_msg = err}
     end
 
-    return res.status, v3_adapter.filter(res.body)
+    return res.status, res.body
 end
 
 
@@ -222,7 +222,7 @@ function _M.patch(id, conf, sub_path)
         return 503, {error_msg = err}
     end
 
-    return res.status, v3_adapter.filter(res.body)
+    return res.status, res.body
 end
 
 

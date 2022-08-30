@@ -18,11 +18,11 @@ local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
 local utils   = require("apisix.admin.utils")
 local plugin  = require("apisix.plugin")
-local v3_adapter = require("apisix.admin.v3_adapter")
 local pairs   = pairs
 
 local _M = {
     version = 0.1,
+    need_v3_filter = true,
 }
 
 
@@ -86,7 +86,7 @@ function _M.put(username, conf)
         return 503, {error_msg = err}
     end
 
-    return res.status, v3_adapter.filter(res.body)
+    return res.status, res.body
 end
 
 
@@ -103,7 +103,7 @@ function _M.get(consumer_name)
     end
 
     utils.fix_count(res.body, consumer_name)
-    return res.status, v3_adapter.filter(res.body)
+    return res.status, res.body
 end
 
 
@@ -124,7 +124,7 @@ function _M.delete(consumer_name)
         return 503, {error_msg = err}
     end
 
-    return res.status, v3_adapter.filter(res.body)
+    return res.status, res.body
 end
 
 
