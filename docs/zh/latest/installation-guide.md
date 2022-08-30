@@ -267,7 +267,7 @@ apisix:
 更新完成后，你可以使用新的 key 访问 Admin API：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes?api_key=newsupersecurekey -i
+curl http://127.0.0.1:9180/apisix/admin/routes?api_key=newsupersecurekey -i
 ```
 
 ### 为 APISIX 添加 systemd 配置文件
