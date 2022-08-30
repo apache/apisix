@@ -141,6 +141,11 @@ Once we've discussed your changes and you've got your code ready, make sure that
       Please take a look at `t/plugin/limit-conn.t` and `t/plugin/limit-conn2.t`.
     * For more details, see the [testing framework](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)
 
+## Installing the tools for local development
+
+If you use Visual Studio Code, or any other editor that supports devcontainers, you can just open the cloned apisix folder with `devcontainer open my/clone/of/apisix`.
+This should spin up a full fledged vscode with all the required tools for development and the minimum services from `ci/pod/docker-compose.common.yml`.
+
 ## Contributor T-shirt
 
 If you have contributed to Apache APISIX, no matter it is a code contribution to fix a bug or a feature request, or a documentation change, Congratulations! You are eligible to receive the very special Contributor T-shirt! It's always been the community effort that has made Apache APISIX be understood and used by more developers. Go ahead and fill out the [Contributors Submissions form](https://docs.google.com/forms/d/e/1FAIpQLSdXEpCs60UK49UlOGdBCQSXr7DYz3enyT4GJPKrYQmYfVLPKQ/viewform).

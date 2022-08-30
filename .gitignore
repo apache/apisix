@@ -67,6 +67,7 @@ t/lib/dubbo-backend/dubbo-backend-provider/target/
 !.markdownlint.yml
 !.licenserc.yaml
 !.ignore_words
+!.devcontainer
 conf/apisix.yaml
 conf/apisix-*.yaml
 conf/config-*.yaml
