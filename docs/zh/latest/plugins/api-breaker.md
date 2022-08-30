@@ -60,7 +60,7 @@ description: 本文介绍了 Apache APISIX api-breaker 插件的相关操作，�
 以下示例展示了如何在指定路由上启用 `api-breaker` 插件，该路由配置表示在一定时间内返回 `500` 或 `503` 状态码达到 3 次后触发熔断，返回 `200` 状态码 1 次后恢复健康：
 
 ```shell
-curl "http://127.0.0.1:9080/apisix/admin/routes/1" \
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -113,7 +113,7 @@ HTTP/1.1 502 Bad Gateway
 当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",

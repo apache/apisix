@@ -63,7 +63,7 @@ deployment:
 make run
 sleep 1
 
-code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 make stop
 
 if [ ! $code -eq 200 ]; then
@@ -97,7 +97,7 @@ deployment:
 make run
 sleep 1
 
-code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 
 if [ ! $code -eq 200 ]; then
     make stop
@@ -107,7 +107,7 @@ fi
 
 echo "passed: work well with etcd in control plane"
 
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "upstream": {
         "nodes": {
@@ -118,7 +118,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
     "uri": "/*"
 }'
 
-code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/c -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/c -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 make stop
 if [ ! $code -eq 404 ]; then
     echo "failed: should disable request proxy"

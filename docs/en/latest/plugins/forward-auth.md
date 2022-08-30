@@ -61,7 +61,7 @@ APISIX will generate and the send the request headers listed below to the author
 First, you need to setup your external authorization service. The example below uses Apache APISIX's [serverless](./serverless.md) Plugin to mock the service:
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/auth' \
     -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -91,7 +91,7 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
 Now you can configure the `forward-auth` Plugin to a specific Route:
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/1' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
     -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
     -d '{
     "uri": "/headers",

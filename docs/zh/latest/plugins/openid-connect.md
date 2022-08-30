@@ -84,7 +84,7 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 以下示例是在路由上启用插件。该路由将通过内省请求头中提供的令牌来保护上游：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/get",
@@ -128,7 +128,7 @@ curl -i -X GET http://127.0.0.1:9080/get -H "Authorization: Bearer {JWT_TOKEN}"
 以下示例展示了如何将公钥添加到路由中：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/get",
@@ -163,7 +163,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 以下示例是将此操作模式添加到 Route：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/get",
