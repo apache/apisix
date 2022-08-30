@@ -471,7 +471,7 @@ invalid base64 content
             end
 
             local resp_data = core.json.decode(body)
-            ngx.say(encode_with_keys_sorted(resp_data.node.value.plugins))
+            ngx.say(encode_with_keys_sorted(resp_data.value.plugins))
         }
     }
 --- request
