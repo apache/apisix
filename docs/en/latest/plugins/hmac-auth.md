@@ -140,7 +140,7 @@ curl -i http://127.0.0.1:9080/index.html?name=james&age=36 \
 -H "User-Agent: curl/7.29.0"
 ```
 
-The procedure for `signing_string` generated according to the above algorithm:
+### Explanation of signature generation formula process
 
 1. The default HTTP Method for the above request is GET, which gives `signing_string` as
 
@@ -157,7 +157,6 @@ The procedure for `signing_string` generated according to the above algorithm:
 
 3. The query item in the URL is `name=james&age=36`, assuming that `encode_uri_params` is false.
 According to the algorithm of `canonical_query_string`, the focus is on dictionary sorting of `key` to get `age=36&name=james`.
-And the `signing_string` is obtained from the HTTP Method + \n + HTTP URI + \n + canonical_query_string as
 
 ```plain
 "GET
@@ -184,7 +183,9 @@ user-key
 Tue, 19 Jan 2021 11:33:20 GMT"
 ```
 
-6. `signed_headers_string` is used to specify the headers involved in the signature, which in the above example includes `User-Agent: curl/7.29.0` and `x-custom-a: test`. And the `signing_string` is obtained from the HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n as
+6. `signed_headers_string` is used to specify the headers involved in the signature, which in the above example includes `User-Agent: curl/7.29.0` and `x-custom-a: test`.
+
+And the `signing_string` is obtained from the HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n as
 
 ```plain
 "GET

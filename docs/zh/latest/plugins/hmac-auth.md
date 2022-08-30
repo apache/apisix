@@ -145,9 +145,9 @@ curl -i http://127.0.0.1:9080/index.html?name=james&age=36 \
 -H "User-Agent: curl/7.29.0"
 ```
 
-根据上述算法生成的 `signing_string` 的过程：
+### 签名生成公式过程详解
 
-1. 上面请求默认的 HTTP Method 是 GET，得到 `signing_string` 为
+1. 上文请求默认的 HTTP Method 是 GET，得到 `signing_string` 为
 
 ```plain
 "GET"
@@ -160,9 +160,7 @@ curl -i http://127.0.0.1:9080/index.html?name=james&age=36 \
 /index.html"
 ```
 
-3. URL 中的 query 项是 `name=james&age=36`，假设 `encode_uri_params` 为 false，
-根据 `canonical_query_string` 的算法，重点是对 `key` 进行字典排序，得到 `age=36&name=james`，
-根据 HTTP Method + \n + HTTP URI + \n + canonical_query_string 得到 `signing_string` 为
+3. URL 中的 query 项是 `name=james&age=36`，假设 `encode_uri_params` 为 false，根据 `canonical_query_string` 的算法，重点是对 `key` 进行字典排序，得到 `age=36&name=james`；根据 HTTP Method + \n + HTTP URI + \n + canonical_query_string 得到 `signing_string` 为
 
 ```plain
 "GET
@@ -189,7 +187,8 @@ user-key
 Tue, 19 Jan 2021 11:33:20 GMT"
 ```
 
-6. `signed_headers_string` 用来制定参与到签名的 headers，在上面示例中包括 `User-Agent: curl/7.29.0` 和 `x-custom-a: test`，
+6. `signed_headers_string` 用来制定参与到签名的 headers，在上面示例中包括 `User-Agent: curl/7.29.0` 和 `x-custom-a: test`。
+
 根据 HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n + signed_headers_string + `\n`，得到完整的 `signing_string` 为
 
 ```plain
