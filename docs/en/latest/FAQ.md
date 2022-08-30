@@ -596,7 +596,7 @@ The differences between the two are described in the table below:
 
 ## After deploying Apache APISIX, how to detect the survival of the APISIX data plane?
 
-You can create a route named `health-info` and enable the [fault-injection](https://github.com/apache/apisix/blob/master/docs/en/latest/plugins/fault-injection.md) plugin (where YOUR-TOKEN is the user's own token; 127.0.0.1 is the ip address of the control plane, which can be modified by yourself):
+You can create a route named `health-info` and enable the [fault-injection](https://github.com/apache/apisix/blob/master/docs/en/latest/plugins/fault-injection.md) plugin (where YOUR-TOKEN is the user's token; 127.0.0.1 is the IP address of the control plane, which can be modified by yourself):
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/health-info \
