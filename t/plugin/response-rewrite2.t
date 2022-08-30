@@ -517,3 +517,181 @@ passed
 GET /hello
 --- response_body
 hello world
+
+
+
+=== TEST 19: schema check for headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            for _, case in ipairs({
+                {add = {
+                    {"headers:"}
+                }},
+                {remove = {
+                    {"headers:"}
+                }},
+                {set = {
+                    {"headers"}
+                }},
+                {set = {
+                    {[""] = 1}
+                }},
+                {set = {
+                    {["a"] = true}
+                }},
+            }) do
+                local plugin = require("apisix.plugins.response-rewrite")
+                local ok, err = plugin.check_schema({headers = case})
+                if not ok then
+                    ngx.say(err)
+                else
+                    ngx.say("done")
+                end
+            end
+    }
+}
+--- response_body eval
+"property \"headers\" validation failed: object matches none of the required\n" x 5
+
+
+
+=== TEST 20: add headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "response-rewrite": {
+                            "headers": {
+                                "add": [
+                                    "Cache-Control: no-cache",
+                                    "Cache-Control : max-age=0, must-revalidate"
+                                ]
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uris": ["/hello"]
+                }]]
+                )
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 21: hit
+--- request
+GET /hello
+--- response_headers
+Cache-Control: no-cache, max-age=0, must-revalidate
+
+
+
+=== TEST 22: set headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "response-rewrite": {
+                            "headers": {
+                                "add": [
+                                    "Cache-Control: no-cache"
+                                ],
+                                "set": {
+                                    "Cache-Control": "max-age=0, must-revalidate"
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uris": ["/hello"]
+                }]]
+                )
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 23: hit
+--- request
+GET /hello
+--- response_headers
+Cache-Control: max-age=0, must-revalidate
+
+
+
+=== TEST 24: remove headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "response-rewrite": {
+                            "headers": {
+                                "add": [
+                                    "Set-Cookie: <cookie-name>=<cookie-value>; Max-Age=<number>"
+                                ],
+                                "set": {
+                                    "Cache-Control": "max-age=0, must-revalidate"
+                                },
+                                "remove": [
+                                    "Set-Cookie",
+                                    "Cache-Control"
+                                ]
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uris": ["/hello"]
+                }]]
+                )
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 25: hit
+--- request
+GET /hello
+--- response_headers
+Cache-Control:
+Set-Cookie:
