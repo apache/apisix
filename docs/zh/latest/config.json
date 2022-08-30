@@ -110,8 +110,7 @@
             "plugins/traffic-split",
             "plugins/request-id",
             "plugins/proxy-control",
-            "plugins/client-control",
-            "plugins/workflow"
+            "plugins/client-control"
           ]
         },
         {
@@ -166,7 +165,8 @@
             "plugins/serverless",
             "plugins/azure-functions",
             "plugins/openwhisk",
-            "plugins/aws-lambda"
+            "plugins/aws-lambda",
+            "plugins/workflow"
           ]
         },
         {

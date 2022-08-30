@@ -37,10 +37,22 @@ The `workflow` plugin is used to introduce [lua-resty-expr](https://github.com/a
 | ---------------------------- | ------------- | -------- | ------- | ------------ | ------------------------------------------------------------ |
 | rules.case                   | array[array]  | True     |         |              | List of variables to match for filtering requests for conditional traffic split. It is in the format `{variable operator value}`. For example, `{"arg_name", "==", "json"}`. The variables here are consistent with NGINX internal variables. For details on supported operators, you can refer to [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
 | rules.actions                | array[object] | True     |         |              | The action to be performed when the case matches successfully. Currently, only one element is supported in actions. The first child element of the actions' only element can be `return` or `limit-count`. |
-| rules.actions[1].return      | string        | False    |         |              | Return directly to the client.                               |
-| rules.actions[1].[2].code    | integer       | False    |         |              | HTTP status code returned to the client.                     |
-| rules.actions[1].limit-count | string        | False    |         |              | Execute the functions of the `limit-count` plugin.           |
-| rules.actions[1].[2]         | object        | False    |         |              | Configuration of `limit-count` plugin, `group` is not supported. |
+
+## `actions` Attributes
+
+#### return
+
+| Name                   | Type          | Required | Default | Valid values | Description                                                  |
+| ---------------------- | ------------- | -------- | ------- | ------------ | ----------------------------------------------------------   |
+| actions[1].return      | string        | False    |         |              | Return directly to the client.                               |
+| actions[1].[2].code    | integer       | False    |         |              | HTTP status code returned to the client.                     |
+
+#### limit-count
+
+| Name                   | Type          | Required | Default | Valid values | Description                                                      |
+| ---------------------- | ------------- | -------- | ------- | ------------ | ---------------------------------------------------------------- |
+| actions[1].limit-count | string        | False    |         |              | Execute the functions of the `limit-count` plugin.               |
+| actions[1].[2]         | object        | False    |         |              | Configuration of `limit-count` plugin, `group` is not supported. |
 
 :::note
 
