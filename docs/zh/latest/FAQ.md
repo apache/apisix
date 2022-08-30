@@ -599,7 +599,7 @@ apisix:
 
 可以创建一个名为 `health-info` 的路由，并开启 [fault-injection](https://github.com/apache/apisix/blob/master/docs/zh/latest/plugins/fault-injection.md) 插件（其中 YOUR-TOKEN 是用户自己的 token；127.0.0.1 是控制平面的 ip 地址，可以自行修改）:
 
-```bash
+```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/health-info \
 -H 'X-API-KEY: YOUR-TOKEN' -X PUT -d '
 {
