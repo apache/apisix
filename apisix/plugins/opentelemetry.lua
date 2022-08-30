@@ -169,6 +169,13 @@ local schema = {
                 type = "string",
                 minLength = 1,
             }
+        },
+        additional_header_attributes = {
+            type = "array",
+            items = {
+                type = "string",
+                minLength = 1,
+            }
         }
     }
 }
@@ -273,6 +280,26 @@ local function create_tracer_obj(conf)
 end
 
 
+local function inject_attributes(attributes, wanted_attributes, source)
+    for _, key in ipairs(wanted_attributes) do
+        local is_key_a_match = #key >= 2 and string.sub(key, -1, -1) == "*"
+        local prefix = string.sub(key, 0, -2)
+        local prefix_size = #prefix
+        local val = source[key]
+        if val then
+            core.table.insert(attributes, attr.string(key, val))
+        end
+        if is_key_a_match then
+            for possible_key, value in pairs(source) do
+                if string.sub(possible_key, 0, prefix_size) == prefix then
+                    core.table.insert(attributes, attr.string(possible_key, value))
+                end
+            end
+        end
+    end
+end
+
+
 function _M.rewrite(conf, api_ctx)
     local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil, create_tracer_obj, conf)
     if not tracer then
@@ -286,13 +313,17 @@ function _M.rewrite(conf, api_ctx)
         attr.string("service", api_ctx.service_name),
         attr.string("route", api_ctx.route_name),
     }
+
     if conf.additional_attributes then
-        for _, key in ipairs(conf.additional_attributes) do
-            local val = api_ctx.var[key]
-            if val then
-                core.table.insert(attributes, attr.string(key, val))
-            end
-        end
+        inject_attributes(attributes, conf.additional_attributes, api_ctx.var)
+    end
+
+    if conf.additional_header_attributes then
+        inject_attributes(
+            attributes,
+            conf.additional_header_attributes,
+            core.request.headers(api_ctx)
+        )
     end
 
     local ctx = tracer:start(upstream_context, api_ctx.var.request_uri, {
