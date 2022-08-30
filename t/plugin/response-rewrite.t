@@ -721,7 +721,7 @@ X-B: from 127.0.0.1 to 127.0.0.1:1980
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/with_empty_body"
+                    "uri": "/hello"
                 }]]
                 )
 
@@ -742,6 +742,8 @@ passed
 
 === TEST 26: hit set empty body
 --- request
-GET /with_empty_body
+GET /hello
+--- response_body
+
 --- no_error_log
 [error]
