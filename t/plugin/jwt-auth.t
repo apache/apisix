@@ -1126,7 +1126,7 @@ base64_secret required but the secret is not in base64 format
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body, res_data = t('/apisix/admin/consumers',
+            local code, body, res = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
                     "username": "kerouac",
@@ -1136,28 +1136,18 @@ base64_secret required but the secret is not in base64 format
                             "secret": "my-secret-key"
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "kerouac",
-                            "plugins": {
-                                "jwt-auth": {
-                                    "key": "exp-not-set",
-                                    "secret": "my-secret-key"
-                                }
-                            }
-                        }
-                    }
                 }]]
-                )
+            )
+
+            res = require("toolkit.json").decode(res)
+            assert(res.value.plugins["jwt-auth"].exp == 86400)
 
             ngx.status = code
-            ngx.say(require("toolkit.json").encode(res_data))
+            ngx.say(body)
         }
     }
---- response_body_like eval
-qr/"exp":86400/
+--- response_body
+passed
 
 
 

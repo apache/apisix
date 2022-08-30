@@ -413,10 +413,12 @@ passed
             )
             res = json.decode(res)
 
-            -- match the name and label are 1, 10
-            assert(#res.list == 2)
+            -- match the name and label are 1, 10, 11
+            -- we do filtering first now, so it will first filter to 1, 10, 11, and then paginate
+            -- res will contain 1, 10, 11 instead of just 1, 10.
+            assert(#res.list == 3)
 
-            local matched = {1, 10}
+            local matched = {1, 10, 11}
             for _, node in ipairs(res.list) do
                 assert(core.table.array_find(matched, tonumber(node.value.name)))
             end
@@ -745,6 +747,58 @@ passed
             res = json.decode(res)
             assert(#res.list == 1)
             assert(res.list[1].value.id == "1")
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: filtered data total
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            local code, body, res = t('/apisix/admin/routes', ngx.HTTP_GET)
+            res = json.decode(res)
+            assert(res.total == 11)
+            assert(#res.list == 11)
+
+            local code, body, res = t('/apisix/admin/routes/?label=', ngx.HTTP_GET)
+            res = json.decode(res)
+            assert(res.total == 0)
+            assert(#res.list == 0)
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: pagination data total
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            local code, body, res = t('/apisix/admin/routes?page=1&page_size=10', ngx.HTTP_GET)
+            res = json.decode(res)
+            assert(res.total == 11)
+            assert(#res.list == 10)
+
+            local code, body, res = t('/apisix/admin/routes?page=10&page_size=10', ngx.HTTP_GET)
+            res = json.decode(res)
+            assert(res.total == 11)
+            assert(#res.list == 0)
 
             ngx.status = code
             ngx.say(body)
