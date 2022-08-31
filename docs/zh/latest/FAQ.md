@@ -595,6 +595,36 @@ apisix:
 | 对绑定到 Plugin 的配置实例的所有实体生效。                           | 对绑定到 `plugin-config` 的路由生效。                                                                                               |
 | 对绑定到 Plugin 的配置实例的所有实体生效。                           | 对绑定到 `plugin-config` 的路由生效。                                                                                               |
 
+## 部署了 Apache APISIX 之后，如何检测 APISIX 数据平面的存活情况（如何探活）?
+
+可以创建一个名为 `health-info` 的路由，并开启 [fault-injection](https://apisix.apache.org/zh/docs/apisix/plugins/fault-injection/) 插件（其中 YOUR-TOKEN 是用户自己的 token；127.0.0.1 是控制平面的 IP 地址，可以自行修改）:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/health-info \
+-H 'X-API-KEY: YOUR-TOKEN' -X PUT -d '
+{
+  "plugins": {
+    "fault-injection": {
+      "abort": {
+       "http_status": 200,
+       "body": "fine"
+      }
+    }
+  },
+  "uri": "/status"
+}'
+```
+
+验证方式：
+
+访问 Apache APISIX 数据平面的 `/status` 来探测 APISIX，如果 response code 是 200 就代表 APISIX 存活。
+
+:::note
+
+这个方式只是探测 APISIX 数据平面是否存活，并不代表 APISIX 的路由和其他功能是正常的，这些需要更多路由级别的探测。
+
+:::
+
 ## 如果在使用 APISIX 过程中遇到问题，我可以在哪里寻求更多帮助？
 
 - [Apache APISIX Slack Channel](/docs/general/join/#加入-slack-频道)：加入后请选择 channel-apisix 频道，即可通过此频道进行 APISIX 相关问题的提问。
