@@ -284,14 +284,13 @@ local function inject_attributes(attributes, wanted_attributes, source)
     for _, key in ipairs(wanted_attributes) do
         local is_key_a_match = #key >= 2 and string.sub(key, -1, -1) == "*"
         local prefix = string.sub(key, 0, -2)
-        local prefix_size = #prefix
         local val = source[key]
         if val then
             core.table.insert(attributes, attr.string(key, val))
         end
         if is_key_a_match then
             for possible_key, value in pairs(source) do
-                if string.sub(possible_key, 0, prefix_size) == prefix then
+                if core.string.has_prefix(possible_key, prefix) then
                     core.table.insert(attributes, attr.string(possible_key, value))
                 end
             end
