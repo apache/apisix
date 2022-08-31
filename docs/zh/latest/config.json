@@ -166,7 +166,8 @@
             "plugins/serverless",
             "plugins/azure-functions",
             "plugins/openwhisk",
-            "plugins/aws-lambda"
+            "plugins/aws-lambda",
+            "plugins/workflow"
           ]
         },
         {
