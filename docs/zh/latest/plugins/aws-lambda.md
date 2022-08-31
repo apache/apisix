@@ -101,8 +101,6 @@ Content-Type: application/json
 
 ```yaml
 apisix:
-  admin_key:
-...
   node_listen:                      # 支持监听多个端口
     - 9080
     - port: 9081

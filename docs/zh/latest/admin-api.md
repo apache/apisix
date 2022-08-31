@@ -27,7 +27,7 @@ Admin API 是为 Apache APISIX 服务的一组 API，我们可以将参数传递
 
 启动 Apache APISIX 时，默认情况下 Admin API 将监听 `9180` 端口。您可以通过修改 [conf/config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml) 文件来改变默认监听的端口。
 
-在下面出现的 `X-API-KEY` 指的是 `conf/config.yaml` 文件中的 `apisix.admin_key.key`，它是 Admin API 的访问 token。
+在下面出现的 `X-API-KEY` 指的是 `conf/config.yaml` 文件中的 `deployment.admin.admin_key.key`，它是 Admin API 的访问 token。
 
 ## V3
 

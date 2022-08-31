@@ -365,10 +365,11 @@ You can follow the steps below to configure this:
 1. Configure different ports for Apache APISIX proxy and Admin API. Or, disable the Admin API.
 
 ```yaml
-apisix:
-  admin_listen: # use a separate port
-    ip: 127.0.0.1
-    port: 9180
+deployment:
+  admin:
+    admin_listen: # use a separate port
+      ip: 127.0.0.1
+      port: 9180
 ```
 
 2. Add a proxy Route for the Apache APISIX dashboard:
@@ -501,9 +502,10 @@ By default, Apache APISIX only allows IPs in the range `127.0.0.0/24` to access 
 To allow IPs in all ranges, you can update your configuration file as show below and restart or reload Apache APISIX.
 
 ```yaml
-apisix:
-  allow_admin:
-    - 0.0.0.0/0
+deployment:
+  admin:
+    allow_admin:
+      - 0.0.0.0/0
 ```
 
 **Note**: This should only be used in non-production environments to allow all clients to access Apache APISIX and is not safe for production environments. Always authorize specific IP addresses or address ranges for production environments.

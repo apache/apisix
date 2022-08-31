@@ -29,7 +29,6 @@ apisix:
   #     port: 9082
   #     enable_http2: true
   enable_admin: true
-  enable_admin_cors: true           # Admin API support CORS response headers.
   enable_dev_mode: false            # Sets nginx worker_processes to 1 if set to true
   enable_reuseport: true            # Enable nginx SO_REUSEPORT switch if set to true.
   show_upstream_status_in_response_header: false # when true all upstream status write to `X-APISIX-Upstream-Status` otherwise only 5xx code
@@ -70,37 +69,6 @@ apisix:
       #  cache_levels: "1:2"
       - name: memory_cache
         memory_size: 50m
-
-  allow_admin:                  # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
-    - 127.0.0.0/24              # If we don't set any IP list, then any IP access is allowed by default.
-    #- "::/64"
-  admin_listen:                 # use a separate port
-    ip: 0.0.0.0                 # Specific IP, if not set, the default value is `0.0.0.0`.
-    port: 9180                  # Specific port, which must be different from node_listen's port.
-
-  #https_admin: true            # enable HTTPS when use a separate port for Admin API.
-                                # Admin API will use conf/apisix_admin_api.crt and conf/apisix_admin_api.key as certificate.
-  admin_api_mtls:               # Depends on `admin_listen` and `https_admin`.
-    admin_ssl_cert: ""          # Path of your self-signed server side cert.
-    admin_ssl_cert_key: ""      # Path of your self-signed server side key.
-    admin_ssl_ca_cert: ""       # Path of your self-signed ca cert.The CA is used to sign all admin api callers' certificates.
-
-  admin_api_version: v3        # The version of admin api, latest version is v3.
-
-  # Default token when use API to call for Admin API.
-  # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
-  # Disabling this configuration item means that the Admin API does not
-  # require any authentication.
-  admin_key:
-    -
-      name: admin
-      key: edd1c9f034335f136f87ad84b625c8f1
-      role: admin                 # admin: manage all configuration data
-                                  # viewer: only can view configuration data
-    -
-      name: viewer
-      key: 4054f7cf07e344346cd3f287985e76a2
-      role: viewer
 
   delete_uri_tail_slash: false    # delete the '/' at the end of the URI
   # The URI normalization in servlet is a little different from the RFC's.
@@ -543,6 +511,40 @@ deployment:
   role: traditional
   role_traditional:
     config_provider: etcd
+  admin:
+    # Default token when use API to call for Admin API.
+    # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
+    # Disabling this configuration item means that the Admin API does not
+    # require any authentication.
+    admin_key:
+      -
+        name: admin
+        key: edd1c9f034335f136f87ad84b625c8f1
+        role: admin                 # admin: manage all configuration data
+                                    # viewer: only can view configuration data
+      -
+        name: viewer
+        key: 4054f7cf07e344346cd3f287985e76a2
+        role: viewer
+
+    enable_admin_cors: true         # Admin API support CORS response headers.
+    allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
+      - 127.0.0.0/24                # If we don't set any IP list, then any IP access is allowed by default.
+      #- "::/64"
+    admin_listen:                 # use a separate port
+      ip: 0.0.0.0                 # Specific IP, if not set, the default value is `0.0.0.0`.
+      port: 9180                  # Specific port, which must be different from node_listen's port.
+
+    #https_admin: true            # enable HTTPS when use a separate port for Admin API.
+                                  # Admin API will use conf/apisix_admin_api.crt and conf/apisix_admin_api.key as certificate.
+
+    admin_api_mtls:               # Depends on `admin_listen` and `https_admin`.
+      admin_ssl_cert: ""          # Path of your self-signed server side cert.
+      admin_ssl_cert_key: ""      # Path of your self-signed server side key.
+      admin_ssl_ca_cert: ""       # Path of your self-signed ca cert.The CA is used to sign all admin api callers' certificates.
+
+    admin_api_version: v3         # The version of admin api, latest version is v3.
+
   etcd:
     host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
       - "http://127.0.0.1:2379"     # multiple etcd address, if your etcd cluster enables TLS, please use https scheme,

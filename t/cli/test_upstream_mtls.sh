@@ -28,10 +28,6 @@ exit_if_not_customed_nginx
 
 echo '
 apisix:
-  admin_key:
-    - name: admin
-      key: edd1c9f034335f136f87ad84b625c8f1
-      role: admin
   ssl:
     ssl_trusted_certificate: t/certs/apisix.crt
 nginx_config:
@@ -91,10 +87,6 @@ echo "passed: connection to upstream with mTLS success"
 # test proxy_ssl_trusted_certificate and use incorrect ca cert
 echo '
 apisix:
-  admin_key:
-    - name: admin
-      key: edd1c9f034335f136f87ad84b625c8f1
-      role: admin
   ssl:
     ssl_trusted_certificate: t/certs/apisix_ecc.crt
 nginx_config:

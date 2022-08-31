@@ -223,7 +223,6 @@ done
 --- yaml_config
 apisix:
   node_listen: 1984
-  admin_key: null
 --- extra_yaml_config
 discovery:
   nacos:
