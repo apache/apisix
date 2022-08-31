@@ -282,8 +282,8 @@ end
 
 local function inject_attributes(attributes, wanted_attributes, source)
     for _, key in ipairs(wanted_attributes) do
-        local is_key_a_match = #key >= 2 and string.sub(key, -1, -1) == "*"
-        local prefix = string.sub(key, 0, -2)
+        local is_key_a_match = #key >= 2 and key:sub(-1, -1) == "*"
+        local prefix = key:sub(0, -2)
         local val = source[key]
         if val then
             core.table.insert(attributes, attr.string(key, val))
