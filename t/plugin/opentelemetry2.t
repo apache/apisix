@@ -208,7 +208,7 @@ passed
         end
         table.sort(attributes_names)
         for _, attribute in ipairs(attributes_names) do
-            ngx.log(ngx.INFO, "attribute " .. attribute .. ": " .. attributes[attribute])
+            ngx.log(ngx.INFO, "attribute " .. attribute .. ": \"" .. attributes[attribute] .. "\"")
         end
 
         ngx.log(ngx.INFO, "opentelemetry export span")
@@ -223,7 +223,7 @@ x-my-header-nick: bill
 --- grep_error_log eval
 qr/attribute .+?:.[^,]*/
 --- grep_error_log_out
-attribute route: route_name
-attribute service: 
-attribute x-my-header-name: william
-attribute x-my-header-nick: bill
+attribute route: "route_name"
+attribute service: ""
+attribute x-my-header-name: "william"
+attribute x-my-header-nick: "bill"
