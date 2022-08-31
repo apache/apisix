@@ -23,7 +23,7 @@ install_dependencies() {
 
     # install build & runtime deps
     yum install -y wget tar gcc automake autoconf libtool make unzip \
-        git sudo openldap-devel which
+        git sudo openldap-devel which libxml2-devel openssl-devel libxslt-devel
 
     # curl with http2
     wget https://github.com/moparisthebest/static-curl/releases/download/v7.79.1/curl-amd64 -O /usr/bin/curl
@@ -78,12 +78,25 @@ install_dependencies() {
     # install dependencies
     git clone https://github.com/openresty/test-nginx.git test-nginx
     create_lua_deps
+
+    download_saml_test_files
 }
 
 run_case() {
     export_or_prefix
     make init
     set_coredns
+
+    # wait for keycloak ready
+    bash -c 'while true; do curl -s localhost:8080 &>/dev/null; ret=$?; [[ $ret -eq 0 ]] && break; sleep 3; done'
+
+    # configure keycloak for test
+    wget https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -O jq
+    chmod +x jq
+    docker cp jq keycloak:/usr/bin/
+    docker cp t/kcadm_configure.sh keycloak:/tmp/
+    docker exec keycloak bash /tmp/kcadm_configure.sh
+
     # run test cases
     FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r ${TEST_FILE_SUB_DIR} | tee /tmp/test.result
     rerun_flaky_tests /tmp/test.result

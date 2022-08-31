@@ -282,6 +282,10 @@ http {
     lua_shared_dict introspection {* http.lua_shared_dict["introspection"] *}; # cache for JWT verification results
     {% end %}
 
+    {% if enabled_plugins["saml-auth"] then %}
+    lua_shared_dict saml_sessions {* http.lua_shared_dict["saml-auth"] *};
+    {% end %}
+
     {% if enabled_plugins["authz-keycloak"] then %}
     # for authz-keycloak
     lua_shared_dict access-tokens {* http.lua_shared_dict["access-tokens"] *}; # cache for service account access tokens
@@ -658,6 +662,10 @@ http {
             set $dubbo_service_name          '';
             set $dubbo_service_version       '';
             set $dubbo_method                '';
+            {% end %}
+
+            {% if enabled_plugins["saml-auth"] then %}
+            set $saml_data_dir               {*apisix_lua_home*}/deps/share/lua/5.1/resty/saml;
             {% end %}
 
             access_by_lua_block {

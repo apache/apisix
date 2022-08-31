@@ -42,6 +42,19 @@ services:
     networks:
       apisix_net:
 
+  ## keycloak
+  apisix_keycloak_for_saml:
+    container_name: keycloak
+    image: quay.io/keycloak/keycloak:18.0.2
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      apisix_net:
 
   ## kafka-cluster
   zookeeper-server1:

@@ -508,6 +508,7 @@ _EOC_
     lua_shared_dict tars 1m;
     lua_shared_dict xds-config 1m;
     lua_shared_dict xds-config-version 1m;
+    lua_shared_dict saml_sessions 10m;
 
     proxy_ssl_name \$upstream_host;
     proxy_ssl_server_name on;
@@ -723,6 +724,8 @@ _EOC_
             set \$upstream_cache_bypass          '';
             set \$upstream_no_cache              '';
             $a6_ngx_vars
+
+            set \$saml_data_dir              '$apisix_home/deps/share/lua/5.1/resty/saml';
 
             proxy_cache                         \$upstream_cache_zone;
             proxy_cache_valid                   any 10s;
