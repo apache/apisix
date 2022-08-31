@@ -37,7 +37,9 @@ local str_format = string.format
 local str_reverse = string.reverse
 local tab_insert = table.insert
 local tab_sort = table.sort
-
+local new_tab = require "table.new"
+local ngx_sleep = require("apisix.core.utils").sleep
+local isempty = require "table.isempty"
 local local_conf
 
 
@@ -169,6 +171,32 @@ local function rename_file(log, date_str)
 end
 
 
+local function wait_old_nginx_exit()
+    local found = true
+    local max_try = 10  -- 10 seconds
+    local prefix = ngx.config.prefix()
+    local file_path = prefix .. "/logs/nginx.pid.oldbin"
+
+    for i = 1, max_try do
+        -- nginx will delete nginx.pid.oldbin after old master process quit
+        found = file_exists(file_path)
+        if found then
+            if i <= max_try then
+                ngx_sleep(1)
+            end
+
+        else
+            break
+        end
+    end
+
+    if found then
+        core.log.error("failed to shutdown the old master after a long time, "
+                        .. "but we still choose to compress log file")
+    end
+end
+
+
 local function compression_file(new_file)
     if not new_file or type(new_file) ~= "string" then
         core.log.info("compression file: ", new_file, " invalid")
@@ -219,6 +247,12 @@ end
 
 
 local function rotate_file(files, now_time, max_kept)
+    if isempty(files) then
+        return
+    end
+
+    local new_files = new_tab(2, 0)
+    -- rename the log files
     for _, file in ipairs(files) do
         local now_date = os_date("%Y-%m-%d_%H-%M-%S", now_time)
         local new_file = rename_file(default_logs[file], now_date)
@@ -226,17 +260,28 @@ local function rotate_file(files, now_time, max_kept)
             return
         end
 
-        local pid = process.get_master_pid()
-        core.log.warn("send USR1 signal to master process [", pid, "] for reopening log file")
-        local ok, err = signal.kill(pid, signal.signum("USR1"))
-        if not ok then
-            core.log.error("failed to send USR1 signal for reopening log file: ", err)
-        end
+        tab_insert(new_files, new_file)
+    end
 
-        if enable_compression then
+    -- send signal to reopen
+    local pid = process.get_master_pid()
+    core.log.warn("send USR1 signal to master process [", pid, "] for reopening log file")
+    local ok, err = signal.kill(pid, signal.signum("USR1"))
+    if not ok then
+        core.log.error("failed to send USR1 signal for reopening log file: ", err)
+    end
+
+    if enable_compression then
+        -- to avoid losing logs during compression
+        ngx_sleep(0.5)
+        wait_old_nginx_exit()
+
+        for _, new_file in ipairs(new_files) do
             compression_file(new_file)
         end
+    end
 
+    for _, file in ipairs(files) do
         -- clean the oldest file
         local log_list, log_dir = scan_log_folder(file)
         for i = max_kept + 1, #log_list do
@@ -288,15 +333,21 @@ local function rotate()
 
         -- reset rotate time
         rotate_time = rotate_time + interval
+
     elseif max_size > 0 then
         local access_log_file_size = file_size(default_logs[DEFAULT_ACCESS_LOG_FILENAME].file)
         local error_log_file_size = file_size(default_logs[DEFAULT_ERROR_LOG_FILENAME].file)
+        local files = new_tab(2, 0)
+
         if access_log_file_size >= max_size then
-            rotate_file({DEFAULT_ACCESS_LOG_FILENAME}, now_time, max_kept)
+            tab_insert(files, DEFAULT_ACCESS_LOG_FILENAME)
         end
+
         if error_log_file_size >= max_size then
-            rotate_file({DEFAULT_ERROR_LOG_FILENAME}, now_time, max_kept)
+            tab_insert(files, DEFAULT_ERROR_LOG_FILENAME)
         end
+
+        rotate_file(files, now_time, max_kept)
     end
 end
 
