@@ -256,6 +256,10 @@ The `conf/nginx.conf` file is automatically generated and should not be modified
 
 :::
 
+### APISIX deployment modes
+
+APISIX has three different deployment modes for different use cases. To learn more and configure deployment modes, see the [documentation](./deployment-modes.md).
+
 ### Updating Admin API key
 
 It is recommended to modify the Admin API key to ensure security.
@@ -274,7 +278,7 @@ apisix:
 Now, to access the Admin API, you can use the new key:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes?api_key=newsupersecurekey -i
+curl http://127.0.0.1:9180/apisix/admin/routes?api_key=newsupersecurekey -i
 ```
 
 ### Adding APISIX systemd unit file

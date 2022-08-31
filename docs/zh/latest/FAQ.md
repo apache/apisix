@@ -121,7 +121,7 @@ make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 1. 创建一个[Route](terminology/route.md)并配置 `vars` 字段：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -134,7 +134,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
     }
 }'
 
-curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -161,7 +161,7 @@ Apache APISIX 提供了几种不同的方法来实现：
 1. 在 [redirect](plugins/redirect.md) 插件中将 `http_to_https` 设置为 `true`：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -176,7 +176,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 2. 结合高级路由规则 `vars` 和 `redirect` 插件一起使用：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -199,7 +199,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 3. 使用 `serverless` 插件：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -270,15 +270,16 @@ nginx_config:
        - 9082
    ```
 
-   处理 HTTPS 请求也类似，修改 `conf/config.yaml` 中 HTTPS 端口监听的参数 `ssl.listen_port`，示例：
+   处理 HTTPS 请求也类似，修改 `conf/config.yaml` 中 HTTPS 端口监听的参数 `ssl.listen`，示例：
 
    ```
    apisix:
      ssl:
-       listen_port:
-         - 9443
-         - 9444
-         - 9445
+       enable: true
+       listen:
+         - port: 9443
+         - port: 9444
+         - port: 9445
    ```
 
 2. 重启或者重新加载 APISIX。
@@ -368,7 +369,9 @@ make: *** [deps] Error 1
 
 ```yaml
 apisix:
-  port_admin: 9180 # use a separate port
+  admin_listen: # use a separate port
+    ip: 127.0.0.1
+    port: 9180
 ```
 
 2、添加 APISIX Dashboard 的代理路由：
@@ -398,7 +401,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 你可以在 Route 中使用 `vars` 字段来匹配正则表达式：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/*",
     "vars": [
@@ -434,7 +437,7 @@ HTTP/1.1 404 Not Found
 这是支持的，下面是一个 `FQDN` 为 `httpbin.default.svc.cluster.local`（一个 Kubernetes Service）的示例：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/ip",
     "upstream": {
@@ -470,7 +473,7 @@ apisix:
 然后访问 Admin API：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: newkey' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: newkey' -X PUT -d '
 {
     "uris":[ "/*" ],
     "name":"admin-token-test",
@@ -533,7 +536,7 @@ acme.sh --renew --domain demo.domain
 在转发至上游之前移除请求路径中的前缀，比如说从 `/foo/get` 改成 `/get`，可以通过 `[proxy-rewrite](plugins/proxy-rewrite.md)` 插件来实现：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/foo/*",
     "plugins": {
@@ -591,6 +594,36 @@ apisix:
 | 当更改该 Plugin 属性后，需要应用到配置该插件的所有路由上时使用。 | 当你需要复用一组通用的插件配置时使用，可以把 Plugin 配置提取到一个 `plugin-config` 并绑定到不同的路由。 |
 | 对绑定到 Plugin 的配置实例的所有实体生效。                           | 对绑定到 `plugin-config` 的路由生效。                                                                                               |
 | 对绑定到 Plugin 的配置实例的所有实体生效。                           | 对绑定到 `plugin-config` 的路由生效。                                                                                               |
+
+## 部署了 Apache APISIX 之后，如何检测 APISIX 数据平面的存活情况（如何探活）?
+
+可以创建一个名为 `health-info` 的路由，并开启 [fault-injection](https://apisix.apache.org/zh/docs/apisix/plugins/fault-injection/) 插件（其中 YOUR-TOKEN 是用户自己的 token；127.0.0.1 是控制平面的 IP 地址，可以自行修改）:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/health-info \
+-H 'X-API-KEY: YOUR-TOKEN' -X PUT -d '
+{
+  "plugins": {
+    "fault-injection": {
+      "abort": {
+       "http_status": 200,
+       "body": "fine"
+      }
+    }
+  },
+  "uri": "/status"
+}'
+```
+
+验证方式：
+
+访问 Apache APISIX 数据平面的 `/status` 来探测 APISIX，如果 response code 是 200 就代表 APISIX 存活。
+
+:::note
+
+这个方式只是探测 APISIX 数据平面是否存活，并不代表 APISIX 的路由和其他功能是正常的，这些需要更多路由级别的探测。
+
+:::
 
 ## 如果在使用 APISIX 过程中遇到问题，我可以在哪里寻求更多帮助？
 

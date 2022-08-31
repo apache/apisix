@@ -598,6 +598,7 @@ _EOC_
             more_clear_headers Date;
         }
 
+        # this configuration is needed as error_page is configured in http block
         location \@50x.html {
             set \$from_error_page 'true';
             content_by_lua_block {

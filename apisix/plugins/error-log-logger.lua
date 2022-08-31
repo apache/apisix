@@ -66,12 +66,6 @@ local metadata_schema = {
             },
             required = {"endpoint_addr", "user", "password", "database", "logtable"}
         },
-        host = {schema_def.host_def, description = "Deprecated, use `tcp.host` instead."},
-        port = {type = "integer", minimum = 0, description = "Deprecated, use `tcp.port` instead."},
-        tls = {type = "boolean", default = false,
-                description = "Deprecated, use `tcp.tls` instead."},
-        tls_server_name = {type = "string",
-                description = "Deprecated, use `tcp.tls_server_name` instead."},
         name = {type = "string", default = plugin_name},
         level = {type = "string", default = "WARN", enum = {"STDERR", "EMERG", "ALERT", "CRIT",
                 "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"}},

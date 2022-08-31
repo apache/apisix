@@ -259,18 +259,18 @@ install: runtime
 	$(ENV_INSTALL) conf/debug.yaml /usr/local/apisix/conf/debug.yaml
 	$(ENV_INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
 
-	# Lua directories listed in alphabetical order
+	# directories listed in alphabetical order
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix
 	$(ENV_INSTALL) apisix/*.lua $(ENV_INST_LUADIR)/apisix/
-
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/include/apisix/model
-	$(ENV_INSTALL) apisix/include/apisix/model/*.proto $(ENV_INST_LUADIR)/apisix/include/apisix/model/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/admin
 	$(ENV_INSTALL) apisix/admin/*.lua $(ENV_INST_LUADIR)/apisix/admin/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/balancer
 	$(ENV_INSTALL) apisix/balancer/*.lua $(ENV_INST_LUADIR)/apisix/balancer/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/cli
+	$(ENV_INSTALL) apisix/cli/*.lua $(ENV_INST_LUADIR)/apisix/cli/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/control
 	$(ENV_INSTALL) apisix/control/*.lua $(ENV_INST_LUADIR)/apisix/control/
@@ -281,21 +281,15 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/core/dns
 	$(ENV_INSTALL) apisix/core/dns/*.lua $(ENV_INST_LUADIR)/apisix/core/dns
 
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/cli
-	$(ENV_INSTALL) apisix/cli/*.lua $(ENV_INST_LUADIR)/apisix/cli/
-
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/discovery
 	$(ENV_INSTALL) apisix/discovery/*.lua $(ENV_INST_LUADIR)/apisix/discovery/
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/discovery/{consul_kv,dns,eureka,nacos,kubernetes,tars}
 	$(ENV_INSTALL) apisix/discovery/consul_kv/*.lua $(ENV_INST_LUADIR)/apisix/discovery/consul_kv
 	$(ENV_INSTALL) apisix/discovery/dns/*.lua $(ENV_INST_LUADIR)/apisix/discovery/dns
 	$(ENV_INSTALL) apisix/discovery/eureka/*.lua $(ENV_INST_LUADIR)/apisix/discovery/eureka
-	$(ENV_INSTALL) apisix/discovery/nacos/*.lua $(ENV_INST_LUADIR)/apisix/discovery/nacos
 	$(ENV_INSTALL) apisix/discovery/kubernetes/*.lua $(ENV_INST_LUADIR)/apisix/discovery/kubernetes
+	$(ENV_INSTALL) apisix/discovery/nacos/*.lua $(ENV_INST_LUADIR)/apisix/discovery/nacos
 	$(ENV_INSTALL) apisix/discovery/tars/*.lua $(ENV_INST_LUADIR)/apisix/discovery/tars
-
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/pubsub
-	$(ENV_INSTALL) apisix/pubsub/*.lua $(ENV_INST_LUADIR)/apisix/pubsub/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/http
 	$(ENV_INSTALL) apisix/http/*.lua $(ENV_INST_LUADIR)/apisix/http/
@@ -303,11 +297,17 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/http/router
 	$(ENV_INSTALL) apisix/http/router/*.lua $(ENV_INST_LUADIR)/apisix/http/router/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/include/apisix/model
+	$(ENV_INSTALL) apisix/include/apisix/model/*.proto $(ENV_INST_LUADIR)/apisix/include/apisix/model/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins
 	$(ENV_INSTALL) apisix/plugins/*.lua $(ENV_INST_LUADIR)/apisix/plugins/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ext-plugin
 	$(ENV_INSTALL) apisix/plugins/ext-plugin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ext-plugin/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging
+	$(ENV_INSTALL) apisix/plugins/google-cloud-logging/*.lua $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/grpc-transcode
 	$(ENV_INSTALL) apisix/plugins/grpc-transcode/*.lua $(ENV_INST_LUADIR)/apisix/plugins/grpc-transcode/
@@ -320,9 +320,6 @@ install: runtime
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-count
 	$(ENV_INSTALL) apisix/plugins/limit-count/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-count/
-
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging
-	$(ENV_INSTALL) apisix/plugins/google-cloud-logging/*.lua $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/opa
 	$(ENV_INSTALL) apisix/plugins/opa/*.lua $(ENV_INST_LUADIR)/apisix/plugins/opa/
@@ -341,6 +338,12 @@ install: runtime
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/syslog
 	$(ENV_INSTALL) apisix/plugins/syslog/*.lua $(ENV_INST_LUADIR)/apisix/plugins/syslog/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/tencent-cloud-cls
+	$(ENV_INSTALL) apisix/plugins/tencent-cloud-cls/*.lua $(ENV_INST_LUADIR)/apisix/plugins/tencent-cloud-cls/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/pubsub
+	$(ENV_INSTALL) apisix/pubsub/*.lua $(ENV_INST_LUADIR)/apisix/pubsub/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/zipkin
 	$(ENV_INSTALL) apisix/plugins/zipkin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/zipkin/

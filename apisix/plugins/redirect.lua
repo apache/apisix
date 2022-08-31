@@ -166,11 +166,6 @@ local function get_port(attr)
         return port
     end
 
-    port = ssl["listen_port"]
-    if port then
-        return port
-    end
-
     local ports = ssl["listen"]
     if ports and #ports > 0 then
         local idx = math_random(1, #ports)

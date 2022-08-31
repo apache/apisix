@@ -70,3 +70,42 @@ __DATA__
             end
         }
     }
+
+
+
+=== TEST 2: add_clean_handler / cancel_clean_handler / fire_all_clean_handlers
+--- config
+    location /t {
+        content_by_lua_block {
+            local util = require("apisix.core.config_util")
+            local function setup()
+                local item = {clean_handlers = {}}
+                local idx1 = util.add_clean_handler(item, function()
+                    ngx.log(ngx.WARN, "fire one")
+                end)
+                local idx2 = util.add_clean_handler(item, function()
+                    ngx.log(ngx.WARN, "fire two")
+                end)
+                return item, idx1, idx2
+            end
+
+            local item, idx1, idx2 = setup()
+            util.cancel_clean_handler(item, idx1, true)
+            util.cancel_clean_handler(item, idx2, true)
+
+            local item, idx1, idx2 = setup()
+            util.fire_all_clean_handlers(item)
+
+            local item, idx1, idx2 = setup()
+            util.cancel_clean_handler(item, idx2)
+            util.fire_all_clean_handlers(item)
+
+            local item, idx1, idx2 = setup()
+            util.cancel_clean_handler(item, idx1)
+            util.fire_all_clean_handlers(item)
+        }
+    }
+--- grep_error_log eval
+qr/fire \w+/
+--- grep_error_log_out eval
+"fire one\nfire two\n" x 3

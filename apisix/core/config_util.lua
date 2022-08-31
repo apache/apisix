@@ -20,8 +20,10 @@
 -- @module core.config_util
 
 local core_tab = require("apisix.core.table")
+local log = require("apisix.core.log")
 local str_byte = string.byte
 local str_char = string.char
+local ipairs = ipairs
 local setmetatable = setmetatable
 local tostring = tostring
 local type = type
@@ -56,20 +58,53 @@ end
 -- or cancelled. Note that Nginx worker exit doesn't trigger the clean handler.
 -- Return an index so that we can cancel it later.
 function _M.add_clean_handler(item, func)
-    local idx = #item.clean_handlers + 1
-    item.clean_handlers[idx] = func
-    return idx
+    if not item.clean_handlers._id then
+        item.clean_handlers._id = 1
+    end
+
+    local id = item.clean_handlers._id
+    item.clean_handlers._id = item.clean_handlers._id + 1
+    core_tab.insert(item.clean_handlers, {f = func, id = id})
+    return id
 end
 
 
 -- cancel a clean handler added by add_clean_handler.
 -- If `fire` is true, call the clean handler.
 function _M.cancel_clean_handler(item, idx, fire)
-    local f = item.clean_handlers[idx]
-    core_tab.remove(item.clean_handlers, idx)
+    local pos, f
+    -- the number of pending clean handler is small so we can cancel them in O(n)
+    for i, clean_handler in ipairs(item.clean_handlers) do
+        if clean_handler.id == idx then
+            pos = i
+            f = clean_handler.f
+            break
+        end
+    end
+
+    if not pos then
+        log.error("failed to find clean_handler with idx ", idx)
+        return
+    end
+
+    core_tab.remove(item.clean_handlers, pos)
     if fire then
         f(item)
     end
+end
+
+
+-- fire all clean handlers added by add_clean_handler.
+function _M.fire_all_clean_handlers(item)
+    if not item.clean_handlers then
+        return
+    end
+
+    for _, clean_handler in ipairs(item.clean_handlers) do
+        clean_handler.f(item)
+    end
+
+    item.clean_handlers = nil
 end
 
 

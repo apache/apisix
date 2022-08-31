@@ -35,7 +35,6 @@ description: 本文介绍了关于 Apache APISIX `proxy-rewrite` 插件的基本
 
 | 名称      | 类型          | 必选项 | 默认值 | 有效值             | 描述                                                                                                                                  |
 | --------- | ------------- | ----- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| scheme    | string        | 否    | "http"  | ["http", "https"]                                                                                                                      | 不推荐使用。应该在 Upstream 的 `scheme` 字段设置上游的 `scheme`。|
 | uri       | string        | 否    |         |                                                                                                                                        | 转发到上游的新 `uri` 地址。支持 [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html) 变量，例如：`$arg_name`。  |
 | method    | string        | 否    |         | ["GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS","MKCOL", "COPY", "MOVE", "PROPFIND", "PROPFIND","LOCK", "UNLOCK", "PATCH", "TRACE"] | 将路由的请求方法代理为该请求方法。 |
 | regex_uri | array[string] | 否    |         |                                                                                                                                        | 转发到上游的新 `uri` 地址。使用正则表达式匹配来自客户端的 `uri`，如果匹配成功，则使用模板替换转发到上游的 `uri`，如果没有匹配成功，则将客户端请求的 `uri` 转发至上游。当同时配置 `uri` 和 `regex_uri` 属性时，优先使用 `uri`。例如：["^/iresty/(.*)/(.*)/(.*)","/$1-$2-$3"] 第一个元素代表匹配来自客户端请求的 `uri` 正则表达式，第二个元素代表匹配成功后转发到上游的 `uri` 模板。 |
@@ -47,7 +46,7 @@ description: 本文介绍了关于 Apache APISIX `proxy-rewrite` 插件的基本
 你可以通过如下命令在指定路由上启用 `proxy-rewrite` 插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -55,7 +54,6 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  \
     "plugins": {
         "proxy-rewrite": {
             "uri": "/test/home.html",
-            "scheme": "http",
             "host": "iresty.com",
             "headers": {
                 "X-Api-Version": "v1",
@@ -92,7 +90,7 @@ curl -X GET http://127.0.0.1:9080/test/index.html
 当你需要禁用 `proxy-rewrite` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/test/index.html",

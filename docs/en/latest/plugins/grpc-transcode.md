@@ -61,7 +61,7 @@ Before enabling the Plugin, you have to add the content of your `.proto` or `.pb
 You can use the `/admin/protos/id` endpoint and add the contents of the file to the `content` field:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/protos/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/protos/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "content" : "syntax = \"proto3\";
     package helloworld;
@@ -122,7 +122,7 @@ api_key = "edd1c9f034335f136f87ad84b625c8f1" # use a different API key
 reqParam = {
     "content": content,
 }
-resp = requests.put("http://127.0.0.1:9080/apisix/admin/protos/" + id, json=reqParam, headers={
+resp = requests.put("http://127.0.0.1:9180/apisix/admin/protos/" + id, json=reqParam, headers={
     "X-API-KEY": api_key,
 })
 print(resp.status_code)
@@ -151,7 +151,7 @@ Response:
 Now, we can enable the `grpc-transcode` Plugin to a specific Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/grpctest",
@@ -205,7 +205,7 @@ Proxy-Connection: keep-alive
 You can also configure the `pb_option` as shown below:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/23 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/23 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/zeebe/WorkflowInstanceCreate",
@@ -253,7 +253,7 @@ Trailer: grpc-message
 To disable the `grpc-transcode` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/grpctest",
     "plugins": {},

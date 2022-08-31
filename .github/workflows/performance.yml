@@ -13,7 +13,7 @@ permissions:
 jobs:
   performance:
     if: github.event_name == 'pull_request' && github.event.label.name == 'performance'
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 45
 
     steps:

@@ -48,7 +48,7 @@ The current SASL authentication only supports PLAIN mode, which is the username 
 When we use scheme as the upstream of kafka, we can add kafka authentication configuration to it through this plugin.
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{

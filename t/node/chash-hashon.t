@@ -51,13 +51,11 @@ __DATA__
                     }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "plugins": {
-                                "key-auth": {
-                                    "key": "auth-jack"
-                                }
+                    "value": {
+                        "username": "jack",
+                        "plugins": {
+                            "key-auth": {
+                                "key": "auth-jack"
                             }
                         }
                     }
@@ -81,13 +79,11 @@ __DATA__
                     }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "tom",
-                            "plugins": {
-                                "key-auth": {
-                                    "key": "auth-tom"
-                                }
+                    "value": {
+                        "username": "tom",
+                        "plugins": {
+                            "key-auth": {
+                                "key": "auth-tom"
                             }
                         }
                     }

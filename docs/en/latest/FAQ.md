@@ -118,7 +118,7 @@ There are two different ways to achieve this in Apache APISIX:
 1. Using the `vars` field in a [Route](terminology/route.md):
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -131,7 +131,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
     }
 }'
 
-curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -158,7 +158,7 @@ Apache APISIX provides several different ways to achieve this:
 1. Setting `http_to_https` to `true` in the [redirect](plugins/redirect.md) Plugin:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -173,7 +173,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 2. Advanced routing with `vars` in the redirect Plugin:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -196,7 +196,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 3. Using the `serverless` Plugin:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -267,15 +267,16 @@ To configure Apache APISIX to listen on multiple ports, you can:
         - 9082
    ```
 
-   Similarly for HTTPS requests, modify the parameter `ssl.listen_port` in `conf/config.yaml`:
+   Similarly for HTTPS requests, modify the parameter `ssl.listen` in `conf/config.yaml`:
 
    ```
    apisix:
      ssl:
-       listen_port:
-         - 9443
-         - 9444
-         - 9445
+       enable: true
+       listen:
+         - port: 9443
+         - port: 9444
+         - port: 9445
    ```
 
 2. Reload or restart Apache APISIX.
@@ -365,7 +366,9 @@ You can follow the steps below to configure this:
 
 ```yaml
 apisix:
-  port_admin: 9180 # use a separate port
+  admin_listen: # use a separate port
+    ip: 127.0.0.1
+    port: 9180
 ```
 
 2. Add a proxy Route for the Apache APISIX dashboard:
@@ -395,7 +398,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 You can use the `vars` field in a Route for matching regular expressions:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/*",
     "vars": [
@@ -431,7 +434,7 @@ For more info on using `vars` refer to [lua-resty-expr](https://github.com/api7/
 Yes. The example below shows configuring the FQDN `httpbin.default.svc.cluster.local` (a Kubernetes service):
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/ip",
     "upstream": {
@@ -469,7 +472,7 @@ apisix:
 Now, to access the Admin API:
 
 ```shell
-$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: newkey' -X PUT -d '
+$ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: newkey' -X PUT -d '
 {
     "uris":[ "/*" ],
     "name":"admin-token-test",
@@ -532,7 +535,7 @@ You can check [this post](https://juejin.cn/post/6965778290619449351) for a more
 To strip a prefix from a path in your route, like to take `/foo/get` and strip it to `/get`, you can use the [proxy-rewrite](plugins/proxy-rewrite.md) Plugin:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/foo/*",
     "plugins": {
@@ -590,6 +593,36 @@ The differences between the two are described in the table below:
 | Metadata of a Plugin shared by all configuration instances of the Plugin.                                        | Collection of configuration instances of multiple different Plugins.                                                                                |
 | Used when there are property changes that needs to be propagated across all configuration instances of a Plugin. | Used when you need to reuse a common set of configuration instances so that it can be extracted to a `plugin-config` and bound to different Routes. |
 | Takes effect on all the entities bound to the configuration instances of the Plugin.                             | Takes effect on Routes bound to the `plugin-config`.                                                                                                |
+
+## After deploying Apache APISIX, how to detect the survival of the APISIX data plane?
+
+You can create a route named `health-info` and enable the [fault-injection](https://apisix.apache.org/docs/apisix/plugins/fault-injection/) plugin (where YOUR-TOKEN is the user's token; 127.0.0.1 is the IP address of the control plane, which can be modified by yourself):
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/health-info \
+-H 'X-API-KEY: YOUR-TOKEN' -X PUT -d '
+{
+   "plugins": {
+     "fault-injection": {
+       "abort": {
+        "http_status": 200,
+        "body": "fine"
+       }
+     }
+   },
+   "uri": "/status"
+}'
+````
+
+Verification:
+
+Access the `/status` of the Apache APISIX data plane to detect APISIX. If the response code is 200, it means APISIX is alive.
+
+:::note
+
+This method only detects whether the APISIX data plane is alive or not. It does not mean that the routing and other functions of APISIX are normal. These require more routing-level detection.
+
+:::
 
 ## Where can I find more answers?
 

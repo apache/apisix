@@ -22,7 +22,7 @@ import http.client
 import json
 import random
 import threading
-from public import check_leak, LEAK_COUNT, run_test
+from public import check_leak, LEAK_COUNT, run_test, connect_admin
 
 
 REQ_PER_THREAD = 50
@@ -40,7 +40,7 @@ def create_route():
             }
         }
     })
-    conn = http.client.HTTPConnection("127.0.0.1", port=9080)
+    conn = connect_admin()
     conn.request("PUT", "/apisix/admin/consumers", conf,
             headers={
                 "X-API-KEY":"edd1c9f034335f136f87ad84b625c8f1",
@@ -49,7 +49,7 @@ def create_route():
     assert response.status <= 300, response.read()
 
     for i in range(TOTOL_ROUTES):
-        conn = http.client.HTTPConnection("127.0.0.1", port=9080)
+        conn = connect_admin()
         i = str(i)
         conf = json.dumps({
             "uri": "/*",

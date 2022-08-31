@@ -302,11 +302,6 @@ http {
     lua_shared_dict {*cache_key*} {*cache_size*};
     {% end %}
     {% end %}
-    {% if http.lua_shared_dicts then %}
-    {% for cache_key, cache_size in pairs(http.lua_shared_dicts) do %}
-    lua_shared_dict {*cache_key*} {*cache_size*};
-    {% end %}
-    {% end %}
 
     {% if enabled_plugins["error-log-logger"] then %}
         lua_capture_error_log  10m;
@@ -353,10 +348,7 @@ http {
     # error_page
     error_page 500 @50x.html;
 
-    {% if real_ip_header then %}
-    real_ip_header {* real_ip_header *};
-    {% print("\nDeprecated: apisix.real_ip_header has been moved to nginx_config.http.real_ip_header. apisix.real_ip_header will be removed in the future version. Please use nginx_config.http.real_ip_header first.\n\n") %}
-    {% elseif http.real_ip_header then %}
+    {% if http.real_ip_header then %}
     real_ip_header {* http.real_ip_header *};
     {% end %}
 
@@ -364,12 +356,7 @@ http {
     real_ip_recursive {* http.real_ip_recursive *};
     {% end %}
 
-    {% if real_ip_from then %}
-    {% print("\nDeprecated: apisix.real_ip_from has been moved to nginx_config.http.real_ip_from. apisix.real_ip_from will be removed in the future version. Please use nginx_config.http.real_ip_from first.\n\n") %}
-    {% for _, real_ip in ipairs(real_ip_from) do %}
-    set_real_ip_from {*real_ip*};
-    {% end %}
-    {% elseif http.real_ip_from then %}
+    {% if http.real_ip_from then %}
     {% for _, real_ip in ipairs(http.real_ip_from) do %}
     set_real_ip_from {*real_ip*};
     {% end %}
@@ -497,7 +484,7 @@ http {
     }
     {% end %}
 
-    {% if enable_admin and admin_server_addr then %}
+    {% if enable_admin then %}
     server {
         {%if https_admin then%}
         listen {* admin_server_addr *} ssl;
@@ -596,7 +583,7 @@ http {
         listen {* proxy_protocol.listen_http_port *} default_server proxy_protocol;
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_https_port then %}
-        listen {* proxy_protocol.listen_https_port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} proxy_protocol;
+        listen {* proxy_protocol.listen_https_port *} ssl default_server proxy_protocol;
         {% end %}
 
         server_name _;
@@ -633,27 +620,6 @@ http {
             access_log off;
             stub_status;
         }
-
-        {% if enable_admin and not admin_server_addr then %}
-        location /apisix/admin {
-            set $upstream_scheme             'http';
-            set $upstream_host               $http_host;
-            set $upstream_uri                '';
-
-            {%if allow_admin then%}
-                {% for _, allow_ip in ipairs(allow_admin) do %}
-                allow {*allow_ip*};
-                {% end %}
-                deny all;
-            {%else%}
-                allow all;
-            {%end%}
-
-            content_by_lua_block {
-                apisix.http_admin()
-            }
-        }
-        {% end %}
 
         {% if ssl.enable then %}
         ssl_certificate_by_lua_block {

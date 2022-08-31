@@ -443,12 +443,13 @@ Location: https://foo.com:8443/hello
 
 
 
-=== TEST 19: redirect(port using `apisix.ssl.listen_port`)
+=== TEST 19: redirect(port using `apisix.ssl.listen`)
 --- yaml_config
 apisix:
     ssl:
         enable: true
-        listen_port: 9445
+        listen:
+            - port: 9445
 --- request
 GET /hello
 --- more_headers

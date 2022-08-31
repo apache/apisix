@@ -47,7 +47,6 @@ local etcd_schema = {
         },
         prefix = {
             type = "string",
-            pattern = [[^/[^/]+$]]
         },
         host = {
             type = "array",
@@ -134,11 +133,18 @@ local config_schema = {
                         }
                     }
                 },
-                port_admin = {
-                    type = "integer",
-                },
                 https_admin = {
                     type = "boolean",
+                },
+                admin_listen = {
+                    properties = {
+                        listen = { type = "string" },
+                        port = { type = "integer" },
+                    },
+                    default = {
+                        listen = "0.0.0.0",
+                        port = 9180,
+                    }
                 },
                 stream_proxy = {
                     type = "object",
@@ -209,6 +215,25 @@ local config_schema = {
                     properties = {
                         ssl_trusted_certificate = {
                             type = "string",
+                        },
+                        listen = {
+                            type = "array",
+                            items = {
+                                type = "object",
+                                properties = {
+                                    ip = {
+                                        type = "string",
+                                    },
+                                    port = {
+                                        type = "integer",
+                                        minimum = 1,
+                                        maximum = 65535
+                                    },
+                                    enable_http2 = {
+                                        type = "boolean",
+                                    }
+                                }
+                            }
                         }
                     }
                 },
