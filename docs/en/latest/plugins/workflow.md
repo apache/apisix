@@ -38,7 +38,7 @@ The `workflow` plugin is used to introduce [lua-resty-expr](https://github.com/a
 | rules.case                   | array[array]  | True     |         |              | List of variables to match for filtering requests for conditional traffic split. It is in the format `{variable operator value}`. For example, `{"arg_name", "==", "json"}`. The variables here are consistent with NGINX internal variables. For details on supported operators, you can refer to [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
 | rules.actions                | array[object] | True     |         |              | The action to be performed when the case matches successfully. Currently, only one element is supported in actions. The first child element of the actions' only element can be `return` or `limit-count`. |
 
-## `actions` Attributes
+### `actions` Attributes
 
 #### return
 
