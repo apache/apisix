@@ -31,7 +31,7 @@ description: 本文介绍了关于 API 网关 Apache APISIX serverless-pre-funct
 
 APISIX 有两个 `serverless` 插件：`serverless-pre-function` 和 `serverless-post-function`。
 
-`serverless-pre-function` 会在指定阶段开始时运行，`serverless-post-function` 后者是在指定阶段的最后运行。这两个插件使用相同的属性值。
+`serverless-pre-function` 会在指定阶段开始时运行，`serverless-post-function` 后者是在指定阶段结束时运行。这两个插件使用相同的属性。
 
 ## 属性
 
@@ -52,7 +52,7 @@ return function()
 end
 ```
 
-Closures 也是合法的：
+闭包也是合法的：
 
 ```lua
 local count = 1
