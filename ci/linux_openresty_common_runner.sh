@@ -62,8 +62,6 @@ do_install() {
 
     # install vault cli capabilities
     install_vault_cli
-
-    download_saml_test_files
 }
 
 script() {
@@ -87,15 +85,7 @@ script() {
         sleep 1
     done
 
-    # wait for keycloak ready
-    bash -c 'while true; do curl -s localhost:8080 &>/dev/null; ret=$?; [[ $ret -eq 0 ]] && break; sleep 3; done'
-
-    # configure keycloak for test
-    wget https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -O jq
-    chmod +x jq
-    docker cp jq keycloak:/usr/bin/
-    docker cp t/kcadm_configure.sh keycloak:/tmp/
-    docker exec keycloak bash /tmp/kcadm_configure.sh
+    wget https://raw.githubusercontent.com/api7/lua-resty-saml/main/t/lib/keycloak.lua -O t/lib/keycloak2.lua
 
     # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
     FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r $TEST_FILE_SUB_DIR | tee /tmp/test.result

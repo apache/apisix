@@ -33,6 +33,9 @@ RUN set -x \
     git \
     openldap-dev \
     pcre-dev \
+    libxml2-dev \
+    libxslt-dev \
+    openssl-dev \
     && cd apisix \
     && git config --global url.https://github.com/.insteadOf git://github.com/ \
     && make deps \
@@ -52,7 +55,9 @@ RUN set -x \
         libstdc++ \
         openldap \
         pcre \
-        tzdata
+        tzdata \
+        libxml2 \
+        libxslt
 
 WORKDIR /usr/local/apisix
 

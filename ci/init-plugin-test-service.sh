@@ -41,3 +41,14 @@ docker exec -i rmqnamesrv /home/rocketmq/rocketmq-4.6.0/bin/mqadmin updateTopic 
 
 # prepare vault kv engine
 docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault secrets enable -path=kv -version=1 kv"
+
+# wait for keycloak ready
+bash -c 'while true; do curl -s localhost:8080 &>/dev/null; ret=$?; [[ $ret -eq 0 ]] && break; sleep 3; done'
+
+# configure keycloak for test
+wget https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -O jq
+chmod +x jq
+docker cp jq keycloak:/usr/bin/
+wget https://raw.githubusercontent.com/api7/lua-resty-saml/main/t/kcadm_configure.sh
+docker cp kcadm_configure.sh keycloak:/tmp/
+docker exec keycloak bash /tmp/kcadm_configure.sh

@@ -54,7 +54,7 @@ local plugin_name = "saml-auth"
 
 local _M = {
     version = 0.1,
-    priority = 2599,
+    priority = 2598,
     name = plugin_name,
     schema = schema,
 }

@@ -416,7 +416,7 @@ plugins:                          # plugin list (sorted by priority)
   - uri-blocker                    # priority: 2900
   - request-validation             # priority: 2800
   - openid-connect                 # priority: 2599
-  - saml-auth                      # priority: 2599
+  - saml-auth                      # priority: 2598
   - authz-casbin                   # priority: 2560
   - authz-casdoor                  # priority: 2559
   - wolf-rbac                      # priority: 2555

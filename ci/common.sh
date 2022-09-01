@@ -125,11 +125,6 @@ set_coredns() {
 
 GRPC_SERVER_EXAMPLE_VER=20210819
 
-download_saml_test_files() {
-    wget https://raw.githubusercontent.com/api7/lua-resty-saml/main/t/kcadm_configure.sh -O t/kcadm_configure.sh
-    wget https://raw.githubusercontent.com/api7/lua-resty-saml/main/t/lib/keycloak.lua -O t/lib/keycloak2.lua
-}
-
 linux_get_dependencies () {
     apt update
     apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev \
