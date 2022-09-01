@@ -34,7 +34,7 @@ add_block_preprocessor(sub {
     local producer = require("resty.kafka.producer")
     local inject = function(mod, name)
         local old_f = mod[name]
-        mod[name] = function (...)
+        mod[name] = function(...)
             ngx.say("success")
             return old_f(...)
         end
@@ -608,7 +608,7 @@ qr/partition_id: 2/]
 
 
 
-=== TEST 20: sasl simple send
+=== TEST 20: user sasl create producer
 --- config
     location /t {
         content_by_lua_block {
