@@ -22,7 +22,7 @@ no_root_location();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
-
+    
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -30,6 +30,19 @@ add_block_preprocessor(sub {
     if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
         $block->set_value("no_error_log", "[error]");
     }
+ my $extra_init_by_lua = <<_EOC_;
+    local producer = require("resty.kafka.producer")
+    local inject = function(mod, name)
+        local old_f = mod[name]
+        mod[name] = function (...)
+            ngx.say("success")
+            return old_f(...)
+        end
+    end
+    inject(producer, "new")
+_EOC_
+
+    $block->set_value("extra_init_by_lua", $extra_init_by_lua);
 });
 
 run_tests;
@@ -596,7 +609,6 @@ qr/partition_id: 2/]
 
 
 === TEST 20: sasl simple send
---- http_config eval: $::HttpConfig
 --- config
     location /t {
         content_by_lua_block {
@@ -613,19 +625,18 @@ qr/partition_id: 2/]
                     }
                 }
             }
-            local message = "halo world"
-            local p = producer:new(broker_list)
-            local offset, err = p:send("test2", nil, message)
-            if not offset then
-                ngx.say("send err:", err)
+--- extra_init_by_lua
+            local producer = producer:new(broker_list)
+            if not producer then
+                ngx.say("err: producer not created ")
                 return
             end
-            ngx.say("offset: ", tostring(offset))
+            ngx.say("success")
         }
     }
 --- request
 GET /t
 --- response_body_like
-.*offset.*
+success
 --- error_log_like eval
-[error]
+producer not created
