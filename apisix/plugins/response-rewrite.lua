@@ -276,14 +276,12 @@ function _M.body_filter(conf, ctx)
     end
 
     if conf.body then
-
+        ngx.arg[2] = true
         if conf.body_base64 then
             ngx.arg[1] = ngx.decode_base64(conf.body)
         else
             ngx.arg[1] = conf.body
         end
-
-        ngx.arg[2] = true
     end
 end
 
