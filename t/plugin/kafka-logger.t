@@ -593,3 +593,38 @@ qr/partition_id: 2/]
 [qr/partition_id: 1/,
 qr/partition_id: 0/,
 qr/partition_id: 2/]
+
+
+
+=== TEST 20: user sasl create producer
+--- config
+    location /t {
+        content_by_lua_block {
+            local producer = require "resty.kafka.producer"
+            local broker_list = {
+                {
+                    host = "127.0.0.1",
+                    port = 9092,
+                    sasl_config = {
+                        mechanism = "PLAIN",
+                        strategy = "sasl",
+                        user = "admin",
+                        password = "admin-secret"
+                    }
+                }
+            }
+--- extra_init_by_lua
+            local producer = producer:new(broker_list)
+            if not producer then
+                ngx.say("err: producer not created ")
+                return
+            end
+            ngx.say("success")
+        }
+    }
+--- request
+GET /t
+--- response_body_like
+success
+--- error_log_like eval
+producer not created
