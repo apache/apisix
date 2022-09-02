@@ -30,7 +30,25 @@ add_block_preprocessor(sub {
     if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
         $block->set_value("no_error_log", "[error]");
     }
+    if (!$block->extra_init_by_lua) {
+        my $extra_init_by_lua = <<_EOC_;
+    local producer = require("resty.kafka.producer")
+    local inject = function(mod, name)
+        local old_f = mod[name]
+        mod[name] = function(...)
+            ngx.say("passed")
+            return old_f(...)
+        end
+    end
+    inject(producer, "new")
+-- mock exporter producer
+producer.send = function()
+    ngx.say("passed")
+end
+_EOC_
 
+        $block->set_value("extra_init_by_lua", $extra_init_by_lua);
+    }
 });
 
 run_tests;
@@ -625,6 +643,6 @@ qr/partition_id: 2/]
 --- request
 GET /t
 --- response_body_like
-success
+passed
 --- error_log_like eval
 producer not created
