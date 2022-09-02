@@ -471,6 +471,7 @@ plugins:                          # plugin list (sorted by priority)
   - aws-lambda                     # priority: -1899
   - azure-functions                # priority: -1900
   - openwhisk                      # priority: -1901
+  - openfunction                   # priority: -1902
   - serverless-post-function       # priority: -2000
   - ext-plugin-post-req            # priority: -3000
   - ext-plugin-post-resp           # priority: -4000

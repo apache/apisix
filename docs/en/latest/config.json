@@ -163,7 +163,8 @@
             "plugins/azure-functions",
             "plugins/openwhisk",
             "plugins/aws-lambda",
-            "plugins/workflow"
+            "plugins/workflow",
+            "plugins/openfunction"
           ]
         },
         {
