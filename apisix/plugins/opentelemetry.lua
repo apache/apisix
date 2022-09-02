@@ -280,19 +280,21 @@ local function create_tracer_obj(conf)
 end
 
 
-local function inject_attributes(attributes, wanted_attributes, source)
+local function inject_attributes(attributes, wanted_attributes, source, with_prefix)
     for _, key in ipairs(wanted_attributes) do
-        local is_key_a_match = #key >= 2 and key:sub(-1, -1) == "*"
-        local prefix = key:sub(0, -2)
-        local val = source[key]
-        if val then
-            core.table.insert(attributes, attr.string(key, val))
-        end
+        local is_key_a_match = #key >= 2 and key:sub(-1, -1) == "*" and with_prefix
+
         if is_key_a_match then
+            local prefix = key:sub(0, -2)
             for possible_key, value in pairs(source) do
                 if core.string.has_prefix(possible_key, prefix) then
                     core.table.insert(attributes, attr.string(possible_key, value))
                 end
+            end
+        else
+            local val = source[key]
+            if val then
+                core.table.insert(attributes, attr.string(key, val))
             end
         end
     end
@@ -314,14 +316,15 @@ function _M.rewrite(conf, api_ctx)
     }
 
     if conf.additional_attributes then
-        inject_attributes(attributes, conf.additional_attributes, api_ctx.var)
+        inject_attributes(attributes, conf.additional_attributes, api_ctx.var, false)
     end
 
     if conf.additional_header_attributes then
         inject_attributes(
             attributes,
             conf.additional_header_attributes,
-            core.request.headers(api_ctx)
+            core.request.headers(api_ctx),
+            true
         )
     end
 
