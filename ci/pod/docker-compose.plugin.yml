@@ -43,6 +43,15 @@ services:
       apisix_net:
 
   ## keycloak
+  # The keycloak official has two types of docker images:
+  # * legacy WildFly distribution
+  # * new Quarkus based distribution
+  # Here we choose new version, because it's mainstream and
+  # supports kcadm.sh to init the container for test.
+  # And, it's for SAML test only.
+  # The original keycloak service `apisix_keycloak` is
+  # third-party personal customized image and for OIDC test only.
+  # We should unify both containers in future.
   apisix_keycloak_for_saml:
     container_name: keycloak
     image: quay.io/keycloak/keycloak:18.0.2

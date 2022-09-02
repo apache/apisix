@@ -21,6 +21,19 @@ repeat_each(1);
 no_long_string();
 no_root_location();
 no_shuffle();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+});
+
 run_tests;
 
 __DATA__
@@ -60,12 +73,8 @@ __DATA__
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -103,16 +112,12 @@ passed
             end
         }
     }
---- request
-GET /t
 --- response_body_like
 uri: /uri
 cookie: .*
 host: 127.0.0.1:1984
 user-agent: .*
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 
 
 
@@ -151,12 +156,8 @@ x-real-ip: 127.0.0.1
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -212,8 +213,3 @@ passed
             end
         }
     }
---- request
-GET /t
---- error_code: 200
---- no_error_log
-[error]

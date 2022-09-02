@@ -25,7 +25,6 @@ local lrucache = core.lrucache.new({
 
 local schema = {
     type = "object",
-    title = "work with route or service object",
     properties = {
         sp_issuer = { type = "string" },
         idp_uri = { type = "string" },
@@ -75,7 +74,7 @@ function _M.rewrite(conf, ctx)
         })
         if err then
             core.log.error("saml init: ", err)
-            return 500
+            return 503
         end
         is_resty_saml_init = true
     end
