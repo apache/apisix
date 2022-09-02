@@ -127,6 +127,8 @@ function _M.rewrite(plugin_conf, ctx)
     local b3 = headers["b3"]
     if b3 then
         -- don't pass b3 header by default
+        -- TODO: add an option like 'single_b3_header' so we can adapt to the upstream
+        -- which doesn't support b3 header without always breaking down the header
         core.request.set_header(ctx, "b3", nil)
 
         local err
@@ -158,6 +160,12 @@ function _M.rewrite(plugin_conf, ctx)
     ctx.opentracing_sample = tracer.sampler:sample(per_req_sample_ratio or conf.sample_ratio)
     if not ctx.opentracing_sample then
         core.request.set_header(ctx, "x-b3-sampled", "0")
+        -- pass the trace ids even the sample is rejected
+        -- see https://github.com/openzipkin/b3-propagation#why-send-
+        -- trace-ids-with-a-reject-sampling-decision
+        core.request.set_header(ctx, "x-b3-traceid", trace_id)
+        core.request.set_header(ctx, "x-b3-parentspanid", parent_span_id)
+        core.request.set_header(ctx, "x-b3-spanid", request_span_id)
         return
     end
 
