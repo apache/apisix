@@ -71,6 +71,7 @@
             "plugins/authz-casdoor",
             "plugins/wolf-rbac",
             "plugins/openid-connect",
+            "plugins/saml-auth",
             "plugins/hmac-auth",
             "plugins/authz-casbin",
             "plugins/ldap-auth",

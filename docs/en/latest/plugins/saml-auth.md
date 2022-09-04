@@ -42,7 +42,7 @@ to do authentication, from the SP (service provider) perspective.
 | `login_callback_uri`      | string       | True      | redirect uri used to callback the SP from IdP after login.       |
 | `logout_uri`      | string       | True      | logout uri to trigger logout.       |
 | `logout_callback_uri`      | string       | True      | redirect uri used to callback the SP from IdP after logout.       |
-| `logout_redirect_uri`      | string       | True      | redirect uri after sucessful logout.       |
+| `logout_redirect_uri`      | string       | True      | redirect uri after successful logout.       |
 | `sp_cert`      | string       | True      | SP Certificate, used to sign the saml request.       |
 | `sp_private_key`      | string       | True      | SP private key.       |
 
@@ -98,7 +98,7 @@ Finally, the user would be redirected to `logout_redirect_uri`.
 
 Note that, `login_callback_uri`, `logout_callback_uri`, `logout_uri` and `logout_redirect_uri` should be
 either full qualified address (e.g. `http://127.0.0.1:9080/anything/logout`),
-or path only (e.g. `/logout`), but it is recommanded to be path only to keep consistent.
+or path only (e.g. `/logout`), but it is recommended to be path only to keep consistent.
 
 These uris need to be captured by the route where the current APISIX is located.
 For example, if the `uri` of the current route is `/api/v1/*`, `login_callback_uri` can be filled in as `/api/v1/login_callback`.
