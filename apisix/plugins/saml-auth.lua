@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local resty_saml = require("resty.saml")
 
 local is_resty_saml_init = false
@@ -70,7 +71,7 @@ function _M.rewrite(conf, ctx)
     if not is_resty_saml_init then
         local err = resty_saml.init({
             debug = true,
-            data_dir = ctx.var.saml_data_dir,
+            data_dir = constants.saml_data_dir,
         })
         if err then
             core.log.error("saml init: ", err)

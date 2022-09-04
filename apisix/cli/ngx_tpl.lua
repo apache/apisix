@@ -436,6 +436,11 @@ http {
             dns_resolver = dns_resolver,
         }
         apisix.http_init(args)
+
+        {% if enabled_plugins["saml-auth"] then %}
+        local constants = require("apisix.constants")
+        constants.saml_data_dir = "{*apisix_lua_home*}/deps/share/lua/5.1/resty/saml"
+        {% end %}
     }
 
     init_worker_by_lua_block {
@@ -662,10 +667,6 @@ http {
             set $dubbo_service_name          '';
             set $dubbo_service_version       '';
             set $dubbo_method                '';
-            {% end %}
-
-            {% if enabled_plugins["saml-auth"] then %}
-            set $saml_data_dir               {*apisix_lua_home*}/deps/share/lua/5.1/resty/saml;
             {% end %}
 
             access_by_lua_block {
