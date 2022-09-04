@@ -696,3 +696,49 @@ passed
 passed
 passed
 passed
+
+
+
+=== TEST 23: set mirror requests host to domain
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-mirror": {
+                               "host": "http://httpbin.org",
+                               "parh": "/get"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- response_body
+passed
+
+
+
+=== TEST 24: hit route resolver domain
+--- request
+GET /hello
+--- error_code: 200
+--- response_body
+hello world
+--- error_log
+http://httpbin.org is resolved to:

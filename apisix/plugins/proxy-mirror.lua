@@ -15,6 +15,8 @@
 -- limitations under the License.
 --
 local core          = require("apisix.core")
+local url           = require("net.url")
+
 local math_random = math.random
 local has_mod, apisix_ngx_client = pcall(require, "resty.apisix.client")
 
@@ -59,9 +61,22 @@ function _M.check_schema(conf)
 end
 
 
+local function resolver_host(prop_host)
+    local url_decoded = url.parse(prop_host)
+    if not core.utils.parse_ipv4(url_decoded.host) and not core.utils.parse_ipv6(url_decoded.host) then
+        local ip = core.resolver.parse_domain(url_decoded.host)
+        local host = url_decoded.scheme .. '://' .. ip .. (url_decoded.port and ':' .. url_decoded.port or '')
+        core.log.info(prop_host, " is resolved to: ", host)
+        return host
+    end
+    
+    return prop_host
+end
+
+
 local function enable_mirror(ctx, conf)
     ctx.var.upstream_mirror_uri =
-        conf.host .. (conf.path or ctx.var.uri) .. ctx.var.is_args .. (ctx.var.args or '')
+        resolver_host(conf.host) .. (conf.path or ctx.var.uri) .. ctx.var.is_args .. (ctx.var.args or '')
 
     if has_mod then
         apisix_ngx_client.enable_mirror()
