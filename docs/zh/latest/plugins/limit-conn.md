@@ -4,7 +4,7 @@ keywords:
   - APISIX
   - API 网关
   - Limit Connection
-description: 本文介绍了 Apache APISIX limit-conn 插件的相关操作，你可以使用此插件限制对你的服务的并发请求数。
+description: 本文介绍了 Apache APISIX limit-conn 插件的相关操作，你可以使用此插件限制客户端对服务的并发请求数。
 ---
 
 <!--
@@ -28,7 +28,7 @@ description: 本文介绍了 Apache APISIX limit-conn 插件的相关操作，�
 
 ## 描述
 
-`limit-conn` 插件用于限制对服务的并发请求数。
+`limit-conn` 插件用于限制客户端对服务的并发请求数。
 
 ## 属性
 
@@ -42,7 +42,7 @@ description: 本文介绍了 Apache APISIX limit-conn 插件的相关操作，�
 | key           | string  | 是   |        |  | 用来做请求计数的依据。如果 `key_type` 为 `"var"`，那么 `key` 会被当作变量名称，如 `remote_addr` 和 `consumer_name`；如果 `key_type` 为 `"var_combination"`，那么 `key` 会当作变量组合，如 `$remote_addr $consumer_name`；如果 `key` 的值为空，`$remote_addr` 会被作为默认 `key`。 |
 | rejected_code      | string  | 否 | 503    | [200,...,599]                                                                             | 当请求数超过 `conn` + `burst` 阈值时，返回的 HTTP 状态码。                                                                                                                                                                |
 | rejected_msg       | string | 否                                |            | 非空                                          | 当请求数超过 `conn` + `burst` 阈值时，返回的响应体。                                                                                                                                                                     |
-| allow_degradation              | boolean  | 否                                | false       |                                                                     | 当插件功能临时不可用时是否允许请求继续。当设置为 `true` 时，启用插件降级并自动允许请求继续。                                                                                                                                                    |
+| allow_degradation              | boolean  | 否                                | false       |                                                                     | 当设置为 `true` 时，启用插件降级并自动允许请求继续。                                                                                                                                                    |
 
 ## 启用插件
 
@@ -104,7 +104,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ## 测试插件
 
-按上述配置启用插件后，服务只允许一个并发请求，当收到多个并发请求时，将直接返回 `503` HTTP 状态码，拒绝请求。
+按上述配置启用插件后，服务将只允许一个并发请求；当收到多个并发请求时，将直接返回 `503` HTTP 状态码，拒绝请求。
 
 ```shell
 curl -i http://127.0.0.1:9080/index.html?sleep=20 &
@@ -126,7 +126,7 @@ curl -i http://127.0.0.1:9080/index.html?sleep=20
 
 Apache APISIX 支持 WebSocket 代理，我们可以使用 `limit-conn` 插件限制 WebSocket 连接的并发数。
 
-1、创建路由并启用 WebSocket 代理和 `limit-conn` 插件：
+1、创建路由并启用 WebSocket 代理和 `limit-conn` 插件。
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -155,7 +155,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 上述路由在 `/ws` 上开启了 WebSocket 代理，并限制了 WebSocket 连接并发数为 1，超过 1 个并发的 WebSocket 连接将返回 `503` 拒绝请求。
 
-2、发起 WebSocket 请求，返回 `101` HTTP 状态码表示连接建立成功：
+2、发起 WebSocket 请求，返回 `101` HTTP 状态码表示连接建立成功。
 
 ```shell
 curl --include \
@@ -172,7 +172,7 @@ curl --include \
 HTTP/1.1 101 Switching Protocols
 ```
 
-3、在另一个终端中再次发起 WebSocket 请求，返回 `503` HTTP 状态码表示请求将被拒绝：
+3、在另一个终端中再次发起 WebSocket 请求，返回 `503` HTTP 状态码表示请求将被拒绝。
 
 ```shell
 HTTP/1.1 503 Service Temporarily Unavailable
@@ -186,7 +186,7 @@ HTTP/1.1 503 Service Temporarily Unavailable
 </html>
 ```
 
-## 移除插件
+## 禁用插件
 
 当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
