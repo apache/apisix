@@ -17,13 +17,21 @@
 # If you want to set the specified configuration value, you can set the new
 # in this file. For example if you want to specify the etcd address:
 #
-# etcd:
+# deployment:
+#   role: traditional
+#   role_traditional:
+#     config_provider: etcd
+#   etcd:
 #     host:
 #       - http://127.0.0.1:2379
 #
 # To configure via environment variables, you can use `${{VAR}}` syntax. For instance:
 #
-# etcd:
+# deployment:
+#   role: traditional
+#   role_traditional:
+#     config_provider: etcd
+#   etcd:
 #     host:
 #       - http://${{ETCD_HOST}}:2379
 #
@@ -34,7 +42,11 @@
 # Also, If you want to use default value when the environment variable not set,
 # Use `${{VAR:=default_value}}` instead. For instance:
 #
-# etcd:
+# deployment:
+#   role: traditional
+#   role_traditional:
+#     config_provider: etcd
+#   etcd:
 #     host:
 #       - http://${{ETCD_HOST:=localhost}}:2379
 #

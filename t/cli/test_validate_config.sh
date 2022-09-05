@@ -205,9 +205,13 @@ fi
 echo "passed: check the realip configuration for batch-requests"
 
 echo '
-etcd:
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
     host:
-        - 127.0.0.1
+      - 127.0.0.1
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)

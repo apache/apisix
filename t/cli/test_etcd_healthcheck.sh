@@ -30,11 +30,15 @@ if [ -z "logs/error.log" ]; then
 fi
 
 echo '
-etcd:
-  host:
-    - "http://127.0.0.1:23790"
-    - "http://127.0.0.1:23791"
-    - "http://127.0.0.1:23792"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:23790"
+      - "http://127.0.0.1:23791"
+      - "http://127.0.0.1:23792"
   health_check_timeout: '"$HEALTH_CHECK_RETRY_TIMEOUT"'
   timeout: 2
 ' > conf/config.yaml

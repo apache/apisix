@@ -21,6 +21,13 @@ no_long_string();
 no_root_location();
 log_level("info");
 
+Test::Nginx::Socket::set_http_config_filter(sub {
+    my $config = shift;
+    my $snippet = `./t/bin/gen_snippet.lua conf_server`;
+    $config .= $snippet;
+    return $config;
+});
+
 run_tests;
 
 __DATA__
@@ -29,10 +36,15 @@ __DATA__
 --- yaml_config
 apisix:
   node_listen: 1984
-etcd:
-  host:
-    - "http://127.0.0.1:7777"  -- wrong etcd port
-  timeout: 1
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    prefix: "/apisix"
+    host:
+      - "http://127.0.0.1:7777"  -- wrong etcd port
+    timeout: 1
 --- config
     location /t {
         content_by_lua_block {
@@ -54,9 +66,15 @@ qr/(connection refused){1,}/
 --- yaml_config
 apisix:
   node_listen: 1984
-etcd:
-  host:
-    - "https://127.0.0.1:2379"
+  ssl:
+    ssl_trusted_certificate: t/servroot/conf/cert/etcd.pem
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "https://127.0.0.1:2379"
 --- extra_init_by_lua
 local health_check = require("resty.etcd.health_check")
 health_check.get_target_status = function()
@@ -73,9 +91,9 @@ end
 --- request
 GET /t
 --- grep_error_log chop
-handshake failed
+peer closed connection in SSL handshake while SSL handshaking to upstream
 --- grep_error_log_out eval
-qr/(handshake failed){1,}/
+qr/(peer closed connection in SSL handshake while SSL handshaking to upstream){1,}/
 
 
 
@@ -83,9 +101,13 @@ qr/(handshake failed){1,}/
 --- yaml_config
 apisix:
   node_listen: 1984
-etcd:
-  host:
-    - "http://127.0.0.1:12379"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:12379"
 --- config
     location /t {
         content_by_lua_block {
@@ -107,9 +129,15 @@ qr/(closed){1,}/
 --- yaml_config
 apisix:
   node_listen: 1984
-etcd:
-  host:
-    - "https://127.0.0.1:12379"
+  ssl:
+    ssl_trusted_certificate: t/servroot/conf/cert/etcd.pem
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "https://127.0.0.1:12379"
 --- extra_init_by_lua
 local health_check = require("resty.etcd.health_check")
 health_check.get_target_status = function()
@@ -126,9 +154,9 @@ end
 --- request
 GET /t
 --- grep_error_log chop
-18: self signed certificate
+10:certificate has expired
 --- grep_error_log_out eval
-qr/(18: self signed certificate){1,}/
+qr/(10:certificate has expired){1,}/
 
 
 
@@ -137,11 +165,15 @@ qr/(18: self signed certificate){1,}/
 apisix:
   node_listen: 1984
   admin_key: null
-etcd:
-  host:
-    - "https://127.0.0.1:12379"
-  tls:
-    verify: false
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "https://127.0.0.1:12379"
+    tls:
+      verify: false
 --- config
     location /t {
         content_by_lua_block {
@@ -159,9 +191,8 @@ etcd:
                     "desc": "new route",
                     "uri": "/index.html"
                 }]]
-                )
+            )
 
-            ngx.status = code
             ngx.say(body)
         }
     }
@@ -179,11 +210,15 @@ passed
 apisix:
   node_listen: 1984
   admin_key: null
-etcd:
-  host:
-    - "https://127.0.0.1:12379"
-  tls:
-    verify: false
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "https://127.0.0.1:12379"
+    tls:
+      verify: false
 --- config
     location /t {
         content_by_lua_block {
@@ -210,12 +245,16 @@ passed
 --- yaml_config
 apisix:
   node_listen: 1984
-etcd:
-  host:
-    - "http://127.0.0.1:1980" -- fake server port
-  timeout: 1
-  user: root                    # root username for etcd
-  password: 5tHkHhYkjr6cQY      # root password for etcd
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:1980" -- fake server port
+    timeout: 1
+    user: root                    # root username for etcd
+    password: 5tHkHhYkjr6cQY      # root password for etcd
 --- extra_init_by_lua
 local health_check = require("resty.etcd.health_check")
 health_check.get_target_status = function()

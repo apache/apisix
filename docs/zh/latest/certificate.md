@@ -243,15 +243,19 @@ apisix:
   ssl:
     ssl_trusted_certificate: /path/to/apisix.ca-bundle
 
-etcd:
-  host:
-    - "https://127.0.0.1:12379"
-    - "https://127.0.0.1:22379"
-    - "https://127.0.0.1:32379"
-  tls:
-    cert: /path/to/bar_apisix.crt
-    key: /path/to/bar_apisix.key
-    sni: etcd.cluster.dev
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "https://127.0.0.1:12379"
+      - "https://127.0.0.1:22379"
+      - "https://127.0.0.1:32379"
+    tls:
+      cert: /path/to/bar_apisix.crt
+      key: /path/to/bar_apisix.key
+      sni: etcd.cluster.dev
 ```
 
 4. 测试 Admin API
