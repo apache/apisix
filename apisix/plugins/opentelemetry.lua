@@ -53,6 +53,7 @@ local lrucache = core.lrucache.new({
     type = 'plugin', count = 128, ttl = 24 * 60 * 60,
 })
 
+local asterisk = string.byte("*", 1)
 
 local attr_schema = {
     type = "object",
@@ -282,7 +283,7 @@ end
 
 local function inject_attributes(attributes, wanted_attributes, source, with_prefix)
     for _, key in ipairs(wanted_attributes) do
-        local is_key_a_match = #key >= 2 and key:sub(-1, -1) == "*" and with_prefix
+        local is_key_a_match = #key >= 2 and key:byte(-1) == asterisk and with_prefix
 
         if is_key_a_match then
             local prefix = key:sub(0, -2)
