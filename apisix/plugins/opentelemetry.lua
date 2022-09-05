@@ -171,7 +171,7 @@ local schema = {
                 minLength = 1,
             }
         },
-        additional_header_attributes = {
+        additional_header_prefix_attributes = {
             type = "array",
             items = {
                 type = "string",
@@ -320,10 +320,10 @@ function _M.rewrite(conf, api_ctx)
         inject_attributes(attributes, conf.additional_attributes, api_ctx.var, false)
     end
 
-    if conf.additional_header_attributes then
+    if conf.additional_header_prefix_attributes then
         inject_attributes(
             attributes,
-            conf.additional_header_attributes,
+            conf.additional_header_prefix_attributes,
             core.request.headers(api_ctx),
             true
         )

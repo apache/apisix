@@ -159,7 +159,7 @@ opentelemetry export span
                             "sampler": {
                                 "name": "always_on"
                             },
-                            "additional_header_attributes": [
+                            "additional_header_prefix_attributes": [
                                 "x-my-header-*"
                             ]
                         }
