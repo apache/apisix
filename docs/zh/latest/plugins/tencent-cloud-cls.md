@@ -30,20 +30,20 @@ description: API 网关 Apache APISIX tencent-cloud-cls 插件可用于将日志
 
 ## 描述
 
-`tencent-cloud-cls` 插件可用于将 APISIX 日志使用[腾讯云日志服务](https://cloud.tencent.com/document/product/614)API 推送到您的日志主题。
+`tencent-cloud-cls` 插件可用于将 APISIX 日志使用[腾讯云日志服务](https://cloud.tencent.com/document/product/614) API 推送到您的日志主题。
 
 ## 属性
 
 | 名称              | 类型    | 必选项 | 默认值   | 有效值       | 描述                                                                           |
 | ----------------- | ------- | ------ |-------| ------------ |------------------------------------------------------------------------------|
-| cls_host          | string  | 是     |       |              | CLS API 域名，参考[使用 API 上传日志](https://cloud.tencent.com/document/api/614/16873) |
-| cls_topic         | string  | 是     |       |              | CLS 日志主题 id                                                                  |
-| secret_id         | string  | 是     |       |              | 云 API 密钥                                                                     |
-| secret_key        | string  | 是     |       |              | 云 API 密钥                                                                     |
+| cls_host          | string  | 是     |       |              | CLS API 域名，参考[使用 API 上传日志](https://cloud.tencent.com/document/api/614/16873)。|
+| cls_topic         | string  | 是     |       |              | CLS 日志主题 id。                                                                 |
+| secret_id         | string  | 是     |       |              | 云 API 密钥的 id。                                                                |
+| secret_key        | string  | 是     |       |              | 云 API 密钥的 key。                                                               |
 | sample_ratio      | number  | 否     | 1     | [0.00001, 1] | 采样的比例。设置为 `1` 时，将对所有请求进行采样。                                                  |
 | include_req_body  | boolean | 否     | false | [false, true]| 当设置为 `true` 时，日志中将包含请求体。                                                     |
 | include_resp_body | boolean | 否     | false | [false, true]| 当设置为 `true` 时，日志中将包含响应体。                                                     |
-| global_tag        | object  | 否     |       |              | kv 形式的 json 数据，写入每一条日志，便于 CLS 上检索                                            |
+| global_tag        | object  | 否     |       |              | kv 形式的 JSON 数据，可以写入每一条日志，便于在 CLS 中检索。                                        |
 
 该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
@@ -53,7 +53,7 @@ description: API 网关 Apache APISIX tencent-cloud-cls 插件可用于将日志
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
 | log_format       | object  | 否    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头。则表明获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
-:::info 注意
+:::info 重要
 
 该设置全局生效。如果指定了 `log_format`，则所有绑定 `tencent-cloud-cls` 的路由或服务都将使用该日志格式。
 
@@ -91,15 +91,15 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
     "plugins": {
         "tencent-cloud-cls": {
             "cls_host": "ap-guangzhou.cls.tencentyun.com",
-            "cls_topic": "xxxxxxxx-xxxx-xxxx-xxxx",
+            "cls_topic": "${your CLS topic name}",
             "global_tag": {
                 "module": "cls-logger",
                 "server_name": "YourApiGateWay"
             },
             "include_req_body": true,
             "include_resp_body": true,
-            "secret_id": "xxx",
-            "secret_key": "xxxx"
+            "secret_id": "${your secret id}",
+            "secret_key": "${your secret key}"
         }
     },
     "upstream": {

@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - CLS
   - Tencent Cloud
-description: This document contains information about the Apache APISIX tencent-cloud-cls Plugin。
+description: This document contains information about the Apache APISIX tencent-cloud-cls Plugin.
 ---
 
 <!--
@@ -30,20 +30,20 @@ description: This document contains information about the Apache APISIX tencent-
 
 ## Description
 
-The `tencent-cloud-cls` Plugin uses [TencentCloud CLS](https://cloud.tencent.com/document/product/614)API to forward logs to your topic.
+The `tencent-cloud-cls` Plugin uses [TencentCloud CLS](https://cloud.tencent.com/document/product/614)API to forward APISIX logs to your topic.
 
 ## Attributes
 
-| Name              | Type    | Required | Default | Valid values  | Description                                                  |
-| ----------------- | ------- | -------- |---------| ------------- | ------------------------------------------------------------ |
-| cls_host          | string  | Yes      |         |               | CLS API host，please refer [Uploading Structured Logs](https://www.tencentcloud.com/document/api/614/16873) |
-| cls_topic         | string  | Yes      |         |               | topic of CLS                                                 |
-| secret_id         | string  | Yes      |         |               | SecretId of your API Key                                     |
-| secret_key        | string  | Yes      |         |               | SecretKey of your API KEY                                    |
-| sample_ratio      | number  | No       | 1       | [0.00001, 1]  | How often to sample the requests. Setting to `1` will sample all requests. |
-| include_req_body  | boolean | No       | false   | [false, true] | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations. |
-| include_resp_body | boolean | No       | false   | [false, true] | When set to `true` includes the response body in the log.    |
-| global_tag        | object  | No       |         |               | kv pairs in json，send with each log                         |
+| Name              | Type    | Required | Default | Valid values  | Description                                                                                                                                                      |
+| ----------------- | ------- | -------- |---------| ------------- |------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| cls_host          | string  | Yes      |         |               | CLS API host，please refer [Uploading Structured Logs](https://www.tencentcloud.com/document/api/614/16873).                                                      |
+| cls_topic         | string  | Yes      |         |               | topic id of CLS.                                                                                                                                                 |
+| secret_id         | string  | Yes      |         |               | SecretId of your API key.                                                                                                                                        |
+| secret_key        | string  | Yes      |         |               | SecretKey of your API key.                                                                                                                                       |
+| sample_ratio      | number  | No       | 1       | [0.00001, 1]  | How often to sample the requests. Setting to `1` will sample all requests.                                                                                       |
+| include_req_body  | boolean | No       | false   | [false, true] | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to NGINX's limitations. |
+| include_resp_body | boolean | No       | false   | [false, true] | When set to `true` includes the response body in the log.                                                                                                        |
+| global_tag        | object  | No       |         |               | kv pairs in JSON，send with each log.                                                                                                                             |
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
@@ -93,15 +93,15 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
     "plugins": {
         "tencent-cloud-cls": {
             "cls_host": "ap-guangzhou.cls.tencentyun.com",
-            "cls_topic": "xxxxxxxx-xxxx-xxxx-xxxx",
+            "cls_topic": "${your CLS topic name}",
             "global_tag": {
                 "module": "cls-logger",
                 "server_name": "YourApiGateWay"
             },
             "include_req_body": true,
             "include_resp_body": true,
-            "secret_id": "xxx",
-            "secret_key": "xxxx"
+            "secret_id": "${your secret id}",
+            "secret_key": "${your secret key}"
         }
     },
       "upstream": {
@@ -127,7 +127,8 @@ curl -i http://127.0.0.1:9080/hello
 To disable this Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},
