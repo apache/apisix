@@ -48,7 +48,7 @@ local INTERVAL = 60 * 60    -- rotate interval (unit: second)
 local MAX_KEPT = 24 * 7     -- max number of log files will be kept
 local MAX_SIZE = -1         -- max size of file will be rotated
 local COMPRESSION_FILE_SUFFIX = ".tar.gz" -- compression file suffix
-local WAIT_TIME_BEFORE_COMPRESS = 60      -- wait time before compress
+local WAIT_TIME_BEFORE_COMPRESS = 0.5      -- wait time before compress
 local rotate_time
 local default_logs
 local enable_compression = false
@@ -247,7 +247,7 @@ local function rotate_file(files, now_time, max_kept, wait_time)
     end
 
     if enable_compression then
-        -- Waiting for the end of the old requests
+        -- Waiting for nginx reopen files
         -- to avoid losing logs during compression
         ngx_sleep(wait_time)
 
