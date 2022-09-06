@@ -1,5 +1,10 @@
 ---
 title: APISIX variable
+keywords:
+ - Apache APISIX
+ - API Gateway
+ - APISIX variable
+description: This is article descriptions Apache APISIX variable.
 ---
 
 <!--
@@ -21,25 +26,27 @@ title: APISIX variable
 #
 -->
 
+## Description
+
 Besides [Nginx variable](http://nginx.org/en/docs/varindex.html), APISIX also provides
 additional variables.
 
-List in alphabetical order:
+## List of variables
 
-|   Variable Name  |  Origin | Description        | Example      |
-|------------------|---------|--------------------| ---------    |
-| balancer_ip      | core    | the IP of picked upstream server | 1.1.1.1 |
-| balancer_port    | core    | the port of picked upstream server | 80 |
-| consumer_name    | core    | username of `consumer` |   |
-| graphql_name     | core    | the [operation name](https://graphql.org/learn/queries/#operation-name) of GraphQL | HeroComparison |
-| graphql_operation     | core    | the operation type of GraphQL | mutation  |
-| graphql_root_fields     | core    | the top level fields of GraphQL | ["hero"] |
-| mqtt_client_id   | mqtt-proxy | the client id in MQTT protocol |   |
-| route_id         | core    | id of `route`          |   |
-| route_name       | core    | name of `route`        |   |
-| service_id       | core    | id of `service`        |   |
-| service_name     | core    | name of `service`      |   |
-| redis_cmd_line   | Redis   | the content of Redis command |   |
-| rpc_time         | xRPC    | time spent at the rpc request level |   |
+|   Variable Name     |  Origin    | Description                                                                         | Example        |
+|-------------------- | ---------- | ----------------------------------------------------------------------------------- | -------------  |
+| balancer_ip         | core       | the IP of picked upstream server.                                                   | 192.168.1.2    |
+| balancer_port       | core       | the port of picked upstream server.                                                 | 80             |
+| consumer_name       | core       | username of Consumer.                                                               |                |
+| graphql_name        | core       | the [operation name](https://graphql.org/learn/queries/#operation-name) of GraphQL. | HeroComparison |
+| graphql_operation   | core       | the operation type of GraphQL.                                                      | mutation       |
+| graphql_root_fields | core       | the top level fields of GraphQL.                                                    | ["hero"]       |
+| mqtt_client_id      | mqtt-proxy | the client id in MQTT protocol.                                                     |                |
+| route_id            | core       | id of Route.                                                                        |                |
+| route_name          | core       | name of Route.                                                                      |                |
+| service_id          | core       | id of Service.                                                                      |                |
+| service_name        | core       | name of Service.                                                                    |                |
+| redis_cmd_line      | Redis      | the content of Redis command.                                                       |                |
+| rpc_time            | xRPC       | time spent at the rpc request level.                                                |                |
 
-You can also [register your own variable](./plugin-develop.md#register-custom-variable).
+You can also register your own [variable](./plugin-develop.md#register-custom-variable).
