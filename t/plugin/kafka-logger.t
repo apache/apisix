@@ -30,25 +30,6 @@ add_block_preprocessor(sub {
     if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
         $block->set_value("no_error_log", "[error]");
     }
-    if (!$block->extra_init_by_lua) {
-        my $extra_init_by_lua = <<_EOC_;
-    local producer = require("resty.kafka.producer")
-    local inject = function(mod, name)
-        local old_f = mod[name]
-        mod[name] = function(...)
-            ngx.say("passed")
-            return old_f(...)
-        end
-    end
-    inject(producer, "new")
--- mock exporter producer
-producer.send = function()
-    ngx.say("passed")
-end
-_EOC_
-
-        $block->set_value("extra_init_by_lua", $extra_init_by_lua);
-    }
 });
 
 run_tests;
@@ -615,6 +596,11 @@ qr/partition_id: 2/]
 
 
 === TEST 20: user sasl create producer
+--- extra_init_by_lua
+local producer = require("resty.kafka.producer")
+producer.send = function()
+    return true
+end
 --- config
     location /t {
         content_by_lua_block {
@@ -631,10 +617,11 @@ qr/partition_id: 2/]
                     }
                 }
             }
---- extra_init_by_lua
-            local producer = producer:new(broker_list)
-            if not producer then
-                ngx.say("err: producer not created ")
+
+            local p = producer:new(broker_list)
+            local ok,err = p.send("test",nil,"hello world")
+            if not ok then
+                ngx.say("send to kafka err ")
                 return
             end
             ngx.say("success")
@@ -643,6 +630,6 @@ qr/partition_id: 2/]
 --- request
 GET /t
 --- response_body_like
-passed
+success
 --- error_log_like eval
-producer not created
+end to kafka err
