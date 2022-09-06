@@ -75,7 +75,7 @@ ngx.say(count)
 
 从 `v2.6` 版本开始，`conf` 和 `ctx` 作为前两个参数传递给 `serverless` 函数。
 
-`v2.12.0` 版本之前，`before_proxy` 阶段曾被称作 `balancer`。考虑到这一方法在 `access` 之后，和请求到上游之前运行，并且与 `balancer` 没有关联，因此已经更新为 `before_proxy`。
+在 `v2.12.0` 版本之前，`before_proxy` 阶段曾被称作 `balancer`。考虑到这一方法是在 `access` 阶段之后、请求到上游之前运行，并且与 `balancer` 没有关联，因此已经更新为 `before_proxy`。
 
 :::
 
