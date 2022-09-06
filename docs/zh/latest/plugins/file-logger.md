@@ -33,8 +33,8 @@ description: API 网关 Apache APISIX file-logger 插件可用于将日志数据
 
 :::tip 提示
 
-- `file-logger` 插件的主要作用是将指定路由的日志发送到指定位置，方便你在本地统计各个路由的请求和响应数据。在使用 debug mode 时，你可以很轻松的将出现问题的路由的日志输出到指定文件中，从而更方便的排查问题。
-- `file-logger` 插件可以获取 APISIX 和 NGINX 的变量，而 `access.log` 仅能使用 NGINX 的变量。
+- `file-logger` 插件的主要作用是将指定路由的日志发送到指定位置，方便你在本地统计各个路由的请求和响应数据。在使用 [debug mode](../../../en/latest/debug-mode.md) 时，你可以很轻松的将出现问题的路由的日志输出到指定文件中，从而更方便的排查问题。
+- `file-logger` 插件可以获取 [APISIX 变量](../../../en/latest/apisix-variable.md)和 [NGINX 的变量](http://nginx.org/en/docs/varindex.html)，而 `access.log` 仅能使用 NGINX 的变量。
 - `file-logger` 插件支持热加载，你可以在路由中随时更改其配置并立即生效。而修改 `access.log` 相关配置，则需要重新加载 APISIX。
 - `file-logger` 插件支持以 JSON 格式保存日志数据。
 - 你可以在 `log phase` 阶段修改 `file-logger` 执行的函数来收集你所需要的信息。
@@ -51,7 +51,7 @@ description: API 网关 Apache APISIX file-logger 插件可用于将日志数据
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [Nginx 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format       | object  | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
 :::note 注意
 
