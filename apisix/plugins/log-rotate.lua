@@ -48,6 +48,7 @@ local INTERVAL = 60 * 60    -- rotate interval (unit: second)
 local MAX_KEPT = 24 * 7     -- max number of log files will be kept
 local MAX_SIZE = -1         -- max size of file will be rotated
 local COMPRESSION_FILE_SUFFIX = ".tar.gz" -- compression file suffix
+local WAIT_TIME_BEFORE_COMPRESS = 60      -- wait time before compress
 local rotate_time
 local default_logs
 local enable_compression = false
@@ -171,32 +172,6 @@ local function rename_file(log, date_str)
 end
 
 
-local function wait_old_nginx_exit()
-    local found = true
-    local max_try = 10  -- 10 seconds
-    local prefix = ngx.config.prefix()
-    local file_path = prefix .. "/logs/nginx.pid.oldbin"
-
-    for i = 1, max_try do
-        -- nginx will delete nginx.pid.oldbin after old master process quit
-        found = file_exists(file_path)
-        if found then
-            if i <= max_try then
-                ngx_sleep(1)
-            end
-
-        else
-            break
-        end
-    end
-
-    if found then
-        core.log.error("failed to shutdown the old master after a long time, "
-                        .. "but we still choose to compress log file")
-    end
-end
-
-
 local function compression_file(new_file)
     if not new_file or type(new_file) ~= "string" then
         core.log.info("compression file: ", new_file, " invalid")
@@ -246,7 +221,7 @@ local function file_size(file)
 end
 
 
-local function rotate_file(files, now_time, max_kept)
+local function rotate_file(files, now_time, max_kept, wait_time)
     if isempty(files) then
         return
     end
@@ -263,7 +238,7 @@ local function rotate_file(files, now_time, max_kept)
         tab_insert(new_files, new_file)
     end
 
-    -- send signal to reopen
+    -- send signal to reopen log files
     local pid = process.get_master_pid()
     core.log.warn("send USR1 signal to master process [", pid, "] for reopening log file")
     local ok, err = signal.kill(pid, signal.signum("USR1"))
@@ -272,9 +247,9 @@ local function rotate_file(files, now_time, max_kept)
     end
 
     if enable_compression then
+        -- Waiting for the end of the old requests
         -- to avoid losing logs during compression
-        ngx_sleep(0.5)
-        wait_old_nginx_exit()
+        ngx_sleep(wait_time)
 
         for _, new_file in ipairs(new_files) do
             compression_file(new_file)
@@ -299,11 +274,14 @@ local function rotate()
     local interval = INTERVAL
     local max_kept = MAX_KEPT
     local max_size = MAX_SIZE
+    -- for test
+    local wait_time = WAIT_TIME_BEFORE_COMPRESS
     local attr = plugin.plugin_attr(plugin_name)
     if attr then
         interval = attr.interval or interval
         max_kept = attr.max_kept or max_kept
         max_size = attr.max_size or max_size
+        wait_time = attr.wait_time or wait_time
         enable_compression = attr.enable_compression or enable_compression
     end
 
@@ -329,7 +307,7 @@ local function rotate()
 
     if now_time >= rotate_time then
         local files = {DEFAULT_ACCESS_LOG_FILENAME, DEFAULT_ERROR_LOG_FILENAME}
-        rotate_file(files, now_time, max_kept)
+        rotate_file(files, now_time, max_kept, wait_time)
 
         -- reset rotate time
         rotate_time = rotate_time + interval
@@ -347,7 +325,7 @@ local function rotate()
             tab_insert(files, DEFAULT_ERROR_LOG_FILENAME)
         end
 
-        rotate_file(files, now_time, max_kept)
+        rotate_file(files, now_time, max_kept, wait_time)
     end
 end
 
