@@ -61,9 +61,9 @@ deployment:
     local apisix = require("apisix")
     apisix.http_init()
     local etcd = require("apisix.core.etcd")
-    assert(etcd.set("/a", "ab", nil, true))
+    assert(etcd.set("/a", "ab"))
 
-    local res, err = etcd.get("/a", nil, true)
+    local res, err = etcd.get("/a")
     if not res then
         ngx.log(ngx.ERR, err)
         return
@@ -77,7 +77,7 @@ deployment:
     end
     ngx.log(ngx.WARN, res.status)
 
-    local res, err = etcd.get("/a", nil, true)
+    local res, err = etcd.get("/a")
     if not res then
         ngx.log(ngx.ERR, err)
         return
@@ -116,9 +116,9 @@ deployment:
     apisix = require("apisix")
     apisix.stream_init()
     local etcd = require("apisix.core.etcd")
-    assert(etcd.set("/a", "ab", nil, true))
+    assert(etcd.set("/a", "ab"))
 
-    local res, err = etcd.get("/a", nil, true)
+    local res, err = etcd.get("/a")
     if not res then
         ngx.log(ngx.ERR, err)
         return
@@ -132,7 +132,7 @@ deployment:
     end
     ngx.log(ngx.WARN, res.status)
 
-    local res, err = etcd.get("/a", nil, true)
+    local res, err = etcd.get("/a")
     if not res then
         ngx.log(ngx.ERR, err)
         return
@@ -282,8 +282,8 @@ deployment:
     local apisix = require("apisix")
     apisix.http_init()
     local etcd = require("apisix.core.etcd")
-    assert(etcd.set("/a", "ab", nil, true))
-    local res, err = etcd.get("/a", nil, true)
+    assert(etcd.set("/a", "ab"))
+    local res, err = etcd.get("/a")
     if not res then
         ngx.log(ngx.ERR, err)
         return
