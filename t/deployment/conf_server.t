@@ -169,6 +169,15 @@ localhost is resolved to: 127.0.0.2
 
 === TEST 4: update balancer if the DNS result changed
 --- extra_init_by_lua
+    local etcd = require("apisix.core.etcd")
+    package.loaded.proxy_by_conf_server = 0
+    local old_etcd_new = etcd.new
+    etcd.new = function ()
+        local proxy_by_conf_server = package.loaded.proxy_by_conf_server
+        package.loaded.proxy_by_conf_server = proxy_by_conf_server + 1
+        return old_etcd_new()
+    end
+
     local resolver = require("apisix.core.resolver")
     local old_f = resolver.parse_domain
     package.loaded.counter = 0
@@ -200,12 +209,12 @@ localhost is resolved to: 127.0.0.2
             assert(etcd.set("/apisix/test", "foo"))
             local res = assert(etcd.get("/apisix/test"))
             ngx.say(res.body.node.value)
-            local counter = package.loaded.counter
+            local proxy_by_conf_server = package.loaded.proxy_by_conf_server
             local n_picker = package.loaded.n_picker
-            if counter == n_picker then
+            if proxy_by_conf_server == n_picker then
                 ngx.say("OK")
             else
-                ngx.say(counter, " ", n_picker)
+                ngx.say(proxy_by_conf_server, " ", n_picker)
             end
         }
     }
