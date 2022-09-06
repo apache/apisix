@@ -67,14 +67,14 @@ local function resolver_host(prop_host)
     if not core.utils.parse_ipv4(decoded_host) and not core.utils.parse_ipv6(decoded_host) then
         local ip, err = core.resolver.parse_domain(decoded_host)
 
-        if err then
-            core.log.error("dns resolver resolves domain: ", decoded_host, " error: ", err,
-             " will continue to use the host: ", decoded_host)
+        if not ip then
+            core.log.error("dns resolver resolves domain: ", decoded_host," error: ", err,
+                            " will continue to use the host: ", decoded_host)
             return prop_host
         end
 
         local host = url_decoded.scheme .. '://' .. ip ..
-                    (url_decoded.port and ':' .. url_decoded.port or '')
+            (url_decoded.port and ':' .. url_decoded.port or '')
         core.log.info(prop_host, " is resolved to: ", host)
         return host
     end
