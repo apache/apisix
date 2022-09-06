@@ -59,5 +59,6 @@ if [[ "${FOUND_PATH}" == "" ]]; then
    export PATH=$PATH:/usr/local/bin
 fi
 
+luarocks config variables.OPENSSL_DIR ${OPENSSL_PREFIX}
 luarocks config variables.OPENSSL_LIBDIR ${OPENSSL_PREFIX}/lib
 luarocks config variables.OPENSSL_INCDIR ${OPENSSL_PREFIX}/include
