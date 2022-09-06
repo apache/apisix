@@ -182,9 +182,8 @@ local function switch_proxy()
         return etcd_cli, prefix, err
     end
     local sock = ngx_socket_tcp()
-    local res, _ = sock:connect(etcd_cli.unix_socket_proxy)
-
-    if not res then
+    local ok = sock:connect(etcd_cli.unix_socket_proxy)
+    if not ok then
         return _M.new_without_proxy()
     end
 

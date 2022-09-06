@@ -388,7 +388,7 @@ ab
     end
     ngx.log(ngx.WARN, res.body.node.value)
 
-    local res, err = etcd.delete("/a", true)
+    local res, err = etcd.delete("/a")
     if not res then
         ngx.log(ngx.ERR, err)
         return
