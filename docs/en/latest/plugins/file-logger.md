@@ -31,6 +31,16 @@ description: This document contains information about the Apache APISIX file-log
 
 The `file-logger` Plugin is used to push log streams to a specific location.
 
+:::tip
+
+- `file-logger` plugin can count request and response data for individual routes locally, which is useful for debugging.
+- `file-logger` plugin can get APISIX variables that access.log can't.
+- `file-logger` plugin support hot-loaded so that we can change its configuration at any time with immediate effect.
+- `file-logger` plugin saves every data in JSON format.
+- The user can modify the functions executed by the `file-logger` during the `log phase` to collect the information they want.
+
+:::
+
 ## Attributes
 
 | Name | Type   | Required | Description   |
