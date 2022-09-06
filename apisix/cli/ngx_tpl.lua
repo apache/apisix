@@ -438,8 +438,8 @@ http {
         apisix.http_init(args)
 
         {% if enabled_plugins["saml-auth"] then %}
-        local constants = require("apisix.constants")
-        constants.saml_data_dir = "{*apisix_lua_home*}/deps/share/lua/5.1/resty/saml"
+        local saml = require("apisix.plugins.saml-auth")
+        saml.set_data_dir("{*apisix_lua_home*}/deps/share/lua/5.1/resty/saml")
         {% end %}
     }
 

@@ -85,8 +85,6 @@ script() {
         sleep 1
     done
 
-    wget https://raw.githubusercontent.com/api7/lua-resty-saml/main/t/lib/keycloak.lua -O t/lib/keycloak2.lua
-
     # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
     FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r $TEST_FILE_SUB_DIR | tee /tmp/test.result
     rerun_flaky_tests /tmp/test.result

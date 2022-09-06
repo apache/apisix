@@ -23,7 +23,7 @@ install_dependencies() {
 
     # install build & runtime deps
     yum install -y wget tar gcc automake autoconf libtool make unzip \
-        git sudo openldap-devel which libxml2-devel openssl-devel libxslt-devel
+        git sudo openldap-devel which libxml2-devel libxslt-devel
 
     # curl with http2
     wget https://github.com/moparisthebest/static-curl/releases/download/v7.79.1/curl-amd64 -O /usr/bin/curl
@@ -84,8 +84,6 @@ run_case() {
     export_or_prefix
     make init
     set_coredns
-
-    wget https://raw.githubusercontent.com/api7/lua-resty-saml/main/t/lib/keycloak.lua -O t/lib/keycloak2.lua
 
     # run test cases
     FLUSH_ETCD=1 prove -Itest-nginx/lib -I./ -r ${TEST_FILE_SUB_DIR} | tee /tmp/test.result

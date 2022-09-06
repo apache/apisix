@@ -42,7 +42,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local kc = require("lib.keycloak2")
+            local kc = require("lib.keycloak_saml")
             local core = require("apisix.core")
 
             local default_opts = kc.get_default_opts()
@@ -84,7 +84,7 @@ passed
         content_by_lua_block {
             local http = require "resty.http"
             local httpc = http.new()
-            local kc = require "lib.keycloak2"
+            local kc = require "lib.keycloak_saml"
 
             local path = "/uri"
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
@@ -125,7 +125,7 @@ x-real-ip: 127.0.0.1
 --- config
     location /t {
         content_by_lua_block {
-            local kc = require("lib.keycloak2")
+            local kc = require("lib.keycloak_saml")
             local core = require("apisix.core")
 
             local default_opts = kc.get_default_opts()
@@ -167,7 +167,7 @@ passed
         content_by_lua_block {
             local http = require "resty.http"
             local httpc = http.new()
-            local kc = require "lib.keycloak2"
+            local kc = require "lib.keycloak_saml"
 
             local path = "/uri"
 

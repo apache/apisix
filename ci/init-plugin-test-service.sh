@@ -49,6 +49,5 @@ bash -c 'while true; do curl -s localhost:8080 &>/dev/null; ret=$?; [[ $ret -eq 
 wget https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -O jq
 chmod +x jq
 docker cp jq keycloak:/usr/bin/
-wget https://raw.githubusercontent.com/api7/lua-resty-saml/main/t/kcadm_configure.sh
-docker cp kcadm_configure.sh keycloak:/tmp/
-docker exec keycloak bash /tmp/kcadm_configure.sh
+docker cp ci/kcadm_configure_saml.sh keycloak:/tmp/
+docker exec keycloak bash /tmp/kcadm_configure_saml.sh

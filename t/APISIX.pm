@@ -478,8 +478,8 @@ _EOC_
     }
     apisix.http_init(args)
 
-    local constants = require("apisix.constants")
-    constants.saml_data_dir = "$apisix_home/deps/share/lua/5.1/resty/saml"
+    local saml = require("apisix.plugins.saml-auth")
+    saml.set_data_dir("$apisix_home/deps/share/lua/5.1/resty/saml")
 
     $extra_init_by_lua
 _EOC_
@@ -728,7 +728,6 @@ _EOC_
             set \$upstream_cache_bypass          '';
             set \$upstream_no_cache              '';
             $a6_ngx_vars
-
 
             proxy_cache                         \$upstream_cache_zone;
             proxy_cache_valid                   any 10s;

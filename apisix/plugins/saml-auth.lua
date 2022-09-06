@@ -15,10 +15,10 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-local constants = require("apisix.constants")
 local resty_saml = require("resty.saml")
 
 local is_resty_saml_init = false
+local data_dir
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
@@ -59,19 +59,19 @@ local _M = {
     schema = schema,
 }
 
-function _M.check_schema(conf, schema_type)
-    return core.schema.check(schema, conf)
+function _M.set_data_dir(dir)
+    data_dir = dir
 end
 
-local function create_saml_obj(conf)
-    return resty_saml.new(conf)
+function _M.check_schema(conf, schema_type)
+    return core.schema.check(schema, conf)
 end
 
 function _M.rewrite(conf, ctx)
     if not is_resty_saml_init then
         local err = resty_saml.init({
             debug = true,
-            data_dir = constants.saml_data_dir,
+            data_dir = data_dir,
         })
         if err then
             core.log.error("saml init: ", err)
@@ -82,7 +82,11 @@ function _M.rewrite(conf, ctx)
 
     core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
-    local saml = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_saml_obj, conf)
+    local saml = core.lrucache.plugin_ctx(lrucache, ctx, nil, resty_saml.new, conf)
+    if not saml then
+        core.log.error("saml new failed")
+        return 500
+    end
 
     local data = saml:authenticate()
 
