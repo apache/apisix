@@ -157,7 +157,7 @@ _M.new = new
 -- @treturn table|nil the etcd client, or nil if failed.
 -- @treturn string|nil the configured prefix of etcd keys, or nil if failed.
 -- @treturn nil|string the error message.
-function _M.new_without_proxy()
+local function new_without_proxy()
     local local_conf, err = fetch_local_conf()
     if not local_conf then
         return nil, nil, err
@@ -166,6 +166,7 @@ function _M.new_without_proxy()
     local etcd_conf = clone_tab(local_conf.etcd)
     return _new(etcd_conf)
 end
+_M.new_without_proxy = new_without_proxy
 
 
 -- convert ETCD v3 entry to v2 one
@@ -280,8 +281,14 @@ function _M.watch_format(v3res)
 end
 
 
-function _M.get(key, is_dir)
-    local etcd_cli, prefix, err = new()
+function _M.get(key, is_dir, noproxy)
+    local etcd_cli, prefix, err
+    if noproxy then
+        etcd_cli, prefix, err = new_without_proxy()
+    else
+        etcd_cli, prefix, err = new()
+    end
+
     if not etcd_cli then
         return nil, err
     end
@@ -299,8 +306,14 @@ function _M.get(key, is_dir)
 end
 
 
-local function set(key, value, ttl)
-    local etcd_cli, prefix, err = new()
+local function set(key, value, ttl, noproxy)
+    local etcd_cli, prefix, err
+    if noproxy then
+        etcd_cli, prefix, err = new_without_proxy()
+    else
+        etcd_cli, prefix, err = new()
+    end
+
     if not etcd_cli then
         return nil, err
     end
@@ -343,8 +356,14 @@ end
 _M.set = set
 
 
-function _M.atomic_set(key, value, ttl, mod_revision)
-    local etcd_cli, prefix, err = new()
+function _M.atomic_set(key, value, ttl, mod_revision, noproxy)
+    local etcd_cli, prefix, err
+    if noproxy then
+        etcd_cli, prefix, err = new_without_proxy()
+    else
+        etcd_cli, prefix, err = new()
+    end
+
     if not etcd_cli then
         return nil, err
     end
@@ -402,8 +421,14 @@ function _M.atomic_set(key, value, ttl, mod_revision)
 end
 
 
-function _M.push(key, value, ttl)
-    local etcd_cli, _, err = new()
+function _M.push(key, value, ttl, noproxy)
+    local etcd_cli, _, err
+    if noproxy then
+        etcd_cli, _, err = new_without_proxy()
+    else
+        etcd_cli, _, err = new()
+    end
+
     if not etcd_cli then
         return nil, err
     end
@@ -434,8 +459,14 @@ function _M.push(key, value, ttl)
 end
 
 
-function _M.delete(key)
-    local etcd_cli, prefix, err = new()
+function _M.delete(key, noproxy)
+    local etcd_cli, prefix, err
+    if noproxy then
+        etcd_cli, prefix, err = new_without_proxy()
+    else
+        etcd_cli, prefix, err = new()
+    end
+
     if not etcd_cli then
         return nil, err
     end
@@ -472,8 +503,14 @@ end
 -- --   etcdcluster = "3.5.0",
 -- --   etcdserver = "3.5.0"
 -- -- }
-function _M.server_version()
-    local etcd_cli, _, err = new()
+function _M.server_version(noproxy)
+    local etcd_cli, _, err
+    if noproxy then
+        etcd_cli, _, err = new_without_proxy()
+    else
+        etcd_cli, _, err = new()
+    end
+
     if not etcd_cli then
         return nil, err
     end
@@ -482,8 +519,14 @@ function _M.server_version()
 end
 
 
-function _M.keepalive(id)
-    local etcd_cli, _, err = new()
+function _M.keepalive(id, noproxy)
+    local etcd_cli, _, err
+    if noproxy then
+        etcd_cli, _, err = new_without_proxy()
+    else
+        etcd_cli, _, err = new()
+    end
+
     if not etcd_cli then
         return nil, err
     end

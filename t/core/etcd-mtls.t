@@ -61,23 +61,23 @@ deployment:
     local apisix = require("apisix")
     apisix.http_init()
     local etcd = require("apisix.core.etcd")
-    assert(etcd.set("/a", "ab"))
+    assert(etcd.set("/a", "ab", nil, true))
 
-    local res, err = etcd.get("/a")
+    local res, err = etcd.get("/a", nil, true)
     if not res then
         ngx.log(ngx.ERR, err)
         return
     end
     ngx.log(ngx.WARN, res.body.node.value)
 
-    local res, err = etcd.delete("/a")
+    local res, err = etcd.delete("/a", true)
     if not res then
         ngx.log(ngx.ERR, err)
         return
     end
     ngx.log(ngx.WARN, res.status)
 
-    local res, err = etcd.get("/a")
+    local res, err = etcd.get("/a", nil, true)
     if not res then
         ngx.log(ngx.ERR, err)
         return
@@ -116,23 +116,23 @@ deployment:
     apisix = require("apisix")
     apisix.stream_init()
     local etcd = require("apisix.core.etcd")
-    assert(etcd.set("/a", "ab"))
+    assert(etcd.set("/a", "ab", nil, true))
 
-    local res, err = etcd.get("/a")
+    local res, err = etcd.get("/a", nil, true)
     if not res then
         ngx.log(ngx.ERR, err)
         return
     end
     ngx.log(ngx.WARN, res.body.node.value)
 
-    local res, err = etcd.delete("/a")
+    local res, err = etcd.delete("/a", true)
     if not res then
         ngx.log(ngx.ERR, err)
         return
     end
     ngx.log(ngx.WARN, res.status)
 
-    local res, err = etcd.get("/a")
+    local res, err = etcd.get("/a", nil, true)
     if not res then
         ngx.log(ngx.ERR, err)
         return
@@ -282,8 +282,8 @@ deployment:
     local apisix = require("apisix")
     apisix.http_init()
     local etcd = require("apisix.core.etcd")
-    assert(etcd.set("/a", "ab"))
-    local res, err = etcd.get("/a")
+    assert(etcd.set("/a", "ab", nil, true))
+    local res, err = etcd.get("/a", nil, true)
     if not res then
         ngx.log(ngx.ERR, err)
         return

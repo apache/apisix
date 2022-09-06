@@ -70,6 +70,15 @@ function _M.generate_conf_server(env, conf)
         end
     end
 
+    local ssl_trusted_certificate
+    local etcd_tls_verify = etcd.tls.verify
+    if enable_https and etcd_tls_verify then
+        if not conf.apisix.ssl.ssl_trusted_certificate then
+            return nil, "should set ssl_trusted_certificate if etcd tls verify is enabled"
+        end
+        ssl_trusted_certificate = pl_path.abspath(conf.apisix.ssl.ssl_trusted_certificate)
+    end
+
     local conf_render = template.compile([[
     upstream apisix_conf_backend {
         server 0.0.0.0:80;
@@ -112,6 +121,11 @@ function _M.generate_conf_server(env, conf)
             proxy_pass https://apisix_conf_backend;
             proxy_ssl_protocols TLSv1.2 TLSv1.3;
             proxy_ssl_server_name on;
+
+            {% if etcd_tls_verify then %}
+            proxy_ssl_verify on;
+            proxy_ssl_trusted_certificate {* ssl_trusted_certificate *};
+            {% end %}
 
             {% if sni then %}
             proxy_ssl_name {* sni *};
@@ -157,6 +171,8 @@ function _M.generate_conf_server(env, conf)
         client_cert = client_cert,
         client_cert_key = client_cert_key,
         trusted_ca_cert = trusted_ca_cert,
+        etcd_tls_verify = etcd_tls_verify,
+        ssl_trusted_certificate = ssl_trusted_certificate,
     })
 end
 

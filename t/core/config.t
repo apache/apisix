@@ -306,30 +306,7 @@ seq: {"Block style":["Mercury","Venus","Earth","Mars","Jupiter","Saturn","Uranus
 
 
 
-=== TEST 3: allow environment variable
---- config
-    location /t {
-        content_by_lua_block {
-            local config = require("apisix.core").config.local_conf()
-
-            ngx.say(config.apisix.id)
-        }
-    }
---- main_config
-env AID=3;
---- yaml_config
-#nginx_config:
-    #env: AID=3
-apisix:
-    id: ${{ AID }}
---- request
-GET /t
---- response_body
-3
-
-
-
-=== TEST 4: allow integer worker processes
+=== TEST 3: allow integer worker processes
 --- config
     location /t {
         content_by_lua_block {
