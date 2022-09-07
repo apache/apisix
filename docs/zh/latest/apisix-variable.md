@@ -28,7 +28,7 @@ description: 本文介绍了 Apache APISIX 支持的变量。
 
 ## 描述
 
-APISIX 除了支持 [NGINX 变量](http://nginx.org/en/docs/varindex.html)，还提供了额外的变量。
+APISIX 除了支持 [NGINX 变量](http://nginx.org/en/docs/varindex.html)，自身也提供了一些变量。
 
 ## 变量列表
 
