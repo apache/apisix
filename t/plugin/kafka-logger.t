@@ -595,41 +595,108 @@ qr/partition_id: 2/]
 
 
 
-=== TEST 20: user sasl create producer
---- extra_init_by_lua
-local producer = require("resty.kafka.producer")
-producer.send = function()
-    return true
-end
+=== TEST 20: set route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
-            local producer = require "resty.kafka.producer"
-            local broker_list = {
-                {
-                    host = "127.0.0.1",
-                    port = 9092,
-                    sasl_config = {
-                        mechanism = "PLAIN",
-                        strategy = "sasl",
-                        user = "admin",
-                        password = "admin-secret"
-                    }
-                }
-            }
-
-            local p = producer:new(broker_list)
-            local ok,err = p.send("test",nil,"hello world")
-            if not ok then
-                ngx.say("send to kafka err")
-                return
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "kafka-logger": {
+                                "broker_list" :
+                                  {
+                                    "127.0.0.1":9092
+                                  },
+                                "kafka_topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "batch_max_size": 1,
+                                "sasl_config": {
+                                    "mechanism": "PLAIN",
+                                    "strategy": "sasl",
+                                    "user": "admin",
+                                    "password": "admin-secret"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
             end
-            ngx.say("success")
+            ngx.say(body)
         }
     }
+--- response_body
+passed
+
+
+
+=== TEST 21: access
 --- request
-GET /t
---- response_body_like
-success
---- error_log_like eval
-send to kafka err
+GET /hello
+--- response_body
+hello world
+--- wait: 2
+
+
+
+=== TEST 22: error log
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                             "kafka-logger": {
+                                    "broker_list" :
+                                      {
+                                        "127.0.0.1":9092,
+                                        "127.0.0.1":9093
+                                      },
+                                    "kafka_topic" : "test2",
+                                    "key" : "key1",
+                                    "timeout" : 1,
+                                    "batch_max_size": 1,
+                                    "sasl_config": {
+                                        "mechanism": "PLAIN",
+                                        "strategy": "sasl",
+                                        "user": "admin",
+                                        "password": "admin-secret"
+                                    }
+                             }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+        }
+    }
+--- error_log
+failed to send data to Kafka topic
+[error]
+--- wait: 1
