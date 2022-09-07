@@ -86,7 +86,7 @@ nginx_config:
         lua_shared_dict introspection        10m; # cache for JWT verification results
 ```
 
-插件本身提供了 init 方法。方便插件加载后做初始化动作。
+插件本身提供了 init 方法。方便插件加载后做初始化动作。如果你需要清理初始化动作创建出来的内容，你可以在对应的 destroy 方法里完成这一操作。
 
 注：如果部分插件的功能实现，需要在 Nginx 初始化启动，则可能需要在 __apisix/init.lua__ 文件的初始化方法 http_init 中添加逻辑，并且可能需要在 __apisix/cli/ngx_tpl.lua__ 文件中，对 Nginx 配置文件生成的部分，添加一些你需要的处理。但是这样容易对全局产生影响，根据现有的插件机制，**我们不建议这样做，除非你已经对代码完全掌握**。
 

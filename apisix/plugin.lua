@@ -356,6 +356,24 @@ function _M.load(config)
 end
 
 
+function _M.exit_worker()
+    for name, plugin in pairs(local_plugins_hash) do
+        local ty = PLUGIN_TYPE_HTTP
+        if plugin.type == "wasm" then
+            ty = PLUGIN_TYPE_HTTP_WASM
+        end
+        unload_plugin(name, ty)
+    end
+
+    -- we need to load stream plugin so that we can check their schemas in
+    -- Admin API. Maybe we can avoid calling `load` in this case? So that
+    -- we don't need to call `destroy` too
+    for name in pairs(stream_local_plugins_hash) do
+        unload_plugin(name, PLUGIN_TYPE_STREAM)
+    end
+end
+
+
 local function trace_plugins_info_for_debug(ctx, plugins)
     if not enable_debug() then
         return
