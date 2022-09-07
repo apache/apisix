@@ -39,8 +39,7 @@ function _M.generate_conf_server(env, conf)
     if servers[1]:find(prefix, 1, true) then
         enable_https = true
     end
-    -- there is not a compatible way to verify upstream TLS like the one we do in cosocket
-    -- so here we just ignore it as the verification is already done in the init phase
+
     for i, s in ipairs(servers) do
         if (s:find(prefix, 1, true) ~= nil) ~= enable_https then
             return nil, "all nodes in the etcd cluster should enable/disable TLS together"
@@ -68,15 +67,6 @@ function _M.generate_conf_server(env, conf)
         if conf.deployment.certs.trusted_ca_cert then
             trusted_ca_cert = pl_path.abspath(conf.deployment.certs.trusted_ca_cert)
         end
-    end
-
-    local ssl_trusted_certificate
-    local etcd_tls_verify = etcd.tls.verify
-    if enable_https and etcd_tls_verify then
-        if not conf.apisix.ssl.ssl_trusted_certificate then
-            return nil, "should set ssl_trusted_certificate if etcd tls verify is enabled"
-        end
-        ssl_trusted_certificate = pl_path.abspath(conf.apisix.ssl.ssl_trusted_certificate)
     end
 
     local conf_render = template.compile([[
@@ -158,9 +148,21 @@ function _M.generate_conf_server(env, conf)
     local tls = etcd.tls
     local client_cert
     local client_cert_key
-    if tls and tls.cert then
-        client_cert = pl_path.abspath(tls.cert)
-        client_cert_key = pl_path.abspath(tls.key)
+    local ssl_trusted_certificate
+    local etcd_tls_verify
+    if tls then
+        if tls.cert then
+            client_cert = pl_path.abspath(tls.cert)
+            client_cert_key = pl_path.abspath(tls.key)
+        end
+
+        etcd_tls_verify = tls.verify
+        if enable_https and etcd_tls_verify then
+            if not conf.apisix.ssl.ssl_trusted_certificate then
+                return nil, "should set ssl_trusted_certificate if etcd tls verify is enabled"
+            end
+            ssl_trusted_certificate = pl_path.abspath(conf.apisix.ssl.ssl_trusted_certificate)
+        end
     end
 
     return conf_render({
