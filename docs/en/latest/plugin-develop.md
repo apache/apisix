@@ -90,7 +90,7 @@ nginx_config:
 ```
 
 The plugin itself provides the init method. It is convenient for plugins to perform some initialization after
-the plugin is loaded.
+the plugin is loaded. If you need to clean up the initialization, you can put it in the corresponding destroy method.
 
 Note : if the dependency of some plugin needs to be initialized when Nginx start, you may need to add logic to the initialization
 method "http_init" in the file __apisix/init.lua__, and you may need to add some processing on generated part of Nginx
