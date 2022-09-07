@@ -24,13 +24,6 @@ if ($out !~ m/function:/) {
     plan('no_plan');
 }
 
-Test::Nginx::Socket::set_http_config_filter(sub {
-    my $config = shift;
-    my $snippet = `./t/bin/gen_snippet.lua conf_server`;
-    $config .= $snippet;
-    return $config;
-});
-
 add_block_preprocessor(sub {
     my ($block) = @_;
 
