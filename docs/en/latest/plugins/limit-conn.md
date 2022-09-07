@@ -102,7 +102,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ## Example usage
 
-The example above configures the Plugin to only allow one concurrent request. When more than one request is received, the Plugin will respond with a 503 status code:
+The example above configures the Plugin to only allow one connection on this route. When more than one request is received, the Plugin will respond with a `503` HTTP status code and reject the connection:
 
 ```shell
 curl -i http://127.0.0.1:9080/index.html?sleep=20 &
