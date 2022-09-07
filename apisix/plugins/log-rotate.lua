@@ -35,11 +35,7 @@ local str_sub = string.sub
 local str_find = string.find
 local str_format = string.format
 local str_reverse = string.reverse
-local tab_insert = table.insert
-local tab_sort = table.sort
-local new_tab = require "table.new"
 local ngx_sleep = require("apisix.core.utils").sleep
-local isempty = require "table.isempty"
 local local_conf
 
 
@@ -138,12 +134,12 @@ local function scan_log_folder(log_file_name)
         if n ~= nil then
             local log_type = file:sub(n + 2)
             if log_type == log_file_name then
-                tab_insert(t, file)
+                core.table.insert(t, file)
             end
         end
     end
 
-    tab_sort(t, tab_sort_comp)
+    core.table.sort(t, tab_sort_comp)
     return t, log_dir
 end
 
@@ -222,11 +218,11 @@ end
 
 
 local function rotate_file(files, now_time, max_kept, wait_time)
-    if isempty(files) then
+    if core.table.isempty(files) then
         return
     end
 
-    local new_files = new_tab(2, 0)
+    local new_files = core.table.new(2, 0)
     -- rename the log files
     for _, file in ipairs(files) do
         local now_date = os_date("%Y-%m-%d_%H-%M-%S", now_time)
@@ -235,7 +231,7 @@ local function rotate_file(files, now_time, max_kept, wait_time)
             return
         end
 
-        tab_insert(new_files, new_file)
+        core.table.insert(new_files, new_file)
     end
 
     -- send signal to reopen log files
@@ -315,14 +311,14 @@ local function rotate()
     elseif max_size > 0 then
         local access_log_file_size = file_size(default_logs[DEFAULT_ACCESS_LOG_FILENAME].file)
         local error_log_file_size = file_size(default_logs[DEFAULT_ERROR_LOG_FILENAME].file)
-        local files = new_tab(2, 0)
+        local files = core.table.new(2, 0)
 
         if access_log_file_size >= max_size then
-            tab_insert(files, DEFAULT_ACCESS_LOG_FILENAME)
+            core.table.insert(files, DEFAULT_ACCESS_LOG_FILENAME)
         end
 
         if error_log_file_size >= max_size then
-            tab_insert(files, DEFAULT_ERROR_LOG_FILENAME)
+            core.table.insert(files, DEFAULT_ERROR_LOG_FILENAME)
         end
 
         rotate_file(files, now_time, max_kept, wait_time)
