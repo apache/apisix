@@ -621,7 +621,7 @@ end
             local p = producer:new(broker_list)
             local ok,err = p.send("test",nil,"hello world")
             if not ok then
-                ngx.say("send to kafka err ")
+                ngx.say("send to kafka err")
                 return
             end
             ngx.say("success")
@@ -632,4 +632,4 @@ GET /t
 --- response_body_like
 success
 --- error_log_like eval
-end to kafka err
+send to kafka err
