@@ -78,7 +78,7 @@ local function _new(etcd_conf)
 end
 
 
-function _M.new()
+local function new()
     local local_conf, err = fetch_local_conf()
     if not local_conf then
         return nil, nil, err
@@ -147,6 +147,7 @@ function _M.new()
 
     return _new(etcd_conf)
 end
+_M.new = new
 
 
 ---
@@ -157,7 +158,7 @@ end
 -- @treturn table|nil the etcd client, or nil if failed.
 -- @treturn string|nil the configured prefix of etcd keys, or nil if failed.
 -- @treturn nil|string the error message.
-function _M.new_without_proxy()
+local function new_without_proxy()
     local local_conf, err = fetch_local_conf()
     if not local_conf then
         return nil, nil, err
@@ -166,14 +167,15 @@ function _M.new_without_proxy()
     local etcd_conf = clone_tab(local_conf.etcd)
     return _new(etcd_conf)
 end
+_M.new_without_proxy = new_without_proxy
 
 
 local function switch_proxy()
     if ngx_get_phase() == "init" or ngx_get_phase() == "init_worker" then
-        return _M.new_without_proxy()
+        return new_without_proxy()
     end
 
-    local etcd_cli, prefix, err = _M.new()
+    local etcd_cli, prefix, err = new()
     if not etcd_cli or err then
         return etcd_cli, prefix, err
     end
@@ -184,7 +186,7 @@ local function switch_proxy()
     local sock = ngx_socket_tcp()
     local ok = sock:connect(etcd_cli.unix_socket_proxy)
     if not ok then
-        return _M.new_without_proxy()
+        return new_without_proxy()
     end
 
     return etcd_cli, prefix, err
