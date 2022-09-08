@@ -234,8 +234,13 @@ apisix:
 apisix:
   node_listen: 8000 # APISIX listening port
 
-etcd:
-  host: "http://foo:2379" # etcd address
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://foo:2379"
 ```
 
 :::warning

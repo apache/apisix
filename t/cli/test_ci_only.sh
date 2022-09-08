@@ -26,10 +26,14 @@
 git checkout conf/config.yaml
 
 echo '
-etcd:
-  host:
-    - "http://127.0.0.1:3379"
-  prefix: "/apisix"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:3379"
+    prefix: "/apisix"
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)

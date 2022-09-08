@@ -24,9 +24,13 @@ __DATA__
 
 === TEST 1: minus timeout to watch repeatedly
 --- extra_yaml_config
-etcd:
-  host:
-    - "http://127.0.0.1:2379"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
 --- config
     location /t {
         content_by_lua_block {
