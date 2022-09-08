@@ -44,7 +44,6 @@ local INTERVAL = 60 * 60    -- rotate interval (unit: second)
 local MAX_KEPT = 24 * 7     -- max number of log files will be kept
 local MAX_SIZE = -1         -- max size of file will be rotated
 local COMPRESSION_FILE_SUFFIX = ".tar.gz" -- compression file suffix
-local WAIT_TIME_BEFORE_COMPRESS = 0.5      -- wait time before compress
 local rotate_time
 local default_logs
 local enable_compression = false
@@ -217,7 +216,7 @@ local function file_size(file)
 end
 
 
-local function rotate_file(files, now_time, max_kept, wait_time)
+local function rotate_file(files, now_time, max_kept)
     if core.table.isempty(files) then
         return
     end
@@ -245,7 +244,7 @@ local function rotate_file(files, now_time, max_kept, wait_time)
     if enable_compression then
         -- Waiting for nginx reopen files
         -- to avoid losing logs during compression
-        ngx_sleep(wait_time)
+        ngx_sleep(0.5)
 
         for _, new_file in ipairs(new_files) do
             compression_file(new_file)
@@ -270,14 +269,11 @@ local function rotate()
     local interval = INTERVAL
     local max_kept = MAX_KEPT
     local max_size = MAX_SIZE
-    -- for test
-    local wait_time = WAIT_TIME_BEFORE_COMPRESS
     local attr = plugin.plugin_attr(plugin_name)
     if attr then
         interval = attr.interval or interval
         max_kept = attr.max_kept or max_kept
         max_size = attr.max_size or max_size
-        wait_time = attr.wait_time or wait_time
         enable_compression = attr.enable_compression or enable_compression
     end
 
@@ -303,7 +299,7 @@ local function rotate()
 
     if now_time >= rotate_time then
         local files = {DEFAULT_ACCESS_LOG_FILENAME, DEFAULT_ERROR_LOG_FILENAME}
-        rotate_file(files, now_time, max_kept, wait_time)
+        rotate_file(files, now_time, max_kept)
 
         -- reset rotate time
         rotate_time = rotate_time + interval
@@ -321,7 +317,7 @@ local function rotate()
             core.table.insert(files, DEFAULT_ERROR_LOG_FILENAME)
         end
 
-        rotate_file(files, now_time, max_kept, wait_time)
+        rotate_file(files, now_time, max_kept)
     end
 end
 
