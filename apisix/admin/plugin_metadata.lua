@@ -21,6 +21,7 @@ local utils   = require("apisix.admin.utils")
 
 local injected_mark = "injected metadata_schema"
 local _M = {
+    need_v3_filter = true,
 }
 
 
