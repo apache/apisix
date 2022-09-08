@@ -85,12 +85,16 @@ test_value
         }
     }
 --- yaml_config
-etcd:
-  host:
-    - "http://127.0.0.1:2379"
-  prefix: "/apisix"
-  user: apisix
-  password: abc123
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: "/apisix"
+    user: apisix
+    password: abc123
 --- request
 GET /t
 --- no_error_log

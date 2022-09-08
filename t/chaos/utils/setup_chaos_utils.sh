@@ -34,9 +34,13 @@ modify_config() {
     DNS_IP=$(kubectl get svc -n kube-system -l k8s-app=kube-dns -o 'jsonpath={..spec.clusterIP}')
     echo "dns_resolver:
   - ${DNS_IP}
-etcd:
-  host:
-  - \"http://etcd.default.svc.cluster.local:2379\"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - \"http://etcd.default.svc.cluster.local:2379\"
 plugin_attr:
   prometheus:
     enable_export_server: false

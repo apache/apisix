@@ -19,21 +19,6 @@
 
 . ./t/cli/common.sh
 
-echo '
-deployment:
-    role: traditional
-    role_traditional:
-        config_provider: etcd
-' > conf/config.yaml
-
-out=$(make init 2>&1 || true)
-if ! echo "$out" | grep 'invalid deployment traditional configuration: property "etcd" is required'; then
-    echo "failed: should check deployment schema during init"
-    exit 1
-fi
-
-echo "passed: should check deployment schema during init"
-
 # HTTP
 echo '
 deployment:

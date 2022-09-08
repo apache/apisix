@@ -32,13 +32,17 @@ etcdctl --endpoints=127.0.0.1:2379 auth enable
 etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 del /apisix --prefix
 
 echo '
-etcd:
-  host:
-    - http://127.0.0.1:2379
-  prefix: /apisix
-  timeout: 30
-  user: root
-  password: apache-api6
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - http://127.0.0.1:2379
+    prefix: /apisix
+    timeout: 30
+    user: root
+    password: apache-api6
 ' > conf/config.yaml
 
 make init
@@ -84,10 +88,14 @@ echo "passed: properly handle the error when connecting to etcd without auth"
 git checkout conf/config.yaml
 
 echo '
-etcd:
-  host:
-    - http://127.0.0.1:2389
-  prefix: /apisix
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - http://127.0.0.1:2389
+    prefix: /apisix
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
@@ -102,10 +110,14 @@ echo "passed: Show retry time info successfully"
 git checkout conf/config.yaml
 
 echo '
-etcd:
-  host:
-    - http://127.0.0.1:2389
-  prefix: /apisix
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - http://127.0.0.1:2389
+    prefix: /apisix
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
@@ -129,13 +141,17 @@ etcdctl --endpoints=127.0.0.1:2379 auth enable
 etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 del /apisix --prefix
 
 echo '
-etcd:
-  host:
-    - http://127.0.0.1:2379
-  prefix: /apisix
-  timeout: 30
-  user: root
-  password: apache-api7
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - http://127.0.0.1:2379
+    prefix: /apisix
+    timeout: 30
+    user: root
+    password: apache-api7
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)

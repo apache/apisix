@@ -275,27 +275,6 @@ nginx_config:                     # config for render the template to generate n
       kubernetes: 1m
       tars: 1m
 
-etcd:
-  host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
-    - "http://127.0.0.1:2379"     # multiple etcd address, if your etcd cluster enables TLS, please use https scheme,
-                                  # e.g. https://127.0.0.1:2379.
-  prefix: /apisix                 # apisix configurations prefix
-  #timeout: 30                    # 30 seconds
-  #resync_delay: 5                # when sync failed and a rest is needed, resync after the configured seconds plus 50% random jitter
-  #health_check_timeout: 10       # etcd retry the unhealthy nodes after the configured seconds
-  startup_retry: 2                # the number of retry to etcd during the startup, default to 2
-  #user: root                     # root username for etcd
-  #password: 5tHkHhYkjr6cQY       # root password for etcd
-  tls:
-    # To enable etcd client certificate you need to build APISIX-Base, see
-    # https://apisix.apache.org/docs/apisix/FAQ#how-do-i-build-the-apisix-base-environment
-    #cert: /path/to/cert          # path of certificate used by the etcd client
-    #key: /path/to/key            # path of key used by the etcd client
-
-    verify: true                  # whether to verify the etcd endpoint certificate when setup a TLS connection to etcd,
-                                  # the default value is true, e.g. the certificate will be verified strictly.
-    #sni:                         # the SNI for etcd TLS requests. If missed, the host part of the URL will be used.
-
 # HashiCorp Vault storage backend for sensitive data retrieval. The config shows an example of what APISIX expects if you
 # wish to integrate Vault for secret (sensetive string, public private keys etc.) retrieval. APISIX communicates with Vault
 # server HTTP APIs. By default, APISIX doesn't need this configuration.
@@ -560,13 +539,27 @@ plugin_attr:
 #  redirect:
 #    https_port: 8443   # the default port for use by HTTP redirects to HTTPS
 
-#deployment:
-#    role: traditional
-#    role_traditional:
-#        config_provider: etcd
-#    etcd:
-#        host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
-#          - "http://127.0.0.1:2379"     # multiple etcd address, if your etcd cluster enables TLS, please use https scheme,
-#                                        # e.g. https://127.0.0.1:2379.
-#        prefix: /apisix                 # configuration prefix in etcd
-#        timeout: 30                     # 30 seconds
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
+      - "http://127.0.0.1:2379"     # multiple etcd address, if your etcd cluster enables TLS, please use https scheme,
+                                    # e.g. https://127.0.0.1:2379.
+    prefix: /apisix                 # configuration prefix in etcd
+    timeout: 30                     # 30 seconds
+    #resync_delay: 5                # when sync failed and a rest is needed, resync after the configured seconds plus 50% random jitter
+    #health_check_timeout: 10       # etcd retry the unhealthy nodes after the configured seconds
+    startup_retry: 2                # the number of retry to etcd during the startup, default to 2
+    #user: root                     # root username for etcd
+    #password: 5tHkHhYkjr6cQY       # root password for etcd
+    tls:
+      # To enable etcd client certificate you need to build APISIX-Base, see
+      # https://apisix.apache.org/docs/apisix/FAQ#how-do-i-build-the-apisix-base-environment
+      #cert: /path/to/cert          # path of certificate used by the etcd client
+      #key: /path/to/key            # path of key used by the etcd client
+
+      verify: true                  # whether to verify the etcd endpoint certificate when setup a TLS connection to etcd,
+                                    # the default value is true, e.g. the certificate will be verified strictly.
+      #sni:                         # the SNI for etcd TLS requests. If missed, the host part of the URL will be used.
