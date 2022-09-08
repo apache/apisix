@@ -123,12 +123,10 @@ local function write_file_data(conf, log_message)
         -- which will cause problem with the log output
         -- it should be atomic
         msg = msg .. "\n"
+        -- write to file directly, no need flush
         local ok, err = file:write(msg)
         if not ok then
             core.log.error("failed to write file: ", conf.path, ", error info: ", err)
-        else
-            -- No buffering model don't need flush, write to file directly
-            -- file:flush()
         end
 
         -- file will be closed by gc, if open_file_cache exists
