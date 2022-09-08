@@ -61,7 +61,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             ngx.log(ngx.ERR, "start xxxxxx")
-            ngx.sleep(2.5)
+            ngx.sleep(3.5)
             local has_split_access_file = false
             local has_split_error_file = false
             local lfs = require("lfs")
@@ -105,7 +105,7 @@ start xxxxxx
 --- config
     location /t {
         content_by_lua_block {
-            ngx.sleep(2)
+            ngx.sleep(3)
 
             local default_logs = {}
             for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
