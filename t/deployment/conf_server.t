@@ -29,13 +29,6 @@ add_block_preprocessor(sub {
 
 });
 
-Test::Nginx::Socket::set_http_config_filter(sub {
-    my $config = shift;
-    my $snippet = `./t/bin/gen_snippet.lua conf_server`;
-    $config .= $snippet;
-    return $config;
-});
-
 run_tests();
 
 __DATA__
@@ -169,6 +162,11 @@ localhost is resolved to: 127.0.0.2
 
 === TEST 4: update balancer if the DNS result changed
 --- extra_init_by_lua
+    local etcd = require("apisix.core.etcd")
+    etcd.switch_proxy = function ()
+        return etcd.new()
+    end
+
     local resolver = require("apisix.core.resolver")
     local old_f = resolver.parse_domain
     package.loaded.counter = 0

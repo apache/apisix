@@ -71,10 +71,14 @@ curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /
 你需要构建 [APISIX-Base](./FAQ.md#如何构建-APISIX-Base-环境？)，并且需要在配置文件中设定 `etcd.tls` 来使 ETCD 的双向认证功能正常工作。
 
 ```yaml
-etcd:
-  tls:
-    cert: /data/certs/etcd_client.pem       # path of certificate used by the etcd client
-    key: /data/certs/etcd_client.key        # path of key used by the etcd client
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    tls:
+      cert: /data/certs/etcd_client.pem       # path of certificate used by the etcd client
+      key: /data/certs/etcd_client.key        # path of key used by the etcd client
 ```
 
 如果 APISIX 不信任 etcd server 使用的 CA 证书，我们需要设置 CA 证书。

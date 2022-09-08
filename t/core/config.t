@@ -55,12 +55,15 @@ first plugin: "real-ip"
         }
     }
 --- yaml_config
-etcd:
-  host:
-    - "http://127.0.0.1:2379" # etcd address
-  prefix: "/apisix"             # apisix configurations prefix
-  timeout: 1
-
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379" # etcd address
+    prefix: "/apisix"           # apisix configurations prefix
+    timeout: 1
 plugins:
   - example-plugin
 

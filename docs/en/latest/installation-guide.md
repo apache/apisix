@@ -240,8 +240,13 @@ Now, if you decide you want to change the etcd address to `http://foo:2379`, you
 apisix:
   node_listen: 8000
 
-etcd:
-  host: "http://foo:2379"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://foo:2379"
 ```
 
 :::warning
