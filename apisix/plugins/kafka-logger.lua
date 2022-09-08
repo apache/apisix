@@ -55,11 +55,11 @@ local schema = {
             type = "object",
             description = "sasl config",
             properties = {
-                mechanism = { type = "string", description = "mechanism" },
+                mechanism = { type = "string", description = "mechanism", default = "PLAIN" },
                 password =  { type = "string", description = "password" },
-                user = { type = "string", description = "user" },
-                strategy = { type = "string", description = "strategy" }
-            }
+                user = { type = "string", description = "user" }
+            },
+            required = {"password", "user"},
         },
         kafka_topic = {type = "string"},
         producer_type = {
