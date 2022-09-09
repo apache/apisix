@@ -490,6 +490,12 @@ _EOC_
         dns_resolver = $dns_addrs_tbl_str,
     }
     apisix.http_init(args)
+
+    -- set apisix_lua_home into constans module
+    -- it may be used by plugins to determine the work path of apisix
+    local constants = require("apisix.constants")
+    constants.apisix_lua_home = "$apisix_home"
+
     $extra_init_by_lua
 _EOC_
 
