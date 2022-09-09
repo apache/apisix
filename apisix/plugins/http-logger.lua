@@ -150,6 +150,22 @@ local function send_http_data(conf, log_message)
 end
 
 
+function _M.rewrite(conf, ctx)
+
+    if conf.include_req_body then
+        -- explicitly read the req body
+        -- When the pre plugins returns, the following collection request will be empty
+        -- Such as the pre jwt plugin in rewrite phase:
+        -- return 401, {message = "Missing JWT token in request"}
+        -- @see log-util line 179 or line 183
+        -- local body = req_get_body_data() or local body_file = ngx.req.get_body_file()
+        -- body or body_file is empty
+        ngx.req.read_body()
+    end
+
+end
+
+
 function _M.body_filter(conf, ctx)
     log_util.collect_body(conf, ctx)
 end
