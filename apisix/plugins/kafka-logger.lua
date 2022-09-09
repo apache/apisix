@@ -238,7 +238,7 @@ function _M.log(conf, ctx)
     broker_config["socket_timeout"] = conf.client_socket_timeout
     broker_config["keepalive_timeout"] = conf.client_keepalive_timeout * 1000
     broker_config["keepalive_size"] = conf.client_keepalive_size
-    
+
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
                                                broker_list, broker_config, conf.cluster_name)
     core.log.info("kafka cluster name ", conf.cluster_name, ", broker_list[1] port ",
