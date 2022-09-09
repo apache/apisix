@@ -97,7 +97,12 @@ local schema = {
         producer_batch_num = {type = "integer", minimum = 1, default = 200},
         producer_batch_size = {type = "integer", minimum = 0, default = 1048576},
         producer_max_buffering = {type = "integer", minimum = 1, default = 50000},
-        producer_time_linger = {type = "integer", minimum = 1, default = 1}
+        producer_time_linger = {type = "integer", minimum = 1, default = 1},
+        client_ssl = {type = "boolean", default = false},
+        client_ssl_verify = {type = "boolean", default = false},
+        client_socket_timeout = {type = "integer", default = 3000},
+        client_keepalive_timeout = {type = "integer", default = 600},
+        client_keepalive_size = {type = "integer", default = 2}
     },
     required = {"broker_list", "kafka_topic"}
 }
@@ -228,7 +233,12 @@ function _M.log(conf, ctx)
     broker_config["batch_size"] = conf.producer_batch_size
     broker_config["max_buffering"] = conf.producer_max_buffering
     broker_config["flush_time"] = conf.producer_time_linger * 1000
-
+    broker_config["ssl"] = conf.client_ssl
+    broker_config["ssl_verify"] = conf.client_ssl_verify
+    broker_config["socket_timeout"] = conf.client_socket_timeout
+    broker_config["keepalive_timeout"] = conf.client_keepalive_timeout * 1000
+    broker_config["keepalive_size"] = conf.client_keepalive_size
+    
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
                                                broker_list, broker_config, conf.cluster_name)
     core.log.info("kafka cluster name ", conf.cluster_name, ", broker_list[1] port ",
