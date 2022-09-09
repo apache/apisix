@@ -641,7 +641,19 @@ passed
 
 
 
-=== TEST 21: access
+=== TEST 21: create producer with sasl_config
+--- extra_init_by_lua
+    local producer = require("resty.kafka.producer")
+    local klogger = require("apisix.plugins.kafka-logger")
+    producer.new = function(klogger)
+        if (!klogger.sasl_config) then
+            ngx.say("create producer without sasl_config")
+            return producer
+        end
+        producer.sasl_config = klogger.sasl_config
+        ngx.say("create producer with sasl_config")
+        return producer
+    end
 --- request
 GET /hello
 --- response_body
