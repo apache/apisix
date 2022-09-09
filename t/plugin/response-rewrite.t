@@ -699,3 +699,50 @@ X-A: 127.0.0.1
 X-B: from 127.0.0.1 to 127.0.0.1:1980
 --- no_error_log
 [error]
+
+
+
+=== TEST 25: set empty body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "response-rewrite": {
+                            "body": ""
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 26: hit set empty body
+--- request
+GET /hello
+--- response_body
+--- no_error_log
+[error]
