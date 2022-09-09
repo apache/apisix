@@ -432,6 +432,9 @@ http {
             dns_resolver = dns_resolver,
         }
         apisix.http_init(args)
+
+        local constants = require("apisix.constants")
+        constants.apisix_lua_home = "{*apisix_lua_home*}"
     }
 
     init_worker_by_lua_block {

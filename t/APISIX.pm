@@ -490,6 +490,10 @@ _EOC_
         dns_resolver = $dns_addrs_tbl_str,
     }
     apisix.http_init(args)
+
+    local constants = require("apisix.constants")
+    constants.apisix_lua_home = "$apisix_home"
+
     $extra_init_by_lua
 _EOC_
 
