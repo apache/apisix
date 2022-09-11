@@ -700,6 +700,15 @@ Please modify "admin_key" in conf/config.yaml .
                 inject_environment(item, envs)
             end
         end
+
+        if not sys_conf["envs"] then
+            sys_conf["envs"] = {}
+        end
+
+        for item in pairs(envs) do
+            table_insert(sys_conf["envs"], item)
+        end
+
     end
 
     -- fix up lua path

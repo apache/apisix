@@ -416,12 +416,11 @@ local function multi_mode_worker_init(confs)
 
         ctx[id] = endpoint_dict
     end
-
 end
 
 
 local function multi_mode_init(confs)
-    ctx = {}
+    ctx = core.table.new(#confs, 0)
 
     if process.type() ~= "privileged agent" then
         multi_mode_worker_init(confs)

@@ -56,12 +56,12 @@ jobs:
 
           KUBERNETES_CLIENT_TOKEN_CONTENT=$(kubectl get secrets | grep apisix-test | awk '{system("kubectl get secret -o jsonpath={.data.token} "$1" | base64 --decode")}')
 
-          KUBERNETES_CLIENT_TOKEN_DIR="/var/run/secrets/kubernetes.io/serviceaccount"
+          KUBERNETES_CLIENT_TOKEN_DIR="/tmp/var/run/secrets/kubernetes.io/serviceaccount"
 
           KUBERNETES_CLIENT_TOKEN_FILE=${KUBERNETES_CLIENT_TOKEN_DIR}/token
 
-          sudo mkdir -p ${KUBERNETES_CLIENT_TOKEN_DIR}
-          sudo echo -n "$KUBERNETES_CLIENT_TOKEN_CONTENT" > ${KUBERNETES_CLIENT_TOKEN_FILE}
+          mkdir -p ${KUBERNETES_CLIENT_TOKEN_DIR}
+          echo -n "$KUBERNETES_CLIENT_TOKEN_CONTENT" > ${KUBERNETES_CLIENT_TOKEN_FILE}
 
           echo 'KUBERNETES_SERVICE_HOST=127.0.0.1'
           echo 'KUBERNETES_SERVICE_PORT=6443'
