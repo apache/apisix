@@ -334,7 +334,7 @@ end
 local function single_mode_init(conf)
     local endpoint_dict = ngx.shared.kubernetes
     if not endpoint_dict then
-        error("failed to get lua_shared_dict: ngx.shared.kubernetes ",
+        error("failed to get lua_shared_dict: ngx.shared.kubernetes, " ..
                 "please check your APISIX version")
     end
 
