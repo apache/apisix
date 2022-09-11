@@ -56,13 +56,15 @@ discovery:
       - id: dev
         service:
           host: ${DEV_HOST}
+          port: ${DEV_PORT}
         client:
-          token: ${DEV_PORT}
+          token: ${DEV_TOKEN}
       - id: pro
         service:
           host: ${PRO_HOST}
+          port: ${PRO_PORT}
         client:
-          token: ${PRO_PORT}
+          token: ${PRO_TOKEN}
         shared_size: 2m
 ' >conf/config.yaml
 
@@ -78,12 +80,22 @@ if ! grep "env DEV_PORT" conf/nginx.conf; then
   exit 1
 fi
 
+if ! grep "env DEV_TOKEN" conf/nginx.conf; then
+  echo "kubernetes discovery env inject failed"
+  exit 1
+fi
+
 if ! grep "env PRO_HOST" conf/nginx.conf; then
   echo "kubernetes discovery env inject failed"
   exit 1
 fi
 
 if ! grep "env PRO_PORT" conf/nginx.conf; then
+  echo "kubernetes discovery env inject failed"
+  exit 1
+fi
+
+if ! grep "env PRO_TOKEN" conf/nginx.conf; then
   echo "kubernetes discovery env inject failed"
   exit 1
 fi
