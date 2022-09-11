@@ -692,11 +692,11 @@ Please modify "admin_key" in conf/config.yaml .
 
         local envs = {}
         if #kubernetes_conf == 0 then
-            sys_conf["discovery_shared_dict"]["kubernetes"] = kubernetes_conf.shared_size or "1m"
+            sys_conf["discovery_shared_dict"]["kubernetes"] = kubernetes_conf.shared_size
             inject_environment(kubernetes_conf, envs)
         else
             for _, item in ipairs(kubernetes_conf) do
-                sys_conf["discovery_shared_dict"]["kubernetes-" .. item.id] = item.shared_size or "1m"
+                sys_conf["discovery_shared_dict"]["kubernetes-" .. item.id] = item.shared_size
                 inject_environment(item, envs)
             end
         end

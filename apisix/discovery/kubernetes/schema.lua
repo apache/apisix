@@ -174,7 +174,7 @@ return {
                                 oneOf = port_patterns,
                             },
                         },
-                        requried = { "host", "port" }
+                        required = { "host", "port" }
                     },
                     client = {
                         type = "object",
@@ -248,7 +248,7 @@ return {
                         default = "1m",
                     }
                 },
-                requried = { "id", "service", "client" }
+                required = { "id", "service", "client" }
             },
         }
     }

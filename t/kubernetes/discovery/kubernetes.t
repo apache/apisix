@@ -80,7 +80,7 @@ _EOC_
                   ngx.say("false, current is ",core.json.encode(current,true))
                 end
             }
-        }        
+        }
 
 _EOC_
 
@@ -173,7 +173,7 @@ GET /compare
   },
   "client": {
     "token_file" : "/var/run/secrets/kubernetes.io/serviceaccount/token"
-  }, 
+  },
   "shared_size": "2m",
   "default_weight": 50
 }

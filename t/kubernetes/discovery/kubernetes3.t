@@ -39,7 +39,7 @@ discovery:
         port: "6445"
       client:
         token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
- 
+
 _EOC_
 
     our $scale_ns_c = <<_EOC_;
@@ -332,7 +332,6 @@ POST /operators
 ]
 --- more_headers
 Content-type: application/json
---- error_code: 200
 
 
 
@@ -372,7 +371,7 @@ discovery:
         port: "6445"
       client:
         token: ${KUBERNETES_CLIENT_TOKEN}
- 
+
 --- request
 GET /queries
 [

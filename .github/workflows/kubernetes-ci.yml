@@ -45,7 +45,7 @@ jobs:
       - name: Setup kubernetes cluster
         run: |
           KUBERNETES_VERSION="v1.22.7"
-          
+
           kind create cluster --name apisix-test --config ./t/kubernetes/configs/kind.yaml --image kindest/node:${KUBERNETES_VERSION}
 
           kubectl wait --for=condition=Ready nodes --all --timeout=180s
