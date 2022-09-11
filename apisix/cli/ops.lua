@@ -653,44 +653,52 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
-    -- inject kubernetes discovery environment variable
+    -- inject kubernetes discovery shared dict and environment variable
     if enabled_discoveries["kubernetes"] then
+
+        if not sys_conf["discovery_shared_dict"] then
+            sys_conf["discovery_shared_dict"] = {}
+        end
 
         local kubernetes_conf = yaml_conf.discovery["kubernetes"]
 
-        local keys = {
-            kubernetes_conf.service.host,
-            kubernetes_conf.service.port,
-        }
+        local inject_environment = function(conf, envs)
+            local keys = {
+                conf.service.host,
+                conf.service.port,
+            }
 
-        if kubernetes_conf.client.token then
-            table_insert(keys, kubernetes_conf.client.token)
-        end
+            if conf.client.token then
+                table_insert(keys, conf.client.token)
+            end
 
-        if kubernetes_conf.client.token_file then
-            table_insert(keys, kubernetes_conf.client.token_file)
-        end
+            if conf.client.token_file then
+                table_insert(keys, conf.client.token_file)
+            end
 
-        local envs = {}
-
-        for _, key in ipairs(keys) do
-            if #key > 3 then
-                local first, second = str_byte(key, 1, 2)
-                if first == str_byte('$') and second == str_byte('{') then
-                    local last = str_byte(key, #key)
-                    if last == str_byte('}') then
-                        envs[str_sub(key, 3, #key - 1)] = ""
+            for _, key in ipairs(keys) do
+                if #key > 3 then
+                    local first, second = str_byte(key, 1, 2)
+                    if first == str_byte('$') and second == str_byte('{') then
+                        local last = str_byte(key, #key)
+                        if last == str_byte('}') then
+                            envs[str_sub(key, 3, #key - 1)] = ""
+                        end
                     end
                 end
             end
+
         end
 
-        if not sys_conf["envs"] then
-            sys_conf["envs"] = {}
-        end
-
-        for item in pairs(envs) do
-            table_insert(sys_conf["envs"], item)
+        local envs = {}
+        if #kubernetes_conf == 0 then
+            sys_conf["discovery_shared_dict"]["kubernetes"] = kubernetes_conf.shared_size or "1m"
+            inject_environment(kubernetes_conf, envs)
+        else
+            for _, item in ipairs(kubernetes_conf) do
+                sys_conf["discovery_shared_dict"]["kubernetes-" .. item.id] = item.shared_size or "1m"
+                inject_environment(item, envs)
+            end
         end
     end
 

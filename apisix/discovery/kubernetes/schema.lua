@@ -28,113 +28,228 @@ local port_patterns = {
 local namespace_pattern = [[^[a-z0-9]([-a-z0-9_.]*[a-z0-9])?$]]
 local namespace_regex_pattern = [[^[\x21-\x7e]*$]]
 
+local shared_pattern = [[^[1-9][0-9]?m$]]
+
 return {
-    type = "object",
-    properties = {
-        service = {
+    anyOf = {
+        {
             type = "object",
             properties = {
-                schema = {
-                    type = "string",
-                    enum = { "http", "https" },
-                    default = "https",
+                service = {
+                    type = "object",
+                    properties = {
+                        schema = {
+                            type = "string",
+                            enum = { "http", "https" },
+                            default = "https",
+                        },
+                        host = {
+                            type = "string",
+                            default = "${KUBERNETES_SERVICE_HOST}",
+                            oneOf = host_patterns,
+                        },
+                        port = {
+                            type = "string",
+                            default = "${KUBERNETES_SERVICE_PORT}",
+                            oneOf = port_patterns,
+                        },
+                    },
+                    default = {
+                        schema = "https",
+                        host = "${KUBERNETES_SERVICE_HOST}",
+                        port = "${KUBERNETES_SERVICE_PORT}",
+                    }
                 },
-                host = {
-                    type = "string",
-                    default = "${KUBERNETES_SERVICE_HOST}",
-                    oneOf = host_patterns,
+                client = {
+                    type = "object",
+                    properties = {
+                        token = {
+                            type = "string",
+                            oneOf = {
+                                { pattern = [[\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
+                                { pattern = [[^[A-Za-z0-9+\/._=-]{0,4096}$]] },
+                            },
+                        },
+                        token_file = {
+                            type = "string",
+                            pattern = [[^[^\:*?"<>|]*$]],
+                            minLength = 1,
+                            maxLength = 500,
+                        }
+                    },
+                    default = {
+                        token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+                    },
+                    ["if"] = {
+                        ["not"] = {
+                            anyOf = {
+                                { required = { "token" } },
+                                { required = { "token_file" } },
+                            }
+                        }
+                    },
+                    ["then"] = {
+                        properties = {
+                            token_file = {
+                                default = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+                            }
+                        }
+                    }
                 },
-                port = {
-                    type = "string",
-                    default = "${KUBERNETES_SERVICE_PORT}",
-                    oneOf = port_patterns,
+                default_weight = {
+                    type = "integer",
+                    default = 50,
+                    minimum = 0,
                 },
-            },
-            default = {
-                schema = "https",
-                host = "${KUBERNETES_SERVICE_HOST}",
-                port = "${KUBERNETES_SERVICE_PORT}",
-            }
-        },
-        client = {
-            type = "object",
-            properties = {
-                token = {
-                    type = "string",
+                namespace_selector = {
+                    type = "object",
+                    properties = {
+                        equal = {
+                            type = "string",
+                            pattern = namespace_pattern,
+                        },
+                        not_equal = {
+                            type = "string",
+                            pattern = namespace_pattern,
+                        },
+                        match = {
+                            type = "array",
+                            items = {
+                                type = "string",
+                                pattern = namespace_regex_pattern
+                            },
+                            minItems = 1
+                        },
+                        not_match = {
+                            type = "array",
+                            items = {
+                                type = "string",
+                                pattern = namespace_regex_pattern
+                            },
+                            minItems = 1
+                        },
+                    },
                     oneOf = {
-                        { pattern = [[\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
-                        { pattern = [[^[A-Za-z0-9+\/._=-]{0,4096}$]] },
+                        { required = {} },
+                        { required = { "equal" } },
+                        { required = { "not_equal" } },
+                        { required = { "match" } },
+                        { required = { "not_match" } }
                     },
                 },
-                token_file = {
+                label_selector = {
                     type = "string",
-                    pattern = [[^[^\:*?"<>|]*$]],
-                    minLength = 1,
-                    maxLength = 500,
+                },
+                shared_size = {
+                    type = "string",
+                    pattern = shared_pattern,
+                    default = "1m",
                 }
             },
-            oneOf = {
-                { required = { "token" } },
-                { required = { "token_file" } },
-            },
-            default = {
-                token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
-            }
         },
-        default_weight = {
-            type = "integer",
-            default = 50,
-            minimum = 0,
-        },
-        namespace_selector = {
-            type = "object",
-            properties = {
-                equal = {
-                    type = "string",
-                    pattern = namespace_pattern,
-                },
-                not_equal = {
-                    type = "string",
-                    pattern = namespace_pattern,
-                },
-                match = {
-                    type = "array",
-                    items = {
+        {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "object",
+                properties = {
+                    id = {
                         type = "string",
-                        pattern = namespace_regex_pattern
+                        pattern = [[^[a-z0-9]{1,6}$]]
                     },
-                    minItems = 1
-                },
-                not_match = {
-                    type = "array",
-                    items = {
+                    service = {
+                        type = "object",
+                        properties = {
+                            schema = {
+                                type = "string",
+                                enum = { "http", "https" },
+                                default = "https",
+                            },
+                            host = {
+                                type = "string",
+                                oneOf = host_patterns,
+                            },
+                            port = {
+                                type = "string",
+                                oneOf = port_patterns,
+                            },
+                        },
+                        requried = { "host", "port" }
+                    },
+                    client = {
+                        type = "object",
+                        properties = {
+                            token = {
+                                type = "string",
+                                oneOf = {
+                                    { pattern = [[\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
+                                    { pattern = [[^[A-Za-z0-9+\/._=-]{0,4096}$]] },
+                                },
+                            },
+                            token_file = {
+                                type = "string",
+                                pattern = [[^[^\:*?"<>|]*$]],
+                                minLength = 1,
+                                maxLength = 500,
+                            }
+                        },
+                        oneOf = {
+                            { required = { "token" } },
+                            { required = { "token_file" } },
+                        },
+                    },
+                    default_weight = {
+                        type = "integer",
+                        default = 50,
+                        minimum = 0,
+                    },
+                    namespace_selector = {
+                        type = "object",
+                        properties = {
+                            equal = {
+                                type = "string",
+                                pattern = namespace_pattern,
+                            },
+                            not_equal = {
+                                type = "string",
+                                pattern = namespace_pattern,
+                            },
+                            match = {
+                                type = "array",
+                                items = {
+                                    type = "string",
+                                    pattern = namespace_regex_pattern
+                                },
+                                minItems = 1
+                            },
+                            not_match = {
+                                type = "array",
+                                items = {
+                                    type = "string",
+                                    pattern = namespace_regex_pattern
+                                },
+                                minItems = 1
+                            },
+                        },
+                        oneOf = {
+                            { required = {} },
+                            { required = { "equal" } },
+                            { required = { "not_equal" } },
+                            { required = { "match" } },
+                            { required = { "not_match" } }
+                        },
+                    },
+                    label_selector = {
                         type = "string",
-                        pattern = namespace_regex_pattern
                     },
-                    minItems = 1
+                    shared_size = {
+                        type = "string",
+                        pattern = shared_pattern,
+                        default = "1m",
+                    }
                 },
+                requried = { "id", "service", "client" }
             },
-            oneOf = {
-                { required = { } },
-                { required = { "equal" } },
-                { required = { "not_equal" } },
-                { required = { "match" } },
-                { required = { "not_match" } }
-            },
-        },
-        label_selector = {
-            type = "string",
         }
-    },
-    default = {
-        service = {
-            schema = "https",
-            host = "${KUBERNETES_SERVICE_HOST}",
-            port = "${KUBERNETES_SERVICE_PORT}",
-        },
-        client = {
-            token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
-        },
-        default_weight = 50
     }
 }
