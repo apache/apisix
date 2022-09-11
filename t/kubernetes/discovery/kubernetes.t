@@ -226,29 +226,48 @@ apisix:
   enable_admin: false
 discovery:
   kubernetes:
-  - service:
+  - id: "debug"
+    service:
         host: "1.cluster.com"
-  - service:
+        port: "6445"
+    client:
+        token: "token"
+  - id: "release"
+    service:
         schema: "http"
         host: "2.cluster.com"
+        port: "${MyPort}"
+    client:
+        token_file: "/var/token"
+    default_weight: 33
     shared_size: "2m"
 --- request
 GET /compare
 [
   {
+    "id": "debug",
     "service": {
       "schema": "https",
-      "host": "1.cluster.com"
+      "host": "1.cluster.com",
+      "port": "6445"
+    },
+    "client": {
+      "token": "token"
     },
     "default_weight": 50,
     "shared_size": "1m"
   },
   {
+    "id": "release",
     "service": {
       "schema": "http",
-      "host": "2.cluster.com"
+      "host": "2.cluster.com",
+      "port": "${MyPort}"
     },
-    "default_weight": 50,
+    "client": {
+      "token_file": "/var/token"
+    },
+    "default_weight": 33,
     "shared_size": "2m"
   }
 ]
