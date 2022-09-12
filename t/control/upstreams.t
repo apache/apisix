@@ -30,7 +30,6 @@ add_block_preprocessor(sub {
 apisix:
     node_listen: 1984
     config_center: yaml
-    enable_admin: false
 _EOC_
 
         $block->set_value("yaml_config", $yaml_config);

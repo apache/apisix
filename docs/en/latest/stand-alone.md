@@ -40,7 +40,6 @@ Refer to the example below:
 
 ```yaml
 apisix:
-  enable_admin: false
   config_center: yaml
 ```
 
