@@ -275,4 +275,3 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
-
