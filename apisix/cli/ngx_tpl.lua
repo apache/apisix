@@ -239,8 +239,8 @@ http {
     lua_shared_dict etcd-cluster-health-check {* http.lua_shared_dict["etcd-cluster-health-check"] *}; # etcd health check
 
     # for discovery shared dict
-    {% if discovery_shared_dict then %}
-    {% for key, size in pairs(discovery_shared_dict) do %}
+    {% if discovery_shared_dicts then %}
+    {% for key, size in pairs(discovery_shared_dicts) do %}
     lua_shared_dict {*key*} {*size*};
     {% end %}
     {% end %}

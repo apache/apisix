@@ -469,7 +469,7 @@ local function multiple_mode_init(confs)
         }, { __index = endpoints_informer })
     end
 
-    for id, item in pairs(ctx) do
+    for _, item in pairs(ctx) do
         start_fetch(item)
     end
 end

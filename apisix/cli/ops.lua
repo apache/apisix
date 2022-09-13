@@ -656,8 +656,8 @@ Please modify "admin_key" in conf/config.yaml .
     -- inject kubernetes discovery shared dict and environment variable
     if enabled_discoveries["kubernetes"] then
 
-        if not sys_conf["discovery_shared_dict"] then
-            sys_conf["discovery_shared_dict"] = {}
+        if not sys_conf["discovery_shared_dicts"] then
+            sys_conf["discovery_shared_dicts"] = {}
         end
 
         local kubernetes_conf = yaml_conf.discovery["kubernetes"]
@@ -692,11 +692,11 @@ Please modify "admin_key" in conf/config.yaml .
 
         local envs = {}
         if #kubernetes_conf == 0 then
-            sys_conf["discovery_shared_dict"]["kubernetes"] = kubernetes_conf.shared_size
+            sys_conf["discovery_shared_dicts"]["kubernetes"] = kubernetes_conf.shared_size
             inject_environment(kubernetes_conf, envs)
         else
             for _, item in ipairs(kubernetes_conf) do
-                sys_conf["discovery_shared_dict"]["kubernetes-" .. item.id] = item.shared_size
+                sys_conf["discovery_shared_dicts"]["kubernetes-" .. item.id] = item.shared_size
                 inject_environment(item, envs)
             end
         end
