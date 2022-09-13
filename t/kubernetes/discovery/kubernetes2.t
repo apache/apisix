@@ -23,10 +23,22 @@ BEGIN {
 apisix:
   node_listen: 1984
   config_center: yaml
+  enable_admin: false
 discovery:
   kubernetes:
-    client:
-      token_file: /tmp/var/run/secrets/kubernetes.io/serviceaccount/token
+    - id: first
+      service:
+        host: "127.0.0.1"
+        port: "6443"
+      client:
+        token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+    - id: second
+      service:
+        schema: "http",
+        host: "127.0.0.1",
+        port: "6445"
+      client:
+        token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
 
 _EOC_
 
@@ -320,7 +332,6 @@ POST /operators
 ]
 --- more_headers
 Content-type: application/json
---- error_code: 200
 
 
 
@@ -328,237 +339,291 @@ Content-type: application/json
 --- yaml_config eval: $::yaml_config
 --- request
 GET /queries
-["ns-a/ep:p1","ns-a/ep:p2","ns-b/ep:p1","ns-b/ep:p2","ns-c/ep:5001","ns-c/ep:5002"]
+[
+  "first/ns-a/ep:p1","first/ns-a/ep:p2","first/ns-b/ep:p1","first/ns-b/ep:p2","first/ns-c/ep:5001","first/ns-c/ep:5002",
+  "second/ns-a/ep:p1","second/ns-a/ep:p2","second/ns-b/ep:p1","second/ns-b/ep:p2","second/ns-c/ep:5001","second/ns-c/ep:5002"
+]
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 2 2 2 2 2 2 }
+qr{ 2 2 2 2 2 2 2 2 2 2 2 2 }
 
 
 
-=== TEST 3: use specify parameters
+=== TEST 3: use specify environment parameters
 --- yaml_config
 apisix:
   node_listen: 1984
   config_center: yaml
+  enable_admin: false
 discovery:
   kubernetes:
-    service:
-      host: "127.0.0.1"
-      port: "6443"
-    client:
-      token: "${KUBERNETES_CLIENT_TOKEN}"
+    - id: first
+      service:
+        host: ${KUBERNETES_SERVICE_HOST}
+        port: ${KUBERNETES_SERVICE_PORT}
+      client:
+        token: ${KUBERNETES_CLIENT_TOKEN}
+    - id: second
+      service:
+        schema: "http",
+        host: "127.0.0.1",
+        port: "6445"
+      client:
+        token: ${KUBERNETES_CLIENT_TOKEN}
+
 --- request
 GET /queries
-["ns-a/ep:p1","ns-a/ep:p2","ns-b/ep:p1","ns-b/ep:p2","ns-c/ep:5001","ns-c/ep:5002"]
+[
+  "first/ns-a/ep:p1","first/ns-a/ep:p2","first/ns-b/ep:p1","first/ns-b/ep:p2","first/ns-c/ep:5001","first/ns-c/ep:5002",
+  "second/ns-a/ep:p1","second/ns-a/ep:p2","second/ns-b/ep:p1","second/ns-b/ep:p2","second/ns-c/ep:5001","second/ns-c/ep:5002"
+]
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 2 2 2 2 2 2 }
+qr{ 2 2 2 2 2 2 2 2 2 2 2 2 }
 
 
 
-=== TEST 4: use specify environment parameters
+=== TEST 4: use namespace selector equal
 --- yaml_config
 apisix:
   node_listen: 1984
   config_center: yaml
+  enable_admin: false
 discovery:
   kubernetes:
-    service:
-      host: ${KUBERNETES_SERVICE_HOST}
-      port: ${KUBERNETES_SERVICE_PORT}
-    client:
-      token: ${KUBERNETES_CLIENT_TOKEN}
+    - id: first
+      service:
+        host: ${KUBERNETES_SERVICE_HOST}
+        port: ${KUBERNETES_SERVICE_PORT}
+      client:
+        token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
+      namespace_selector:
+        equal: ns-a
+    - id: second
+      service:
+        schema: "http",
+        host: "127.0.0.1",
+        port: "6445"
+      client:
+        token: ${KUBERNETES_CLIENT_TOKEN}
 --- request
 GET /queries
-["ns-a/ep:p1","ns-a/ep:p2","ns-b/ep:p1","ns-b/ep:p2","ns-c/ep:5001","ns-c/ep:5002"]
+[
+  "first/ns-a/ep:p1","first/ns-a/ep:p2","first/ns-b/ep:p1","first/ns-b/ep:p2","first/ns-c/ep:5001","first/ns-c/ep:5002",
+  "second/ns-a/ep:p1","second/ns-a/ep:p2","second/ns-b/ep:p1","second/ns-b/ep:p2","second/ns-c/ep:5001","second/ns-c/ep:5002"
+]
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 2 2 2 2 2 2 }
+qr{ 2 2 0 0 0 0 2 2 2 2 2 2 }
 
 
 
-=== TEST 5: use token_file
+=== TEST 5: use namespace selector not_equal
 --- yaml_config
 apisix:
   node_listen: 1984
   config_center: yaml
+  enable_admin: false
 discovery:
   kubernetes:
-    client:
-      token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
+    - id: first
+      service:
+        host: ${KUBERNETES_SERVICE_HOST}
+        port: ${KUBERNETES_SERVICE_PORT}
+      client:
+        token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
+      namespace_selector:
+        not_equal: ns-a
+    - id: second
+      service:
+        schema: "http",
+        host: "127.0.0.1",
+        port: "6445"
+      client:
+        token: ${KUBERNETES_CLIENT_TOKEN}
 --- request
 GET /queries
-["ns-a/ep:p1","ns-a/ep:p2","ns-b/ep:p1","ns-b/ep:p2","ns-c/ep:5001","ns-c/ep:5002"]
+[
+  "first/ns-a/ep:p1","first/ns-a/ep:p2","first/ns-b/ep:p1","first/ns-b/ep:p2","first/ns-c/ep:5001","first/ns-c/ep:5002",
+  "second/ns-a/ep:p1","second/ns-a/ep:p2","second/ns-b/ep:p1","second/ns-b/ep:p2","second/ns-c/ep:5001","second/ns-c/ep:5002"
+]
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 2 2 2 2 2 2 }
+qr{ 0 0 2 2 2 2 2 2 2 2 2 2 }
 
 
 
-=== TEST 6: use http
+=== TEST 6: use namespace selector match
 --- yaml_config
 apisix:
   node_listen: 1984
   config_center: yaml
+  enable_admin: false
 discovery:
   kubernetes:
-    service:
-      schema: http
-      host: "127.0.0.1"
-      port: "6445"
-    client:
-      token: ""
+    - id: first
+      service:
+        host: ${KUBERNETES_SERVICE_HOST}
+        port: ${KUBERNETES_SERVICE_PORT}
+      client:
+        token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
+      namespace_selector:
+        match: [ns-a,ns-b]
+    - id: second
+      service:
+        schema: "http",
+        host: "127.0.0.1",
+        port: "6445"
+      client:
+        token: ${KUBERNETES_CLIENT_TOKEN}
 --- request
 GET /queries
-["ns-a/ep:p1","ns-a/ep:p2","ns-b/ep:p1","ns-b/ep:p2","ns-c/ep:5001","ns-c/ep:5002"]
+[
+  "first/ns-a/ep:p1","first/ns-a/ep:p2","first/ns-b/ep:p1","first/ns-b/ep:p2","first/ns-c/ep:5001","first/ns-c/ep:5002",
+  "second/ns-a/ep:p1","second/ns-a/ep:p2","second/ns-b/ep:p1","second/ns-b/ep:p2","second/ns-c/ep:5001","second/ns-c/ep:5002"
+]
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 2 2 2 2 2 2 }
+qr{ 2 2 2 2 0 0 2 2 2 2 2 2 }
 
 
 
-=== TEST 7: use namespace selector equal
+=== TEST 7: use namespace selector match with regex
 --- yaml_config
 apisix:
   node_listen: 1984
   config_center: yaml
+  enable_admin: false
 discovery:
   kubernetes:
-    client:
-      token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
-    namespace_selector:
-      equal: ns-a
+    - id: first
+      service:
+        host: ${KUBERNETES_SERVICE_HOST}
+        port: ${KUBERNETES_SERVICE_PORT}
+      client:
+        token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
+      namespace_selector:
+        match: ["ns-[ab]"]
+    - id: second
+      service:
+        schema: "http",
+        host: "127.0.0.1",
+        port: "6445"
+      client:
+        token: ${KUBERNETES_CLIENT_TOKEN}
 --- request
 GET /queries
-["ns-a/ep:p1","ns-a/ep:p2","ns-b/ep:p1","ns-b/ep:p2","ns-c/ep:5001","ns-c/ep:5002"]
+[
+  "first/ns-a/ep:p1","first/ns-a/ep:p2","first/ns-b/ep:p1","first/ns-b/ep:p2","first/ns-c/ep:5001","first/ns-c/ep:5002",
+  "second/ns-a/ep:p1","second/ns-a/ep:p2","second/ns-b/ep:p1","second/ns-b/ep:p2","second/ns-c/ep:5001","second/ns-c/ep:5002"
+]
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 2 2 0 0 0 0 }
+qr{ 2 2 2 2 0 0 2 2 2 2 2 2 }
 
 
 
-=== TEST 8: use namespace selector not_equal
+=== TEST 8: use namespace selector not_match
 --- yaml_config
 apisix:
   node_listen: 1984
   config_center: yaml
+  enable_admin: false
 discovery:
   kubernetes:
-    client:
-      token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
-    namespace_selector:
-      not_equal: ns-a
+    - id: first
+      service:
+        host: ${KUBERNETES_SERVICE_HOST}
+        port: ${KUBERNETES_SERVICE_PORT}
+      client:
+        token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
+      namespace_selector:
+        not_match: ["ns-a"]
+    - id: second
+      service:
+        schema: "http",
+        host: "127.0.0.1",
+        port: "6445"
+      client:
+        token: ${KUBERNETES_CLIENT_TOKEN}
 --- request
 GET /queries
-["ns-a/ep:p1","ns-a/ep:p2","ns-b/ep:p1","ns-b/ep:p2","ns-c/ep:5001","ns-c/ep:5002"]
+[
+  "first/ns-a/ep:p1","first/ns-a/ep:p2","first/ns-b/ep:p1","first/ns-b/ep:p2","first/ns-c/ep:5001","first/ns-c/ep:5002",
+  "second/ns-a/ep:p1","second/ns-a/ep:p2","second/ns-b/ep:p1","second/ns-b/ep:p2","second/ns-c/ep:5001","second/ns-c/ep:5002"
+]
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 0 0 2 2 2 2 }
+qr{ 0 0 2 2 2 2 2 2 2 2 2 2 }
 
 
 
-=== TEST 9: use namespace selector match
+=== TEST 9: use namespace selector not_match with regex
 --- yaml_config
 apisix:
   node_listen: 1984
   config_center: yaml
+  enable_admin: false
 discovery:
   kubernetes:
-    client:
-      token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
-    namespace_selector:
-      match: [ns-a,ns-b]
+    - id: first
+      service:
+        host: ${KUBERNETES_SERVICE_HOST}
+        port: ${KUBERNETES_SERVICE_PORT}
+      client:
+        token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
+      namespace_selector:
+        not_match: ["ns-[ab]"]
+    - id: second
+      service:
+        schema: "http",
+        host: "127.0.0.1",
+        port: "6445"
+      client:
+        token: ${KUBERNETES_CLIENT_TOKEN}
 --- request
 GET /queries
-["ns-a/ep:p1","ns-a/ep:p2","ns-b/ep:p1","ns-b/ep:p2","ns-c/ep:5001","ns-c/ep:5002"]
+[
+  "first/ns-a/ep:p1","first/ns-a/ep:p2","first/ns-b/ep:p1","first/ns-b/ep:p2","first/ns-c/ep:5001","first/ns-c/ep:5002",
+  "second/ns-a/ep:p1","second/ns-a/ep:p2","second/ns-b/ep:p1","second/ns-b/ep:p2","second/ns-c/ep:5001","second/ns-c/ep:5002"
+]
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 2 2 2 2 0 0 }
+qr{ 0 0 0 0 2 2 2 2 2 2 2 2 }
 
 
 
-=== TEST 10: use namespace selector match with regex
+=== TEST 10: use label selector
 --- yaml_config
 apisix:
   node_listen: 1984
   config_center: yaml
+  enable_admin: false
 discovery:
   kubernetes:
-    client:
-      token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
-    namespace_selector:
-      match: ["ns-[ab]"]
---- request
-GET /queries
-["ns-a/ep:p1","ns-a/ep:p2","ns-b/ep:p1","ns-b/ep:p2","ns-c/ep:5001","ns-c/ep:5002"]
---- more_headers
-Content-type: application/json
---- response_body eval
-qr{ 2 2 2 2 0 0 }
-
-
-
-=== TEST 11: use namespace selector not_match
---- yaml_config
-apisix:
-  node_listen: 1984
-  config_center: yaml
-discovery:
-  kubernetes:
-    client:
-      token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
-    namespace_selector:
-      not_match: ["ns-a"]
---- request
-GET /queries
-["ns-a/ep:p1","ns-a/ep:p2","ns-b/ep:p1","ns-b/ep:p2","ns-c/ep:5001","ns-c/ep:5002"]
---- more_headers
-Content-type: application/json
---- response_body eval
-qr{ 0 0 2 2 2 2 }
-
-
-
-=== TEST 12: use namespace selector not_match with regex
---- yaml_config
-apisix:
-  node_listen: 1984
-  config_center: yaml
-discovery:
-  kubernetes:
-    client:
-      token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
-    namespace_selector:
-      not_match: ["ns-[ab]"]
---- request
-GET /queries
-["ns-a/ep:p1","ns-a/ep:p2","ns-b/ep:p1","ns-b/ep:p2","ns-c/ep:5001","ns-c/ep:5002"]
---- more_headers
-Content-type: application/json
---- response_body eval
-qr{ 0 0 0 0 2 2 }
-
-
-
-=== TEST 13: use label selector
---- yaml_config
-apisix:
-  node_listen: 1984
-  config_center: yaml
-discovery:
-  kubernetes:
-    client:
-      token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
-    label_selector: |-
-       first=1,second
+    - id: first
+      service:
+        host: ${KUBERNETES_SERVICE_HOST}
+        port: ${KUBERNETES_SERVICE_PORT}
+      client:
+        token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
+      label_selector: |-
+        first=1,second
+    - id: second
+      service:
+        schema: "http",
+        host: "127.0.0.1",
+        port: "6445"
+      client:
+        token: ${KUBERNETES_CLIENT_TOKEN}
 --- request eval
 [
 
@@ -572,37 +637,37 @@ discovery:
 [{\"op\":\"replace_labels\",\"name\":\"ep\",\"namespace\":\"ns-c\",\"labels\":{}}]",
 
 "GET /queries
-[\"ns-a/ep:p1\",\"ns-b/ep:p1\",\"ns-c/ep:5001\"]",
+[\"first/ns-a/ep:p1\",\"first/ns-b/ep:p1\",\"first/ns-c/ep:5001\"]",
 
 "POST /operators
 [{\"op\":\"replace_labels\",\"name\":\"ep\",\"namespace\":\"ns-a\",\"labels\":{\"first\":\"1\" }}]",
 
 "GET /queries
-[\"ns-a/ep:p1\",\"ns-b/ep:p1\",\"ns-c/ep:5001\"]",
+[\"first/ns-a/ep:p1\",\"first/ns-b/ep:p1\",\"first/ns-c/ep:5001\"]",
 
 "POST /operators
 [{\"op\":\"replace_labels\",\"name\":\"ep\",\"namespace\":\"ns-b\",\"labels\":{\"first\":\"1\",\"second\":\"o\" }}]",
 
 "GET /queries
-[\"ns-a/ep:p1\",\"ns-b/ep:p1\",\"ns-c/ep:5001\"]",
+[\"first/ns-a/ep:p1\",\"first/ns-b/ep:p1\",\"first/ns-c/ep:5001\"]",
 
 "POST /operators
 [{\"op\":\"replace_labels\",\"name\":\"ep\",\"namespace\":\"ns-c\",\"labels\":{\"first\":\"2\",\"second\":\"o\" }}]",
 
 "GET /queries
-[\"ns-a/ep:p1\",\"ns-b/ep:p1\",\"ns-c/ep:5001\"]",
+[\"first/ns-a/ep:p1\",\"first/ns-b/ep:p1\",\"first/ns-c/ep:5001\"]",
 
 "POST /operators
 [{\"op\":\"replace_labels\",\"name\":\"ep\",\"namespace\":\"ns-c\",\"labels\":{\"first\":\"1\" }}]",
 
 "GET /queries
-[\"ns-a/ep:p1\",\"ns-b/ep:p1\",\"ns-c/ep:5001\"]",
+[\"first/ns-a/ep:p1\",\"first/ns-b/ep:p1\",\"first/ns-c/ep:5001\"]",
 
 "POST /operators
 [{\"op\":\"replace_labels\",\"name\":\"ep\",\"namespace\":\"ns-c\",\"labels\":{\"first\":\"1\",\"second\":\"o\" }}]",
 
 "GET /queries
-[\"ns-a/ep:p1\",\"ns-b/ep:p1\",\"ns-c/ep:5001\"]",
+[\"first/ns-a/ep:p1\",\"first/ns-b/ep:p1\",\"first/ns-c/ep:5001\"]",
 
 ]
 --- response_body eval
@@ -625,35 +690,49 @@ discovery:
 
 
 
-=== TEST 14: scale endpoints
+=== TEST 11: scale endpoints
 --- yaml_config eval: $::yaml_config
 --- request eval
 [
+
 "GET /queries
-[\"ns-a/ep:p1\",\"ns-a/ep:p2\"]",
+[
+  \"first/ns-a/ep:p1\",\"first/ns-a/ep:p2\",
+  \"second/ns-a/ep:p1\",\"second/ns-a/ep:p2\"
+]",
 
 "POST /operators
 [{\"op\":\"replace_subsets\",\"name\":\"ep\",\"namespace\":\"ns-a\",\"subsets\":[]}]",
 
 "GET /queries
-[\"ns-a/ep:p1\",\"ns-a/ep:p2\"]",
+[
+  \"first/ns-a/ep:p1\",\"first/ns-a/ep:p2\",
+  \"second/ns-a/ep:p1\",\"second/ns-a/ep:p2\"
+]",
 
 "GET /queries
-[\"ns-c/ep:5001\",\"ns-c/ep:5002\",\"ns-c/ep:p1\"]",
+[
+  \"first/ns-c/ep:5001\",\"first/ns-c/ep:5002\",\"first/ns-c/ep:p1\",
+  \"second/ns-c/ep:5001\",\"second/ns-c/ep:5002\",\"second/ns-c/ep:p1\"
+]",
 
 "POST /operators
 $::scale_ns_c",
 
 "GET /queries
-[\"ns-c/ep:5001\",\"ns-c/ep:5002\",\"ns-c/ep:p1\"]",
+[
+  \"first/ns-c/ep:5001\",\"first/ns-c/ep:5002\",\"first/ns-c/ep:p1\",
+  \"second/ns-c/ep:5001\",\"second/ns-c/ep:5002\",\"second/ns-c/ep:p1\"
+]"
 
 ]
 --- response_body eval
 [
-    "{ 2 2 }\n",
+    "{ 2 2 2 2 }\n",
     "DONE\n",
-    "{ 0 0 }\n",
-    "{ 2 2 0 }\n",
+    "{ 0 0 0 0 }\n",
+    "{ 2 2 0 2 2 0 }\n",
     "DONE\n",
-    "{ 0 0 1 }\n",
+    "{ 0 0 1 0 0 1 }\n",
 ]
+
