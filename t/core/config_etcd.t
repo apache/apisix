@@ -157,11 +157,12 @@ qr/(10:certificate has expired){1,}/
 --- yaml_config
 apisix:
   node_listen: 1984
-  admin_key: null
 deployment:
   role: traditional
   role_traditional:
     config_provider: etcd
+  admin:
+    admin_key: null
   etcd:
     host:
       - "https://127.0.0.1:12379"
@@ -207,6 +208,8 @@ deployment:
   role: traditional
   role_traditional:
     config_provider: etcd
+  admin:
+    admin_key: ~
   etcd:
     host:
       - "https://127.0.0.1:12379"

@@ -191,8 +191,8 @@ The following table details the configurations involved in this example and what
 | foo_ca.crt       | CA cert  | Issues the secondary certificate required for the client to communicate with the APISIX Admin API over mTLS.                                                                 |
 | foo_client.crt   | cert     | A certificate issued by `foo_ca.crt` and used by the client to prove its identity when accessing the APISIX Admin API.                                                       |
 | foo_client.key   | key      | Issued by `foo_ca.crt`, used by the client, the key file required to access the APISIX Admin API.                                                                            |
-| foo_server.crt   | cert     | Issued by `foo_ca.crt`, used by APISIX, corresponding to the `apisix.admin_api_mtls.admin_ssl_cert` configuration entry.                                                     |
-| foo_server.key   | key      | Issued by `foo_ca.crt`, used by APISIX, corresponding to the `apisix.admin_api_mtls.admin_ssl_cert_key` configuration entry.                                                 |
+| foo_server.crt   | cert     | Issued by `foo_ca.crt`, used by APISIX, corresponding to the `admin_api_mtls.admin_ssl_cert` configuration entry.                                                     |
+| foo_server.key   | key      | Issued by `foo_ca.crt`, used by APISIX, corresponding to the `admin_api_mtls.admin_ssl_cert_key` configuration entry.                                                 |
 | admin.apisix.dev | doname   | Common Name used in issuing `foo_server.crt` certificate, through which the client accesses APISIX Admin API                                                                 |
 | bar_ca.crt       | CA cert  | Issues the secondary certificate required for APISIX to communicate with ETCD over mTLS.                                                                                     |
 | bar_etcd.crt     | cert     | Issued by `bar_ca.crt` and used by ETCD, corresponding to the `-cert-file` option in the ETCD startup command.                                                               |
@@ -228,21 +228,22 @@ goreman -f Procfile-single-enable-mtls start > goreman.log 2>&1 &
 3. Update `config.yaml`
 
 ```yaml
+deployment:
+  admin:
+    admin_key
+      - name: admin
+        key: edd1c9f034335f136f87ad84b625c8f1
+        role: admin
+    admin_listen:
+      ip: 127.0.0.1
+      port: 9180
+    https_admin: true
+    admin_api_mtls:
+      admin_ssl_ca_cert: /path/to/apisix.ca-bundle
+      admin_ssl_cert: /path/to/foo_server.crt
+      admin_ssl_cert_key: /path/to/foo_server.key
+
 apisix:
-  admin_key:
-    - name: admin
-      key: edd1c9f034335f136f87ad84b625c8f1
-      role: admin
-  admin_listen:
-    ip: 127.0.0.1
-    port: 9180
-  https_admin: true
-
-  admin_api_mtls:
-    admin_ssl_ca_cert: /path/to/apisix.ca-bundle
-    admin_ssl_cert: /path/to/foo_server.crt
-    admin_ssl_cert_key: /path/to/foo_server.key
-
   ssl:
     ssl_trusted_certificate: /path/to/apisix.ca-bundle
 

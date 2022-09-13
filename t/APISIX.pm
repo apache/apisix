@@ -105,7 +105,6 @@ apisix:
   stream_proxy:
     tcp:
       - 9100
-  admin_key: null
   enable_resolv_search_opt: false
 _EOC_
 
@@ -837,6 +836,19 @@ _EOC_
     }
 
     my $yaml_config = $block->yaml_config // $user_yaml_config;
+
+    my $default_deployment = <<_EOC_;
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+_EOC_
+
+    if ($yaml_config !~ m/deployment:/) {
+        $yaml_config = $default_deployment . $yaml_config;
+    }
 
     if ($block->extra_yaml_config) {
         $yaml_config .= $block->extra_yaml_config;

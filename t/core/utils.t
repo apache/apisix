@@ -128,8 +128,6 @@ qr/"address":.+,"name":"github.com"/
 apisix:
   node_listen: 1984
   enable_server_tokens: false
-  admin_key: null
-
 --- config
 location /t {
     content_by_lua_block {
