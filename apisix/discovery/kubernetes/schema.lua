@@ -25,10 +25,85 @@ local port_patterns = {
     { pattern = [[^(([1-9]\d{0,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5]))$]] },
 }
 
+local schema_schema = {
+    type = "string",
+    enum = { "http", "https" },
+    default = "https",
+}
+
+local token_patterns = {
+    { pattern = [[\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
+    { pattern = [[^[A-Za-z0-9+\/._=-]{0,4096}$]] },
+}
+
+local token_schema = {
+    type = "string",
+    oneOf = token_patterns,
+}
+
+local token_file_schema = {
+    type = "string",
+    pattern = [[^[^\:*?"<>|]*$]],
+    minLength = 1,
+    maxLength = 500,
+}
+
 local namespace_pattern = [[^[a-z0-9]([-a-z0-9_.]*[a-z0-9])?$]]
+
 local namespace_regex_pattern = [[^[\x21-\x7e]*$]]
 
-local shared_pattern = [[^[1-9][0-9]?m$]]
+local namespace_selector_schema = {
+    type = "object",
+    properties = {
+        equal = {
+            type = "string",
+            pattern = namespace_pattern,
+        },
+        not_equal = {
+            type = "string",
+            pattern = namespace_pattern,
+        },
+        match = {
+            type = "array",
+            items = {
+                type = "string",
+                pattern = namespace_regex_pattern
+            },
+            minItems = 1
+        },
+        not_match = {
+            type = "array",
+            items = {
+                type = "string",
+                pattern = namespace_regex_pattern
+            },
+            minItems = 1
+        },
+    },
+    oneOf = {
+        { required = {} },
+        { required = { "equal" } },
+        { required = { "not_equal" } },
+        { required = { "match" } },
+        { required = { "not_match" } }
+    },
+}
+
+local label_selector_schema = {
+    type = "string",
+}
+
+local default_weight_schema = {
+    type = "integer",
+    default = 50,
+    minimum = 0,
+}
+
+local shared_size_schema = {
+    type = "string",
+    pattern = [[^[1-9][0-9]?m$]],
+    default = "1m",
+}
 
 return {
     anyOf = {
@@ -38,20 +113,16 @@ return {
                 service = {
                     type = "object",
                     properties = {
-                        schema = {
-                            type = "string",
-                            enum = { "http", "https" },
-                            default = "https",
-                        },
+                        schema = schema_schema,
                         host = {
                             type = "string",
-                            default = "${KUBERNETES_SERVICE_HOST}",
                             oneOf = host_patterns,
+                            default = "${KUBERNETES_SERVICE_HOST}",
                         },
                         port = {
                             type = "string",
-                            default = "${KUBERNETES_SERVICE_PORT}",
                             oneOf = port_patterns,
+                            default = "${KUBERNETES_SERVICE_PORT}",
                         },
                     },
                     default = {
@@ -63,19 +134,8 @@ return {
                 client = {
                     type = "object",
                     properties = {
-                        token = {
-                            type = "string",
-                            oneOf = {
-                                { pattern = [[\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
-                                { pattern = [[^[A-Za-z0-9+\/._=-]{0,4096}$]] },
-                            },
-                        },
-                        token_file = {
-                            type = "string",
-                            pattern = [[^[^\:*?"<>|]*$]],
-                            minLength = 1,
-                            maxLength = 500,
-                        }
+                        token = token_schema,
+                        token_file = token_file_schema,
                     },
                     default = {
                         token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
@@ -96,56 +156,12 @@ return {
                         }
                     }
                 },
-                default_weight = {
-                    type = "integer",
-                    default = 50,
-                    minimum = 0,
-                },
-                namespace_selector = {
-                    type = "object",
-                    properties = {
-                        equal = {
-                            type = "string",
-                            pattern = namespace_pattern,
-                        },
-                        not_equal = {
-                            type = "string",
-                            pattern = namespace_pattern,
-                        },
-                        match = {
-                            type = "array",
-                            items = {
-                                type = "string",
-                                pattern = namespace_regex_pattern
-                            },
-                            minItems = 1
-                        },
-                        not_match = {
-                            type = "array",
-                            items = {
-                                type = "string",
-                                pattern = namespace_regex_pattern
-                            },
-                            minItems = 1
-                        },
-                    },
-                    oneOf = {
-                        { required = {} },
-                        { required = { "equal" } },
-                        { required = { "not_equal" } },
-                        { required = { "match" } },
-                        { required = { "not_match" } }
-                    },
-                },
-                label_selector = {
-                    type = "string",
-                },
-                shared_size = {
-                    type = "string",
-                    pattern = shared_pattern,
-                    default = "1m",
-                }
+                namespace_selector = namespace_selector_schema,
+                label_selector = label_selector_schema,
+                default_weight = default_weight_schema,
+                shared_size = shared_size_schema,
             },
+            required = { "service", "client" }
         },
         {
             type = "array",
@@ -155,16 +171,12 @@ return {
                 properties = {
                     id = {
                         type = "string",
-                        pattern = [[^[a-z0-9]{1,6}$]]
+                        pattern = [[^[a-z0-9]{1,8}$]]
                     },
                     service = {
                         type = "object",
                         properties = {
-                            schema = {
-                                type = "string",
-                                enum = { "http", "https" },
-                                default = "https",
-                            },
+                            schema = schema_schema,
                             host = {
                                 type = "string",
                                 oneOf = host_patterns,
@@ -179,74 +191,18 @@ return {
                     client = {
                         type = "object",
                         properties = {
-                            token = {
-                                type = "string",
-                                oneOf = {
-                                    { pattern = [[\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
-                                    { pattern = [[^[A-Za-z0-9+\/._=-]{0,4096}$]] },
-                                },
-                            },
-                            token_file = {
-                                type = "string",
-                                pattern = [[^[^\:*?"<>|]*$]],
-                                minLength = 1,
-                                maxLength = 500,
-                            }
+                            token = token_schema,
+                            token_file = token_file_schema,
                         },
                         oneOf = {
                             { required = { "token" } },
                             { required = { "token_file" } },
                         },
                     },
-                    default_weight = {
-                        type = "integer",
-                        default = 50,
-                        minimum = 0,
-                    },
-                    namespace_selector = {
-                        type = "object",
-                        properties = {
-                            equal = {
-                                type = "string",
-                                pattern = namespace_pattern,
-                            },
-                            not_equal = {
-                                type = "string",
-                                pattern = namespace_pattern,
-                            },
-                            match = {
-                                type = "array",
-                                items = {
-                                    type = "string",
-                                    pattern = namespace_regex_pattern
-                                },
-                                minItems = 1
-                            },
-                            not_match = {
-                                type = "array",
-                                items = {
-                                    type = "string",
-                                    pattern = namespace_regex_pattern
-                                },
-                                minItems = 1
-                            },
-                        },
-                        oneOf = {
-                            { required = {} },
-                            { required = { "equal" } },
-                            { required = { "not_equal" } },
-                            { required = { "match" } },
-                            { required = { "not_match" } }
-                        },
-                    },
-                    label_selector = {
-                        type = "string",
-                    },
-                    shared_size = {
-                        type = "string",
-                        pattern = shared_pattern,
-                        default = "1m",
-                    }
+                    namespace_selector = namespace_selector_schema,
+                    label_selector = label_selector_schema,
+                    default_weight = default_weight_schema,
+                    shared_size = shared_size_schema,
                 },
                 required = { "id", "service", "client" }
             },
