@@ -615,7 +615,6 @@ qr/partition_id: 2/]
                                 "batch_max_size": 1,
                                 "sasl_config": {
                                     "mechanism": "PLAIN",
-                                    "strategy": "sasl",
                                     "user": "admin",
                                     "password": "admin-secret"
                                 }
@@ -641,17 +640,14 @@ passed
 
 
 
-=== TEST 21: create producer with sasl_config
+=== TEST 21: inject create producer
 --- extra_init_by_lua
     local producer = require("resty.kafka.producer")
-    local klogger = require("apisix.plugins.kafka-logger")
-    producer.new = function(klogger)
-        if (!klogger.sasl_config) then
-            ngx.say("create producer without sasl_config")
-            return producer
+    producer.new = function(self, broker_list, producer_config, cluster_name)
+        if (#broker_list) then
+            ngx.log(ngx.ERR, "unexpected broker_list length: ", #broker_list)
+            return nil
         end
-        producer.sasl_config = klogger.sasl_config
-        ngx.say("create producer with sasl_config")
         return producer
     end
 --- request
@@ -683,7 +679,6 @@ hello world
                                     "batch_max_size": 1,
                                     "sasl_config": {
                                         "mechanism": "PLAIN",
-                                        "strategy": "sasl",
                                         "user": "admin",
                                         "password": "admin-secret"
                                     }
