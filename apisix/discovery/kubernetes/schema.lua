@@ -161,7 +161,6 @@ return {
                 default_weight = default_weight_schema,
                 shared_size = shared_size_schema,
             },
-            required = { "service", "client" }
         },
         {
             type = "array",
