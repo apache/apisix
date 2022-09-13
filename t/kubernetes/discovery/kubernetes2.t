@@ -23,7 +23,6 @@ BEGIN {
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   kubernetes:
     client:
@@ -342,7 +341,6 @@ qr{ 2 2 2 2 2 2 }
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   kubernetes:
     service:
@@ -365,7 +363,6 @@ qr{ 2 2 2 2 2 2 }
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   kubernetes:
     service:
@@ -388,7 +385,6 @@ qr{ 2 2 2 2 2 2 }
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   kubernetes:
     client:
@@ -408,7 +404,6 @@ qr{ 2 2 2 2 2 2 }
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   kubernetes:
     service:
@@ -432,7 +427,6 @@ qr{ 2 2 2 2 2 2 }
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   kubernetes:
     client:
@@ -454,7 +448,6 @@ qr{ 2 2 0 0 0 0 }
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   kubernetes:
     client:
@@ -476,7 +469,6 @@ qr{ 0 0 2 2 2 2 }
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   kubernetes:
     client:
@@ -498,7 +490,6 @@ qr{ 2 2 2 2 0 0 }
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   kubernetes:
     client:
@@ -520,7 +511,6 @@ qr{ 2 2 2 2 0 0 }
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   kubernetes:
     client:
@@ -542,7 +532,6 @@ qr{ 0 0 2 2 2 2 }
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   kubernetes:
     client:
@@ -564,7 +553,6 @@ qr{ 0 0 0 0 2 2 }
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   kubernetes:
     client:

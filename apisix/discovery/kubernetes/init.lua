@@ -24,12 +24,13 @@ local tostring = tostring
 local os = os
 local error = error
 local pcall = pcall
+local setmetatable = setmetatable
 local process = require("ngx.process")
 local core = require("apisix.core")
 local util = require("apisix.cli.util")
 local local_conf = require("apisix.core.config_local").local_conf()
 local informer_factory = require("apisix.discovery.kubernetes.informer_factory")
-local setmetatable = setmetatable
+
 
 local ctx
 
@@ -380,7 +381,7 @@ local function single_mode_nodes(service_name)
     local pattern = "^(.*):(.*)$" -- namespace/name:port_name
     local match = ngx.re.match(service_name, pattern, "jo")
     if not match then
-        core.log.info("get unexpected upstream service_name:　", service_name)
+        core.log.error("get unexpected upstream service_name:　", service_name)
         return nil
     end
 
@@ -398,7 +399,7 @@ local function single_mode_nodes(service_name)
 end
 
 
-local function multi_mode_worker_init(confs)
+local function multiple_mode_worker_init(confs)
     for _, conf in ipairs(confs) do
 
         local id = conf.id
@@ -408,11 +409,8 @@ local function multi_mode_worker_init(confs)
 
         local endpoint_dict = ngx.shared["kubernetes-" .. id]
         if not endpoint_dict then
-            error(core.table.concat {
-                "failed to get lua_shared_dict: ngx.shared.",
-                "kubernetes-" .. id,
-                ", please check your APISIX version"
-            })
+            error(string.format("failed to get lua_shared_dict: ngx.shared.kubernetes-%s, ", id) ..
+                    "please check your APISIX version")
         end
 
         ctx[id] = endpoint_dict
@@ -420,11 +418,11 @@ local function multi_mode_worker_init(confs)
 end
 
 
-local function multi_mode_init(confs)
+local function multiple_mode_init(confs)
     ctx = core.table.new(#confs, 0)
 
     if process.type() ~= "privileged agent" then
-        multi_mode_worker_init(confs)
+        multiple_mode_worker_init(confs)
         return
     end
 
@@ -437,11 +435,8 @@ local function multi_mode_init(confs)
 
         local endpoint_dict = ngx.shared["kubernetes-" .. id]
         if not endpoint_dict then
-            error(core.table.concat {
-                "failed to get lua_shared_dict: ngx.shared.",
-                "kubernetes-" .. id,
-                ", please check your APISIX version"
-            })
+            error(string.format("failed to get lua_shared_dict: ngx.shared.kubernetes-%s, ", id) ..
+                    "please check your APISIX version")
         end
 
         local apiserver, err = get_apiserver(conf)
@@ -467,8 +462,6 @@ local function multi_mode_init(confs)
         endpoints_informer.pre_list = pre_list
         endpoints_informer.post_list = post_list
 
-        core.log.debug("get informer ", core.json.encode(endpoints_informer, true))
-
         ctx[id] = setmetatable({
             endpoint_dict = endpoint_dict,
             apiserver = apiserver,
@@ -477,25 +470,23 @@ local function multi_mode_init(confs)
     end
 
     for id, item in pairs(ctx) do
-        core.log.debug("start fetch ", id, " ", core.json.encode(item, true), item.kind)
         start_fetch(item)
     end
 end
 
 
-local function multi_mode_nodes(service_name)
+local function multiple_mode_nodes(service_name)
     local pattern = "^(.*)/(.*/.*):(.*)$" -- id/namespace/name:port_name
     local match = ngx.re.match(service_name, pattern, "jo")
     if not match then
-        core.log.info("get unexpected upstream service_name:　", service_name)
+        core.log.error("get unexpected upstream service_name:　", service_name)
         return nil
     end
 
-    core.log.info("ctx: ", core.json.encode(ctx, true), match[1])
     local id = match[1]
     local endpoint_dict = ctx[id]
     if not endpoint_dict then
-        core.log.info("id not exis")
+        core.log.error("id not exist")
         return nil
     end
 
@@ -514,13 +505,13 @@ end
 
 function _M.init_worker()
     local discovery_conf = local_conf.discovery.kubernetes
-    core.log.info("kubernetes discovery conf: ", core.json.encode(discovery_conf, true))
+    core.log.info("kubernetes discovery conf: ", core.json.delay_encode(discovery_conf))
     if #discovery_conf == 0 then
         _M.nodes = single_mode_nodes
         single_mode_init(discovery_conf)
     else
-        _M.nodes = multi_mode_nodes
-        multi_mode_init(discovery_conf)
+        _M.nodes = multiple_mode_nodes
+        multiple_mode_init(discovery_conf)
     end
 end
 

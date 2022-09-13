@@ -97,7 +97,6 @@ __DATA__
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   kubernetes: {}
 --- request
@@ -126,7 +125,6 @@ true
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   kubernetes:
     service: {}
@@ -157,7 +155,6 @@ true
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   kubernetes:
     service:
@@ -189,7 +186,6 @@ true
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   kubernetes:
     service:
@@ -223,7 +219,6 @@ true
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   kubernetes:
   - id: "debug"
