@@ -22,11 +22,13 @@
 make run
 
 echo "
+deployment:
+    admin:
+        admin_listen:
+            ip: 127.0.0.2
+            port: 9181
 apisix:
   enable_admin: true
-  admin_listen:
-    ip: 127.0.0.2
-    port: 9181
 " > conf/config.yaml
 
 make reload

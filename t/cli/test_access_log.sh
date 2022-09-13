@@ -187,13 +187,14 @@ echo "don't log uninitialized access log variable when the HTTP request is malfo
 # TLS upstream
 
 echo "
-apisix:
-    admin_api_mtls:
-        admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
-        admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
-    admin_listen:
-        port: 9180
-    https_admin: true
+deployment:
+    admin:
+        admin_listen:
+            port: 9180
+        https_admin: true
+        admin_api_mtls:
+            admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
+            admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
 nginx_config:
   http:
     access_log_format: '\"\$upstream_scheme://\$upstream_host\" \$ssl_server_name'

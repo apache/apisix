@@ -65,6 +65,7 @@ local etcd_schema = {
     },
     required = {"prefix", "host"}
 }
+
 local config_schema = {
     type = "object",
     properties = {
@@ -131,19 +132,6 @@ local config_schema = {
                             },
                             uniqueItems = true,
                         }
-                    }
-                },
-                https_admin = {
-                    type = "boolean",
-                },
-                admin_listen = {
-                    properties = {
-                        listen = { type = "string" },
-                        port = { type = "integer" },
-                    },
-                    default = {
-                        listen = "0.0.0.0",
-                        port = 9180,
                     }
                 },
                 stream_proxy = {
@@ -292,17 +280,51 @@ local config_schema = {
             type = "object",
             properties = {
                 role = {
-                    enum = {"traditional", "control_plane", "data_plane", "standalone"}
+                    enum = {"traditional", "control_plane", "data_plane", "standalone"},
+                    default = "traditional"
                 }
             },
-            required = {"role"},
+        },
+    },
+    required = {"apisix", "deployment"},
+}
+
+local admin_schema = {
+    type = "object",
+    properties = {
+        admin_key = {
+            type = "array",
+            properties = {
+                items = {
+                    properties = {
+                        name = {type = "string"},
+                        key = {type = "string"},
+                        role = {type = "string"},
+                    }
+                }
+            }
+        },
+        admin_listen = {
+            properties = {
+                listen = { type = "string" },
+                port = { type = "integer" },
+            },
+            default = {
+                listen = "0.0.0.0",
+                port = 9180,
+            }
+        },
+        https_admin = {
+            type = "boolean",
         },
     }
 }
+
 local deployment_schema = {
     traditional = {
         properties = {
             etcd = etcd_schema,
+            admin = admin_schema,
             role_traditional = {
                 properties = {
                     config_provider = {
@@ -402,13 +424,11 @@ function _M.validate(yaml_conf)
         end
     end
 
-    if yaml_conf.deployment then
-        local role = yaml_conf.deployment.role
-        local validator = jsonschema.generate_validator(deployment_schema[role])
-        local ok, err = validator(yaml_conf.deployment)
-        if not ok then
-            return false, "invalid deployment " .. role .. " configuration: " .. err
-        end
+    local role = yaml_conf.deployment.role
+    local validator = jsonschema.generate_validator(deployment_schema[role])
+    local ok, err = validator(yaml_conf.deployment)
+    if not ok then
+        return false, "invalid deployment " .. role .. " configuration: " .. err
     end
 
     return true

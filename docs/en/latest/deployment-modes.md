@@ -49,12 +49,13 @@ An example configuration of the traditional deployment mode is shown below:
 apisix:
     node_listen:
         - port: 9080
-    admin_listen:
-        port: 9180
 deployment:
     role: traditional
     role_traditional:
         config_provider: etcd
+    admin:
+        admin_listen:
+            port: 9180
     etcd:
        host:
            - http://${IP}:${Port}

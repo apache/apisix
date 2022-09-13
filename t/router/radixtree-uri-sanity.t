@@ -25,7 +25,6 @@ no_shuffle();
 our $servlet_yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    admin_key: null
     normalize_uri_like_servlet: true
 _EOC_
 

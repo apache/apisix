@@ -75,11 +75,13 @@ make stop
 echo "passed: find the certificate correctly"
 
 echo '
+deployment:
+    admin:
+        admin_listen:
+            port: 9180
 apisix:
     node_listen: 9080
     enable_admin: true
-    admin_listen:
-        port: 9180
     stream_proxy:
         tcp:
             - "localhost:9100"

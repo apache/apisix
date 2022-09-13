@@ -52,8 +52,12 @@
 #
 # This will find environment variable `ETCD_HOST` first, and if it's not exist it will use `localhost` as default value.
 #
-apisix:
-  admin_key:
-    - name: admin
-      key: edd1c9f034335f136f87ad84b625c8f1  # using fixed API token has security risk, please update it when you deploy to production environment
-      role: admin
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key:
+      - name: admin
+        key: edd1c9f034335f136f87ad84b625c8f1  # using fixed API token has security risk, please update it when you deploy to production environment
+        role: admin

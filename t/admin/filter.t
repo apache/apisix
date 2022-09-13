@@ -25,10 +25,15 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     my $user_yaml_config = <<_EOC_;
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: ~
+    admin_api_version: v3
 apisix:
     node_listen: 1984
-    admin_key: null
-    admin_api_version: v3
 _EOC_
     $block->set_value("yaml_config", $user_yaml_config);
 
