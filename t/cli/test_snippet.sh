@@ -25,7 +25,8 @@ echo '
 apisix:
     node_listen: 9080
     enable_admin: true
-    port_admin: 9180
+    admin_listen:
+        port: 9180
     stream_proxy:
         only: false
         tcp:

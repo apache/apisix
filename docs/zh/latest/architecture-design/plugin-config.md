@@ -27,7 +27,7 @@ title: Plugin Config
 
 ```shell
 # 创建 Plugin config
-$ curl http://127.0.0.1:9080/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "desc": "吾乃插件配置 1",
     "plugins": {
@@ -40,7 +40,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9
 }'
 
 # 绑定到路由上
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uris": ["/index.html"],
     "plugin_config_id": 1,
@@ -94,7 +94,6 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "plugins": {
         "proxy-rewrite": {
             "uri": "/test/add",
-            "scheme": "https",
             "host": "apisix.iresty.com"
         },
         "limit-count": {
@@ -127,7 +126,6 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
         },
         "proxy-rewrite": {
             "uri": "/test/add",
-            "scheme": "https",
             "host": "apisix.iresty.com"
         },
         "limit-count": {

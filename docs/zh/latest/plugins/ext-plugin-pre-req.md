@@ -50,7 +50,7 @@ External Plugin 执行的结果会影响当前请求的行为。
 以下示例展示了如何在指定路由中启用 `ext-plugin-pre-req` 插件：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
@@ -84,7 +84,7 @@ curl -i http://127.0.0.1:9080/index.html
 当你需要禁用 `ext-plugin-pre-req` 插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",

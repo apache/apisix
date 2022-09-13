@@ -180,7 +180,9 @@ qr/1980/
                             "time_window": 60,
                             "rejected_code": 503,
                             "key": "remote_addr",
-                            "disable": true
+                            "_meta": {
+                                "disable": true
+                            }
                         }
                     },
                     "uri": "/server_port",
@@ -249,6 +251,7 @@ qr/merge_service_route.*"time_window":60/]
                 ngx.HTTP_PUT,
                 [[{
                     "upstream": {
+                        "scheme": "https",
                         "type": "roundrobin",
                         "nodes": {
                             "httpbin.org:443": 1
@@ -280,11 +283,11 @@ passed
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/get",
+                    "uri": "/fake",
                     "host": "httpbin.org",
                     "plugins": {
                         "proxy-rewrite": {
-                            "scheme": "https"
+                            "uri": "/get"
                         }
                     },
                     "service_id": "1"
@@ -308,7 +311,7 @@ passed
 
 === TEST 12: hit route
 --- request
-GET /get
+GET /fake
 --- more_headers
 host: httpbin.org
 --- response_body eval
@@ -321,7 +324,7 @@ qr/"Host": "httpbin.org"/
 
 === TEST 13: not hit route
 --- request
-GET /get
+GET /fake
 --- more_headers
 host: httpbin.orgxxx
 --- error_code: 404

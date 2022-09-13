@@ -167,7 +167,7 @@ decrypt ssl key failed
             end
 
             res = json.decode(res)
-            ngx.say(res.node.value.upstream.tls.client_key == ssl_key)
+            ngx.say(res.value.upstream.tls.client_key == ssl_key)
 
             -- upstream
             local data = {
@@ -203,7 +203,7 @@ decrypt ssl key failed
             end
 
             res = json.decode(res)
-            ngx.say(res.node.value.tls.client_key == ssl_key)
+            ngx.say(res.value.tls.client_key == ssl_key)
 
             local data = {
                 upstream = {
@@ -240,7 +240,7 @@ decrypt ssl key failed
             end
 
             res = json.decode(res)
-            ngx.say(res.node.value.upstream.tls.client_key == ssl_key)
+            ngx.say(res.value.upstream.tls.client_key == ssl_key)
         }
     }
 --- request
@@ -387,7 +387,7 @@ apisix:
             end
 
             res = json.decode(res)
-            ngx.say(res.node.value.upstream.tls.client_key == ssl_key)
+            ngx.say(res.value.upstream.tls.client_key == ssl_key)
 
             -- upstream
             local data = {
@@ -423,7 +423,7 @@ apisix:
             end
 
             res = json.decode(res)
-            ngx.say(res.node.value.tls.client_key == ssl_key)
+            ngx.say(res.value.tls.client_key == ssl_key)
 
             local data = {
                 upstream = {
@@ -460,7 +460,7 @@ apisix:
             end
 
             res = json.decode(res)
-            ngx.say(res.node.value.upstream.tls.client_key == ssl_key)
+            ngx.say(res.value.upstream.tls.client_key == ssl_key)
         }
     }
 --- request

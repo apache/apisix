@@ -23,12 +23,10 @@ title: Plugin
 
 `Plugin` 表示将在 `HTTP` 请求/响应生命周期期间执行的插件配置。
 
-`Plugin` 配置可直接绑定在 `Route` 上，也可以被绑定在 `Service` 或 `Consumer`上。而对于同一个插件的配置，只能有一份是有效的，配置选择优先级总是 `Consumer` > `Route` > `Service`。
+`Plugin` 配置可直接绑定在 `Route` 上，也可以被绑定在 `Service`、`Consumer` 或 `Plugin Config` 上。而对于同一个插件的配置，只能有一份是有效的，配置选择优先级总是 `Consumer` > `Route` > `Plugin Config` > `Service`。
 
 在 `conf/config.yaml` 中，可以声明本地 APISIX 节点都支持哪些插件。这是个白名单机制，不在该白名单的插件配置，都将会被自动忽略。这个特性可用于临时关闭或打开特定插件，应对突发情况非常有效。
 如果你想在现有插件的基础上新增插件，注意需要拷贝 `conf/config-default.yaml` 的插件节点内容到 `conf/config.yaml` 的插件节点中。
-
-插件的配置可以被直接绑定在指定 Route 中，也可以被绑定在 Service 中，不过 Route 中的插件配置优先级更高。
 
 一个插件在一次请求中只会执行一次，即使被同时绑定到多个不同对象中（比如 Route 或 Service）。
 插件运行先后顺序是根据插件自身的优先级来决定的，例如：
@@ -72,9 +70,24 @@ local _M = {
 
 | 名称         | 类型 | 描述           |
 |--------------|------|----------------|
+| disable | boolean  | 是否禁用该插件。 |
 | error_response | string/object  | 自定义错误响应。 |
 | priority       | integer        | 自定义插件优先级。 |
 | filter  | array   | 根据请求的参数，在运行时控制插件是否执行。此配置由一个或多个 {var, operator, val} 元素组成列表，类似：{{var, operator, val}, {var, operator, val}, ...}}。例如 `{"arg_version", "==", "v2"}`，表示当前请求参数 `version` 是 `v2`。这里的 `var` 与 NGINX 内部自身变量命名是保持一致。操作符的具体用法请看[lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 operator-list 部分。|
+
+### 禁用插件
+
+通过 `disable` 配置，你可以新增一个处于禁用状态的插件，请求不会经过该插件。
+
+```json
+{
+    "proxy-rewrite": {
+        "_meta": {
+            "disable": true
+        }
+    }
+}
+```
 
 ### 自定义错误响应
 
@@ -237,7 +250,7 @@ APISIX 的插件是热加载的，不管你是新增、删除还是修改插件�
 只需要通过 admin API 发送一个 HTTP 请求即可：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
+curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
 ```
 
 注意：如果你已经在路由规则里配置了某个插件（比如在 `route` 的 `plugins` 字段里面添加了它），然后禁用了该插件，在执行路由规则的时候会跳过这个插件。

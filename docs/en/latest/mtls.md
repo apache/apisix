@@ -36,7 +36,9 @@ The clients will provide their certificates to the server and the server will ch
 2. Modify configuration items in `conf/config.yaml`:
 
 ```yaml
-  port_admin: 9180
+  admin_listen:
+    ip: 127.0.0.1
+    port: 9180
   https_admin: true
 
   admin_api_mtls:
@@ -126,7 +128,7 @@ if len(sys.argv) >= 5:
         reqParam["client"]["ca"] = clientCert
     if len(sys.argv) >= 6:
         reqParam["client"]["depth"] = int(sys.argv[5])
-resp = requests.put("http://127.0.0.1:9080/apisix/admin/ssls/1", json=reqParam, headers={
+resp = requests.put("http://127.0.0.1:9180/apisix/admin/ssls/1", json=reqParam, headers={
     "X-API-KEY": api_key,
 })
 print(resp.status_code)
@@ -183,7 +185,7 @@ reqParam = {
     },
 }
 
-resp = requests.patch("http://127.0.0.1:9080/apisix/admin/upstreams/"+id, json=reqParam, headers={
+resp = requests.patch("http://127.0.0.1:9180/apisix/admin/upstreams/"+id, json=reqParam, headers={
     "X-API-KEY": api_key,
 })
 print(resp.status_code)

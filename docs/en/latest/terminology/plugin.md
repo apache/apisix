@@ -23,11 +23,11 @@ title: Plugin
 
 ## Description
 
-This represents the configuration of the plugins that are executed during the HTTP request/response lifecycle. A **Plugin** configuration can be bound directly to a [`Route`](./route.md), a [`Service`](./service.md) or a [`Consumer`](./consumer.md).
+This represents the configuration of the plugins that are executed during the HTTP request/response lifecycle. A **Plugin** configuration can be bound directly to a [`Route`](./route.md), a [`Service`](./service.md), a [`Consumer`](./consumer.md) or a [`Plugin Config`](./plugin-config.md).
 
 :::note
 
-While configuring the same plugin, only one copy of the configuration is valid. The order of precedence is always `Consumer` > `Route` > `Service`.
+While configuring the same plugin, only one copy of the configuration is valid. The order of precedence is always `Consumer` > `Route` > `Plugin Config` > `Service`.
 
 :::
 
@@ -80,9 +80,24 @@ Some common configurations can be applied to plugins through the `_meta` configu
 
 | Name         | Type | Description |
 |--------------|------|-------------|
+| disable      | boolean  | Whether to disable the plugin |
 | error_response | string/object  | Custom error response |
 | priority       | integer        | Custom plugin priority |
 | filter  | array | Depending on the requested parameters, it is decided at runtime whether the plugin should be executed. Something like this: `{{var, operator, val}, {var, operator, val}, ...}}`. For example: `{"arg_version", "==", "v2"}`, indicating that the current request parameter `version` is `v2`. The variables here are consistent with NGINX internal variables. For details on supported operators, please see [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
+
+### Disable the plugin
+
+Through the `disable` configuration, you can add a new plugin with disabled status and the request will not go through the plugin.
+
+```json
+{
+    "proxy-rewrite": {
+        "_meta": {
+            "disable": true
+        }
+    }
+}
+```
 
 ### Custom error response
 
@@ -245,7 +260,7 @@ curl -v /dev/null http://127.0.0.1:9080/get?version=v2 -H"host:httpbin.org"
 APISIX Plugins are hot-loaded. This means that there is no need to restart the service if you add, delete, modify plugins, or even if you update the plugin code. To hot-reload, you can send an HTTP request through the [Admin API](../admin-api.md):
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
+curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
 ```
 
 :::note

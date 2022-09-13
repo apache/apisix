@@ -93,6 +93,7 @@ authz-keycloak
 proxy-mirror
 proxy-cache
 proxy-rewrite
+workflow
 api-breaker
 limit-conn
 limit-count
@@ -108,6 +109,7 @@ grpc-web
 public-api
 prometheus
 datadog
+elasticsearch-logger
 echo
 loggly
 http-logger
@@ -122,10 +124,12 @@ syslog
 udp-logger
 file-logger
 clickhouse-logger
+tencent-cloud-cls
 example-plugin
 aws-lambda
 azure-functions
 openwhisk
+openfunction
 serverless-post-function
 ext-plugin-post-req
 ext-plugin-post-resp
@@ -150,7 +154,7 @@ GET /apisix/admin/plugins
                 ngx.HTTP_GET,
                 nil,
                 [[
-                {"type":"object","required":["rate","burst","key"],"properties":{"rate":{"type":"number","exclusiveMinimum":0},"key_type":{"type":"string","enum":["var","var_combination"],"default":"var"},"burst":{"type":"number","minimum":0},"disable":{"type":"boolean"},"nodelay":{"type":"boolean","default":false},"key":{"type":"string"},"rejected_code":{"type":"integer","minimum":200,"maximum":599,"default":503},"rejected_msg":{"type":"string","minLength":1},"allow_degradation":{"type":"boolean","default":false}}}
+                {"type":"object","required":["rate","burst","key"],"properties":{"rate":{"type":"number","exclusiveMinimum":0},"key_type":{"type":"string","enum":["var","var_combination"],"default":"var"},"burst":{"type":"number","minimum":0},"nodelay":{"type":"boolean","default":false},"key":{"type":"string"},"rejected_code":{"type":"integer","minimum":200,"maximum":599,"default":503},"rejected_msg":{"type":"string","minLength":1},"allow_degradation":{"type":"boolean","default":false}}}
                 ]]
                 )
 
@@ -172,7 +176,7 @@ plugins:
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"type":"object"}
+{"properties":{},"type":"object"}
                 ]]
                 )
 
@@ -191,7 +195,7 @@ plugins:
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"type":"object"}
+{"properties":{},"type":"object"}
                 ]]
                 )
 
@@ -210,7 +214,7 @@ plugins:
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","type":"object"}
+{"properties":{},"title":"work with route or service object","type":"object"}
                 ]]
                 )
 
@@ -265,7 +269,7 @@ plugins:
         }
     }
 --- response_body eval
-qr/\{"metadata_schema":\{"properties":\{"ikey":\{"minimum":0,"type":"number"\},"skey":\{"type":"string"\}\},"required":\["ikey","skey"\],"type":"object"\},"priority":0,"schema":\{"\$comment":"this is a mark for our injected plugin schema","properties":\{"_meta":\{"properties":\{"error_response":\{"oneOf":\[\{"type":"string"\},\{"type":"object"\}\]\},"filter":\{"description":"filter determines whether the plugin needs to be executed at runtime","type":"array"\},"priority":\{"description":"priority of plugins by customized order","type":"integer"\}\},"type":"object"\},"disable":\{"type":"boolean"\},"i":\{"minimum":0,"type":"number"\},"ip":\{"type":"string"\},"port":\{"type":"integer"\},"s":\{"type":"string"\},"t":\{"minItems":1,"type":"array"\}\},"required":\["i"\],"type":"object"\},"version":0.1\}/
+qr/\{"metadata_schema":\{"properties":\{"ikey":\{"minimum":0,"type":"number"\},"skey":\{"type":"string"\}\},"required":\["ikey","skey"\],"type":"object"\},"priority":0,"schema":\{"\$comment":"this is a mark for our injected plugin schema","properties":\{"_meta":\{"properties":\{"disable":\{"type":"boolean"\},"error_response":\{"oneOf":\[\{"type":"string"\},\{"type":"object"\}\]\},"filter":\{"description":"filter determines whether the plugin needs to be executed at runtime","type":"array"\},"priority":\{"description":"priority of plugins by customized order","type":"integer"\}\},"type":"object"\},"i":\{"minimum":0,"type":"number"\},"ip":\{"type":"string"\},"port":\{"type":"integer"\},"s":\{"type":"string"\},"t":\{"minItems":1,"type":"array"\}\},"required":\["i"\],"type":"object"\},"version":0.1\}/
 
 
 
@@ -366,7 +370,7 @@ qr/\{"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\
         }
     }
 --- response_body
-{"priority":1003,"schema":{"$comment":"this is a mark for our injected plugin schema","properties":{"_meta":{"properties":{"error_response":{"oneOf":[{"type":"string"},{"type":"object"}]},"filter":{"description":"filter determines whether the plugin needs to be executed at runtime","type":"array"},"priority":{"description":"priority of plugins by customized order","type":"integer"}},"type":"object"},"burst":{"minimum":0,"type":"integer"},"conn":{"exclusiveMinimum":0,"type":"integer"},"default_conn_delay":{"exclusiveMinimum":0,"type":"number"},"disable":{"type":"boolean"},"key":{"type":"string"},"key_type":{"default":"var","enum":["var","var_combination"],"type":"string"},"only_use_default_delay":{"default":false,"type":"boolean"}},"required":["conn","burst","default_conn_delay","key"],"type":"object"},"version":0.1}
+{"priority":1003,"schema":{"$comment":"this is a mark for our injected plugin schema","properties":{"_meta":{"properties":{"disable":{"type":"boolean"},"error_response":{"oneOf":[{"type":"string"},{"type":"object"}]},"filter":{"description":"filter determines whether the plugin needs to be executed at runtime","type":"array"},"priority":{"description":"priority of plugins by customized order","type":"integer"}},"type":"object"},"burst":{"minimum":0,"type":"integer"},"conn":{"exclusiveMinimum":0,"type":"integer"},"default_conn_delay":{"exclusiveMinimum":0,"type":"number"},"key":{"type":"string"},"key_type":{"default":"var","enum":["var","var_combination"],"type":"string"},"only_use_default_delay":{"default":false,"type":"boolean"}},"required":["conn","burst","default_conn_delay","key"],"type":"object"},"version":0.1}
 
 
 

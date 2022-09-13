@@ -725,7 +725,9 @@ hello world
                             "denylist": [
                                 "foo"
                             ],
-                            "disable": true
+                            "_meta": {
+                                "disable": true
+                            }
                         }
                     }
                 }]]

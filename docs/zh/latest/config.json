@@ -152,7 +152,9 @@
                 "plugins/sls-logger",
                 "plugins/google-cloud-logging",
                 "plugins/splunk-hec-logging",
-                "plugins/file-logger"
+                "plugins/file-logger",
+                "plugins/loggly",
+                "plugins/elasticsearch-logger"
               ]
             }
           ]
@@ -164,7 +166,9 @@
             "plugins/serverless",
             "plugins/azure-functions",
             "plugins/openwhisk",
-            "plugins/aws-lambda"
+            "plugins/aws-lambda",
+            "plugins/workflow",
+            "plugins/openfunction"
           ]
         },
         {

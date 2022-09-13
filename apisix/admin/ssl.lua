@@ -17,12 +17,12 @@
 local core              = require("apisix.core")
 local utils             = require("apisix.admin.utils")
 local apisix_ssl        = require("apisix.ssl")
-local v3_adapter        = require("apisix.admin.v3_adapter")
 local tostring          = tostring
 local type              = type
 
 local _M = {
     version = 0.1,
+    need_v3_filter = true,
 }
 
 
@@ -108,7 +108,6 @@ function _M.get(id)
     end
 
     utils.fix_count(res.body, id)
-    v3_adapter.filter(res.body)
     return res.status, res.body
 end
 

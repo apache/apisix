@@ -140,7 +140,7 @@ allow {
 Then, you can configure the `opa` Plugin on a specific Route:
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -258,7 +258,7 @@ reason = input'
 Now we can configure the Plugin on the Route to send APISIX data:
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{

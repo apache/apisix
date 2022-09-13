@@ -65,7 +65,7 @@ description: 本文将介绍 API 网关 Apache APISIX 如何通过 skywalking-lo
 以下示例展示了如何通过 Admin API 进行插件元数据配置：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/skywalking-logger \
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/skywalking-logger \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "log_format": {
@@ -88,7 +88,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/skywalking-logger \
 完成 SkyWalking OAP 配置后，你可以通过以下命令在路由中启用该插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
       "plugins": {
@@ -121,7 +121,7 @@ curl -i http://127.0.0.1:9080/hello
 当你需要禁用该插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],

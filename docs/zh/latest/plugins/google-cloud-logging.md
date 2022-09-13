@@ -1,5 +1,12 @@
 ---
 title: google-cloud-logging
+keywords:
+  - APISIX
+  - API 网关
+  - 插件
+  - Splunk
+  - 日志
+description: API 网关 Apache APISIX 的 google-cloud-logging 插件可用于将请求日志转发到 Google Cloud Logging Service 中进行分析和存储。
 ---
 
 <!--
@@ -23,38 +30,34 @@ title: google-cloud-logging
 
 ## 描述
 
-`google-cloud-logging` 插件用于将 `Apache APISIX` 的请求日志发送到 [Google Cloud Logging Service](https://cloud.google.com/logging/)。
-
-该插件提供了将请求的日志数据以批处理队列的形式推送到谷歌云日志服务的功能。
-
-有关 `Apache APISIX` 的 `Batch-Processor` 的更多信息，请参考：
-[Batch-Processor](../batch-processor.md)
+`google-cloud-logging` 插件可用于将请求日志发送到 [Google Cloud Logging Service](https://cloud.google.com/logging/) 进行分析和存储。
 
 ## 属性
 
-| 名称                  | 是否必需 | 默认值                                                                                                                                                                                         | 描述                                                                                                                                     |
-| ----------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| auth_config             | 半可选 |                                                                                                                                                                                                   | 必须配置 `auth_config` 或 `auth_file` 之一                                                                                          |
-| auth_config.private_key | 必选   |                                                                                                                                                                                                   | 谷歌服务帐号的私钥参数                                                                                                          |
-| auth_config.project_id  | 必选   |                                                                                                                                                                                                   | 谷歌服务帐号的项目 ID                                                                                                             |
-| auth_config.token_uri   | 可选   | https://oauth2.googleapis.com/token                                                                                                                                                               | 请求谷歌服务帐户的令牌的 URI                                                                                                  |
-| auth_config.entries_uri | 可选   | https://logging.googleapis.com/v2/entries:write                                                                                                                                                   | 谷歌日志服务写入日志条目的 API                                                                                                 |
-| auth_config.scopes      | 可选   | ["https://www.googleapis.com/auth/logging.read","https://www.googleapis.com/auth/logging.write","https://www.googleapis.com/auth/logging.admin","https://www.googleapis.com/auth/cloud-platform"] | 谷歌服务账号的访问范围，参考：[OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes#logging) |
-| auth_file               | 半可选 |                                                                                                                                                                                                   | 谷歌服务账号 JSON 文件的路径（必须配置 `auth_config` 或 `auth_file` 之一）|
-| ssl_verify              | 可选   | true                                                                                                                                                                                              | 启用 `SSL` 验证，配置根据 [OpenResty 文档](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake) 选项 |
-| resource                | 可选   | {"type": "global"}                                                                                                                                                                                | 谷歌监控资源，参考： [MonitoredResource](https://cloud.google.com/logging/docs/reference/v2/rest/v2/MonitoredResource)           |
-| log_id                  | 可选   | apisix.apache.org%2Flogs                                                                                                                                                                          | 谷歌日志 ID，参考： [LogEntry](https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry)                                 |
+| 名称                     | 必选项   | 默认值                                           | 描述                                                                                                                             |
+| ----------------------- | -------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------  |
+| auth_config             | 是       |                                                  | `auth_config` 和 `auth_file` 必须配置一个。                                                                                     |
+| auth_config.private_key | 是       |                                                  | 谷歌服务帐号的私钥参数。                                                                                                           |
+| auth_config.project_id  | 是       |                                                  | 谷歌服务帐号的项目 ID。                                                                                                            |
+| auth_config.token_uri   | 是       | https://oauth2.googleapis.com/token              | 请求谷歌服务帐户的令牌的 URI。                                                                                                     |
+| auth_config.entries_uri | 否       | https://logging.googleapis.com/v2/entries:write  | 谷歌日志服务写入日志条目的 API。                                                                                                   |
+| auth_config.scopes      | 否       |                                                  | 谷歌服务账号的访问范围，可参考 [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes#logging)。可选项："https://www.googleapis.com/auth/logging.read"、"https://www.googleapis.com/auth/logging.write"、"https://www.googleapis.com/auth/logging.admin"、"https://www.googleapis.com/auth/cloud-platform"。|
+| auth_file               | 是       |                                                  | `auth_config` 和 `auth_file` 必须配置一个。                                                                 |
+| ssl_verify              | 否       | true                                             | 当设置为 `true` 时，启用 `SSL` 验证。                 |
+| resource                | 否       | {"type": "global"}                               | 谷歌监控资源，请参考 [MonitoredResource](https://cloud.google.com/logging/docs/reference/v2/rest/v2/MonitoredResource)。             |
+| log_id                  | 否       | apisix.apache.org%2Flogs                         | 谷歌日志 ID，请参考 [LogEntry](https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry)。                                |
 
-本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
+该插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免该插件频繁地提交数据。默认情况下每 `5` 秒钟或队列中的数据达到 `1000` 条时，批处理器会自动提交数据，如需了解更多信息或自定义配置，请参考 [Batch Processor](../batch-processor.md#配置)。
 
-## 如何开启
+## 启用插件
 
-下面例子展示了如何为指定路由开启 `google-cloud-logging` 插件。
+以下示例展示了如何在指定路由上启用该插件：
 
-### 完整配置
+**完整配置**
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "google-cloud-logging": {
@@ -89,10 +92,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-### 最小化配置
+**最小化配置**
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "google-cloud-logging": {
@@ -114,25 +118,27 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-* 向配置 `google-cloud-logging` 插件的路由发送请求
+你可以通过以下命令向 APISIX 发出请求：
 
 ```shell
-$ curl -i http://127.0.0.1:9080/hello
+curl -i http://127.0.0.1:9080/hello
+```
+
+```
 HTTP/1.1 200 OK
 ...
 hello, world
 ```
 
-* 登录谷歌云日志服务，查看日志
-
-[Google Cloud Logging Service](https://console.cloud.google.com/logs/viewer)
+访问成功后，你可以登录 [Google Cloud Logging Service](https://console.cloud.google.com/logs/viewer) 查看相关日志。
 
 ## 禁用插件
 
-禁用 `google-cloud-logging` 插件非常简单，只需将 `google-cloud-logging` 对应的 `JSON` 配置移除即可。
+当你需要禁用该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

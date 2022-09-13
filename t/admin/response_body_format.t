@@ -66,22 +66,20 @@ __DATA__
                     "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/index.html",
-                            "desc": "new route",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
-                            }
-                        },
-                        "key": "/apisix/routes/1"
-                    }
+                    "value": {
+                        "methods": [
+                            "GET"
+                        ],
+                        "uri": "/index.html",
+                        "desc": "new route",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
+                        }
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
                 )
 
@@ -94,37 +92,38 @@ passed
 
 
 
-=== TEST 2: response body format only have count and list(count is 1)
+=== TEST 2: response body format only have total and list (total is 1)
 --- config
     location /t {
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/routes',
-                ngx.HTTP_GET
-            )
+            local code, message, res = t('/apisix/admin/routes', ngx.HTTP_GET)
 
             if code >= 300 then
                 ngx.status = code
                 ngx.say(message)
                 return
             end
-
             res = json.decode(res)
-            assert(res.count == #res.list)
+            assert(res.total == 1)
+            assert(res.total == #res.list)
             assert(res.action == nil)
             assert(res.node == nil)
             assert(res.list.key == nil)
             assert(res.list.dir == nil)
-            ngx.say(json.encode(res))
+            assert(res.list[1].createdIndex ~= nil)
+            assert(res.list[1].modifiedIndex ~= nil)
+            assert(res.list[1].key == "/apisix/routes/1")
+            ngx.say(message)
         }
     }
---- response_body eval
-qr/\{"count":1,"list":\[\{.*\}\]/
+--- response_body
+passed
 
 
 
-=== TEST 3: response body format only have count and list(count is 2)
+=== TEST 3: response body format only have total and list (total is 2)
 --- config
     location /t {
         content_by_lua_block {
@@ -161,28 +160,35 @@ qr/\{"count":1,"list":\[\{.*\}\]/
             end
 
             res = json.decode(res)
-            assert(res.count == #res.list)
+            assert(res.total == 2)
+            assert(res.total == #res.list)
             assert(res.action == nil)
             assert(res.node == nil)
             assert(res.list.key == nil)
             assert(res.list.dir == nil)
-            ngx.say(json.encode(res))
+            assert(res.list[1].createdIndex ~= nil)
+            assert(res.list[1].modifiedIndex ~= nil)
+            assert(res.list[1].key == "/apisix/routes/1")
+            assert(res.list[2].createdIndex ~= nil)
+            assert(res.list[2].modifiedIndex ~= nil)
+            assert(res.list[2].key == "/apisix/routes/2")
+            ngx.say(message)
         }
     }
---- response_body eval
-qr/\{"count":2,"list":\[\{.*\},\{.*\}\]/
+--- response_body
+passed
 
 
 
-=== TEST 4: response body format(test services)
+=== TEST 4: response body format (test services)
 --- config
     location /t {
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/services/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1
@@ -191,15 +197,15 @@ qr/\{"count":2,"list":\[\{.*\},\{.*\}\]/
                     },
                     "desc": "new service 001"
                 }]]
-                )
+            )
             if code >= 300 then
                 ngx.status = code
             end
             ngx.say(body)
 
             local code, body = t('/apisix/admin/services/2',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1
@@ -208,15 +214,13 @@ qr/\{"count":2,"list":\[\{.*\},\{.*\}\]/
                     },
                     "desc": "new service 002"
                 }]]
-                )
+            )
             if code >= 300 then
                 ngx.status = code
             end
             ngx.say(body)
 
-            local code, message, res = t('/apisix/admin/services',
-                ngx.HTTP_GET
-            )
+            local code, message, res = t('/apisix/admin/services', ngx.HTTP_GET)
 
             if code >= 300 then
                 ngx.status = code
@@ -225,13 +229,22 @@ qr/\{"count":2,"list":\[\{.*\},\{.*\}\]/
             end
 
             res = json.decode(res)
-            assert(res.count == #res.list)
+            assert(res.total == 2)
+            assert(res.total == #res.list)
             assert(res.action == nil)
             assert(res.node == nil)
             assert(res.list.key == nil)
             assert(res.list.dir == nil)
-            ngx.say(json.encode(res))
+            assert(res.list[1].createdIndex ~= nil)
+            assert(res.list[1].modifiedIndex ~= nil)
+            assert(res.list[1].key == "/apisix/services/1")
+            assert(res.list[2].createdIndex ~= nil)
+            assert(res.list[2].modifiedIndex ~= nil)
+            assert(res.list[2].key == "/apisix/services/2")
+            ngx.say(message)
         }
     }
---- response_body eval
-qr/\{"count":2,"list":\[\{.*\},\{.*\}\]/
+--- response_body
+passed
+passed
+passed

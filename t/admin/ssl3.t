@@ -60,4 +60,4 @@ __DATA__
         }
     }
 --- response_body
-{"count":0,"list":[]}
+{"list":[],"total":0}

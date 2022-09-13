@@ -47,7 +47,7 @@ The `redirect` Plugin can be used to configure redirects.
 * Only one of `http_to_https` and `append_query_string` can be configured.
 * When enabling `http_to_https`, the ports in the redirect URL will pick a value in the following order (in descending order of priority)
   * Read `plugin_attr.redirect.https_port` from the configuration file (`conf/config.yaml`).
-  * If `apisix.ssl` is enabled, read `apisix.ssl.listen_port` first, and if it does not exist, read `apisix.ssl.listen` and select a port randomly from it.
+  * If `apisix.ssl` is enabled, read `apisix.ssl.listen` and select a port randomly from it.
   * Use 443 as the default https port.
 
 :::
@@ -57,7 +57,7 @@ The `redirect` Plugin can be used to configure redirects.
 The example below shows how you can enable the `redirect` Plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/test/index.html",
     "plugins": {
@@ -78,7 +78,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 You can also use any built-in Nginx variables in the new URI:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/test",
     "plugins": {
@@ -119,7 +119,7 @@ The response shows the response code and the `Location` header implying that the
 The example below shows how you can redirect HTTP to HTTPS:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -148,7 +148,7 @@ Location: https://127.0.0.1:9443/hello
 To disable the `redirect` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/test/index.html",
     "plugins": {},

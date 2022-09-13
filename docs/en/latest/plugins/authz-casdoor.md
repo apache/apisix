@@ -57,7 +57,7 @@ The `callback_url` must belong to the URI of your Route. See the code snippet be
 You can enable the Plugin on a specific Route as shown below:
 
 ```shell
-curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "methods": ["GET"],
   "uri": "/anything/*",
@@ -91,7 +91,7 @@ Once this is done, the user is redirected to the original URL they wanted to vis
 To disable the `authz-casdoor` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/anything/*",

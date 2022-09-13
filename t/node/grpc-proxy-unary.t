@@ -70,8 +70,8 @@ routes:
     methods: [
         POST
     ]
-    service_protocol: grpc
     upstream:
+      scheme: grpc
       nodes:
         "127.0.0.1:50051": 1
       type: roundrobin
