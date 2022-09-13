@@ -23,8 +23,11 @@ BEGIN {
         our $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
-  config_center: yaml
   enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   kubernetes: {}
 _EOC_
@@ -40,8 +43,11 @@ _EOC_
         our $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
-  config_center: yaml
   enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   kubernetes:
     client:
@@ -360,8 +366,11 @@ qr{ 2 2 2 2 2 2 }
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
   enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   kubernetes:
     service:
@@ -385,8 +394,11 @@ qr{ 2 2 2 2 2 2 }
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
   enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   kubernetes:
     service:
@@ -410,8 +422,11 @@ qr{ 2 2 2 2 2 2 }
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
   enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   kubernetes:
     client:
@@ -432,8 +447,11 @@ qr{ 2 2 2 2 2 2 }
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
   enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   kubernetes:
     service:
@@ -458,8 +476,11 @@ qr{ 2 2 2 2 2 2 }
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
   enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   kubernetes:
     client:
@@ -482,8 +503,11 @@ qr{ 2 2 0 0 0 0 }
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
   enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   kubernetes:
     client:
@@ -506,8 +530,11 @@ qr{ 0 0 2 2 2 2 }
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
   enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   kubernetes:
     client:
@@ -530,8 +557,11 @@ qr{ 2 2 2 2 0 0 }
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
   enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   kubernetes:
     client:
@@ -554,8 +584,11 @@ qr{ 2 2 2 2 0 0 }
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
   enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   kubernetes:
     client:
@@ -578,8 +611,11 @@ qr{ 0 0 2 2 2 2 }
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
   enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   kubernetes:
     client:
@@ -602,8 +638,11 @@ qr{ 0 0 0 0 2 2 }
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
   enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   kubernetes:
     client:

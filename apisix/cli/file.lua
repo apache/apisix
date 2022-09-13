@@ -233,20 +233,6 @@ function _M.read_yaml_conf(apisix_home)
         end
     end
 
-    if default_conf.apisix.config_center == "yaml" then
-        local apisix_conf_path = profile:yaml_path("apisix")
-        local apisix_conf_yaml, _ = util.read_file(apisix_conf_path)
-        if apisix_conf_yaml then
-            local apisix_conf = yaml.parse(apisix_conf_yaml)
-            if apisix_conf then
-                local ok, err = resolve_conf_var(apisix_conf)
-                if not ok then
-                    return nil, err
-                end
-            end
-        end
-    end
-
     if default_conf.deployment then
         if default_conf.deployment.role == "traditional" then
             default_conf.etcd = default_conf.deployment.etcd
@@ -257,7 +243,7 @@ function _M.read_yaml_conf(apisix_home)
 
         elseif default_conf.deployment.role == "data_plane" then
             if default_conf.deployment.role_data_plane.config_provider == "yaml" then
-                default_conf.apisix.config_center = "yaml"
+                default_conf.deployment.config_provider = "yaml"
             else
                 default_conf.etcd = default_conf.deployment.role_data_plane.control_plane
             end
@@ -273,6 +259,20 @@ function _M.read_yaml_conf(apisix_home)
             end
             etcd.tls.cert = certs.cert
             etcd.tls.key = certs.cert_key
+        end
+    end
+
+    if default_conf.deployment.config_provider == "yaml" then
+        local apisix_conf_path = profile:yaml_path("apisix")
+        local apisix_conf_yaml, _ = util.read_file(apisix_conf_path)
+        if apisix_conf_yaml then
+            local apisix_conf = yaml.parse(apisix_conf_yaml)
+            if apisix_conf then
+                local ok, err = resolve_conf_var(apisix_conf)
+                if not ok then
+                    return nil, err
+                end
+            end
         end
     end
 

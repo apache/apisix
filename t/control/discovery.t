@@ -27,9 +27,11 @@ our $yaml_config = <<_EOC_;
 apisix:
   enable_control: true
   node_listen: 1984
-  config_center: yaml
   enable_admin: false
-
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 discovery:
   eureka:
     host:
@@ -131,8 +133,11 @@ GET /v1/discovery/dns/dump
 apisix:
   enable_control: true
   node_listen: 1984
-  config_center: yaml
   enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   consul_kv:
     servers:
