@@ -144,12 +144,6 @@ Note: the order of the plugins is not related to the order of execution.
 To enable your plugin, copy this plugin list into `conf/config.yaml`, and add your plugin name. For instance:
 
 ```yaml
-apisix:
-  admin_key:
-    - name: "admin"
-      key: edd1c9f034335f136f87ad84b625c8f1 # using fixed API token has security risk, please update it when you deploy to production environment
-      role: admin
-
 plugins: # copied from config-default.yaml
   ...
   - your-plugin

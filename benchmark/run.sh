@@ -68,11 +68,6 @@ else
 fi
 
 echo "
-apisix:
-  admin_key:
-    - name: admin
-      key: edd1c9f034335f136f87ad84b625c8f1
-      role: admin
 nginx_config:
   worker_processes: ${worker_cnt}
 " > conf/config.yaml

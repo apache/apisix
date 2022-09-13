@@ -25,7 +25,7 @@ The Admin API lets users control their deployed Apache APISIX instance. The [arc
 
 By default, the Admin API listens to port `9180` when APISIX is launched. This can be changed by modifying your configuration file ([conf/config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml)).
 
-**Note**: Mentions of `X-API-KEY` in this document refers to `apisix.admin_key.key`—the access token for Admin API—in your configuration file.
+**Note**: Mentions of `X-API-KEY` in this document refers to `deployment.admin.admin_key.key`—the access token for Admin API—in your configuration file.
 
 ## V3
 

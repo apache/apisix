@@ -46,7 +46,7 @@ server {
         proxy_pass http://127.0.0.1:2379;
     }
 }
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -89,7 +89,7 @@ server {
         proxy_pass http://127.0.0.1:2379;
     }
 }
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -133,7 +133,7 @@ server {
         proxy_pass http://127.0.0.1:2379;
     }
 }
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
