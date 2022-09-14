@@ -63,8 +63,8 @@ local router
 
 local function check_token(ctx)
     local local_conf = core.config.local_conf()
-    if not local_conf or not local_conf.apisix
-       or not local_conf.apisix.admin_key then
+    local admin_key = core.table.try_read_attr(local_conf, "deployment", "admin", "admin_key")
+    if not admin_key then
         return true
     end
 
@@ -75,7 +75,7 @@ local function check_token(ctx)
     end
 
     local admin
-    for i, row in ipairs(local_conf.apisix.admin_key) do
+    for i, row in ipairs(admin_key) do
         if req_token == row.key then
             admin = row
             break

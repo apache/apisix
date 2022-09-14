@@ -57,7 +57,7 @@ if [ $count_test_access_log -eq 0 ]; then
 fi
 
 count_access_log_off=`grep -c "access_log off;" conf/nginx.conf || true`
-if [ $count_access_log_off -eq 4 ]; then
+if [ $count_access_log_off -eq 5 ]; then
     echo "failed: nginx.conf file find access_log off; when enable access log"
     exit 1
 fi
@@ -92,7 +92,7 @@ if [ $count_test_access_log -eq 1 ]; then
 fi
 
 count_access_log_off=`grep -c "access_log off;" conf/nginx.conf || true`
-if [ $count_access_log_off -ne 4 ]; then
+if [ $count_access_log_off -ne 5 ]; then
     echo "failed: nginx.conf file doesn't find access_log off; when disable access log"
     exit 1
 fi
@@ -187,13 +187,14 @@ echo "don't log uninitialized access log variable when the HTTP request is malfo
 # TLS upstream
 
 echo "
-apisix:
-    admin_api_mtls:
-        admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
-        admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
-    admin_listen:
-        port: 9180
-    https_admin: true
+deployment:
+    admin:
+        admin_listen:
+            port: 9180
+        https_admin: true
+        admin_api_mtls:
+            admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
+            admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
 nginx_config:
   http:
     access_log_format: '\"\$upstream_scheme://\$upstream_host\" \$ssl_server_name'

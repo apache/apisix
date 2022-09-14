@@ -71,10 +71,14 @@ curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /
 You need to build [APISIX-Base](./FAQ.md#how-do-i-build-the-apisix-base-environment) and configure `etcd.tls` section if you want APISIX to work on an etcd cluster with mTLS enabled.
 
 ```yaml
-etcd:
-  tls:
-    cert: /data/certs/etcd_client.pem       # path of certificate used by the etcd client
-    key: /data/certs/etcd_client.key        # path of key used by the etcd client
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    tls:
+      cert: /data/certs/etcd_client.pem       # path of certificate used by the etcd client
+      key: /data/certs/etcd_client.key        # path of key used by the etcd client
 ```
 
 If APISIX does not trust the CA certificate that used by etcd server, we need to set up the CA certificate.

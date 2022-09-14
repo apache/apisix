@@ -75,11 +75,13 @@ make stop
 echo "passed: find the certificate correctly"
 
 echo '
+deployment:
+    admin:
+        admin_listen:
+            port: 9180
 apisix:
     node_listen: 9080
     enable_admin: true
-    admin_listen:
-        port: 9180
     stream_proxy:
         tcp:
             - "localhost:9100"
@@ -205,9 +207,13 @@ fi
 echo "passed: check the realip configuration for batch-requests"
 
 echo '
-etcd:
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
     host:
-        - 127.0.0.1
+      - 127.0.0.1
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)

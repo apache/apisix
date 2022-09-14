@@ -26,7 +26,6 @@ our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
     delete_uri_tail_slash: true
-    admin_key: null
 _EOC_
 
 run_tests();

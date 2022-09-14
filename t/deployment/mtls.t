@@ -38,13 +38,6 @@ add_block_preprocessor(sub {
 
 });
 
-Test::Nginx::Socket::set_http_config_filter(sub {
-    my $config = shift;
-    my $snippet = `./t/bin/gen_snippet.lua conf_server`;
-    $config .= $snippet;
-    return $config;
-});
-
 run_tests();
 
 __DATA__
@@ -54,7 +47,7 @@ __DATA__
 curl --cert t/certs/mtls_client.crt --key t/certs/mtls_client.key -k https://localhost:12345/version
 --- response_body eval
 qr/"etcdserver":/
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: control_plane
     role_control_plane:
@@ -80,7 +73,7 @@ deployment:
 curl -k https://localhost:12345/version
 --- response_body eval
 qr/No required SSL certificate was sent/
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: control_plane
     role_control_plane:
@@ -106,7 +99,7 @@ deployment:
 curl --cert t/certs/apisix.crt --key t/certs/apisix.key -k https://localhost:12345/version
 --- response_body eval
 qr/The SSL certificate error/
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: control_plane
     role_control_plane:

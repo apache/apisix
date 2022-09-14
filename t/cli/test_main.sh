@@ -256,9 +256,13 @@ echo "passed: resolve variables wrapped with whitespace"
 
 # support environment variables in local_conf
 echo '
-etcd:
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
     host:
-        - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
+      - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
 ' > conf/config.yaml
 
 ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
@@ -270,9 +274,13 @@ fi
 
 # don't override user's envs configuration
 echo '
-etcd:
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
     host:
-        - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
+      - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
 nginx_config:
     envs:
         - ETCD_HOST
@@ -291,9 +299,13 @@ if ! grep "env ETCD_HOST;" conf/nginx.conf > /dev/null; then
 fi
 
 echo '
-etcd:
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
     host:
-        - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
+      - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
 nginx_config:
     envs:
         - ETCD_HOST=1.1.1.1
@@ -513,13 +525,14 @@ echo "passed: worker_processes number is configurable"
 git checkout conf/config.yaml
 
 echo "
-apisix:
-    admin_api_mtls:
-        admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
-        admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
-    admin_listen:
-        port: 9180
-    https_admin: true
+deployment:
+    admin:
+        admin_listen:
+            port: 9180
+        https_admin: true
+        admin_api_mtls:
+            admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
+            admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
 " > conf/customized_config.yaml
 
 cp conf/config.yaml conf/config_original.yaml
