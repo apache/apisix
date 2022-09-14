@@ -15,6 +15,13 @@
     },
     {
       "type": "category",
+      "label": "How-to Guides",
+      "items": [
+        "how-to-guides/observe-your-api"
+      ]
+    },
+    {
+      "type": "category",
       "label": "Terminology",
       "items": [
         "terminology/api-gateway",
