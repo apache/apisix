@@ -244,7 +244,7 @@ Please modify "admin_key" in conf/config.yaml .
     end
 
     if yaml_conf.apisix.enable_admin and
-        yaml_conf.apisix.deployment.config_provider == "yaml"
+        yaml_conf.deployment.config_provider == "yaml"
     then
         util.die("ERROR: Admin API can only be used with etcd config_provider.\n")
     end
