@@ -368,10 +368,11 @@ make: *** [deps] Error 1
 1. 为 Apache APISIX 代理和 Admin API 配置不同的端口，或者禁用 Admin API。
 
 ```yaml
-apisix:
-  admin_listen: # use a separate port
-    ip: 127.0.0.1
-    port: 9180
+deployment:
+  admin:
+    admin_listen: # use a separate port
+      ip: 127.0.0.1
+      port: 9180
 ```
 
 2、添加 APISIX Dashboard 的代理路由：
@@ -457,17 +458,17 @@ curl http://127.0.0.1:9080/ip -i
 
 ## Admin API 的 `X-API-KEY` 指的是什么？是否可以修改？
 
-Admin API 的 `X-API-KEY` 指的是 `./conf/config.yaml` 文件中的 `apisix.admin_key.key`，默认值是 `edd1c9f034335f136f87ad84b625c8f1`。它是 Admin API 的访问 token。
+Admin API 的 `X-API-KEY` 指的是 `./conf/config.yaml` 文件中的 `deployment.admin.admin_key.key`，默认值是 `edd1c9f034335f136f87ad84b625c8f1`。它是 Admin API 的访问 token。
 
 默认情况下，它被设置为 `edd1c9f034335f136f87ad84b625c8f1`，也可以通过修改 `./conf/conf/config` 中的参数来修改，如下示例：
 
 ```yaml
-apisix:
-  admin_key
-    -
-      name: "admin"
-      key: newkey
-      role: admin
+deployment:
+  admin:
+    admin_key
+      - name: "admin"
+        key: newkey
+        role: admin
 ```
 
 然后访问 Admin API：
@@ -502,9 +503,10 @@ Apache APISIX 默认只允许 `127.0.0.0/24` 的 IP 段范围访问 `Admin API`�
 如果你想允许所有的 IP 访问，只需在 `./conf/config.yaml` 配置文件中添加如下的配置，然后重启或重新加载 APISIX 就可以让所有 IP 访问 `Admin API`。
 
 ```yaml
-apisix:
-  allow_admin:
-    - 0.0.0.0/0
+deployment:
+  admin:
+    allow_admin:
+      - 0.0.0.0/0
 ```
 
 **注意**：你可以在非生产环境中使用此方法，以允许所有客户端从任何地方访问 Apache APISIX 实例，但是在生产环境中该设置并不安全。在生产环境中，请仅授权特定的 IP 地址或地址范围访问 Apache APISIX 实例。

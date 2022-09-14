@@ -525,13 +525,14 @@ echo "passed: worker_processes number is configurable"
 git checkout conf/config.yaml
 
 echo "
-apisix:
-    admin_api_mtls:
-        admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
-        admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
-    admin_listen:
-        port: 9180
-    https_admin: true
+deployment:
+    admin:
+        admin_listen:
+            port: 9180
+        https_admin: true
+        admin_api_mtls:
+            admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
+            admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
 " > conf/customized_config.yaml
 
 cp conf/config.yaml conf/config_original.yaml

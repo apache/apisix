@@ -25,7 +25,6 @@ no_shuffle();
 our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    admin_key: null
     router:
         http: 'radixtree_uri_with_parameter'
 _EOC_

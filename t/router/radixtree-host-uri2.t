@@ -28,7 +28,6 @@ apisix:
     config_center: yaml
     router:
         http: 'radixtree_host_uri'
-    admin_key: null
 _EOC_
 
 run_tests();
