@@ -58,6 +58,8 @@ env {*name*};
 {% end %}
 
 {% if use_apisix_openresty then %}
+thread_pool grpc-client-nginx-module threads=1;
+
 lua {
     {% if enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* meta.lua_shared_dict["prometheus-metrics"] *};
