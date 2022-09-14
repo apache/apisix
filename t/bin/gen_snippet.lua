@@ -35,7 +35,8 @@ if not yaml_conf then
 end
 
 if yaml_conf.deployment.role == "data_plane" and
-   yaml_conf.deployment.config_provider == "yaml" then
+    yaml_conf.deployment.config_provider == "yaml"
+    or yaml_conf.deployment.config_provider == "xds" then
     return
 end
 

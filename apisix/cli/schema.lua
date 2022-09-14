@@ -377,7 +377,7 @@ local deployment_schema = {
             role_data_plane = {
                 properties = {
                     config_provider = {
-                        enum = {"control_plane", "yaml"}
+                        enum = {"control_plane", "yaml", "xds"}
                     },
                 },
                 required = {"config_provider"}
