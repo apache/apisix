@@ -27,6 +27,13 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     my $user_yaml_config = <<_EOC_;
+deployment:
+    admin:
+        admin_key:
+            - name: admin
+              role: admin
+              key: edd1c9f034335f136f87ad84b625c8f1
+
 apisix:
   node_listen: 1984
 _EOC_

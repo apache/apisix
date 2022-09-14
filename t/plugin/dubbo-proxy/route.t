@@ -165,7 +165,6 @@ dubbo success
 apisix:
     node_listen: 1984
     enable_admin: true
-    admin_key: null
 plugins:
     - key-auth
     - dubbo-proxy
@@ -233,7 +232,6 @@ passed
 apisix:
     node_listen: 1984
     enable_admin: true
-    admin_key: null
 plugins:
     - key-auth
     - dubbo-proxy
@@ -246,7 +244,6 @@ plugins:
 apisix:
     node_listen: 1984
     enable_admin: true
-    admin_key: null
 plugins:
     - key-auth
     - dubbo-proxy

@@ -68,7 +68,7 @@ Host: test.com
 --- response_body eval
 qr/1980/
 --- error_log
-use config_provider: yaml
+use config_center: yaml
 --- no_error_log
 [error]
 

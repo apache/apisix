@@ -71,11 +71,13 @@ __DATA__
     }
 --- response_body
 prev_index updated
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
         config_provider: etcd
+    admin:
+        admin_key: ~
     etcd:
         prefix: "/apisix"
         host:
@@ -95,7 +97,7 @@ deployment:
             ngx.say(res.body.node.value)
         }
     }
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -139,7 +141,7 @@ foo
             ngx.say(res.body.node.value)
         }
     }
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -207,7 +209,7 @@ localhost is resolved to: 127.0.0.2
             end
         }
     }
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -236,7 +238,7 @@ x.com is resolved to: 127.0.0.2
             ngx.say(res.body.node.value)
         }
     }
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -281,7 +283,7 @@ server {
     }
 --- response_body
 foo
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -325,7 +327,7 @@ server {
     }
 --- response_body
 foo
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -365,7 +367,7 @@ server {
     }
 --- response_body
 foo
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -403,7 +405,7 @@ server {
     }
 --- response_body
 foo
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -434,7 +436,7 @@ Receive Host: localhost
             ngx.say(timeout)
         }
     }
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:

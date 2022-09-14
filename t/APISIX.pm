@@ -105,7 +105,6 @@ apisix:
   stream_proxy:
     tcp:
       - 9100
-  admin_key: null
   enable_resolv_search_opt: false
 _EOC_
 
@@ -493,6 +492,12 @@ _EOC_
         dns_resolver = $dns_addrs_tbl_str,
     }
     apisix.http_init(args)
+
+    -- set apisix_lua_home into constans module
+    -- it may be used by plugins to determine the work path of apisix
+    local constants = require("apisix.constants")
+    constants.apisix_lua_home = "$apisix_home"
+
     $extra_init_by_lua
 _EOC_
 
@@ -834,6 +839,19 @@ _EOC_
     }
 
     my $yaml_config = $block->yaml_config // $user_yaml_config;
+
+    my $default_deployment = <<_EOC_;
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+_EOC_
+
+    if ($yaml_config !~ m/deployment:/) {
+        $yaml_config = $default_deployment . $yaml_config;
+    }
 
     if ($block->extra_yaml_config) {
         $yaml_config .= $block->extra_yaml_config;
