@@ -40,7 +40,7 @@ Apache APISIX 的技术架构如下图所示：
 
 - 邮件列表 - 发送任意内容到 dev-subscribe@apisix.apache.org 后，根据回复以订阅邮件列表。
 - QQ 群 - 781365357
-- Slack - [查看加入方式](https://apisix.apache.org/docs/general/join/#join-the-slack-channel)
+- Slack - [查看加入方式](https://apisix.apache.org/zh/docs/general/join/#join-the-slack-channel)
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - 使用标签 `#ApacheAPISIX` 关注我们并与我们互动。
 - [哔哩哔哩](https://space.bilibili.com/551921247)
 - **新手任务列表**
@@ -167,11 +167,11 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 
 1. 安装
 
-   请参考[APISIX 安装指南](./installation-guide.md)。
+   请参考[APISIX 安装指南](https://apisix.apache.org/zh/docs/apisix/installation-guide/)。
 
 2. 入门指南
 
-   入门指南是学习 APISIX 基础知识的好方法。按照 [入门指南](getting-started.md)的步骤即可。
+   入门指南是学习 APISIX 基础知识的好方法。按照 [入门指南](https://apisix.apache.org/zh/docs/apisix/getting-started/)的步骤即可。
 
    更进一步，你可以跟着文档来尝试更多的[插件](plugins)。
 
@@ -184,7 +184,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
    可以参考[插件开发指南](plugin-develop.md)，以及示例插件 `example-plugin` 的代码实现。
    阅读[插件概念](terminology/plugin.md) 会帮助你学到更多关于插件的知识。
 
-更多文档请参考 [Apache APISIX 文档站](https://apisix.apache.org/docs/apisix/getting-started/)。
+更多文档请参考 [Apache APISIX 文档站](https://apisix.apache.org/zh/docs/apisix/getting-started/)。
 
 ## 性能测试
 
