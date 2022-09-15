@@ -258,17 +258,21 @@ local function sync_local_conf_to_etcd(reset)
     local local_conf = core.config.local_conf()
 
     local plugins = {}
-    for _, name in ipairs(local_conf.plugins) do
-        core.table.insert(plugins, {
-            name = name,
-        })
+    if local_conf.plugins then
+        for _, name in ipairs(local_conf.plugins) do
+            core.table.insert(plugins, {
+                name = name,
+            })
+        end
     end
 
-    for _, name in ipairs(local_conf.stream_plugins) do
-        core.table.insert(plugins, {
-            name = name,
-            stream = true,
-        })
+    if local_conf.stream_plugins then
+        for _, name in ipairs(local_conf.stream_plugins) do
+            core.table.insert(plugins, {
+                name = name,
+                stream = true,
+            })
+        end
     end
 
     if reset then
