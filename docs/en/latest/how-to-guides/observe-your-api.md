@@ -111,7 +111,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 Once we get a successful response from APISIX server, we can send a request to this _get_ endpoint to generate logs.
 
-```bash
+```shell
 
 curl -i http://127.0.0.1:9080/get
 
