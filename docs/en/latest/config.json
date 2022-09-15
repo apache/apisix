@@ -206,10 +206,6 @@
         },
         {
           "type": "doc",
-          "id": "plugin-develop"
-        },
-        {
-          "type": "doc",
           "id": "wasm"
         },
         {
@@ -224,6 +220,10 @@
             "internal/plugin-runner",
             "internal/testing-framework"
           ]
+        },
+        {
+          "type": "doc",
+          "id": "plugin-develop"
         },
         {
           "type": "doc",

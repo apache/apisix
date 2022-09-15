@@ -205,11 +205,11 @@
         },
         {
           "type": "doc",
-          "id": "plugin-develop"
+          "id": "CODE_STYLE"
         },
         {
           "type": "doc",
-          "id": "CODE_STYLE"
+          "id": "plugin-develop"
         },
         {
           "type": "doc",
