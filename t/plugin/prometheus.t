@@ -612,7 +612,6 @@ qr/apisix_node_info\{hostname=".*"\} 1/
 apisix:
     node_listen: 1984
     config_center: yaml
-    enable_admin: false
 --- apisix_yaml
 routes:
   -

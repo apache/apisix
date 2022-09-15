@@ -25,7 +25,6 @@ our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
     config_center: yaml
-    enable_admin: false
 _EOC_
 
 run_tests();
@@ -154,7 +153,6 @@ hello world
 apisix:
     node_listen: 1984
     config_center: yaml
-    enable_admin: false
     router:
         http: "radixtree_host_uri"
 --- apisix_yaml
@@ -183,7 +181,6 @@ property "uri" validation failed
 apisix:
     node_listen: 1984
     config_center: yaml
-    enable_admin: false
     router:
         http: "radixtree_host_uri"
 --- apisix_yaml
@@ -211,7 +208,6 @@ GET /hello
 apisix:
     node_listen: 1984
     config_center: yaml
-    enable_admin: false
     router:
         http: "radixtree_host_uri"
 --- apisix_yaml
@@ -239,7 +235,6 @@ GET /hello
 apisix:
     node_listen: 1984
     config_center: yaml
-    enable_admin: false
 --- apisix_yaml
 routes:
   -
