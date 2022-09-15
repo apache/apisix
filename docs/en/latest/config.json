@@ -203,6 +203,31 @@
         },
         {
           "type": "doc",
+          "id": "external-plugin"
+        },
+        {
+          "type": "doc",
+          "id": "wasm"
+        },
+        {
+          "type": "link",
+          "label": "CODE_STYLE",
+          "href": "https://github.com/apache/apisix/blob/master/CODE_STYLE.md"
+        },
+        {
+          "type": "category",
+          "label": "internal",
+          "items": [
+            "internal/plugin-runner",
+            "internal/testing-framework"
+          ]
+        },
+        {
+          "type": "doc",
+          "id": "plugin-develop"
+        },
+        {
+          "type": "doc",
           "id": "debug-mode"
         }
       ]
@@ -290,24 +315,7 @@
         },
         {
           "type": "doc",
-          "id": "plugin-develop"
-        },
-        {
-          "type": "doc",
           "id": "apisix-variable"
-        },
-        {
-          "type": "doc",
-          "id": "external-plugin"
-        },
-        {
-          "type": "doc",
-          "id": "wasm"
-        },
-        {
-          "type": "link",
-          "label": "CODE_STYLE",
-          "href": "https://github.com/apache/apisix/blob/master/CODE_STYLE.md"
         },
         {
           "type": "doc",
@@ -320,14 +328,6 @@
         {
           "type": "doc",
           "id": "debug-function"
-        },
-        {
-          "type": "category",
-          "label": "internal",
-          "items": [
-            "internal/plugin-runner",
-            "internal/testing-framework"
-          ]
         },
         {
           "type": "doc",
