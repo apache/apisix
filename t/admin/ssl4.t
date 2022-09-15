@@ -19,7 +19,76 @@ use t::APISIX 'no_plan';
 log_level('debug');
 no_root_location();
 
-$ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
+#$ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
+
+add_block_preprocessor( sub{
+    my ($block) = @_;
+
+    my $TEST_NGINX_HTML_DIR ||= html_dir();
+
+    my $config = <<_EOC_;
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+
+location /t {
+    content_by_lua_block {
+        -- etcd sync
+        ngx.sleep(0.2)
+
+        do
+            local sock = ngx.socket.tcp()
+
+            sock:settimeout(2000)
+
+            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            ngx.say("connected: ", ok)
+
+            local sess, err = sock:sslhandshake(nil, "www.test.com", true)
+            if not sess then
+                ngx.say("failed to do SSL handshake: ", err)
+                return
+            end
+
+            ngx.say("ssl handshake: ", sess ~= nil)
+
+            local req = "GET /hello HTTP/1.0\\r\\nHost: www.test.com\\r\\nConnection: close\\r\\n\\r\\n"
+            local bytes, err = sock:send(req)
+            if not bytes then
+                ngx.say("failed to send http request: ", err)
+                return
+            end
+
+            ngx.say("sent http request: ", bytes, " bytes.")
+
+            while true do
+                local line, err = sock:receive()
+                if not line then
+                    -- ngx.say("failed to receive response status line: ", err)
+                    break
+                end
+
+                ngx.say("received: ", line)
+            end
+
+            local ok, err = sock:close()
+            ngx.say("close: ", ok, " ", err)
+        end  -- do
+        -- collectgarbage()
+    }
+}
+_EOC_
+
+    if (!$block->config) {
+        $block->set_value("config", $config)
+    }
+}
+
+);
+
 
 run_tests;
 
@@ -111,60 +180,6 @@ apisix:
     node_listen: 1984
     ssl:
         key_encrypt_salt: "edd1c9f0985e76a1"
---- config
-listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
-
-location /t {
-    content_by_lua_block {
-        -- etcd sync
-        ngx.sleep(0.2)
-
-        do
-            local sock = ngx.socket.tcp()
-
-            sock:settimeout(2000)
-
-            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
-            if not ok then
-                ngx.say("failed to connect: ", err)
-                return
-            end
-
-            ngx.say("connected: ", ok)
-
-            local sess, err = sock:sslhandshake(nil, "www.test.com", true)
-            if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
-                return
-            end
-
-            ngx.say("ssl handshake: ", sess ~= nil)
-
-            local req = "GET /hello HTTP/1.0\r\nHost: www.test.com\r\nConnection: close\r\n\r\n"
-            local bytes, err = sock:send(req)
-            if not bytes then
-                ngx.say("failed to send http request: ", err)
-                return
-            end
-
-            ngx.say("sent http request: ", bytes, " bytes.")
-
-            while true do
-                local line, err = sock:receive()
-                if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
-                    break
-                end
-
-                ngx.say("received: ", line)
-            end
-
-            local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
-        end  -- do
-        -- collectgarbage()
-    }
-}
 --- request
 GET /t
 --- response_body eval
@@ -193,60 +208,6 @@ apisix:
     ssl:
         key_encrypt_salt:
             - edd1c9f0985e76a1
---- config
-listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
-
-location /t {
-    content_by_lua_block {
-        -- etcd sync
-        ngx.sleep(0.2)
-
-        do
-            local sock = ngx.socket.tcp()
-
-            sock:settimeout(2000)
-
-            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
-            if not ok then
-                ngx.say("failed to connect: ", err)
-                return
-            end
-
-            ngx.say("connected: ", ok)
-
-            local sess, err = sock:sslhandshake(nil, "www.test.com", true)
-            if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
-                return
-            end
-
-            ngx.say("ssl handshake: ", sess ~= nil)
-
-            local req = "GET /hello HTTP/1.0\r\nHost: www.test.com\r\nConnection: close\r\n\r\n"
-            local bytes, err = sock:send(req)
-            if not bytes then
-                ngx.say("failed to send http request: ", err)
-                return
-            end
-
-            ngx.say("sent http request: ", bytes, " bytes.")
-
-            while true do
-                local line, err = sock:receive()
-                if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
-                    break
-                end
-
-                ngx.say("received: ", line)
-            end
-
-            local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
-        end  -- do
-        -- collectgarbage()
-    }
-}
 --- request
 GET /t
 --- response_body eval
@@ -275,60 +236,6 @@ apisix:
     ssl:
         key_encrypt_salt:
             - edd1c9f0985e76a2
---- config
-listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
-
-location /t {
-    content_by_lua_block {
-        -- etcd sync
-        ngx.sleep(0.2)
-
-        do
-            local sock = ngx.socket.tcp()
-
-            sock:settimeout(2000)
-
-            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
-            if not ok then
-                ngx.say("failed to connect: ", err)
-                return
-            end
-
-            ngx.say("connected: ", ok)
-
-            local sess, err = sock:sslhandshake(nil, "www.test.com", true)
-            if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
-                return
-            end
-
-            ngx.say("ssl handshake: ", sess ~= nil)
-
-            local req = "GET /hello HTTP/1.0\r\nHost: www.test.com\r\nConnection: close\r\n\r\n"
-            local bytes, err = sock:send(req)
-            if not bytes then
-                ngx.say("failed to send http request: ", err)
-                return
-            end
-
-            ngx.say("sent http request: ", bytes, " bytes.")
-
-            while true do
-                local line, err = sock:receive()
-                if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
-                    break
-                end
-
-                ngx.say("received: ", line)
-            end
-
-            local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
-        end  -- do
-        -- collectgarbage()
-    }
-}
 --- request
 GET /t
 --- error_log
@@ -344,60 +251,6 @@ apisix:
         key_encrypt_salt:
             - edd1c9f0985e76a2
             - edd1c9f0985e76a1
---- config
-listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
-
-location /t {
-    content_by_lua_block {
-        -- etcd sync
-        ngx.sleep(0.2)
-
-        do
-            local sock = ngx.socket.tcp()
-
-            sock:settimeout(2000)
-
-            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
-            if not ok then
-                ngx.say("failed to connect: ", err)
-                return
-            end
-
-            ngx.say("connected: ", ok)
-
-            local sess, err = sock:sslhandshake(nil, "www.test.com", true)
-            if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
-                return
-            end
-
-            ngx.say("ssl handshake: ", sess ~= nil)
-
-            local req = "GET /hello HTTP/1.0\r\nHost: www.test.com\r\nConnection: close\r\n\r\n"
-            local bytes, err = sock:send(req)
-            if not bytes then
-                ngx.say("failed to send http request: ", err)
-                return
-            end
-
-            ngx.say("sent http request: ", bytes, " bytes.")
-
-            while true do
-                local line, err = sock:receive()
-                if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
-                    break
-                end
-
-                ngx.say("received: ", line)
-            end
-
-            local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
-        end  -- do
-        -- collectgarbage()
-    }
-}
 --- request
 GET /t
 --- response_body eval
@@ -488,60 +341,6 @@ apisix:
     node_listen: 1984
     ssl:
         key_encrypt_salt: null
---- config
-listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
-
-location /t {
-    content_by_lua_block {
-        -- etcd sync
-        ngx.sleep(0.2)
-
-        do
-            local sock = ngx.socket.tcp()
-
-            sock:settimeout(2000)
-
-            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
-            if not ok then
-                ngx.say("failed to connect: ", err)
-                return
-            end
-
-            ngx.say("connected: ", ok)
-
-            local sess, err = sock:sslhandshake(nil, "www.test.com", true)
-            if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
-                return
-            end
-
-            ngx.say("ssl handshake: ", sess ~= nil)
-
-            local req = "GET /hello HTTP/1.0\r\nHost: www.test.com\r\nConnection: close\r\n\r\n"
-            local bytes, err = sock:send(req)
-            if not bytes then
-                ngx.say("failed to send http request: ", err)
-                return
-            end
-
-            ngx.say("sent http request: ", bytes, " bytes.")
-
-            while true do
-                local line, err = sock:receive()
-                if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
-                    break
-                end
-
-                ngx.say("received: ", line)
-            end
-
-            local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
-        end  -- do
-        -- collectgarbage()
-    }
-}
 --- request
 GET /t
 --- response_body eval
