@@ -216,7 +216,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 We can test our example by simply running the following curl command:
 
-```bash
+```shell
 curl -i http://127.0.0.1:9080/get
 ```
 
