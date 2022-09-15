@@ -86,7 +86,7 @@ You can generate a mock HTTP server at [mockbin.com](https://mockbin.org/) to re
 
 The following is an example of how to enable the http-logger for a specific route.
 
-```bash
+```shell
 
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
