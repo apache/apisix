@@ -523,6 +523,8 @@ _EOC_
     lua_shared_dict etcd-cluster-health-check 10m; # etcd health check
     lua_shared_dict ext-plugin 1m;
     lua_shared_dict kubernetes 1m;
+    lua_shared_dict kubernetes-first 1m;
+    lua_shared_dict kubernetes-second 1m;
     lua_shared_dict tars 1m;
     lua_shared_dict xds-config 1m;
     lua_shared_dict xds-config-version 1m;
