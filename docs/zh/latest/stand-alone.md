@@ -41,7 +41,6 @@ Admin API 将不再被允许使用。
 
 ```yaml
 apisix:
-  enable_admin: false
   config_center: yaml
 ```
 

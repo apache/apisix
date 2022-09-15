@@ -32,7 +32,6 @@ add_block_preprocessor(sub {
 apisix:
     node_listen: 1984
     config_center: yaml
-    enable_admin: false
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
@@ -113,7 +112,6 @@ connect to 127.0.0.1:1053
 apisix:
     node_listen: 1984
     config_center: yaml
-    enable_admin: false
     dns_resolver_valid: 900
 --- apisix_yaml
 upstreams:
@@ -194,7 +192,6 @@ connect to 127.0.0.1:1053
 apisix:
     node_listen: 1984
     config_center: yaml
-    enable_admin: false
     dns_resolver_valid: 1
 --- apisix_yaml
 upstreams:
