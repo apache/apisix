@@ -39,7 +39,6 @@ __DATA__
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   nacos:
       host:

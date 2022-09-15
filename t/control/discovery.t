@@ -28,7 +28,6 @@ apisix:
   enable_control: true
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 
 discovery:
   eureka:
@@ -132,7 +131,6 @@ apisix:
   enable_control: true
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   consul_kv:
     servers:
