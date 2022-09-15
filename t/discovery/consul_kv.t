@@ -82,7 +82,6 @@ our $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 
 discovery:
   consul_kv:
@@ -195,7 +194,6 @@ routes:
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 
 discovery:
   consul_kv:
@@ -251,7 +249,6 @@ skip some keys, return default nodes, get response: missing consul_kv services
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 
 discovery:
   consul_kv:
@@ -461,7 +458,6 @@ location /v1/kv {
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 
 discovery:
   consul_kv:
@@ -517,7 +513,6 @@ location /sleep {
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 
 discovery:
   consul_kv:

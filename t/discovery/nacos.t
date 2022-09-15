@@ -26,7 +26,6 @@ our $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   nacos:
       host:
@@ -45,7 +44,6 @@ our $yaml_auth_config = <<_EOC_;
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
 discovery:
   nacos:
       host:

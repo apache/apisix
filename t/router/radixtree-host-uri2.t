@@ -26,7 +26,6 @@ our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
     config_center: yaml
-    enable_admin: false
     router:
         http: 'radixtree_host_uri'
 _EOC_
