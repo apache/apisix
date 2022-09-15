@@ -165,11 +165,11 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 1. Installation
 
-   Please refer to [install documentation](docs/en/latest/installation-guide.md).
+   Please refer to [install documentation](https://apisix.apache.org/docs/apisix/installation-guide/).
 
 2. Getting started
 
-   The getting started guide is a great way to learn the basics of APISIX. Just follow the steps in [Getting Started](docs/en/latest/getting-started.md).
+   The getting started guide is a great way to learn the basics of APISIX. Just follow the steps in [Getting Started](https://apisix.apache.org/docs/apisix/getting-started/).
 
    Further, you can follow the documentation to try more [plugins](docs/en/latest/plugins).
 
