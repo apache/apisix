@@ -627,6 +627,58 @@ curl http://127.0.0.1:9180/apisix/admin/routes/health-info \
 
 :::
 
+## APISIX 与 [etcd](https://etcd.io/) 相关的延迟较高的问题有哪些，如何修复？
+
+etcd 作为 APISIX 的数据存储组件，它的稳定性关乎 APISIX 的稳定性。在实际场景中，如果 APISIX 使用证书通过 HTTPS 的方式连接 etcd，可能会出现以下 2 种数据查询或写入延迟较高的问题：
+
+1. 通过接口操作 APISIX Admin API 进行数据的查询或写入，延迟较高。
+2. 在监控系统中，Prometheus 抓取 APISIX 数据面 Metrics 接口超时。
+
+这些延迟问题，严重影响了 APISIX 的服务稳定性，而之所以会出现这类问题，主要是因为 etcd 对外提供了 2 种操作方式：HTTP（HTTPS）、gRPC。而 APISIX 是基于 HTTP（HTTPS）协议来操作 etcd 的。
+
+在这个场景中，etcd 存在一个关于 HTTP/2 的 BUG：如果通过 HTTPS 操作 etcd（HTTP 不受影响），HTTP/2 的连接数上限为 Golang 默认的 `250` 个。
+
+所以，当 APISIX 数据面节点数较多时，一旦所有 APISIX 节点与 etcd 连接数超过这个上限，则 APISIX 的接口响应会非常的慢。
+
+Golang 中，默认的 HTTP/2 上限为 `250`，代码如下：
+
+```go
+package http2
+
+import ...
+
+const (
+    prefaceTimeout         = 10 * time.Second
+    firstSettingsTimeout   = 2 * time.Second // should be in-flight with preface anyway
+    handlerChunkWriteSize  = 4 << 10
+    defaultMaxStreams      = 250 // TODO: make this 100 as the GFE seems to?
+    maxQueuedControlFrames = 10000
+)
+
+```
+
+目前，etcd 官方主要维护了 `3.4` 和 `3.5` 这两个主要版本。在 `3.4` 系列中，近期发布的 `3.4.20` 版本已修复了这个问题。至于 `3.5` 版本，其实，官方很早之前就在筹备发布 `3.5.5` 版本了，但截止目前（2022.09.13）仍尚未发布。所以，如果你使用的是 etcd 的版本小于 `3.5.5`，可以参考以下几种方式解决这个问题：
+
+1. 将 APISIX 与 etcd 的通讯方式由 HTTPS 改为 HTTP。
+2. 将 etcd 版本回退到 `3.4.20`。
+3. 将 etcd 源码克隆下来，直接编译 `release-3.5` 分支（此分支已修复，只是尚未发布新版本而已）。
+
+重新编译 etcd 的方式如下：
+
+```shell
+git checkout release-3.5
+make GOOS=linux GOARCH=amd64
+```
+
+编译的二进制在 `bin` 目录下，将其替换掉你服务器环境的 etcd 二进制后，然后重启 etcd 即可。
+
+更多信息，请参考：
+
+- [when etcd node have many http long polling connections, it may cause etcd to respond slowly to http requests.](https://github.com/etcd-io/etcd/issues/14185)
+- [bug: when apisix starts for a while, its communication with etcd starts to time out](https://github.com/apache/apisix/issues/7078)
+- [the prometheus metrics API is tool slow](https://github.com/apache/apisix/issues/7353)
+- [Support configuring `MaxConcurrentStreams` for http2](https://github.com/etcd-io/etcd/pull/14169)
+
 ## 如果在使用 APISIX 过程中遇到问题，我可以在哪里寻求更多帮助？
 
 - [Apache APISIX Slack Channel](/docs/general/join/#加入-slack-频道)：加入后请选择 channel-apisix 频道，即可通过此频道进行 APISIX 相关问题的提问。

@@ -39,8 +39,6 @@ The Stand-alone mode can only be enabled when set the role of APISIX as data pla
 Refer to the example below:
 
 ```yaml
-apisix:
-  enable_admin: false
 deployment:
   role: data_plane
   role_data_plane:

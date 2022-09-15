@@ -24,7 +24,6 @@ no_shuffle();
 our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    enable_admin: false
 deployment:
     role: data_plane
     role_data_plane:
@@ -156,7 +155,6 @@ hello world
 --- yaml_config
 apisix:
     node_listen: 1984
-    enable_admin: false
     router:
         http: "radixtree_host_uri"
 deployment:
@@ -188,7 +186,6 @@ property "uri" validation failed
 --- yaml_config
 apisix:
     node_listen: 1984
-    enable_admin: false
     router:
         http: "radixtree_host_uri"
 deployment:
@@ -219,7 +216,6 @@ GET /hello
 --- yaml_config
 apisix:
     node_listen: 1984
-    enable_admin: false
     router:
         http: "radixtree_host_uri"
 deployment:
@@ -250,7 +246,6 @@ GET /hello
 --- yaml_config
 apisix:
     node_listen: 1984
-    enable_admin: false
 deployment:
     role: data_plane
     role_data_plane:

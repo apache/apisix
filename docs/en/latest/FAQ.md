@@ -626,6 +626,57 @@ This method only detects whether the APISIX data plane is alive or not. It does 
 
 :::
 
+## What are the scenarios with high APISIX latency related to [etcd](https://etcd.io/) and how to fix them?
+
+etcd is the data storage component of apisix, and its stability is related to the stability of APISIX.
+
+In actual scenarios, if APISIX uses a certificate to connect to etcd through HTTPS, the following two problems of high latency for data query or writing may occur:
+
+1. Query or write data through APISIX Admin API.
+2. In the monitoring scenario, Prometheus crawls the APISIX data plane Metrics API timeout.
+
+These problems related to higher latency seriously affect the service stability of APISIX, and the reason why such problems occur is mainly because etcd provides two modes of operation: HTTP (HTTPS) and gRPC. And APISIX uses the HTTP (HTTPS) protocol to operate etcd.
+In this scenario, etcd has a bug about HTTP/2: if etcd is operated over HTTPS (HTTP is not affected), the upper limit of HTTP/2 connections is the default `250` in Golang. Therefore, when the number of APISIX data plane nodes is large, once the number of connections between all APISIX nodes and etcd exceeds this upper limit, the response of APISIX API interface will be very slow.
+
+In Golang, the default upper limit of HTTP/2 connections is `250`, the code is as follows:
+
+```go
+package http2
+
+import ...
+
+const (
+    prefaceTimeout         = 10 * time.Second
+    firstSettingsTimeout   = 2 * time.Second // should be in-flight with preface anyway
+    handlerChunkWriteSize  = 4 << 10
+    defaultMaxStreams      = 250 // TODO: make this 100 as the GFE seems to?
+    maxQueuedControlFrames = 10000
+)
+
+```
+
+etcd officially maintains two main branches, `3.4` and `3.5`. In the `3.4` series, the recently released `3.4.20` version has fixed this issue. As for the `3.5` version, the official is preparing to release the `3.5.5` version a long time ago, but it has not been released as of now (2022.09.13). So, if you are using etcd version less than `3.5.5`, you can refer to the following ways to solve this problem:
+
+1. Change the communication method between APISIX and etcd from HTTPS to HTTP.
+2. Roll back the etcd to `3.4.20`.
+3. Clone the etcd source code and compile the `release-3.5` branch directly (this branch has fixed the problem of HTTP/2 connections, but the new version has not been released yet).
+
+The way to recompile etcd is as follows:
+
+```shell
+git checkout release-3.5
+make GOOS=linux GOARCH=amd64
+```
+
+The compiled binary is in the bin directory, replace it with the etcd binary of your server environment, and then restart etcd:
+
+For more information, please refer to:
+
+- [when etcd node have many http long polling connections, it may cause etcd to respond slowly to http requests.](https://github.com/etcd-io/etcd/issues/14185)
+- [bug: when apisix starts for a while, its communication with etcd starts to time out](https://github.com/apache/apisix/issues/7078)
+- [the prometheus metrics API is tool slow](https://github.com/apache/apisix/issues/7353)
+- [Support configuring `MaxConcurrentStreams` for http2](https://github.com/etcd-io/etcd/pull/14169)
+
 ## Where can I find more answers?
 
 You can find more answers on:

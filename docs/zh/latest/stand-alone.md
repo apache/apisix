@@ -40,8 +40,6 @@ Admin API 将不再被允许使用。
 参考下面示例：
 
 ```yaml
-apisix:
-  enable_admin: false
 deployment:
   role: data_plane
   role_data_plane:

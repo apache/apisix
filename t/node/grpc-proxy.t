@@ -31,7 +31,6 @@ add_block_preprocessor(sub {
     my $yaml_config = $block->yaml_config // <<_EOC_;
 apisix:
     node_listen: 1984
-    enable_admin: false
 deployment:
     role: data_plane
     role_data_plane:
