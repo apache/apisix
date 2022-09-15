@@ -132,7 +132,7 @@ local _M = {
 
 
 local function create_multiple_origin_cache(allow_origins)
-    if not str_find(allow_origins, ",") then
+    if not allow_origins or not str_find(allow_origins, ",") then
         return nil
     end
     local origin_cache = {}
@@ -164,18 +164,23 @@ function _M.check_schema(conf, schema_type)
     if not ok then
         return false, err
     end
-    if conf.allow_credential then
-        if conf.allow_origins == "*" or conf.allow_methods == "*" or
-            conf.allow_headers == "*" or conf.expose_headers == "*" then
-            return false, "you can not set '*' for other option when 'allow_credential' is true"
-        end
-    end
+
+    -- When allow_origins_by_regex is present we need to clear the default value of allow_origins
+    -- first to avoid errors in the check in allow_credential below.
     if conf.allow_origins_by_regex then
+        conf.allow_origins = nil
         for i, re_rule in ipairs(conf.allow_origins_by_regex) do
             local ok, err = re_compile(re_rule, "j")
             if not ok then
                 return false, err
             end
+        end
+    end
+
+    if conf.allow_credential then
+        if conf.allow_origins == "*" or conf.allow_methods == "*" or
+            conf.allow_headers == "*" or conf.expose_headers == "*" then
+            return false, "you can not set '*' for other option when 'allow_credential' is true"
         end
     end
 
