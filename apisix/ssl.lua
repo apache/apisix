@@ -65,14 +65,9 @@ local function get_aes_128_cbc_with_iv()
         local type_ivs = type(ivs)
 
         if type_ivs == "table" then
-            for index, iv in ipairs(ivs) do
-                if type(iv) == "string" and #iv == 16 then
-                    local aes_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv = iv}))
-                    core.table.insert(_aes_128_cbc_with_iv_tbl, aes_with_iv)
-                else
-                    core.log.error("the key_encrypt_salt does not meet the "
-                                   .. "requirements, index: ", index)
-                end
+            for _, iv in ipairs(ivs) do
+                local aes_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv = iv}))
+                core.table.insert(_aes_128_cbc_with_iv_tbl, aes_with_iv)
             end
         elseif type_ivs == "string" and #ivs == 16 then
             local aes_with_iv = assert(aes:new(ivs, nil, aes.cipher(128, "cbc"), {iv = ivs}))
@@ -107,7 +102,7 @@ local function aes_decrypt_pkey(origin)
     end
 
     local aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv()
-    if core.table.isempty(aes_128_cbc_with_iv_tbl) then
+    if #aes_128_cbc_with_iv_tbl == 0 then
         return origin
     end
 

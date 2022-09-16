@@ -22,6 +22,14 @@ no_root_location();
 add_block_preprocessor( sub{
     my ($block) = @_;
 
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
     my $TEST_NGINX_HTML_DIR ||= html_dir();
 
     my $config = <<_EOC_;
@@ -125,12 +133,8 @@ location /t {
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -163,12 +167,8 @@ apisix:
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -178,8 +178,6 @@ apisix:
     node_listen: 1984
     ssl:
         key_encrypt_salt: "edd1c9f0985e76a1"
---- request
-GET /t
 --- response_body eval
 qr{connected: 1
 ssl handshake: true
@@ -206,8 +204,6 @@ apisix:
     ssl:
         key_encrypt_salt:
             - edd1c9f0985e76a1
---- request
-GET /t
 --- response_body eval
 qr{connected: 1
 ssl handshake: true
@@ -234,8 +230,6 @@ apisix:
     ssl:
         key_encrypt_salt:
             - edd1c9f0985e76a2
---- request
-GET /t
 --- error_log
 decrypt ssl key failed
 [alert]
@@ -250,8 +244,6 @@ apisix:
         key_encrypt_salt:
             - edd1c9f0985e76a2
             - edd1c9f0985e76a1
---- request
-GET /t
 --- response_body eval
 qr{connected: 1
 ssl handshake: true
@@ -266,8 +258,6 @@ close: 1 nil}
 --- error_log
 server name: "www.test.com"
 [alert]
---- no_error_log
-[error]
 
 
 
@@ -287,10 +277,6 @@ location /t {
         t.test('/apisix/admin/ssls/1', ngx.HTTP_DELETE)
     }
 }
---- request
-GET /t
---- no_error_log
-[error]
 
 
 
@@ -325,12 +311,8 @@ location /t {
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -340,8 +322,6 @@ apisix:
     node_listen: 1984
     ssl:
         key_encrypt_salt: null
---- request
-GET /t
 --- response_body eval
 qr{connected: 1
 ssl handshake: true
@@ -376,7 +356,3 @@ location /t {
         t.test('/apisix/admin/ssls/1', ngx.HTTP_DELETE)
     }
 }
---- request
-GET /t
---- no_error_log
-[error]
