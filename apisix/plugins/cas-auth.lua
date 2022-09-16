@@ -17,6 +17,9 @@
 local core = require("apisix.core")
 local http = require("resty.http")
 local ngx = ngx
+local type = type
+local table = table
+local string = string
 
 local CAS_REQUEST_URI = "CAS_REQUEST_URI"
 local COOKIE_NAME = "CAS_SESSION"
