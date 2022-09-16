@@ -229,7 +229,7 @@ curl http://127.0.0.1:9080/index.html -i
 ```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
-
+...
 hello 1980
 ```
 
@@ -240,7 +240,7 @@ curl http://127.0.0.1:9080/index.html -i
 ```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
-
+...
 world 1981
 ```
 
@@ -301,8 +301,7 @@ curl http://127.0.0.1:9080/index.html -H 'release: new_release' -i
 ```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
-......
-
+...
 world 1981
 ```
 
@@ -313,8 +312,7 @@ curl http://127.0.0.1:9080/index.html -H 'release: old_release' -i
 ```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
-......
-
+...
 hello 1980
 ```
 
@@ -373,28 +371,28 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 After the rules are matched, 60% of the traffic hit the Upstream on port `1981` and 40% hit the one on `1980`.
 
 ```shell
-curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'apisix-key: hello' -i
+curl 'http://127.0.0.1:9080/index.html?name=jack' \
+-H 'user-id:30' -H 'apisix-key: hello' -i
 ```
 
 ```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
-......
-
+...
 world 1981
 ```
 
 If the rule fails to match, then the request is directed to the service on `1980`:
 
 ```shell
-curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'apisix-key: hello' -i
+curl 'http://127.0.0.1:9080/index.html?name=jack' \
+-H 'user-id:30' -H 'apisix-key: hello' -i
 ```
 
 ```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
-......
-
+...
 hello 1980
 ```
 
@@ -463,8 +461,7 @@ curl 'http://127.0.0.1:9080/index.html?name=jack&name2=rose' \
 ```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
-......
-
+...
 world 1981
 ```
 
@@ -476,8 +473,7 @@ curl 'http://127.0.0.1:9080/index.html?name=jack&name2=rose' \
 ```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
-......
-
+...
 hello 1980
 ```
 
@@ -491,8 +487,7 @@ curl 'http://127.0.0.1:9080/index.html?name=jack' \
 ```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
-......
-
+...
 world 1981
 ```
 
@@ -504,8 +499,7 @@ curl 'http://127.0.0.1:9080/index.html?name=jack' \
 ```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
-......
-
+...
 hello 1980
 ```
 
@@ -518,8 +512,7 @@ curl 'http://127.0.0.1:9080/index.html?name=jack' -i
 ```shell
 HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
-......
-
+...
 hello 1980
 ```
 
@@ -530,7 +523,8 @@ You can achieve one-to-one correspondence between rules and Upstream by configur
 For example, when the request header `x-api-id` is equal to `1` it should be directed to Upstream on port `1981` and if it is equal to `2` it should be directed to Upstream on port `1982`. And in other cases, it should default to the Upstream on port `1980`. You can configure this as shown below:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
