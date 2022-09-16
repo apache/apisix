@@ -27,8 +27,11 @@ add_block_preprocessor(sub {
     my $yaml_config = $block->yaml_config // <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
     enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
@@ -84,7 +87,7 @@ GET /t
 --- response_body
 hello world
 --- error_log
-use config_center: yaml
+use config_provider: yaml
 load(): loaded plugin and sort by priority: 3000 name: ip-restriction
 load(): loaded plugin and sort by priority: 2510 name: jwt-auth
 load_stream(): loaded stream plugin and sort by priority: 1000 name: mqtt-proxy
@@ -102,8 +105,11 @@ load(): new plugins
 --- yaml_config
 apisix:
     node_listen: 1984
-    config_center: yaml
     enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 plugins:
     - ip-restriction
     - jwt-auth
@@ -169,8 +175,11 @@ GET /apisix/prometheus/metrics
 --- yaml_config
 apisix:
     node_listen: 1984
-    config_center: yaml
     enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 plugins:
     - ip-restriction
     - jwt-auth

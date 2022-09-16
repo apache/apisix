@@ -27,8 +27,11 @@ add_block_preprocessor(sub {
         my $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
     enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 discovery:                        # service discovery center
     dns:
         servers:
@@ -70,8 +73,11 @@ __DATA__
 --- yaml_config
 apisix:
     node_listen: 1984
-    config_center: yaml
     enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 discovery:                        # service discovery center
     dns:
         servers:
@@ -147,9 +153,12 @@ failed to query the DNS server
 --- yaml_config
 apisix:
     node_listen: 1984
-    config_center: yaml
     enable_admin: false
     enable_resolv_search_option: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 discovery:                        # service discovery center
     dns:
         servers:
