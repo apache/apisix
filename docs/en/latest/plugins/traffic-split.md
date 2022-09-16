@@ -2,11 +2,11 @@
 title: traffic-split
 keywords:
   - APISIX
-  - Plugin
+  - API Gateway
   - Traffic Split
-  - traffic-split
-description: This document contains information about the Apache APISIX traffic-split Plugin.
+description: This document contains information about the Apache APISIX traffic-split Plugin, you can use it to dynamically direct portions of traffic to various Upstream services.
 ---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -45,7 +45,7 @@ The traffic ratio between Upstream services may be less accurate since round rob
 | Name                           | Type           | Required | Default    | Valid values                | Description                                                                                                                                                                                                                                                                                                                                               |
 |--------------------------------|----------------|----------|------------|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | rules.match                    | array[object]  | False    |            |                             | Rules to match for conditional traffic split. By default the list is empty and the traffic will be split unconditionally.                                                                                                                                                                                                                                 |
-| rules.match.vars               | array[array]   | False    |            |                             | List of variables to match for filtering requests for conditional traffic split. It is in the format `{variable operator value}`. For example, `{"arg_name", "==", "json"}`. The variables here are consistent with Nginx internal variables. For details on supported operators, [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
+| rules.match.vars               | array[array]   | False    |            |                             | List of variables to match for filtering requests for conditional traffic split. It is in the format `{variable operator value}`. For example, `{"arg_name", "==", "json"}`. The variables here are consistent with NGINX internal variables. For details on supported operators, [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
 | rules.weighted_upstreams       | array[object]  | False    |            |                             | List of Upstream configurations.                                                                                                                                                                                                                                                                                                                          |
 | weighted_upstreams.upstream_id | string/integer | False    |            |                             | ID of the configured Upstream object.                                                                                                                                                                                                                                                                                                                     |
 | weighted_upstreams.upstream    | object         | False    |            |                             | Configuration of the Upstream.                                                                                                                                                                                                                                                                                                                            |
@@ -80,7 +80,8 @@ If only the `weight` attribute is configured, it corresponds to the weight of th
 You can configure the Plugin on a Route as shown below:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -123,7 +124,8 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 Alternatively, you can configure `upstream_id` if you have already configured an Upstream object:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -175,7 +177,8 @@ This is the process of gradually rolling out a release by splitting an increasin
 To set this up, you can configure the `weight` attribute of your `weighted_upstreams` as shown below:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -248,7 +251,8 @@ In this setup, user traffic is shifted from the "green" (production) environment
 To set this up, you can configure `match` rules based on the request headers as shown below:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -321,7 +325,8 @@ You can also make custom releases by configuring rules and setting weights.
 In the example below, only one `vars` rule is configured and the multiple expressions in the rule have an AND relationship. The weights are configured in 3:2 ratio and traffic not matching the `vars` will be redirected to the Upstream configured on the Route.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -396,7 +401,8 @@ hello 1980
 In the example below, multiple `vars` rules are configured and they have an OR relationship.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -450,7 +456,8 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 In the example below, both the `vars` rules are matched. After the rules are matched, 60% of the traffic is directed to the service on `1981` and 40% to the service on `1980`:
 
 ```shell
-curl 'http://127.0.0.1:9080/index.html?name=jack&name2=rose' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+curl 'http://127.0.0.1:9080/index.html?name=jack&name2=rose' \
+-H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
 ```
 
 ```shell
@@ -462,7 +469,8 @@ world 1981
 ```
 
 ```shell
-curl 'http://127.0.0.1:9080/index.html?name=jack&name2=rose' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+curl 'http://127.0.0.1:9080/index.html?name=jack&name2=rose' \
+-H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
 ```
 
 ```shell
@@ -476,7 +484,8 @@ hello 1980
 In the example below, the second `vars` rule fail to match. But since it is an OR relationship, the rules are matched and traffic is directed as configured:
 
 ```shell
-curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+curl 'http://127.0.0.1:9080/index.html?name=jack' \
+-H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
 ```
 
 ```shell
@@ -488,7 +497,8 @@ world 1981
 ```
 
 ```shell
-curl 'http://127.0.0.1:9080/index.html?name=jack' -H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
+curl 'http://127.0.0.1:9080/index.html?name=jack' \
+-H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
 ```
 
 ```shell
@@ -615,7 +625,8 @@ curl http://127.0.0.1:9080/hello -H 'x-api-id: 3'
 To disable the `traffic-split` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},
