@@ -97,6 +97,10 @@ jobs:
           rm -rf $(ls -1 --ignore=*.tgz --ignore=ci --ignore=t --ignore=utils --ignore=.github)
           tar zxvf ${{ steps.branch_env.outputs.fullname }}
 
+      - name: download keycloak cas provider
+        run: |
+          sudo wget https://github.com/jacekkow/keycloak-protocol-cas/releases/download/18.0.2/keycloak-protocol-cas-18.0.2.jar -O /opt/keycloak-protocol-cas-18.0.2.jar
+
       - name: Start CI env (FIRST_TEST)
         if: steps.test_env.outputs.type == 'first'
         run: |
