@@ -70,14 +70,13 @@ local function get_aes_128_cbc_with_iv()
                     local aes_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv = iv}))
                     core.table.insert(_aes_128_cbc_with_iv_tbl, aes_with_iv)
                 else
-                    core.log.error("the key_encrypt_salt does not meet the requirements, index: ", index)
+                    core.log.error("the key_encrypt_salt does not meet the "
+                                   .. "requirements, index: ", index)
                 end
             end
         elseif type_ivs == "string" and #ivs == 16 then
             local aes_with_iv = assert(aes:new(ivs, nil, aes.cipher(128, "cbc"), {iv = ivs}))
             core.table.insert(_aes_128_cbc_with_iv_tbl, aes_with_iv)
-        else
-            -- do nothing
         end
     end
 

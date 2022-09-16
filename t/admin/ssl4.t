@@ -19,8 +19,6 @@ use t::APISIX 'no_plan';
 log_level('debug');
 no_root_location();
 
-#$ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
-
 add_block_preprocessor( sub{
     my ($block) = @_;
 
@@ -82,9 +80,9 @@ location /t {
 }
 _EOC_
 
-    if (!$block->config) {
-        $block->set_value("config", $config)
-    }
+   if (!$block->config) {
+       $block->set_value("config", $config)
+   }
 }
 
 );
@@ -240,6 +238,7 @@ apisix:
 GET /t
 --- error_log
 decrypt ssl key failed
+[alert]
 
 
 
@@ -266,9 +265,9 @@ received: \nreceived: hello world
 close: 1 nil}
 --- error_log
 server name: "www.test.com"
+[alert]
 --- no_error_log
 [error]
-[alert]
 
 
 
