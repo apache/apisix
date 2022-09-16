@@ -204,20 +204,24 @@ fi
 
 echo "pass: uninitialized variable not found during writing access log (admin_listen set)"
 
-# Admin API can only be used with etcd config_center
+# Admin API can only be used with etcd config_provider
+## if role is data_plane, and config_provider is yaml, then enable_admin is set to false
 echo '
 apisix:
     enable_admin: true
-    config_center: yaml
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
-if ! echo "$out" | grep "Admin API can only be used with etcd config_center"; then
-    echo "failed: Admin API can only be used with etcd config_center"
+if echo "$out" | grep "Admin API can only be used with etcd config_provider"; then
+    echo "failed: Admin API can only be used with etcd config_provider"
     exit 1
 fi
 
-echo "passed: Admin API can only be used with etcd config_center"
+echo "passed: Admin API can only be used with etcd config_provider"
 
 # disable Admin API and init plugins syncer
 echo '
