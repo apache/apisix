@@ -38,7 +38,10 @@ __DATA__
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   nacos:
       host:

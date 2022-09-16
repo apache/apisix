@@ -28,8 +28,11 @@ add_block_preprocessor(sub {
     my $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
-  config_center: yaml
   enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 discovery:
   tars:
     db_conf:
