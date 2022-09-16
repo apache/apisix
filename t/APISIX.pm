@@ -256,6 +256,8 @@ _EOC_
 
     if ($version =~ m/\/apisix-nginx-module/) {
         $main_config .= <<_EOC_;
+thread_pool grpc-client-nginx-module threads=1;
+
 lua {
     lua_shared_dict prometheus-metrics 15m;
 }
