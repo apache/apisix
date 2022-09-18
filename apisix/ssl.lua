@@ -69,7 +69,7 @@ local function get_aes_128_cbc_with_iv()
                 local aes_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv = iv}))
                 core.table.insert(_aes_128_cbc_with_iv_tbl, aes_with_iv)
             end
-        elseif type_ivs == "string" and #ivs == 16 then
+        elseif type_ivs == "string" then
             local aes_with_iv = assert(aes:new(ivs, nil, aes.cipher(128, "cbc"), {iv = ivs}))
             core.table.insert(_aes_128_cbc_with_iv_tbl, aes_with_iv)
         end

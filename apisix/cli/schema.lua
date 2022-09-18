@@ -226,11 +226,12 @@ local config_schema = {
                         key_encrypt_salt = {
                             anyOf = {
                                 {
-                                type = "array",
-                                items = {
-                                    type = "string",
-                                    minLength = 16,
-                                    maxLength = 16
+                                    type = "array",
+                                    minItems = 1,
+                                    items = {
+                                        type = "string",
+                                        minLength = 16,
+                                        maxLength = 16
                                     }
                                 },
                                 {
@@ -239,7 +240,6 @@ local config_schema = {
                                     maxLength = 16
                                 }
                             }
-
                         },
                     }
                 },
