@@ -24,6 +24,16 @@ return {
                 type = "string",
             },
         },
+        servers = {
+            type = "array",
+            minItems = 1,
+            items = {
+                enum = {"last", "SRV", "A", "AAAA", "CNAME"},
+     --           ["not"] = {
+     --               enum = {"last"}
+     --           }
+            },
+        },
     },
     required = {"servers"}
 }

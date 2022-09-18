@@ -318,3 +318,24 @@ qr/upstream nodes: \{[^}]+\}/
 qr/upstream nodes: \{("127.0.0.1:1980":60,"127.0.0.2:1980":20|"127.0.0.2:1980":20,"127.0.0.1:1980":60)\}/
 --- response_body
 hello world
+
+
+
+=== TEST 16: prefer A than SRV when A is ahead of SRV in config.yaml
+--- apisix_yaml
+upstreams:
+    - service_name: "srv-a.test.local"
+      discovery_type: dns
+      type: roundrobin
+      id: 1
+discovery:
+    dns:
+        servers:
+            - "127.0.0.1:1053"
+        order:
+            - A
+            - SRV
+--- error_log
+proxy request to 127.0.0.1:80
+--- response_body
+hello world
