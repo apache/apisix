@@ -15,6 +15,13 @@
     },
     {
       "type": "category",
+      "label": "How-to Guides",
+      "items": [
+        "how-to-guides/observe-your-api"
+      ]
+    },
+    {
+      "type": "category",
       "label": "Terminology",
       "items": [
         "terminology/api-gateway",
@@ -150,7 +157,8 @@
                 "plugins/splunk-hec-logging",
                 "plugins/file-logger",
                 "plugins/loggly",
-                "plugins/elasticsearch-logger"
+                "plugins/elasticsearch-logger",
+                "plugins/tencent-cloud-cls"
               ]
             }
           ]
@@ -199,6 +207,31 @@
         {
           "type": "doc",
           "id": "building-apisix"
+        },
+        {
+          "type": "doc",
+          "id": "external-plugin"
+        },
+        {
+          "type": "doc",
+          "id": "wasm"
+        },
+        {
+          "type": "link",
+          "label": "CODE_STYLE",
+          "href": "https://github.com/apache/apisix/blob/master/CODE_STYLE.md"
+        },
+        {
+          "type": "category",
+          "label": "internal",
+          "items": [
+            "internal/plugin-runner",
+            "internal/testing-framework"
+          ]
+        },
+        {
+          "type": "doc",
+          "id": "plugin-develop"
         },
         {
           "type": "doc",
@@ -289,24 +322,7 @@
         },
         {
           "type": "doc",
-          "id": "plugin-develop"
-        },
-        {
-          "type": "doc",
           "id": "apisix-variable"
-        },
-        {
-          "type": "doc",
-          "id": "external-plugin"
-        },
-        {
-          "type": "doc",
-          "id": "wasm"
-        },
-        {
-          "type": "link",
-          "label": "CODE_STYLE",
-          "href": "https://github.com/apache/apisix/blob/master/CODE_STYLE.md"
         },
         {
           "type": "doc",
@@ -319,14 +335,6 @@
         {
           "type": "doc",
           "id": "debug-function"
-        },
-        {
-          "type": "category",
-          "label": "internal",
-          "items": [
-            "internal/plugin-runner",
-            "internal/testing-framework"
-          ]
         },
         {
           "type": "doc",

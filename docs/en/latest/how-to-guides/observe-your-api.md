@@ -86,7 +86,7 @@ You can generate a mock HTTP server at [mockbin.com](https://mockbin.org/) to re
 
 The following is an example of how to enable the http-logger for a specific route.
 
-```bash
+```shell
 
 curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -111,7 +111,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 Once we get a successful response from APISIX server, we can send a request to this _get_ endpoint to generate logs.
 
-```bash
+```shell
 
 curl -i http://127.0.0.1:9080/get
 
@@ -129,7 +129,7 @@ Apache APISIX API Gateway also offers [prometheus-plugin](https://apisix.apache.
 
 Let’s enable prometheus-plugin for our route:
 
-```bash
+```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/get",
@@ -142,7 +142,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 We fetch the metric data from the specified URL `/apisix/prometheus/`metrics.
 
-```bash
+```shell
 curl -i http://127.0.0.1:9091/apisix/prometheus/metrics
 ```
 
@@ -197,7 +197,7 @@ The third is **tracing** or distributed tracing allows you to understand the lif
 
 Here’s an example to enable the _zipkin plugin_ on the specified route:
 
-```bash
+```shell
 curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "methods": [
@@ -216,7 +216,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 We can test our example by simply running the following curl command:
 
-```bash
+```shell
 curl -i http://127.0.0.1:9080/get
 ```
 

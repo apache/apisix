@@ -58,6 +58,8 @@ env {*name*};
 {% end %}
 
 {% if use_apisix_openresty then %}
+thread_pool grpc-client-nginx-module threads=1;
+
 lua {
     {% if enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* meta.lua_shared_dict["prometheus-metrics"] *};
@@ -238,8 +240,11 @@ http {
     lua_shared_dict balancer-ewma-last-touched-at {* http.lua_shared_dict["balancer-ewma-last-touched-at"] *};
     lua_shared_dict etcd-cluster-health-check {* http.lua_shared_dict["etcd-cluster-health-check"] *}; # etcd health check
 
-    {% if enabled_discoveries["kubernetes"] then %}
-    lua_shared_dict kubernetes {* http.lua_shared_dict["kubernetes"] *};
+    # for discovery shared dict
+    {% if discovery_shared_dicts then %}
+    {% for key, size in pairs(discovery_shared_dicts) do %}
+    lua_shared_dict {*key*} {*size*};
+    {% end %}
     {% end %}
 
     {% if enabled_discoveries["tars"] then %}

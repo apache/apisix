@@ -232,8 +232,11 @@ add_block_preprocessor(sub {
         $user_yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
     enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 _EOC_
     }
 
@@ -253,6 +256,8 @@ _EOC_
 
     if ($version =~ m/\/apisix-nginx-module/) {
         $main_config .= <<_EOC_;
+thread_pool grpc-client-nginx-module threads=1;
+
 lua {
     lua_shared_dict prometheus-metrics 15m;
 }
@@ -523,6 +528,8 @@ _EOC_
     lua_shared_dict etcd-cluster-health-check 10m; # etcd health check
     lua_shared_dict ext-plugin 1m;
     lua_shared_dict kubernetes 1m;
+    lua_shared_dict kubernetes-first 1m;
+    lua_shared_dict kubernetes-second 1m;
     lua_shared_dict tars 1m;
     lua_shared_dict xds-config 1m;
     lua_shared_dict xds-config-version 1m;
