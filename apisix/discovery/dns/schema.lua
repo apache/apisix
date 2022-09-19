@@ -31,9 +31,9 @@ return {
             uniqueItems = true,
             items = {
                 enum = {"last", "SRV", "A", "AAAA", "CNAME"},
-     --           ["not"] = {
-     --               enum = {"last"}
-     --           }
+               ["not"] = {
+                   enum = {"last"}
+               }
             },
         },
     },
