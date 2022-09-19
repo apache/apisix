@@ -1,6 +1,7 @@
 name: Doc Lint
 
 on:
+  push:
   pull_request:
     branches: [master, 'release/**']
     paths:
