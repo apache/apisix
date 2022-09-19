@@ -15,9 +15,9 @@
     },
     {
       "type": "category",
-      "label": "How-to Guides",
+      "label": "Tutorials",
       "items": [
-        "how-to-guides/observe-your-api"
+        "tutorials/observe-your-api"
       ]
     },
     {

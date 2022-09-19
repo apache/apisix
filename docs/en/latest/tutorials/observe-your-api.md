@@ -1,5 +1,5 @@
 ---
-title: Observer your APIs
+title: Observe APIs
 keywords:
   - API gateway
   - Apache APISIX
