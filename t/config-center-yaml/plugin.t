@@ -188,3 +188,32 @@ hello world
 property "stream" validation failed: wrong type: expected boolean, got string
 --- no_error_log
 load(): plugins not changed
+
+
+
+=== TEST 6: empty plugin list
+--- apisix_yaml
+plugins:
+stream_plugins:
+--- debug_config eval: $::debug_config
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                })
+            ngx.print(res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+hello world
+--- error_log
+use config_center: yaml
+--- grep_error_log_out
+load(): failed to read stream plugin list from local file or stream plugin list is nil
