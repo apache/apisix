@@ -17,9 +17,6 @@
 local core = require("apisix.core")
 local http = require("resty.http")
 local ngx = ngx
-local type = type
-local table = table
-local string = string
 
 local CAS_REQUEST_URI = "CAS_REQUEST_URI"
 local COOKIE_NAME = "CAS_SESSION"
@@ -112,7 +109,8 @@ local function validate(conf, ctx, ticket)
     -- send a request to CAS to validate the ticket
     local httpc = http.new()
     local res, err = httpc:request_uri(conf.idp_uri ..
-        "/serviceValidate", { query = { ticket = ticket, service = uri_without_ticket(conf, ctx) } })
+        "/serviceValidate",
+        { query = { ticket = ticket, service = uri_without_ticket(conf, ctx) } })
 
     if res and res.status == ngx.HTTP_OK and res.body ~= nil then
         if core.string.find(res.body, "<cas:authenticationSuccess>") then
