@@ -140,7 +140,6 @@ local function validate(conf, ticket)
         end
     else
         ngx.log(ngx.ERR, "validate ticket failed: res=", res, ", err=", err)
-        ngx.exit(ngx.HTTP_UNAUTHORIZED)
     end
     return nil
 end
@@ -154,7 +153,7 @@ local function validate_with_cas(conf, ticket)
             ", cookie: ", ngx.var.http_cookie, ", request_uri: ", request_uri, ", user=", user)
         ngx.redirect(request_uri, ngx.HTTP_MOVED_TEMPORARILY)
     else
-        ngx.exit(ngx.HTTP_UNAUTHORIZED)
+        return ngx.HTTP_UNAUTHORIZED, {message = "invalid ticket"}
     end
 end
 
@@ -191,7 +190,6 @@ function _M.access(conf, ctx)
             store:delete(session_id)
             ngx.log(ngx.INFO, "SLO: user=", user, ", tocket=", ticket)
         end
-        ngx.exit(200)
     else
         local session_id = get_session_id()
         if session_id ~= nil then
@@ -200,7 +198,7 @@ function _M.access(conf, ctx)
 
         local ticket = ngx.var.arg_ticket
         if ticket ~= nil and uri == conf.cas_callback_uri then
-            validate_with_cas(conf, ticket)
+            return validate_with_cas(conf, ticket)
         else
             first_access(conf)
         end

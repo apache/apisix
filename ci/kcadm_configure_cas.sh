@@ -21,7 +21,7 @@ set -ex
 
 export PATH=/opt/keycloak/bin:$PATH
 
-kcadm.sh config credentials --server http://localhost:28080 --realm master --user admin --password admin
+kcadm.sh config credentials --server http://localhost:8080 --realm master --user admin --password admin
 
 kcadm.sh create realms -s realm=test -s enabled=true
 
