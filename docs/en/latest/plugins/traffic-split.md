@@ -4,6 +4,8 @@ keywords:
   - APISIX
   - API Gateway
   - Traffic Split
+  - Blue-green Deployment
+  - Canary Deployment
 description: This document contains information about the Apache APISIX traffic-split Plugin, you can use it to dynamically direct portions of traffic to various Upstream services.
 ---
 
