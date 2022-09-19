@@ -410,3 +410,31 @@ upstreams:
 --- must_die
 --- error_log
 expected unique items but items 1 and 2 are equal
+
+
+
+=== TEST 19: invalid order type in config.yaml
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+discovery:
+    dns:
+        servers:
+            - "127.0.0.1:1053"
+        order:
+            - a
+            - SRV
+--- apisix_yaml
+upstreams:
+    - service_name: "srv-a.test.local"
+      discovery_type: dns
+      type: roundrobin
+      id: 1
+--- must_die
+--- error_log
+matches none of the enum values
