@@ -159,7 +159,7 @@ Location: http://example.com/auth
 To disable the `forward-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:2379/apisix/admin/routes/1 -X PUT -d value='
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
