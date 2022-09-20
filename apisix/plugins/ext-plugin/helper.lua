@@ -56,7 +56,7 @@ function _M.get_conf_token_cache_time()
 end
 
 
-function _M.response_reader(reader, callabck, ...)
+function _M.response_reader(reader, callback, ...)
     if not reader then
         return "get response reader failed"
     end
@@ -70,7 +70,7 @@ function _M.response_reader(reader, callabck, ...)
         end
 
         if chunk then
-            cb_err = callabck(chunk, ...)
+            cb_err = callback(chunk, ...)
             if cb_err then
                 return cb_err
             end
