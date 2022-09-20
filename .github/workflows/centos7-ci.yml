@@ -93,10 +93,6 @@ jobs:
         docker run -itd -v /home/runner/work/apisix/apisix:/apisix --env TEST_FILE_SUB_DIR="$TEST_FILE_SUB_DIR" --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org docker.io/centos:7 /bin/bash
         # docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
 
-    - name: download keycloak cas provider
-      run: |
-        sudo wget https://github.com/jacekkow/keycloak-protocol-cas/releases/download/18.0.2/keycloak-protocol-cas-18.0.2.jar -O /opt/keycloak-protocol-cas-18.0.2.jar
-
     - name: Start CI env (FIRST_TEST)
       if: steps.test_env.outputs.type == 'first'
       run: |
@@ -105,6 +101,9 @@ jobs:
     - name: Start CI env (PLUGIN_TEST)
       if: steps.test_env.outputs.type == 'plugin'
       run: |
+        # download keycloak cas provider
+        sudo wget https://github.com/jacekkow/keycloak-protocol-cas/releases/download/18.0.2/keycloak-protocol-cas-18.0.2.jar -O /opt/keycloak-protocol-cas-18.0.2.jar
+
         sh ci/pod/openfunction/build-function-image.sh
         make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
         ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
