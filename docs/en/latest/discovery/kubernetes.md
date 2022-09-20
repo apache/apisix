@@ -24,7 +24,7 @@ title: Kubernetes
 ## Summary
 
 The [_Kubernetes_](https://kubernetes.io/) service discovery [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) real-time changes of [_Endpoints_](https://kubernetes.io/docs/concepts/services-networking/service/) resources,
-then store theirs value into ngx.shared.DITC \
+then store theirs value into ngx.shared.DICT \
 Discovery also provides a node query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md)
 
 ## How To Use
@@ -34,7 +34,7 @@ applicable to the case where the service is distributed in a single or multiple 
 
 ### Single-Cluster Mode Configuration
 
-A idetailed configuration for single-cluster mode kubernetes service discovery is as follows:
+A detailed configuration for single-cluster mode kubernetes service discovery is as follows:
 
 ```yaml
 discovery:
@@ -117,7 +117,7 @@ the kubernetes service discovery provides a query interface in accordance with t
  nodes(service_name)
 
 **description:** \
-  nodes() function attempts to look up the ngx.shared.DITC for nodes corresponding to service_name, \
+  nodes() function attempts to look up the ngx.shared.DICT for nodes corresponding to service_name, \
   service_name should match pattern: _[namespace]/[name]:[portName]_
 
   + namespace: The namespace where the kubernetes endpoints is located
@@ -163,7 +163,7 @@ the kubernetes service discovery provides a query interface in accordance with t
 
 ### Multi-Cluster Mode Configuration
 
-A idetailed configuration for multi-cluster mode kubernetes service discovery is as follows:
+A detailed configuration for multi-cluster mode kubernetes service discovery is as follows:
 
 ```yaml
 discovery:
@@ -228,7 +228,7 @@ the kubernetes service discovery provides a query interface in accordance with t
 nodes(service_name)
 
 **description:** \
-nodes() function attempts to look up the ngx.shared.DITC for nodes corresponding to service_name, \
+nodes() function attempts to look up the ngx.shared.DICT for nodes corresponding to service_name, \
 service_name should match pattern: _[id]/[namespace]/[name]:[portName]_
 
 + id: value defined in service discovery configuration
@@ -290,7 +290,7 @@ a nodes("release/default/plat-dev:port") call will get follow result:
 
 > Q: APISIX inherits Nginx's multiple process model, does it mean that each nginx worker process will [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) kubernetes endpoints resources \
 > A: The kubernetes service discovery only uses privileged processes to [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) kubernetes endpoints resources, then store theirs value \
-> into ngx.shared.DITC, worker processes get results by querying ngx.shared.DITC
+> into ngx.shared.DICT, worker processes get results by querying ngx.shared.DICT
 
 ---
 
