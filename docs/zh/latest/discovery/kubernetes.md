@@ -252,7 +252,7 @@ service_name 必须满足格式: [id]/[namespace]/[name]:[portName]
           name: port
   ```
 
-nodes("default/plat-dev:port") 调用会得到如下的返回值：
+nodes("release/default/plat-dev:port") 调用会得到如下的返回值：
 
   ```
    {
