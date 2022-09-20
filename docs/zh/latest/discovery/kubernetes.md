@@ -218,7 +218,7 @@ discovery:
 
 ### 多集群模式 Kubernetes 服务发现的查询接口
 
-多集群模式 Kubernetes 服务发现遵循 [_APISIX Discovery 规范_](https://github.com/apache/apisix/blob/master/docs/zh/latest/discovery.md) 提供节点查询接口
+多集群模式 Kubernetes 服务发现遵循 [_APISIX Discovery 规范_](https://github.com/apache/apisix/blob/master/docs/zh/latest/discovery.md) 提供节点查询接口。
 
 **函数：**
 nodes(service_name)
