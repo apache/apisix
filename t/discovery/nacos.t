@@ -25,8 +25,10 @@ workers(4);
 our $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
-  config_center: yaml
-  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   nacos:
       host:
@@ -44,8 +46,10 @@ _EOC_
 our $yaml_auth_config = <<_EOC_;
 apisix:
   node_listen: 1984
-  config_center: yaml
-  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   nacos:
       host:

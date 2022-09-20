@@ -71,9 +71,6 @@ local config_schema = {
     properties = {
         apisix = {
             properties = {
-                config_center = {
-                    enum = {"etcd", "yaml", "xds"},
-                },
                 lua_module_hook = {
                     pattern = "^[a-zA-Z._-]+$",
                 },
@@ -380,7 +377,7 @@ local deployment_schema = {
             role_data_plane = {
                 properties = {
                     config_provider = {
-                        enum = {"control_plane", "yaml"}
+                        enum = {"control_plane", "yaml", "xds"}
                     },
                 },
                 required = {"config_provider"}

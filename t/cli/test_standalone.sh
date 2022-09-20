@@ -30,7 +30,10 @@ trap standalone EXIT
 echo '
 apisix:
   enable_admin: false
-  config_center: yaml
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 ' > conf/config.yaml
 
 echo '
