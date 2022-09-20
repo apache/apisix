@@ -748,6 +748,14 @@ http {
                 apisix.grpc_access_phase()
             }
 
+            {% if use_apisix_openresty then %}
+            # For servers which obey the standard, when `:authority` is missing,
+            # `host` will be used instead. When used with apisix-base, we can do
+            # better by setting `:authority` directly
+            grpc_set_header   ":authority" $upstream_host;
+            {% else %}
+            grpc_set_header   "Host" $upstream_host;
+            {% end %}
             grpc_set_header   Content-Type application/grpc;
             grpc_socket_keepalive on;
             grpc_pass         $upstream_scheme://apisix_backend;
