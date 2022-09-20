@@ -117,7 +117,7 @@ local function validate(conf, ctx, ticket)
 
     if res and res.status == ngx.HTTP_OK and res.body ~= nil then
         if core.string.find(res.body, "<cas:authenticationSuccess>") then
-            local m = ngx_re_match(res.body, "<cas:user>(.*?)</cas:user>");
+            local m = ngx_re_match(res.body, "<cas:user>(.*?)</cas:user>", "jo");
             if m then
                 return m[1]
             end
