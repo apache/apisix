@@ -316,8 +316,8 @@ local function handle_extra_info(ctx, input)
             local err = helper.response_reader(ext_res.body_reader, function (chunk, chunks)
                 -- When the upstream response is chunked type,
                 -- we will receive the complete response body
-                -- before sending it to the runner program 
-                -- to reduce the number of RCP calls
+                -- before sending it to the runner program
+                -- to reduce the number of RCP calls.
                 core.table.insert_tail(chunks, chunk)
             end, chunks)
             if err then
