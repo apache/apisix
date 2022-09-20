@@ -274,68 +274,6 @@ function _M.go(case)
         end
 
         if case.extra_info then
-            --[[for _, action in ipairs(case.extra_info) do
-                if action.type == "closed" then
-                    ngx.exit(-1)
-                    return
-                end
-
-                if action.type == "var" then
-                    local name = builder:CreateString(action.name)
-                    extra_info_var.Start(builder)
-                    extra_info_var.AddName(builder, name)
-                    local var_req = extra_info_var.End(builder)
-                    build_extra_info(var_req, extra_info.Var)
-                    local req = extra_info_req.End(builder)
-                    builder:Finish(req)
-                    data = builder:Output()
-                    local ok, err = ext.send(sock, constants.RPC_EXTRA_INFO, data)
-                    if not ok then
-                        ngx.log(ngx.ERR, err)
-                        return
-                    end
-                    ngx.log(ngx.WARN, "send extra info req successfully")
-
-                    local ty, data = ext.receive(sock)
-                    if not ty then
-                        ngx.log(ngx.ERR, data)
-                        return
-                    end
-
-                    assert(ty == constants.RPC_EXTRA_INFO, ty)
-                    local buf = flatbuffers.binaryArray.New(data)
-                    local resp = extra_info_resp.GetRootAsResp(buf, 0)
-                    local res = resp:ResultAsString()
-                    assert(res == action.result, res)
-                end
-
-                if action.type == "reqbody" then
-                    extra_info_reqbody.Start(builder)
-                    local reqbody_req = extra_info_reqbody.End(builder)
-                    build_extra_info(reqbody_req, extra_info.ReqBody)
-                    local req = extra_info_req.End(builder)
-                    builder:Finish(req)
-                    data = builder:Output()
-                    local ok, err = ext.send(sock, constants.RPC_EXTRA_INFO, data)
-                    if not ok then
-                        ngx.log(ngx.ERR, err)
-                        return
-                    end
-                    ngx.log(ngx.WARN, "send extra info req successfully")
-
-                    local ty, data = ext.receive(sock)
-                    if not ty then
-                        ngx.log(ngx.ERR, data)
-                        return
-                    end
-
-                    assert(ty == constants.RPC_EXTRA_INFO, ty)
-                    local buf = flatbuffers.binaryArray.New(data)
-                    local resp = extra_info_resp.GetRootAsResp(buf, 0)
-                    local res = resp:ResultAsString()
-                    assert(res == action.result, res)
-                end
-            end]]
             ask_extra_info(sock, case.extra_info)
         end
 
