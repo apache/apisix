@@ -214,7 +214,7 @@ discovery:
     shared_size: 1m #default 1m
 ```
 
-多集群模式 Kubernetes 服务发现没有为 service,client 域填充默认值，你需要根据集群配置情况自行填充。
+多集群模式 Kubernetes 服务发现没有为 `service` 和 `client` 域填充默认值，你需要根据集群配置情况自行填充。
 
 ### 多集群模式 Kubernetes 服务发现的查询接口
 
