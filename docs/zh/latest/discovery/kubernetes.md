@@ -86,7 +86,7 @@ discovery:
     shared_size: 1m #default 1m
 ```
 
-如果 Kubernetes 服务发现运行在 Pod 内，你可以使用最简配置
+如果 Kubernetes 服务发现运行在 Pod 内，你可以使用如下最简配置：
 
 ```yaml
 discovery:
