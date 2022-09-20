@@ -36,13 +36,13 @@ description: 本文介绍了 Apache APISIX traffic-split 插件的相关操作�
 
 :::note 注意
 
-由于使用了加权循环算法（特别是在重置 `wrr` 状态时），因此在使用该插件时，可能会存在上游服务之间的流量比例不精准现象。
+由于该插件使用了加权循环算法（特别是在重置 `wrr` 状态时），因此在使用该插件时，可能会存在上游服务之间的流量比例不精准现象。
 
 :::
 
 ## 属性
 
-|              参数名             | 类型          | 可选项 | 默认值 | 有效值 | 描述                                                                                                                                                                                                                                                                                                                                                               |
+|            名称             | 类型          | 必选项 | 默认值 | 有效值 | 描述                                                                                                                                                                                                                                                                                                                                                               |
 | ---------------------- | --------------| ------ | ------ | ------ |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | rules.match                    | array[object] | 否  |        |        | 匹配规则列表，默认为空且规则将被无条件执行。                                                                                                                                                                                                                                                                                                                                           |
 | rules.match.vars               | array[array]  | 否   |        |        | 由一个或多个 `{var, operator, val}` 元素组成的列表，例如：`{"arg_name", "==", "json"}`，表示当前请求参数 `name` 是 `json`。这里的 `var` 与 NGINX 内部自身变量命名是保持一致，所以也可以使用 `request_uri`、`host` 等；对于已支持的运算符，具体用法请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 `operator-list` 部分。 |
@@ -55,7 +55,7 @@ description: 本文介绍了 Apache APISIX traffic-split 插件的相关操作�
 | upstream.nodes                 | object | 否   |        |        | 哈希表，键是上游节点的 IP 地址与可选端口的组合，值是节点的权重。将 `weight` 设置为 `0` 表示一个请求永远不会被转发到该节点。                                                                                                                                                                                                             |
 | upstream.timeout               | object | 否   |  15     |        | 发送和接收消息的超时时间（单位为秒）。                                                                                                                                                                                                                                                                                                                           |
 | upstream.pass_host             | enum   | 否   | "pass"   | ["pass", "node", "rewrite"]  | 当请求被转发到上游时配置 `host`。`pass` 代表将客户端的 `host` 透明传输给上游；`node` 代表使用 `upstream` Node 中配置的 `host`； `rewrite` 代表使用配置项 `upstream_host` 的值。                                                                                                                                                                                                                                                                |
-| upstream.name                  | string | 否   |        |  | 标识上游服务名称、使⽤场景等。                                                                                                                                                                                                                                                                                                                                                  |
+| upstream.name                  | string | 否   |        |  | 标识上游服务名称、使用场景等。                                                                                                                                                                                                                                                                                                                                                  |
 | upstream.upstream_host         | string | 否   |        |        | 上游服务请求的 `host`，仅当 `pass_host` 属性配置为 `rewrite` 时生效。                                                                                                                                                                                                                                                                                                                                    |
 | weighted_upstreams.weight      | integer | 否   |   weight = 1     |        | 根据 `weight` 值做流量划分，多个 `weight` 之间使用 `roundrobin` 算法划分。                                                                                                                                                                                                                                                                                                               |
 
@@ -69,7 +69,7 @@ description: 本文介绍了 Apache APISIX traffic-split 插件的相关操作�
 
 在 `match` 属性中，变量中的表达式以 AND 方式关联，多个变量以 OR 方式关联。
 
-如果只配置了 `weight` 属性，那么它就对应于在 Route 或 Service 上配置的上游服务的权重。
+如果你仅配置了 `weight` 属性，那么它将会使用该 Route 或 Service 中的上游服务的权重。
 
 :::
 
@@ -154,13 +154,13 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 :::tip 提示
 
-通过 `upstream_id` 方式来绑定已定义的上游，可以复用上游已存在的健康检测、重试等功能。
+通过 `upstream_id` 方式来绑定已定义的上游，可以复用上游已存在的健康检查、重试等功能。
 
 :::
 
 :::note 注意
 
-支持同时使用 `upstream` 和 `upstream_id` 两种配置方式。
+`weighted_upstreams` 属性支持同时使用 `upstream` 和 `upstream_id` 两种配置方式。
 
 :::
 
@@ -168,9 +168,9 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ### 灰度发布
 
-灰度发布（又名金丝雀发布）是指在黑与白之间，能够平滑过渡的一种发布方式。 在其上可以进行 A/B 测试，即让一部分用户继续用产品特性 A，一部分用户开始用产品特性 B。如果用户对特性 B 没有什么反对意见，那么逐步扩大范围，把所有用户都迁移到特性 B 上面来。
+灰度发布（又名金丝雀发布）是指在已经上线与未上线服务之间，能够平滑过渡的一种发布方式。 在其上可以进行 A/B 测试，即让一部分用户继续用产品特性 A，一部分用户开始用产品特性 B。如果用户对特性 B 没有什么反对意见，那么逐步扩大范围，把所有用户都迁移到特性 B 上面来。
 
-以下示例展示了如何通过配置 `weighted_upstreams` 的 `weight` 属性来实现流量分流。按 3:2 的权重流量比例进行划分，其中 60% 的流量到达运行在 `1981` 端口上的上游服务，40% 的流量到达运行在`1980` 端口上的上游服务：
+以下示例展示了如何通过配置 `weighted_upstreams` 的 `weight` 属性来实现流量分流。按 3:2 的权重流量比例进行划分，其中 60% 的流量到达运行在 `1981` 端口上的上游服务，40% 的流量到达运行在 `1980` 端口上的上游服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -489,7 +489,7 @@ Content-Type: text/html; charset=utf-8
 hello 1980
 ```
 
-2. 如果第二个 `vars` 的表达式匹配失败（如缺少 `name2` 请求参数），`match` 规则校验通过后，效果将会与上一种相同。即有 60% 的请求被引导至插件 `1981` 端口的上游服务，40% 的请求命中到路由的 `1980` 端口的上游服务：
+2. 如果第二个 `vars` 的表达式匹配失败（例如缺少 `name2` 请求参数），`match` 规则校验通过后，效果将会与上一种相同。即有 60% 的请求被引导至插件 `1981` 端口的上游服务，40% 的请求命中到路由的 `1980` 端口的上游服务：
 
 ```shell
 curl 'http://127.0.0.1:9080/index.html?name=jack' \
@@ -628,7 +628,7 @@ curl http://127.0.0.1:9080/hello -H 'x-api-id: 3'
 当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
