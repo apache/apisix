@@ -110,7 +110,7 @@ discovery:
 
 ### Single-Cluster Mode Query Interface
 
-the Kubernetes service discovery provides a query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md)
+The Kubernetes service discovery provides a query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md).
 
 **function:** \
  nodes(service_name)
