@@ -29,7 +29,7 @@ Kubernetes 服务发现以 [_List-Watch_](https://kubernetes.io/docs/reference/u
 
 ## Kubernetes 服务发现的使用
 
-Kubernetes 服务发现支持单集群，多集群模式。分别适用于待发现的服务分布在单个或多个 Kubernetes 的情况。
+目前 Kubernetes 服务发现支持单集群和多集群模式，分别适用于待发现的服务分布在单个或多个 Kubernetes 的场景。
 
 ### 单集群模式 Kubernetes 服务发现的配置格式
 
