@@ -29,12 +29,12 @@ Discovery also provides a node query interface in accordance with the [_APISIX D
 
 ## How To Use
 
-kubernetes service discovery both support single-cluster and multi-cluster mode, \
-applicable to the case where the service is distributed in a single or multiple kubernetes clusters.
+Kubernetes service discovery both support single-cluster and multi-cluster mode, \
+applicable to the case where the service is distributed in a single or multiple Kubernetes clusters.
 
 ### Single-Cluster Mode Configuration
 
-A detailed configuration for single-cluster mode kubernetes service discovery is as follows:
+A detailed configuration for single-cluster mode Kubernetes service discovery is as follows:
 
 ```yaml
 discovery:
@@ -87,14 +87,14 @@ discovery:
     shared_size: 1m #default 1m
 ```
 
-If the kubernetes service discovery runs inside a pod, you can use minimal configuration:
+If the Kubernetes service discovery runs inside a pod, you can use minimal configuration:
 
 ```yaml
 discovery:
   kubernetes: { }
 ```
 
-If the kubernetes service discovery runs outside a pod, you need to create or select a specified [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/),
+If the Kubernetes service discovery runs outside a pod, you need to create or select a specified [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/),
 then get its token value, and use following configuration:
 
 ```yaml
@@ -111,7 +111,7 @@ discovery:
 
 ### Single-Cluster Mode Query Interface
 
-the kubernetes service discovery provides a query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md)
+the Kubernetes service discovery provides a query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md)
 
 **function:** \
  nodes(service_name)
@@ -120,14 +120,14 @@ the kubernetes service discovery provides a query interface in accordance with t
   nodes() function attempts to look up the ngx.shared.DICT for nodes corresponding to service_name, \
   service_name should match pattern: _[namespace]/[name]:[portName]_
 
-  + namespace: The namespace where the kubernetes endpoints is located
+  + namespace: The namespace where the Kubernetes endpoints is located
 
-  + name: The name of the kubernetes endpoints
+  + name: The name of the Kubernetes endpoints
 
-  + portName: The ports.name value in the kubernetes endpoints, if there is no ports.name, use targetPort, port instead
+  + portName: The ports.name value in the Kubernetes endpoints, if there is no ports.name, use targetPort, port instead
 
 **return value:** \
-  if the kubernetes endpoints value is as follows:
+  if the Kubernetes endpoints value is as follows:
 
   ```yaml
   apiVersion: v1
@@ -163,7 +163,7 @@ the kubernetes service discovery provides a query interface in accordance with t
 
 ### Multi-Cluster Mode Configuration
 
-A detailed configuration for multi-cluster mode kubernetes service discovery is as follows:
+A detailed configuration for multi-cluster mode Kubernetes service discovery is as follows:
 
 ```yaml
 discovery:
@@ -222,7 +222,7 @@ you need to fill them according to cluster configuration.
 
 ### Multi-Cluster Mode Query Interface
 
-the kubernetes service discovery provides a query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md)
+the Kubernetes service discovery provides a query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md)
 
 **function:** \
 nodes(service_name)
@@ -233,14 +233,14 @@ service_name should match pattern: _[id]/[namespace]/[name]:[portName]_
 
 + id: value defined in service discovery configuration
 
-+ namespace: The namespace where the kubernetes endpoints is located
++ namespace: The namespace where the Kubernetes endpoints is located
 
-+ name: The name of the kubernetes endpoints
++ name: The name of the Kubernetes endpoints
 
-+ portName: The ports.name value in the kubernetes endpoints, if there is no ports.name, use targetPort, port instead
++ portName: The ports.name value in the Kubernetes endpoints, if there is no ports.name, use targetPort, port instead
 
 **return value:** \
-if the kubernetes endpoints value is as follows:
+if the Kubernetes endpoints value is as follows:
 
   ```yaml
   apiVersion: v1
@@ -289,7 +289,7 @@ a nodes("release/default/plat-dev:port") call will get follow result:
 ---
 
 > Q: APISIX inherits Nginx's multiple process model, does it mean that each nginx worker process will [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) kubernetes endpoints resources \
-> A: The kubernetes service discovery only uses privileged processes to [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) kubernetes endpoints resources, then store theirs value \
+> A: The Kubernetes service discovery only uses privileged processes to [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) Kubernetes endpoints resources, then store theirs value \
 > into ngx.shared.DICT, worker processes get results by querying ngx.shared.DICT
 
 ---
@@ -331,7 +331,7 @@ a nodes("release/default/plat-dev:port") call will get follow result:
 
 ---
 > Q: How to get [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) token value \
-> A: Assume your [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) located in namespace apisix and name is kubernetes-discovery, you can use the following steps to get token value
+> A: Assume your [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) located in namespace apisix and name is Kubernetes-discovery, you can use the following steps to get token value
 >
 > 1. Get secret name: \
 > you can execute the following command, the output of the first column is the secret name we want

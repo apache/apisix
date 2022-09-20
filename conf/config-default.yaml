@@ -305,7 +305,7 @@ nginx_config:                     # config for render the template to generate n
 #    ### kubernetes service discovery both support single-cluster and multi-cluster mode
 #    ### applicable to the case where the service is distributed in a single or multiple kubernetes clusters.
 #
-#    ### Single-Cluster Mode ###
+#    ### single-cluster mode ###
 #    service:
 #      schema: https                     #apiserver schema, options [http, https], default https
 #      host: ${KUBERNETES_SERVICE_HOST}  #apiserver host, options [ipv4, ipv6, domain, environment variable], default ${KUBERNETES_SERVICE_HOST}
@@ -337,9 +337,9 @@ nginx_config:                     # config for render the template to generate n
 #      first="a",second="b"
 #    # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
 #    shared_size: 1m #default 1m
-#    ### Single-Cluster Mode ###
+#    ### single-cluster mode ###
 #
-#    ### Multi-Cluster Mode ###
+#    ### multi-cluster mode ###
 #  - id: release  # a custom name refer to the cluster, pattern ^[a-z0-9]{1,8}
 #    service:
 #      schema: https                     #apiserver schema, options [http, https], default https
@@ -372,7 +372,7 @@ nginx_config:                     # config for render the template to generate n
 #      first="a",second="b"
 #    # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
 #    shared_size: 1m #default 1m
-#    ### Multi-Cluster Mode ###
+#    ### multi-cluster mode ###
 
 graphql:
   max_size: 1048576               # the maximum size limitation of graphql in bytes, default 1MiB
