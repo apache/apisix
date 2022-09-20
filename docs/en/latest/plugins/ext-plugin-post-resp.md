@@ -45,10 +45,6 @@ See [External Plugin](../external-plugin.md) to learn more.
 
 Execution of External Plugins will affect the response of the current request.
 
-External Plugin does not yet support getting request context information.
-
-External Plugin does not yet support getting the response body of an upstream response.
-
 :::
 
 ## Attributes
