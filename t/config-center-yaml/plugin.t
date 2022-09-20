@@ -216,4 +216,5 @@ hello world
 --- error_log
 use config_center: yaml
 --- grep_error_log_out
-load(): failed to read stream plugin list from local file or stream plugin list is nil
+load(): new plugins: {}
+load_stream(): new plugins: {}

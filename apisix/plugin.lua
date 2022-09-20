@@ -328,7 +328,7 @@ function _M.load(config)
 
     if ngx.config.subsystem == "http" then
         if not http_plugin_names then
-            core.log.warn("failed to read plugin list from local file or plugin list is nil")
+            core.log.error("failed to read plugin list from local file")
         else
             local wasm_plugin_names = {}
             if local_conf.wasm then
@@ -343,8 +343,7 @@ function _M.load(config)
     end
 
     if not stream_plugin_names then
-        core.log.warn("failed to read stream plugin list from local file ",
-                        "or stream plugin list is nil")
+        core.log.warn("failed to read stream plugin list from local file")
     else
         local ok, err = load_stream(stream_plugin_names)
         if not ok then
