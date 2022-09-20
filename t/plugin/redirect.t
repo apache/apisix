@@ -477,8 +477,8 @@ apisix:
     ssl:
         enable: true
         listen:
-            - 6443
-            - 7443
+            - port: 6443
+            - port: 7443
             - port: 8443
             - port: 9443
 --- request

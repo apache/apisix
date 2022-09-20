@@ -41,8 +41,8 @@ discovery:
       database: db_tars
       user: root
       password: tars2022
-    full_fetch_interval: 3
-    incremental_fetch_interval: 1
+    full_fetch_interval: 90
+    incremental_fetch_interval: 5
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
