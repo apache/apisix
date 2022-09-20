@@ -189,6 +189,19 @@ my $grpc_location = <<_EOC_;
                 apisix.grpc_access_phase()
             }
 
+_EOC_
+
+if ($version =~ m/\/apisix-nginx-module/) {
+    $grpc_location .= <<_EOC_;
+            grpc_set_header   ":authority" \$upstream_host;
+_EOC_
+} else {
+    $grpc_location .= <<_EOC_;
+            grpc_set_header   "Host" \$upstream_host;
+_EOC_
+}
+
+$grpc_location .= <<_EOC_;
             grpc_set_header   Content-Type application/grpc;
             grpc_socket_keepalive on;
             grpc_pass         \$upstream_scheme://apisix_backend;
