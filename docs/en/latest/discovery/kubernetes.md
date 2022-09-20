@@ -216,7 +216,7 @@ discovery:
     shared_size: 1m #default 1m
 ```
 
-Multi-Kubernetes service discovery does not fill default values for service and client fields,\
+Multi-Kubernetes service discovery does not fill default values for service and client fields, you need to fill them according to the cluster configuration.
 
 ### Multi-Cluster Mode Query Interface
 
