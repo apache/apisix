@@ -95,7 +95,6 @@ discovery:
 ```
 
 If the Kubernetes service discovery runs outside a pod, you need to create or select a specified [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/),
-then get its token value, and use following configuration:
 
 ```yaml
 discovery:
