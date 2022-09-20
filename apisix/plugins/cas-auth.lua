@@ -17,6 +17,7 @@
 local core = require("apisix.core")
 local http = require("resty.http")
 local ngx = ngx
+local ngx_re_match = ngx.re.match
 
 local CAS_REQUEST_URI = "CAS_REQUEST_URI"
 local COOKIE_NAME = "CAS_SESSION"
@@ -100,6 +101,8 @@ local function set_store_and_cookie(session_id, user)
             core.log.emerg("CAS cookie store is out of memory")
         elseif err == "exists" then
             core.log.error("Same CAS ticket validated twice, this should never happen!")
+        else
+            core.log.error("CAS cookie store: ", err)
         end
     end
     return success
@@ -114,7 +117,7 @@ local function validate(conf, ctx, ticket)
 
     if res and res.status == ngx.HTTP_OK and res.body ~= nil then
         if core.string.find(res.body, "<cas:authenticationSuccess>") then
-            local m = ngx.re.match(res.body, "<cas:user>(.*?)</cas:user>");
+            local m = ngx_re_match(res.body, "<cas:user>(.*?)</cas:user>");
             if m then
                 return m[1]
             end
@@ -156,14 +159,15 @@ local function logout(conf, ctx)
 end
 
 function _M.access(conf, ctx)
-    local method = ngx.req.get_method()
+    local method = core.request.get_method()
     local uri = ctx.var.uri
 
     if method == "GET" and uri == conf.logout_uri then
         return logout(conf, ctx)
-    elseif method == "POST" and uri == conf.cas_callback_uri then
-        ngx.req.read_body()
-        local data = ngx.req.get_body_data()
+    end
+
+    if method == "POST" and uri == conf.cas_callback_uri then
+        local data = core.request.get_body()
         local ticket = data:match("<samlp:SessionIndex>(.*)</samlp:SessionIndex>")
         if ticket == nil then
             return 400, {message = "invalid logout request from IdP, no ticket"}
