@@ -24,7 +24,6 @@ title: Kubernetes
 ## 基于 Kubernetes 的服务发现
 
 Kubernetes 服务发现以 [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts) 方式监听 [_Kubernetes_](https://kubernetes.io) 集群 [_Endpoints_](https://kubernetes.io/docs/concepts/services-networking/service) 资源的实时变化，
-资源，并将其值存储到 ngx.shared.DICT 中 \
 
 同时遵循 [_APISIX Discovery 规范_](https://github.com/apache/apisix/blob/master/docs/zh/latest/discovery.md) 提供了节点查询接口。
 
