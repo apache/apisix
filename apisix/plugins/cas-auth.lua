@@ -125,7 +125,13 @@ local function validate(conf, ctx, ticket)
             core.log.info("CAS serviceValidate failed: ", res.body)
         end
     else
-        core.log.error("validate ticket failed: res=", res, ", err=", err)
+        local status
+        local has_body = false
+        if res then
+            status = res.status
+            has_body = res.body ~= nil
+        end
+        core.log.error("validate ticket failed: status=", status, ", has_body=", has_body, ", err=", err)
     end
     return nil
 end
