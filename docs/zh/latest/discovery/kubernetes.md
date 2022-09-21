@@ -1,5 +1,12 @@
 ---
 title: Kubernetes
+keywords:
+  - Kubernetes
+  - Apache APISIX
+  - 服务发现
+  - 集群
+  - API 网关
+description: 本文将介绍如何在 Apache APISIX 中基于 Kubernetes 进行服务发现以及相关问题汇总。
 ---
 
 <!--
@@ -271,74 +278,68 @@ nodes("release/default/plat-dev:port") 调用会得到如下的返回值：
 
 ## Q&A
 
-> Q: 为什么只支持配置 token 来访问 Kubernetes APIServer \
-> A: 一般情况下，我们有三种方式可以完成与 Kubernetes APIServer 的认证：
->
->+ mTLS
->+ token
->+ basic authentication
->
-> 因为 lua-resty-http 目前不支持 mTLS, basic authentication 不被推荐使用，\
-> 所以当前只实现了 token 认证方式
+**Q: 为什么只支持配置 token 来访问 Kubernetes APIServer?**
 
+A: 一般情况下，我们有三种方式可以完成与 Kubernetes APIServer 的认证：
+
+- mTLS
+- Token
+- Basic authentication
+
+因为 lua-resty-http 目前不支持 mTLS, Basic authentication 不被推荐使用，所以当前只实现了 Token 认证方式。
+
+**Q: APISIX 继承了 NGINX 的多进程模型，是否意味着每个 APISIX 工作进程都会监听 Kubernetes Endpoints？**
+
+A: Kubernetes 服务发现只使用特权进程监听 Kubernetes Endpoints，然后将其值存储到 `ngx.shared.DICT` 中，工作进程通过查询 `ngx.shared.DICT` 来获取结果。
+
+**Q: [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 需要的权限有哪些？**
+
+A: [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 需要集群级 [ get,list,watch ] endpoints 资源的的权限，其声明式定义如下：
+
+```yaml
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+ name: apisix-test
+ namespace: default
 ---
 
-> Q: APISIX 继承了 Nginx 的多进程模型，是否意味着每个 APISIX 工作进程都会监听 Kubernetes Endpoints \
-> A: Kubernetes 服务发现只使用特权进程监听 Kubernetes Endpoints，然后将其值存储\
-> 到 ngx.shared.DICT，工作进程通过查询 ngx.shared.DICT 来获取结果
-
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+ name: apisix-test
+rules:
+- apiGroups: [ "" ]
+  resources: [ endpoints ]
+  verbs: [ get,list,watch ]
 ---
 
-> Q: [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 需要的权限有哪些 \
-> A: [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 需要集群级 [ get,list,watch ] endpoints 资源的的权限，其声明式定义如下：
->
->```yaml
->kind: ServiceAccount
->apiVersion: v1
->metadata:
-> name: apisix-test
-> namespace: default
->---
->
->kind: ClusterRole
->apiVersion: rbac.authorization.k8s.io/v1
->metadata:
-> name: apisix-test
->rules:
->- apiGroups: [ "" ]
->  resources: [ endpoints ]
->  verbs: [ get,list,watch ]
->---
->
->apiVersion: rbac.authorization.k8s.io/v1
->kind: ClusterRoleBinding
->metadata:
-> name: apisix-test
->roleRef:
-> apiGroup: rbac.authorization.k8s.io
-> kind: ClusterRole
-> name: apisix-test
->subjects:
-> - kind: ServiceAccount
->   name: apisix-test
->   namespace: default
->```
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+ name: apisix-test
+roleRef:
+ apiGroup: rbac.authorization.k8s.io
+ kind: ClusterRole
+ name: apisix-test
+subjects:
+ - kind: ServiceAccount
+   name: apisix-test
+   namespace: default
+```
 
----
+**Q: 怎样获取指定 [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 的 Token 值？**
 
-> Q: 怎样获取指定 [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 的 Token 值 \
-> A: 假定你指定的 [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 资源名为 “kubernetes-discovery“, 命名空间为 “apisix”, 请按如下步骤获取其 Token 值
->
-> 1. 获取 _Secret_ 资源名: \
-     > 执行以下命令，输出的第一列内容就是目标 _Secret_ 资源名
->
-> ```shell
-> kubectl -n apisix get secrets | grep kubernetes-discovery
-> ```
->
-> 2. 获取 Token 值: \
-     > 假定你获取到的 _Secret_ 资源名为 "kubernetes-discovery-token-c64cv", 执行以下命令，输出内容就是目标 Token 值
->
-> ```shell
-> kubectl -n apisix get secret kubernetes-discovery-token-c64cv -o jsonpath={.data.token} | base64 -d
-> ```
+A: 假定你指定的 [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 资源名为 “kubernetes-discovery“, 命名空间为 “apisix”, 请按如下步骤获取其 Token 值。
+
+ 1. 获取 _Secret_ 资源名。执行以下命令，输出的第一列内容就是目标 _Secret_ 资源名：
+
+ ```shell
+ kubectl -n apisix get secrets | grep kubernetes-discovery
+ ```
+
+ 2. 获取 Token 值。假定你获取到的 _Secret_ 资源名为 "kubernetes-discovery-token-c64cv", 执行以下命令，输出内容就是目标 Token 值：
+
+ ```shell
+ kubectl -n apisix get secret kubernetes-discovery-token-c64cv -o jsonpath={.data.token} | base64 -d
+ ```

@@ -1,5 +1,12 @@
 ---
 title: Kubernetes
+keywords:
+  - Kubernetes
+  - Apache APISIX
+  - Service discovery
+  - Cluster
+  - API Gateway
+description: This article introduce how to perform service discovery based on Kubernetes in Apache APISIX and summarize related issues.
 ---
 
 <!--
@@ -23,14 +30,13 @@ title: Kubernetes
 
 ## Summary
 
-The [_Kubernetes_](https://kubernetes.io/) service discovery [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) real-time changes of [_Endpoints_](https://kubernetes.io/docs/concepts/services-networking/service/) resources,
-then store theirs value into ngx.shared.DICT \
-Discovery also provides a node query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md)
+The [_Kubernetes_](https://kubernetes.io/) service discovery [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) real-time changes of [_Endpoints_](https://kubernetes.io/docs/concepts/services-networking/service/) resources, then store theirs value into `ngx.shared.DICT`.
+
+Discovery also provides a node query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md).
 
 ## How To Use
 
-Kubernetes service discovery both support single-cluster and multi-cluster mode, \
-applicable to the case where the service is distributed in a single or multiple Kubernetes clusters.
+Kubernetes service discovery both support single-cluster and multi-cluster mode, applicable to the case where the service is distributed in a single or multiple Kubernetes clusters.
 
 ### Single-Cluster Mode Configuration
 
@@ -112,10 +118,10 @@ discovery:
 
 The Kubernetes service discovery provides a query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md).
 
-**function:** \
+**function:**
  nodes(service_name)
 
-**description:** \
+**description:**
   nodes() function attempts to look up the ngx.shared.DICT for nodes corresponding to service_name, \
   service_name should match pattern: _[namespace]/[name]:[portName]_
 
@@ -125,7 +131,7 @@ The Kubernetes service discovery provides a query interface in accordance with t
 
   + portName: The ports.name value in the Kubernetes endpoints, if there is no ports.name, use targetPort, port instead
 
-**return value:** \
+**return value:**
   if the Kubernetes endpoints value is as follows:
 
   ```yaml
@@ -222,10 +228,10 @@ Multi-Kubernetes service discovery does not fill default values for service and 
 
 The Kubernetes service discovery provides a query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md).
 
-**function:** \
+**function:**
 nodes(service_name)
 
-**description:** \
+**description:**
 nodes() function attempts to look up the ngx.shared.DICT for nodes corresponding to service_name, \
 service_name should match pattern: _[id]/[namespace]/[name]:[portName]_
 
@@ -237,7 +243,7 @@ service_name should match pattern: _[id]/[namespace]/[name]:[portName]_
 
 + portName: The ports.name value in the Kubernetes endpoints, if there is no ports.name, use targetPort, port instead
 
-**return value:** \
+**return value:**
 if the Kubernetes endpoints value is as follows:
 
   ```yaml
@@ -274,73 +280,68 @@ a nodes("release/default/plat-dev:port") call will get follow result:
 
 ## Q&A
 
-> Q: Why only support configuration token to access _Kubernetes APIServer_ \
-> A: Usually, we will use three ways to complete the authentication of _Kubernetes APIServer_:
->
->+ mTLS
->+ token
->+ basic authentication
->
-> Because lua-resty-http does not currently support mTLS, and basic authentication is not recommended,\
-> So currently only the token authentication method is implemented
+**Q: Why only support configuration token to access _Kubernetes APIServer_?**
 
+A: Usually, we will use three ways to complete the authentication of _Kubernetes APIServer_:
+
++ mTLS
++ Token
++ Basic authentication
+
+Because lua-resty-http does not currently support mTLS, and basic authentication is not recommended, so currently only the token authentication method is implemented.
+
+**Q: APISIX inherits Nginx's multiple process model, does it mean that each nginx worker process will [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) kubernetes endpoints resources?**
+
+A: The Kubernetes service discovery only uses privileged processes to [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) Kubernetes endpoints resources, then store theirs value into `ngx.shared.DICT`, worker processes get results by querying `ngx.shared.DICT`.
+
+**Q: What permissions do [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) require?**
+
+A: ServiceAccount requires the permissions of cluster-level [ get, list, watch ] endpoints resources, the declarative definition is as follows:
+
+```yaml
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+ name: apisix-test
+ namespace: default
 ---
 
-> Q: APISIX inherits Nginx's multiple process model, does it mean that each nginx worker process will [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) kubernetes endpoints resources \
-> A: The Kubernetes service discovery only uses privileged processes to [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) Kubernetes endpoints resources, then store theirs value \
-> into ngx.shared.DICT, worker processes get results by querying ngx.shared.DICT
-
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+ name: apisix-test
+rules:
+- apiGroups: [ "" ]
+  resources: [ endpoints ]
+  verbs: [ get,list,watch ]
 ---
 
-> Q: What permissions do [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) require \
-> A: ServiceAccount requires the permissions of cluster-level [ get, list, watch ] endpoints resources, the declarative definition is as follows:
->
->```yaml
->kind: ServiceAccount
->apiVersion: v1
->metadata:
-> name: apisix-test
-> namespace: default
->---
->
->kind: ClusterRole
->apiVersion: rbac.authorization.k8s.io/v1
->metadata:
-> name: apisix-test
->rules:
->- apiGroups: [ "" ]
->  resources: [ endpoints ]
->  verbs: [ get,list,watch ]
->---
->
->apiVersion: rbac.authorization.k8s.io/v1
->kind: ClusterRoleBinding
->metadata:
-> name: apisix-test
->roleRef:
-> apiGroup: rbac.authorization.k8s.io
-> kind: ClusterRole
-> name: apisix-test
->subjects:
-> - kind: ServiceAccount
->   name: apisix-test
->   namespace: default
->```
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+ name: apisix-test
+roleRef:
+ apiGroup: rbac.authorization.k8s.io
+ kind: ClusterRole
+ name: apisix-test
+subjects:
+ - kind: ServiceAccount
+   name: apisix-test
+   namespace: default
+```
 
----
-> Q: How to get [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) token value \
-> A: Assume your [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) located in namespace apisix and name is Kubernetes-discovery, you can use the following steps to get token value
->
-> 1. Get secret name: \
-> you can execute the following command, the output of the first column is the secret name we want
->
-> ```shell
-> kubectl -n apisix get secrets | grep kubernetes-discovery
-> ```
->
-> 2. Get token value: \
-> assume secret resources name is kubernetes-discovery-token-c64cv, you can execute the following command, the output is the service account token value we want
->
-> ```shell
-> kubectl -n apisix get secret kubernetes-discovery-token-c64cv -o jsonpath={.data.token} | base64 -d
-> ```
+**Q: How to get [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) token value?**
+
+A: Assume your [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) located in namespace apisix and name is Kubernetes-discovery, you can use the following steps to get token value.
+
+ 1. Get secret name. You can execute the following command, the output of the first column is the secret name we want:
+
+ ```shell
+ kubectl -n apisix get secrets | grep kubernetes-discovery
+ ```
+
+ 2. Get token value. Assume secret resources name is kubernetes-discovery-token-c64cv, you can execute the following command, the output is the service account token value we want:
+
+ ```shell
+ kubectl -n apisix get secret kubernetes-discovery-token-c64cv -o jsonpath={.data.token} | base64 -d
+ ```
