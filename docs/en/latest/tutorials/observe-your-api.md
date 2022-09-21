@@ -80,7 +80,7 @@ Before enabling our plugins we need to install Apache APISIX, create a route, an
 
 - [google-cloud-logging](https://apisix.apache.org/docs/apisix/plugins/google-cloud-logging)
 
-And you can see the [full list](https://apisix.apache.org/docs/apisix/plugins/zipkin) on the official website of Apache APISIX. Now for demo purposes, let's choose a simple but mostly used _http-logger_ plugin that is capable of sending API Log data requests to HTTP/HTTPS servers or sends as JSON objects to Monitoring tools. We can assume that a route and an upstream are created.  You can learn how to set up them in the **[Getting started with Apache APISIX](https://youtu.be/dUOjJkb61so)** video tutorial. Also, you can find all command-line examples on the GitHub page [apisix-observability-plugins](https://boburmirzo.github.io/apisix-observability-plugins/)
+And you can see the [full list](../plugins/http-logger.md) on the official website of Apache APISIX. Now for demo purposes, let's choose a simple but mostly used _http-logger_ plugin that is capable of sending API Log data requests to HTTP/HTTPS servers or sends as JSON objects to Monitoring tools. We can assume that a route and an upstream are created.  You can learn how to set up them in the **[Getting started with Apache APISIX](https://youtu.be/dUOjJkb61so)** video tutorial. Also, you can find all command-line examples on the GitHub page [apisix-observability-plugins](https://boburmirzo.github.io/apisix-observability-plugins/)
 
 You can generate a mock HTTP server at [mockbin.com](https://mockbin.org/) to record and view the logs. Note that we also bind the route to an upstream (You can refer to this documentation to learn about more [core concepts of Apache APISIX](https://apisix.apache.org/docs/apisix/architecture-design/apisix)).
 
@@ -88,7 +88,8 @@ The following is an example of how to enable the http-logger for a specific rout
 
 ```shell
 
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "plugins": {
     "http-logger": {
@@ -101,13 +102,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ```
 
-> To http-logger plugin settings, your can just put your mock server URI address like below:
+:::note
+
+To `http-logger` plugin settings, your can just put your mock server URI address like below:
 
 ```json
 {
   "uri": "http://mockbin.org/bin/5451b7cd-af27-41b8-8df1-282ffea13a61"
 }
 ```
+
+:::
 
 Once we get a successful response from APISIX server, we can send a request to this _get_ endpoint to generate logs.
 
@@ -130,7 +135,8 @@ Apache APISIX API Gateway also offers [prometheus-plugin](https://apisix.apache.
 Let’s enable prometheus-plugin for our route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/get",
   "plugins": {
@@ -140,7 +146,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-We fetch the metric data from the specified URL `/apisix/prometheus/`metrics.
+We fetch the metric data from the specified URL `/apisix/prometheus/metrics`.
 
 ```shell
 curl -i http://127.0.0.1:9091/apisix/prometheus/metrics
@@ -185,9 +191,9 @@ In addition to this, you can view the Grafana dashboard running in your local in
 
 You can also check two other plugins for metrics:
 
-- [Node status Plugin](https://apisix.apache.org/docs/apisix/plugins/node-status/)
+- [Node status Plugin](../plugins/node-status.md)
 
-- [Datadog Plugin](https://apisix.apache.org/docs/apisix/plugins/opentelemetry)
+- [Datadog Plugin](../plugins/datadog.md)
 
 ## Tracing
 
@@ -195,10 +201,11 @@ The third is **tracing** or distributed tracing allows you to understand the lif
 
 [Zipkin](https://zipkin.io/) an open-source distributed tracing system. [APISIX plugin](https://apisix.apache.org/docs/apisix/plugins/zipkin) is supported to collect tracing and report to Zipkin Collector based on [Zipkin API specification](https://zipkin.io/pages/instrumenting.html).
 
-Here’s an example to enable the _zipkin plugin_ on the specified route:
+Here’s an example to enable the `zipkin` plugin on the specified route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "methods": [
     "GET"
@@ -242,9 +249,9 @@ As you noticed, the recent traces were exposed in the above pictures.
 
 You can also check two other plugins for tracing:
 
-- [Skywalking-plugin](https://apisix.apache.org/docs/apisix/plugins/skywalking)
+- [Skywalking-plugin](../plugins/skywalking.md)
 
-- [Opentelemetry-plugin](https://apisix.apache.org/docs/apisix/plugins/opentelemetry)
+- [Opentelemetry-plugin](../plugins/opentelemetry.md)
 
 ## Summary
 
