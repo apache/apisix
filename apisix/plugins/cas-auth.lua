@@ -131,7 +131,8 @@ local function validate(conf, ctx, ticket)
             status = res.status
             has_body = res.body ~= nil
         end
-        core.log.error("validate ticket failed: status=", status, ", has_body=", has_body, ", err=", err)
+        core.log.error("validate ticket failed: status=", status,
+            ", has_body=", has_body, ", err=", err)
     end
     return nil
 end
