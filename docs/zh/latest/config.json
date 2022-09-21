@@ -15,6 +15,15 @@
     },
     {
       "type": "category",
+      "label": "Tutorials",
+      "items": [
+        "tutorials/expose-api",
+        "tutorials/protect-api",
+        "tutorials/observe-your-api"
+      ]
+    },
+    {
+      "type": "category",
       "label": "Terminology",
       "items": [
         "terminology/api-gateway",
