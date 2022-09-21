@@ -66,7 +66,7 @@ APISIX 中提供了很多具有丰富功能的可观测性插件。你可以通�
 
 ```shell
 
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "plugins": {
@@ -109,7 +109,7 @@ curl -i http://127.0.0.1:9080/get
 你可以通过以下命令启用 `prometheus` 插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/get",
@@ -187,7 +187,7 @@ docker run -d -p 9411:9411 openzipkin/zipkin
 你可以通过如下示例，在指定路由中启用 `zipkin` 插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "methods": [

@@ -93,7 +93,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 
-curl http://127.0.0.1:9180/index.html
+curl http://127.0.0.1:9080/index.html
 
 ```
 

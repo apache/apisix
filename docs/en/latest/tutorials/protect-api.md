@@ -89,7 +89,7 @@ In the above configuration, a Route with ID `1` is created using the upstream ma
 2. Test
 
 ```shell
-curl http://127.0.0.1:9180/index.html
+curl http://127.0.0.1:9080/index.html
 ```
 
 After using the above command to access three times in a row, the following error will appear:
