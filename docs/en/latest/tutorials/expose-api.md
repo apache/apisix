@@ -52,7 +52,7 @@ Please make sure you have [installed Apache APISIX](../installation-guide.md) be
 
 ## Expose your service
 
-1. create an Upstream.
+1. Create an Upstream.
 
 Create an Upstream service containing `httpbin.org` that you can use for testing. This is a return service that will return the parameters we passed in the request.
 
