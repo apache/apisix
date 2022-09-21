@@ -238,7 +238,6 @@ nginx_config:                     # config for render the template to generate n
       introspection: 10m
       access-tokens: 1m
       ext-plugin: 1m
-      kubernetes: 1m
       tars: 1m
 
 # HashiCorp Vault storage backend for sensitive data retrieval. The config shows an example of what APISIX expects if you
@@ -303,6 +302,10 @@ nginx_config:                     # config for render the template to generate n
 #       path: "logs/consul_kv.dump"
 #       expire: 2592000            # unit sec, here is 30 day
 #  kubernetes:
+#    ### kubernetes service discovery both support single-cluster and multi-cluster mode
+#    ### applicable to the case where the service is distributed in a single or multiple kubernetes clusters.
+#
+#    ### single-cluster mode ###
 #    service:
 #      schema: https                     #apiserver schema, options [http, https], default https
 #      host: ${KUBERNETES_SERVICE_HOST}  #apiserver host, options [ipv4, ipv6, domain, environment variable], default ${KUBERNETES_SERVICE_HOST}
@@ -332,6 +335,44 @@ nginx_config:                     # config for render the template to generate n
 #    # for the expression of label_selector, please refer to https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
 #    label_selector: |-
 #      first="a",second="b"
+#    # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
+#    shared_size: 1m #default 1m
+#    ### single-cluster mode ###
+#
+#    ### multi-cluster mode ###
+#  - id: release  # a custom name refer to the cluster, pattern ^[a-z0-9]{1,8}
+#    service:
+#      schema: https                     #apiserver schema, options [http, https], default https
+#      host: ${KUBERNETES_SERVICE_HOST}  #apiserver host, options [ipv4, ipv6, domain, environment variable]
+#      port: ${KUBERNETES_SERVICE_PORT}  #apiserver port, options [port number, environment variable]
+#    client:
+#      # serviceaccount token or path of serviceaccount token_file
+#      token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
+#      # token: |-
+#       # eyJhbGciOiJSUzI1NiIsImtpZCI6Ikx5ME1DNWdnbmhQNkZCNlZYMXBsT3pYU3BBS2swYzBPSkN3ZnBESGpkUEEif
+#       # 6Ikx5ME1DNWdnbmhQNkZCNlZYMXBsT3pYU3BBS2swYzBPSkN3ZnBESGpkUEEifeyJhbGciOiJSUzI1NiIsImtpZCI
+#    # kubernetes discovery plugin support use namespace_selector
+#    # you can use one of [equal, not_equal, match, not_match] filter namespace
+#    namespace_selector:
+#      # only save endpoints with namespace equal default
+#      equal: default
+#      # only save endpoints with namespace not equal default
+#      #not_equal: default
+#      # only save endpoints with namespace match one of [default, ^my-[a-z]+$]
+#      #match:
+#      #- default
+#      #- ^my-[a-z]+$
+#      # only save endpoints with namespace not match one of [default, ^my-[a-z]+$ ]
+#      #not_match:
+#      #- default
+#      #- ^my-[a-z]+$
+#    # kubernetes discovery plugin support use label_selector
+#    # for the expression of label_selector, please refer to https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+#    label_selector: |-
+#      first="a",second="b"
+#    # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
+#    shared_size: 1m #default 1m
+#    ### multi-cluster mode ###
 
 graphql:
   max_size: 1048576               # the maximum size limitation of graphql in bytes, default 1MiB
