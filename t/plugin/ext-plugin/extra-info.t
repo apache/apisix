@@ -200,7 +200,6 @@ GET /hello
             ext.go({extra_info = actions})
         }
     }
---- error_code: 200
 --- error_log: failed to read response body: not exits
 
 
@@ -261,7 +260,6 @@ GET /hello?x=
             ext.go({extra_info = actions})
         }
     }
---- error_code: 200
 --- grep_error_log eval
 qr/send extra info req successfully/
 --- grep_error_log_out
@@ -289,7 +287,6 @@ GET /hello
             ext.go({extra_info = actions})
         }
     }
---- error_code: 200
 --- grep_error_log eval
 qr/send extra info req successfully/
 --- grep_error_log_out
@@ -314,7 +311,6 @@ GET /hello_chunked
             ext.go({extra_info = actions})
         }
     }
---- error_code: 200
 --- grep_error_log eval
 qr/send extra info req successfully/
 --- grep_error_log_out
@@ -339,4 +335,3 @@ GET /hello
             ext.go({extra_info = actions})
         }
     }
---- error_code: 200
