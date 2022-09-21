@@ -1,5 +1,12 @@
 ---
 title: Kubernetes
+keywords:
+  - Kubernetes
+  - Apache APISIX
+  - Service discovery
+  - Cluster
+  - API Gateway
+description: This article introduce how to perform service discovery based on Kubernetes in Apache APISIX and summarize related issues.
 ---
 
 <!--

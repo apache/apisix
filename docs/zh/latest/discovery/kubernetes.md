@@ -1,5 +1,12 @@
 ---
 title: Kubernetes
+keywords:
+  - Kubernetes
+  - Apache APISIX
+  - 服务发现
+  - 集群
+  - API 网关
+description: 本文将介绍如何在 Apache APISIX 中基于 Kubernetes 进行服务发现以及相关问题汇总。
 ---
 
 <!--
