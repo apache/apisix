@@ -245,6 +245,22 @@ local config_schema = {
             }
         },
         etcd = etcd_schema,
+        plugins = {
+            type = "array",
+            default = {},
+            minItems = 0,
+            items = {
+                type = "string"
+            }
+        },
+        stream_plugins = {
+            type = "array",
+            default = {},
+            minItems = 0,
+            items = {
+                type = "string"
+            }
+        },
         wasm = {
             type = "object",
             properties = {
