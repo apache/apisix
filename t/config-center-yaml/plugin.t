@@ -223,7 +223,6 @@ GET /t
 --- response_body
 hello world
 --- error_log
-use config_center: yaml
---- grep_error_log_out
+use config_provider: yaml
 load(): new plugins: {}
 load_stream(): new plugins: {}
