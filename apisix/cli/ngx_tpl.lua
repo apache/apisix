@@ -287,6 +287,10 @@ http {
     lua_shared_dict introspection {* http.lua_shared_dict["introspection"] *}; # cache for JWT verification results
     {% end %}
 
+    {% if enabled_plugins["cas-auth"] then %}
+    lua_shared_dict cas_sessions {* http.lua_shared_dict["cas-auth"] *};
+    {% end %}
+
     {% if enabled_plugins["authz-keycloak"] then %}
     # for authz-keycloak
     lua_shared_dict access-tokens {* http.lua_shared_dict["access-tokens"] *}; # cache for service account access tokens
