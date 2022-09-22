@@ -118,7 +118,11 @@ local function send_chunk(chunk)
     return nil
 end
 
-
+-- TODO: response body is empty (304 or HEAD)
+-- If the upstream returns 304 or the request method is HEAD,
+-- there is no response body. In this case,
+-- we need to send a response to the client in the plugin,
+-- instead of continuing to execute the subsequent plugin.
 local function send_response(ctx, res, code)
     ngx.status = code or res.status
 

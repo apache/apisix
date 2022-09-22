@@ -63,7 +63,6 @@ function _M.response_reader(reader, callback, ...)
 
     repeat
         local chunk, read_err, cb_err
-        -- TODO: HEAD or 304
         chunk, read_err = reader()
         if read_err then
             return "read response failed: ".. (read_err or "")

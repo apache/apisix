@@ -20,7 +20,6 @@ repeat_each(1);
 no_long_string();
 no_root_location();
 no_shuffle();
-log_level("info");
 
 add_block_preprocessor(sub {
     my ($block) = @_;
@@ -320,7 +319,7 @@ hello world
 
 
 
-=== TEST 10: ask request body (not exist)
+=== TEST 10: ask request body (empty)
 --- request
 GET /hello
 --- extra_stream_config
@@ -331,6 +330,25 @@ GET /hello
             local ext = require("lib.ext-plugin")
             local actions = {
                 {type = "reqbody", result = nil}
+            }
+            ext.go({extra_info = actions})
+        }
+    }
+
+
+
+=== TEST 11: ask request body
+--- request
+POST /hello
+123
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
+        content_by_lua_block {
+            local ext = require("lib.ext-plugin")
+            local actions = {
+                {type = "reqbody", result = "123"}
             }
             ext.go({extra_info = actions})
         }
