@@ -125,14 +125,8 @@ local function validate(conf, ctx, ticket)
             core.log.info("CAS serviceValidate failed: ", res.body)
         end
     else
-        local status
-        local has_body = false
-        if res then
-            status = res.status
-            has_body = res.body ~= nil
-        end
-        core.log.error("validate ticket failed: status=", status,
-            ", has_body=", has_body, ", err=", err)
+        core.log.error("validate ticket failed: status=", (res and res.status),
+            ", has_body=", (res and res.body ~= nil or false), ", err=", err)
     end
     return nil
 end
@@ -177,7 +171,8 @@ function _M.access(conf, ctx)
         local data = core.request.get_body()
         local ticket = data:match("<samlp:SessionIndex>(.*)</samlp:SessionIndex>")
         if ticket == nil then
-            return 400, {message = "invalid logout request from IdP, no ticket"}
+            return ngx.HTTP_BAD_REQUEST,
+                {message = "invalid logout request from IdP, no ticket"}
         end
         core.log.info("Back-channel logout (SLO) from IdP: LogoutRequest: ", data)
         local session_id = ticket
