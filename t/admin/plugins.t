@@ -78,6 +78,7 @@ csrf
 uri-blocker
 request-validation
 openid-connect
+cas-auth
 authz-casbin
 authz-casdoor
 wolf-rbac
