@@ -27,7 +27,6 @@ local pairs         = pairs
 local type          = type
 local local_plugins = core.table.new(32, 0)
 local ngx           = ngx
-local tostring      = tostring
 local error         = error
 local is_http       = ngx.config.subsystem == "http"
 local local_plugins_hash    = core.table.new(0, 32)
