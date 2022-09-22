@@ -347,7 +347,7 @@ if ! grep -E 'new plugins: {"public-api":true,"node-status":true}' logs/error.lo
 fi
 
 # check stream plugins(no plugins under stream, it will be added below)
-if ! grep -E 'failed to read stream plugin list from local file' logs/error.log; then
+if grep -E 'failed to read stream plugin list from local file' logs/error.log; then
     echo "failed: first time load stream plugins list failed"
     exit 1
 fi
