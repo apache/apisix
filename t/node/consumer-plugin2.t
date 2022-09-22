@@ -418,6 +418,7 @@ apikey: auth-jack
                 ngx.say(body)
                 return
             end
+            ngx.sleep(0.5)
 
             local headers = {
                 ["Authorization"] = "Basic Zm9vOmJhbGE="
