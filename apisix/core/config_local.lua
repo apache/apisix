@@ -67,7 +67,7 @@ function _M.local_conf(force)
     -- fill the default value by the schema
     local ok, err = schema.validate(default_conf)
     if not ok then
-        ngx.log(ngx.ERR, "======================== levy, err: ", err)
+        error(err)
     end
 
     config_data = default_conf

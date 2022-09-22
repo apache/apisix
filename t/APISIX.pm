@@ -493,6 +493,7 @@ _EOC_
 
     $block->set_value("main_config", $main_config);
 
+    my $extra_init_by_lua_start = $block->extra_init_by_lua_start // "";
     my $extra_init_by_lua = $block->extra_init_by_lua // "";
     my $init_by_lua_block = $block->init_by_lua_block // <<_EOC_;
     if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
@@ -501,6 +502,8 @@ _EOC_
     end
 
     require "resty.core"
+
+    $extra_init_by_lua_start
 
     apisix = require("apisix")
     local args = {
