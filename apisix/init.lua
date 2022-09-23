@@ -30,6 +30,7 @@ local core            = require("apisix.core")
 local conf_server     = require("apisix.conf_server")
 local plugin          = require("apisix.plugin")
 local plugin_config   = require("apisix.plugin_config")
+local consumer_group  = require("apisix.consumer_group")
 local script          = require("apisix.script")
 local service_fetch   = require("apisix.http.service").get
 local admin_init      = require("apisix.admin.init")
@@ -143,6 +144,7 @@ function _M.http_init_worker()
     require("apisix.http.service").init_worker()
     plugin_config.init_worker()
     require("apisix.consumer").init_worker()
+    consumer_group.init_worker()
 
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()
@@ -442,9 +444,14 @@ function _M.http_access_phase()
         plugin.run_plugin("rewrite", plugins, api_ctx)
         if api_ctx.consumer then
             local changed
+            local group_conf
+            if api_ctx.consumer.group_id then
+                group_conf = consumer_group.get(api_ctx.consumer.group_id)
+            end
             route, changed = plugin.merge_consumer_route(
                 route,
                 api_ctx.consumer,
+                group_conf,
                 api_ctx
             )
 

@@ -698,6 +698,7 @@ _M.consumer = {
             type = "string", minLength = 1, maxLength = rule_name_def.maxLength,
             pattern = [[^[a-zA-Z0-9_]+$]]
         },
+        group_id = id_schema,
         plugins = plugins_schema,
         labels = labels_def,
         create_time = timestamp_def,

@@ -207,6 +207,7 @@ do
         balancer_ip = true,
         balancer_port = true,
         consumer_name = true,
+        consumer_group_id = true,
         route_id = true,
         route_name = true,
         service_id = true,
