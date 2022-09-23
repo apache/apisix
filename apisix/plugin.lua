@@ -27,7 +27,6 @@ local pairs         = pairs
 local type          = type
 local local_plugins = core.table.new(32, 0)
 local ngx           = ngx
-local tostring      = tostring
 local error         = error
 local is_http       = ngx.config.subsystem == "http"
 local local_plugins_hash    = core.table.new(0, 32)
@@ -474,7 +473,8 @@ function _M.merge_consumer_route(route_conf, consumer_conf, api_ctx)
     core.log.info("route conf: ", core.json.delay_encode(route_conf))
     core.log.info("consumer conf: ", core.json.delay_encode(consumer_conf))
 
-    local flag = tostring(route_conf) .. tostring(consumer_conf)
+    local flag = route_conf.value.id .. "#" .. route_conf.modifiedIndex
+                 .. "#" .. consumer_conf.id .. "#" .. consumer_conf.modifiedIndex
     local new_conf = merged_route(flag, nil,
                         merge_consumer_route, route_conf, consumer_conf)
 
