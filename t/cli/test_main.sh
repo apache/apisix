@@ -520,56 +520,6 @@ fi
 sed -i 's/worker_processes: 2/worker_processes: auto/'  conf/config.yaml
 echo "passed: worker_processes number is configurable"
 
-# check customized config.yaml is copied and reverted.
-
-git checkout conf/config.yaml
-
-echo "
-deployment:
-    admin:
-        admin_listen:
-            port: 9180
-        https_admin: true
-        admin_api_mtls:
-            admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
-            admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
-" > conf/customized_config.yaml
-
-cp conf/config.yaml conf/config_original.yaml
-
-make init
-
-if ./bin/apisix start -c conf/not_existed_config.yaml; then
-    echo "failed: apisix still start with invalid customized config.yaml"
-    exit 1
-fi
-
-./bin/apisix start -c conf/customized_config.yaml
-
-if cmp -s "conf/config.yaml" "conf/config_original.yaml"; then
-    rm conf/config_original.yaml
-    echo "failed: customized config.yaml copied failed"
-    exit 1
-fi
-
-code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
-if [ ! $code -eq 200 ]; then
-    rm conf/config_original.yaml conf/customized_config.yaml
-    echo "failed: customized config.yaml not be used"
-    exit 1
-fi
-
-make stop
-
-if ! cmp -s "conf/config.yaml" "conf/config_original.yaml"; then
-    rm conf/config_original.yaml conf/customized_config.yaml
-    echo "failed: customized config.yaml reverted failed"
-    exit 1
-fi
-
-rm conf/config_original.yaml conf/customized_config.yaml
-echo "passed: customized config.yaml copied and reverted succeeded"
-
 # check disable cpu affinity
 git checkout conf/config.yaml
 
@@ -641,7 +591,7 @@ stream_plugins:
     - 3rd-party
 ' > conf/config.yaml
 
-rm logs/error.log
+rm logs/error.log || true
 make init
 make run
 
@@ -710,43 +660,6 @@ if ! grep "my hook works in stream" logs/error.log > /dev/null; then
 fi
 
 echo "passed: hook can take effect"
-
-# check restart with old nginx.pid exist
-echo "-1" > logs/nginx.pid
-out=$(./bin/apisix start 2>&1 || true)
-if echo "$out" | grep "APISIX is running"; then
-    rm logs/nginx.pid
-    echo "failed: should reject bad nginx.pid"
-    exit 1
-fi
-
-./bin/apisix stop
-sleep 0.5
-rm logs/nginx.pid || true
-
-# check no corresponding process
-make run
-oldpid=$(< logs/nginx.pid)
-make stop
-sleep 0.5
-echo $oldpid > logs/nginx.pid
-out=$(make run || true)
-if ! echo "$out" | grep "nginx.pid exists but there's no corresponding process with pid"; then
-    echo "failed: should find no corresponding process"
-    exit 1
-fi
-make stop
-echo "pass: no corresponding process"
-
-# check running when run repeatedly
-out=$(make run; make run || true)
-if ! echo "$out" | grep "APISIX is running"; then
-    echo "failed: should find APISIX running"
-    exit 1
-fi
-
-make stop
-echo "pass: check APISIX running"
 
 # check the keepalive related parameter settings in the upstream
 git checkout conf/config.yaml
