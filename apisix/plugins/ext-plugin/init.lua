@@ -31,6 +31,7 @@ local extra_info_req = require("A6.ExtraInfo.Req")
 local extra_info_var = require("A6.ExtraInfo.Var")
 local extra_info_resp = require("A6.ExtraInfo.Resp")
 local extra_info_reqbody = require("A6.ExtraInfo.ReqBody")
+local extra_info_respbody = require("A6.ExtraInfo.RespBody")
 local text_entry = require("A6.TextEntry")
 local err_resp = require("A6.Err.Resp")
 local err_code = require("A6.Err.Code")
@@ -304,7 +305,31 @@ local function handle_extra_info(ctx, input)
         if err then
             core.log.error("failed to read request body: ", err)
         end
+    elseif info_type == extra_info.RespBody then
+        local ext_res = ctx.runner_ext_response
+        if ext_res then
+            local info = req:Info()
+            local respbody_req = extra_info_respbody.New()
+            respbody_req:Init(info.byte, info.pos)
 
+            local chunks = {}
+            local err = helper.response_reader(ext_res.body_reader, function (chunk, chunks)
+                -- When the upstream response is chunked type,
+                -- we will receive the complete response body
+                -- before sending it to the runner program
+                -- to reduce the number of RPC calls.
+                core.table.insert_tail(chunks, chunk)
+            end, chunks)
+            if err then
+                -- TODO: send RPC_ERROR to runner
+                core.log.error(err)
+            else
+                res = core.table.concat(chunks)
+                ctx.runner_ext_response_body = chunks
+            end
+        else
+            core.log.error("failed to read response body: not exits")
+        end
     else
         return nil, "unsupported info type: " .. info_type
     end
@@ -732,9 +757,26 @@ local rpc_handlers = {
             return nil, "failed to send RPC_HTTP_RESP_CALL: " .. err
         end
 
-        local ty, resp = receive(sock)
-        if ty == nil then
-            return nil, "failed to receive RPC_HTTP_RESP_CALL: " .. resp
+        local ty, resp
+        while true do
+            ty, resp = receive(sock)
+            if ty == nil then
+                return nil, "failed to receive RPC_HTTP_REQ_CALL: " .. resp
+            end
+
+            if ty ~= constants.RPC_EXTRA_INFO then
+                break
+            end
+
+            local out, err = handle_extra_info(ctx, resp)
+            if not out then
+                return nil, "failed to handle RPC_EXTRA_INFO: " .. err
+            end
+
+            local ok, err = send(sock, constants.RPC_EXTRA_INFO, out)
+            if not ok then
+                return nil, "failed to reply RPC_EXTRA_INFO: " .. err
+            end
         end
 
         if ty ~= constants.RPC_HTTP_RESP_CALL then
