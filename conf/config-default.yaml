@@ -112,9 +112,10 @@ apisix:
     ssl_session_tickets: false              #  disable ssl_session_tickets by default for 'ssl_session_tickets' would make Perfect Forward Secrecy useless.
                                             #  ref: https://github.com/mozilla/server-side-tls/issues/135
 
-    key_encrypt_salt: edd1c9f0985e76a2      #  If not set, will save origin ssl key into etcd.
-                                            #  If set this, must be a string of length 16. And it will encrypt ssl key with AES-128-CBC
-                                            #  !!! So do not change it after saving your ssl, it can't decrypt the ssl keys have be saved if you change !!
+    key_encrypt_salt:             #  If not set, will save origin ssl key into etcd.
+      - edd1c9f0985e76a2          #  If set this, the key_encrypt_salt should be an array whose elements are string, and the size is also 16, and it will encrypt ssl key with AES-128-CBC
+                                  #  !!! So do not change it after saving your ssl, it can't decrypt the ssl keys have be saved if you change !!
+                                  #  Only use the first key to encrypt, and decrypt in the order of the array.
 
     #fallback_sni: "my.default.domain"      # If set this, when the client doesn't send SNI during handshake, the fallback SNI will be used instead
   enable_control: true
