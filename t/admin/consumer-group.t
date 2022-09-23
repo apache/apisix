@@ -452,13 +452,13 @@ passed
             local code, body = t('/apisix/admin/consumers/foobar',
                 ngx.HTTP_PUT,
                 [[{
-					"username": "foobar",
-					"plugins": {
-						"key-auth": {
-							"key": "auth-two"
-						}
-					},
-					"group_id": "company_a"
+                    "username": "foobar",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "auth-two"
+                        }
+                    },
+                    "group_id": "company_a"
                 }]]
                 )
 
