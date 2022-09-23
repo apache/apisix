@@ -21,7 +21,7 @@ jobs:
       - name: Setup go
         uses: actions/setup-go@v2.1.4
         with:
-          go-version: "1.16"
+          go-version: "1.17"
 
       - uses: actions/cache@v2
         with:
@@ -35,9 +35,8 @@ jobs:
       - name: Creating minikube cluster
         run: |
           bash ./t/chaos/utils/setup_chaos_utils.sh start_minikube
-          wget https://raw.githubusercontent.com/apache/apisix-docker/master/alpine-local/Dockerfile
           mkdir logs
-          docker build -t apache/apisix:alpine-local --build-arg APISIX_PATH=. -f Dockerfile .
+          docker build -t apache/apisix:alpine-local --build-arg APISIX_PATH=. -f ./t/chaos/utils/Dockerfile .
           minikube cache add apache/apisix:alpine-local -v 7 --alsologtostderr
 
       - name: Print cluster information
@@ -80,9 +79,3 @@ jobs:
       - name: Run test
         working-directory: ./t/chaos
         run: ginkgo -r --v --progress --trace
-
-      # Debug via SSH if previous steps failed
-      - name: Set up tmate session
-        if: ${{ failure() }}
-        uses: ./.github/actions/action-tmate
-        timeout-minutes: 15

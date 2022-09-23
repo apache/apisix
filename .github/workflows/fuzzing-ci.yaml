@@ -63,6 +63,8 @@ jobs:
 
     - name: install boofuzz
       run: |
+        # Avoid "ERROR: flask has requirement click>=8.0, but you'll have click 7.0 which is incompatible"
+        sudo apt remove python3-click
         pip install -r $PWD/t/fuzzing/requirements.txt
 
     - name: run simpleroute test
