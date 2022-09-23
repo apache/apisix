@@ -73,7 +73,6 @@ location /t {
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
                     break
                 end
 
