@@ -239,6 +239,7 @@ nginx_config:                     # config for render the template to generate n
       access-tokens: 1m
       ext-plugin: 1m
       tars: 1m
+      cas-auth: 10m
 
 # HashiCorp Vault storage backend for sensitive data retrieval. The config shows an example of what APISIX expects if you
 # wish to integrate Vault for secret (sensetive string, public private keys etc.) retrieval. APISIX communicates with Vault
@@ -401,6 +402,7 @@ plugins:                          # plugin list (sorted by priority)
   - uri-blocker                    # priority: 2900
   - request-validation             # priority: 2800
   - openid-connect                 # priority: 2599
+  - cas-auth                       # priority: 2597
   - authz-casbin                   # priority: 2560
   - authz-casdoor                  # priority: 2559
   - wolf-rbac                      # priority: 2555
