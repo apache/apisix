@@ -71,9 +71,6 @@ local config_schema = {
     properties = {
         apisix = {
             properties = {
-                config_center = {
-                    enum = {"etcd", "yaml", "xds"},
-                },
                 lua_module_hook = {
                     pattern = "^[a-zA-Z._-]+$",
                 },
@@ -266,6 +263,22 @@ local config_schema = {
             }
         },
         etcd = etcd_schema,
+        plugins = {
+            type = "array",
+            default = {},
+            minItems = 0,
+            items = {
+                type = "string"
+            }
+        },
+        stream_plugins = {
+            type = "array",
+            default = {},
+            minItems = 0,
+            items = {
+                type = "string"
+            }
+        },
         wasm = {
             type = "object",
             properties = {
@@ -398,7 +411,7 @@ local deployment_schema = {
             role_data_plane = {
                 properties = {
                     config_provider = {
-                        enum = {"control_plane", "yaml"}
+                        enum = {"control_plane", "yaml", "xds"}
                     },
                 },
                 required = {"config_provider"}

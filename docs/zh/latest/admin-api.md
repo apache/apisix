@@ -38,17 +38,45 @@ Admin API 在 V3 版本中做了一些不向下兼容的调整，以及支持更
 1. 移除响应体中的 `action` 字段；
 2. 调整获取资源列表时的响应体结构，新的响应体结构示例如下：
 
+返回单个资源：
+
 ```json
 {
-    "count":2,
-    "list":[
-        {
-            ...
-        },
-        {
-            ...
-        }
-    ]
+  "modifiedIndex": 2685183,
+  "value": {
+    "id": "1",
+    ...
+  },
+  "key": "/apisix/routes/1",
+  "createdIndex": 2684956
+}
+```
+
+返回多个资源：
+
+```json
+{
+  "list": [
+    {
+      "modifiedIndex": 2685183,
+      "value": {
+        "id": "1",
+        ...
+      },
+      "key": "/apisix/routes/1",
+      "createdIndex": 2684956
+    },
+    {
+      "modifiedIndex": 2685163,
+      "value": {
+        "id": "2",
+        ...
+      },
+      "key": "/apisix/routes/2",
+      "createdIndex": 2685163
+    }
+  ],
+  "total": 2
 }
 ```
 
@@ -64,10 +92,10 @@ Admin API 在 V3 版本中做了一些不向下兼容的调整，以及支持更
 示例如下：
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10 \
+$ curl "http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10" \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET -i -d '
 {
-  "count": 1,
+  "total": 1,
   "list": [
     {
       ...
@@ -102,10 +130,10 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10 \
 下述示例将返回一个路由列表，该路由列表中的所有路由满足以下条件：路由的 `name` 包含字符串 "test"；`uri` 包含字符串 "foo"；对路由的 `label` 没有限制，因为查询的 label 是空字符串。
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label= \
+$ curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET -i -d '
 {
-  "count": 1,
+  "total": 1,
   "list": [
     {
       ...
@@ -223,7 +251,7 @@ Date: Sat, 31 Aug 2019 01:17:15 GMT
 ...
 
 # 创建一个有效期为 60 秒的路由，过期后自动删除
-$ curl http://127.0.0.1:9180/apisix/admin/routes/2?ttl=60 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl 'http://127.0.0.1:9180/apisix/admin/routes/2?ttl=60' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/aa/index.html",
     "upstream": {

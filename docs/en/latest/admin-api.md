@@ -36,17 +36,45 @@ The Admin API has made some breaking changes in V3 version, as well as supportin
 1. Remove `action` field in response body;
 2. Adjust the response body structure when fetching the list of resources, the new response body structure like:
 
+Return single resource:
+
 ```json
 {
-    "count":2,
-    "list":[
-        {
-            ...
-        },
-        {
-            ...
-        }
-    ]
+  "modifiedIndex": 2685183,
+  "value": {
+    "id": "1",
+    ...
+  },
+  "key": "/apisix/routes/1",
+  "createdIndex": 2684956
+}
+```
+
+Return multiple resources:
+
+```json
+{
+  "list": [
+    {
+      "modifiedIndex": 2685183,
+      "value": {
+        "id": "1",
+        ...
+      },
+      "key": "/apisix/routes/1",
+      "createdIndex": 2684956
+    },
+    {
+      "modifiedIndex": 2685163,
+      "value": {
+        "id": "2",
+        ...
+      },
+      "key": "/apisix/routes/2",
+      "createdIndex": 2685163
+    }
+  ],
+  "total": 2
 }
 ```
 
@@ -62,10 +90,10 @@ Paging query is supported when getting the resource list, paging parameters incl
 The example is as follows:
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10 \
+$ curl "http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10" \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET -i -d '
 {
-  "count": 1,
+  "total": 1,
   "list": [
     {
       ...
@@ -101,10 +129,10 @@ When multiple filter parameters are enabled, use the intersection of the query r
 The following example will return a list of routes, and all routes in the list satisfy: the `name` of the route contains the string "test", the `uri` contains the string "foo", and there is no restriction on the `label` of the route, since the label of the query is the empty string.
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label= \
+$ curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET -i -d '
 {
-  "count": 1,
+  "total": 1,
   "list": [
     {
       ...
@@ -217,7 +245,7 @@ Date: Sat, 31 Aug 2019 01:17:15 GMT
 ...
 
 # Create a route expires after 60 seconds, then it's deleted automatically
-$ curl http://127.0.0.1:9180/apisix/admin/routes/2?ttl=60 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl 'http://127.0.0.1:9180/apisix/admin/routes/2?ttl=60' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/aa/index.html",
     "upstream": {

@@ -157,7 +157,7 @@ function _M.init(env, args)
         util.die("failed to read `apisix` field from yaml file when init etcd")
     end
 
-    if yaml_conf.apisix.config_center ~= "etcd" then
+    if yaml_conf.deployment.config_provider ~= "etcd" then
         return true
     end
 

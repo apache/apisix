@@ -97,7 +97,10 @@ __DATA__
 apisix:
   node_listen: 1984
   config_center: yaml
-  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   kubernetes: {}
 --- request
@@ -125,8 +128,10 @@ true
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
-  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   kubernetes:
     service: {}
@@ -156,8 +161,10 @@ true
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
-  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   kubernetes:
     service:
@@ -188,8 +195,10 @@ true
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
-  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   kubernetes:
     service:
@@ -222,8 +231,10 @@ true
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
-  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   kubernetes:
   - id: "debug"

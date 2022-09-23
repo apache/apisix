@@ -31,7 +31,10 @@ add_block_preprocessor(sub {
     my $yaml_config = $block->yaml_config // <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
@@ -111,8 +114,11 @@ connect to 127.0.0.1:1053
 --- yaml_config
 apisix:
     node_listen: 1984
-    config_center: yaml
     dns_resolver_valid: 900
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 --- apisix_yaml
 upstreams:
     -
@@ -191,8 +197,11 @@ connect to 127.0.0.1:1053
 --- yaml_config
 apisix:
     node_listen: 1984
-    config_center: yaml
     dns_resolver_valid: 1
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 --- apisix_yaml
 upstreams:
     -

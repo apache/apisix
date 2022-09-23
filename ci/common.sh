@@ -79,6 +79,8 @@ install_nodejs () {
     mv node-v${NODEJS_VERSION}-linux-x64 ${NODEJS_PREFIX}
     ln -s ${NODEJS_PREFIX}/bin/node /usr/local/bin/node
     ln -s ${NODEJS_PREFIX}/bin/npm /usr/local/bin/npm
+
+    npm config set registry https://registry.npmjs.org/
 }
 
 set_coredns() {
