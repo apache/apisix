@@ -19,8 +19,9 @@
 --
 -- @module core.config_local
 
-local file = require("apisix.cli.file")
+local file   = require("apisix.cli.file")
 local schema = require("apisix.cli.schema")
+local error  = error
 
 
 local _M = {}
