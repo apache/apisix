@@ -56,9 +56,9 @@ function _M.server_name()
 end
 
 
-local _aes_128_cbc_with_iv_tbl = false
+local _aes_128_cbc_with_iv_tbl
 local function get_aes_128_cbc_with_iv()
-    if _aes_128_cbc_with_iv_tbl == false then
+    if _aes_128_cbc_with_iv_tbl == nil then
         _aes_128_cbc_with_iv_tbl = core.table.new(2, 0)
         local local_conf = core.config.local_conf()
         local ivs = core.table.try_read_attr(local_conf, "apisix", "ssl", "key_encrypt_salt")
