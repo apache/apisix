@@ -64,6 +64,14 @@ title: Changelog
 
 ## 3.0.0-beta
 
+Here we use 2.99.0 as the version number in the source code instead of the code name
+`3.0.0-beta` for two reasons:
+
+1. avoid unexpected errors when some programs try to compare the
+version, as `3.0.0-beta` contains `3.0.0` and is longer than it.
+2. some package system might not allow package which has a suffix
+after the version number.
+
 ### Change
 
 #### Moves the config_center, etcd and Admin API configuration to the deployment
@@ -90,10 +98,10 @@ With the new 3.0 release, we took the opportunity to clean out many configuratio
 In the static configuration, we removed several fields as follows:
 
 - Removed `enable_http2` and `listen_port` from `apisix.ssl`: [#7717](https://github.com/apache/apisix/pull/7717)
-- Remove `apisix.port_admin`: [#7716](https://github.com/apache/apisix/pull/7716)
-- Remove `etcd.health_check_retry`: [#7676](https://github.com/apache/apisix/pull/7676)
-- Remove `nginx_config.http.lua_shared_dicts`: [#7677](https://github.com/apache/apisix/pull/7677)
-- Remove `nginx_config.http.real_ip_header`: [#7696](https://github.com/apache/apisix/pull/7696)
+- Removed `apisix.port_admin`: [#7716](https://github.com/apache/apisix/pull/7716)
+- Removed `etcd.health_check_retry`: [#7676](https://github.com/apache/apisix/pull/7676)
+- Removed `nginx_config.http.lua_shared_dicts`: [#7677](https://github.com/apache/apisix/pull/7677)
+- Removed `nginx_config.http.real_ip_header`: [#7696](https://github.com/apache/apisix/pull/7696)
 
 In the dynamic configuration, we made the following adjustments:
 
