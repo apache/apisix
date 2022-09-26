@@ -24,6 +24,15 @@ return {
                 type = "string",
             },
         },
+        order = {
+            type = "array",
+            minItems = 1,
+            maxItems = 5,
+            uniqueItems = true,
+            items = {
+                enum = {"last", "SRV", "A", "AAAA", "CNAME"}
+            },
+        },
     },
     required = {"servers"}
 }
