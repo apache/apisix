@@ -493,8 +493,8 @@ _EOC_
 
     $block->set_value("main_config", $main_config);
 
-    # The new directive is introduced here to modify the upper and
-    # lower limits of the schema before apisix validate in require("apisix")
+    # The new directive is introduced here to modify the schema
+    # before apisix validate in require("apisix")
     # Todo: merge extra_init_by_lua_start and extra_init_by_lua
     my $extra_init_by_lua_start = $block->extra_init_by_lua_start // "";
 
