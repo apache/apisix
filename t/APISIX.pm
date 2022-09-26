@@ -493,6 +493,11 @@ _EOC_
 
     $block->set_value("main_config", $main_config);
 
+    # The new directive is introduced here to modify the schema
+    # before apisix validate in require("apisix")
+    # Todo: merge extra_init_by_lua_start and extra_init_by_lua
+    my $extra_init_by_lua_start = $block->extra_init_by_lua_start // "";
+
     my $extra_init_by_lua = $block->extra_init_by_lua // "";
     my $init_by_lua_block = $block->init_by_lua_block // <<_EOC_;
     if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
@@ -501,6 +506,8 @@ _EOC_
     end
 
     require "resty.core"
+
+    $extra_init_by_lua_start
 
     apisix = require("apisix")
     local args = {
