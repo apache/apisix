@@ -45,10 +45,6 @@ description: 本文介绍了关于 Apache APISIX `ext-plugin-post-resp` 插件�
 
 External Plugin 执行的结果会影响当前请求的响应。
 
-External Plugin 尚不支持获取请求的上下文信息。
-
-External Plugin 尚不支持获取上游响应的响应体。
-
 :::
 
 ## 属性

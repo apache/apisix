@@ -17,7 +17,7 @@
 
 github:
     description: The Cloud-Native API Gateway
-    homepage: https://apisix.apache.org/
+    homepage: https://apisix.apache.org/blog/
     labels:
       - api-gateway
       - cloud-native

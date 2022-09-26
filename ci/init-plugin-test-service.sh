@@ -41,3 +41,8 @@ docker exec -i rmqnamesrv /home/rocketmq/rocketmq-4.6.0/bin/mqadmin updateTopic 
 
 # prepare vault kv engine
 docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault secrets enable -path=kv -version=1 kv"
+
+# wait for keycloak ready
+bash -c 'while true; do curl -s localhost:8080 &>/dev/null; ret=$?; [[ $ret -eq 0 ]] && break; sleep 3; done'
+docker cp ci/kcadm_configure_cas.sh apisix_keycloak_new:/tmp/
+docker exec apisix_keycloak_new bash /tmp/kcadm_configure_cas.sh

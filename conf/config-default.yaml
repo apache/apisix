@@ -112,9 +112,10 @@ apisix:
     ssl_session_tickets: false              #  disable ssl_session_tickets by default for 'ssl_session_tickets' would make Perfect Forward Secrecy useless.
                                             #  ref: https://github.com/mozilla/server-side-tls/issues/135
 
-    key_encrypt_salt: edd1c9f0985e76a2      #  If not set, will save origin ssl key into etcd.
-                                            #  If set this, must be a string of length 16. And it will encrypt ssl key with AES-128-CBC
-                                            #  !!! So do not change it after saving your ssl, it can't decrypt the ssl keys have be saved if you change !!
+    key_encrypt_salt:             #  If not set, will save origin ssl key into etcd.
+      - edd1c9f0985e76a2          #  If set this, the key_encrypt_salt should be an array whose elements are string, and the size is also 16, and it will encrypt ssl key with AES-128-CBC
+                                  #  !!! So do not change it after saving your ssl, it can't decrypt the ssl keys have be saved if you change !!
+                                  #  Only use the first key to encrypt, and decrypt in the order of the array.
 
     #fallback_sni: "my.default.domain"      # If set this, when the client doesn't send SNI during handshake, the fallback SNI will be used instead
   enable_control: true
@@ -238,8 +239,8 @@ nginx_config:                     # config for render the template to generate n
       introspection: 10m
       access-tokens: 1m
       ext-plugin: 1m
-      kubernetes: 1m
       tars: 1m
+      cas-auth: 10m
 
 # HashiCorp Vault storage backend for sensitive data retrieval. The config shows an example of what APISIX expects if you
 # wish to integrate Vault for secret (sensetive string, public private keys etc.) retrieval. APISIX communicates with Vault
@@ -309,6 +310,10 @@ nginx_config:                     # config for render the template to generate n
 #       path: "logs/consul_kv.dump"
 #       expire: 2592000            # unit sec, here is 30 day
 #  kubernetes:
+#    ### kubernetes service discovery both support single-cluster and multi-cluster mode
+#    ### applicable to the case where the service is distributed in a single or multiple kubernetes clusters.
+#
+#    ### single-cluster mode ###
 #    service:
 #      schema: https                     #apiserver schema, options [http, https], default https
 #      host: ${KUBERNETES_SERVICE_HOST}  #apiserver host, options [ipv4, ipv6, domain, environment variable], default ${KUBERNETES_SERVICE_HOST}
@@ -338,6 +343,44 @@ nginx_config:                     # config for render the template to generate n
 #    # for the expression of label_selector, please refer to https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
 #    label_selector: |-
 #      first="a",second="b"
+#    # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
+#    shared_size: 1m #default 1m
+#    ### single-cluster mode ###
+#
+#    ### multi-cluster mode ###
+#  - id: release  # a custom name refer to the cluster, pattern ^[a-z0-9]{1,8}
+#    service:
+#      schema: https                     #apiserver schema, options [http, https], default https
+#      host: ${KUBERNETES_SERVICE_HOST}  #apiserver host, options [ipv4, ipv6, domain, environment variable]
+#      port: ${KUBERNETES_SERVICE_PORT}  #apiserver port, options [port number, environment variable]
+#    client:
+#      # serviceaccount token or path of serviceaccount token_file
+#      token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
+#      # token: |-
+#       # eyJhbGciOiJSUzI1NiIsImtpZCI6Ikx5ME1DNWdnbmhQNkZCNlZYMXBsT3pYU3BBS2swYzBPSkN3ZnBESGpkUEEif
+#       # 6Ikx5ME1DNWdnbmhQNkZCNlZYMXBsT3pYU3BBS2swYzBPSkN3ZnBESGpkUEEifeyJhbGciOiJSUzI1NiIsImtpZCI
+#    # kubernetes discovery plugin support use namespace_selector
+#    # you can use one of [equal, not_equal, match, not_match] filter namespace
+#    namespace_selector:
+#      # only save endpoints with namespace equal default
+#      equal: default
+#      # only save endpoints with namespace not equal default
+#      #not_equal: default
+#      # only save endpoints with namespace match one of [default, ^my-[a-z]+$]
+#      #match:
+#      #- default
+#      #- ^my-[a-z]+$
+#      # only save endpoints with namespace not match one of [default, ^my-[a-z]+$ ]
+#      #not_match:
+#      #- default
+#      #- ^my-[a-z]+$
+#    # kubernetes discovery plugin support use label_selector
+#    # for the expression of label_selector, please refer to https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+#    label_selector: |-
+#      first="a",second="b"
+#    # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
+#    shared_size: 1m #default 1m
+#    ### multi-cluster mode ###
 
 graphql:
   max_size: 1048576               # the maximum size limitation of graphql in bytes, default 1MiB
@@ -366,6 +409,7 @@ plugins:                          # plugin list (sorted by priority)
   - uri-blocker                    # priority: 2900
   - request-validation             # priority: 2800
   - openid-connect                 # priority: 2599
+  - cas-auth                       # priority: 2597
   - authz-casbin                   # priority: 2560
   - authz-casdoor                  # priority: 2559
   - wolf-rbac                      # priority: 2555

@@ -25,6 +25,7 @@ local v3_adapter        = require("apisix.admin.v3_adapter")
 local etcd              = require("resty.etcd")
 local clone_tab         = require("table.clone")
 local health_check      = require("resty.etcd.health_check")
+local pl_path           = require("pl.path")
 local ipairs            = ipairs
 local setmetatable      = setmetatable
 local string            = string
@@ -183,8 +184,8 @@ local function switch_proxy()
     if not etcd_cli.unix_socket_proxy then
         return etcd_cli, prefix, err
     end
-    local sock = ngx_socket_tcp()
-    local ok = sock:connect(etcd_cli.unix_socket_proxy)
+    local sock_path = etcd_cli.unix_socket_proxy:sub(#"unix:" + 1)
+    local ok = pl_path.exists(sock_path)
     if not ok then
         return new_without_proxy()
     end
