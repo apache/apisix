@@ -259,6 +259,12 @@ nginx_config:                     # config for render the template to generate n
 #  dns:
 #    servers:
 #      - "127.0.0.1:8600"         # use the real address of your dns server
+#    order:                       # order in which to try different dns record types when resolving
+#      - last                     # "last" will try the last previously successful type for a hostname.
+#      - SRV
+#      - A
+#      - AAAA
+#      - CNAME
 #  eureka:
 #    host:                        # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
 #      - "http://127.0.0.1:8761"
