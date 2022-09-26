@@ -642,13 +642,53 @@ passed
 
 === TEST 21: inject create producer
 --- extra_init_by_lua
+    local setmetatable_p = setmetatable
+    local setmetatable_c = setmetatable
     local producer = require("resty.kafka.producer")
+    local client = require("resty.kafka.client")
+    local sendbuffer = require("resty.kafka.sendbuffer")
+    local ringbuffer = require("resty.kafka.ringbuffer")
     producer.new = function(self, broker_list, producer_config, cluster_name)
-        if (#broker_list) then
-            ngx.log(ngx.ERR, "unexpected broker_list length: ", #broker_list)
+        if #broker_list=0 then
+            ngx.log(ngx.ERR, "broker_list length must not zero")
             return nil
         end
-        return producer
+        local name = cluster_name or 1
+        local opts = producer_config or {}
+        local cli = setmetatable_c({
+                broker_list = broker_list,
+                topic_partitions = {},
+                brokers = {},
+                api_versions = {}, -- support APIs version on broker
+                client_id = "worker" .. pid(),
+                socket_config = {
+                    socket_timeout = opts.socket_timeout or 3000,
+                    keepalive_timeout = opts.keepalive_timeout or (600 * 1000),   -- 10 min
+                    keepalive_size = opts.keepalive_size or 2,
+                    ssl = opts.ssl or false,
+                    ssl_verify = opts.ssl_verify or false,
+                    resolver = opts.resolver -- or nil
+                }
+            }, { __index =  { _VERSION = "0.20" } })
+        return setmetatable_p({
+            client = cli,
+            correlation_id = 1,
+            request_timeout = opts.request_timeout or 2000,
+            retry_backoff = opts.retry_backoff or 100,   -- ms
+            max_retry = opts.max_retry or 3,
+            required_acks = opts.required_acks or 1,
+            partitioner = opts.partitioner,
+            error_handle = opts.error_handle,
+            api_version = opts.api_version or 0,
+            async = opts.producer_type == "async",
+            socket_config = cli.socket_config,
+            _timer_flushing_buffer = false,
+            ringbuffer = ringbuffer:new(opts.batch_num or 200, opts.max_buffering or 50000),   -- 200, 50K
+            sendbuffer = sendbuffer:new(opts.batch_num or 200, opts.batch_size or 1048576)
+                            -- default: 1K, 1M
+                            -- batch_size should less than (MaxRequestSize / 2 - 10KiB)
+                            -- config in the kafka server, default 100M
+        }, { __index =  { _VERSION = "0.20" } })
     end
 --- request
 GET /hello
