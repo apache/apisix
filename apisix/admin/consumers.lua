@@ -18,7 +18,6 @@ local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
 local utils   = require("apisix.admin.utils")
 local plugin  = require("apisix.plugin")
-local consumer_group  = require("apisix.consumer_group")
 local pairs   = pairs
 
 local _M = {
@@ -64,8 +63,18 @@ local function check_conf(username, conf)
     end
 
     if conf.group_id then
-        if consumer_group.get(conf.group_id) == nil then
-            return nil, {error_msg = "invalid consumer group: " .. conf.group_id}
+        local key = "/consumer_groups/" .. conf.group_id
+        local res, err = core.etcd.get(key)
+        if not res then
+            return nil, {error_msg = "failed to fetch consumer group info by "
+                                     .. "consumer group id [" .. conf.group_id .. "]: "
+                                     .. err}
+        end
+
+        if res.status ~= 200 then
+            return nil, {error_msg = "failed to fetch consumer group info by "
+                                     .. "consumer group id [" .. conf.group_id .. "], "
+                                     .. "response code: " .. res.status}
         end
     end
 

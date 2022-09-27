@@ -546,4 +546,4 @@ passed
         }
     }
 --- response_body_like
-.*invalid consumer group.*
+.*failed to fetch consumer group info by consumer group id.*
