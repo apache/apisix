@@ -642,12 +642,10 @@ passed
 
 === TEST 21: inject create producer
 --- extra_init_by_lua
-    local setmetatable_p = setmetatable
-    local setmetatable_c = setmetatable
     local producer = require("resty.kafka.producer")
     producer.new = function(self, broker_list, producer_config, cluster_name)
         local opts = producer_config or {}
-        local cli = setmetatable_c({
+        local cli = {
                 broker_list = broker_list,
                 topic_partitions = {},
                 brokers = {},
@@ -661,8 +659,8 @@ passed
                     ssl_verify = opts.ssl_verify or false,
                     resolver = opts.resolver or nil
                 }
-            }, { __index =  { _VERSION = "0.20" } })
-        return setmetatable_p({
+            }
+        return {
             client = cli,
             correlation_id = 1,
             request_timeout = opts.request_timeout or 2000,
@@ -677,7 +675,7 @@ passed
             _timer_flushing_buffer = false,
             ringbuffer = ringbuffer:new(opts.batch_num or 200, opts.max_buffering or 50000),
             sendbuffer = sendbuffer:new(opts.batch_num or 200, opts.batch_size or 1048576)
-        }, { __index =  { _VERSION = "0.20" } })
+        }
     end
 --- request
 GET /hello
