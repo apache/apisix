@@ -679,9 +679,6 @@ passed
             sendbuffer = sendbuffer:new(opts.batch_num or 200, opts.batch_size or 1048576)
         }, { __index =  { _VERSION = "0.20" } })
     end
-    producer.send = function(self, topic, key, message)
-        return 1
-    end
 --- request
 GET /hello
 --- response_body
