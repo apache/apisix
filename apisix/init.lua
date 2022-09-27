@@ -445,9 +445,16 @@ function _M.http_access_phase()
         if api_ctx.consumer then
             local changed
             local group_conf
+
             if api_ctx.consumer.group_id then
                 group_conf = consumer_group.get(api_ctx.consumer.group_id)
+                if not group_conf then
+                    core.log.error("failed to fetch consumer group config by ",
+                        "id: ", api_ctx.consumer.group_id)
+                    return core.response.exit(503)
+                end
             end
+
             route, changed = plugin.merge_consumer_route(
                 route,
                 api_ctx.consumer,

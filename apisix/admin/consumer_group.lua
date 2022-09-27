@@ -49,7 +49,7 @@ local function check_conf(id, conf, need_id)
     conf.id = id
 
     core.log.info("conf: ", core.json.delay_encode(conf))
-    local ok, err = core.schema.check(core.schema.plugin_config, conf)
+    local ok, err = core.schema.check(core.schema.consumer_group, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end

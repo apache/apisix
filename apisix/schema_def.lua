@@ -919,6 +919,20 @@ _M.plugin_config = {
 }
 
 
+_M.consumer_group = {
+    type = "object",
+    properties = {
+        id = id_schema,
+        desc = desc_def,
+        plugins = plugins_schema,
+        labels = labels_def,
+        create_time = timestamp_def,
+        update_time = timestamp_def
+    },
+    required = {"id", "plugins"},
+}
+
+
 _M.id_schema = id_schema
 
 

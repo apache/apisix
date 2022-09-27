@@ -18,6 +18,7 @@ local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
 local utils   = require("apisix.admin.utils")
 local plugin  = require("apisix.plugin")
+local consumer_group  = require("apisix.consumer_group")
 local pairs   = pairs
 
 local _M = {
@@ -59,6 +60,12 @@ local function check_conf(username, conf)
 
         if count_auth_plugin == 0 then
             return nil, {error_msg = "require one auth plugin"}
+        end
+    end
+
+    if conf.group_id then
+        if consumer_group.get(conf.group_id) == nil then
+            return nil, {error_msg = "invalid consumer group: " .. conf.group_id}
         end
     end
 

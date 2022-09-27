@@ -30,7 +30,7 @@ function _M.init_worker()
     local err
     consumer_groups, err = core.config.new("/consumer_groups", {
         automatic = true,
-        item_schema = nil,
+        item_schema = core.schema.consumer_group,
         checker = plugin_checker,
     })
     if not consumer_groups then

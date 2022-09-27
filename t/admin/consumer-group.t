@@ -29,7 +29,7 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    if (!$block->no_error_log) {
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
         $block->set_value("no_error_log", "[error]\n[alert]");
     }
 });
@@ -521,3 +521,29 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST 15: add consumer with invalid group
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/foobar',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foobar",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "auth-two"
+                        }
+                    },
+                    "group_id": "invalid_group"
+                }]]
+                )
+            assert(code >= 300)
+            ngx.say(body)
+        }
+    }
+--- response_body_like
+.*invalid consumer group.*
