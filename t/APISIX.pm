@@ -875,7 +875,8 @@ _EOC_
 
     $block->set_value("user_files", $user_files);
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)
+        && (!defined $block->grep_error_log)) {
         $block->set_value("no_error_log", "[error]");
     }
 
