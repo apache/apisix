@@ -405,7 +405,6 @@ OPTIONS /hello HTTP/1.1
 
 
 
-
 === TEST 15: set route(auth plugins fails)
 --- config
     location /t {
