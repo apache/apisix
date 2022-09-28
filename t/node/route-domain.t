@@ -55,8 +55,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -66,8 +64,6 @@ GET /not_found
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -76,8 +72,6 @@ GET /not_found
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 --- error_log eval
 qr/dns resolver domain: www.apiseven.com to \d+.\d+.\d+.\d+/
 --- timeout: 10
@@ -114,8 +108,6 @@ qr/dns resolver domain: www.apiseven.com to \d+.\d+.\d+.\d+/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -124,8 +116,6 @@ passed
 GET /uri
 --- response_body eval
 qr/host: httpbin.org/
---- no_error_log
-[error]
 --- timeout: 10
 
 
@@ -160,8 +150,6 @@ qr/host: httpbin.org/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -170,8 +158,6 @@ passed
 GET /get
 --- response_body eval
 qr/"Host": "httpbin.org"/
---- no_error_log
-[error]
 --- timeout: 10
 
 
@@ -205,8 +191,6 @@ qr/"Host": "httpbin.org"/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -228,5 +212,3 @@ location /t {
 GET /t
 --- response_body
 1980, 1981, 1981
---- no_error_log
-[error]

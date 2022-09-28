@@ -54,8 +54,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -106,8 +104,6 @@ GET /t
 passed
 200
 passed
---- no_error_log
-[error]
 
 
 
@@ -135,8 +131,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -156,8 +150,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -174,8 +166,6 @@ passed
 GET /t
 --- response_body
 [delete] code: 404
---- no_error_log
-[error]
 
 
 
@@ -201,8 +191,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"missing plugin name"}
---- no_error_log
-[error]
 
 
 
@@ -228,8 +216,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid plugin name"}
---- no_error_log
-[error]
 
 
 
@@ -260,8 +246,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/\{"error_msg":"invalid configuration: property \\"ikey\\" is required"\}/
---- no_error_log
-[error]
 
 
 
@@ -293,8 +277,6 @@ qr/\{"error_msg":"invalid configuration: property \\"ikey\\" is required"\}/
 {"key":"/apisix/plugin_metadata/example-plugin","value":{"ikey":1,"skey":"val"}}
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -326,8 +308,6 @@ GET /t
 {"key":"/apisix/plugin_metadata/example-plugin","value":{"ikey":1,"skey":"val"}}
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -353,5 +333,3 @@ GET /t
 {"deleted":"1","key":"/apisix/plugin_metadata/example-plugin"}
 --- request
 GET /t
---- no_error_log
-[error]

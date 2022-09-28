@@ -55,8 +55,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -65,8 +63,6 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 --- grep_error_log eval
 qr/X-APISIX-Upstream-Status: 200/
 --- grep_error_log_out
@@ -107,8 +103,6 @@ qr/X-APISIX-Upstream-Status: 200/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -152,8 +146,6 @@ X-APISIX-Upstream-Status: 504
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -197,8 +189,6 @@ X-APISIX-Upstream-Status: 502
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -240,8 +230,6 @@ X-APISIX-Upstream-Status: 500
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -268,8 +256,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -313,8 +299,6 @@ qr/X-APISIX-Upstream-Status: 502, 200/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -357,8 +341,6 @@ qr/X-APISIX-Upstream-Status: 502, 502, 502/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -404,8 +386,6 @@ qr/X-APISIX-Upstream-Status: 500/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 

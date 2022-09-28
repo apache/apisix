@@ -109,8 +109,6 @@ X-APISIX-Upstream-Status: 200
     }
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 

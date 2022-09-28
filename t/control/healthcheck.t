@@ -327,8 +327,6 @@ upstreams:
 qr/unhealthy TCP increment \(.+\) for '[^']+'/
 --- grep_error_log_out
 unhealthy TCP increment (1/2) for '(127.0.0.1:1988)'
---- no_error_log
-[error]
 --- response_body
 {}
 [{"host":"127.0.0.1","port":1988,"priority":0,"weight":1},{"host":"127.0.0.2","port":1980,"priority":0,"weight":1}]

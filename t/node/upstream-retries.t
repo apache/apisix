@@ -54,8 +54,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -82,8 +80,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -93,8 +89,6 @@ GET /not_found
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -150,8 +144,6 @@ connect() failed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -196,8 +188,6 @@ qr/\[error\]/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -239,8 +229,6 @@ qr/\[error\]/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 

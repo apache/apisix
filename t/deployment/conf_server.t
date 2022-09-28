@@ -157,8 +157,6 @@ foo
 --- error_log
 localhost is resolved to: 127.0.0.3
 localhost is resolved to: 127.0.0.2
---- no_error_log
-[error]
 
 
 

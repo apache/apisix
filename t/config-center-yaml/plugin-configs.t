@@ -120,8 +120,6 @@ world
 in: out
 --- error_log eval
 qr/conf_version: \d+#1,/
---- no_error_log
-[error]
 
 
 

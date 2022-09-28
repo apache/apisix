@@ -217,8 +217,6 @@ GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtl
 {"message":"JWT token invalid"}
 --- error_log
 JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
---- no_error_log
-[error]
 
 
 
@@ -230,8 +228,6 @@ GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4
 {"message":"failed to verify jwt"}
 --- error_log
 failed to verify jwt: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT
---- no_error_log
-[error]
 
 
 
@@ -285,8 +281,6 @@ Authorization: bearer invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c
 {"message":"JWT token invalid"}
 --- error_log
 JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
---- no_error_log
-[error]
 
 
 
@@ -440,8 +434,6 @@ GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtl
 {"message":"JWT token invalid"}
 --- error_log
 JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
---- no_error_log
-[error]
 
 
 
@@ -455,8 +447,6 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtle
 {"message":"failed to verify jwt"}
 --- error_log
 failed to verify jwt: signature mismatch: fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
---- no_error_log
-[error]
 
 
 

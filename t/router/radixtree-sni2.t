@@ -63,8 +63,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -183,8 +181,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -388,8 +384,6 @@ location /t {
 }
 --- request
 GET /t
---- no_error_log
-[error]
 --- response_body
 ssl handshake: true
 
@@ -419,8 +413,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -453,8 +445,6 @@ location /t {
 }
 --- request
 GET /t
---- no_error_log
-[error]
 --- response_body
 ssl handshake: true
 
@@ -484,8 +474,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -518,8 +506,6 @@ location /t {
 }
 --- request
 GET /t
---- no_error_log
-[error]
 --- response_body
 ssl handshake: true
 
@@ -567,8 +553,6 @@ location /t {
     end
 --- request
 GET /t
---- no_error_log
-[error]
 --- response_body
 ssl handshake: true
 --- grep_error_log eval

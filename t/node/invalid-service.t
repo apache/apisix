@@ -109,5 +109,3 @@ qr/"nodes":\{"127.0.0.1:1980":1\}/
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
