@@ -19,7 +19,6 @@ local log_util = require("apisix.utils.log-util")
 local producer = require ("resty.kafka.producer")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local plugin = require("apisix.plugin")
-local table = require("apisix.core.table")
 
 local math     = math
 local pairs    = pairs
@@ -223,10 +222,11 @@ function _M.log(conf, ctx)
     end
 
     -- reuse producer via lrucache to avoid unbalanced partitions of messages in kafka
-    local broker_list = core.table.new(conf.broker_list and core.table.nkeys(conf.broker_list) or #conf.brokers, 0)
+    local length = conf.broker_list and core.table.nkeys(conf.broker_list) or #conf.brokers
+    local broker_list = core.table.new(length, 0)
     local broker_config = {}
 
-    if conf.broker_list then 
+    if conf.broker_list then
         for host, port in pairs(conf.broker_list) do
             local broker = {
                 host = host,

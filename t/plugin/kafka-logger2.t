@@ -342,47 +342,47 @@ qr/not found topic, retryable: true, topic: undefined_topic, partition_id: -1/
                 },
                 {
                     input = {
-		                brokers = {
-		                },
-		                kafka_topic = "test",
-		                key = "key1",
-		            },
+                        brokers = {
+                        },
+                        kafka_topic = "test",
+                        key = "key1",
+                    },
                 },
                 {
                     input = {
-		                brokers = {
+                        brokers = {
                             {
                                 host = "127.0.0.1",
                                 port = "9093",
                             },
-		                },
-		                kafka_topic = "test",
-		                key = "key1",
-		            },
+                        },
+                        kafka_topic = "test",
+                        key = "key1",
+                    },
                 },
                 {
                     input = {
-		                brokers = {
+                        brokers = {
                             {
                                 host = "127.0.0.1",
                                 port = 0,
                             },
-		                },
-		                kafka_topic = "test",
-		                key = "key1",
-		            },
+                        },
+                        kafka_topic = "test",
+                        key = "key1",
+                    },
                 },
                 {
                     input = {
-		                brokers = {
+                        brokers = {
                             {
                                 host = "127.0.0.1",
                                 port = 65536,
                             },
-		                },
-		                kafka_topic = "test",
-		                key = "key1",
-		            },
+                        },
+                        kafka_topic = "test",
+                        key = "key1",
+                    },
                 },
             }
 

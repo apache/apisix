@@ -72,7 +72,7 @@ done
         }
     }
 --- response_body
-property "broker_list" is required
+value should match only one schema, but matches none
 done
 
 
