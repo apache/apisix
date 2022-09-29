@@ -22,6 +22,7 @@ local plugin = require("apisix.plugin")
 
 local math     = math
 local pairs    = pairs
+local ipairs   = ipairs
 local type     = type
 local plugin_name = "kafka-logger"
 local batch_processor_manager = bp_manager_mod.new("kafka logger")
