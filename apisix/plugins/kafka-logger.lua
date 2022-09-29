@@ -19,6 +19,7 @@ local log_util = require("apisix.utils.log-util")
 local producer = require ("resty.kafka.producer")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local plugin = require("apisix.plugin")
+local table = require("apisix.core.table")
 
 local math     = math
 local pairs    = pairs
@@ -50,6 +51,26 @@ local schema = {
                     maximum = 65535,
                 },
             },
+        },
+        brokers = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "object",
+                properties = {
+                    host = {
+                        type = "string",
+                        description = "the host of kafka broker",
+                    },
+                    port = {
+                        type = "integer",
+                        minimum = 1,
+                        maximum = 65535,
+                        description = "the port of kafka broker",
+                    },
+                },
+            },
+            uniqueItems = true,
         },
         kafka_topic = {type = "string"},
         producer_type = {
@@ -89,7 +110,10 @@ local schema = {
         producer_max_buffering = {type = "integer", minimum = 1, default = 50000},
         producer_time_linger = {type = "integer", minimum = 1, default = 1}
     },
-    required = {"broker_list", "kafka_topic"}
+    oneOf = {
+        { required = {"broker_list", "kafka_topic"},},
+        { required = {"brokers", "kafka_topic"},},
+    }
 }
 
 local metadata_schema = {
@@ -199,15 +223,23 @@ function _M.log(conf, ctx)
     end
 
     -- reuse producer via lrucache to avoid unbalanced partitions of messages in kafka
-    local broker_list = core.table.new(core.table.nkeys(conf.broker_list), 0)
+    local broker_list = core.table.new(conf.broker_list and core.table.nkeys(conf.broker_list) or #conf.brokers, 0)
     local broker_config = {}
 
-    for host, port in pairs(conf.broker_list) do
-        local broker = {
-            host = host,
-            port = port
-        }
-        core.table.insert(broker_list, broker)
+    if conf.broker_list then 
+        for host, port in pairs(conf.broker_list) do
+            local broker = {
+                host = host,
+                port = port
+            }
+            core.table.insert(broker_list, broker)
+        end
+    end
+
+    if conf.broker then
+        for _, broker in ipairs(conf.brokers) do
+            core.table.insert(broker_list, broker)
+        end
     end
 
     broker_config["request_timeout"] = conf.timeout * 1000
@@ -251,3 +283,4 @@ end
 
 
 return _M
+
