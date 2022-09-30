@@ -225,8 +225,7 @@ function _M.log(conf, ctx)
     end
 
     -- reuse producer via lrucache to avoid unbalanced partitions of messages in kafka
-    local length = conf.broker_list and core.table.nkeys(conf.broker_list) or #conf.brokers
-    local broker_list = core.table.new(length, 0)
+    local broker_list = core.table.clone(conf.brokers or {})
     local broker_config = {}
 
     if conf.broker_list then
@@ -235,12 +234,6 @@ function _M.log(conf, ctx)
                 host = host,
                 port = port
             }
-            core.table.insert(broker_list, broker)
-        end
-    end
-
-    if conf.broker then
-        for _, broker in ipairs(conf.brokers) do
             core.table.insert(broker_list, broker)
         end
     end
