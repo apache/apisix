@@ -40,6 +40,7 @@ local schema = {
             default = "default",
             enum = {"default", "origin"},
         },
+        -- deprecated, use "brokers" instead
         broker_list = {
             type = "object",
             minProperties = 1,
@@ -69,6 +70,7 @@ local schema = {
                         description = "the port of kafka broker",
                     },
                 },
+                required = {"host", "port"},
             },
             uniqueItems = true,
         },
@@ -284,4 +286,3 @@ end
 
 
 return _M
-

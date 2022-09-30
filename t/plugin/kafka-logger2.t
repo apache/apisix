@@ -353,6 +353,28 @@ qr/not found topic, retryable: true, topic: undefined_topic, partition_id: -1/
                         brokers = {
                             {
                                 host = "127.0.0.1",
+                            }
+                        },
+                        kafka_topic = "test",
+                        key = "key1",
+                    },
+                },
+                {
+                    input = {
+                        brokers = {
+                            {
+                                port = 9092,
+                            }
+                        },
+                        kafka_topic = "test",
+                        key = "key1",
+                    },
+                },
+                {
+                    input = {
+                        brokers = {
+                            {
+                                host = "127.0.0.1",
                                 port = "9093",
                             },
                         },
@@ -406,6 +428,8 @@ property "broker_list" validation failed: failed to validate 127.0.0.1 (matching
 property "broker_list" validation failed: failed to validate 127.0.0.1 (matching ".*"): expected 0 to be at least 1
 property "broker_list" validation failed: failed to validate 127.0.0.1 (matching ".*"): expected 65536 to be at most 65535
 property "brokers" validation failed: expect array to have at least 1 items
+property "brokers" validation failed: failed to validate item 1: property "port" is required
+property "brokers" validation failed: failed to validate item 1: property "host" is required
 property "brokers" validation failed: failed to validate item 1: property "port" validation failed: wrong type: expected integer, got string
 property "brokers" validation failed: failed to validate item 1: property "port" validation failed: expected 0 to be at least 1
 property "brokers" validation failed: failed to validate item 1: property "port" validation failed: expected 65536 to be at most 65535
