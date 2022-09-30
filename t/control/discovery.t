@@ -61,6 +61,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
+            ngx.sleep(2)
             local json = require("toolkit.json")
             local t = require("lib.test_admin")
 
