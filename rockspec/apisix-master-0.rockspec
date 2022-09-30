@@ -47,7 +47,6 @@ dependencies = {
     "opentracing-openresty = 0.1",
     "lua-resty-radixtree = 2.8.2",
     "lua-protobuf = 0.3.4",
-    "grpc-client-nginx-module = 0.2.2",
     "lua-resty-openidc = 1.7.5",
     "luafilesystem = 1.7.0-2",
     "api7-lua-tinyyaml = 0.4.2",
