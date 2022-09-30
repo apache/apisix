@@ -784,6 +784,17 @@ local function start(env, ...)
               ", the file will be overwritten")
     end
 
+    -- start a new APISIX instance
+
+    local conf_server_sock_path = env.apisix_home .. "/conf/config_listen.sock"
+    if pl_path.exists(conf_server_sock_path) then
+        -- remove stale sock (if exists) so that APISIX can start
+        local ok, err = os_remove(conf_server_sock_path)
+        if not ok then
+            util.die("failed to remove stale conf server sock file, error: ", err)
+        end
+    end
+
     local parser = argparse()
     parser:argument("_", "Placeholder")
     parser:option("-c --config", "location of customized config.yaml")
