@@ -58,6 +58,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
             "conf" : [
                 {"name": "ext-plugin-A", "value": "{\"enable\":\"feature\"}"}
             ]
+        }
     },
     "upstream": {
         "type": "roundrobin",
