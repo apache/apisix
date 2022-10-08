@@ -37,7 +37,7 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 | ---------------------- | ------- | ------ | -------------- | --------------------- | ------------------------------------------------ |
 | broker_list            | object  | 是     |                |                       | 已废弃，现使用 `brokers` 属性代替。原指需要推送的 Kafka 的 broker 列表。                  |
 | brokers                | array   | 是     |                |                       | 需要推送的 Kafka 的 broker 列表。                   |
-| brokers.host           | string  | 是     |                |                       | Kafka broker 的节点 host 配置, 例如 `192.168.1.1`                     |
+| brokers.host           | string  | 是     |                |                       | Kafka broker 的节点 host 配置，例如 `192.168.1.1`                     |
 | brokers.port           | string  | 是     |                |                       | Kafka broker 的节点端口配置                         |
 | kafka_topic            | string  | 是     |                |                       | 需要推送的 topic。                                 |
 | producer_type          | string  | 否     | async          | ["async", "sync"]     | 生产者发送消息的模式。          |
