@@ -32,7 +32,6 @@ With consumer groups, you can define any number of plugins, e.g. rate limiting a
 instead of managing each consumer individually.
 
 While configuring the same plugin for the same route, only one copy of the configuration is valid.
-The order of precedence is `Consumer` > `Consumer Group` > `Route` > `plugin_config` > `Service`.
 
 The example below illustrates how to create a Consumer Group and bind it to a Consumer:
 
@@ -63,13 +62,13 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-When APISIX can't find the Consumer Group with the `group_id`, the Admin API is terminated with a status code of 400.
+When APISIX can't find the Consumer Group with the `group_id`, the Admin API is terminated with a status code of `400`.
 
-If a Consumer already has the `plugins` field configured, the plugins in the Consumer Group will effectively be merged to it. The same plugin in the Consumer Group will not override the ones configured directly in the Consumer.
+If a Consumer already has the `plugins` field configured, the plugins in the Consumer Group will effectively be merged into it. The same plugin in the Consumer Group will not override the one configured directly in the Consumer.
 
-For example, if we configure a Consumer Group as shown below
+For example, if we configure a Consumer Group as shown below:
 
-```
+```json
 {
     "id": "bar",
     "plugins": {
@@ -80,9 +79,9 @@ For example, if we configure a Consumer Group as shown below
 }
 ```
 
-to a Consumer as shown below,
+To a Consumer as shown below.
 
-```
+```json
 {
     "username": "foo",
     "group_id": "bar",
