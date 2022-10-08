@@ -35,7 +35,10 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 
 | 名称                   | 类型    | 必选项 | 默认值          | 有效值                | 描述                                             |
 | ---------------------- | ------- | ------ | -------------- | --------------------- | ------------------------------------------------ |
-| broker_list            | object  | 是     |                |                       | 需要推送的 Kafka 的 broker 列表。                  |
+| broker_list            | object  | 是     |                |                       | 已废弃，现使用 `brokers` 属性代替。原指需要推送的 Kafka 的 broker 列表。                  |
+| brokers                | array   | 是     |                |                       | 需要推送的 Kafka 的 broker 列表。                   |
+| brokers.host           | string  | 是     |                |                       | Kafka broker 的节点 host 配置，例如 `192.168.1.1`                     |
+| brokers.port           | string  | 是     |                |                       | Kafka broker 的节点端口配置                         |
 | kafka_topic            | string  | 是     |                |                       | 需要推送的 topic。                                 |
 | producer_type          | string  | 否     | async          | ["async", "sync"]     | 生产者发送消息的模式。          |
 | required_acks          | integer | 否     | 1              | [0, 1, -1]            | 生产者在确认一个请求发送完成之前需要收到的反馈信息的数量。该参数是为了保证发送请求的可靠性。该属性的配置与 Kafka `acks` 属性相同，具体配置请参考 [Apache Kafka 文档](https://kafka.apache.org/documentation/#producerconfigs_acks)。  |
@@ -162,10 +165,12 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 {
     "plugins": {
        "kafka-logger": {
-           "broker_list" :
-             {
-               "127.0.0.1":9092
-             },
+            "brokers" : [
+              {
+               "host": "127.0.0.1",
+               "port": 9092
+              }
+            ],
            "kafka_topic" : "test2",
            "key" : "key1"
        }
@@ -183,10 +188,16 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 该插件还支持一次推送到多个 Broker，示例如下：
 
 ```json
-{
-    "127.0.0.1":9092,
-    "127.0.0.1":9093
-}
+"brokers" : [
+    {
+      "host" :"127.0.0.1",
+      "port" : 9092
+    },
+    {
+      "host" :"127.0.0.1",
+      "port" : 9093
+    }
+],
 ```
 
 ## 测试插件
