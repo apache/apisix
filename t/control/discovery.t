@@ -27,8 +27,6 @@ our $yaml_config = <<_EOC_;
 apisix:
   enable_control: true
   node_listen: 1984
-deployment:
-    role: data_plane
 discovery:
   eureka:
     host:
@@ -130,8 +128,6 @@ GET /v1/discovery/dns/dump
 apisix:
   enable_control: true
   node_listen: 1984
-deployment:
-  role: data_plane
 discovery:
   consul_kv:
     servers:

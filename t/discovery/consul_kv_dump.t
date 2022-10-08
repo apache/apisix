@@ -358,8 +358,6 @@ success
 apisix:
   node_listen: 1984
   enable_control: true
-deployment:
-  role: data_plane
 discovery:
   consul_kv:
     servers:
@@ -378,8 +376,6 @@ GET /v1/discovery/consul_kv/show_dump_file
 apisix:
   node_listen: 1984
   enable_control: true
-deployment:
-  role: data_plane
 discovery:
   consul_kv:
     servers:

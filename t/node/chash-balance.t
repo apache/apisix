@@ -532,6 +532,8 @@ passed
 GET /t
 --- response_body
 200
+--- error_log
+Connection refused
 
 
 
