@@ -360,3 +360,5 @@ GET /hello;a=b/world;a/;
 GET /t
 --- response_body
 ok
+--- error_log
+failed to normalize

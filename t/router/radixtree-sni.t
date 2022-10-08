@@ -851,3 +851,5 @@ GET /t
 --- response_body
 {"error_msg":"failed to decrypt previous encrypted key"}
 --- error_code: 400
+--- error_log
+decrypt ssl key failed

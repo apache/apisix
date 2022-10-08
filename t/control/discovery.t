@@ -29,8 +29,6 @@ apisix:
   node_listen: 1984
 deployment:
     role: data_plane
-    role_data_plane:
-        config_provider: yaml
 discovery:
   eureka:
     host:
@@ -61,7 +59,6 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            ngx.sleep(2)
             local json = require("toolkit.json")
             local t = require("lib.test_admin")
 
@@ -135,8 +132,6 @@ apisix:
   node_listen: 1984
 deployment:
   role: data_plane
-  role_data_plane:
-    config_provider: yaml
 discovery:
   consul_kv:
     servers:

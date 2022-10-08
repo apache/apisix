@@ -318,6 +318,8 @@ GET /hello
 x-rbac-token: V1#invalid-appid#rbac-token
 --- response_body
 {"message":"Invalid appid in rbac token"}
+--- error_log
+consumer [invalid-appid] not found
 
 
 

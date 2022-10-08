@@ -421,3 +421,5 @@ init_by_lua:26: 404
 GET /t
 --- response_body
 ouch
+--- error_log
+failed to get server_info from etcd

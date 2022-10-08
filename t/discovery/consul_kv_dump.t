@@ -360,8 +360,6 @@ apisix:
   enable_control: true
 deployment:
   role: data_plane
-  role_data_plane:
-    config_provider: yaml
 discovery:
   consul_kv:
     servers:
@@ -382,8 +380,6 @@ apisix:
   enable_control: true
 deployment:
   role: data_plane
-  role_data_plane:
-    config_provider: yaml
 discovery:
   consul_kv:
     servers:

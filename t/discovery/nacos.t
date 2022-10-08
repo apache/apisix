@@ -109,6 +109,8 @@ routes:
 --- request
 GET /hello
 --- error_code: 503
+--- error_log
+no valid upstream node
 
 
 
@@ -154,6 +156,8 @@ routes:
 --- request
 GET /hello
 --- error_code: 503
+--- error_log
+no valid upstream node
 
 
 
@@ -295,6 +299,8 @@ routes:
 --- request
 GET /hello
 --- error_code: 503
+--- error_log
+no valid upstream node
 
 
 
@@ -441,6 +447,8 @@ routes:
 --- request
 GET /hello
 --- error_code: 503
+--- error_log
+no valid upstream node
 
 
 
@@ -589,6 +597,8 @@ routes:
 --- request
 GET /hello
 --- error_code: 503
+--- error_log
+no valid upstream node
 
 
 
@@ -609,6 +619,8 @@ routes:
 --- request
 GET /hello
 --- error_code: 503
+--- error_log
+no valid upstream node
 
 
 
@@ -629,6 +641,8 @@ routes:
 --- request
 GET /hello
 --- error_code: 503
+--- error_log
+no valid upstream node
 
 
 

@@ -251,7 +251,9 @@ connect() failed
 GET /hello
 --- error_code: 502
 --- error_log_like eval
-qr/proxy request to 127.0.0.1:1
+qr/Connection refused
+failed to find valid upstream server
+proxy request to 127.0.0.1:1
 proxy request to 127.0.0.2:1
 |proxy request to 127.0.0.2:1
 proxy request to 127.0.0.1:1/

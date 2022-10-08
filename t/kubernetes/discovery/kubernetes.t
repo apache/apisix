@@ -121,6 +121,8 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
+--- error_log
+not found environment variable
 
 
 
@@ -154,6 +156,8 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
+--- error_log
+not found environment variable
 
 
 
@@ -188,6 +192,8 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
+--- error_log
+not found environment variable
 
 
 
@@ -224,6 +230,8 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
+--- error_log
+not found environment variable
 
 
 
@@ -286,3 +294,5 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
+--- error_log
+failed to get lua_shared_dict

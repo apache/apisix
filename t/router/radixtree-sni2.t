@@ -274,6 +274,8 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to handle cert-key pair[1]: failed to decrypt previous encrypted key"}
+--- error_log
+decrypt ssl key failed
 
 
 
