@@ -38,6 +38,14 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Cache deps
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-deps
+      with:
+        path: deps
+        key: ${{ runner.os }}-${{ env.cache-name }}-centos7-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
+
     - name: Extract branch name
       if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
       id: branch_env
