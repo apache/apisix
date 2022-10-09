@@ -73,10 +73,11 @@ local schema = {
                         description = "sasl config",
                         properties = {
                             mechanism = { type = "string", description = "mechanism", default = "PLAIN" },
+                            user = { type = "string", description = "user" },
                             password =  { type = "string", description = "password" },
-                            user = { type = "string", description = "user" }
                         },
-                        required = {"password", "user"},
+                        required = {"user", "password"},
+                    },
                 },
                 required = {"host", "port"},
             },
@@ -119,11 +120,6 @@ local schema = {
         producer_batch_size = {type = "integer", minimum = 0, default = 1048576},
         producer_max_buffering = {type = "integer", minimum = 1, default = 50000},
         producer_time_linger = {type = "integer", minimum = 1, default = 1},
-        client_ssl = {type = "boolean", default = false},
-        client_ssl_verify = {type = "boolean", default = false},
-        client_socket_timeout = {type = "integer", default = 3000},
-        client_keepalive_timeout = {type = "integer", default = 600},
-        client_keepalive_size = {type = "integer", default = 2}
     },
     oneOf = {
         { required = {"broker_list", "kafka_topic"},},
@@ -241,15 +237,6 @@ function _M.log(conf, ctx)
     local broker_list = core.table.clone(conf.brokers or {})
     local broker_config = {}
 
-<<<<<<< HEAD
-    for host, port in pairs(conf.broker_list) do
-        local broker = {
-            host = host,
-            port = port,
-            sasl_config = conf.sasl_config or nil
-        }
-        core.table.insert(broker_list, broker)
-=======
     if conf.broker_list then
         for host, port in pairs(conf.broker_list) do
             local broker = {
@@ -258,7 +245,6 @@ function _M.log(conf, ctx)
             }
             core.table.insert(broker_list, broker)
         end
->>>>>>> master
     end
 
     broker_config["request_timeout"] = conf.timeout * 1000
@@ -268,11 +254,6 @@ function _M.log(conf, ctx)
     broker_config["batch_size"] = conf.producer_batch_size
     broker_config["max_buffering"] = conf.producer_max_buffering
     broker_config["flush_time"] = conf.producer_time_linger * 1000
-    broker_config["ssl"] = conf.client_ssl
-    broker_config["ssl_verify"] = conf.client_ssl_verify
-    broker_config["socket_timeout"] = conf.client_socket_timeout
-    broker_config["keepalive_timeout"] = conf.client_keepalive_timeout * 1000
-    broker_config["keepalive_size"] = conf.client_keepalive_size
 
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
                                                broker_list, broker_config, conf.cluster_name)
