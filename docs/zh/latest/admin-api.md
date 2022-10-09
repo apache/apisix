@@ -107,6 +107,7 @@ $ curl "http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10" \
 目前支持分页查询的资源如下：
 
 - Consumer
+- Consumer Group
 - Global Rules
 - Plugin Config
 - Proto

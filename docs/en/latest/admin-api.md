@@ -105,6 +105,7 @@ $ curl "http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10" \
 Resources that support paging queries:
 
 - Consumer
+- Consumer Group
 - Global Rules
 - Plugin Config
 - Proto
