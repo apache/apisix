@@ -88,6 +88,8 @@ routes:
 #END
 --- response_body
 dubbo success
+--- error_log
+connect failed
 
 
 

@@ -73,6 +73,8 @@ GET /t
 --- response_body
 {}
 {"fetch_interval":3,"keepalive":true,"prefix":"upstreams","servers":["http://127.0.0.1:8500","http://127.0.0.1:8600"],"timeout":{"connect":2000,"read":2000,"wait":60},"weight":1}
+--- error_log
+connect consul
 
 
 
@@ -112,6 +114,8 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
+--- error_log
+connect consul
 
 
 
@@ -120,6 +124,8 @@ passed
 --- request
 GET /v1/discovery/dns/dump
 --- error_code: 404
+--- error_log
+connect consul
 
 
 
@@ -137,6 +143,8 @@ discovery:
 --- request
 GET /v1/discovery/eureka/dump
 --- error_code: 404
+--- error_log
+connect consul
 
 
 

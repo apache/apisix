@@ -218,6 +218,8 @@ routes:
 GET /hello
 --- response_body_like eval
 qr/server [1-2]/
+--- error_log
+connect consul
 
 
 
@@ -244,6 +246,8 @@ routes:
     "missing consul_kv services\n",
     "missing consul_kv services\n"
 ]
+--- error_log
+fetch nodes failed
 
 
 
@@ -284,6 +288,8 @@ routes:
 GET /hello
 --- response_body eval
 "missing consul_kv services\n"
+--- error_log
+fetch nodes failed
 
 
 
@@ -360,6 +366,8 @@ location /sleep {
     qr/server [1-2]\n/,
     qr/server [1-2]\n/
 ]
+--- error_log
+connect consul
 
 
 
@@ -440,6 +448,8 @@ GET /thc
 --- response_body
 [{"healthy_nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1},{"host":"127.0.0.2","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"upstreams"}]
 {"healthy_nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1},{"host":"127.0.0.2","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"upstreams"}
+--- error_log
+Connection refused
 
 
 
@@ -513,6 +523,8 @@ location /sleep {
     qr/ok\n/,
     qr/server 1\n/
 ]
+--- error_log
+connect consul
 
 
 

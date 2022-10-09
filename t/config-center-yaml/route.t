@@ -231,6 +231,8 @@ routes:
 --- request
 GET /hello
 --- error_code: 404
+--- error_log
+failed to validate the 'vars' expression
 
 
 
@@ -257,6 +259,8 @@ routes:
 --- request
 GET /hello
 --- error_code: 200
+--- error_log
+missing loaded script object
 
 
 
