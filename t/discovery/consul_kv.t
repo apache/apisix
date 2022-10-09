@@ -246,8 +246,6 @@ routes:
     "missing consul_kv services\n",
     "missing consul_kv services\n"
 ]
---- error_log
-fetch nodes failed
 
 
 
@@ -366,8 +364,6 @@ location /sleep {
     qr/server [1-2]\n/,
     qr/server [1-2]\n/
 ]
---- error_log
-connect consul
 
 
 
@@ -523,8 +519,6 @@ location /sleep {
     qr/ok\n/,
     qr/server 1\n/
 ]
---- error_log
-connect consul
 
 
 
