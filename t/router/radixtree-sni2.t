@@ -49,12 +49,10 @@ location /t {
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "sni": "test.com"
-                    },
-                    "key": "/apisix/ssls/1"
-                }
+                "value": {
+                    "sni": "test.com"
+                },
+                "key": "/apisix/ssls/1"
             }]]
         )
         ngx.status = code
@@ -170,14 +168,12 @@ location /t {
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "sni": "*.test2.com"
-                    },
-                    "key": "/apisix/ssls/1"
-                }
+                "value": {
+                    "sni": "*.test2.com"
+                },
+                "key": "/apisix/ssls/1"
             }]]
-            )
+        )
 
         ngx.status = code
         ngx.say(body)
@@ -271,7 +267,7 @@ location /t {
         local code, body = t.test('/apisix/admin/ssls/1',
             ngx.HTTP_PUT,
             core.json.encode(data)
-            )
+        )
 
         ngx.status = code
         ngx.print(body)

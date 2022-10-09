@@ -52,7 +52,7 @@ with open(sys.argv[2]) as f:
     key = f.read()
 sni = sys.argv[3]
 api_key = "edd1c9f034335f136f87ad84b625c8f1"
-resp = requests.put("http://127.0.0.1:9080/apisix/admin/ssls/1", json={
+resp = requests.put("http://127.0.0.1:9180/apisix/admin/ssls/1", json={
     "cert": cert,
     "key": key,
     "snis": [sni],
@@ -68,7 +68,7 @@ print(resp.text)
 ./ssl.py t.crt t.key test.com
 
 # 创建 Router 对象
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/hello",
     "hosts": ["test.com"],
@@ -113,7 +113,7 @@ curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/hello  -vvv
 ```shell
 ./ssl.py t.crt t.key '*.test.com'
 
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/hello",
     "hosts": ["*.test.com"],
@@ -188,8 +188,8 @@ APISIX 目前支持在多处设置 CA 证书，比如 [保护 Admin API](./mtls.
 | foo_ca.crt       | CA 证书  | 签发客户端与 APISIX Admin API 进行 mTLS 通信所需的次级证书。                                                             |
 | foo_client.crt   | 证书     | 由 `foo_ca.crt` 签发，客户端使用，访问 APISIX Admin API 时证明自身身份的证书。                                             |
 | foo_client.key   | 密钥文件  | 由 `foo_ca.crt` 签发，客户端使用，访问 APISIX Admin API 所需的密钥文件。                                                  |
-| foo_server.crt   | 证书     | 由 `foo_ca.crt` 签发，APISIX 使用，对应 `apisix.admin_api_mtls.admin_ssl_cert` 配置项。                                 |
-| foo_server.key   | 密钥文件  | 由 `foo_ca.crt` 签发，APISIX 使用，对应 `apisix.admin_api_mtls.admin_ssl_cert_key` 配置项。                             |
+| foo_server.crt   | 证书     | 由 `foo_ca.crt` 签发，APISIX 使用，对应 `admin_api_mtls.admin_ssl_cert` 配置项。                                 |
+| foo_server.key   | 密钥文件  | 由 `foo_ca.crt` 签发，APISIX 使用，对应 `admin_api_mtls.admin_ssl_cert_key` 配置项。                             |
 | admin.apisix.dev | 域名     | 签发 `foo_server.crt` 证书时使用的 Common Name，客户端通过该域名访问 APISIX Admin API                                     |
 | bar_ca.crt       | CA 证书  | 签发 APISIX 与 ETCD 进行 mTLS 通信所需的次级证书。                                                                       |
 | bar_etcd.crt     | 证书     | 由 `bar_ca.crt` 签发，ETCD 使用，对应 ETCD 启动命令中的 `--cert-file` 选项。                                              |
@@ -225,33 +225,38 @@ goreman -f Procfile-single-enable-mtls start > goreman.log 2>&1 &
 3. 更新 `config.yaml`
 
 ```yaml
+deployment:
+  admin:
+    admin_key
+      - name: admin
+        key: edd1c9f034335f136f87ad84b625c8f1
+        role: admin
+    admin_listen:
+      ip: 127.0.0.1
+      port: 9180
+    https_admin: true
+    admin_api_mtls:
+      admin_ssl_ca_cert: /path/to/apisix.ca-bundle
+      admin_ssl_cert: /path/to/foo_server.crt
+      admin_ssl_cert_key: /path/to/foo_server.key
+
 apisix:
-  admin_key:
-    - name: admin
-      key: edd1c9f034335f136f87ad84b625c8f1
-      role: admin
-  admin_listen:
-    ip: 127.0.0.1
-    port: 9180
-  https_admin: true
-
-  admin_api_mtls:
-    admin_ssl_ca_cert: /path/to/apisix.ca-bundle
-    admin_ssl_cert: /path/to/foo_server.crt
-    admin_ssl_cert_key: /path/to/foo_server.key
-
   ssl:
     ssl_trusted_certificate: /path/to/apisix.ca-bundle
 
-etcd:
-  host:
-    - "https://127.0.0.1:12379"
-    - "https://127.0.0.1:22379"
-    - "https://127.0.0.1:32379"
-  tls:
-    cert: /path/to/bar_apisix.crt
-    key: /path/to/bar_apisix.key
-    sni: etcd.cluster.dev
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "https://127.0.0.1:12379"
+      - "https://127.0.0.1:22379"
+      - "https://127.0.0.1:32379"
+    tls:
+      cert: /path/to/bar_apisix.crt
+      key: /path/to/bar_apisix.key
+      sni: etcd.cluster.dev
 ```
 
 4. 测试 Admin API

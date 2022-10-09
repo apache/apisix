@@ -58,6 +58,8 @@ env {*name*};
 {% end %}
 
 {% if use_apisix_openresty then %}
+thread_pool grpc-client-nginx-module threads=1;
+
 lua {
     {% if enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* meta.lua_shared_dict["prometheus-metrics"] *};
@@ -238,8 +240,11 @@ http {
     lua_shared_dict balancer-ewma-last-touched-at {* http.lua_shared_dict["balancer-ewma-last-touched-at"] *};
     lua_shared_dict etcd-cluster-health-check {* http.lua_shared_dict["etcd-cluster-health-check"] *}; # etcd health check
 
-    {% if enabled_discoveries["kubernetes"] then %}
-    lua_shared_dict kubernetes {* http.lua_shared_dict["kubernetes"] *};
+    # for discovery shared dict
+    {% if discovery_shared_dicts then %}
+    {% for key, size in pairs(discovery_shared_dicts) do %}
+    lua_shared_dict {*key*} {*size*};
+    {% end %}
     {% end %}
 
     {% if enabled_discoveries["tars"] then %}
@@ -280,6 +285,10 @@ http {
     # for openid-connect plugin
     lua_shared_dict jwks {* http.lua_shared_dict["jwks"] *}; # cache for JWKs
     lua_shared_dict introspection {* http.lua_shared_dict["introspection"] *}; # cache for JWT verification results
+    {% end %}
+
+    {% if enabled_plugins["cas-auth"] then %}
+    lua_shared_dict cas_sessions {* http.lua_shared_dict["cas-auth"] *};
     {% end %}
 
     {% if enabled_plugins["authz-keycloak"] then %}
@@ -432,6 +441,11 @@ http {
             dns_resolver = dns_resolver,
         }
         apisix.http_init(args)
+
+        -- set apisix_lua_home into constans module
+        -- it may be used by plugins to determine the work path of apisix
+        local constants = require("apisix.constants")
+        constants.apisix_lua_home = "{*apisix_lua_home*}"
     }
 
     init_worker_by_lua_block {
@@ -484,7 +498,7 @@ http {
     }
     {% end %}
 
-    {% if enable_admin and admin_server_addr then %}
+    {% if enable_admin then %}
     server {
         {%if https_admin then%}
         listen {* admin_server_addr *} ssl;
@@ -621,27 +635,6 @@ http {
             stub_status;
         }
 
-        {% if enable_admin and not admin_server_addr then %}
-        location /apisix/admin {
-            set $upstream_scheme             'http';
-            set $upstream_host               $http_host;
-            set $upstream_uri                '';
-
-            {%if allow_admin then%}
-                {% for _, allow_ip in ipairs(allow_admin) do %}
-                allow {*allow_ip*};
-                {% end %}
-                deny all;
-            {%else%}
-                allow all;
-            {%end%}
-
-            content_by_lua_block {
-                apisix.http_admin()
-            }
-        }
-        {% end %}
-
         {% if ssl.enable then %}
         ssl_certificate_by_lua_block {
             apisix.http_ssl_phase()
@@ -759,6 +752,14 @@ http {
                 apisix.grpc_access_phase()
             }
 
+            {% if use_apisix_openresty then %}
+            # For servers which obey the standard, when `:authority` is missing,
+            # `host` will be used instead. When used with apisix-base, we can do
+            # better by setting `:authority` directly
+            grpc_set_header   ":authority" $upstream_host;
+            {% else %}
+            grpc_set_header   "Host" $upstream_host;
+            {% end %}
             grpc_set_header   Content-Type application/grpc;
             grpc_socket_keepalive on;
             grpc_pass         $upstream_scheme://apisix_backend;

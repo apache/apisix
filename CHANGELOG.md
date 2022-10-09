@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.0.0-beta](#300-beta)
 - [2.15.0](#2150)
 - [2.14.1](#2141)
 - [2.14.0](#2140)
@@ -60,6 +61,157 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.0.0-beta
+
+Here we use 2.99.0 as the version number in the source code instead of the code name
+`3.0.0-beta` for two reasons:
+
+1. avoid unexpected errors when some programs try to compare the
+version, as `3.0.0-beta` contains `3.0.0` and is longer than it.
+2. some package system might not allow package which has a suffix
+after the version number.
+
+### Change
+
+#### Moves the config_center, etcd and Admin API configuration to the deployment
+
+We've adjusted the configuration in the static configuration file, so you need to update the configuration in `config.yaml` as well:
+
+- The `config_center` function is now implemented by `config_provider` under `deployment`: [#7901](https://github.com/apache/apisix/pull/7901)
+- The `etcd` field is moved to `deployment`: [#7860](https://github.com/apache/apisix/pull/7860)
+- The following Admin API configuration is moved to the `admin` field under `deployment`: [#7823](https://github.com/apache/apisix/pull/7823)
+    - admin_key
+    - enable_admin_cors
+    - allow_admin
+    - admin_listen
+    - https_admin
+    - admin_api_mtls
+    - admin_api_version
+
+You can refer to the latest `config-default.yaml` for details.
+
+#### Removing multiple deprecated configurations
+
+With the new 3.0 release, we took the opportunity to clean out many configurations that were previously marked as deprecated.
+
+In the static configuration, we removed several fields as follows:
+
+- Removed `enable_http2` and `listen_port` from `apisix.ssl`: [#7717](https://github.com/apache/apisix/pull/7717)
+- Removed `apisix.port_admin`: [#7716](https://github.com/apache/apisix/pull/7716)
+- Removed `etcd.health_check_retry`: [#7676](https://github.com/apache/apisix/pull/7676)
+- Removed `nginx_config.http.lua_shared_dicts`: [#7677](https://github.com/apache/apisix/pull/7677)
+- Removed `nginx_config.http.real_ip_header`: [#7696](https://github.com/apache/apisix/pull/7696)
+
+In the dynamic configuration, we made the following adjustments:
+
+- Moved `disable` of the plugin configuration under `_meta`: [#7707](https://github.com/apache/apisix/pull/7707)
+- Removed `service_protocol` from the Route: [#7701](https://github.com/apache/apisix/pull/7701)
+
+There are also specific plugin level changes:
+
+- Removed `audience` field from authz-keycloak: [#7683](https://github.com/apache/apisix/pull/7683)
+- Removed `upstream` field from mqtt-proxy: [#7694](https://github.com/apache/apisix/pull/7694)
+- tcp-related configuration placed under the `tcp` field in error-log-logger: [#7700](https://github.com/apache/apisix/pull/7700)
+- Removed `max_retry_times` and `retry_interval` fields from syslog: [#7699](https://github.com/apache/apisix/pull/7699)
+- The `scheme` field has been removed from proxy-rewrite: [#7695](https://github.com/apache/apisix/pull/7695)
+
+#### New Admin API response format
+
+We have adjusted the response format of the Admin API in several PRs as follows:
+
+- [#7630](https://github.com/apache/apisix/pull/7630)
+- [#7622](https://github.com/apache/apisix/pull/7622)
+
+The new response format is shown below:
+
+Returns a single configuration:
+
+```json
+{
+  "modifiedIndex": 2685183,
+  "value": {
+    "id": "1",
+    ...
+  },
+  "key": "/apisix/routes/1",
+  "createdIndex": 2684956
+}
+```
+
+Returns multiple configurations:
+
+```json
+{
+  "list": [
+    {
+      "modifiedIndex": 2685183,
+      "value": {
+        "id": "1",
+        ...
+      },
+      "key": "/apisix/routes/1",
+      "createdIndex": 2684956
+    },
+    {
+      "modifiedIndex": 2685163,
+      "value": {
+        "id": "2",
+        ...
+      },
+      "key": "/apisix/routes/2",
+      "createdIndex": 2685163
+    }
+  ],
+  "total": 2
+}
+```
+
+#### Other
+
+- Port of Admin API changed to 9180: [#7806](https://github.com/apache/apisix/pull/7806)
+- We only support OpenResty 1.19.3.2 and above: [#7625](https://github.com/apache/apisix/pull/7625)
+- Adjusted the priority of the Plugin Config object so that the priority of a plugin configuration with the same name changes from Consumer > Plugin Config > Route > Service to Consumer > Route > Plugin Config > Service: [#7614](https://github. com/apache/apisix/pull/7614)
+
+### Core
+
+- Integrating grpc-client-nginx-module to APISIX: [#7917](https://github.com/apache/apisix/pull/7917)
+- k8s service discovery support for configuring multiple clusters: [#7895](https://github.com/apache/apisix/pull/7895)
+
+### Plugin
+
+- Support for injecting header with specified prefix in opentelemetry plugin: [#7822](https://github.com/apache/apisix/pull/7822)
+- Added openfunction plugin: [#7634](https://github.com/apache/apisix/pull/7634)
+- Added elasticsearch-logger plugin: [#7643](https://github.com/apache/apisix/pull/7643)
+- response-rewrite plugin supports adding response bodies: [#7794](https://github.com/apache/apisix/pull/7794)
+- log-rorate supports specifying the maximum size to cut logs: [#7749](https://github.com/apache/apisix/pull/7749)
+- Added workflow plug-in.
+    - [#7760](https://github.com/apache/apisix/pull/7760)
+    - [#7771](https://github.com/apache/apisix/pull/7771)
+- Added Tencent Cloud Log Service plugin: [#7593](https://github.com/apache/apisix/pull/7593)
+- jwt-auth supports ES256 algorithm: [#7627](https://github.com/apache/apisix/pull/7627)
+- ldap-auth internal implementation, switching from lualdap to lua-resty-ldap: [#7590](https://github.com/apache/apisix/pull/7590)
+- http request metrics within the prometheus plugin supports setting additional labels via variables: [#7549](https://github.com/apache/apisix/pull/7549)
+- The clickhouse-logger plugin supports specifying multiple clickhouse endpoints: [#7517](https://github.com/apache/apisix/pull/7517)
+
+### Bugfix
+
+- gRPC proxy sets :authority request header to configured upstream Host: [#7939](https://github.com/apache/apisix/pull/7939)
+- response-rewrite writing to an empty body may cause AIPSIX to fail to respond to the request: [#7836](https://github.com/apache/apisix/pull/7836)
+- Fix the problem that when using Plugin Config and Consumer at the same time, there is a certain probability that the plugin configuration is not updated: [#7965](https://github.com/apache/apisix/pull/7965)
+- Only reopen log files once when log cutting: [#7869](https://github.com/apache/apisix/pull/7869)
+- Passive health checks should not be enabled by default: [#7850](https://github.com/apache/apisix/pull/7850)
+- The zipkin plugin should pass trace IDs upstream even if it does not sample: [#7833](https://github.com/apache/apisix/pull/7833)
+- Correction of opentelemetry span kind to server: [#7830](https://github.com/apache/apisix/pull/7830)
+- in limit-count plugin, different routes with the same configuration should not share the same counter: [#7750](https://github.com/apache/apisix/pull/7750)
+- Fix occasional exceptions thrown when removing clean_handler: [#7648](https://github.com/apache/apisix/pull/7648)
+- Allow direct use of IPv6 literals when configuring upstream nodes: [#7594](https://github.com/apache/apisix/pull/7594)
+- The wolf-rbac plugin adjusts the way it responds to errors:
+    - [#7561](https://github.com/apache/apisix/pull/7561)
+    - [#7497](https://github.com/apache/apisix/pull/7497)
+- the phases after proxy didn't run when 500 error happens before proxy: [#7703](https://github.com/apache/apisix/pull/7703)
+- avoid error when multiple plugins associated with consumer and have rewrite phase: [#7531](https://github.com/apache/apisix/pull/7531)
+- upgrade lua-resty-etcd to 1.8.3 which fixes various issues: [#7565](https://github.com/apache/apisix/pull/7565)
 
 ## 2.15.0
 

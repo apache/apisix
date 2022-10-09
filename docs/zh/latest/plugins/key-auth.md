@@ -56,7 +56,7 @@ Router 端：
 首先，你可以通过 Admin API 创建一个具有唯一 key 的 Consumer：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers \
+curl http://127.0.0.1:9180/apisix/admin/consumers \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
@@ -85,7 +85,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers \
 创建 Consumer 对象后，你可以创建 Route 进行验证：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -153,7 +153,7 @@ HTTP/1.1 401 Unauthorized
 当你需要禁用 `key-auth` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],

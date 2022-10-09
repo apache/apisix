@@ -42,6 +42,28 @@ services:
     networks:
       apisix_net:
 
+  ## keycloak
+  # The keycloak official has two types of docker images:
+  # * legacy WildFly distribution
+  # * new Quarkus based distribution
+  # Here we choose new version, because it's mainstream and
+  # supports kcadm.sh to init the container for test.
+  # The original keycloak service `apisix_keycloak` is
+  # third-party personal customized image and for OIDC test only.
+  # We should unify both containers in future.
+  apisix_keycloak_new:
+    container_name: apisix_keycloak_new
+    image: quay.io/keycloak/keycloak:18.0.2
+    # use host network because in CAS auth,
+    # keycloak needs to send back-channel POST to apisix.
+    network_mode: host
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    restart: unless-stopped
+    command: ["start-dev", "--http-port 8080"]
+    volumes:
+      - /opt/keycloak-protocol-cas-18.0.2.jar:/opt/keycloak/providers/keycloak-protocol-cas-18.0.2.jar
 
   ## kafka-cluster
   zookeeper-server1:
@@ -196,6 +218,62 @@ services:
       SPLUNK_START_ARGS: "--accept-license"
       SPLUNK_HEC_TOKEN: "BD274822-96AA-4DA6-90EC-18940FB2414C"
       SPLUNK_HEC_SSL: "False"
+
+  # Elasticsearch Logger Service
+  elasticsearch-noauth:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.1
+    restart: unless-stopped
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      discovery.type: single-node
+      xpack.security.enabled: 'false'
+
+  elasticsearch-auth:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.1
+    restart: unless-stopped
+    ports:
+      - "9201:9201"
+      - "9301:9301"
+    environment:
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      discovery.type: single-node
+      ELASTIC_USERNAME: elastic
+      ELASTIC_PASSWORD: 123456
+      http.port: 9201
+      transport.tcp.port: 9301
+      xpack.security.enabled: 'true'
+
+
+  # The function services of OpenFunction
+  test-header:
+    image: test-header-image:latest
+    restart: unless-stopped
+    ports:
+      - "30583:8080"
+    environment:
+      CONTEXT_MODE: "self-host"
+      FUNC_CONTEXT: "{\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}"
+
+  test-uri:
+    image: test-uri-image:latest
+    restart: unless-stopped
+    ports:
+      - "30584:8080"
+    environment:
+      CONTEXT_MODE: "self-host"
+      FUNC_CONTEXT: "{\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}"
+
+  test-body:
+    image: test-body-image:latest
+    restart: unless-stopped
+    ports:
+      - "30585:8080"
+    environment:
+      CONTEXT_MODE: "self-host"
+      FUNC_CONTEXT: "{\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}"
 
 
 networks:

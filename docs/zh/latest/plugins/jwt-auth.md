@@ -84,7 +84,7 @@ Route 端：
 首先，你可以通过 Admin API 创建一个 Consumer：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers \
+curl http://127.0.0.1:9180/apisix/admin/consumers \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
@@ -102,7 +102,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers \
 `jwt-auth` 默认使用 `HS256` 算法，如果使用 `RS256` 算法，需要指定算法，并配置公钥与私钥，示例如下：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers \
+curl http://127.0.0.1:9180/apisix/admin/consumers \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "kerouac",
@@ -122,7 +122,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers \
 创建 Consumer 对象后，你可以创建 Route 进行验证：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -158,7 +158,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 例如，如果你在 Vault 中存储了一个 HS256 签名密钥，可以通过以下方式在 APISIX 中使用它：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers \
+curl http://127.0.0.1:9180/apisix/admin/consumers \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
@@ -186,7 +186,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers \
 对于 RS256，公钥和私钥都应该存储在 Vault 中，可以通过以下方式配置：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers \
+curl http://127.0.0.1:9180/apisix/admin/consumers \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
@@ -207,7 +207,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers \
 你还可以在 Consumer 中配置 `public_key` 并使用存储在 Vault 中的 `private_key`：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers \
+curl http://127.0.0.1:9180/apisix/admin/consumers \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "rico",
@@ -235,7 +235,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers \
 首先，你需要为签发 token 的 API 配置一个 Route，该路由将使用 [public-api](../../../en/latest/plugins/public-api.md) 插件。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/jas \
+curl http://127.0.0.1:9180/apisix/admin/routes/jas \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/apisix/plugin/jwt/sign",
@@ -353,7 +353,7 @@ Accept-Ranges: bytes
 当你需要禁用 `jwt-auth` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],

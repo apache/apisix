@@ -19,21 +19,6 @@
 
 . ./t/cli/common.sh
 
-echo '
-deployment:
-    role: traditional
-    role_traditional:
-        config_provider: etcd
-' > conf/config.yaml
-
-out=$(make init 2>&1 || true)
-if ! echo "$out" | grep 'invalid deployment traditional configuration: property "etcd" is required'; then
-    echo "failed: should check deployment schema during init"
-    exit 1
-fi
-
-echo "passed: should check deployment schema during init"
-
 # HTTP
 echo '
 deployment:
@@ -49,7 +34,7 @@ deployment:
 make run
 sleep 1
 
-code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 make stop
 
 if [ ! $code -eq 200 ]; then
@@ -77,7 +62,7 @@ deployment:
 make run
 sleep 1
 
-code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 make stop
 
 if [ ! $code -eq 200 ]; then
@@ -154,7 +139,7 @@ deployment:
 make run
 sleep 1
 
-code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 make stop
 
 if [ ! $code -eq 200 ]; then

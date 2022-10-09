@@ -39,6 +39,7 @@ local schema = {
             default = "default",
             enum = {"default", "origin"},
         },
+        -- deprecated, use "brokers" instead
         broker_list = {
             type = "object",
             minProperties = 1,
@@ -51,15 +52,35 @@ local schema = {
                 },
             },
         },
-        sasl_config = {
-            type = "object",
-            description = "sasl config",
-            properties = {
-                mechanism = { type = "string", description = "mechanism", default = "PLAIN" },
-                password =  { type = "string", description = "password" },
-                user = { type = "string", description = "user" }
+        brokers = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "object",
+                properties = {
+                    host = {
+                        type = "string",
+                        description = "the host of kafka broker",
+                    },
+                    port = {
+                        type = "integer",
+                        minimum = 1,
+                        maximum = 65535,
+                        description = "the port of kafka broker",
+                    },
+                    sasl_config = {
+                        type = "object",
+                        description = "sasl config",
+                        properties = {
+                            mechanism = { type = "string", description = "mechanism", default = "PLAIN" },
+                            password =  { type = "string", description = "password" },
+                            user = { type = "string", description = "user" }
+                        },
+                        required = {"password", "user"},
+                },
+                required = {"host", "port"},
             },
-            required = {"password", "user"},
+            uniqueItems = true,
         },
         kafka_topic = {type = "string"},
         producer_type = {
@@ -104,7 +125,10 @@ local schema = {
         client_keepalive_timeout = {type = "integer", default = 600},
         client_keepalive_size = {type = "integer", default = 2}
     },
-    required = {"broker_list", "kafka_topic"}
+    oneOf = {
+        { required = {"broker_list", "kafka_topic"},},
+        { required = {"brokers", "kafka_topic"},},
+    }
 }
 
 local metadata_schema = {
@@ -214,9 +238,10 @@ function _M.log(conf, ctx)
     end
 
     -- reuse producer via lrucache to avoid unbalanced partitions of messages in kafka
-    local broker_list = core.table.new(core.table.nkeys(conf.broker_list), 0)
+    local broker_list = core.table.clone(conf.brokers or {})
     local broker_config = {}
 
+<<<<<<< HEAD
     for host, port in pairs(conf.broker_list) do
         local broker = {
             host = host,
@@ -224,6 +249,16 @@ function _M.log(conf, ctx)
             sasl_config = conf.sasl_config or nil
         }
         core.table.insert(broker_list, broker)
+=======
+    if conf.broker_list then
+        for host, port in pairs(conf.broker_list) do
+            local broker = {
+                host = host,
+                port = port
+            }
+            core.table.insert(broker_list, broker)
+        end
+>>>>>>> master
     end
 
     broker_config["request_timeout"] = conf.timeout * 1000

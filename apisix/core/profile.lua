@@ -21,7 +21,7 @@
 
 local _M = {
     version = 0.1,
-    profile = os.getenv("APISIX_PROFILE"),
+    profile = os.getenv("APISIX_PROFILE") or "",
     apisix_home = (ngx and ngx.config.prefix()) or ""
 }
 
@@ -40,7 +40,7 @@ local _M = {
 -- local local_conf_path = profile:yaml_path("config")
 function _M.yaml_path(self, file_name)
     local file_path = self.apisix_home  .. "conf/" .. file_name
-    if self.profile and file_name ~= "config-default" then
+    if self.profile ~= "" and file_name ~= "config-default" then
         file_path = file_path .. "-" .. self.profile
     end
 

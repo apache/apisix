@@ -44,6 +44,12 @@ Server: APISIX/(.*)
 
 === TEST 2: Server header for admin API without token
 --- yaml_config
+deployment:
+    admin:
+        admin_key:
+            - key: a
+              name: a
+              role: admin
 apisix:
   node_listen: 1984
   enable_server_tokens: false
@@ -55,6 +61,12 @@ Server: APISIX
 
 === TEST 3: Version header for admin API (without apikey)
 --- yaml_config
+deployment:
+    admin:
+        admin_key:
+            - key: a
+              name: a
+              role: admin
 apisix:
   admin_api_version: default
 --- error_code: 401
@@ -65,8 +77,13 @@ apisix:
 
 === TEST 4: Version header for admin API (v2)
 --- yaml_config
-apisix:
-  admin_api_version: v2 # default may change
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: ~
+    admin_api_version: v2
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- response_headers
@@ -76,9 +93,31 @@ X-API-VERSION: v2
 
 === TEST 5: Version header for admin API (v3)
 --- yaml_config
-apisix:
-  admin_api_version: v3
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: ~
+    admin_api_version: v3
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- response_headers
 X-API-VERSION: v3
+
+
+
+=== TEST 6: CORS header for admin API
+--- response_headers
+Access-Control-Allow-Origin: *
+
+
+
+=== TEST 7: CORS header disabled for admin API
+--- yaml_config
+deployment:
+    admin:
+        admin_key: ~
+        enable_admin_cors: false
+--- response_headers
+Access-Control-Allow-Origin:

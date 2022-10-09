@@ -27,7 +27,6 @@ apisix:
     node_listen: 1984
     router:
         http: 'radixtree_host_uri'
-    admin_key: null
 _EOC_
 
 run_tests();

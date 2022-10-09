@@ -507,7 +507,7 @@ do
         end
 
         local err
-        etcd_cli, err = etcd_apisix.new()
+        etcd_cli, err = etcd_apisix.switch_proxy()
         return etcd_cli, err
     end
 end

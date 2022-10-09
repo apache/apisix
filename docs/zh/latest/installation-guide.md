@@ -234,8 +234,13 @@ apisix:
 apisix:
   node_listen: 8000 # APISIX listening port
 
-etcd:
-  host: "http://foo:2379" # etcd address
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://foo:2379"
 ```
 
 :::warning
@@ -256,18 +261,19 @@ APISIX 的默认配置可以在 `./conf/config-default.yaml` 文件中看到，�
 请参考如下信息更新配置文件：
 
 ```yaml title="./conf/config.yaml"
-apisix:
-  admin_key
-    -
-      name: "admin"
-      key: newsupersecurekey  # 请修改 key 的值
-      role: admin
+deployment:
+  admin:
+    admin_key
+      -
+        name: "admin"
+        key: newsupersecurekey  # 请修改 key 的值
+        role: admin
 ```
 
 更新完成后，你可以使用新的 key 访问 Admin API：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes?api_key=newsupersecurekey -i
+curl http://127.0.0.1:9180/apisix/admin/routes?api_key=newsupersecurekey -i
 ```
 
 ### 为 APISIX 添加 systemd 配置文件

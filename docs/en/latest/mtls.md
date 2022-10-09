@@ -71,10 +71,14 @@ curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /
 You need to build [APISIX-Base](./FAQ.md#how-do-i-build-the-apisix-base-environment) and configure `etcd.tls` section if you want APISIX to work on an etcd cluster with mTLS enabled.
 
 ```yaml
-etcd:
-  tls:
-    cert: /data/certs/etcd_client.pem       # path of certificate used by the etcd client
-    key: /data/certs/etcd_client.key        # path of key used by the etcd client
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    tls:
+      cert: /data/certs/etcd_client.pem       # path of certificate used by the etcd client
+      key: /data/certs/etcd_client.key        # path of key used by the etcd client
 ```
 
 If APISIX does not trust the CA certificate that used by etcd server, we need to set up the CA certificate.
@@ -128,7 +132,7 @@ if len(sys.argv) >= 5:
         reqParam["client"]["ca"] = clientCert
     if len(sys.argv) >= 6:
         reqParam["client"]["depth"] = int(sys.argv[5])
-resp = requests.put("http://127.0.0.1:9080/apisix/admin/ssls/1", json=reqParam, headers={
+resp = requests.put("http://127.0.0.1:9180/apisix/admin/ssls/1", json=reqParam, headers={
     "X-API-KEY": api_key,
 })
 print(resp.status_code)
@@ -185,7 +189,7 @@ reqParam = {
     },
 }
 
-resp = requests.patch("http://127.0.0.1:9080/apisix/admin/upstreams/"+id, json=reqParam, headers={
+resp = requests.patch("http://127.0.0.1:9180/apisix/admin/upstreams/"+id, json=reqParam, headers={
     "X-API-KEY": api_key,
 })
 print(resp.status_code)

@@ -1,13 +1,25 @@
 {
-  "version": "2.15.0",
+  "version": "2.99.0",
   "sidebar": [
     {
+      "type": "doc",
+      "id": "getting-started"
+    },
+    {
+      "type": "doc",
+      "id": "installation-guide"
+    },
+    {
+      "type": "doc",
+      "id": "architecture-design/apisix"
+    },
+    {
       "type": "category",
-      "label": "Architecture Design",
+      "label": "Tutorials",
       "items": [
-        "architecture-design/apisix",
-        "architecture-design/plugin-config",
-        "architecture-design/debug-mode"
+        "tutorials/expose-api",
+        "tutorials/protect-api",
+        "tutorials/observe-your-api"
       ]
     },
     {
@@ -18,20 +30,13 @@
         "terminology/consumer",
         "terminology/global-rule",
         "terminology/plugin",
+        "terminology/plugin-config",
         "terminology/route",
         "terminology/router",
         "terminology/script",
         "terminology/service",
         "terminology/upstream"
       ]
-    },
-    {
-      "type": "doc",
-      "id": "getting-started"
-    },
-    {
-      "type": "doc",
-      "id": "installation-guide"
     },
     {
       "type": "category",
@@ -153,7 +158,9 @@
                 "plugins/google-cloud-logging",
                 "plugins/splunk-hec-logging",
                 "plugins/file-logger",
-                "plugins/loggly"
+                "plugins/loggly",
+                "plugins/elasticsearch-logger",
+                "plugins/tencent-cloud-cls"
               ]
             }
           ]
@@ -165,12 +172,14 @@
             "plugins/serverless",
             "plugins/azure-functions",
             "plugins/openwhisk",
-            "plugins/aws-lambda"
+            "plugins/aws-lambda",
+            "plugins/workflow",
+            "plugins/openfunction"
           ]
         },
         {
           "type": "category",
-          "label": "其它",
+          "label": "Other protocols",
           "items": [
             "plugins/dubbo-proxy",
             "plugins/mqtt-proxy"
@@ -199,6 +208,22 @@
         {
           "type": "doc",
           "id": "building-apisix"
+        },
+        {
+          "type": "doc",
+          "id": "external-plugin"
+        },
+        {
+          "type": "doc",
+          "id": "CODE_STYLE"
+        },
+        {
+          "type": "doc",
+          "id": "plugin-develop"
+        },
+        {
+          "type": "doc",
+          "id": "debug-mode"
         }
       ]
     },
@@ -221,10 +246,6 @@
             "discovery/control-plane-service-discovery",
             "discovery/kubernetes"
           ]
-        },
-        {
-          "type": "doc",
-          "id": "external-plugin"
         },
         {
           "type": "doc",
@@ -256,6 +277,10 @@
         },
         {
           "type": "doc",
+          "id": "apisix-variable"
+        },
+        {
+          "type": "doc",
           "id": "batch-processor"
         },
         {
@@ -265,14 +290,6 @@
         {
           "type": "doc",
           "id": "install-dependencies"
-        },
-        {
-          "type": "doc",
-          "id": "plugin-develop"
-        },
-        {
-          "type": "doc",
-          "id": "CODE_STYLE"
         },
         {
           "type": "doc",

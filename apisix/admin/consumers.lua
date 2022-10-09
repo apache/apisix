@@ -18,11 +18,11 @@ local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
 local utils   = require("apisix.admin.utils")
 local plugin  = require("apisix.plugin")
-local v3_adapter = require("apisix.admin.v3_adapter")
 local pairs   = pairs
 
 local _M = {
     version = 0.1,
+    need_v3_filter = true,
 }
 
 
@@ -103,7 +103,6 @@ function _M.get(consumer_name)
     end
 
     utils.fix_count(res.body, consumer_name)
-    v3_adapter.filter(res.body)
     return res.status, res.body
 end
 

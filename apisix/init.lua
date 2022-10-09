@@ -55,6 +55,7 @@ local re_split        = require("ngx.re").split
 local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
+local type            = type
 local pairs           = pairs
 local control_api_router
 
@@ -109,6 +110,13 @@ function _M.http_init_worker()
     -- for testing only
     core.log.info("random test in [1, 10000]: ", math.random(1, 10000))
 
+    -- Because go's scheduler doesn't work after fork, we have to load the gRPC module
+    -- in each worker.
+    core.grpc = require("apisix.core.grpc")
+    if type(core.grpc) ~= "table" then
+        core.grpc = nil
+    end
+
     local we = require("resty.worker.events")
     local ok, err = we.configure({shm = "worker-events", interval = 0.1})
     if not ok then
@@ -152,6 +160,9 @@ end
 
 
 function _M.http_exit_worker()
+    -- TODO: we can support stream plugin later - currently there is not `destory` method
+    -- in stream plugins
+    plugin.exit_worker()
     require("apisix.plugins.ext-plugin.init").exit_worker()
 end
 
@@ -759,7 +770,7 @@ end
 
 local function cors_admin()
     local_conf = core.config.local_conf()
-    if local_conf.apisix and not local_conf.apisix.enable_admin_cors then
+    if not core.table.try_read_attr(local_conf, "deployment", "admin", "enable_admin_cors") then
         return
     end
 

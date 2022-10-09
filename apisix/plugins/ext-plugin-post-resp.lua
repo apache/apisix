@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local ext = require("apisix.plugins.ext-plugin.init")
+local helper = require("apisix.plugins.ext-plugin.helper")
 local constants = require("apisix.constants")
 local http = require("resty.http")
 
@@ -100,34 +101,44 @@ local function get_response(ctx, http_obj)
     return res, err
 end
 
+local function send_chunk(chunk)
+    if not chunk then
+        return nil
+    end
 
-local function send_response(res, code)
-    ngx.status = code or res.status
-
-    local reader = res.body_reader
-    repeat
-        local chunk, ok, read_err, print_err, flush_err
-        -- TODO: HEAD or 304
-        chunk, read_err = reader()
-        if read_err then
-            return "read response failed: ".. (read_err or "")
-        end
-
-        if chunk then
-            ok, print_err = ngx_print(chunk)
-            if not ok then
-                return "output response failed: ".. (print_err or "")
-            end
-            ok, flush_err = ngx_flush(true)
-            if not ok then
-                core.log.warn("flush response failed: ", flush_err)
-            end
-        end
-    until not chunk
+    local ok, print_err = ngx_print(chunk)
+    if not ok then
+        return "output response failed: ".. (print_err or "")
+    end
+    local ok, flush_err = ngx_flush(true)
+    if not ok then
+        core.log.warn("flush response failed: ", flush_err)
+    end
 
     return nil
 end
 
+-- TODO: response body is empty (304 or HEAD)
+-- If the upstream returns 304 or the request method is HEAD,
+-- there is no response body. In this case,
+-- we need to send a response to the client in the plugin,
+-- instead of continuing to execute the subsequent plugin.
+local function send_response(ctx, res, code)
+    ngx.status = code or res.status
+
+    local chunks = ctx.runner_ext_response_body
+    if chunks then
+        for i=1, #chunks do
+            local err = send_chunk(chunks[i])
+            if err then
+                return err
+            end
+        end
+        return
+    end
+
+    return helper.response_reader(res.body_reader, send_chunk)
+end
 
 
 function _M.check_schema(conf)
@@ -157,7 +168,7 @@ function _M.before_proxy(conf, ctx)
     core.log.info("ext-plugin will send response")
 
     -- send origin response, status maybe changed.
-    err = send_response(res, code)
+    err = send_response(ctx, res, code)
     close(http_obj)
 
     if err then

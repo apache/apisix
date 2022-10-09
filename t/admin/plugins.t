@@ -78,6 +78,7 @@ csrf
 uri-blocker
 request-validation
 openid-connect
+cas-auth
 authz-casbin
 authz-casdoor
 wolf-rbac
@@ -109,6 +110,7 @@ grpc-web
 public-api
 prometheus
 datadog
+elasticsearch-logger
 echo
 loggly
 http-logger
@@ -123,10 +125,12 @@ syslog
 udp-logger
 file-logger
 clickhouse-logger
+tencent-cloud-cls
 example-plugin
 aws-lambda
 azure-functions
 openwhisk
+openfunction
 serverless-post-function
 ext-plugin-post-req
 ext-plugin-post-resp
@@ -372,10 +376,7 @@ qr/\{"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\
 
 
 === TEST 12: confirm the scope of plugin
---- yaml_config
-apisix:
-  node_listen: 1984
-  admin_key: null
+--- extra_yaml_config
 plugins:
   - batch-requests
   - error-log-logger

@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [3.0.0-beta](#300-beta)
 - [2.15.0](#2150)
 - [2.14.1](#2141)
 - [2.14.0](#2140)
@@ -60,6 +61,155 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.0.0-beta
+
+这里我们使用 `2.99.0` 作为源代码中的版本号，而不是代码名称
+`3.0.0-beta`，有两个原因。
+
+1. 避免在一些程序试图比较版本时出现意外的错误，因为 `3.0.0-beta` 包含 `3.0.0` 并且比它长。
+2. 一些软件包系统可能不允许在版本号后面有一个后缀。
+
+### Change
+
+#### 移动 config_center、etcd 和 Admin API 的配置到 deployment 下面
+
+我们调整了下静态配置文件里面的配置，所以你需要同步更新下 config.yaml 里面的配置了：
+
+- `config_center` 功能改由 `deployment` 下面的 `config_provider` 实现： [#7901](https://github.com/apache/apisix/pull/7901)
+- `etcd` 字段整体搬迁到 `deployment` 下面： [#7860](https://github.com/apache/apisix/pull/7860)
+- 以下的 Admin API 配置移动到 `deployment` 下面的 `admin` 字段：[#7823](https://github.com/apache/apisix/pull/7823)
+    - admin_key
+    - enable_admin_cors
+    - allow_admin
+    - admin_listen
+    - https_admin
+    - admin_api_mtls
+    - admin_api_version
+
+具体可以参考最新的 config-default.yaml。
+
+#### 移除多个已废弃的配置
+
+借着 3.0 新版本的机会，我们把许多之前标记为 deprecated 的配置清理出去。
+
+在静态配置中，我们移除了以下若干字段：
+
+- 移除 `apisix.ssl` 中的 `enable_http2` 和 `listen_port`：[#7717](https://github.com/apache/apisix/pull/7717)
+- 移除 `apisix.port_admin`： [#7716](https://github.com/apache/apisix/pull/7716)
+- 移除 `etcd.health_check_retry`： [#7676](https://github.com/apache/apisix/pull/7676)
+- 移除 `nginx_config.http.lua_shared_dicts`： [#7677](https://github.com/apache/apisix/pull/7677)
+- 移除 `nginx_config.http.real_ip_header`: [#7696](https://github.com/apache/apisix/pull/7696)
+
+在动态配置中，我们做了以下调整：
+
+- 将插件配置的 `disable` 移到 `_meta` 下面：[#7707](https://github.com/apache/apisix/pull/7707)
+- 从 Route 里面移除了 `service_protocol`：[#7701](https://github.com/apache/apisix/pull/7701)
+
+此外还有具体插件级别上的改动：
+
+- authz-keycloak 中移除了 `audience` 字段： [#7683](https://github.com/apache/apisix/pull/7683)
+- mqtt-proxy 中移除了 `upstream` 字段：[#7694](https://github.com/apache/apisix/pull/7694)
+- error-log-logger 中把 tcp 相关配置放到 `tcp` 字段下面：[#7700](https://github.com/apache/apisix/pull/7700)
+- syslog 中移除了 `max_retry_times` 和 `retry_interval` 字段： [#7699](https://github.com/apache/apisix/pull/7699)
+- proxy-rewrite 中移除了 `scheme` 字段： [#7695](https://github.com/apache/apisix/pull/7695)
+
+#### 新的 Admin API 响应格式
+
+我们在以下若干个 PR 中调整了 Admin API 的响应格式：
+
+- [#7630](https://github.com/apache/apisix/pull/7630)
+- [#7622](https://github.com/apache/apisix/pull/7622)
+
+新的响应格式展示如下：
+
+返回单个配置：
+
+```json
+{
+  "modifiedIndex": 2685183,
+  "value": {
+    "id": "1",
+    ...
+  },
+  "key": "/apisix/routes/1",
+  "createdIndex": 2684956
+}
+```
+
+返回多个配置：
+
+```json
+{
+  "list": [
+    {
+      "modifiedIndex": 2685183,
+      "value": {
+        "id": "1",
+        ...
+      },
+      "key": "/apisix/routes/1",
+      "createdIndex": 2684956
+    },
+    {
+      "modifiedIndex": 2685163,
+      "value": {
+        "id": "2",
+        ...
+      },
+      "key": "/apisix/routes/2",
+      "createdIndex": 2685163
+    }
+  ],
+  "total": 2
+}
+```
+
+#### 其他
+
+- Admin API 的端口改为 9180：[#7806](https://github.com/apache/apisix/pull/7806)
+- 我们只支持 OpenResty 1.19.3.2 及以上的版本：[#7625](https://github.com/apache/apisix/pull/7625)
+- 调整了 Plugin Config 对象的优先级，同名插件配置的优先级由 Consumer > Plugin Config > Route > Service 变成 Consumer > Route > Plugin Config > Service： [#7614](https://github.com/apache/apisix/pull/7614)
+
+### Core
+
+- 集成 grpc-client-nginx-module 到 APISIX： [#7917](https://github.com/apache/apisix/pull/7917)
+- k8s 服务发现支持配置多个集群：[#7895](https://github.com/apache/apisix/pull/7895)
+
+### Plugin
+
+- 支持在 opentelemetry 插件里注入指定前缀的 header：[#7822](https://github.com/apache/apisix/pull/7822)
+- 新增 openfunction 插件：[#7634](https://github.com/apache/apisix/pull/7634)
+- 新增 elasticsearch-logger 插件：[#7643](https://github.com/apache/apisix/pull/7643)
+- response-rewrite 插件支持增加响应体：[#7794](https://github.com/apache/apisix/pull/7794)
+- log-rorate 支持指定最大大小来切割日志：[#7749](https://github.com/apache/apisix/pull/7749)
+- 新增 workflow 插件：
+    - [#7760](https://github.com/apache/apisix/pull/7760)
+    - [#7771](https://github.com/apache/apisix/pull/7771)
+- 新增 Tencent Cloud Log Service 插件：[#7593](https://github.com/apache/apisix/pull/7593)
+- jwt-auth 支持 ES256 算法： [#7627](https://github.com/apache/apisix/pull/7627)
+- ldap-auth 内部实现，由 lualdap 换成 lua-resty-ldap：[#7590](https://github.com/apache/apisix/pull/7590)
+- prometheus 插件内的 http request metrics 支持通过变量来设置额外的 labels：[#7549](https://github.com/apache/apisix/pull/7549)
+- clickhouse-logger 插件支持指定多个 clickhouse endpoints: [#7517](https://github.com/apache/apisix/pull/7517)
+
+### Bugfix
+
+- gRPC 代理设置 :authority 请求头为配置的上游 Host： [#7939](https://github.com/apache/apisix/pull/7939)
+- response-rewrite 写入空 body 时有可能导致 AIPSIX 无法响应该请求：[#7836](https://github.com/apache/apisix/pull/7836)
+- 修复同时使用 Plugin Config 和 Consumer，有一定概率发生插件配置没有更新的问题：[#7965](https://github.com/apache/apisix/pull/7965)
+- 日志切割时，只 reopen 一次日志文件：[#7869](https://github.com/apache/apisix/pull/7869)
+- 默认不应开启被动健康检查： [#7850](https://github.com/apache/apisix/pull/7850)
+- zipkin 插件即使不进行 sample，也要向上游传递 trace IDs： [#7833](https://github.com/apache/apisix/pull/7833)
+- 将 opentelemetry 的 span kind 更正为 server: [#7830](https://github.com/apache/apisix/pull/7830)
+- limit-count 插件中，同样配置的不同路由不应该共享同一个计数器：[#7750](https://github.com/apache/apisix/pull/7750)
+- 修复偶发的移除 clean_handler 时抛异常的问题： [#7648](https://github.com/apache/apisix/pull/7648)
+- 允许配置上游节点时直接使用 IPv6 字面量： [#7594](https://github.com/apache/apisix/pull/7594)
+- wolf-rbac 插件调整对错误的响应方式：
+    - [#7561](https://github.com/apache/apisix/pull/7561)
+    - [#7497](https://github.com/apache/apisix/pull/7497)
+- 当代理到上游之前发生 500 错误时，代理到上游之后运行的插件不应被跳过 [#7703](https://github.com/apache/apisix/pull/7703)
+- 当 consumer 上绑定了多个插件且该插件定义了 rewrite 方法时，避免抛出异常 [#7531](https://github.com/apache/apisix/pull/7531)
+- 升级 lua-resty-etcd 到 1.8.3。该版本修复了若干问题。 [#7565](https://github.com/apache/apisix/pull/7565)
 
 ## 2.15.0
 

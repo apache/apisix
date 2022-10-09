@@ -356,6 +356,24 @@ function _M.load(config)
 end
 
 
+function _M.exit_worker()
+    for name, plugin in pairs(local_plugins_hash) do
+        local ty = PLUGIN_TYPE_HTTP
+        if plugin.type == "wasm" then
+            ty = PLUGIN_TYPE_HTTP_WASM
+        end
+        unload_plugin(name, ty)
+    end
+
+    -- we need to load stream plugin so that we can check their schemas in
+    -- Admin API. Maybe we can avoid calling `load` in this case? So that
+    -- we don't need to call `destroy` too
+    for name in pairs(stream_local_plugins_hash) do
+        unload_plugin(name, PLUGIN_TYPE_STREAM)
+    end
+end
+
+
 local function trace_plugins_info_for_debug(ctx, plugins)
     if not enable_debug() then
         return
@@ -637,7 +655,8 @@ function _M.merge_consumer_route(route_conf, consumer_conf, api_ctx)
     core.log.info("route conf: ", core.json.delay_encode(route_conf))
     core.log.info("consumer conf: ", core.json.delay_encode(consumer_conf))
 
-    local flag = tostring(route_conf) .. tostring(consumer_conf)
+    local flag = route_conf.value.id .. "#" .. route_conf.modifiedIndex
+                 .. "#" .. consumer_conf.id .. "#" .. consumer_conf.modifiedIndex
     local new_conf = merged_route(flag, nil,
                         merge_consumer_route, route_conf, consumer_conf)
 

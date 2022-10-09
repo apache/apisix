@@ -21,6 +21,19 @@ repeat_each(1);
 no_long_string();
 no_root_location();
 worker_connections(128);
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!defined $block->extra_yaml_config) {
+        my $extra_yaml_config = <<_EOC_;
+plugins:
+    - error-log-logger
+_EOC_
+        $block->set_value("extra_yaml_config", $extra_yaml_config);
+    }
+});
+
 run_tests;
 
 __DATA__
@@ -56,12 +69,6 @@ done
 
 
 === TEST 2: test unreachable server
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -90,12 +97,6 @@ qr/Batch Processor\[error-log-logger\] failed to process entries: error while se
 
 
 === TEST 3: put plugin metadata and log an error level message
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -126,12 +127,6 @@ qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an error message for test.*\
 
 
 === TEST 4: log a warn level message
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -149,12 +144,6 @@ qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is a warning message for test.*
 
 
 === TEST 5: log some messages
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -173,12 +162,6 @@ qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an error message for test.*\
 
 
 === TEST 6: log an info level message
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -196,12 +179,6 @@ qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an info message for test.*\"
 
 
 === TEST 7: delete metadata for the plugin, recover to the default
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {

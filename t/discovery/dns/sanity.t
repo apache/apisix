@@ -27,8 +27,11 @@ add_block_preprocessor(sub {
         my $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
     enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 discovery:                        # service discovery center
     dns:
         servers:
@@ -70,8 +73,11 @@ __DATA__
 --- yaml_config
 apisix:
     node_listen: 1984
-    config_center: yaml
     enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 discovery:                        # service discovery center
     dns:
         servers:
@@ -114,6 +120,10 @@ upstreams:
       id: 1
 --- response_body
 hello world
+--- grep_error_log eval
+qr/proxy request to \S+/
+--- grep_error_log_out
+proxy request to [0:0:0:0:0:0:0:1]:1980
 
 
 
@@ -127,6 +137,10 @@ upstreams:
       id: 1
 --- response_body
 hello world
+--- grep_error_log eval
+qr/proxy request to \S+/
+--- grep_error_log_out
+proxy request to 127.0.0.1:1980
 
 
 
@@ -147,9 +161,12 @@ failed to query the DNS server
 --- yaml_config
 apisix:
     node_listen: 1984
-    config_center: yaml
     enable_admin: false
     enable_resolv_search_option: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 discovery:                        # service discovery center
     dns:
         servers:
@@ -309,3 +326,115 @@ qr/upstream nodes: \{[^}]+\}/
 qr/upstream nodes: \{("127.0.0.1:1980":60,"127.0.0.2:1980":20|"127.0.0.2:1980":20,"127.0.0.1:1980":60)\}/
 --- response_body
 hello world
+
+
+
+=== TEST 16: prefer A than SRV when A is ahead of SRV in config.yaml
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+discovery:
+    dns:
+        servers:
+            - "127.0.0.1:1053"
+        order:
+            - A
+            - SRV
+--- apisix_yaml
+upstreams:
+    - service_name: "srv-a.test.local"
+      discovery_type: dns
+      type: roundrobin
+      id: 1
+--- error_code: 502
+--- error_log
+proxy request to 127.0.0.1:80
+
+
+
+=== TEST 17: Invalid order type in config.yaml
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+discovery:
+    dns:
+        servers:
+            - "127.0.0.1:1053"
+        order:
+            - B
+            - SRV
+--- apisix_yaml
+upstreams:
+    - service_name: "srv-a.test.local"
+      discovery_type: dns
+      type: roundrobin
+      id: 1
+--- must_die
+--- error_log
+matches none of the enum values
+
+
+
+=== TEST 18: Multiple order type in config.yaml
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+discovery:
+    dns:
+        servers:
+            - "127.0.0.1:1053"
+        order:
+            - SRV
+            - SRV
+--- apisix_yaml
+upstreams:
+    - service_name: "srv-a.test.local"
+      discovery_type: dns
+      type: roundrobin
+      id: 1
+--- must_die
+--- error_log
+expected unique items but items 1 and 2 are equal
+
+
+
+=== TEST 19: invalid order type in config.yaml
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+discovery:
+    dns:
+        servers:
+            - "127.0.0.1:1053"
+        order:
+            - a
+            - SRV
+--- apisix_yaml
+upstreams:
+    - service_name: "srv-a.test.local"
+      discovery_type: dns
+      type: roundrobin
+      id: 1
+--- must_die
+--- error_log
+matches none of the enum values
