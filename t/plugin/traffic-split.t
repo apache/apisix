@@ -705,9 +705,9 @@ GET /t
                         name = "upstream_A",
                         type = "roundrobin",
                         pass_host = "rewrite",
-                        upstream_host = "www.apiseven.com",
+                        upstream_host = "www.test.com",
                         nodes = {
-                          ["www.apiseven.com:80"] = 0
+                          ["www.test.com:1980"] = 0
                         }
                       },
                       weight = 100000
@@ -748,7 +748,7 @@ passed
 GET /
 --- error_code: 200
 --- error_log eval
-qr/dns resolver domain: www.apiseven.com to \d+.\d+.\d+.\d+/
+qr/dns resolver domain: www.test.com to \d+.\d+.\d+.\d+/
 
 
 
