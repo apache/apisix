@@ -641,7 +641,7 @@ passed
 
 
 
-=== TEST 21: hit route, failed to send data to kafka 
+=== TEST 21: hit route, failed to send data to kafka
 --- request
 GET /hello
 --- response_body

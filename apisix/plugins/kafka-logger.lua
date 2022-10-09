@@ -72,7 +72,10 @@ local schema = {
                         type = "object",
                         description = "sasl config",
                         properties = {
-                            mechanism = { type = "string", description = "mechanism", default = "PLAIN" },
+                            mechanism = {
+                                type = "string",
+                                default = "PLAIN"
+                            },
                             user = { type = "string", description = "user" },
                             password =  { type = "string", description = "password" },
                         },
