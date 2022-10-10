@@ -163,3 +163,55 @@ done
 aaa:
 --- no_error_log
 [error]
+
+
+
+=== TEST 8: hold_body_chunk (ngx.arg[2] == true and ngx.arg[1] ~= "")
+--- config
+    location = /t {
+        content_by_lua_block {
+            -- Nginx uses a separate buf to mark the end of the stream,
+            -- hence when ngx.arg[2] == true, ngx.arg[1] will be equal to "".
+            -- To avoid something unexpected, here we add a test to verify
+            -- this situation via mock.
+            local t = ngx.arg
+            local metatable = getmetatable(t)
+            local count = 0
+            setmetatable(t, {__index = function(t, idx)
+                if count == 0 then
+                    if idx == 1 then
+                        return "hello "
+                    end
+                    count = count + 1
+                    return false
+                end
+                if count == 1 then
+                    if idx == 1 then
+                        return "world\n"
+                    end
+                    count = count + 1
+                    return true
+                end
+
+                return metatable.__index(t, idx)
+            end,
+            __newindex = metatable.__newindex})
+
+            -- trigger body_filter_by_lua_block
+            ngx.print("A")
+        }
+        body_filter_by_lua_block {
+            local core = require("apisix.core")
+            local final_body = core.response.hold_body_chunk(ngx.ctx)
+            if not final_body then
+                return
+            end
+            ngx.arg[1] = final_body
+        }
+    }
+--- request
+GET /t
+--- response_body
+hello world
+--- no_error_log
+[error]
