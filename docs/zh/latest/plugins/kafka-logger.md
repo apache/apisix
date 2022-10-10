@@ -41,7 +41,7 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 | brokers.port           | string  | 是     |                |                       | Kafka broker 的节点端口配置                         |
 | brokers.sasl_config    | object  | 否     |                |                       | Kafka broker 中的 sasl_config                     |
 | brokers.sasl_config.mechanism  | string  | 否     | "PLAIN"          | ["PLAIN"]   | Kafka broker 中的 sasl 认证机制                     |
-| brokers.sasl_config.user       | string  | 是     |                  |             | Kafka broker 中 sasl 配置中的 user， 如果 sasl_config 存在，则必须填写                 |
+| brokers.sasl_config.user       | string  | 是     |                  |             | Kafka broker 中 sasl 配置中的 user，如果 sasl_config 存在，则必须填写                 |
 | brokers.sasl_config.password   | string  | 是     |                  |             | Kafka broker 中 sasl 配置中的 password， 如果 sasl_config 存在，则必须填写             |
 | kafka_topic            | string  | 是     |                |                       | 需要推送的 topic。                                 |
 | producer_type          | string  | 否     | async          | ["async", "sync"]     | 生产者发送消息的模式。          |
