@@ -183,21 +183,7 @@ passed
 
 
 
-=== TEST 10: client abort
---- request
-GET /mysleep?seconds=3
---- abort
---- timeout: 0.5
---- ignore_response
---- grep_error_log eval
-qr/(stash|fetch) ngx ctx/
---- grep_error_log_out
-stash ngx ctx
-fetch ngx ctx
-
-
-
-=== TEST 11: check if the phases after proxy are run when 500 happens before proxy
+=== TEST 10: check if the phases after proxy are run when 500 happens before proxy
 --- config
     location /t {
         content_by_lua_block {
@@ -239,7 +225,7 @@ passed
 
 
 
-=== TEST 12: hit
+=== TEST 11: hit
 --- request
 GET /hello
 --- more_headers
