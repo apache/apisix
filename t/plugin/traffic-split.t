@@ -690,6 +690,7 @@ GET /t
 
 
 === TEST 18: host is domain name
+--- FIRST
 --- config
     location /t {
         content_by_lua_block {
@@ -705,9 +706,9 @@ GET /t
                         name = "upstream_A",
                         type = "roundrobin",
                         pass_host = "rewrite",
-                        upstream_host = "www.test.com",
+                        upstream_host = "test.com",
                         nodes = {
-                          ["www.test.com:1980"] = 0
+                          ["test.com:1980"] = 0
                         }
                       },
                       weight = 100000
@@ -744,6 +745,7 @@ passed
 
 
 === TEST 19: domain name resolved successfully
+--- LAST
 --- request
 GET /
 --- error_code: 200

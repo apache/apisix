@@ -37,7 +37,7 @@ __DATA__
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1,
-                                "www.test.com:1980": 0
+                                "test.com:1980": 0
                             },
                             "type": "roundrobin"
                         },
@@ -79,7 +79,7 @@ hello world
 --- no_error_log
 [error]
 --- error_log eval
-qr/dns resolver domain: www.test.com to \d+.\d+.\d+.\d+/
+qr/dns resolver domain: test.com to \d+.\d+.\d+.\d+/
 --- timeout: 10
 
 
