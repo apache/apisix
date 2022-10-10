@@ -690,7 +690,6 @@ GET /t
 
 
 === TEST 18: host is domain name
---- FIRST
 --- config
     location /t {
         content_by_lua_block {
@@ -745,12 +744,11 @@ passed
 
 
 === TEST 19: domain name resolved successfully
---- LAST
 --- request
 GET /
 --- error_code: 200
 --- error_log eval
-qr/dns resolver domain: www.test.com to \d+.\d+.\d+.\d+/
+qr/dns resolver domain: test.com to \d+.\d+.\d+.\d+/
 
 
 
