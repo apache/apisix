@@ -74,7 +74,8 @@ local schema = {
                         properties = {
                             mechanism = {
                                 type = "string",
-                                default = "PLAIN"
+                                default = "PLAIN",
+                                enum = {"PLAIN"},
                             },
                             user = { type = "string", description = "user" },
                             password =  { type = "string", description = "password" },
