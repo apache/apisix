@@ -251,6 +251,7 @@ services:
       transport.tcp.port: 9301
       xpack.security.enabled: 'true'
 
+
   # The function services of OpenFunction
   test-header:
     image: test-header-image:latest
