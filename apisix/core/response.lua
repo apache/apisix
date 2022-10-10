@@ -177,17 +177,6 @@ end
 function _M.hold_body_chunk(ctx, hold_the_copy)
     local body_buffer
     local chunk, eof = arg[1], arg[2]
-    if eof then
-        body_buffer = ctx._body_buffer
-        if not body_buffer then
-            return chunk
-        end
-
-        body_buffer = concat_tab(body_buffer, "", 1, body_buffer.n)
-        ctx._body_buffer = nil
-        return body_buffer
-    end
-
     if type(chunk) == "string" and chunk ~= "" then
         body_buffer = ctx._body_buffer
         if not body_buffer then
@@ -201,6 +190,17 @@ function _M.hold_body_chunk(ctx, hold_the_copy)
             body_buffer.n = n
             body_buffer[n] = chunk
         end
+    end
+
+    if eof then
+        body_buffer = ctx._body_buffer
+        if not body_buffer then
+            return chunk
+        end
+
+        body_buffer = concat_tab(body_buffer, "", 1, body_buffer.n)
+        ctx._body_buffer = nil
+        return body_buffer
     end
 
     if not hold_the_copy then
