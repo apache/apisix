@@ -92,7 +92,7 @@ deployment:
        config_provider: control_plane
        control_plane:
            host:
-               - ${IP}:9280
+               - ${Control_Plane_IP}:9280
            prefix: /apisix
            timeout: 30
     certs:
@@ -120,7 +120,7 @@ deployment:
             client_ca_cert: /path/to/ca-cert
     etcd:
        host:
-           - https://${IP}:${Port}
+           - https://${etcd_IP}:${etcd_Port}
        prefix: /apisix
        timeout: 30
     certs:
@@ -144,7 +144,7 @@ deployment:
             cert_key: /path/to/ca-cert
     etcd:
        host:
-           - https://${IP}:${Port}
+           - https://${etcd_IP}:${etcd_Port}
        prefix: /apisix
        timeout: 30
     certs:
