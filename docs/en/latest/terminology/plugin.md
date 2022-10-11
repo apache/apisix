@@ -27,7 +27,7 @@ This represents the configuration of the plugins that are executed during the HT
 
 :::note
 
-While configuring the same plugin, only one copy of the configuration is valid. The order of precedence is always `Consumer` > `Route` > `Plugin Config` > `Service`.
+While configuring the same plugin, only one copy of the configuration is valid. The order of precedence is always `Consumer` > `Consumer Group` > `Route` > `plugin_config` > `Service`.
 
 :::
 

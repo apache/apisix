@@ -14,31 +14,34 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-return {
-    RPC_ERROR = 0,
-    RPC_PREPARE_CONF = 1,
-    RPC_HTTP_REQ_CALL = 2,
-    RPC_EXTRA_INFO = 3,
-    RPC_HTTP_RESP_CALL = 4,
-    HTTP_ETCD_DIRECTORY = {
-        ["/upstreams"] = true,
-        ["/plugins"] = true,
-        ["/ssls"] = true,
-        ["/stream_routes"] = true,
-        ["/plugin_metadata"] = true,
-        ["/routes"] = true,
-        ["/services"] = true,
-        ["/consumers"] = true,
-        ["/global_rules"] = true,
-        ["/protos"] = true,
-        ["/plugin_configs"] = true,
-        ["/consumer_groups"] = true,
-    },
-    STREAM_ETCD_DIRECTORY = {
-        ["/upstreams"] = true,
-        ["/plugins"] = true,
-        ["/ssls"] = true,
-        ["/stream_routes"] = true,
-        ["/plugin_metadata"] = true,
-    },
+local core = require("apisix.core")
+local plugin_checker = require("apisix.plugin").plugin_checker
+local error = error
+
+
+local consumer_groups
+
+
+local _M = {
 }
+
+
+function _M.init_worker()
+    local err
+    consumer_groups, err = core.config.new("/consumer_groups", {
+        automatic = true,
+        item_schema = core.schema.consumer_group,
+        checker = plugin_checker,
+    })
+    if not consumer_groups then
+        error("failed to sync /consumer_groups: " .. err)
+    end
+end
+
+
+function _M.get(id)
+    return consumer_groups:get(id)
+end
+
+
+return _M

@@ -38,6 +38,7 @@ additional variables.
 | balancer_ip         | core       | The IP of picked upstream server.                                                   | 192.168.1.2    |
 | balancer_port       | core       | The port of picked upstream server.                                                 | 80             |
 | consumer_name       | core       | Username of Consumer.                                                               |                |
+| consumer_group_id   | core       | Group ID of Consumer.                                                               |                |
 | graphql_name        | core       | The [operation name](https://graphql.org/learn/queries/#operation-name) of GraphQL. | HeroComparison |
 | graphql_operation   | core       | The operation type of GraphQL.                                                      | mutation       |
 | graphql_root_fields | core       | The top level fields of GraphQL.                                                    | ["hero"]       |

@@ -105,6 +105,7 @@ $ curl "http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10" \
 Resources that support paging queries:
 
 - Consumer
+- Consumer Group
 - Global Rules
 - Plugin Config
 - Proto
@@ -560,6 +561,7 @@ Consumers are users of services and can only be used in conjunction with a user 
 | Parameter   | Required | Type        | Description                                                                                                        | Example                                          |
 | ----------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
 | username    | True     | Name        | Name of the Consumer.                                                                                              |                                                  |
+| group_id    | False    | Name        | Group of the Consumer.                                                                                              |                                                  |
 | plugins     | False    | Plugin      | Plugins that are executed during the request/response cycle. See [Plugin](terminology/plugin.md) for more. |                                                  |
 | desc        | False    | Auxiliary   | Description of usage scenarios.                                                                                    | customer xxxx                                    |
 | labels      | False    | Match Rules | Attributes of the Consumer specified as key-value pairs.                                                           | {"version":"v2","build":"16","env":"production"} |
@@ -946,6 +948,35 @@ Sets Plugins which run globally. i.e these Plugins will be run before any Route/
 | plugins     | True     | Plugins that are executed during the request/response cycle. See [Plugin](terminology/plugin.md) for more. |            |
 | create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670 |
 | update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670 |
+
+## Consumer group
+
+**API**: /apisix/admin/consumer_groups/{id}
+
+Group of Plugins which can be reused across Consumers.
+
+### Request Methods
+
+| Method | Request URI                              | Request Body | Description                                                                                                                           |
+| ------ | ---------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | /apisix/admin/consumer_groups             | NULL         | Fetches a list of all Consumer groups.                                                                                                 |
+| GET    | /apisix/admin/consumer_groups/{id}        | NULL         | Fetches specified Consumer group by id.                                                                                                |
+| PUT    | /apisix/admin/consumer_groups/{id}        | {...}        | Creates a new Consumer group with the specified id.                                                                                    |
+| DELETE | /apisix/admin/consumer_groups/{id}        | NULL         | Removes the Consumer group with the specified id.                                                                                      |
+| PATCH  | /apisix/admin/consumer_groups/{id}        | {...}        | Updates the selected attributes of the specified, existing Consumer group. To delete an attribute, set value of attribute set to null. |
+| PATCH  | /apisix/admin/consumer_groups/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                         |
+
+### Request Body Parameters
+
+| Parameter   | Required | Description                                                                                                        | Example                                          |
+| ----------- | -------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| plugins     | True     | Plugins that are executed during the request/response cycle. See [Plugin](terminology/plugin.md) for more. |                                                  |
+| desc        | False    | Description of usage scenarios.                                                                                    | customer xxxx                                    |
+| labels      | False    | Attributes of the Consumer group specified as key-value pairs.                                                      | {"version":"v2","build":"16","env":"production"} |
+| create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
+| update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
+
+[Back to TOC](#table-of-contents)
 
 ## Plugin config
 
