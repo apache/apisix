@@ -142,7 +142,8 @@ function _M.check_schema(conf)
     end
 
     if not conf.bearer_only and not conf.session then
-        core.log.warn("when bearer_only = false, you'd better complete the session configuration manually")
+        core.log.warn("when bearer_only = false, " ..
+                       "you'd better complete the session configuration manually")
         conf.session = {
             -- generate a secret when bearer_only = false and no secret is configured
             secret = ngx_encode_base64(random.bytes(32, true) or random.bytes(32))
