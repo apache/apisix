@@ -58,7 +58,7 @@ deployment:
             port: 9180
     etcd:
        host:
-           - http://${IP}:${Port}
+           - http://${etcd_IP}:${etcd_Port}
        prefix: /apisix
        timeout: 30
 ```
@@ -93,6 +93,7 @@ deployment:
        control_plane:
            host:
                - ${IP}:9280
+           prefix: /apisix
            timeout: 30
     certs:
         cert: /path/to/ca-cert
@@ -110,7 +111,7 @@ The example below shows the configuration of an APISIX instance as control plane
 ```yaml title="conf/config.yaml"
 deployment:
     role: control_plane
-    role_control_plan:
+    role_control_plane:
         config_provider: etcd
         conf_server:
             listen: 0.0.0.0:9280
@@ -135,7 +136,7 @@ As OpenResty <= 1.21.4 does not support sending mTLS requests, to accept connect
 ```yaml title="conf/config.yaml"
 deployment:
     role: control_plane
-    role_control_plan:
+    role_control_plane:
         config_provider: etcd
         conf_server:
             listen: 0.0.0.0:9280
