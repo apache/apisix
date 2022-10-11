@@ -913,6 +913,11 @@ OIDC introspection failed: invalid token
                 ngx.say(err)
             end
 
+            -- ensure session secret generated when bearer_only = false
+            -- then remove it from table, because it's a random value that I cannot verify it by response body
+            assert(s.session and s.session.secret, "no session secret generated")
+            s.session = nil
+
             ngx.say(json.encode(s))
         }
     }
