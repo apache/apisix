@@ -288,8 +288,7 @@ routes:
 GET /hello
 --- response_body eval
 "missing consul_kv services\n"
---- error_log eval
-qr/.*/
+--- ignore_error_log
 
 
 
@@ -366,8 +365,7 @@ location /sleep {
     qr/server [1-2]\n/,
     qr/server [1-2]\n/
 ]
---- error_log eval
-qr/.*/
+--- ignore_error_log
 
 
 
@@ -523,8 +521,7 @@ location /sleep {
     qr/ok\n/,
     qr/server 1\n/
 ]
---- error_log eval
-qr/.*/
+--- ignore_error_log
 
 
 
