@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   performance:
-    if: github.event_name == 'pull_request' && github.event.label.name == 'performance'
+    if: ${{ startsWith(github.event.pull_request.title, 'perf:') }}
     runs-on: ubuntu-20.04
     timeout-minutes: 45
 
