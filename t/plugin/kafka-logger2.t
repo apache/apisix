@@ -406,6 +406,53 @@ qr/not found topic, retryable: true, topic: undefined_topic, partition_id: -1/
                         key = "key1",
                     },
                 },
+                {
+                    input = {
+                        brokers = {
+                            {
+                                host = "127.0.0.1",
+                                port = 9093,
+                                sasl_config = {
+                                    mechanism = "INVALID",
+                                    user = "admin",
+                                    password = "admin-secret",
+                                },
+                            },
+                        },
+                        kafka_topic = "test",
+                        key = "key1",
+                    },
+                },
+                {
+                    input = {
+                        brokers = {
+                            {
+                                host = "127.0.0.1",
+                                port = 9093,
+                                sasl_config = {
+                                    user = "admin",
+                                },
+                            },
+                        },
+                        kafka_topic = "test",
+                        key = "key1",
+                    },
+                },
+                {
+                    input = {
+                        brokers = {
+                            {
+                                host = "127.0.0.1",
+                                port = 9093,
+                                sasl_config = {
+                                    password = "admin-secret",
+                                },
+                            },
+                        },
+                        kafka_topic = "test",
+                        key = "key1",
+                    },
+                },
             }
 
             local plugin = require("apisix.plugins.kafka-logger")
@@ -433,6 +480,9 @@ property "brokers" validation failed: failed to validate item 1: property "host"
 property "brokers" validation failed: failed to validate item 1: property "port" validation failed: wrong type: expected integer, got string
 property "brokers" validation failed: failed to validate item 1: property "port" validation failed: expected 0 to be at least 1
 property "brokers" validation failed: failed to validate item 1: property "port" validation failed: expected 65536 to be at most 65535
+property "brokers" validation failed: failed to validate item 1: property "sasl_config" validation failed: property "mechanism" validation failed: matches none of the enum values
+property "brokers" validation failed: failed to validate item 1: property "sasl_config" validation failed: property "password" is required
+property "brokers" validation failed: failed to validate item 1: property "sasl_config" validation failed: property "user" is required
 
 
 
