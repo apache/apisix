@@ -92,7 +92,7 @@ deployment:
        config_provider: control_plane
        control_plane:
            host:
-               - ${Control_Plane_IP}:9280
+               - https://${Control_Plane_IP}:9280
            prefix: /apisix
            timeout: 30
     certs:
