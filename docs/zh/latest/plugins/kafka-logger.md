@@ -39,6 +39,10 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 | brokers                | array   | 是     |                |                       | 需要推送的 Kafka 的 broker 列表。                   |
 | brokers.host           | string  | 是     |                |                       | Kafka broker 的节点 host 配置，例如 `192.168.1.1`                     |
 | brokers.port           | string  | 是     |                |                       | Kafka broker 的节点端口配置                         |
+| brokers.sasl_config    | object  | 否     |                |                       | Kafka broker 中的 sasl_config                     |
+| brokers.sasl_config.mechanism  | string  | 否     | "PLAIN"          | ["PLAIN"]   | Kafka broker 中的 sasl 认证机制                     |
+| brokers.sasl_config.user       | string  | 是     |                  |             | Kafka broker 中 sasl 配置中的 user，如果 sasl_config 存在，则必须填写                 |
+| brokers.sasl_config.password   | string  | 是     |                  |             | Kafka broker 中 sasl 配置中的 password，如果 sasl_config 存在，则必须填写             |
 | kafka_topic            | string  | 是     |                |                       | 需要推送的 topic。                                 |
 | producer_type          | string  | 否     | async          | ["async", "sync"]     | 生产者发送消息的模式。          |
 | required_acks          | integer | 否     | 1              | [0, 1, -1]            | 生产者在确认一个请求发送完成之前需要收到的反馈信息的数量。该参数是为了保证发送请求的可靠性。该属性的配置与 Kafka `acks` 属性相同，具体配置请参考 [Apache Kafka 文档](https://kafka.apache.org/documentation/#producerconfigs_acks)。  |
