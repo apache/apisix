@@ -37,6 +37,7 @@ APISIX 除了支持 [NGINX 变量](http://nginx.org/en/docs/varindex.html)外，
 | balancer_ip         | core       | 上游服务器的 IP 地址。                                                            | 192.168.1.2      |
 | balancer_port       | core       | 上游服务器的端口。                                                                | 80               |
 | consumer_name       | core       | 消费者的名称。                                                                    |                  |
+| consumer_group_id   | core       | 消费者所在的组的 ID。                                                            |                  |
 | graphql_name        | core       | GraphQL 的 [operation name](https://graphql.org/learn/queries/#operation-name)。 | HeroComparison   |
 | graphql_operation   | core       | GraphQL 的操作类型。                                                              | mutation         |
 | graphql_root_fields | core       | GraphQL 最高级别的字段。                                                          | ["hero"]          |
