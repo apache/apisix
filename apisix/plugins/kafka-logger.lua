@@ -68,6 +68,20 @@ local schema = {
                         maximum = 65535,
                         description = "the port of kafka broker",
                     },
+                    sasl_config = {
+                        type = "object",
+                        description = "sasl config",
+                        properties = {
+                            mechanism = {
+                                type = "string",
+                                default = "PLAIN",
+                                enum = {"PLAIN"},
+                            },
+                            user = { type = "string", description = "user" },
+                            password =  { type = "string", description = "password" },
+                        },
+                        required = {"user", "password"},
+                    },
                 },
                 required = {"host", "port"},
             },
@@ -109,7 +123,7 @@ local schema = {
         producer_batch_num = {type = "integer", minimum = 1, default = 200},
         producer_batch_size = {type = "integer", minimum = 0, default = 1048576},
         producer_max_buffering = {type = "integer", minimum = 1, default = 50000},
-        producer_time_linger = {type = "integer", minimum = 1, default = 1}
+        producer_time_linger = {type = "integer", minimum = 1, default = 1},
     },
     oneOf = {
         { required = {"broker_list", "kafka_topic"},},
