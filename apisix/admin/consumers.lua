@@ -62,6 +62,22 @@ local function check_conf(username, conf)
         end
     end
 
+    if conf.group_id then
+        local key = "/consumer_groups/" .. conf.group_id
+        local res, err = core.etcd.get(key)
+        if not res then
+            return nil, {error_msg = "failed to fetch consumer group info by "
+                                     .. "consumer group id [" .. conf.group_id .. "]: "
+                                     .. err}
+        end
+
+        if res.status ~= 200 then
+            return nil, {error_msg = "failed to fetch consumer group info by "
+                                     .. "consumer group id [" .. conf.group_id .. "], "
+                                     .. "response code: " .. res.status}
+        end
+    end
+
     return conf.username
 end
 

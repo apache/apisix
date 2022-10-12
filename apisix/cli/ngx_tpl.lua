@@ -287,6 +287,10 @@ http {
     lua_shared_dict introspection {* http.lua_shared_dict["introspection"] *}; # cache for JWT verification results
     {% end %}
 
+    {% if enabled_plugins["cas-auth"] then %}
+    lua_shared_dict cas_sessions {* http.lua_shared_dict["cas-auth"] *};
+    {% end %}
+
     {% if enabled_plugins["authz-keycloak"] then %}
     # for authz-keycloak
     lua_shared_dict access-tokens {* http.lua_shared_dict["access-tokens"] *}; # cache for service account access tokens
@@ -748,6 +752,14 @@ http {
                 apisix.grpc_access_phase()
             }
 
+            {% if use_apisix_openresty then %}
+            # For servers which obey the standard, when `:authority` is missing,
+            # `host` will be used instead. When used with apisix-base, we can do
+            # better by setting `:authority` directly
+            grpc_set_header   ":authority" $upstream_host;
+            {% else %}
+            grpc_set_header   "Host" $upstream_host;
+            {% end %}
             grpc_set_header   Content-Type application/grpc;
             grpc_socket_keepalive on;
             grpc_pass         $upstream_scheme://apisix_backend;

@@ -45,10 +45,6 @@ See [External Plugin](../external-plugin.md) to learn more.
 
 Execution of External Plugins will affect the response of the current request.
 
-External Plugin does not yet support getting request context information.
-
-External Plugin does not yet support getting the response body of an upstream response.
-
 :::
 
 ## Attributes
@@ -71,6 +67,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
             "conf" : [
                 {"name": "ext-plugin-A", "value": "{\"enable\":\"feature\"}"}
             ]
+        }
     },
     "upstream": {
         "type": "roundrobin",

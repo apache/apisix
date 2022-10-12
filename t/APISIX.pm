@@ -189,6 +189,19 @@ my $grpc_location = <<_EOC_;
                 apisix.grpc_access_phase()
             }
 
+_EOC_
+
+if ($version =~ m/\/apisix-nginx-module/) {
+    $grpc_location .= <<_EOC_;
+            grpc_set_header   ":authority" \$upstream_host;
+_EOC_
+} else {
+    $grpc_location .= <<_EOC_;
+            grpc_set_header   "Host" \$upstream_host;
+_EOC_
+}
+
+$grpc_location .= <<_EOC_;
             grpc_set_header   Content-Type application/grpc;
             grpc_socket_keepalive on;
             grpc_pass         \$upstream_scheme://apisix_backend;
@@ -480,6 +493,11 @@ _EOC_
 
     $block->set_value("main_config", $main_config);
 
+    # The new directive is introduced here to modify the schema
+    # before apisix validate in require("apisix")
+    # Todo: merge extra_init_by_lua_start and extra_init_by_lua
+    my $extra_init_by_lua_start = $block->extra_init_by_lua_start // "";
+
     my $extra_init_by_lua = $block->extra_init_by_lua // "";
     my $init_by_lua_block = $block->init_by_lua_block // <<_EOC_;
     if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
@@ -488,6 +506,8 @@ _EOC_
     end
 
     require "resty.core"
+
+    $extra_init_by_lua_start
 
     apisix = require("apisix")
     local args = {
@@ -533,6 +553,7 @@ _EOC_
     lua_shared_dict tars 1m;
     lua_shared_dict xds-config 1m;
     lua_shared_dict xds-config-version 1m;
+    lua_shared_dict cas_sessions 10m;
 
     proxy_ssl_name \$upstream_host;
     proxy_ssl_server_name on;

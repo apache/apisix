@@ -30,6 +30,7 @@ local core            = require("apisix.core")
 local conf_server     = require("apisix.conf_server")
 local plugin          = require("apisix.plugin")
 local plugin_config   = require("apisix.plugin_config")
+local consumer_group  = require("apisix.consumer_group")
 local script          = require("apisix.script")
 local service_fetch   = require("apisix.http.service").get
 local admin_init      = require("apisix.admin.init")
@@ -55,6 +56,7 @@ local re_split        = require("ngx.re").split
 local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
+local type            = type
 local pairs           = pairs
 local control_api_router
 
@@ -112,6 +114,9 @@ function _M.http_init_worker()
     -- Because go's scheduler doesn't work after fork, we have to load the gRPC module
     -- in each worker.
     core.grpc = require("apisix.core.grpc")
+    if type(core.grpc) ~= "table" then
+        core.grpc = nil
+    end
 
     local we = require("resty.worker.events")
     local ok, err = we.configure({shm = "worker-events", interval = 0.1})
@@ -143,6 +148,7 @@ function _M.http_init_worker()
     require("apisix.http.service").init_worker()
     plugin_config.init_worker()
     require("apisix.consumer").init_worker()
+    consumer_group.init_worker()
 
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()
@@ -442,9 +448,21 @@ function _M.http_access_phase()
         plugin.run_plugin("rewrite", plugins, api_ctx)
         if api_ctx.consumer then
             local changed
+            local group_conf
+
+            if api_ctx.consumer.group_id then
+                group_conf = consumer_group.get(api_ctx.consumer.group_id)
+                if not group_conf then
+                    core.log.error("failed to fetch consumer group config by ",
+                        "id: ", api_ctx.consumer.group_id)
+                    return core.response.exit(503)
+                end
+            end
+
             route, changed = plugin.merge_consumer_route(
                 route,
                 api_ctx.consumer,
+                group_conf,
                 api_ctx
             )
 

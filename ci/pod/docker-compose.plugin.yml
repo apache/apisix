@@ -42,6 +42,28 @@ services:
     networks:
       apisix_net:
 
+  ## keycloak
+  # The keycloak official has two types of docker images:
+  # * legacy WildFly distribution
+  # * new Quarkus based distribution
+  # Here we choose new version, because it's mainstream and
+  # supports kcadm.sh to init the container for test.
+  # The original keycloak service `apisix_keycloak` is
+  # third-party personal customized image and for OIDC test only.
+  # We should unify both containers in future.
+  apisix_keycloak_new:
+    container_name: apisix_keycloak_new
+    image: quay.io/keycloak/keycloak:18.0.2
+    # use host network because in CAS auth,
+    # keycloak needs to send back-channel POST to apisix.
+    network_mode: host
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    restart: unless-stopped
+    command: ["start-dev", "--http-port 8080"]
+    volumes:
+      - /opt/keycloak-protocol-cas-18.0.2.jar:/opt/keycloak/providers/keycloak-protocol-cas-18.0.2.jar
 
   ## kafka-cluster
   zookeeper-server1:
@@ -82,17 +104,20 @@ services:
   kafka-server2:
     image: bitnami/kafka:2.8.1
     env_file:
-      - ci/pod/kafka/kafka-server/env/common.env
+      - ci/pod/kafka/kafka-server/env/common2.env
     environment:
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper-server2:2181
     restart: unless-stopped
     ports:
       - "19092:9092"
+      - "19094:9094"
     depends_on:
       - zookeeper-server1
       - zookeeper-server2
     networks:
       kafka_net:
+    volumes:
+      - ./ci/pod/kafka/kafka-server/kafka_jaas.conf:/opt/bitnami/kafka/config/kafka_jaas.conf:ro
 
   ## SkyWalking
   skywalking:

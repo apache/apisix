@@ -1,5 +1,5 @@
 {
-  "version": "2.15.0",
+  "version": "2.99.0",
   "sidebar": [
     {
       "type": "doc",
@@ -12,6 +12,15 @@
     {
       "type": "doc",
       "id": "architecture-design/apisix"
+    },
+    {
+      "type": "category",
+      "label": "Tutorials",
+      "items": [
+        "tutorials/expose-api",
+        "tutorials/protect-api",
+        "tutorials/observe-your-api"
+      ]
     },
     {
       "type": "category",

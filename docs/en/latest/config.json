@@ -1,5 +1,5 @@
 {
-  "version": "2.15.0",
+  "version": "2.99.0",
   "sidebar": [
     {
       "type": "doc",
@@ -15,9 +15,11 @@
     },
     {
       "type": "category",
-      "label": "How-to Guides",
+      "label": "Tutorials",
       "items": [
-        "how-to-guides/observe-your-api"
+        "tutorials/expose-api",
+        "tutorials/protect-api",
+        "tutorials/observe-your-api"
       ]
     },
     {
@@ -26,6 +28,7 @@
       "items": [
         "terminology/api-gateway",
         "terminology/consumer",
+        "terminology/consumer-group",
         "terminology/global-rule",
         "terminology/plugin",
         "terminology/plugin-config",
@@ -78,6 +81,7 @@
             "plugins/authz-casdoor",
             "plugins/wolf-rbac",
             "plugins/openid-connect",
+            "plugins/cas-auth",
             "plugins/hmac-auth",
             "plugins/authz-casbin",
             "plugins/ldap-auth",

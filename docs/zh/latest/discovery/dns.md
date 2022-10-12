@@ -61,9 +61,22 @@ discovery:
 
 注意所有来自 `test.consul.service` 的 IP 都有相同的权重。
 
-解析的记录将根据它们的 TTL 来进行缓存。
-对于记录不在缓存中的服务，我们将按照 `SRV -> A -> AAAA -> CNAME` 的顺序进行查询。
-刷新缓存记录时，我们将从上次成功的类型开始尝试。
+解析的记录将根据它们的 TTL 来进行缓存。对于记录不在缓存中的服务，我们将默认按照 `SRV -> A -> AAAA -> CNAME` 的顺序进行查询，刷新缓存记录时，我们将从上次成功的类型开始尝试。也可以通过修改配置文件来自定义 DNS 的解析顺序。
+
+```yaml
+# 添加到 config.yaml
+discovery:
+   dns:
+     servers:
+       - "127.0.0.1:8600"          # 使用 DNS 服务器的真实地址
+     order:                        # DNS 解析的顺序
+       - last                      # "last" 表示从上次成功的类型开始
+       - SRV
+       - A
+       - AAAA
+       - CNAME
+
+```
 
 如果你想指定 upstream 服务器的端口，可以把以下内容添加到 `service_name`：
 
