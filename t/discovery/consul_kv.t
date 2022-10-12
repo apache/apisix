@@ -218,8 +218,7 @@ routes:
 GET /hello
 --- response_body_like eval
 qr/server [1-2]/
---- error_log
-connect consul
+--- ignore_error_log
 
 
 
@@ -246,8 +245,7 @@ routes:
     "missing consul_kv services\n",
     "missing consul_kv services\n"
 ]
---- error_log
-fetch nodes failed
+--- ignore_error_log
 
 
 
@@ -446,8 +444,7 @@ GET /thc
 --- response_body
 [{"healthy_nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1},{"host":"127.0.0.2","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"upstreams"}]
 {"healthy_nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1},{"host":"127.0.0.2","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"upstreams"}
---- error_log
-Connection refused
+--- ignore_error_log
 
 
 
