@@ -188,6 +188,22 @@ function _M.http_ssl_phase()
 end
 
 
+local function stash_ngx_ctx()
+    local ref = ctxdump.stash_ngx_ctx()
+    core.log.info("stash ngx ctx: ", ref)
+    ngx_var.ctx_ref = ref
+end
+
+
+local function fetch_ctx()
+    local ref = ngx_var.ctx_ref
+    core.log.info("fetch ngx ctx: ", ref)
+    local ctx = ctxdump.apply_ngx_ctx(ref)
+    ngx_var.ctx_ref = ''
+    return ctx
+end
+
+
 local function parse_domain_in_route(route)
     local nodes = route.value.upstream.nodes
     local new_nodes, err = upstream_util.parse_domain_for_nodes(nodes)
@@ -430,10 +446,6 @@ function _M.http_access_phase()
     api_ctx.route_id = route.value.id
     api_ctx.route_name = route.value.name
 
-    local ref = ctxdump.stash_ngx_ctx()
-    core.log.info("stash ngx ctx: ", ref)
-    ngx_var.ctx_ref = ref
-
     -- run global rule
     plugin.run_global_rules(api_ctx, router.global_rules, nil)
 
@@ -577,21 +589,14 @@ function _M.http_access_phase()
 
     local up_scheme = api_ctx.upstream_scheme
     if up_scheme == "grpcs" or up_scheme == "grpc" then
+        stash_ngx_ctx()
         return ngx.exec("@grpc_pass")
     end
 
     if api_ctx.dubbo_proxy_enabled then
+        stash_ngx_ctx()
         return ngx.exec("@dubbo_pass")
     end
-end
-
-
-local function fetch_ctx()
-    local ref = ngx_var.ctx_ref
-    core.log.info("fetch ngx ctx: ", ref)
-    local ctx = ctxdump.apply_ngx_ctx(ref)
-    ngx_var.ctx_ref = ''
-    return ctx
 end
 
 
@@ -642,16 +647,6 @@ end
 
 
 function _M.http_header_filter_phase()
-    if ngx_var.ctx_ref ~= '' then
-        -- prevent for the table leak
-        local stash_ctx = fetch_ctx()
-
-        -- internal redirect, so we should apply the ctx
-        if ngx_var.from_error_page == "true" then
-            ngx.ctx = stash_ctx
-        end
-    end
-
     core.response.set_header("Server", ver_header)
 
     local up_status = get_var("upstream_status")
@@ -737,16 +732,6 @@ end
 
 
 function _M.http_log_phase()
-    if ngx_var.ctx_ref ~= '' then
-        -- prevent for the table leak
-        local stash_ctx = fetch_ctx()
-
-        -- internal redirect, so we should apply the ctx
-        if ngx_var.from_error_page == "true" then
-            ngx.ctx = stash_ctx
-        end
-    end
-
     local api_ctx = common_phase("log")
     if not api_ctx then
         return
