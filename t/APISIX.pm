@@ -565,8 +565,6 @@ _EOC_
     lua_socket_log_errors off;
     client_body_buffer_size 8k;
 
-    error_page 500 \@50x.html;
-
     variables_hash_bucket_size 128;
 
     upstream apisix_backend {
@@ -643,21 +641,6 @@ _EOC_
 
             more_clear_headers Date;
         }
-
-        # this configuration is needed as error_page is configured in http block
-        location \@50x.html {
-            set \$from_error_page 'true';
-            content_by_lua_block {
-                require("apisix.error_handling").handle_500()
-            }
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
-        }
     }
 
     $a6_ngx_directives
@@ -733,20 +716,6 @@ _EOC_
             }
         }
 
-        location \@50x.html {
-            set \$from_error_page 'true';
-            content_by_lua_block {
-                require("apisix.error_handling").handle_500()
-            }
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
-        }
-
         location /v1/ {
             content_by_lua_block {
                 apisix.http_control()
@@ -762,7 +731,6 @@ _EOC_
             set \$upstream_host               \$http_host;
             set \$upstream_uri                '';
             set \$ctx_ref                     '';
-            set \$from_error_page             '';
 
             set \$upstream_cache_zone            off;
             set \$upstream_cache_key             '';
