@@ -447,7 +447,7 @@ git checkout conf/config.yaml
 make init
 
 grep -E "worker_cpu_affinity" conf/nginx.conf > /dev/null
-if [ ! $? -eq 0 ]; then
+if [ ! $? -eq 1 ]; then
     echo "failed: nginx.conf file is missing worker_cpu_affinity configuration"
     exit 1
 fi
