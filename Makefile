@@ -460,3 +460,29 @@ ci-env-down:
 	@$(call func_echo_status, "$@ -> [ Start ]")
 	$(ENV_DOCKER_COMPOSE) down
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
+
+### run-dev: APISIX dev build x86
+.PHONY:build-dev
+build-dev:
+		docker build -f Dockerfile -t apisix-dev .
+
+### run-dev: APISIX dev build arm
+.PHONY:build-dev-arm
+build-dev-arm:
+		docker build -f Dockerfile-arm -t apisix-dev .
+
+.PHONY:run-dev
+run-dev:
+		docker run -d --name etcd-apisix --net=host pachyderm/etcd:v3.5.2
+		docker run -id --name apisix-dev -v $(CURDIR):/usr/local/apisix --net=host apisix-dev:latest
+		docker exec -it apisix-dev bash -c "make deps"
+
+### test-dev: Run APISIX test case
+.PHONY:test-dev
+test-dev:
+		docker exec -it apisix-dev bash -c "prove $(files)"
+
+### stop-dev: STOP APISIX dev
+.PHONY:stop-dev
+stop-dev:
+		docker stop apisix-dev etcd-apisix && docker rm apisix-dev etcd-apisix
