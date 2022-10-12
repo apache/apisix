@@ -448,11 +448,11 @@ make init
 
 grep -E "worker_cpu_affinity" conf/nginx.conf > /dev/null
 if [ ! $? -eq 1 ]; then
-    echo "failed: nginx.conf file is missing worker_cpu_affinity configuration"
+    echo "failed: nginx.conf file is contains worker_cpu_affinity configuration"
     exit 1
 fi
 
-echo "passed: nginx.conf file contains worker_cpu_affinity configuration"
+echo "passed: nginx.conf file missing worker_cpu_affinity configuration"
 
 # check the 'worker_shutdown_timeout' in 'nginx.conf' .
 
@@ -564,7 +564,7 @@ nginx_config:
 make init
 
 count=`grep -c "worker_cpu_affinity" conf/nginx.conf  || true`
-if [ $count -ne 0 ]; then
+if [ $count -ne 1 ]; then
     echo "failed: nginx.conf file found worker_cpu_affinity when disable it"
     exit 1
 fi
