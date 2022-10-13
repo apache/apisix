@@ -59,7 +59,7 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 | set_userinfo_header                  | boolean | 否     | true                  | [true, false] | 是否将用户信息对象设置到请求头参数 `X-Userinfo`。                                                    |
 | set_refresh_token_header             | boolean | 否     | false                 |               | 当设置为 `true` 并且刷新令牌可用时，则会将该属性设置在`X-Refresh-Token`请求头中。                      |
 | session                              | object  | 否     |                       |               | 当设置 bearer_only 为 false 时，openid-connect 插件将使用 Authorization Code 在 IDP 上进行认证，因此你必须设置 session 相关设置。 |
-| session.secret                       | string  | 是     | 自动生成               | 16个以上字符  | 用于 session 加密和 HMAC 计算的密钥。 |
+| session.secret                       | string  | 是     | 自动生成               | 16 个以上字符  | 用于 session 加密和 HMAC 计算的密钥。 |
 
 ## 使用场景
 
@@ -73,7 +73,7 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 
 1. 应用之间认证授权：将 `bearer_only` 设置为 `true`，并配置 `introspection_endpoint` 或 `public_key` 属性。该场景下，请求头（Header）中没有令牌或无效令牌的请求将被拒绝。
 
-2. 浏览器中认证授权：将 `bearer_only` 设置为 `false`。认证成功后，该插件可获得并管理 Cookie 中的令牌，后续请求将使用该令牌。在这种模式中，用户会话将作为cookie存储在浏览器中，这些数据是加密的，因此你必须通过 `session.secret` 设置一个密钥用于加密。
+2. 浏览器中认证授权：将 `bearer_only` 设置为 `false`。认证成功后，该插件可获得并管理 Cookie 中的令牌，后续请求将使用该令牌。在这种模式中，用户会话将作为 Cookie 存储在浏览器中，这些数据是加密的，因此你必须通过 `session.secret` 设置一个密钥用于加密。
 
 ### 令牌内省
 
