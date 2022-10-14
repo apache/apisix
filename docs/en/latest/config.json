@@ -208,6 +208,10 @@
       "label": "Development",
       "items": [
         {
+          "type":"doc",
+          "id": "build-apisix-dev"
+        },
+        {
           "type": "doc",
           "id": "building-apisix"
         },
