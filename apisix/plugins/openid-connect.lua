@@ -63,7 +63,8 @@ local schema = {
             properties = {
                 secret = {
                     type = "string",
-                    description = "the key used for the HMAC calculation"
+                    description = "the key used for the encrypt and HMAC calculation",
+                    minLength = 16,
                 },
             },
             required = {"secret"},
