@@ -448,7 +448,7 @@ make init
 
 count=`grep -c "worker_cpu_affinity" conf/nginx.conf  || true`
 if [ $count -ne 0 ]; then
-    echo "failed: nginx.conf file found worker_cpu_affinity when disable it"
+    echo "failed: nginx.conf file found worker_cpu_affinity when disabling it"
     exit 1
 fi
 
