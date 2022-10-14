@@ -752,6 +752,9 @@ passed
 
 
 === TEST 25: access
+--- extra_yaml_config
+plugins:
+  - kafka-logger
 --- request
 GET /hello
 --- response_body
