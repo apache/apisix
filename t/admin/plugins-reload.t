@@ -26,10 +26,6 @@ workers(2);
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if (!defined $block->no_error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     $block;
 });
 
