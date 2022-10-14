@@ -53,7 +53,7 @@ rerun_flaky_tests() {
     fi
 
     echo "Rerun $(echo "$tests" | xargs)"
-    FLUSH_ETCD=1 prove -I./test-nginx/lib -I./ $(echo "$tests" | xargs)
+    FLUSH_ETCD=1 prove --timer -I./test-nginx/lib -I./ $(echo "$tests" | xargs)
 }
 
 install_grpcurl () {

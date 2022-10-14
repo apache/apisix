@@ -449,7 +449,7 @@ end
 
 function _M._well_known_openid_configuration()
     local t = require("lib.test_admin")
-    local openid_data = t.read_file("t/plugin/openid-configuration.json")
+    local openid_data = t.read_file("t/plugin/openid-connect/configuration.json")
     ngx.say(openid_data)
 end
 
