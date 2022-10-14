@@ -452,7 +452,7 @@ if [ $count -ne 0 ]; then
     exit 1
 fi
 
-echo "passed: nginx.conf file disable cpu affinity"
+echo "passed: nginx.conf file disables cpu affinity"
 
 # check the 'worker_shutdown_timeout' in 'nginx.conf' .
 
