@@ -36,38 +36,45 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: sanity (bearer_only = true)
+=== TEST 1: sanity
 --- config
     location /t {
         content_by_lua_block {
-            local case = {client_id = "a", client_secret = "b", discovery = "c", bearer_only = true}
-            local ok, err = require("apisix.plugins.openid-connect").check_schema(case)
-            assert(not case.session, "not expect session was generated")
-        }
-    }
+            local test_cases = {
+                {
+                    name = "sanity (bearer_only = true)",
+                    data = {client_id = "a", client_secret = "b", discovery = "c", bearer_only = true},
+                    cb = function(ok, err, case)
+                        assert(ok and not case.session, "not expect session was generated")
+                    end,
+                },
+                {
+                    name = "sanity (bearer_only = false)",
+                    data = {client_id = "a", client_secret = "b", discovery = "c", bearer_only = false},
+                    cb = function(ok, err, case)
+                        assert(ok and case.session and case.session.secret, "no session secret generated")
+                    end,
+                },
+                {
+                    name = "sanity (bearer_only = false, user-set secret, less than 16 charactors)",
+                    data = {client_id = "a", client_secret = "b", discovery = "c", bearer_only = false, session = {secret = "test"}},
+                    cb = function(ok, err, case)
+                        assert(not ok and err == "property \"session\" validation failed: property \"secret\" validation failed: string too short, expected at least 16, got 4", "too short key passes validation")
+                    end,
+                },
+                {
+                    name = "sanity (bearer_only = false, user-set secret, more than 16 charactors)",
+                    data = {client_id = "a", client_secret = "b", discovery = "c", bearer_only = false, session = {secret = "test_secret_more_than_16"}},
+                    cb = function(ok, err, case)
+                        assert(ok and case.session and case.session.secret and case.session.secret == "test_secret_more_than_16", "user-set secret is incorrect")
+                    end,
+                },
+            }
 
-
-
-=== TEST 2: sanity (bearer_only = false)
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local case = {client_id = "a", client_secret = "b", discovery = "c", bearer_only = false}
-            local ok, err = require("apisix.plugins.openid-connect").check_schema(case)
-            assert(ok and case.session and case.session.secret, "no session secret generated")
-        }
-    }
-
-
-
-=== TEST 3: sanity (bearer_only = false, user-set secret)
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local case = {client_id = "a", client_secret = "b", discovery = "c", bearer_only = false, session = {secret = "test"}}
-            local ok, err = require("apisix.plugins.openid-connect").check_schema(case)
-            assert(ok and case.session and case.session.secret and case.session.secret == "test", "user-set secret is incorrect")
+            local plugin = require("apisix.plugins.openid-connect")
+            for _, case in ipairs(test_cases) do
+                local ok, err = plugin.check_schema(case.data)
+                case.cb(ok, err, case.data)
+            end
         }
     }
