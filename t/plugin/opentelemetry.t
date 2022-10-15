@@ -553,6 +553,7 @@ plugin_attr:
 --- extra_init_by_lua
     local core = require("apisix.core")
     local otlp = require("opentelemetry.trace.exporter.otlp")
+    local span_kind = require("opentelemetry.trace.span_kind")
     otlp.export_spans = function(self, spans)
         if (#spans ~= 1) then
             ngx.log(ngx.ERR, "unexpected spans length: ", #spans)
@@ -562,6 +563,12 @@ plugin_attr:
         local span = spans[1]
         if span:context().trace_id ~= "01010101010101010101010101010101" then
             ngx.log(ngx.ERR, "unexpected trace id: ", span:context().trace_id)
+            return
+        end
+
+        local current_span_kind = span:plain().kind
+        if current_span_kind ~= span_kind.server then
+            ngx.log(ngx.ERR, "expected span.kind to be server but got ", current_span_kind)
             return
         end
 

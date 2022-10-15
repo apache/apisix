@@ -43,19 +43,16 @@ so that we can delete it later)
                     "desc": "new upstream"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin",
-                            "desc": "new upstream"
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/admin_up"
+                        "type": "roundrobin",
+                        "desc": "new upstream"
                     },
-                    "action": "set"
+                    "key": "/apisix/upstreams/admin_up"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -85,19 +82,16 @@ passed
                  ngx.HTTP_GET,
                  nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin",
-                            "desc": "new upstream"
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/admin_up"
+                        "type": "roundrobin",
+                        "desc": "new upstream"
                     },
-                    "action": "get"
+                    "key": "/apisix/upstreams/admin_up"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -117,13 +111,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/upstreams/admin_up',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+            local code, message = t('/apisix/admin/upstreams/admin_up', ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -141,13 +129,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code = t('/apisix/admin/upstreams/not_found',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+            local code = t('/apisix/admin/upstreams/not_found', ngx.HTTP_DELETE)
 
             ngx.say("[delete] code: ", code)
         }
@@ -176,17 +158,14 @@ GET /t
                     "type": "roundrobin"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin"
-                        }
-                    },
-                    "action": "create"
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    }
                 }]]
-                )
+            )
 
             if code ~= 200 then
                 ngx.status = code
@@ -196,20 +175,14 @@ GET /t
 
             ngx.say("[push] code: ", code, " message: ", message)
 
-            local id = string.sub(res.node.key, #"/apisix/upstreams/" + 1)
+            local id = string.sub(res.key, #"/apisix/upstreams/" + 1)
             local res = assert(etcd.get('/upstreams/' .. id))
             local create_time = res.body.node.value.create_time
             assert(create_time ~= nil, "create_time is nil")
             local update_time = res.body.node.value.update_time
             assert(update_time ~= nil, "update_time is nil")
 
-            code, message = t('/apisix/admin/upstreams/' .. id,
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+            code, message = t('/apisix/admin/upstreams/' .. id, ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -236,7 +209,7 @@ GET /t
                     },
                     "type": "roundrobin"
                 }]]
-                )
+            )
 
             ngx.exit(code)
         }
@@ -263,7 +236,7 @@ GET /t
                     },
                     "type": "roundrobin"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -294,18 +267,15 @@ GET /t
                     "type": "roundrobin"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin"
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/1"
+                        "type": "roundrobin"
                     },
-                    "action": "set"
+                    "key": "/apisix/upstreams/1"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -334,7 +304,7 @@ passed
                     },
                     "type": "roundrobin"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -364,7 +334,7 @@ GET /t
                     },
                     "type": "roundrobin"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -396,7 +366,7 @@ GET /t
                     "_service_name": "xyz",
                     "_discovery_type": "nacos"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -426,19 +396,16 @@ passed
                     "type": "chash"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "key": "remote_addr",
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "chash"
+                    "value": {
+                        "key": "remote_addr",
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/1"
+                        "type": "chash"
                     },
-                    "action": "set"
+                    "key": "/apisix/upstreams/1"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -467,7 +434,7 @@ passed
                     },
                     "type": "unknown"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -496,7 +463,7 @@ passed
                     },
                     "type": "chash"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -518,15 +485,15 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "id": 1,
                     "nodes": {
                         "127.0.0.1:8080": -100
                     },
                     "type": "chash"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -548,14 +515,14 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
                     "type": "chash"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -577,14 +544,14 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_POST,
-                 [[{
+                ngx.HTTP_POST,
+                [[{
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
                     "type": "roundrobin"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -606,15 +573,15 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams',
-                 ngx.HTTP_POST,
-                 [[{
+                ngx.HTTP_POST,
+                [[{
                     "id": 1,
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
                     "type": "roundrobin"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -651,9 +618,9 @@ GET /t
                 }
             }
             local code, body = t.test('/apisix/admin/upstreams',
-                 ngx.HTTP_POST,
-                 core.json.encode(data)
-                )
+                ngx.HTTP_POST,
+                core.json.encode(data)
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -686,9 +653,9 @@ qr/{"error_msg":"invalid configuration: property \\\"tls\\\" validation failed: 
                 }
             }
             local code, body = t.test('/apisix/admin/upstreams',
-                 ngx.HTTP_POST,
-                 core.json.encode(data)
-                )
+                ngx.HTTP_POST,
+                core.json.encode(data)
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -717,7 +684,7 @@ GET /t
                 cert = ssl_cert,
                 key = ssl_key
             }
-            local code, body = t.test('/apisix/admin/ssl/1',
+            local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 json.encode(data)
             )

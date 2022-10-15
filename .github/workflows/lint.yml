@@ -1,6 +1,6 @@
 name: ❄️ Lint
 
-on: [pull_request]
+on: [push, pull_request]
 
 permissions:
   contents: read
@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code.
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
       - name: spell check
         run: |
           pip install codespell==2.1.0
@@ -29,10 +29,10 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
 
       - name: Setup Nodejs env
-        uses: actions/setup-node@v3.4.1
+        uses: actions/setup-node@v3.5.1
         with:
           node-version: '12'
 

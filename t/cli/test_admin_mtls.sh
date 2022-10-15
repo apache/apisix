@@ -22,14 +22,15 @@
 # The 'admin.apisix.dev' is injected by ci/common.sh@set_coredns
 
 echo '
-apisix:
-    port_admin: 9180
-    https_admin: true
-
-    admin_api_mtls:
-        admin_ssl_cert: "../t/certs/mtls_server.crt"
-        admin_ssl_cert_key: "../t/certs/mtls_server.key"
-        admin_ssl_ca_cert: "../t/certs/mtls_ca.crt"
+deployment:
+    admin:
+        admin_listen:
+            port: 9180
+        https_admin: true
+        admin_api_mtls:
+            admin_ssl_cert: "../t/certs/mtls_server.crt"
+            admin_ssl_cert_key: "../t/certs/mtls_server.key"
+            admin_ssl_ca_cert: "../t/certs/mtls_ca.crt"
 
 ' > conf/config.yaml
 

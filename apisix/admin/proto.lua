@@ -21,12 +21,12 @@ local utils = require("apisix.admin.utils")
 local get_routes = require("apisix.router").http_routes
 local get_services = require("apisix.http.service").services
 local compile_proto = require("apisix.plugins.grpc-transcode.proto").compile_proto
-local v3_adapter = require("apisix.admin.v3_adapter")
 local tostring = tostring
 
 
 local _M = {
     version = 0.1,
+    need_v3_filter = true,
 }
 
 
@@ -70,7 +70,7 @@ function _M.put(id, conf)
         return 400, err
     end
 
-    local key = "/proto/" .. id
+    local key = "/protos/" .. id
 
     local ok, err = utils.inject_conf_with_prev_conf("proto", key, conf)
     if not ok then
@@ -88,7 +88,7 @@ end
 
 
 function _M.get(id)
-    local key = "/proto"
+    local key = "/protos"
     if id then
         key = key .. "/" .. id
     end
@@ -100,7 +100,6 @@ function _M.get(id)
     end
 
     utils.fix_count(res.body, id)
-    v3_adapter.filter(res.body)
     return res.status, res.body
 end
 
@@ -111,7 +110,7 @@ function _M.post(id, conf)
         return 400, err
     end
 
-    local key = "/proto"
+    local key = "/protos"
     utils.inject_timestamp(conf)
     local res, err = core.etcd.push(key, conf)
     if not res then
@@ -183,7 +182,7 @@ function _M.delete(id)
     end
     core.log.info("proto delete service ref check pass: ", id)
 
-    local key = "/proto/" .. id
+    local key = "/protos/" .. id
     -- core.log.info("key: ", key)
     local res, err = core.etcd.delete(key)
     if not res then

@@ -1,5 +1,12 @@
 ---
 title: splunk-hec-logging
+keywords:
+  - APISIX
+  - API 网关
+  - 插件
+  - Splunk
+  - 日志
+description: API 网关 Apache APISIX 的 splunk-hec-logging 插件可用于将请求日志转发到 Splunk HTTP 事件收集器（HEC）中进行分析和存储。
 ---
 
 <!--
@@ -23,32 +30,32 @@ title: splunk-hec-logging
 
 ## 描述
 
-`splunk-hec-logging` 插件用于将 `Apache APISIX` 的请求日志转发到 `Splunk HTTP 事件收集器（HEC）` 中进行分析和存储，启用该插件后 `Apache APISIX` 将在 `Log Phase` 获取请求上下文信息并序列化为 [Splunk Event Data 格式](https://docs.splunk.com/Documentation/Splunk/latest/Data/FormateventsforHTTPEventCollector#Event_metadata) 后提交到批处理队列中，当触发批处理队列每批次最大处理容量或刷新缓冲区的最大时间时会将队列中的数据提交到 `Splunk HEC` 中。
+`splunk-hec-logging` 插件可用于将请求日志转发到 Splunk HTTP 事件收集器（HEC）中进行分析和存储。
 
-有关 `Apache APISIX` 的 `Batch-Processor` 的更多信息，请参考：
-[Batch-Processor](../batch-processor.md)
+启用该插件后，APISIX 将在 `Log Phase` 获取请求上下文信息，并将其序列化为 [Splunk Event Data 格式](https://docs.splunk.com/Documentation/Splunk/latest/Data/FormateventsforHTTPEventCollector#Event_metadata) 后提交到批处理队列中，当触发批处理队列每批次最大处理容量或刷新缓冲区的最大时间时会将队列中的数据提交到 `Splunk HEC` 中。
 
 ## 属性
 
-| 名称                  | 是否必需 | 默认值                                                                                                                                                                                         | 描述                                                                                                                                                           |
-| ----------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| endpoint                | 必选   |                                                                                                                                                                                                   | Splunk HEC 端点配置信息                                                                                                                                     |
-| endpoint.uri            | 必选   |                                                                                                                                                                                                   | Splunk HEC 事件收集 API                                                                                                                                     |
-| endpoint.token          | 必选   |                                                                                                                                                                                                   | Splunk HEC 身份令牌                                                                                                                                        |
-| endpoint.channel        | 可选   |                                                                                                                                                                                                   | Splunk HEC 发送渠道标识，参考：[About HTTP Event Collector Indexer Acknowledgment](https://docs.splunk.com/Documentation/Splunk/8.2.3/Data/AboutHECIDXAck)   |
-| endpoint.timeout        | 可选   | 10                                                                                                                                                                                                | Splunk HEC 数据提交超时时间（以秒为单位）|
-| ssl_verify              | 可选   | true                                                                                                                                                                                              | 启用 `SSL` 验证，参考：[OpenResty 文档](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake)                                                    |
+| 名称                | 必选项  | 默认值 | 描述                                                                                                                                                               |
+| ------------------  | ------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| endpoint            | 是     |        | Splunk HEC 端点配置信息。                                                                                                                                            |
+| endpoint.uri        | 是     |        | Splunk HEC 事件收集 API。                                                                                                                                            |
+| endpoint.token      | 是     |        | Splunk HEC 身份令牌。                                                                                                                                                |
+| endpoint.channel    | 否     |        | Splunk HEC 发送渠道标识，更多信息请参考 [About HTTP Event Collector Indexer Acknowledgment](https://docs.splunk.com/Documentation/Splunk/8.2.3/Data/AboutHECIDXAck)。 |
+| endpoint.timeout    | 否     | 10     | Splunk HEC 数据提交超时时间（以秒为单位）。                                                                                                                             |
+| ssl_verify          | 否     | true   | 当设置为 `true` 时，启用 `SSL` 验证。                                                                                                                                 |
 
-本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
+本插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免该插件频繁地提交数据。默认情况下每 `5` 秒钟或队列中的数据达到 `1000` 条时，批处理器会自动提交数据，如需了解更多信息或自定义配置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
-## 如何开启
+## 启用插件
 
-下面例子展示了如何为指定路由开启 `splunk-hec-logging` 插件。
+以下示例展示了如何在指定路由上启用该插件：
 
-### 完整配置
+**完整配置**
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins":{
         "splunk-hec-logging":{
@@ -75,10 +82,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-### 最小化配置
+**最小化配置**
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins":{
         "splunk-hec-logging":{
@@ -100,25 +108,29 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-* 向配置 `splunk-hec-logging` 插件的路由发送请求
+你可以通过以下命令向 APISIX 发出请求：
 
 ```shell
-$ curl -i http://127.0.0.1:9080/splunk.do?q=hello
+curl -i http://127.0.0.1:9080/splunk.do?q=hello
+```
+
+```
 HTTP/1.1 200 OK
 ...
 hello, world
 ```
 
-* 登录 Splunk 控制台检索查看日志
+访问成功后，你可以登录 Splunk 控制台检索查看日志：
 
 ![splunk hec search view](../../../assets/images/plugin/splunk-hec-admin-cn.png)
 
 ## 禁用插件
 
-禁用 `splunk-hec-logging` 插件非常简单，只需将 `splunk-hec-logging` 对应的 `JSON` 配置移除即可。
+当你需要禁用该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

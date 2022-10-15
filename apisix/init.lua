@@ -30,6 +30,7 @@ local core            = require("apisix.core")
 local conf_server     = require("apisix.conf_server")
 local plugin          = require("apisix.plugin")
 local plugin_config   = require("apisix.plugin_config")
+local consumer_group  = require("apisix.consumer_group")
 local script          = require("apisix.script")
 local service_fetch   = require("apisix.http.service").get
 local admin_init      = require("apisix.admin.init")
@@ -55,6 +56,7 @@ local re_split        = require("ngx.re").split
 local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
+local type            = type
 local pairs           = pairs
 local control_api_router
 
@@ -109,6 +111,13 @@ function _M.http_init_worker()
     -- for testing only
     core.log.info("random test in [1, 10000]: ", math.random(1, 10000))
 
+    -- Because go's scheduler doesn't work after fork, we have to load the gRPC module
+    -- in each worker.
+    core.grpc = require("apisix.core.grpc")
+    if type(core.grpc) ~= "table" then
+        core.grpc = nil
+    end
+
     local we = require("resty.worker.events")
     local ok, err = we.configure({shm = "worker-events", interval = 0.1})
     if not ok then
@@ -139,6 +148,7 @@ function _M.http_init_worker()
     require("apisix.http.service").init_worker()
     plugin_config.init_worker()
     require("apisix.consumer").init_worker()
+    consumer_group.init_worker()
 
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()
@@ -152,6 +162,9 @@ end
 
 
 function _M.http_exit_worker()
+    -- TODO: we can support stream plugin later - currently there is not `destory` method
+    -- in stream plugins
+    plugin.exit_worker()
     require("apisix.plugins.ext-plugin.init").exit_worker()
 end
 
@@ -172,6 +185,22 @@ function _M.http_ssl_phase()
         end
         ngx_exit(-1)
     end
+end
+
+
+local function stash_ngx_ctx()
+    local ref = ctxdump.stash_ngx_ctx()
+    core.log.info("stash ngx ctx: ", ref)
+    ngx_var.ctx_ref = ref
+end
+
+
+local function fetch_ctx()
+    local ref = ngx_var.ctx_ref
+    core.log.info("fetch ngx ctx: ", ref)
+    local ctx = ctxdump.apply_ngx_ctx(ref)
+    ngx_var.ctx_ref = ''
+    return ctx
 end
 
 
@@ -431,9 +460,21 @@ function _M.http_access_phase()
         plugin.run_plugin("rewrite", plugins, api_ctx)
         if api_ctx.consumer then
             local changed
+            local group_conf
+
+            if api_ctx.consumer.group_id then
+                group_conf = consumer_group.get(api_ctx.consumer.group_id)
+                if not group_conf then
+                    core.log.error("failed to fetch consumer group config by ",
+                        "id: ", api_ctx.consumer.group_id)
+                    return core.response.exit(503)
+                end
+            end
+
             route, changed = plugin.merge_consumer_route(
                 route,
                 api_ctx.consumer,
+                group_conf,
                 api_ctx
             )
 
@@ -520,10 +561,6 @@ function _M.http_access_phase()
         core.log.info("enabled websocket for route: ", route.value.id)
     end
 
-    if route.value.service_protocol == "grpc" then
-        api_ctx.upstream_scheme = "grpc"
-    end
-
     -- load balancer is not required by kafka upstream, so the upstream
     -- node selection process is intercepted and left to kafka to
     -- handle on its own
@@ -550,27 +587,16 @@ function _M.http_access_phase()
     -- run the before_proxy method in access phase first to avoid always reinit request
     common_phase("before_proxy")
 
-    local ref = ctxdump.stash_ngx_ctx()
-    core.log.info("stash ngx ctx: ", ref)
-    ngx_var.ctx_ref = ref
-
     local up_scheme = api_ctx.upstream_scheme
     if up_scheme == "grpcs" or up_scheme == "grpc" then
+        stash_ngx_ctx()
         return ngx.exec("@grpc_pass")
     end
 
     if api_ctx.dubbo_proxy_enabled then
+        stash_ngx_ctx()
         return ngx.exec("@dubbo_pass")
     end
-end
-
-
-local function fetch_ctx()
-    local ref = ngx_var.ctx_ref
-    core.log.info("fetch ngx ctx: ", ref)
-    local ctx = ctxdump.apply_ngx_ctx(ref)
-    ngx_var.ctx_ref = ''
-    return ctx
 end
 
 
@@ -621,16 +647,6 @@ end
 
 
 function _M.http_header_filter_phase()
-    if ngx_var.ctx_ref ~= '' then
-        -- prevent for the table leak
-        local stash_ctx = fetch_ctx()
-
-        -- internal redirect, so we should apply the ctx
-        if ngx_var.from_error_page == "true" then
-            ngx.ctx = stash_ctx
-        end
-    end
-
     core.response.set_header("Server", ver_header)
 
     local up_status = get_var("upstream_status")
@@ -716,16 +732,6 @@ end
 
 
 function _M.http_log_phase()
-    if ngx_var.ctx_ref ~= '' then
-        -- prevent for the table leak
-        local stash_ctx = fetch_ctx()
-
-        -- internal redirect, so we should apply the ctx
-        if ngx_var.from_error_page == "true" then
-            ngx.ctx = stash_ctx
-        end
-    end
-
     local api_ctx = common_phase("log")
     if not api_ctx then
         return
@@ -763,7 +769,7 @@ end
 
 local function cors_admin()
     local_conf = core.config.local_conf()
-    if local_conf.apisix and not local_conf.apisix.enable_admin_cors then
+    if not core.table.try_read_attr(local_conf, "deployment", "admin", "enable_admin_cors") then
         return
     end
 

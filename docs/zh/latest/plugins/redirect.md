@@ -47,7 +47,7 @@ description: 本文介绍了关于 Apache APISIX `redirect` 插件的基本信�
 * `http_to_https`、和 `append_query_string` 只能配置其中一个属性。
 * 当开启 `http_to_https` 时，重定向 URL 中的端口将按如下顺序选取一个值（按优先级从高到低排列）
   * 从配置文件（`conf/config.yaml`）中读取 `plugin_attr.redirect.https_port`。
-  * 如果 `apisix.ssl` 处于开启状态，先读取 `apisix.ssl.listen_port`，如果没有，再读取 `apisix.ssl.listen` 并从中随机选一个 `port`。
+  * 如果 `apisix.ssl` 处于开启状态，读取 `apisix.ssl.listen` 并从中随机选一个 `port`。
   * 使用 443 作为默认 `https port`。
 
 :::
@@ -57,7 +57,7 @@ description: 本文介绍了关于 Apache APISIX `redirect` 插件的基本信�
 以下示例展示了如何在指定路由中启用 `redirect` 插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/test/index.html",
@@ -79,7 +79,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  \
 你也可以在新的 URI 中使用 NGINX 内置的任意变量：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/test",
@@ -121,7 +121,7 @@ Location: /test/default.html
 以下示例展示了如何将 HTTP 重定向到 HTTPS：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
@@ -151,7 +151,7 @@ Location: https://127.0.0.1:9443/hello
 当你需要禁用 `redirect` 插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/test/index.html",

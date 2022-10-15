@@ -25,7 +25,6 @@ no_shuffle();
 our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    admin_key: null
     router:
         http: 'radixtree_uri_with_parameter'
 _EOC_
@@ -59,21 +58,18 @@ __DATA__
                     "uri": "/name/:name/bar"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "uri": "/name/:name/bar",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            }
-                        },
-                        "key": "/apisix/routes/1"
+                    "value": {
+                        "uri": "/name/:name/bar",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        }
                     },
-                    "action": "set"
+                    "key": "/apisix/routes/1"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -162,21 +158,18 @@ qr/404 Not Found/
                     "uri": "/:name/foo"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "uri": "/:name/foo",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:1980": 1
-                                },
-                                "type": "roundrobin"
-                            }
-                        },
-                        "key": "/apisix/routes/1"
+                    "value": {
+                        "uri": "/:name/foo",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        }
                     },
-                    "action": "set"
+                    "key": "/apisix/routes/1"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -221,11 +214,11 @@ GET /json/bbb/foo
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/services/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                         "hosts": ["bar.com"]
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -234,8 +227,8 @@ GET /json/bbb/foo
             end
 
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                         "methods": ["GET"],
                         "upstream": {
                             "nodes": {
@@ -249,7 +242,7 @@ GET /json/bbb/foo
                         "service_id": "1",
                         "uri": "/:name/hello"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -258,8 +251,8 @@ GET /json/bbb/foo
             end
 
             local code, body = t('/apisix/admin/routes/2',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                         "methods": ["GET"],
                         "upstream": {
                             "nodes": {
@@ -273,7 +266,7 @@ GET /json/bbb/foo
                         "uri": "/:name/hello",
                         "priority": -1
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code

@@ -240,8 +240,13 @@ Now, if you decide you want to change the etcd address to `http://foo:2379`, you
 apisix:
   node_listen: 8000
 
-etcd:
-  host: "http://foo:2379"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://foo:2379"
 ```
 
 :::warning
@@ -256,6 +261,10 @@ The `conf/nginx.conf` file is automatically generated and should not be modified
 
 :::
 
+### APISIX deployment modes
+
+APISIX has three different deployment modes for different use cases. To learn more and configure deployment modes, see the [documentation](./deployment-modes.md).
+
 ### Updating Admin API key
 
 It is recommended to modify the Admin API key to ensure security.
@@ -263,18 +272,19 @@ It is recommended to modify the Admin API key to ensure security.
 You can update your configuration file as shown below:
 
 ```yaml title="conf/config.yaml"
-apisix:
-  admin_key
-    -
-      name: "admin"
-      key: newsupersecurekey
-      role: admin
+deployment:
+  admin:
+    admin_key
+      -
+        name: "admin"
+        key: newsupersecurekey
+        role: admin
 ```
 
 Now, to access the Admin API, you can use the new key:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes?api_key=newsupersecurekey -i
+curl http://127.0.0.1:9180/apisix/admin/routes?api_key=newsupersecurekey -i
 ```
 
 ### Adding APISIX systemd unit file

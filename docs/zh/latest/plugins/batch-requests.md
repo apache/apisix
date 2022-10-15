@@ -69,7 +69,7 @@ plugins:
 默认情况下，可以发送到 `/apisix/batch-requests` 的最大请求体不能大于 1 MiB。 你可以通过 `apisix/admin/plugin_metadata/batch-requests` 更改插件的此配置：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests \
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/batch-requests \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "max_body_size": 4194304
@@ -88,12 +88,12 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests \
 
 ### 请求参数
 
-| 参数名   | 类型                         | 必选项 | 默认值 |  描述                             |
-| -------- | --------------------------- | ------ | ------ |  -------------------------------- |
-| query    | object                      | 否     |        | 给所有请求都携带的 `query string`。 |
-| headers  | object                      | 否     |        | 给所有请求都携带的 `header`。       |
-| timeout  | number                      | 否     | 30000  | 聚合请求的超时时间，单位为 `ms`。    |
-| pipeline | [HttpRequest](#httprequest) | 是     |        | HTTP 请求的详细信息。               |
+| 参数名   | 类型                                 | 必选项 | 默认值 |  描述                             |
+| -------- |------------------------------------| ------ | ------ |  -------------------------------- |
+| query    | object                             | 否     |        | 给所有请求都携带的 `query string`。 |
+| headers  | object                             | 否     |        | 给所有请求都携带的 `header`。       |
+| timeout  | number                             | 否     | 30000  | 聚合请求的超时时间，单位为 `ms`。    |
+| pipeline | array[[HttpRequest](#httprequest)] | 是     |        | HTTP 请求的详细信息。               |
 
 #### HttpRequest
 
@@ -127,7 +127,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests \
 只需要在创建路由时设置所需的 URI 并更改 `public-api` 插件的配置：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/br \
+curl http://127.0.0.1:9180/apisix/admin/routes/br \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/batch-requests",
@@ -144,7 +144,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/br \
 首先，你需要为 `batch-requests` 插件的 API 创建一个路由，它将使用 [public-api](../../../en/latest/plugins/public-api.md) 插件。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/apisix/batch-requests",

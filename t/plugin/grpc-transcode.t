@@ -42,7 +42,7 @@ __DATA__
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local etcd = require("apisix.core.etcd")
-            local code, body = t('/apisix/admin/proto/1',
+            local code, body = t('/apisix/admin/protos/1',
                  ngx.HTTP_PUT,
                  [[{
                     "content" : "syntax = \"proto3\";
@@ -64,7 +64,7 @@ __DATA__
             end
             ngx.say(body)
 
-            local res = assert(etcd.get('/proto/1'))
+            local res = assert(etcd.get('/protos/1'))
             local create_time = res.body.node.value.create_time
             assert(create_time ~= nil, "create_time is nil")
             local update_time = res.body.node.value.update_time
@@ -86,7 +86,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/proto/2',
+            local code, body = t('/apisix/admin/protos/2',
                  ngx.HTTP_PUT,
                  [[{
                     "content" : "syntax = \"proto3\";
@@ -123,7 +123,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/proto/2',
+            local code, body = t('/apisix/admin/protos/2',
                  ngx.HTTP_DELETE
                 )
 
@@ -317,7 +317,7 @@ Connection refused) while connecting to upstream
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/proto/1',
+            local code, body = t('/apisix/admin/protos/1',
                  ngx.HTTP_PUT,
                  [[{
                     "content" : "syntax = \"proto3\";
@@ -562,7 +562,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/proto/1',
+            local code, body = t('/apisix/admin/protos/1',
                  ngx.HTTP_PUT,
                  [[{
                     "content" : "syntax = \"proto3\";
@@ -606,7 +606,6 @@ passed
                 [[{
                     "methods": ["GET", "POST"],
                     "uri": "/grpctest",
-                    "service_protocol": "grpc",
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",
@@ -669,7 +668,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/proto/1',
+            local code, body = t('/apisix/admin/protos/1',
                  ngx.HTTP_PUT,
                  [[{
                     "content" : "syntax = \"proto3\";
@@ -771,7 +770,6 @@ failed to encode request data to protobuf
                 [[{
                     "methods": ["GET", "POST"],
                     "uri": "/grpctest",
-                    "service_protocol": "grpc",
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",

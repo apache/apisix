@@ -58,6 +58,8 @@ env {*name*};
 {% end %}
 
 {% if use_apisix_openresty then %}
+thread_pool grpc-client-nginx-module threads=1;
+
 lua {
     {% if enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* meta.lua_shared_dict["prometheus-metrics"] *};
@@ -238,8 +240,11 @@ http {
     lua_shared_dict balancer-ewma-last-touched-at {* http.lua_shared_dict["balancer-ewma-last-touched-at"] *};
     lua_shared_dict etcd-cluster-health-check {* http.lua_shared_dict["etcd-cluster-health-check"] *}; # etcd health check
 
-    {% if enabled_discoveries["kubernetes"] then %}
-    lua_shared_dict kubernetes {* http.lua_shared_dict["kubernetes"] *};
+    # for discovery shared dict
+    {% if discovery_shared_dicts then %}
+    {% for key, size in pairs(discovery_shared_dicts) do %}
+    lua_shared_dict {*key*} {*size*};
+    {% end %}
     {% end %}
 
     {% if enabled_discoveries["tars"] then %}
@@ -282,6 +287,10 @@ http {
     lua_shared_dict introspection {* http.lua_shared_dict["introspection"] *}; # cache for JWT verification results
     {% end %}
 
+    {% if enabled_plugins["cas-auth"] then %}
+    lua_shared_dict cas_sessions {* http.lua_shared_dict["cas-auth"] *};
+    {% end %}
+
     {% if enabled_plugins["authz-keycloak"] then %}
     # for authz-keycloak
     lua_shared_dict access-tokens {* http.lua_shared_dict["access-tokens"] *}; # cache for service account access tokens
@@ -301,33 +310,6 @@ http {
     {% for cache_key, cache_size in pairs(http.custom_lua_shared_dict) do %}
     lua_shared_dict {*cache_key*} {*cache_size*};
     {% end %}
-    {% end %}
-    {% if http.lua_shared_dicts then %}
-    {% for cache_key, cache_size in pairs(http.lua_shared_dicts) do %}
-    lua_shared_dict {*cache_key*} {*cache_size*};
-    {% end %}
-    {% end %}
-
-    {% if enabled_plugins["proxy-cache"] then %}
-    # for proxy cache
-    {% for _, cache in ipairs(proxy_cache.zones) do %}
-    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
-    proxy_cache_path {* cache.disk_path *} levels={* cache.cache_levels *} keys_zone={* cache.name *}:{* cache.memory_size *} inactive=1d max_size={* cache.disk_size *} use_temp_path=off;
-    {% else %}
-    lua_shared_dict {* cache.name *} {* cache.memory_size *};
-    {% end %}
-    {% end %}
-    {% end %}
-
-    {% if enabled_plugins["proxy-cache"] then %}
-    # for proxy cache
-    map $upstream_cache_zone $upstream_cache_zone_info {
-    {% for _, cache in ipairs(proxy_cache.zones) do %}
-    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
-        {* cache.name *} {* cache.disk_path *},{* cache.cache_levels *};
-    {% end %}
-    {% end %}
-    }
     {% end %}
 
     {% if enabled_plugins["error-log-logger"] then %}
@@ -372,13 +354,7 @@ http {
     include mime.types;
     charset {* http.charset *};
 
-    # error_page
-    error_page 500 @50x.html;
-
-    {% if real_ip_header then %}
-    real_ip_header {* real_ip_header *};
-    {% print("\nDeprecated: apisix.real_ip_header has been moved to nginx_config.http.real_ip_header. apisix.real_ip_header will be removed in the future version. Please use nginx_config.http.real_ip_header first.\n\n") %}
-    {% elseif http.real_ip_header then %}
+    {% if http.real_ip_header then %}
     real_ip_header {* http.real_ip_header *};
     {% end %}
 
@@ -386,12 +362,7 @@ http {
     real_ip_recursive {* http.real_ip_recursive *};
     {% end %}
 
-    {% if real_ip_from then %}
-    {% print("\nDeprecated: apisix.real_ip_from has been moved to nginx_config.http.real_ip_from. apisix.real_ip_from will be removed in the future version. Please use nginx_config.http.real_ip_from first.\n\n") %}
-    {% for _, real_ip in ipairs(real_ip_from) do %}
-    set_real_ip_from {*real_ip*};
-    {% end %}
-    {% elseif http.real_ip_from then %}
+    {% if http.real_ip_from then %}
     {% for _, real_ip in ipairs(http.real_ip_from) do %}
     set_real_ip_from {*real_ip*};
     {% end %}
@@ -467,6 +438,11 @@ http {
             dns_resolver = dns_resolver,
         }
         apisix.http_init(args)
+
+        -- set apisix_lua_home into constans module
+        -- it may be used by plugins to determine the work path of apisix
+        local constants = require("apisix.constants")
+        constants.apisix_lua_home = "{*apisix_lua_home*}"
     }
 
     init_worker_by_lua_block {
@@ -486,13 +462,6 @@ http {
         location / {
             content_by_lua_block {
                 apisix.http_control()
-            }
-        }
-
-        location @50x.html {
-            set $from_error_page 'true';
-            content_by_lua_block {
-                require("apisix.error_handling").handle_500()
             }
         }
     }
@@ -519,7 +488,7 @@ http {
     }
     {% end %}
 
-    {% if enable_admin and admin_server_addr then %}
+    {% if enable_admin then %}
     server {
         {%if https_admin then%}
         listen {* admin_server_addr *} ssl;
@@ -570,18 +539,32 @@ http {
                 apisix.http_admin()
             }
         }
-
-        location @50x.html {
-            set $from_error_page 'true';
-            content_by_lua_block {
-                require("apisix.error_handling").handle_500()
-            }
-        }
     }
     {% end %}
 
     {% if conf_server then %}
     {* conf_server *}
+    {% end %}
+
+    {% if deployment_role ~= "control_plane" then %}
+
+    {% if enabled_plugins["proxy-cache"] then %}
+    # for proxy cache
+    {% for _, cache in ipairs(proxy_cache.zones) do %}
+    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
+    proxy_cache_path {* cache.disk_path *} levels={* cache.cache_levels *} keys_zone={* cache.name *}:{* cache.memory_size *} inactive=1d max_size={* cache.disk_size *} use_temp_path=off;
+    {% else %}
+    lua_shared_dict {* cache.name *} {* cache.memory_size *};
+    {% end %}
+    {% end %}
+
+    map $upstream_cache_zone $upstream_cache_zone_info {
+    {% for _, cache in ipairs(proxy_cache.zones) do %}
+    {% if cache.disk_path and cache.cache_levels and cache.disk_size then %}
+        {* cache.name *} {* cache.disk_path *},{* cache.cache_levels *};
+    {% end %}
+    {% end %}
+    }
     {% end %}
 
     server {
@@ -597,7 +580,7 @@ http {
         listen {* proxy_protocol.listen_http_port *} default_server proxy_protocol;
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_https_port then %}
-        listen {* proxy_protocol.listen_https_port *} ssl default_server {% if ssl.enable_http2 then %} http2 {% end %} proxy_protocol;
+        listen {* proxy_protocol.listen_https_port *} ssl default_server proxy_protocol;
         {% end %}
 
         server_name _;
@@ -635,27 +618,6 @@ http {
             stub_status;
         }
 
-        {% if enable_admin and not admin_server_addr then %}
-        location /apisix/admin {
-            set $upstream_scheme             'http';
-            set $upstream_host               $http_host;
-            set $upstream_uri                '';
-
-            {%if allow_admin then%}
-                {% for _, allow_ip in ipairs(allow_admin) do %}
-                allow {*allow_ip*};
-                {% end %}
-                deny all;
-            {%else%}
-                allow all;
-            {%end%}
-
-            content_by_lua_block {
-                apisix.http_admin()
-            }
-        }
-        {% end %}
-
         {% if ssl.enable then %}
         ssl_certificate_by_lua_block {
             apisix.http_ssl_phase()
@@ -676,7 +638,6 @@ http {
             set $upstream_host               $http_host;
             set $upstream_uri                '';
             set $ctx_ref                     '';
-            set $from_error_page             '';
 
             {% if wasm then %}
             set $wasm_process_req_body       '';
@@ -773,6 +734,14 @@ http {
                 apisix.grpc_access_phase()
             }
 
+            {% if use_apisix_openresty then %}
+            # For servers which obey the standard, when `:authority` is missing,
+            # `host` will be used instead. When used with apisix-base, we can do
+            # better by setting `:authority` directly
+            grpc_set_header   ":authority" $upstream_host;
+            {% else %}
+            grpc_set_header   "Host" $upstream_host;
+            {% end %}
             grpc_set_header   Content-Type application/grpc;
             grpc_socket_keepalive on;
             grpc_pass         $upstream_scheme://apisix_backend;
@@ -841,21 +810,9 @@ http {
             proxy_pass $upstream_mirror_uri;
         }
         {% end %}
-
-        location @50x.html {
-            set $from_error_page 'true';
-            content_by_lua_block {
-                require("apisix.error_handling").handle_500()
-            }
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
-        }
     }
+    {% end %}
+
     # http end configuration snippet starts
     {% if http_end_configuration_snippet then %}
     {* http_end_configuration_snippet *}

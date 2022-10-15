@@ -56,6 +56,7 @@ local function plugin_consumer()
                 -- is 'username' field in admin
                 new_consumer.consumer_name = new_consumer.id
                 new_consumer.auth_conf = config
+                new_consumer.modifiedIndex = consumer.modifiedIndex
                 core.log.info("consumer:", core.json.delay_encode(new_consumer))
                 core.table.insert(plugins[name].nodes, new_consumer)
             end
@@ -79,6 +80,7 @@ end
 function _M.attach_consumer(ctx, consumer, conf)
     ctx.consumer = consumer
     ctx.consumer_name = consumer.consumer_name
+    ctx.consumer_group_id = consumer.group_id
     ctx.consumer_ver = conf.conf_version
 end
 

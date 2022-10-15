@@ -162,7 +162,7 @@ You can check out [Installing Apache APISIX](./installation-guide.md) for differ
 
 :::info IMPORTANT
 
-Make sure that all the required ports (default: 9080, 9443 and 2379) are available and not used by other system processes.
+Make sure that all the required ports (default: 9080, 9180, 9443 and 2379) are available and not used by other system processes.
 
 On Unix-based systems, you can run the command below to terminate a process listening on a specific port:
 
@@ -181,7 +181,7 @@ docker logs -f --tail <container_id>
 Once APISIX is running, you can use `curl` to access the Admin API. You can also check if APISIX is running properly by running this command and checking the response.
 
 ```bash
-curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+curl "http://127.0.0.1:9180/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```
 
 This response indicates that APISIX is running successfully:
@@ -189,7 +189,6 @@ This response indicates that APISIX is running successfully:
 ```json
 {
   "count":0,
-  "action":"get",
   "node":{
     "key":"/apisix/services",
     "nodes":[],
@@ -207,7 +206,7 @@ APISIX provides a powerful [Admin API](./admin-api.md) and [APISIX Dashboard](ht
 We will configure the Route so that APISIX can forward the request to the corresponding Upstream service:
 
 ```bash
-curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "methods": ["GET"],
   "host": "example.com",
@@ -242,7 +241,7 @@ Instead of configuring the Upstream directly to the Route, you can create an Ups
 To create an Upstream object:
 
 ```bash
-curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "type": "roundrobin",
   "nodes": {
@@ -256,7 +255,7 @@ This is the same as the Upstream service we configured directly into the Route o
 To bind this Upstream to the Route, we can use the `upstream_id` as `1`:
 
 ```bash
-curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "methods": ["GET"],
   "host": "example.com",

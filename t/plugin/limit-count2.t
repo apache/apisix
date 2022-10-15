@@ -781,7 +781,9 @@ limit key: afafafhao2:remote_addr
                             "time_window": 60,
                             "rejected_code": 503,
                             "group": "abcd",
-                            "disable": false
+                            "_meta": {
+                                "disable": false
+                            }
                         }
                     },
                     "upstream": {

@@ -36,7 +36,7 @@ description: 本文介绍了关于 Apache APISIX `grpc-web` 插件的基本信�
 你可以通过如下命令在指定路由上启用 `gRPC-web` 插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri":"/grpc/web/*",
@@ -80,7 +80,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 当你需要禁用 `grpc-web` 插件时，可以通过如下命令删除相应的 `JSON` 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri":"/grpc/web/*",

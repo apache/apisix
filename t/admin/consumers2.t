@@ -59,13 +59,13 @@ __DATA__
             end
 
             res = json.decode(res)
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
+            res.value.create_time = nil
+            res.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"action":"set","node":{"key":"/apisix/consumers/jack","value":{"username":"jack"}}}
+{"key":"/apisix/consumers/jack","value":{"username":"jack"}}
 
 
 
@@ -87,18 +87,19 @@ __DATA__
             end
 
             res = json.decode(res)
-            local value = res.node.value
-            assert(value.create_time ~= nil)
-            value.create_time = nil
-            assert(value.update_time ~= nil)
-            value.update_time = nil
-            assert(res.count ~= nil)
-            res.count = nil
+            assert(res.createdIndex ~= nil)
+            res.createdIndex = nil
+            assert(res.modifiedIndex ~= nil)
+            res.modifiedIndex = nil
+            assert(res.value.create_time ~= nil)
+            res.value.create_time = nil
+            assert(res.value.update_time ~= nil)
+            res.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"action":"get","node":{"key":"/apisix/consumers/jack","value":{"username":"jack"}}}
+{"key":"/apisix/consumers/jack","value":{"username":"jack"}}
 
 
 
@@ -124,7 +125,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"delete","deleted":"1","key":"/apisix/consumers/jack","node":{}}
+{"deleted":"1","key":"/apisix/consumers/jack"}
 
 
 
@@ -150,7 +151,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"get","count":0,"node":{"dir":true,"key":"/apisix/consumers","nodes":[]}}
+{"list":[],"total":0}
 
 
 

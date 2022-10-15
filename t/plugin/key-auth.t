@@ -188,7 +188,7 @@ GET /hello
                 code, body = t('/apisix/admin/consumers',
                     ngx.HTTP_PUT,
                     string.format('{"username":"%s","plugins":{"key-auth":{"key":"%s"}}}', username, key),
-                    string.format('{"node":{"value":{"username":"%s","plugins":{"key-auth":{"key":"%s"}}}},"action":"set"}', username, key)
+                    string.format('{"value":{"username":"%s","plugins":{"key-auth":{"key":"%s"}}}}', username, key)
                     )
             end
 

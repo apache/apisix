@@ -47,27 +47,24 @@ __DATA__
                     "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/index.html",
-                            "desc": "new route",
-                            "upstream": {
-                                "nodes": [{
-                                    "host": "127.0.0.1",
-                                    "port": 8080,
-                                    "weight": 1
-                                }],
-                                "type": "roundrobin"
-                            }
-                        },
-                        "key": "/apisix/routes/1"
+                    "value": {
+                        "methods": [
+                            "GET"
+                        ],
+                        "uri": "/index.html",
+                        "desc": "new route",
+                        "upstream": {
+                            "nodes": [{
+                                "host": "127.0.0.1",
+                                "port": 8080,
+                                "weight": 1
+                            }],
+                            "type": "roundrobin"
+                        }
                     },
-                    "action": "set"
+                    "key": "/apisix/routes/1"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -88,30 +85,27 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_GET,
-                 nil,
+                ngx.HTTP_GET,
+                nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/index.html",
-                            "desc": "new route",
-                            "upstream": {
-                                "nodes": [{
-                                    "host": "127.0.0.1",
-                                    "port": 8080,
-                                    "weight": 1
-                                }],
-                                "type": "roundrobin"
-                            }
-                        },
-                        "key": "/apisix/routes/1"
+                    "value": {
+                        "methods": [
+                            "GET"
+                        ],
+                        "uri": "/index.html",
+                        "desc": "new route",
+                        "upstream": {
+                            "nodes": [{
+                                "host": "127.0.0.1",
+                                "port": 8080,
+                                "weight": 1
+                            }],
+                            "type": "roundrobin"
+                        }
                     },
-                    "action": "get"
+                    "key": "/apisix/routes/1"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)

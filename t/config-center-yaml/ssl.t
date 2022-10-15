@@ -27,8 +27,10 @@ add_block_preprocessor(sub {
     my $yaml_config = $block->yaml_config // <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
-    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
@@ -108,7 +110,7 @@ __DATA__
 
 === TEST 1: sanity
 --- apisix_yaml
-ssl:
+ssls:
     -
         cert: |
             -----BEGIN CERTIFICATE-----
@@ -181,7 +183,7 @@ server name: "test.com"
 
 === TEST 2: single sni
 --- apisix_yaml
-ssl:
+ssls:
     -
         cert: |
             -----BEGIN CERTIFICATE-----
@@ -252,7 +254,7 @@ server name: "test.com"
 
 === TEST 3: bad cert
 --- apisix_yaml
-ssl:
+ssls:
     -
         cert: |
             -----BEGIN CERTIFICATE-----

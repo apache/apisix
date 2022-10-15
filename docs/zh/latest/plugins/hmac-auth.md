@@ -43,7 +43,7 @@ description: 本文介绍了关于 Apache APISIX `hmac-auth` 插件的基本信�
 | clock_skew       | integer       | 否   | 0             |                                             | 签名允许的时间偏移（以秒为单位）。比如允许时间偏移 10 秒钟，那么就应设置为 `10`。如果将其设置为 `0`，则表示表示跳过日期检查。                                                                      |
 | signed_headers   | array[string] | 否   |               |                                             | 要在加密计算中使用的 headers 列表。指定后客户端请求只能在此范围内指定 headers，如果未指定，就会在所有客户端请求指定的 headers 加入加密计算。如： ["User-Agent", "Accept-Language", "x-custom-a"]。  |
 | keep_headers     | boolean       | 否   | false         | [ true, false ]                             | 当设置为 `true` 时，认证成功后的 HTTP 请求中则会保留 `X-HMAC-SIGNATURE`、`X-HMAC-ALGORITHM` 和 `X-HMAC-SIGNED-HEADERS` 的请求头。否则将移除 HTTP 请求头。                                       |
-| encode_uri_param | boolean       | 否   | true          | [ true, false ]                             | 当设置为 `true` 时，对签名中的 URI 参数进行编码。例如：`params1=hello%2Cworld` 进行了编码，`params2=hello,world` 没有进行编码。设置为 `false` 时则不对签名中的 URI 参数编码。                     |
+| encode_uri_params| boolean       | 否   | true          | [ true, false ]                             | 当设置为 `true` 时，对签名中的 URI 参数进行编码。例如：`params1=hello%2Cworld` 进行了编码，`params2=hello,world` 没有进行编码。设置为 `false` 时则不对签名中的 URI 参数编码。                     |
 | validate_request_body | boolean  | 否   | false         | [ true, false ]                             | 当设置为 `true` 时，对请求 body 做签名校验。                                                                                                                                                 |
 | max_req_body     | integer       | 否   | 512 * 1024    |                                             | 最大允许的 body 大小。                                                                                                                                                                      |
 
@@ -52,7 +52,7 @@ description: 本文介绍了关于 Apache APISIX `hmac-auth` 插件的基本信�
 首先，我们需要在 Consumer 中启用该插件，如下所示：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers \
+curl http://127.0.0.1:9180/apisix/admin/consumers \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
@@ -78,7 +78,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers \
 然后就可以在 Route 或 Service 中启用插件，如下所示：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
@@ -112,13 +112,13 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 
 1. 提取 URL 中的 query 项。
 2. 使用 `&` 作为分隔符，将 query 拆分成键值对。
-3. 如果 `encode_uri_param` 为 `true` 时：
+3. 如果 `encode_uri_params` 为 `true` 时：
 
     - 当该项有 `key` 时，转换公式为 `url_encode(key) + "="`。
     - 当该项同时有 `key` 和 `value` 时，转换公式为 `url_encode(key) + "=" + url_encode(value)` 。此处 `value` 可以是空字符串。
     - 将每一项转换后，以 `key` 按照字典顺序（ASCII 码由小到大）排序，并使用 `&` 符号连接起来，生成相应的 `canonical_query_string` 。
 
-4. 如果 `encode_uri_param` 为 `false` 时：
+4. 如果 `encode_uri_params` 为 `false` 时：
 
     - 当该项只有 `key` 时，转换公式为 `key + "="` 。
     - 当该项同时有 `key` 和 `value` 时，转换公式为 `key + "=" + value` 。此处 `value` 可以是空字符串。
@@ -145,7 +145,51 @@ curl -i http://127.0.0.1:9080/index.html?name=james&age=36 \
 -H "User-Agent: curl/7.29.0"
 ```
 
-根据上述算法生成的 `signing_string` 为：
+### 签名生成公式过程详解
+
+1. 上文请求默认的 HTTP Method 是 GET，得到 `signing_string` 为
+
+```plain
+"GET"
+```
+
+2. 请求的 URI 是 `/index.html`，根据 HTTP Method + \n + HTTP URI 得到 `signing_string` 为
+
+```plain
+"GET
+/index.html"
+```
+
+3. URL 中的 query 项是 `name=james&age=36`，假设 `encode_uri_params` 为 false，根据 `canonical_query_string` 的算法，重点是对 `key` 进行字典排序，得到 `age=36&name=james`；根据 HTTP Method + \n + HTTP URI + \n + canonical_query_string 得到 `signing_string` 为
+
+```plain
+"GET
+/index.html
+age=36&name=james"
+```
+
+4. access_key 是 `user-key`，根据 HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key 得到 `signing_string` 为
+
+```plain
+"GET
+/index.html
+age=36&name=james
+user-key"
+```
+
+5. Date 是指 GMT 格式的日期，形如 `Tue, 19 Jan 2021 11:33:20 GMT`, 根据 HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date 得到 `signing_string` 为
+
+```plain
+"GET
+/index.html
+age=36&name=james
+user-key
+Tue, 19 Jan 2021 11:33:20 GMT"
+```
+
+6. `signed_headers_string` 用来制定参与到签名的 headers，在上面示例中包括 `User-Agent: curl/7.29.0` 和 `x-custom-a: test`。
+
+根据 HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n + signed_headers_string + `\n`，得到完整的 `signing_string` 为
 
 ```plain
 "GET
@@ -157,8 +201,6 @@ User-Agent:curl/7.29.0
 x-custom-a:test
 "
 ```
-
-最后一个请求头也需要 + `\n`。
 
 以下示例是通过使用 Python 来生成签名 `SIGNATURE`：
 
@@ -322,7 +364,7 @@ Accept-Ranges: bytes
 当你需要禁用 `hmac-auth` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",

@@ -38,9 +38,8 @@ This will allow the ability to send log data requests as JSON objects to monitor
 | Name                   | Type    | Required | Default       | Valid values         | Description                                                                                                                                                                                                              |
 | ---------------------- | ------- | -------- | ------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | uri                    | string  | True     |               |                      | URI of the HTTP/HTTPS server.                                                                                                                                                                                            |
-| auth_header            | string  | False    | ""            |                      | Authorization headers if required.                                                                                                                                                                                       |
+| auth_header            | string  | False    |               |                      | Authorization headers if required.                                                                                                                                                                                       |
 | timeout                | integer | False    | 3             | [1,...]              | Time to keep the connection alive for after sending a request.                                                                                                                                                           |
-| name                   | string  | False    | "http logger" |                      | Unique identifier to identify the logger.                                                                                                                                                                                |
 | include_req_body       | boolean | False    | false         | [false, true]        | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations.                                                         |
 | include_resp_body      | boolean | False    | false         | [false, true]        | When set to `true` includes the response body in the log.                                                                                                                                                                |
 | include_resp_body_expr | array   | False    |               |                      | When the `include_resp_body` attribute is set to `true`, use this to filter based on [lua-resty-expr](https://github.com/api7/lua-resty-expr). If present, only logs the response if the expression evaluates to `true`. |
@@ -70,7 +69,7 @@ Configuring the Plugin metadata is global in scope. This means that it will take
 The example below shows how you can configure through the Admin API:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/http-logger \
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/http-logger \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "log_format": {
@@ -93,7 +92,7 @@ With this configuration, your logs would be formatted as shown below:
 The example below shows how you can enable the Plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
       "plugins": {
@@ -126,7 +125,7 @@ curl -i http://127.0.0.1:9080/hello
 To disable this Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

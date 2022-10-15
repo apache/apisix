@@ -194,18 +194,18 @@ GET /t
             end
 
             res = json.decode(res)
-            res.node.key = nil
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
-            assert(res.node.value.id ~= nil)
-            res.node.value.id = nil
+            res.key = nil
+            res.value.create_time = nil
+            res.value.update_time = nil
+            assert(res.value.id ~= nil)
+            res.value.id = nil
             ngx.say(json.encode(res))
         }
     }
 --- request
 GET /t
 --- response_body
-{"action":"create","node":{"value":{"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/not_unwanted_data_post"}}}
+{"value":{"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/not_unwanted_data_post"}}
 --- no_error_log
 [error]
 
@@ -239,15 +239,15 @@ GET /t
             end
 
             res = json.decode(res)
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
+            res.value.create_time = nil
+            res.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
 --- request
 GET /t
 --- response_body
-{"action":"set","node":{"key":"/apisix/routes/1","value":{"id":1,"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index.html"}}}
+{"key":"/apisix/routes/1","value":{"id":1,"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index.html"}}
 --- no_error_log
 [error]
 
@@ -280,15 +280,15 @@ GET /t
             end
 
             res = json.decode(res)
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
+            res.value.create_time = nil
+            res.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
 --- request
 GET /t
 --- response_body
-{"action":"compareAndSwap","node":{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index"}}}
+{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index"}}
 --- no_error_log
 [error]
 
@@ -311,20 +311,21 @@ GET /t
             end
 
             res = json.decode(res)
-            local value = res.node.value
-            assert(value.create_time ~= nil)
-            value.create_time = nil
-            assert(value.update_time ~= nil)
-            value.update_time = nil
-            assert(res.count ~= nil)
-            res.count = nil
+            assert(res.createdIndex ~= nil)
+            res.createdIndex = nil
+            assert(res.modifiedIndex ~= nil)
+            res.modifiedIndex = nil
+            assert(res.value.create_time ~= nil)
+            res.value.create_time = nil
+            assert(res.value.update_time ~= nil)
+            res.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
 --- request
 GET /t
 --- response_body
-{"action":"get","node":{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index"}}}
+{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index"}}
 --- no_error_log
 [error]
 
@@ -353,7 +354,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"action":"delete","deleted":"1","key":"/apisix/routes/1","node":{}}
+{"deleted":"1","key":"/apisix/routes/1"}
 --- no_error_log
 [error]
 
@@ -550,25 +551,22 @@ GET /t
                     "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/index.html",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
+                    "value": {
+                        "methods": [
+                            "GET"
+                        ],
+                        "uri": "/index.html",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
                             },
-                            "labels": {
-                                "您好": "世界"
-                            }
+                            "type": "roundrobin"
                         },
-                        "key": "/apisix/routes/1"
+                        "labels": {
+                            "您好": "世界"
+                        }
                     },
-                    "action": "set"
+                    "key": "/apisix/routes/1"
                 }]]
                 )
 

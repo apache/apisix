@@ -1,6 +1,10 @@
 name: Doc Lint
 
 on:
+  push:
+    paths:
+      - 'docs/**'
+      - '**/*.md'
   pull_request:
     branches: [master, 'release/**']
     paths:
@@ -16,9 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.1.0
       - name: 🚀 Use Node.js
-        uses: actions/setup-node@v3.4.1
+        uses: actions/setup-node@v3.5.1
         with:
           node-version: '12.x'
       - run: npm install -g markdownlint-cli@0.25.0
@@ -43,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.1.0
       - name: check Chinese copywriting
         run: |
           version=v1.5.6

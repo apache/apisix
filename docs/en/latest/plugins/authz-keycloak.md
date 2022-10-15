@@ -46,8 +46,7 @@ Refer to [Authorization Services Guide](https://www.keycloak.org/docs/latest/aut
 | discovery                                    | string        | False    |                                               | https://host.domain/auth/realms/foo/.well-known/uma2-configuration | URL to [discovery document](https://www.keycloak.org/docs/14.0/authorization_services/#_service_authorization_api) of Keycloak Authorization Services.                                                                                                |
 | token_endpoint                               | string        | False    |                                               | https://host.domain/auth/realms/foo/protocol/openid-connect/token  | An OAuth2-compliant token endpoint that supports the `urn:ietf:params:oauth:grant-type:uma-ticket` grant type. If provided, overrides the value from discovery.                                                                                       |
 | resource_registration_endpoint               | string        | False    |                                               | https://host.domain/auth/realms/foo/authz/protection/resource_set  | A UMA-compliant resource registration endpoint. If provided, overrides the value from discovery.                                                                                                                                                      |
-| client_id                                    | string        | False    |                                               |                                                                    | The identifier of the resource server to which the client is seeking access. Either `client_id` or `audience` is required.                                                                                                                            |
-| audience                                     | string        | False    |                                               |                                                                    | Legacy parameter now replaced by `client_id` kept for backwards compatibility. Either `client_id` or `audience` is required.                                                                                                                          |
+| client_id                                    | string        | True     |                                               |                                                                    | The identifier of the resource server to which the client is seeking access.                                                                                                                                                                         |
 | client_secret                                | string        | False    |                                               |                                                                    | The client secret, if required.                                                                                                                                                                                                                       |
 | grant_type                                   | string        | False    | "urn:ietf:params:oauth:grant-type:uma-ticket" | ["urn:ietf:params:oauth:grant-type:uma-ticket"]                    |                                                                                                                                                                                                                                                       |
 | policy_enforcement_mode                      | string        | False    | "ENFORCING"                                   | ["ENFORCING", "PERMISSIVE"]                                        |                                                                                                                                                                                                                                                       |
@@ -75,9 +74,7 @@ If set, the `token_endpoint` and `resource_registration_endpoint` will override 
 
 ### Client ID and secret
 
-The Plugin needs the `client_id` or `audience` (for backwards compatibility) attribute for identification and to specify the context in which to evaluate permissions when interacting with Keycloak.
-
-If both are configured, `client_id` is preferred.
+The Plugin needs the `client_id` attribute for identification and to specify the context in which to evaluate permissions when interacting with Keycloak.
 
 If the `lazy_load_paths` attribute is set to true, then the Plugin additionally needs to obtain an access token for itself from Keycloak. In such cases, if the client access to Keycloak is confidential, you need to configure the `client_secret` attribute.
 
@@ -148,14 +145,14 @@ curl --location --request POST 'http://127.0.0.1:9080/api/token' \
 The example below shows how you can enable the `authz-keycloak` Plugin on a specific Route. `${realm}` represents the realm name in Keycloak.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
     "plugins": {
         "authz-keycloak": {
             "token_endpoint": "http://127.0.0.1:8090/auth/realms/${realm}/protocol/openid-connect/token",
             "permissions": ["resource name#scope name"],
-            "audience": "Client ID"
+            "client_id": "Client ID"
         }
     },
     "upstream": {
@@ -205,7 +202,7 @@ The image below shows how the policies are configured in the Keycloak server:
 To disable the `authz-keycloak` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
     "plugins": {

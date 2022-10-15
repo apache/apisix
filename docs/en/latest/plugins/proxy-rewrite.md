@@ -35,7 +35,6 @@ The `proxy-rewrite` Plugin rewrites Upstream proxy information such as `scheme`,
 
 | Name                        | Type          | Required | Default | Valid values                                                                                                                           | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 |-----------------------------|---------------|----------|---------|----------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| scheme                      | string        | False    | "http"  | ["http", "https"]                                                                                                                      | New upstream protocol scheme. This option is deprecated. Instead, it is recommended to set the `scheme` field in the Upstream.                                                                                                                                                                                                                                                                                                                                               |
 | uri                         | string        | False    |         |                                                                                                                                        | New Upstream forwarding address. Value supports [Nginx variables](https://nginx.org/en/docs/http/ngx_http_core_module.html). For example, `$arg_name`.                                                                                                                                                                                                                                                                                                                       |
 | method                      | string        | False    |         | ["GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS","MKCOL", "COPY", "MOVE", "PROPFIND", "PROPFIND","LOCK", "UNLOCK", "PATCH", "TRACE"] | Rewrites the HTTP method.                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | regex_uri                   | array[string] | False    |         |                                                                                                                                        | New upstream forwarding address. Regular expressions can be used to match the URL from client. If it matches, the URL template is forwarded to the Upstream otherwise, the URL from the client is forwarded. When both `uri` and `regex_uri` are configured, `uri` is used first. For example, `[" ^/iresty/(.*)/(.*)/(.*)", "/$1-$2-$3"]`. Here, the first element is the regular expression to match and the second element is the URL template forwarded to the Upstream. |
@@ -48,14 +47,13 @@ The `proxy-rewrite` Plugin rewrites Upstream proxy information such as `scheme`,
 The example below enables the `proxy-rewrite` Plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/test/index.html",
     "plugins": {
         "proxy-rewrite": {
             "uri": "/test/home.html",
-            "scheme": "http",
             "host": "iresty.com",
             "headers": {
                 "X-Api-Version": "v1",
@@ -92,7 +90,7 @@ Once you send the request, you can check the Upstream `access.log` for its outpu
 To disable the `proxy-rewrite` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/test/index.html",

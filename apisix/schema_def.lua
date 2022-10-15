@@ -277,20 +277,6 @@ local health_checker = {
                     }
                 }
             },
-            default = {
-                type = "http",
-                healthy = {
-                    http_statuses = { 200, 201, 202, 203, 204, 205, 206, 207, 208, 226,
-                                      300, 301, 302, 303, 304, 305, 306, 307, 308 },
-                    successes = 0,
-                },
-                unhealthy = {
-                    http_statuses = { 429, 500, 503 },
-                    tcp_failures = 0,
-                    timeouts = 0,
-                    http_failures = 0,
-                },
-            }
         }
     },
     anyOf = {
@@ -610,9 +596,6 @@ _M.route = {
 
         service_id = id_schema,
         upstream_id = id_schema,
-        service_protocol = {
-            enum = {"grpc", "http"}
-        },
 
         enable_websocket = {
             description = "enable websocket for request",
@@ -715,6 +698,7 @@ _M.consumer = {
             type = "string", minLength = 1, maxLength = rule_name_def.maxLength,
             pattern = [[^[a-zA-Z0-9_]+$]]
         },
+        group_id = id_schema,
         plugins = plugins_schema,
         labels = labels_def,
         create_time = timestamp_def,
@@ -935,17 +919,31 @@ _M.plugin_config = {
 }
 
 
+_M.consumer_group = {
+    type = "object",
+    properties = {
+        id = id_schema,
+        desc = desc_def,
+        plugins = plugins_schema,
+        labels = labels_def,
+        create_time = timestamp_def,
+        update_time = timestamp_def
+    },
+    required = {"id", "plugins"},
+}
+
+
 _M.id_schema = id_schema
 
 
 _M.plugin_injected_schema = {
     ["$comment"] = "this is a mark for our injected plugin schema",
-    disable = {
-        type = "boolean",
-    },
     _meta = {
         type = "object",
         properties = {
+            disable = {
+                type = "boolean",
+            },
             error_response = {
                 oneOf = {
                     { type = "string" },

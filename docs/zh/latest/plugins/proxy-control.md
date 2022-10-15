@@ -1,5 +1,10 @@
 ---
 title: proxy-control
+keywords:
+  - APISIX
+  - API 网关
+  - Proxy Control
+description: 本文介绍了 Apache APISIX proxy-control 插件的相关操作，你可以使用此插件动态地控制 NGINX 代理的行为。
 ---
 
 <!--
@@ -23,22 +28,27 @@ title: proxy-control
 
 ## 描述
 
-`proxy-control` 能够动态地控制 Nginx 代理的行为。
+使用 `proxy-control` 插件能够动态地控制 NGINX 代理的相关行为。
 
-**这个插件需要 APISIX 在 [APISIX-Base](../FAQ.md#如何构建-apisix-base-环境) 上运行。**
+:::info 重要
+
+此插件需要 APISIX 在 [APISIX-Base](../FAQ.md#如何构建-apisix-base-环境) 环境上运行。更多信息请参考 [apisix-build-tools](https://github.com/api7/apisix-build-tools)。
+
+:::
 
 ## 属性
 
 | 名称      | 类型          | 必选项 | 默认值    | 有效值                                                                    | 描述                                                                                                                                         |
 | --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| request_buffering | boolean        | 可选    |  true            |  | 动态设置 [`proxy_request_buffering`](http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_request_buffering) |
+| request_buffering | boolean        | 否    |  true            |  | 如果设置为 `true`，插件将动态设置 [`proxy_request_buffering`](http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_request_buffering)。 |
 
-## 如何启用
+## 启用插件
 
-以下是一个示例，在指定路由中启用插件：
+以下示例展示了如何在指定路由上启用 `proxy-control` 插件：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
+  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/upload",
     "plugins": {
@@ -57,20 +67,21 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 
 ## 测试插件
 
-使用 `curl` 去测试：
+启用插件后，使用 `curl` 命令请求该路由进行一个大文件的上传测试：
 
 ```shell
 curl -i http://127.0.0.1:9080/upload -d @very_big_file
 ```
 
-将不会在 error 日志中找到 "a client request body is buffered to a temporary file" 。
+如果在错误日志中没有找到关于 "a client request body is buffered to a temporary file" 的信息，则说明插件生效。
 
 ## 禁用插件
 
-当您要禁用这个插件时，这很简单，您可以在插件配置中删除相应的 json 配置，无需重新启动服务，它将立即生效：
+当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d
 {
     "uri": "/upload",
     "upstream": {
@@ -81,5 +92,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
-
-现在就已经移除 `proxy-control` 插件了。其他插件的开启和移除也是同样的方法。

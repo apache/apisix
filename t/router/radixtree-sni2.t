@@ -45,17 +45,14 @@ location /t {
             sni = "test.com",
         }
 
-        local code, body = t.test('/apisix/admin/ssl/1',
+        local code, body = t.test('/apisix/admin/ssls/1',
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "sni": "test.com"
-                    },
-                    "key": "/apisix/ssl/1"
+                "value": {
+                    "sni": "test.com"
                 },
-                "action": "set"
+                "key": "/apisix/ssls/1"
             }]]
         )
         ngx.status = code
@@ -167,19 +164,16 @@ location /t {
         local ssl_key =  t.read_file("t/certs/test2.key")
         local data = {cert = ssl_cert, key = ssl_key, sni = "*.test2.com"}
 
-        local code, body = t.test('/apisix/admin/ssl/1',
+        local code, body = t.test('/apisix/admin/ssls/1',
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "sni": "*.test2.com"
-                    },
-                    "key": "/apisix/ssl/1"
+                "value": {
+                    "sni": "*.test2.com"
                 },
-                "action": "set"
+                "key": "/apisix/ssls/1"
             }]]
-            )
+        )
 
         ngx.status = code
         ngx.say(body)
@@ -270,10 +264,10 @@ location /t {
             key = raw_ssl_key,
         }
 
-        local code, body = t.test('/apisix/admin/ssl/1',
+        local code, body = t.test('/apisix/admin/ssls/1',
             ngx.HTTP_PUT,
             core.json.encode(data)
-            )
+        )
 
         ngx.status = code
         ngx.print(body)
@@ -298,7 +292,7 @@ location /t {
         local ssl_key =  t.read_file("t/certs/incorrect.key")
         local data = {cert = ssl_cert, key = ssl_key, sni = "www.test.com"}
 
-        local code, body = t.test('/apisix/admin/ssl/1',
+        local code, body = t.test('/apisix/admin/ssls/1',
             ngx.HTTP_PUT,
             core.json.encode(data)
             )
@@ -412,7 +406,7 @@ location /t {
         local ssl_key =  t.read_file("t/certs/test2.key")
         local data = {cert = ssl_cert, key = ssl_key, sni = "*.TesT2.com"}
 
-        local code, body = t.test('/apisix/admin/ssl/1',
+        local code, body = t.test('/apisix/admin/ssls/1',
             ngx.HTTP_PUT,
             core.json.encode(data)
         )
@@ -477,7 +471,7 @@ location /t {
         local ssl_key =  t.read_file("t/certs/test2.key")
         local data = {cert = ssl_cert, key = ssl_key, snis = {"TesT2.com", "a.com"}}
 
-        local code, body = t.test('/apisix/admin/ssl/1',
+        local code, body = t.test('/apisix/admin/ssls/1',
             ngx.HTTP_PUT,
             core.json.encode(data)
         )

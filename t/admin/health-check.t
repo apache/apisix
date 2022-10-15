@@ -43,11 +43,8 @@ add_block_preprocessor(sub {
         "uri": "/index.html"
     }]])
     exp_data = {
-        node = {
-            value = req_data,
-            key = "/apisix/routes/1",
-        },
-        action = "set",
+        value = req_data,
+        key = "/apisix/routes/1",
     }
 _EOC_
 
@@ -87,9 +84,9 @@ __DATA__
                     }
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
+            exp_data.value.upstream.checks = req_data.upstream.checks
 
-            local code, body = t('/apisix/admin/routes/1',
+            local code, body, res = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 req_data,
                 exp_data
@@ -130,7 +127,7 @@ passed
                     }
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
+            exp_data.value.upstream.checks = req_data.upstream.checks
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -318,7 +315,7 @@ passed
                     "req_headers": ["User-Agent: curl/7.29.0"]
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
+            exp_data.value.upstream.checks = req_data.upstream.checks
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -352,7 +349,7 @@ passed
                     "req_headers": ["User-Agent: curl/7.29.0", "Accept: */*"]
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
+            exp_data.value.upstream.checks = req_data.upstream.checks
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -386,7 +383,7 @@ passed
                     "req_headers": ["User-Agent: curl/7.29.0", 2233]
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
+            exp_data.value.upstream.checks = req_data.upstream.checks
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -422,7 +419,7 @@ passed
                     }
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
+            exp_data.value.upstream.checks = req_data.upstream.checks
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -460,8 +457,8 @@ passed
                     }
                 }
             }]])
-            exp_data.node.value.upstream.checks.active = req_data.upstream.checks.active
-            exp_data.node.value.upstream.checks.passive = {
+            exp_data.value.upstream.checks.active = req_data.upstream.checks.active
+            exp_data.value.upstream.checks.passive = {
                 type = "http",
                 healthy = {
                     http_statuses = { 200, 201, 202, 203, 204, 205, 206, 207, 208, 226,
@@ -512,7 +509,7 @@ passed
                     }
                 }
             }]])
-            exp_data.node.value.upstream.checks = req_data.upstream.checks
+            exp_data.value.upstream.checks = req_data.upstream.checks
 
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,

@@ -17,12 +17,12 @@
 local core              = require("apisix.core")
 local utils             = require("apisix.admin.utils")
 local apisix_ssl        = require("apisix.ssl")
-local v3_adapter        = require("apisix.admin.v3_adapter")
 local tostring          = tostring
 local type              = type
 
 local _M = {
     version = 0.1,
+    need_v3_filter = true,
 }
 
 
@@ -73,7 +73,7 @@ function _M.put(id, conf)
         end
     end
 
-    local key = "/ssl/" .. id
+    local key = "/ssls/" .. id
 
     local ok, err = utils.inject_conf_with_prev_conf("ssl", key, conf)
     if not ok then
@@ -91,7 +91,7 @@ end
 
 
 function _M.get(id)
-    local key = "/ssl"
+    local key = "/ssls"
     if id then
         key = key .. "/" .. id
     end
@@ -108,7 +108,6 @@ function _M.get(id)
     end
 
     utils.fix_count(res.body, id)
-    v3_adapter.filter(res.body)
     return res.status, res.body
 end
 
@@ -128,7 +127,7 @@ function _M.post(id, conf)
         end
     end
 
-    local key = "/ssl"
+    local key = "/ssls"
     utils.inject_timestamp(conf)
     local res, err = core.etcd.push(key, conf)
     if not res then
@@ -145,7 +144,7 @@ function _M.delete(id)
         return 400, {error_msg = "missing ssl id"}
     end
 
-    local key = "/ssl/" .. id
+    local key = "/ssls/" .. id
     -- core.log.info("key: ", key)
     local res, err = core.etcd.delete(key)
     if not res then
@@ -170,7 +169,7 @@ function _M.patch(id, conf, sub_path)
         return 400, {error_msg = "invalid configuration"}
     end
 
-    local key = "/ssl"
+    local key = "/ssls"
     if id then
         key = key .. "/" .. id
     end

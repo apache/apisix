@@ -60,7 +60,7 @@ APISIX 将生成并发送如下所示的请求头到认证服务：
 首先，你需要设置一个外部认证服务。以下示例使用的是 Apache APISIX 无服务器插件模拟服务：
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/auth' \
     -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -90,7 +90,7 @@ curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/auth' \
 现在你可以在指定 Route 上启用 `forward-auth` 插件：
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/1' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
     -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
     -d '{
     "uri": "/headers",
@@ -160,7 +160,7 @@ Location: http://example.com/auth
 当你需要禁用 `forward-auth` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],

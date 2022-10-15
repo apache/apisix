@@ -39,6 +39,7 @@ local schema = {
             default = "default",
             enum = {"default", "origin"},
         },
+        -- deprecated, use "brokers" instead
         broker_list = {
             type = "object",
             minProperties = 1,
@@ -50,6 +51,41 @@ local schema = {
                     maximum = 65535,
                 },
             },
+        },
+        brokers = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "object",
+                properties = {
+                    host = {
+                        type = "string",
+                        description = "the host of kafka broker",
+                    },
+                    port = {
+                        type = "integer",
+                        minimum = 1,
+                        maximum = 65535,
+                        description = "the port of kafka broker",
+                    },
+                    sasl_config = {
+                        type = "object",
+                        description = "sasl config",
+                        properties = {
+                            mechanism = {
+                                type = "string",
+                                default = "PLAIN",
+                                enum = {"PLAIN"},
+                            },
+                            user = { type = "string", description = "user" },
+                            password =  { type = "string", description = "password" },
+                        },
+                        required = {"user", "password"},
+                    },
+                },
+                required = {"host", "port"},
+            },
+            uniqueItems = true,
         },
         kafka_topic = {type = "string"},
         producer_type = {
@@ -87,9 +123,12 @@ local schema = {
         producer_batch_num = {type = "integer", minimum = 1, default = 200},
         producer_batch_size = {type = "integer", minimum = 0, default = 1048576},
         producer_max_buffering = {type = "integer", minimum = 1, default = 50000},
-        producer_time_linger = {type = "integer", minimum = 1, default = 1}
+        producer_time_linger = {type = "integer", minimum = 1, default = 1},
     },
-    required = {"broker_list", "kafka_topic"}
+    oneOf = {
+        { required = {"broker_list", "kafka_topic"},},
+        { required = {"brokers", "kafka_topic"},},
+    }
 }
 
 local metadata_schema = {
@@ -199,15 +238,17 @@ function _M.log(conf, ctx)
     end
 
     -- reuse producer via lrucache to avoid unbalanced partitions of messages in kafka
-    local broker_list = core.table.new(core.table.nkeys(conf.broker_list), 0)
+    local broker_list = core.table.clone(conf.brokers or {})
     local broker_config = {}
 
-    for host, port in pairs(conf.broker_list) do
-        local broker = {
-            host = host,
-            port = port
-        }
-        core.table.insert(broker_list, broker)
+    if conf.broker_list then
+        for host, port in pairs(conf.broker_list) do
+            local broker = {
+                host = host,
+                port = port
+            }
+            core.table.insert(broker_list, broker)
+        end
     end
 
     broker_config["request_timeout"] = conf.timeout * 1000

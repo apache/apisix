@@ -76,6 +76,21 @@ local function custom_sort_plugin(l, r)
     return l._meta.priority > r._meta.priority
 end
 
+local function check_disable(plugin_conf)
+    if not plugin_conf then
+        return nil
+    end
+
+    if not plugin_conf._meta then
+       return nil
+    end
+
+    if type(plugin_conf._meta) ~= "table" then
+        return nil
+    end
+
+    return plugin_conf._meta.disable
+end
 
 local PLUGIN_TYPE_HTTP = 1
 local PLUGIN_TYPE_STREAM = 2
@@ -143,14 +158,6 @@ local function load_plugin(name, plugins_list, plugin_type)
     local plugin_injected_schema = core.schema.plugin_injected_schema
 
     if plugin.schema['$comment'] ~= plugin_injected_schema['$comment'] then
-        if properties.disable then
-            core.log.error("invalid plugin [", name,
-                           "]: found forbidden 'disable' field in the schema")
-            return
-        end
-
-        properties.disable = plugin_injected_schema.disable
-
         if properties._meta then
             core.log.error("invalid plugin [", name,
                            "]: found forbidden '_meta' field in the schema")
@@ -161,7 +168,6 @@ local function load_plugin(name, plugins_list, plugin_type)
         -- new injected fields should be added under `_meta`
         -- 1. so we won't break user's code when adding any new injected fields
         -- 2. the semantics is clear, especially in the doc and in the caller side
-        -- TODO: move the `disable` to `_meta` too
 
         plugin.schema['$comment'] = plugin_injected_schema['$comment']
     end
@@ -350,6 +356,24 @@ function _M.load(config)
 end
 
 
+function _M.exit_worker()
+    for name, plugin in pairs(local_plugins_hash) do
+        local ty = PLUGIN_TYPE_HTTP
+        if plugin.type == "wasm" then
+            ty = PLUGIN_TYPE_HTTP_WASM
+        end
+        unload_plugin(name, ty)
+    end
+
+    -- we need to load stream plugin so that we can check their schemas in
+    -- Admin API. Maybe we can avoid calling `load` in this case? So that
+    -- we don't need to call `destroy` too
+    for name in pairs(stream_local_plugins_hash) do
+        unload_plugin(name, PLUGIN_TYPE_STREAM)
+    end
+end
+
+
 local function trace_plugins_info_for_debug(ctx, plugins)
     if not enable_debug() then
         return
@@ -434,10 +458,12 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
         end
 
         local matched = meta_filter(ctx, name, plugin_conf)
-        if not plugin_conf.disable and matched then
+        local disable = check_disable(plugin_conf)
+        if not disable and matched then
             if plugin_obj.run_policy == "prefer_route" and route_plugin_conf ~= nil then
                 local plugin_conf_in_route = route_plugin_conf[name]
-                if plugin_conf_in_route and not plugin_conf_in_route.disable then
+                local disable_in_route = check_disable(plugin_conf_in_route)
+                if plugin_conf_in_route and not disable_in_route then
                     goto continue
                 end
             end
@@ -515,7 +541,8 @@ function _M.stream_filter(user_route, plugins)
         local name = plugin_obj.name
         local plugin_conf = user_plugin_conf[name]
 
-        if type(plugin_conf) == "table" and not plugin_conf.disable then
+        local disable = check_disable(plugin_conf)
+        if type(plugin_conf) == "table" and not disable then
             core.table.insert(plugins, plugin_obj)
             core.table.insert(plugins, plugin_conf)
         end
@@ -599,7 +626,7 @@ function _M.merge_service_route(service_conf, route_conf)
 end
 
 
-local function merge_consumer_route(route_conf, consumer_conf)
+local function merge_consumer_route(route_conf, consumer_conf, consumer_group_conf)
     if not consumer_conf.plugins or
        core.table.nkeys(consumer_conf.plugins) == 0
     then
@@ -608,6 +635,20 @@ local function merge_consumer_route(route_conf, consumer_conf)
     end
 
     local new_route_conf = core.table.deepcopy(route_conf)
+
+    if consumer_group_conf then
+        for name, conf in pairs(consumer_group_conf.value.plugins) do
+            if not new_route_conf.value.plugins then
+                new_route_conf.value.plugins = {}
+            end
+
+            if new_route_conf.value.plugins[name] == nil then
+                conf._from_consumer = true
+            end
+            new_route_conf.value.plugins[name] = conf
+        end
+    end
+
     for name, conf in pairs(consumer_conf.plugins) do
         if not new_route_conf.value.plugins then
             new_route_conf.value.plugins = {}
@@ -624,18 +665,32 @@ local function merge_consumer_route(route_conf, consumer_conf)
 end
 
 
-function _M.merge_consumer_route(route_conf, consumer_conf, api_ctx)
+function _M.merge_consumer_route(route_conf, consumer_conf, consumer_group_conf, api_ctx)
     core.log.info("route conf: ", core.json.delay_encode(route_conf))
     core.log.info("consumer conf: ", core.json.delay_encode(consumer_conf))
+    core.log.info("consumer group conf: ", core.json.delay_encode(consumer_group_conf))
 
-    local flag = tostring(route_conf) .. tostring(consumer_conf)
+    local flag = route_conf.value.id .. "#" .. route_conf.modifiedIndex
+                 .. "#" .. consumer_conf.id .. "#" .. consumer_conf.modifiedIndex
+
+    if consumer_group_conf then
+        flag = flag .. "#" .. consumer_group_conf.value.id
+            .. "#" .. consumer_group_conf.modifiedIndex
+    end
+
     local new_conf = merged_route(flag, nil,
-                        merge_consumer_route, route_conf, consumer_conf)
+                        merge_consumer_route, route_conf, consumer_conf, consumer_group_conf)
 
     api_ctx.conf_type = api_ctx.conf_type .. "&consumer"
     api_ctx.conf_version = api_ctx.conf_version .. "&" ..
                            api_ctx.consumer_ver
     api_ctx.conf_id = api_ctx.conf_id .. "&" .. api_ctx.consumer_name
+
+    if consumer_group_conf then
+        api_ctx.conf_type = api_ctx.conf_type .. "&consumer_group"
+        api_ctx.conf_version = api_ctx.conf_version .. "&" .. consumer_group_conf.modifiedIndex
+        api_ctx.conf_id = api_ctx.conf_id .. "&" .. consumer_group_conf.value.id
+    end
 
     return new_conf, new_conf ~= route_conf
 end
@@ -761,9 +816,6 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
     end
 
     if plugin_obj.check_schema then
-        local disable = plugin_conf.disable
-        plugin_conf.disable = nil
-
         local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
         if not ok then
             return false, "failed to check the configuration of plugin "
@@ -776,8 +828,6 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
                 return nil, "failed to validate the 'vars' expression: " .. err
             end
         end
-
-        plugin_conf.disable = disable
     end
 
     return true
@@ -825,16 +875,11 @@ local function stream_check_schema(plugins_conf, schema_type, skip_disabled_plug
         end
 
         if plugin_obj.check_schema then
-            local disable = plugin_conf.disable
-            plugin_conf.disable = nil
-
             local ok, err = plugin_obj.check_schema(plugin_conf, schema_type)
             if not ok then
                 return false, "failed to check the configuration of "
                               .. "stream plugin [" .. name .. "]: " .. err
             end
-
-            plugin_conf.disable = disable
         end
 
         ::CONTINUE::

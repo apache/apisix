@@ -45,20 +45,17 @@ __DATA__
                     }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 2,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
                             }
-                        },
-                        "key": "/apisix/global_rules/1"
+                        }
                     },
-                    "action": "set"
+                    "key": "/apisix/global_rules/1"
                 }]]
                 )
 
@@ -90,20 +87,17 @@ passed
                 ngx.HTTP_GET,
                 nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 2,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
                             }
-                        },
-                        "key": "/apisix/global_rules/1"
+                        }
                     },
-                    "action": "get"
+                    "key": "/apisix/global_rules/1"
                 }]]
                 )
 
@@ -129,27 +123,23 @@ passed
                 ngx.HTTP_GET,
                 nil,
                 [[{
-                    "node": {
-                        "dir": true,
-                        "nodes": [
+                    "total": 1,
+                    "list": [
                         {
                             "key": "/apisix/global_rules/1",
                             "value": {
-                            "plugins": {
-                                "limit-count": {
-                                "time_window": 60,
-                                "policy": "local",
-                                "count": 2,
-                                "key": "remote_addr",
-                                "rejected_code": 503
+                                "plugins": {
+                                    "limit-count": {
+                                    "time_window": 60,
+                                    "policy": "local",
+                                    "count": 2,
+                                    "key": "remote_addr",
+                                    "rejected_code": 503
+                                    }
                                 }
                             }
-                            }
                         }
-                        ],
-                        "key": "/apisix/global_rules"
-                    },
-                    "action": "get"
+                    ]
                 }]]
                 )
 
@@ -191,20 +181,17 @@ passed
                     }
                 }}]],
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 3,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "count": 3,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
                             }
-                        },
-                        "key": "/apisix/global_rules/1"
+                        }
                     },
-                    "action": "compareAndSwap"
+                    "key": "/apisix/global_rules/1"
                 }]]
                 )
 
@@ -252,20 +239,17 @@ passed
                     }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 3,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "count": 3,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
                             }
-                        },
-                        "key": "/apisix/global_rules/1"
+                        }
                     },
-                    "action": "compareAndSwap"
+                    "key": "/apisix/global_rules/1"
                 }]]
                 )
 
@@ -295,12 +279,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/global_rules/1',
-                ngx.HTTP_DELETE,
-                nil,
-                [[{
-                    "action": "delete"
-                }]]
-                )
+                ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -319,12 +299,8 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code = t('/apisix/admin/global_rules/1',
-                ngx.HTTP_DELETE,
-                nil,
-                [[{
-                    "action": "delete"
-                }]]
-                )
+                ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code)
         }
     }
@@ -441,13 +417,13 @@ passed
             end
 
             res = json.decode(res)
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
+            res.value.create_time = nil
+            res.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"action":"set","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}}
+{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}
 --- request
 GET /t
 --- no_error_log
@@ -479,13 +455,13 @@ GET /t
             end
 
             res = json.decode(res)
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
+            res.value.create_time = nil
+            res.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"action":"compareAndSwap","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}}
+{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}
 --- request
 GET /t
 --- no_error_log
@@ -510,18 +486,19 @@ GET /t
             end
 
             res = json.decode(res)
-            local value = res.node.value
-            assert(value.create_time ~= nil)
-            value.create_time = nil
-            assert(value.update_time ~= nil)
-            value.update_time = nil
-            assert(res.count ~= nil)
-            res.count = nil
+            assert(res.createdIndex ~= nil)
+            res.createdIndex = nil
+            assert(res.modifiedIndex ~= nil)
+            res.modifiedIndex = nil
+            assert(res.value.create_time ~= nil)
+            res.value.create_time = nil
+            assert(res.value.update_time ~= nil)
+            res.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"action":"get","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}}
+{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}
 --- request
 GET /t
 --- no_error_log
@@ -550,7 +527,7 @@ GET /t
         }
     }
 --- response_body
-{"action":"delete","deleted":"1","key":"/apisix/global_rules/1","node":{}}
+{"deleted":"1","key":"/apisix/global_rules/1"}
 --- request
 GET /t
 --- no_error_log

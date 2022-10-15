@@ -38,15 +38,13 @@ __DATA__
                     "ikey": 1
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "skey": "val",
-                            "ikey": 1
-                        }
+                    "value": {
+                        "skey": "val",
+                        "ikey": 1
                     },
-                    "action": "set"
+                    "key": "/apisix/plugin_metadata/example-plugin"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -73,15 +71,12 @@ passed
                     "ikey": 2
                  }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "skey": "val2",
-                            "ikey": 2
-                        }
-                    },
-                    "action": "set"
+                    "value": {
+                        "skey": "val2",
+                        "ikey": 2
+                    }
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -94,15 +89,12 @@ passed
                     "ikey": 2
                  }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "skey": "val2",
-                            "ikey": 2
-                        }
-                    },
-                    "action": "set"
+                    "value": {
+                        "skey": "val2",
+                        "ikey": 2
+                    }
                 }]]
-                )
+            )
 
             ngx.say(code)
             ngx.say(body)
@@ -128,15 +120,12 @@ passed
                  ngx.HTTP_GET,
                  nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "skey": "val2",
-                            "ikey": 2
-                        }
-                    },
-                    "action": "get"
+                    "value": {
+                        "skey": "val2",
+                        "ikey": 2
+                    }
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -157,11 +146,7 @@ passed
         content_by_lua_block {
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin_metadata/example-plugin',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+            local code, body = t('/apisix/admin/plugin_metadata/example-plugin', ngx.HTTP_DELETE)
 
             ngx.status = code
             ngx.say(body)
@@ -181,13 +166,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code = t('/apisix/admin/plugin_metadata/not_found',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+            local code = t('/apisix/admin/plugin_metadata/not_found', ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code)
         }
     }
@@ -206,15 +185,12 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/plugin_metadata',
-                 ngx.HTTP_PUT,
-                 [[{"k": "v"}]],
+                ngx.HTTP_PUT,
+                [[{"k": "v"}]],
                 [[{
-                    "node": {
-                        "value": "sdf"
-                    },
-                    "action": "set"
+                    "value": "sdf"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -236,15 +212,12 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/plugin_metadata/test',
-                 ngx.HTTP_PUT,
-                 [[{"k": "v"}]],
+                ngx.HTTP_PUT,
+                [[{"k": "v"}]],
                 [[{
-                    "node": {
-                        "value": "sdf"
-                    },
-                    "action": "set"
+                    "value": "sdf"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -271,15 +244,12 @@ GET /t
                     "skey": "val"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "skey": "val",
-                            "ikey": 1
-                        }
-                    },
-                    "action": "set"
+                    "value": {
+                        "skey": "val",
+                        "ikey": 1
+                    }
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -302,12 +272,12 @@ qr/\{"error_msg":"invalid configuration: property \\"ikey\\" is required"\}/
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
             local code, message, res = t('/apisix/admin/plugin_metadata/example-plugin',
-                 ngx.HTTP_PUT,
+                ngx.HTTP_PUT,
                 [[{
                     "skey": "val",
                     "ikey": 1
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -316,13 +286,11 @@ qr/\{"error_msg":"invalid configuration: property \\"ikey\\" is required"\}/
             end
 
             res = json.decode(res)
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"action":"set","node":{"key":"/apisix/plugin_metadata/example-plugin","value":{"ikey":1,"skey":"val"}}}
+{"key":"/apisix/plugin_metadata/example-plugin","value":{"ikey":1,"skey":"val"}}
 --- request
 GET /t
 --- no_error_log
@@ -336,9 +304,7 @@ GET /t
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/plugin_metadata/example-plugin',
-                 ngx.HTTP_GET
-                )
+            local code, message, res = t('/apisix/admin/plugin_metadata/example-plugin', ngx.HTTP_GET)
 
             if code >= 300 then
                 ngx.status = code
@@ -347,14 +313,17 @@ GET /t
             end
 
             res = json.decode(res)
-            local value = res.node.value
-            assert(res.count ~= nil)
-            res.count = nil
+
+            assert(res.createdIndex ~= nil)
+            res.createdIndex = nil
+            assert(res.modifiedIndex ~= nil)
+            res.modifiedIndex = nil
+
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"action":"get","node":{"key":"/apisix/plugin_metadata/example-plugin","value":{"ikey":1,"skey":"val"}}}
+{"key":"/apisix/plugin_metadata/example-plugin","value":{"ikey":1,"skey":"val"}}
 --- request
 GET /t
 --- no_error_log
@@ -368,9 +337,7 @@ GET /t
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/plugin_metadata/example-plugin',
-                 ngx.HTTP_DELETE
-                )
+            local code, message, res = t('/apisix/admin/plugin_metadata/example-plugin', ngx.HTTP_DELETE)
 
             if code >= 300 then
                 ngx.status = code
@@ -383,7 +350,7 @@ GET /t
         }
     }
 --- response_body
-{"action":"delete","deleted":"1","key":"/apisix/plugin_metadata/example-plugin","node":{}}
+{"deleted":"1","key":"/apisix/plugin_metadata/example-plugin"}
 --- request
 GET /t
 --- no_error_log

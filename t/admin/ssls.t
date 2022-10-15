@@ -54,25 +54,21 @@ __DATA__
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
-                    "node": {
-                        "value": {
-                            "sni": "test.com"
-                        },
-                        "key": "/apisix/ssl/1"
+                    "value": {
+                        "sni": "test.com"
                     },
-                    "action": "set"
+                    "key": "/apisix/ssls/1"
                 }]]
                 )
 
             ngx.status = code
             ngx.say(body)
 
-            local res = assert(etcd.get('/ssl/1'))
+            local res = assert(etcd.get('/ssls/1'))
             local prev_create_time = res.body.node.value.create_time
             assert(prev_create_time ~= nil, "create_time is nil")
             local update_time = res.body.node.value.update_time
             assert(update_time ~= nil, "update_time is nil")
-
         }
     }
 --- response_body

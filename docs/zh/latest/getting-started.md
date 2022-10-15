@@ -154,7 +154,7 @@ docker-compose -p docker-apisix -f docker-compose-arm64.yml up -d
 
 :::info IMPORTANT
 
-请确保其他系统进程没有占用 **9080、9443 和 2379** 端口。
+请确保其他系统进程没有占用 **9080、9180、9443 和 2379** 端口。
 
 在基于 UNIX 的系统中，可以使用以下命令来终止指定监听端口的运行：
 
@@ -174,7 +174,7 @@ docker logs -f --tail $<container_id>
 
 ```bash
 # 注意：请在运行 Docker 的宿主机上执行 curl 命令。
-curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+curl "http://127.0.0.1:9180/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```
 
 如果返回数据如下所示，则表示 APISIX 成功启动：
@@ -182,7 +182,6 @@ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335
 ```json
 {
   "count":0,
-  "action":"get",
   "node":{
     "key":"/apisix/services",
     "nodes":[],
@@ -200,7 +199,7 @@ APISIX 提供了强大的 [Admin API](./admin-api.md) 和 [Dashboard](https://gi
 以下示例代码中，我们将为路由配置匹配规则，以便 APISIX 可以将请求转发到对应的上游服务：
 
 ```bash
-curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "methods": ["GET"],
   "host": "example.com",
@@ -233,7 +232,7 @@ curl -i -X GET "http://127.0.0.1:9080/anything/foo?arg=10" -H "Host: example.com
 你可以通过以下命令创建一个上游，并在路由中使用它，而不是直接将其配置在路由中：
 
 ```bash
-curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "type": "roundrobin",
   "nodes": {
@@ -247,7 +246,7 @@ curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f0343
 上游服务创建完成后，可以通过以下命令绑定到指定路由：
 
 ```bash
-curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "uri": "/get",
   "host": "httpbin.org",

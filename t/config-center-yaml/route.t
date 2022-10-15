@@ -24,8 +24,10 @@ no_shuffle();
 our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
-    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 _EOC_
 
 run_tests();
@@ -49,7 +51,7 @@ GET /hello
 --- response_body
 hello world
 --- error_log
-use config_center: yaml
+use config_provider: yaml
 --- no_error_log
 [error]
 
@@ -72,7 +74,7 @@ routes:
 GET /hello
 --- error_code: 404
 --- error_log
-use config_center: yaml
+use config_provider: yaml
 --- no_error_log
 [error]
 
@@ -153,10 +155,12 @@ hello world
 --- yaml_config
 apisix:
     node_listen: 1984
-    config_center: yaml
-    enable_admin: false
     router:
         http: "radixtree_host_uri"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 --- apisix_yaml
 routes:
   -
@@ -182,10 +186,12 @@ property "uri" validation failed
 --- yaml_config
 apisix:
     node_listen: 1984
-    config_center: yaml
-    enable_admin: false
     router:
         http: "radixtree_host_uri"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 --- apisix_yaml
 routes:
   -
@@ -210,10 +216,12 @@ GET /hello
 --- yaml_config
 apisix:
     node_listen: 1984
-    config_center: yaml
-    enable_admin: false
     router:
         http: "radixtree_host_uri"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 --- apisix_yaml
 routes:
   -
@@ -238,8 +246,10 @@ GET /hello
 --- yaml_config
 apisix:
     node_listen: 1984
-    config_center: yaml
-    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 --- apisix_yaml
 routes:
   -

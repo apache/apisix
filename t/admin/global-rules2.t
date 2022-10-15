@@ -60,7 +60,7 @@ __DATA__
         }
     }
 --- response_body
-{"action":"get","count":0,"node":{"dir":true,"key":"/apisix/global_rules","nodes":[]}}
+{"list":[],"total":0}
 
 
 
@@ -88,13 +88,13 @@ __DATA__
             end
 
             res = json.decode(res)
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
+            res.value.create_time = nil
+            res.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"action":"set","node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}}
+{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}
 
 
 
@@ -116,11 +116,18 @@ __DATA__
             end
 
             res = json.decode(res)
-            ngx.say(json.encode(res))
+            assert(res.total == 1)
+            assert(#res.list == 1)
+            assert(res.list[1].createdIndex ~= nil)
+            assert(res.list[1].modifiedIndex ~= nil)
+            assert(res.list[1].key == "/apisix/global_rules/1")
+            assert(res.list[1].value ~= nil)
+
+            ngx.say(message)
         }
     }
 --- response_body_like
-{"action":"get","count":1,"node":\{"dir":true,"key":"/apisix/global_rules","nodes":.*
+passed
 
 
 
@@ -130,12 +137,8 @@ __DATA__
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/global_rules/1',
-                ngx.HTTP_DELETE,
-                nil,
-                [[{
-                    "action": "delete"
-                }]]
-                )
+                ngx.HTTP_DELETE
+            )
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }

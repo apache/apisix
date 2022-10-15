@@ -443,12 +443,13 @@ Location: https://foo.com:8443/hello
 
 
 
-=== TEST 19: redirect(port using `apisix.ssl.listen_port`)
+=== TEST 19: redirect(port using `apisix.ssl.listen`)
 --- yaml_config
 apisix:
     ssl:
         enable: true
-        listen_port: 9445
+        listen:
+            - port: 9445
 --- request
 GET /hello
 --- more_headers
@@ -476,8 +477,8 @@ apisix:
     ssl:
         enable: true
         listen:
-            - 6443
-            - 7443
+            - port: 6443
+            - port: 7443
             - port: 8443
             - port: 9443
 --- request
@@ -649,7 +650,7 @@ location /t {
         local ssl_key =  t.read_file("t/certs/apisix.key")
         local data = {cert = ssl_cert, key = ssl_key, sni = "test.com"}
 
-        local code, body = t.test('/apisix/admin/ssl/1',
+        local code, body = t.test('/apisix/admin/ssls/1',
             ngx.HTTP_PUT,
             core.json.encode(data)
             )

@@ -38,13 +38,11 @@ __DATA__
                      "desc": "new consumer"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "desc": "new consumer"
-                        }
+                    "value": {
+                        "username": "jack",
+                        "desc": "new consumer"
                     },
-                    "action": "set"
+                    "key": "/apisix/consumers/jack"
                 }]]
                 )
 
@@ -86,18 +84,16 @@ passed
                         }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "desc": "new consumer",
-                            "plugins": {
-                                "key-auth": {
-                                    "key": "auth-one"
-                                }
+                    "value": {
+                        "username": "jack",
+                        "desc": "new consumer",
+                        "plugins": {
+                            "key-auth": {
+                                "key": "auth-one"
                             }
                         }
                     },
-                    "action": "set"
+                    "key": "/apisix/consumers/jack"
                 }]]
                 )
 
@@ -129,18 +125,16 @@ passed
                  ngx.HTTP_GET,
                  nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "desc": "new consumer",
-                            "plugins": {
-                                "key-auth": {
-                                    "key": "auth-one"
-                                }
+                    "value": {
+                        "username": "jack",
+                        "desc": "new consumer",
+                        "plugins": {
+                            "key-auth": {
+                                "key": "auth-one"
                             }
                         }
                     },
-                    "action": "get"
+                    "key": "/apisix/consumers/jack"
                 }]]
                 )
 
@@ -164,10 +158,8 @@ passed
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/consumers/jack',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+                 ngx.HTTP_DELETE
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -189,11 +181,8 @@ passed
             local t = require("lib.test_admin").test
             local code = t('/apisix/admin/consumers/not_found',
                  ngx.HTTP_DELETE,
-                 nil,
-                 [[{
-                    "action": "delete"
-                }]]
-                )
+                 nil
+            )
             ngx.say("[delete] code: ", code)
         }
     }
@@ -217,12 +206,9 @@ GET /t
                      "id":"jack"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "id": "jack"
-                        }
-                    },
-                    "action": "set"
+                    "value": {
+                        "id": "jack"
+                    }
                 }]]
                 )
 
@@ -257,18 +243,16 @@ GET /t
                      }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "desc": "new consumer",
-                            "labels": {
-                                "build":"16",
-                                "env":"production",
-                                "version":"v2"
-                            }
+                    "value": {
+                        "username": "jack",
+                        "desc": "new consumer",
+                        "labels": {
+                            "build":"16",
+                            "env":"production",
+                            "version":"v2"
                         }
                     },
-                    "action": "set"
+                    "key": "/apisix/consumers/jack"
                 }]]
                 )
 
@@ -353,15 +337,13 @@ GET /t
                      "update_time": 1602893670
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "pony",
-                            "desc": "new consumer",
-                            "create_time": 1602883670,
-                            "update_time": 1602893670
-                        }
+                    "value": {
+                        "username": "pony",
+                        "desc": "new consumer",
+                        "create_time": 1602883670,
+                        "update_time": 1602893670
                     },
-                    "action": "set"
+                    "key": "/apisix/consumers/pony"
                 }]]
                 )
 
@@ -385,10 +367,8 @@ passed
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/consumers/pony',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+                 ngx.HTTP_DELETE
+            )
 
             ngx.status = code
             ngx.say(body)

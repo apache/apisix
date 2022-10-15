@@ -36,17 +36,14 @@ location /t {
         local ssl_key =  t.read_file("t/certs/apisix.key")
         local data = {cert = ssl_cert, key = ssl_key, sni = "www.test.com"}
 
-        local code, body = t.test('/apisix/admin/ssl/1',
+        local code, body = t.test('/apisix/admin/ssls/1',
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "sni": "www.test.com"
-                    },
-                    "key": "/apisix/ssl/1"
+                "value": {
+                    "sni": "www.test.com"
                 },
-                "action": "set"
+                "key": "/apisix/ssls/1"
             }]]
             )
 
@@ -183,17 +180,14 @@ location /t {
         local ssl_key =  t.read_file("t/certs/test2.key")
         local data = {cert = ssl_cert, key = ssl_key, sni = "*.test2.com"}
 
-        local code, body = t.test('/apisix/admin/ssl/2',
+        local code, body = t.test('/apisix/admin/ssls/2',
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "sni": "*.test2.com"
-                    },
-                    "key": "/apisix/ssl/2"
+                "value": {
+                    "sni": "*.test2.com"
                 },
-                "action": "set"
+                "key": "/apisix/ssls/2"
             }]]
             )
 
@@ -268,17 +262,14 @@ location /t {
         local ssl_key =  t.read_file("t/certs/apisix_admin_ssl.key")
         local data = {cert = ssl_cert, key = ssl_key, sni = "apisix.dev"}
 
-        local code, body = t.test('/apisix/admin/ssl/3',
+        local code, body = t.test('/apisix/admin/ssls/3',
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "sni": "apisix.dev"
-                    },
-                    "key": "/apisix/ssl/3"
+                "value": {
+                    "sni": "apisix.dev"
                 },
-                "action": "set"
+                "key": "/apisix/ssls/3"
             }]]
             )
 
@@ -349,9 +340,9 @@ location /t {
         local core = require("apisix.core")
         local t = require("lib.test_admin")
 
-        t.test('/apisix/admin/ssl/1', ngx.HTTP_DELETE)
-        t.test('/apisix/admin/ssl/2', ngx.HTTP_DELETE)
-        t.test('/apisix/admin/ssl/3', ngx.HTTP_DELETE)
+        t.test('/apisix/admin/ssls/1', ngx.HTTP_DELETE)
+        t.test('/apisix/admin/ssls/2', ngx.HTTP_DELETE)
+        t.test('/apisix/admin/ssls/3', ngx.HTTP_DELETE)
 
     }
 }

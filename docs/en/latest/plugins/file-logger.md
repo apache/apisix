@@ -31,6 +31,16 @@ description: This document contains information about the Apache APISIX file-log
 
 The `file-logger` Plugin is used to push log streams to a specific location.
 
+:::tip
+
+- `file-logger` plugin can count request and response data for individual routes locally, which is useful for [debugging](../debug-mode.md).
+- `file-logger` plugin can get [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html), while `access.log` can only use NGINX variables.
+- `file-logger` plugin support hot-loaded so that we can change its configuration at any time with immediate effect.
+- `file-logger` plugin saves every data in JSON format.
+- The user can modify the functions executed by the `file-logger` during the `log phase` to collect the information they want.
+
+:::
+
 ## Attributes
 
 | Name | Type   | Required | Description   |
@@ -48,7 +58,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 The example below shows how you can configure through the Admin API:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/file-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/file-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "log_format": {
     "host": "$host",
@@ -70,7 +80,7 @@ With this configuration, your logs would be formatted as shown below:
 The example below shows how you can enable the Plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "plugins": {
     "file-logger": {
@@ -102,7 +112,7 @@ You will be able to find the `file.log` file in the configured `logs` directory.
 To disable the `file-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "methods": ["GET"],
   "uri": "/hello",

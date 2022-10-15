@@ -1,5 +1,10 @@
 ---
 title: client-control
+keywords:
+  - APISIX
+  - API 网关
+  - Client Control
+description: 本文介绍了 Apache APISIX proxy-control 插件的相关操作，你可以使用此插件动态地控制 NGINX 处理客户端的请求的行为。
 ---
 
 <!--
@@ -23,22 +28,27 @@ title: client-control
 
 ## 描述
 
-`client-control` 插件能够动态地控制 Nginx 处理客户端的请求的行为。
+`client-control` 插件能够通过设置客户端请求体大小的上限来动态地控制 NGINX 处理客户端的请求。
 
-**这个插件需要 APISIX 在 [APISIX-Base](../FAQ.md#如何构建-apisix-base-环境) 上运行。**
+:::info 重要
+
+此插件需要 APISIX 在 [APISIX-Base](../FAQ.md#如何构建-apisix-base-环境) 环境上运行。更多信息请参考 [apisix-build-tools](https://github.com/api7/apisix-build-tools)。
+
+:::
 
 ## 属性
 
-| 名称      | 类型          | 必选项 | 默认值    | 有效值                                                                    | 描述                                                                                                                                         |
-| --------- | ------------- | ----------- | ---------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| max_body_size | integer        | 可选    |              | >= 0 | 动态设置 `client_max_body_size` 的大小 |
+| 名称      | 类型          | 必选项 | 有效值                                                                    | 描述                                                                                                                                         |
+| --------- | ------------- | ----------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| max_body_size | integer        | 否    | [0,...] | 动态设置 [`client_max_body_size`](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size) 的大小。 |
 
-## 如何启用
+## 启用插件
 
-以下是一个示例，在指定路由中启用插件：
+以下示例展示了如何在指定路由上启用 `client-control` 插件，并设置 `max_body_size`：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
+  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -57,11 +67,15 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 
 ## 测试插件
 
-使用 `curl` 去测试：
+启用插件后，使用 `curl` 命令请求该路由：
 
 ```shell
 curl -i http://127.0.0.1:9080/index.html -d '123'
+```
 
+因为在配置插件时设置了 `max_body_size` 为 `1`，所以返回的 HTTP 响应头中如果带有 `413` 状态码，则表示插件生效：
+
+```shell
 HTTP/1.1 413 Request Entity Too Large
 ...
 <html>
@@ -75,10 +89,11 @@ HTTP/1.1 413 Request Entity Too Large
 
 ## 禁用插件
 
-当您要禁用 `client-control` 插件时，这很简单，您可以在插件配置中删除相应的 json 配置，无需重新启动服务，它将立即生效：
+当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
+  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {
@@ -89,5 +104,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
-
-现在就已经移除 `client-control` 插件了。其他插件的开启和移除也是同样的方法。

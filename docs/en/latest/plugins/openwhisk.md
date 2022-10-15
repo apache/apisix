@@ -69,6 +69,10 @@ docker run --rm -d \
 docker exec openwhisk waitready
 ```
 
+Install the [openwhisk-cli](https://github.com/apache/openwhisk-cli) utility.
+
+You can download the released executable binaries wsk for Linux systems from the [openwhisk-cli](https://github.com/apache/openwhisk-cli) repository.
+
 You can then create an action to test:
 
 ```shell
@@ -79,7 +83,7 @@ wsk action update test <(echo 'function main(){return {"ready":true}}') --kind n
 You can now configure the Plugin on a specific Route and point to this running OpenWhisk service:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -112,7 +116,7 @@ This will give back the response from the action:
 To disable the `openwhisk` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",

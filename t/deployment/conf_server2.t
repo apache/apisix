@@ -29,13 +29,6 @@ add_block_preprocessor(sub {
 
 });
 
-Test::Nginx::Socket::set_http_config_filter(sub {
-    my $config = shift;
-    my $snippet = `./t/bin/gen_snippet.lua conf_server`;
-    $config .= $snippet;
-    return $config;
-});
-
 run_tests();
 
 __DATA__
@@ -53,7 +46,7 @@ server {
         proxy_pass http://127.0.0.1:2379;
     }
 }
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -96,7 +89,7 @@ server {
         proxy_pass http://127.0.0.1:2379;
     }
 }
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -140,7 +133,7 @@ server {
         proxy_pass http://127.0.0.1:2379;
     }
 }
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:

@@ -34,14 +34,15 @@ The routing rules in the `conf/apisix.yaml` file are loaded into memory immediat
 
 Since the current Admin API is based on the etcd configuration center solution, enable Admin API is not allowed when the Stand-alone mode is enabled.
 
-To enable Stand-alone mode, we can set `apisix.config_center` to `yaml` and disable Admin API in file `conf/config.yaml`.
+The Stand-alone mode can only be enabled when set the role of APISIX as data plane. We can set `deployment.role` to `data_plane` and `deployment.role_data_plane.config_provider` to `yaml`.
 
 Refer to the example below:
 
 ```yaml
-apisix:
-  enable_admin: false
-  config_center: yaml
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 ```
 
 ### How to configure rules
@@ -284,9 +285,6 @@ stream_routes:
       mqtt-proxy:
         protocol_name: "MQTT"
         protocol_level: 4
-        upstream:
-          ip: "127.0.0.1"
-          port: 1995
 upstreams:
   - nodes:
       "127.0.0.1:1995": 1

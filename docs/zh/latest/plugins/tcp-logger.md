@@ -2,11 +2,11 @@
 title: tcp-logger
 keywords:
   - APISIX
+  - API 网关
   - Plugin
   - TCP Logger
-description: 本文介绍了 API 网关 Apache APISIX 如何启用 tcp-logger 插件，并将日志数据发送到 TCP 服务器的步骤。
+description: 本文介绍了 API 网关 Apache APISIX 如何使用 tcp-logger 插件将日志数据发送到 TCP 服务器。
 ---
-
 
 <!--
 #
@@ -42,7 +42,7 @@ description: 本文介绍了 API 网关 Apache APISIX 如何启用 tcp-logger �
 | timeout          | integer | 否     | 1000   | [1,...] | 发送数据超时间。                                   |
 | tls              | boolean | 否     | false  |         | 用于控制是否执行 SSL 验证。                        |
 | tls_options      | string  | 否     |        |         | TLS 选项。                                        |
-| include_req_body | boolean | 否     |        |         | 当设置为 `true` 时，将请求体包含在日志中。           |
+| include_req_body | boolean | 否     |        |         | 当设置为 `true` 时，日志中将包含请求体。           |
 
 该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
@@ -51,7 +51,7 @@ description: 本文介绍了 API 网关 Apache APISIX 如何启用 tcp-logger �
 你可以通过以下命令在指定路由中启用该插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
       "plugins": {
@@ -92,7 +92,7 @@ hello, world
 当你需要禁用该插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],

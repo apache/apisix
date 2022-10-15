@@ -2,10 +2,9 @@
 title: proxy-control
 keywords:
   - APISIX
-  - Plugin
+  - API Gateway
   - Proxy Control
-  - proxy-control
-description: This document contains information about the Apache APISIX proxy-control Plugin.
+description: This document contains information about the Apache APISIX proxy-control Plugin, you can use it to control the behavior of the NGINX proxy dynamically.
 ---
 
 <!--
@@ -29,11 +28,11 @@ description: This document contains information about the Apache APISIX proxy-co
 
 ## Description
 
-The proxy-control Plugin dynamically controls the behavior of the Nginx proxy.
+The proxy-control Plugin dynamically controls the behavior of the NGINX proxy.
 
 :::info IMPORTANT
 
-This Plugin requires APISIX to run on APISIX-Base. See [apisix-build-tools](https://github.com/api7/apisix-build-tools) for more info.
+This Plugin requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-the-apisix-base-environment). See [apisix-build-tools](https://github.com/api7/apisix-build-tools) for more info.
 
 :::
 
@@ -41,14 +40,15 @@ This Plugin requires APISIX to run on APISIX-Base. See [apisix-build-tools](http
 
 | Name              | Type    | Required | Default | Description                                                                                                                                                                 |
 | ----------------- | ------- | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| request_buffering | boolean | False    | true    | When set to `true`, the Plugin dynamically sets the [proxy_request_buffering](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_request_buffering) directive. |
+| request_buffering | boolean | False    | true    | When set to `true`, the Plugin dynamically sets the [`proxy_request_buffering`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_request_buffering) directive. |
 
 ## Enabling the Plugin
 
 The example below enables the Plugin on a specific Route:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
+  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/upload",
     "plugins": {
@@ -80,7 +80,8 @@ It's expected to not find a message "a client request body is buffered to a temp
 To disable the `proxy-control` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
+  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/upload",
     "upstream": {

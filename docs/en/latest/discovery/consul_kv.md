@@ -134,7 +134,7 @@ To avoid confusion, use the full consul key url path as service name in practice
 Here is an example of routing a request with a URL of "/*" to a service which named "http://127.0.0.1:8500/v1/kv/upstreams/webpages/" and use consul_kv discovery client in the registry :
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/*",
     "upstream": {
@@ -166,8 +166,7 @@ The format response as below:
       "status": 1
     },
     "key": "/apisix/routes/1"
-  },
-  "action": "set"
+  }
 }
 ```
 

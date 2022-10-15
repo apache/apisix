@@ -45,7 +45,7 @@ __DATA__
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
 
-            local code, message, res = t('/apisix/admin/ssl',
+            local code, message, res = t('/apisix/admin/ssls',
                 ngx.HTTP_GET
             )
 
@@ -60,4 +60,4 @@ __DATA__
         }
     }
 --- response_body
-{"action":"get","count":0,"node":{"dir":true,"key":"/apisix/ssl","nodes":[]}}
+{"list":[],"total":0}

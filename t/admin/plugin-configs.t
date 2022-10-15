@@ -57,20 +57,17 @@ __DATA__
                     }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 2,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
                             }
-                        },
-                        "key": "/apisix/plugin_configs/1"
+                        }
                     },
-                    "action": "set"
+                    "key": "/apisix/plugin_configs/1"
                 }]]
                 )
 
@@ -98,20 +95,17 @@ passed
                 ngx.HTTP_GET,
                 nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 2,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
                             }
-                        },
-                        "key": "/apisix/plugin_configs/1"
+                        }
                     },
-                    "action": "get"
+                    "key": "/apisix/plugin_configs/1"
                 }]]
                 )
 
@@ -133,27 +127,23 @@ passed
                 ngx.HTTP_GET,
                 nil,
                 [[{
-                    "node": {
-                        "dir": true,
-                        "nodes": [
+                    "total": 1,
+                    "list": [
                         {
                             "key": "/apisix/plugin_configs/1",
                             "value": {
-                            "plugins": {
-                                "limit-count": {
-                                "time_window": 60,
-                                "policy": "local",
-                                "count": 2,
-                                "key": "remote_addr",
-                                "rejected_code": 503
+                                "plugins": {
+                                    "limit-count": {
+                                    "time_window": 60,
+                                    "policy": "local",
+                                    "count": 2,
+                                    "key": "remote_addr",
+                                    "rejected_code": 503
+                                    }
                                 }
                             }
-                            }
                         }
-                        ],
-                        "key": "/apisix/plugin_configs"
-                    },
-                    "action": "get"
+                    ]
                 }]]
                 )
 
@@ -191,20 +181,17 @@ passed
                     }
                 }}]],
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 3,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "count": 3,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
                             }
-                        },
-                        "key": "/apisix/plugin_configs/1"
+                        }
                     },
-                    "action": "compareAndSwap"
+                    "key": "/apisix/plugin_configs/1"
                 }]]
                 )
 
@@ -248,20 +235,17 @@ passed
                     }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 2,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
                             }
-                        },
-                        "key": "/apisix/plugin_configs/1"
+                        }
                     },
-                    "action": "compareAndSwap"
+                    "key": "/apisix/plugin_configs/1"
                 }]]
                 )
 
@@ -332,24 +316,21 @@ passed
                     "desc": "blah"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 2,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
-                            },
-                            "labels": {
-                                "你好": "世界"
-                            },
-                            "desc": "blah"
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
+                            }
                         },
-                        "key": "/apisix/plugin_configs/1"
+                        "labels": {
+                            "你好": "世界"
+                        },
+                        "desc": "blah"
                     },
-                    "action": "set"
+                    "key": "/apisix/plugin_configs/1"
                 }]]
                 )
 
@@ -377,24 +358,21 @@ passed
                 ngx.HTTP_GET,
                 nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "plugins": {
-                                "limit-count": {
-                                    "count": 2,
-                                    "time_window": 60,
-                                    "rejected_code": 503,
-                                    "key": "remote_addr"
-                                }
-                            },
-                            "labels": {
-                                "你好": "世界"
-                            },
-                            "desc": "blah"
+                    "value": {
+                        "plugins": {
+                            "limit-count": {
+                                "count": 2,
+                                "time_window": 60,
+                                "rejected_code": 503,
+                                "key": "remote_addr"
+                            }
                         },
-                        "key": "/apisix/plugin_configs/1"
+                        "labels": {
+                            "你好": "世界"
+                        },
+                        "desc": "blah"
                     },
-                    "action": "get"
+                    "key": "/apisix/plugin_configs/1"
                 }]]
                 )
 
@@ -502,10 +480,8 @@ passed
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/plugin_configs/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.print(body)
         }
     }
@@ -521,10 +497,8 @@ passed
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say(body)
         }
     }
@@ -540,10 +514,8 @@ passed
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/plugin_configs/1',
-                 ngx.HTTP_DELETE,
-                 nil,
-                 [[{"action": "delete"}]]
-                )
+                 ngx.HTTP_DELETE
+            )
             ngx.say(body)
         }
     }
