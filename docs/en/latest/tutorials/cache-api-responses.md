@@ -4,7 +4,7 @@ keywords:
   - API Gateway
   - Apache APISIX
   - Cache
-  - Permormance
+  - Performance
 description: This tutorial will focus primarily on handling caching at the API Gateway level by using Apache APISIX API Gateway and you will learn how to use proxy-caching plugin to improve response efficiency for your Web or Microservices API.
 ---
 
