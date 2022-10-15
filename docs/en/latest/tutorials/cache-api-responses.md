@@ -109,32 +109,44 @@ Then, we run two more curl commands to configure an Upstream and Route for the `
 ``` shell
 curl "http://127.0.0.1:9080/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
- "type": "roundrobin",
- "nodes": {
- "productapi:80": 1
- }
+  "type": "roundrobin",
+  "nodes": {
+    "productapi:80": 1
+  }
 }'
 ```
 
 Next, we will add a new route with caching ability by setting `proxy-cache` plugin in `plugins` property and giving a reference to the upstream service by its unique id to forward requests to the API server:
 
 ``` shell
-curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d ' 
-{
- "name": "Route for API Caching",
- "methods": ["GET"], 
- "uri": "/api/products", 
- "plugins": {
- "proxy-cache": {
- "cache_key": ["$uri", "-cache-id"],
- "cache_bypass": ["$arg_bypass"],
- "cache_method": ["GET"],
- "cache_http_status": [200],
- "hide_cache_headers": true,
- "no_cache": ["$arg_test"]
- }
- }, 
- "upstream_id": 1
+curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '{
+  "name": "Route for API Caching",
+  "methods": [
+    "GET"
+  ],
+  "uri": "/api/products",
+  "plugins": {
+    "proxy-cache": {
+      "cache_key": [
+        "$uri",
+        "-cache-id"
+      ],
+      "cache_bypass": [
+        "$arg_bypass"
+      ],
+      "cache_method": [
+        "GET"
+      ],
+      "cache_http_status": [
+        200
+      ],
+      "hide_cache_headers": true,
+      "no_cache": [
+        "$arg_test"
+      ]
+    }
+  },
+  "upstream_id": 1
 }'
 ```
 
