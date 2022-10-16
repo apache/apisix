@@ -39,7 +39,7 @@ This tutorial will focus primarily on handling caching at the API Gateway level 
 
 ## Improve performance with caching
 
-When you are building an API, you want to keep it simple and fast. Once the concurrent need to read the same data increase, you'll face a few issues 😐 where you might be considering introducing **caching**:
+When you are building an API, you want to keep it simple and fast. Once the concurrent need to read the same data increase, you'll face a few issues where you might be considering introducing **caching**:
 
 - There is latency on some API requests which is noticeably affecting the user's experience.
 - Fetching data from a database takes more time to respond.
@@ -61,7 +61,7 @@ When you are building an API, you want to keep it simple and fast. Once the conc
 
 With the help of Apache APISIX, you can enable API caching with [proxy-cache](https://apisix.apache.org/docs/apisix/plugins/proxy-cache/) plugin to cache your API endpoint's responses and enhance the performance. It can be used together with other Plugins too and currently supports disk-based caching. The data to be cached can be filtered with _response codes, request modes_, or more complex methods using the _no_cache_ and _cache_bypass_ attributes. You can specify cache expiration time or a memory capacity in the plugin configuration as well. Please, refer to other `proxy-cache` plugin's [attributes](https://apisix.apache.org/docs/apisix/plugins/proxy-cache/).
 
-🙋🏼 With all this in mind, we'll look next at an example of using `proxy-cache` plugin offered by Apache APISIX and apply it for ASP.NET Core Web API with a single endpoint.
+With all this in mind, we'll look next at an example of using `proxy-cache` plugin offered by Apache APISIX and apply it for ASP.NET Core Web API with a single endpoint.
 
 ## Run the demo project
 
@@ -152,7 +152,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
 
 As you can see in the above configuration, we defined some plugin attributes that we want to cache only successful responses from the `GET` method of API.
 
-## Validate Proxy Caching🙎
+## Validate Proxy Caching
 
 Finally, we can test the proxy caching if it is working as it is expected.
 
@@ -188,11 +188,11 @@ HTTP/1.1 200 OK
 Apisix-Cache-Status: EXPIRED
 ```
 
-Excellent! We enabled caching for our API endpoint 😎
+Excellent! We enabled caching for our API endpoint
 
 ### Additional test case
 
-💁🏼 Optionally, you can also add some delay in the Product controller code and measure response time properly with and without cache:
+Optionally, you can also add some delay in the Product controller code and measure response time properly with and without cache:
 
 ``` c#
  [HttpGet]
