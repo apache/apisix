@@ -31,11 +31,11 @@ This tutorial will focus primarily on handling caching at the API Gateway level 
 
 **Here is an overview of what we cover in this walkthrough:**
 
-- ✔️ Caching in API Gateway
-- ✔️ About [Apache APISIX API Gateway](https://apisix.apache.org/docs/apisix/getting-started/)
-- ✔️ Run the demo project [apisix-dotnet-docker](https://github.com/Boburmirzo/apisix-dotnet-docker)
-- ✔️ Configure the [Proxy Cache](https://apisix.apache.org/docs/apisix/plugins/proxy-cache/) plugin
-- ✔️ Validate Proxy Caching
+- Caching in API Gateway
+- About [Apache APISIX API Gateway](https://apisix.apache.org/docs/apisix/getting-started/)
+- Run the demo project [apisix-dotnet-docker](https://github.com/Boburmirzo/apisix-dotnet-docker)
+- Configure the [Proxy Cache](https://apisix.apache.org/docs/apisix/plugins/proxy-cache/) plugin
+- Validate Proxy Caching
 
 ## Improve performance with caching
 
