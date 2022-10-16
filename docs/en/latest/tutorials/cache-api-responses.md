@@ -41,10 +41,10 @@ This tutorial will focus primarily on handling caching at the API Gateway level 
 
 When you are building an API, you want to keep it simple and fast. Once the concurrent need to read the same data increase, you'll face a few issues 😐 where you might be considering introducing **caching**:
 
-- ❌ There is latency on some API requests which is noticeably affecting the user's experience.
-- ❌ Fetching data from a database takes more time to respond.
-- ❌ Availability of your API is threatened by the API's high throughput.
-- ❌ There are some network failures in getting frequently accessed information from your API.
+- There is latency on some API requests which is noticeably affecting the user's experience.
+- Fetching data from a database takes more time to respond.
+- Availability of your API is threatened by the API's high throughput.
+- There are some network failures in getting frequently accessed information from your API.
 
 ## Caching in API Gateway
 
