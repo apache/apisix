@@ -69,7 +69,7 @@ Until now, I assume that you have the demo project [apisix-dotnet-docker](https:
 
 In the **ASP.NET Core project**, there is a simple API to get all products list from the service layer in [ProductsController.cs](https://github.com/Boburmirzo/apisix-dotnet-docker/blob/main/ProductApi/Controllers/ProductsController.cs) file.
 
-Let's assume that this product list is usually updated only once a day and the endpoint receives repeated billions of requests every day to fetch the product list partially or all of them. In this scenario, using API caching technique with `proxy-cache` plugin might be really helpful🙌. For the demo purpose, we only enable caching for `GET` method.
+Let's assume that this product list is usually updated only once a day and the endpoint receives repeated billions of requests every day to fetch the product list partially or all of them. In this scenario, using API caching technique with `proxy-cache` plugin might be really helpful. For the demo purpose, we only enable caching for `GET` method.
 
 > Ideally, `GET` requests should be cacheable by default - until a special condition arises.
 
