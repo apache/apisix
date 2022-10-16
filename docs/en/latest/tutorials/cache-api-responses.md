@@ -59,7 +59,7 @@ When you are building an API, you want to keep it simple and fast. Once the conc
 
 ## Apache APISIX API Gateway Proxy Caching
 
-With the help of Apache APISIX, you can enable API caching with [proxy-cache](https://apisix.apache.org/docs/apisix/plugins/proxy-cache/) plugin to cache your API endpoint's responses and enhance the performance. It can be used together with other Plugins too and currently supports disk-based caching. The data to be cached can be filtered with _response codes_, _request modes_, or more complex methods using the _no_cache_ and _cache_bypass_ attributes. You can specify cache expiration time or a memory capacity in the plugin configuration as well. Please, refer to other `proxy-cache` plugin's [attributes](https://apisix.apache.org/docs/apisix/plugins/proxy-cache/).
+With the help of Apache APISIX, you can enable API caching with [proxy-cache](https://apisix.apache.org/docs/apisix/plugins/proxy-cache/) plugin to cache your API endpoint's responses and enhance the performance. It can be used together with other Plugins too and currently supports disk-based caching. The data to be cached can be filtered with _response_codes_, _request_modes_, or more complex methods using the _no_cache_ and _cache_by_pass_ attributes. You can specify cache expiration time or a memory capacity in the plugin configuration as well. Please, refer to other `proxy-cache` plugin's [attributes](https://apisix.apache.org/docs/apisix/plugins/proxy-cache/).
 
 With all this in mind, we'll look next at an example of using `proxy-cache` plugin offered by Apache APISIX and apply it for ASP.NET Core Web API with a single endpoint.
 
