@@ -56,14 +56,14 @@ __DATA__
                     end,
                 },
                 {
-                    name = "sanity (bearer_only = false, user-set secret, less than 16 charactors)",
+                    name = "sanity (bearer_only = false, user-set secret, less than 16 characters)",
                     data = {client_id = "a", client_secret = "b", discovery = "c", bearer_only = false, session = {secret = "test"}},
                     cb = function(ok, err, case)
                         assert(not ok and err == "property \"session\" validation failed: property \"secret\" validation failed: string too short, expected at least 16, got 4", "too short key passes validation")
                     end,
                 },
                 {
-                    name = "sanity (bearer_only = false, user-set secret, more than 16 charactors)",
+                    name = "sanity (bearer_only = false, user-set secret, more than 16 characters)",
                     data = {client_id = "a", client_secret = "b", discovery = "c", bearer_only = false, session = {secret = "test_secret_more_than_16"}},
                     cb = function(ok, err, case)
                         assert(ok and case.session and case.session.secret and case.session.secret == "test_secret_more_than_16", "user-set secret is incorrect")
