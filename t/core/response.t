@@ -149,8 +149,6 @@ GET /t
 done
 --- response_headers
 aaa:
---- no_error_log
-[error]
 
 
 
@@ -201,5 +199,3 @@ aaa:
 GET /t
 --- response_body
 hello world
---- no_error_log
-[error]
