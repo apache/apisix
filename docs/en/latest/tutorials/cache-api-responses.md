@@ -207,7 +207,7 @@ Optionally, you can also add some delay in the Product controller code and measu
 
 The `curl` command to check response time would be:
 
-```
+```shell
 curl -i 'http://localhost:9080/api/products' -s -o /dev/null -w "Response time: %{time_starttransfer} seconds\n"
 ```
 
