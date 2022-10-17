@@ -19,10 +19,6 @@ local core            = require("apisix.core")
 local ipairs          = ipairs
 local type            = type
 
-local recovery_func = core.lrucache.new({
-    count = 512
-})
-
 local route_lrucache = core.lrucache.new({
     count = 512
 })
@@ -31,83 +27,69 @@ local enable_route_cache
 
 local _M = {}
 
-local ori_router_match
+local orig_router_match
 local router
 
-local route_ckey
-local route_cver
-
-function _M.router_match(ctx)
-    -- TODO: generate cache key dynamically according to the user routes
-    route_ckey = ctx.var.uri .. "-" .. ctx.var.method .. "-" ..
-                 ctx.var.host .. "-" .. ctx.var.remote_addr
-    route_cver = router.user_routes.conf_version
-    recovery_func(route_ckey, route_cver, function()
-        -- if the version has changed, fall back to the original router match
-        router.match = ori_router_match
-        return true
-    end)
-end
-
-
-local function create_router_cache(ctx)
+local function match_route(ctx)
+    orig_router_match(ctx)
     -- replace the router match
-    router.match = function()
-        -- do nothing
-        core.log.info("hit route cache, key: ", route_ckey)
-    end
-    return ctx.matched_route
+    return ctx.matched_route or false
 end
 
 
-function _M.router_match_post(ctx)
-    if not enable_route_cache then
-        return
-    end
-
-    local route_cache = route_lrucache(route_ckey, route_cver,
-                                       create_router_cache, ctx)
+local function ai_match(ctx)
+    local route_ckey = ctx.var.uri .. "-" .. ctx.var.method .. "-" ..
+                       ctx.var.host .. "-" .. ctx.var.remote_addr
+    local ver = router.user_routes.conf_version
+    local route_cache = route_lrucache(route_ckey, ver,
+                        match_route, ctx)
     -- if the version has not changed, use the cached route
-    if route_cache and not ctx.matched_route then
+    if route_cache then
         ctx.matched_route = route_cache
     end
 end
 
 
 function  _M.routes_analyze(routes)
+    local vars_flag = false
+    local filter_flag = false
+    local prefix_match_flag = false
+
     for _, route in ipairs(routes) do
         if type(route) == "table" then
-            if route.value.vars then
-                enable_route_cache = false
-                return
+            if route.vars then
+                vars_flag = true
+                break
             end
 
-            if route.value.filter_fun then
-                enable_route_cache = false
-                return
+            if route.filter_fun then
+                filter_flag = true
+                break
             end
 
-            if route.value.priority and route.value.priority ~= 0 then
-                enable_route_cache = false
-                return
+            if route.uri and core.string.has_suffix(route.uri, "*") then
+                prefix_match_flag = true
+                break
             end
 
-            if route.value.uri and core.string.has_suffix(route.value.uri, "*") then
-                enable_route_cache = false
-                return
-            end
-
-            if route.value.uris then
-                for _, uri in ipairs(route.value.uris) do
+            if route.uris then
+                for _, uri in ipairs(route.uris) do
                     if core.string.has_suffix(uri, "*") then
-                        enable_route_cache = false
-                        return
+                        prefix_match_flag = true
+                        break
                     end
                 end
             end
         end
     end
-    enable_route_cache = true
+
+    if vars_flag or filter_flag or prefix_match_flag then
+        enable_route_cache = false
+        router.match = orig_router_match
+    else
+        enable_route_cache = true
+        router.match = ai_match
+    end
 end
 
 
@@ -118,7 +100,7 @@ end
 
 function _M.init_worker(router_http)
     router = router_http
-    ori_router_match = router.match
+    orig_router_match = router.match
 end
 
 return _M

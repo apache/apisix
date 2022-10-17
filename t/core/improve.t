@@ -215,82 +215,7 @@ hit route cache, key: /hello1-GET-127.0.0.1-127.0.0.1
 
 
 
-=== TEST 5: route has priority, disable route cache
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "priority": 1,
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/hello"
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            local code, body = t('/apisix/admin/routes/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "priority": 0,
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/hello"
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            local http = require "resty.http"
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local t = {}
-            for i = 1, 2 do
-                local th = assert(ngx.thread.spawn(function(i)
-                    local httpc = http.new()
-                    local res, err = httpc:request_uri(uri)
-                    assert(res.status == 200)
-                    if not res then
-                        ngx.log(ngx.ERR, err)
-                        return
-                    end
-                end, i))
-                table.insert(t, th)
-            end
-            local improve = require("apisix.core.improve")
-            for i, th in ipairs(t) do
-                ngx.thread.wait(th)
-                ngx.say(improve.enable_route_cache())
-            end
-        }
-    }
---- response_body
-false
-false
---- no_error_log
-hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
-
-
-
-=== TEST 6: method changed, create different route cache
+=== TEST 5: method changed, create different route cache
 --- config
     location /t {
         content_by_lua_block {
@@ -354,7 +279,7 @@ hit route cache, key: /hello-POST-127.0.0.1-127.0.0.1
 
 
 
-=== TEST 7: route with plugins, enable
+=== TEST 6: route with plugins, enable
 --- config
     location /t {
         content_by_lua_block {
@@ -417,7 +342,7 @@ hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
 
 
 
-=== TEST 8: enable ->disable -> enable -> diable
+=== TEST 7: enable ->disable -> enable -> diable
 --- config
     location /t {
         content_by_lua_block {
