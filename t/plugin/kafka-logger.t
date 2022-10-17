@@ -144,8 +144,6 @@ GET /hello
 --- response_body
 hello world
 --- wait: 2
---- error_log
-not found topic
 
 
 
