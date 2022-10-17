@@ -37,6 +37,8 @@ local router
 local route_ckey
 local route_cver
 
+local radix_tree_changed
+
 function _M.router_match(ctx)
     -- TODO: generate cache key dynamically according to the user routes
     route_ckey = ctx.var.uri .. "-" .. ctx.var.method .. "-" ..
@@ -90,6 +92,20 @@ function  _M.routes_analyze(routes)
             if route.value.priority and route.value.priority ~= 0 then
                 enable_route_cache = false
                 return
+            end
+
+            if route.value.uri and core.string.has_suffix(route.value.uri, "*") then
+                enable_route_cache = false
+                return
+            end
+
+            if route.value.uris then
+                for _, uri in ipairs(route.value.uris) do
+                    if core.string.has_suffix(uri, "*") then
+                        enable_route_cache = false
+                        return
+                    end
+                end
             end
         end
     end
