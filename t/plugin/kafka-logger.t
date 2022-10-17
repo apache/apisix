@@ -708,3 +708,55 @@ hello world
 --- error_log eval
 qr/send data to kafka: \{.*"body":"abcdef"/
 --- wait: 2
+
+
+
+=== TEST 24: set route(batch_max_size = 2), check if prometheus is initialized properly
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "kafka-logger": {
+                                "broker_list" :
+                                  {
+                                    "127.0.0.1":9092
+                                  },
+                                "kafka_topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "batch_max_size": 2
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 25: access
+--- extra_yaml_config
+plugins:
+  - kafka-logger
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 2
