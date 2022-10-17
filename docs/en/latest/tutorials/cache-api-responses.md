@@ -188,7 +188,7 @@ HTTP/1.1 200 OK
 Apisix-Cache-Status: EXPIRED
 ```
 
-Excellent! We enabled caching for our API endpoint
+Excellent! We enabled caching for our API endpoint.
 
 ### Additional test case
 
