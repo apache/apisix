@@ -18,6 +18,7 @@ local require = require
 local core = require("apisix.core")
 local base_router = require("apisix.http.route")
 local get_services = require("apisix.http.service").services
+local routes_analyze = require("apisix.core.improve").routes_analyze
 local cached_router_version
 local cached_service_version
 
@@ -45,6 +46,7 @@ function _M.match(api_ctx)
         return true
     end
 
+    routes_analyze(user_routes.values)
     return base_router.match_uri(uri_router, match_opts, api_ctx)
 end
 
