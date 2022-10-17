@@ -58,6 +58,8 @@ description: OpenID Connect allows the client to obtain user information from th
 | set_id_token_header                  | boolean | False    | true                  |              | When set to true and the ID token is available, sets the ID token in the `X-ID-Token` request header.                    |
 | set_userinfo_header                  | boolean | False    | true                  |              | When set to true and the UserInfo object is available, sets it in the `X-Userinfo` request header.                       |
 | set_refresh_token_header             | boolean | False    | false                 |              | When set to true and a refresh token object is available, sets it in the `X-Refresh-Token` request header.               |
+| session                              | object  | False    |                       |              | When bearer_only is set to false, openid-connect will use Authorization Code flow to authenticate on the IDP, so you need to set the session-related configuration. |
+| session.secret                       | string  | True     | Automatic generation  | 16 or more characters | The key used for session encrypt and HMAC operation. |
 
 ## Scenarios
 
@@ -71,7 +73,7 @@ This plugin offers two scenorios:
 
 1. Authentication between Services: Set `bearer_only` to `true` and configure the `introspection_endpoint` or `public_key` attribute. In this scenario, APISIX will reject requests without a token or invalid token in the request header.
 
-2. Authentication between Browser and Identity Providers: Set `bearer_only` to `false.` After successful authentication, this plugin can obtain and manage the token in the cookie, and subsequent requests will use the token.
+2. Authentication between Browser and Identity Providers: Set `bearer_only` to `false.` After successful authentication, this plugin can obtain and manage the token in the cookie, and subsequent requests will use the token. In this mode, the user session will be stored in the browser as a cookie and this data is encrypted, so you have to set a key for encryption via `session.secret`.
 
 ### Token introspection
 
