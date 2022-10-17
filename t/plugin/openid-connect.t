@@ -21,7 +21,20 @@ repeat_each(1);
 no_long_string();
 no_root_location();
 no_shuffle();
-run_tests;
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+});
+
+run_tests();
 
 __DATA__
 
@@ -38,12 +51,8 @@ __DATA__
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -60,13 +69,9 @@ done
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 property "client_id" is required
 done
---- no_error_log
-[error]
 
 
 
@@ -83,13 +88,9 @@ done
             ngx.say("done")
         }
     }
---- request
-GET /t
 --- response_body
 property "client_id" validation failed: wrong type: expected string, got number
 done
---- no_error_log
-[error]
 
 
 
@@ -129,12 +130,8 @@ done
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -157,14 +154,10 @@ passed
             end
         }
     }
---- request
-GET /t
 --- timeout: 10s
 --- response_body
 true
 --- error_code: 302
---- no_error_log
-[error]
 
 
 
@@ -210,12 +203,8 @@ true
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -264,8 +253,6 @@ passed
             ngx.say(res.body)
         }
     }
---- request
-GET /t
 --- response_body_like
 uri: /uri
 cookie: .*
@@ -276,8 +263,6 @@ x-id-token: ey.*
 x-real-ip: 127.0.0.1
 x-refresh-token: ey.*
 x-userinfo: ey.*
---- no_error_log
-[error]
 
 
 
@@ -322,12 +307,8 @@ x-userinfo: ey.*
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -376,8 +357,6 @@ passed
             ngx.say(res.body)
         }
     }
---- request
-GET /t
 --- response_body_like
 uri: /uri
 authorization: Bearer ey.*
@@ -385,8 +364,6 @@ cookie: .*
 host: 127.0.0.1:1984
 user-agent: .*
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 
 
 
@@ -426,12 +403,8 @@ x-real-ip: 127.0.0.1
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -499,12 +472,8 @@ OIDC introspection failed: Invalid Authorization header format.
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -531,12 +500,8 @@ passed
             end
         }
     }
---- request
-GET /t
 --- response_body
 true
---- no_error_log
-[error]
 
 
 
@@ -580,12 +545,8 @@ true
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -600,8 +561,6 @@ authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhMSI6IkRhdGEgM
 host: localhost
 x-access-token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhMSI6IkRhdGEgMSIsImlhdCI6MTU4NTEyMjUwMiwiZXhwIjoxOTAwNjk4NTAyLCJhdWQiOiJodHRwOi8vbXlzb2Z0Y29ycC5pbiIsImlzcyI6Ik15c29mdCBjb3JwIiwic3ViIjoic29tZUB1c2VyLmNvbSJ9.u1ISx7JbuK_GFRIUqIMP175FqXRyF9V7y86480Q4N3jNxs3ePbc51TFtIHDrKttstU4Tub28PYVSlr-HXfjo7w
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 --- error_code: 200
 
 
@@ -650,12 +609,8 @@ x-real-ip: 127.0.0.1
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -669,8 +624,6 @@ uri: /uri
 authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhMSI6IkRhdGEgMSIsImlhdCI6MTU4NTEyMjUwMiwiZXhwIjoxOTAwNjk4NTAyLCJhdWQiOiJodHRwOi8vbXlzb2Z0Y29ycC5pbiIsImlzcyI6Ik15c29mdCBjb3JwIiwic3ViIjoic29tZUB1c2VyLmNvbSJ9.u1ISx7JbuK_GFRIUqIMP175FqXRyF9V7y86480Q4N3jNxs3ePbc51TFtIHDrKttstU4Tub28PYVSlr-HXfjo7w
 host: localhost
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 --- error_code: 200
 
 
@@ -715,12 +668,8 @@ x-real-ip: 127.0.0.1
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -747,8 +696,6 @@ passed
             end
         }
     }
---- request
-GET /t
 --- error_code: 401
 --- error_log
 jwt signature verification failed
@@ -793,12 +740,8 @@ jwt signature verification failed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -853,16 +796,12 @@ passed
             end
         }
     }
---- request
-GET /t
 --- response_body
 true
 --- grep_error_log eval
 qr/token validate successfully by \w+/
 --- grep_error_log_out
 token validate successfully by introspection
---- no_error_log
-[error]
 
 
 
@@ -888,8 +827,6 @@ token validate successfully by introspection
             end
         }
     }
---- request
-GET /t
 --- response_body
 false
 --- error_log
@@ -913,15 +850,16 @@ OIDC introspection failed: invalid token
                 ngx.say(err)
             end
 
+            -- ensure session secret generated when bearer_only = false
+            -- then remove it from table, because it's a random value that I cannot verify it by response body
+            assert(s.session and s.session.secret, "no session secret generated")
+            s.session = nil
+
             ngx.say(json.encode(s))
         }
     }
---- request
-GET /t
 --- response_body
 {"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","introspection_endpoint_auth_method":"client_secret_basic","logout_path":"/logout","realm":"apisix","scope":"openid","set_access_token_header":true,"set_id_token_header":true,"set_refresh_token_header":false,"set_userinfo_header":true,"ssl_verify":false,"timeout":3,"use_pkce":false}
---- no_error_log
-[error]
 
 
 
@@ -964,12 +902,8 @@ GET /t
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1024,16 +958,12 @@ passed
             end
         }
     }
---- request
-GET /t
 --- response_body
 true
 --- grep_error_log eval
 qr/token validate successfully by \w+/
 --- grep_error_log_out
 token validate successfully by jwks
---- no_error_log
-[error]
 
 
 
@@ -1059,8 +989,6 @@ token validate successfully by jwks
             end
         }
     }
---- request
-GET /t
 --- response_body
 false
 --- error_log
@@ -1110,12 +1038,8 @@ OIDC introspection failed: invalid jwt: invalid jwt string
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1180,12 +1104,8 @@ passed
             ngx.say(res.headers["Location"])
         }
     }
---- request
-GET /t
 --- response_body_like
 http://127.0.0.1:.*/hello
---- no_error_log
-[error]
 
 
 
@@ -1225,12 +1145,8 @@ http://127.0.0.1:.*/hello
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1255,11 +1171,7 @@ passed
             end
         }
     }
---- request
-GET /t
 --- timeout: 10s
 --- response_body
 true
 --- error_code: 302
---- no_error_log
-[error]

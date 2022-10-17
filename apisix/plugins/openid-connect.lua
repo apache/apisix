@@ -14,11 +14,14 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local string = string
-local core = require("apisix.core")
-local ngx_re = require("ngx.re")
+
+local core    = require("apisix.core")
+local ngx_re  = require("ngx.re")
 local openidc = require("resty.openidc")
-local ngx = ngx
+local random  = require("resty.random")
+local string  = string
+local ngx     = ngx
+
 local ngx_encode_base64 = ngx.encode_base64
 
 local plugin_name = "openid-connect"
@@ -54,6 +57,18 @@ local schema = {
         bearer_only = {
             type = "boolean",
             default = false,
+        },
+        session = {
+            type = "object",
+            properties = {
+                secret = {
+                    type = "string",
+                    description = "the key used for the encrypt and HMAC calculation",
+                    minLength = 16,
+                },
+            },
+            required = {"secret"},
+            additionalProperties = false,
         },
         realm = {
             type = "string",
@@ -114,7 +129,7 @@ local schema = {
 
 
 local _M = {
-    version = 0.1,
+    version = 0.2,
     priority = 2599,
     name = plugin_name,
     schema = schema,
@@ -125,6 +140,15 @@ function _M.check_schema(conf)
     if conf.ssl_verify == "no" then
         -- we used to set 'ssl_verify' to "no"
         conf.ssl_verify = false
+    end
+
+    if not conf.bearer_only and not conf.session then
+        core.log.warn("when bearer_only = false, " ..
+                       "you'd better complete the session configuration manually")
+        conf.session = {
+            -- generate a secret when bearer_only = false and no secret is configured
+            secret = ngx_encode_base64(random.bytes(32, true) or random.bytes(32))
+        }
     end
 
     local ok, err = core.schema.check(schema, conf)
@@ -309,7 +333,7 @@ function _M.rewrite(plugin_conf, ctx)
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, _, session  = openidc.authenticate(conf)
+        response, err, _, session  = openidc.authenticate(conf, nil, nil, conf.session)
 
         if err then
             core.log.error("OIDC authentication failed: ", err)
