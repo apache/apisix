@@ -37,8 +37,6 @@ local router
 local route_ckey
 local route_cver
 
-local radix_tree_changed
-
 function _M.router_match(ctx)
     -- TODO: generate cache key dynamically according to the user routes
     route_ckey = ctx.var.uri .. "-" .. ctx.var.method .. "-" ..
