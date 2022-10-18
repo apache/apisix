@@ -346,7 +346,7 @@ local function common_phase(phase_name)
 end
 
 
-local function handle_upstream(api_ctx, route)
+local function handle_upstream(api_ctx, route, enable_websocket)
     local up_id = route.value.upstream_id
 
     -- used for the traffic-split plugin
@@ -409,7 +409,7 @@ local function handle_upstream(api_ctx, route)
         api_ctx.upstream_ssl = upstream_ssl
     end
 
-    if route.value.enable_websocket then
+    if enable_websocket then
         api_ctx.var.upstream_upgrade    = api_ctx.var.http_upgrade
         api_ctx.var.upstream_connection = api_ctx.var.http_connection
         core.log.info("enabled websocket for route: ", route.value.id)
@@ -452,6 +452,7 @@ local function handle_upstream(api_ctx, route)
         return ngx.exec("@dubbo_pass")
     end
 end
+_M.handle_upstream = handle_upstream
 
 
 local function simple_upstream(api_ctx, route)
@@ -521,6 +522,8 @@ function _M.http_access_phase()
     core.log.info("matched route: ",
                   core.json.delay_encode(api_ctx.matched_route, true))
 
+    local enable_websocket = route.value.enable_websocket
+
     if route.value.plugin_config_id then
         local conf = plugin_config.get(route.value.plugin_config_id)
         if not conf then
@@ -548,8 +551,8 @@ function _M.http_access_phase()
         api_ctx.service_id = service.value.id
         api_ctx.service_name = service.value.name
 
-        if route.value.enable_websocket == nil then
-            route.value.enable_websocket = service.value.enable_websocket
+        if enable_websocket == nil then
+            enable_websocket = service.value.enable_websocket
         end
 
     else
@@ -607,8 +610,8 @@ function _M.http_access_phase()
         plugin.run_plugin("access", plugins, api_ctx)
     end
 
-    if route.value.upstream and route.value.upstream["_sample_upstream"] then
-        simple_upstream(api_ctx, route)
+    if route.value.upstream and route["_ai_sample_upstream"] then
+        simple_upstream(api_ctx, route, enable_websocket)
     else
         handle_upstream(api_ctx, route)
     end

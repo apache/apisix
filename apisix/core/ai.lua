@@ -51,7 +51,8 @@ end
 
 function  _M.routes_analyze(routes)
     -- TODO: we need to add a option in config.yaml to enable this feature(default is true)
-    local route_flags = core.table.new(0, 2)
+    local route_flags = core.table.new(0, 5)
+    local route_up_flags = core.table.new(0, 8)
     for _, route in ipairs(routes) do
         if type(route) == "table" then
             if route.value.vars then
@@ -66,26 +67,58 @@ function  _M.routes_analyze(routes)
                 route_flags["remote_addr"] = true
             end
 
+            if route.value.service then
+                route_flags["service"] = true
+            end
+
+            if route.value.enable_websocket then
+                route_flags["enable_websocket"] = true
+            end
+
             local upstream = route.value.upstream
+
             if upstream and upstream.nodes and #upstream.nodes == 1 then
                 local node = upstream.nodes[1]
-                if not core.utils.parse_ipv4(node.host) and
-                   not core.utils.parse_ipv6(node.host) then
-                    route_flags["has_domain"] = true
+                if core.utils.parse_ipv4(node.host) or
+                 core.utils.parse_ipv6(node.host) then
+                    route_up_flags["no_domain"] = true
                 end
 
                 if upstream.pass_host == "pass" then
-                    route_flags["pass"] = true
+                    route_up_flags["pass_host"] = true
                 end
 
                 if upstream.scheme == "http" then
-                    route_flags["http"] = true
+                    route_up_flags["scheme"] = true
+                end
+
+                if upstream.checks then
+                    route_up_flags["checks"] = true
+                end
+
+                if upstream.retries then
+                    route_up_flags["retries"] = true
+                end
+
+                if upstream.timeout then
+                    route_up_flags["timeout"] = true
+                end
+
+                if upstream.tls then
+                    route_up_flags["tls"] = true
+                end
+
+                if upstream.keepalive then
+                    route_up_flags["keepalive"] = true
                 end
             end
 
-            if not route_flags["has_domain"] and route_flags["pass"]
-               and route_flags["pass"] then
-                upstream["_sample_upstream"] = true
+            if not route_flags["service"] and not route_flags["enable_websocket"]
+               and route_up_flags["no_domain"] and route_up_flags["pass_host"]
+               and route_up_flags["scheme"] and not route_up_flags["checks"]
+               and not route_up_flags["retries"] and not route_up_flags["timeout"]
+               and not route_up_flags["timeout"] and not route_up_flags["keepalive"] then
+                route["_ai_sample_upstream"] = true
             end
         end
     end
