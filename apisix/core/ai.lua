@@ -16,15 +16,14 @@
 --
 local require         = require
 local core            = require("apisix.core")
-local template        = require("resty.template")
 local ipairs          = ipairs
 local pcall           = pcall
-local assert          = assert
 local loadstring      = loadstring
 
 local get_cache_key_func
+local get_cache_key_func_def_render
 
-local get_cache_key_func_def_render = template.compile([[
+local get_cache_key_func_def = [[
 return function(ctx)
     local key = ctx.var.uri
         {% if route_flags["methods"] then %}
@@ -36,7 +35,7 @@ return function(ctx)
 
     return key
 end
-]])
+]]
 
 local route_lrucache = core.lrucache.new({
     -- TODO: we need to set the cache size by count of routes
@@ -98,12 +97,26 @@ function  _M.routes_analyze(routes)
     else
         core.log.info("use ai plane to match route")
         router.match = ai_match
+
+        if get_cache_key_func_def_render == nil then
+            local template = require("resty.template")
+            get_cache_key_func_def_render = template.compile(get_cache_key_func_def)
+        end
+
         local str = get_cache_key_func_def_render({route_flags = route_flags})
-        local func = loadstring(str)
-        assert(func)
-        local ok
-        ok, get_cache_key_func = pcall(func)
-        assert(ok)
+        local func, err = loadstring(str)
+        if func == nil then
+            core.log.error("generate get_cache_key_func failed:", err)
+            router.match = orig_router_match
+        else
+            local ok
+            ok, get_cache_key_func = pcall(func)
+            if not ok then
+                local err = get_cache_key_func
+                core.log.error("generate get_cache_key_func failed:", err)
+                router.match = orig_router_match
+            end
+        end
     end
 end
 
