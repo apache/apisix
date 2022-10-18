@@ -101,7 +101,8 @@ function  _M.routes_analyze(routes)
         local str = get_cache_key_func_def_render({route_flags = route_flags})
         local func = loadstring(str)
         assert(func)
-        local ok, get_cache_key_func = pcall(func)
+        local ok
+        ok, get_cache_key_func = pcall(func)
         assert(ok)
     end
 end
