@@ -26,14 +26,12 @@ local get_cache_key_func
 local get_cache_key_func_def_render = template.compile([[
 return function(ctx)
     local key = ctx.var.uri
-
-    {% if route_flags["methods"] then %}
-    key = key .. "\0" .. ctx.var.method
-    {% end %}
-
-    {% if route_flags["host"] then %}
-    key = key .. "\1" .. ctx.var.host
-    {% end %}
+        {% if route_flags["methods"] then %}
+        .. "\0" .. ctx.var.method
+        {% end %}
+        {% if route_flags["host"] then %}
+        .. "\0" .. ctx.var.host
+        {% end %}
 
     return key
 end
