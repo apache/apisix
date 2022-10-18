@@ -93,15 +93,7 @@ Admin API 在 V3 版本中做了一些不向下兼容的调整，以及支持更
 
 ```shell
 $ curl "http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10" \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET -i -d '
-{
-  "total": 1,
-  "list": [
-    {
-      ...
-    }
-  ]
-}
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET -i
 ```
 
 目前支持分页查询的资源如下：
@@ -132,15 +124,7 @@ $ curl "http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10" \
 
 ```shell
 $ curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET -i -d '
-{
-  "total": 1,
-  "list": [
-    {
-      ...
-    }
-  ]
-}
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET -i
 ```
 
 ## Route
