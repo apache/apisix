@@ -130,7 +130,6 @@ use ai plane to match route
                     if i == 1 then
                         -- arg_k = a, match route
                         res, err = httpc:request_uri(uri1)
-                        ngx.log(ngx.WARN, "res : ", require("inspect")(res))
                         assert(res.status == 200)
                     else
                         -- arg_k = v, not match route
@@ -474,3 +473,140 @@ qr/use ai plane to match route/
 --- grep_error_log_out
 use ai plane to match route
 use ai plane to match route
+
+
+
+=== TEST 6: enable sample upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(0.5)
+
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri)
+            assert(res.status == 200)
+            if not res then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+enable sample upstream
+
+
+
+=== TEST 7: upstream has more than one nodes, disable sample upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1,
+                            "127.0.0.1:1981": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(0.5)
+
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri)
+            assert(res.status == 200)
+            if not res then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- no_error_log
+enable sample upstream
+
+
+
+=== TEST 8: node has domain, disable sample upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "admin.apisix.dev:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri)
+            assert(res.status == 200)
+            if not res then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- no_error_log
+enable sample upstream

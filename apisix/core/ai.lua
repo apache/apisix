@@ -17,6 +17,7 @@
 local require         = require
 local core            = require("apisix.core")
 local ipairs          = ipairs
+local type            = type
 
 local route_lrucache = core.lrucache.new({
     -- TODO: we need to set the cache size by count of routes
@@ -52,16 +53,40 @@ function  _M.routes_analyze(routes)
     -- TODO: we need to add a option in config.yaml to enable this feature(default is true)
     local route_flags = core.table.new(0, 2)
     for _, route in ipairs(routes) do
-        if route.vars then
-            route_flags["vars"] = true
-        end
+        if type(route) == "table" then
+            if route.value.vars then
+                route_flags["vars"] = true
+            end
 
-        if route.filter_fun then
-            route_flags["filter_fun"] = true
-        end
+            if route.value.filter_fun then
+                route_flags["filter_fun"] = true
+            end
 
-        if route.remote_addr or route.remote_addrs then
-            route_flags["remote_addr"] = true
+            if route.value.remote_addr or route.value.remote_addrs then
+                route_flags["remote_addr"] = true
+            end
+
+            local upstream = route.value.upstream
+            if upstream and upstream.nodes and #upstream.nodes == 1 then
+                local node = upstream.nodes[1]
+                if not core.utils.parse_ipv4(node.host) and
+                   not core.utils.parse_ipv6(node.host) then
+                    route_flags["has_domain"] = true
+                end
+
+                if upstream.pass_host == "pass" then
+                    route_flags["pass"] = true
+                end
+
+                if upstream.scheme == "http" then
+                    route_flags["http"] = true
+                end
+            end
+
+            if not route_flags["has_domain"] and route_flags["pass"]
+               and route_flags["pass"] then
+                upstream["_sample_upstream"] = true
+            end
         end
     end
 

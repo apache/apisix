@@ -346,153 +346,7 @@ local function common_phase(phase_name)
 end
 
 
-function _M.http_access_phase()
-    local ngx_ctx = ngx.ctx
-
-    -- always fetch table from the table pool, we don't need a reused api_ctx
-    local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-    ngx_ctx.api_ctx = api_ctx
-
-    if not verify_tls_client(api_ctx) then
-        return core.response.exit(400)
-    end
-
-    core.ctx.set_vars_meta(api_ctx)
-
-    debug.dynamic_debug(api_ctx)
-
-    local uri = api_ctx.var.uri
-    if local_conf.apisix then
-        if local_conf.apisix.delete_uri_tail_slash then
-            if str_byte(uri, #uri) == str_byte("/") then
-                api_ctx.var.uri = str_sub(api_ctx.var.uri, 1, #uri - 1)
-                core.log.info("remove the end of uri '/', current uri: ", api_ctx.var.uri)
-            end
-        end
-
-        if local_conf.apisix.normalize_uri_like_servlet then
-            local new_uri, err = normalize_uri_like_servlet(uri)
-            if not new_uri then
-                core.log.error("failed to normalize: ", err)
-                return core.response.exit(400)
-            end
-
-            api_ctx.var.uri = new_uri
-            -- forward the original uri so the servlet upstream
-            -- can consume the param after ';'
-            api_ctx.var.upstream_uri = uri
-        end
-    end
-
-    -- To prevent being hacked by untrusted request_uri, here we
-    -- record the normalized but not rewritten uri as request_uri,
-    -- the original request_uri can be accessed via var.real_request_uri
-    api_ctx.var.real_request_uri = api_ctx.var.request_uri
-    api_ctx.var.request_uri = api_ctx.var.uri .. api_ctx.var.is_args .. (api_ctx.var.args or "")
-
-    router.router_http.match(api_ctx)
-
-    local route = api_ctx.matched_route
-    if not route then
-        -- run global rule when there is no matching route
-        plugin.run_global_rules(api_ctx, router.global_rules, nil)
-
-        core.log.info("not find any matched route")
-        return core.response.exit(404,
-                    {error_msg = "404 Route Not Found"})
-    end
-
-    core.log.info("matched route: ",
-                  core.json.delay_encode(api_ctx.matched_route, true))
-
-    local enable_websocket = route.value.enable_websocket
-
-    if route.value.plugin_config_id then
-        local conf = plugin_config.get(route.value.plugin_config_id)
-        if not conf then
-            core.log.error("failed to fetch plugin config by ",
-                            "id: ", route.value.plugin_config_id)
-            return core.response.exit(503)
-        end
-
-        route = plugin_config.merge(route, conf)
-    end
-
-    if route.value.service_id then
-        local service = service_fetch(route.value.service_id)
-        if not service then
-            core.log.error("failed to fetch service configuration by ",
-                           "id: ", route.value.service_id)
-            return core.response.exit(404)
-        end
-
-        route = plugin.merge_service_route(service, route)
-        api_ctx.matched_route = route
-        api_ctx.conf_type = "route&service"
-        api_ctx.conf_version = route.modifiedIndex .. "&" .. service.modifiedIndex
-        api_ctx.conf_id = route.value.id .. "&" .. service.value.id
-        api_ctx.service_id = service.value.id
-        api_ctx.service_name = service.value.name
-
-        if enable_websocket == nil then
-            enable_websocket = service.value.enable_websocket
-        end
-
-    else
-        api_ctx.conf_type = "route"
-        api_ctx.conf_version = route.modifiedIndex
-        api_ctx.conf_id = route.value.id
-    end
-    api_ctx.route_id = route.value.id
-    api_ctx.route_name = route.value.name
-
-    -- run global rule
-    plugin.run_global_rules(api_ctx, router.global_rules, nil)
-
-    if route.value.script then
-        script.load(route, api_ctx)
-        script.run("access", api_ctx)
-
-    else
-        local plugins = plugin.filter(api_ctx, route)
-        api_ctx.plugins = plugins
-
-        plugin.run_plugin("rewrite", plugins, api_ctx)
-        if api_ctx.consumer then
-            local changed
-            local group_conf
-
-            if api_ctx.consumer.group_id then
-                group_conf = consumer_group.get(api_ctx.consumer.group_id)
-                if not group_conf then
-                    core.log.error("failed to fetch consumer group config by ",
-                        "id: ", api_ctx.consumer.group_id)
-                    return core.response.exit(503)
-                end
-            end
-
-            route, changed = plugin.merge_consumer_route(
-                route,
-                api_ctx.consumer,
-                group_conf,
-                api_ctx
-            )
-
-            core.log.info("find consumer ", api_ctx.consumer.username,
-                          ", config changed: ", changed)
-
-            if changed then
-                api_ctx.matched_route = route
-                core.table.clear(api_ctx.plugins)
-                local phase = "rewrite_in_consumer"
-                api_ctx.plugins = plugin.filter(api_ctx, route, api_ctx.plugins, nil, phase)
-                -- rerun rewrite phase for newly added plugins in consumer
-                plugin.run_plugin(phase, api_ctx.plugins, api_ctx)
-            end
-        end
-        plugin.run_plugin("access", plugins, api_ctx)
-    end
-
+local function handle_upstream(api_ctx, route)
     local up_id = route.value.upstream_id
 
     -- used for the traffic-split plugin
@@ -555,7 +409,7 @@ function _M.http_access_phase()
         api_ctx.upstream_ssl = upstream_ssl
     end
 
-    if enable_websocket then
+    if route.value.enable_websocket then
         api_ctx.var.upstream_upgrade    = api_ctx.var.http_upgrade
         api_ctx.var.upstream_connection = api_ctx.var.http_connection
         core.log.info("enabled websocket for route: ", route.value.id)
@@ -596,6 +450,167 @@ function _M.http_access_phase()
     if api_ctx.dubbo_proxy_enabled then
         stash_ngx_ctx()
         return ngx.exec("@dubbo_pass")
+    end
+end
+
+
+local function simple_upstream(api_ctx, route)
+    core.log.info("enable sample upstream")
+    local up_conf = route.value.upstream
+    local upstream_key = up_conf.type .. "#route_" .. route.value.id
+    apisix_upstream.set(api_ctx, upstream_key, api_ctx.conf_version, up_conf)
+end
+
+
+function _M.http_access_phase()
+    local ngx_ctx = ngx.ctx
+
+    -- always fetch table from the table pool, we don't need a reused api_ctx
+    local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+    ngx_ctx.api_ctx = api_ctx
+
+    if not verify_tls_client(api_ctx) then
+        return core.response.exit(400)
+    end
+
+    core.ctx.set_vars_meta(api_ctx)
+
+    debug.dynamic_debug(api_ctx)
+
+    local uri = api_ctx.var.uri
+    if local_conf.apisix then
+        if local_conf.apisix.delete_uri_tail_slash then
+            if str_byte(uri, #uri) == str_byte("/") then
+                api_ctx.var.uri = str_sub(api_ctx.var.uri, 1, #uri - 1)
+                core.log.info("remove the end of uri '/', current uri: ", api_ctx.var.uri)
+            end
+        end
+
+        if local_conf.apisix.normalize_uri_like_servlet then
+            local new_uri, err = normalize_uri_like_servlet(uri)
+            if not new_uri then
+                core.log.error("failed to normalize: ", err)
+                return core.response.exit(400)
+            end
+
+            api_ctx.var.uri = new_uri
+            -- forward the original uri so the servlet upstream
+            -- can consume the param after ';'
+            api_ctx.var.upstream_uri = uri
+        end
+    end
+
+    -- To prevent being hacked by untrusted request_uri, here we
+    -- record the normalized but not rewritten uri as request_uri,
+    -- the original request_uri can be accessed via var.real_request_uri
+    api_ctx.var.real_request_uri = api_ctx.var.request_uri
+    api_ctx.var.request_uri = api_ctx.var.uri .. api_ctx.var.is_args .. (api_ctx.var.args or "")
+
+    router.router_http.match(api_ctx)
+
+    local route = api_ctx.matched_route
+    if not route then
+        -- run global rule when there is no matching route
+        plugin.run_global_rules(api_ctx, router.global_rules, nil)
+
+        core.log.info("not find any matched route")
+        return core.response.exit(404,
+                    {error_msg = "404 Route Not Found"})
+    end
+
+    core.log.info("matched route: ",
+                  core.json.delay_encode(api_ctx.matched_route, true))
+
+    if route.value.plugin_config_id then
+        local conf = plugin_config.get(route.value.plugin_config_id)
+        if not conf then
+            core.log.error("failed to fetch plugin config by ",
+                            "id: ", route.value.plugin_config_id)
+            return core.response.exit(503)
+        end
+
+        route = plugin_config.merge(route, conf)
+    end
+
+    if route.value.service_id then
+        local service = service_fetch(route.value.service_id)
+        if not service then
+            core.log.error("failed to fetch service configuration by ",
+                           "id: ", route.value.service_id)
+            return core.response.exit(404)
+        end
+
+        route = plugin.merge_service_route(service, route)
+        api_ctx.matched_route = route
+        api_ctx.conf_type = "route&service"
+        api_ctx.conf_version = route.modifiedIndex .. "&" .. service.modifiedIndex
+        api_ctx.conf_id = route.value.id .. "&" .. service.value.id
+        api_ctx.service_id = service.value.id
+        api_ctx.service_name = service.value.name
+
+        if route.value.enable_websocket == nil then
+            route.value.enable_websocket = service.value.enable_websocket
+        end
+
+    else
+        api_ctx.conf_type = "route"
+        api_ctx.conf_version = route.modifiedIndex
+        api_ctx.conf_id = route.value.id
+    end
+    api_ctx.route_id = route.value.id
+    api_ctx.route_name = route.value.name
+
+    -- run global rule
+    plugin.run_global_rules(api_ctx, router.global_rules, nil)
+
+    if route.value.script then
+        script.load(route, api_ctx)
+        script.run("access", api_ctx)
+
+    else
+        local plugins = plugin.filter(api_ctx, route)
+        api_ctx.plugins = plugins
+
+        plugin.run_plugin("rewrite", plugins, api_ctx)
+        if api_ctx.consumer then
+            local changed
+            local group_conf
+
+            if api_ctx.consumer.group_id then
+                group_conf = consumer_group.get(api_ctx.consumer.group_id)
+                if not group_conf then
+                    core.log.error("failed to fetch consumer group config by ",
+                        "id: ", api_ctx.consumer.group_id)
+                    return core.response.exit(503)
+                end
+            end
+
+            route, changed = plugin.merge_consumer_route(
+                route,
+                api_ctx.consumer,
+                group_conf,
+                api_ctx
+            )
+
+            core.log.info("find consumer ", api_ctx.consumer.username,
+                          ", config changed: ", changed)
+
+            if changed then
+                api_ctx.matched_route = route
+                core.table.clear(api_ctx.plugins)
+                local phase = "rewrite_in_consumer"
+                api_ctx.plugins = plugin.filter(api_ctx, route, api_ctx.plugins, nil, phase)
+                -- rerun rewrite phase for newly added plugins in consumer
+                plugin.run_plugin(phase, api_ctx.plugins, api_ctx)
+            end
+        end
+        plugin.run_plugin("access", plugins, api_ctx)
+    end
+
+    if route.value.upstream and route.value.upstream["_sample_upstream"] then
+        simple_upstream(api_ctx, route)
+    else
+        handle_upstream(api_ctx, route)
     end
 end
 

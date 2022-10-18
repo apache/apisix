@@ -92,8 +92,7 @@ function _M.create_radixtree_uri_router(routes, uri_routes, with_parameter)
         end
     end
 
-    ai.routes_analyze(uri_routes)
-    core.log.info("route items: ", core.json.delay_encode(uri_routes, true))
+    ai.routes_analyze(routes)
 
     if with_parameter then
         return radixtree.new(uri_routes)
