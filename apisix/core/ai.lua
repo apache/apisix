@@ -19,6 +19,7 @@ local core            = require("apisix.core")
 local ipairs          = ipairs
 local pcall           = pcall
 local loadstring      = loadstring
+local encode_base64   = ngx.encode_base64
 
 local get_cache_key_func
 local get_cache_key_func_def_render
@@ -54,7 +55,7 @@ end
 
 local function ai_match(ctx)
     local key = get_cache_key_func(ctx)
-    core.log.info("route cache key: ", core.log.delay_exec(ngx.encode_base64, key))
+    core.log.info("route cache key: ", core.log.delay_exec(encode_base64, key))
     local ver = router.user_routes.conf_version
     local route_cache = route_lrucache(key, ver,
                                        match_route, ctx)
