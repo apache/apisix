@@ -25,15 +25,13 @@ local get_cache_key_func_def_render
 
 local get_cache_key_func_def = [[
 return function(ctx)
-    local key = ctx.var.uri
+    return ctx.var.uri
         {% if route_flags["methods"] then %}
         .. "\0" .. ctx.var.method
         {% end %}
         {% if route_flags["host"] then %}
         .. "\0" .. ctx.var.host
         {% end %}
-
-    return key
 end
 ]]
 
@@ -56,12 +54,34 @@ end
 
 local function ai_match(ctx)
     local key = get_cache_key_func(ctx)
+    core.log.info("route cache key: ", core.log.delay_exec(ngx.encode_base64, key))
     local ver = router.user_routes.conf_version
     local route_cache = route_lrucache(key, ver,
                                        match_route, ctx)
     -- if the version has not changed, use the cached route
     if route_cache then
         ctx.matched_route = route_cache
+    end
+end
+
+
+local function gen_get_cache_key_func(route_flags)
+    if get_cache_key_func_def_render == nil then
+        local template = require("resty.template")
+        get_cache_key_func_def_render = template.compile(get_cache_key_func_def)
+    end
+
+    local str = get_cache_key_func_def_render({route_flags = route_flags})
+    local func, err = loadstring(str)
+    if func == nil then
+        return err
+    else
+        local ok
+        ok, get_cache_key_func = pcall(func)
+        if not ok then
+            local err = get_cache_key_func
+            return err
+        end
     end
 end
 
@@ -98,24 +118,10 @@ function  _M.routes_analyze(routes)
         core.log.info("use ai plane to match route")
         router.match = ai_match
 
-        if get_cache_key_func_def_render == nil then
-            local template = require("resty.template")
-            get_cache_key_func_def_render = template.compile(get_cache_key_func_def)
-        end
-
-        local str = get_cache_key_func_def_render({route_flags = route_flags})
-        local func, err = loadstring(str)
-        if func == nil then
+        local err = gen_get_cache_key_func(route_flags)
+        if err then
             core.log.error("generate get_cache_key_func failed:", err)
             router.match = orig_router_match
-        else
-            local ok
-            ok, get_cache_key_func = pcall(func)
-            if not ok then
-                local err = get_cache_key_func
-                core.log.error("generate get_cache_key_func failed:", err)
-                router.match = orig_router_match
-            end
         end
     end
 end
