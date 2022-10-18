@@ -91,7 +91,10 @@ The example is as follows:
 
 ```shell
 $ curl "http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10" \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET -i -d '
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET
+```
+
+```json
 {
   "total": 1,
   "list": [
@@ -131,7 +134,10 @@ The following example will return a list of routes, and all routes in the list s
 
 ```shell
 $ curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET -i -d '
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET
+```
+
+```json
 {
   "total": 1,
   "list": [
