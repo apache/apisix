@@ -18,6 +18,8 @@ local require         = require
 local core            = require("apisix.core")
 local template        = require("resty.template")
 local ipairs          = ipairs
+local pcall           = pcall
+local assert          = assert
 
 local get_cache_key_func
 
