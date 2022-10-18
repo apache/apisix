@@ -19,7 +19,8 @@
       "items": [
         "tutorials/expose-api",
         "tutorials/protect-api",
-        "tutorials/observe-your-api"
+        "tutorials/observe-your-api",
+        "tutorials/cache-api-responses"
       ]
     },
     {
