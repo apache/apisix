@@ -19,6 +19,7 @@ local http_route = require("apisix.http.route")
 local apisix_upstream = require("apisix.upstream")
 local core    = require("apisix.core")
 local plugin_checker = require("apisix.plugin").plugin_checker
+local ai_init = require("apisix.core.ai").init_worker
 local str_lower = string.lower
 local error   = error
 local ipairs  = ipairs
@@ -83,6 +84,7 @@ function _M.http_init_worker()
 
     local router_http = require("apisix.http.router." .. router_http_name)
     attach_http_router_common_methods(router_http)
+    ai_init(router_http)
     router_http.init_worker(filter)
     _M.router_http = router_http
 
