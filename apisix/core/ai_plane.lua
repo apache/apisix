@@ -17,13 +17,12 @@
 local require         = require
 local core            = require("apisix.core")
 local ipairs          = ipairs
-local type            = type
 
 local route_lrucache = core.lrucache.new({
+    -- TODO: we need to set the cache size by count of routes
+    -- if we have done this feature, we need to release the origin lrucache
     count = 512
 })
-
-local enable_route_cache
 
 local _M = {}
 
@@ -32,17 +31,17 @@ local router
 
 local function match_route(ctx)
     orig_router_match(ctx)
-    -- replace the router match
     return ctx.matched_route or false
 end
 
 
 local function ai_match(ctx)
-    local route_ckey = ctx.var.uri .. "-" .. ctx.var.method .. "-" ..
-                       ctx.var.host .. "-" .. ctx.var.remote_addr
+    -- TODO: we need to generate cache key dynamically
+    local key = ctx.var.uri .. "-" .. ctx.var.method .. "-" ..
+                ctx.var.host .. "-" .. ctx.var.remote_addr
     local ver = router.user_routes.conf_version
-    local route_cache = route_lrucache(route_ckey, ver,
-                        match_route, ctx)
+    local route_cache = route_lrucache(key, ver,
+                                       match_route, ctx)
     -- if the version has not changed, use the cached route
     if route_cache then
         ctx.matched_route = route_cache
@@ -51,50 +50,24 @@ end
 
 
 function  _M.routes_analyze(routes)
-    local vars_flag = false
-    local filter_flag = false
-    local prefix_match_flag = false
-
+    -- TODO: we need to add a option in config.yaml to enable this feature(default is true)
+    local route_flags = core.table.new(0, 2)
     for _, route in ipairs(routes) do
-        if type(route) == "table" then
-            if route.vars then
-                vars_flag = true
-                break
-            end
+        if route.vars then
+            route_flags.vars = true
+        end
 
-            if route.filter_fun then
-                filter_flag = true
-                break
-            end
-
-            if route.uri and core.string.has_suffix(route.uri, "*") then
-                prefix_match_flag = true
-                break
-            end
-
-            if route.uris then
-                for _, uri in ipairs(route.uris) do
-                    if core.string.has_suffix(uri, "*") then
-                        prefix_match_flag = true
-                        break
-                    end
-                end
-            end
+        if route.filter_fun then
+            route_flags.filter_fun = true
         end
     end
 
-    if vars_flag or filter_flag or prefix_match_flag then
-        enable_route_cache = false
+    if route_flags.vars or route_flags.filter_fun then
         router.match = orig_router_match
     else
-        enable_route_cache = true
+        core.log.info("use ai plane to match route")
         router.match = ai_match
     end
-end
-
-
-function _M.enable_route_cache()
-    return enable_route_cache
 end
 
 

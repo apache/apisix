@@ -39,7 +39,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: set route(id: 1)
+=== TEST 1: enable route cache
 --- config
     location /t {
         content_by_lua_block {
@@ -48,73 +48,6 @@ __DATA__
                  ngx.HTTP_PUT,
                  [[{
                     "methods": ["GET"],
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 2: enable route cache
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require "resty.http"
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local t = {}
-            for i = 1, 2 do
-                local th = assert(ngx.thread.spawn(function(i)
-                    local httpc = http.new()
-                    local res, err = httpc:request_uri(uri)
-                    assert(res.status == 200)
-                    if not res then
-                        ngx.log(ngx.ERR, err)
-                        return
-                    end
-                end, i))
-                table.insert(t, th)
-            end
-            local improve = require("apisix.core.improve")
-            for i, th in ipairs(t) do
-                ngx.thread.wait(th)
-                ngx.say(improve.enable_route_cache())
-            end
-        }
-    }
---- response_body
-true
-true
---- grep_error_log eval
-qr/hit route cache, key: [^,]+/
---- grep_error_log_out
-hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
-
-
-
-=== TEST 3: route has vars, disable route cache
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "methods": ["GET"],
-                    "vars": [ ["arg_k", "==", "v"] ],
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1
@@ -146,22 +79,21 @@ hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
                 end, i))
                 table.insert(t, th)
             end
-            local improve = require("apisix.core.improve")
             for i, th in ipairs(t) do
                 ngx.thread.wait(th)
-                ngx.say(improve.enable_route_cache())
             end
+
+            ngx.say("done")
         }
     }
 --- response_body
-false
-false
---- no_error_log
-hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
+done
+--- error_log
+use ai plane to match route
 
 
 
-=== TEST 4: route with prefix match, disable route cache
+=== TEST 2: route has vars, disable route cache
 --- config
     location /t {
         content_by_lua_block {
@@ -169,13 +101,15 @@ hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
+                    "methods": ["GET"],
+                    "vars": [ ["arg_k", "~=", "v"] ],
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/hello*"
+                    "uri": "/hello"
                 }]]
             )
 
@@ -186,36 +120,45 @@ hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
             end
 
             local http = require "resty.http"
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1"
-            local t = {}
+            local uri1 = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello?k=a"
+            local uri2 = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello?k=v"
+            local threads = {}
             for i = 1, 2 do
                 local th = assert(ngx.thread.spawn(function(i)
                     local httpc = http.new()
-                    local res, err = httpc:request_uri(uri)
-                    assert(res.status == 200)
+                    local res, err
+                    if i == 1 then
+                        -- arg_k = a, match route
+                        res, err = httpc:request_uri(uri1)
+                        ngx.log(ngx.WARN, "res : ", require("inspect")(res))
+                        assert(res.status == 200)
+                    else
+                        -- arg_k = v, not match route
+                        res, err = httpc:request_uri(uri2)
+                        assert(res.status == 404)
+                    end
                     if not res then
                         ngx.log(ngx.ERR, err)
                         return
                     end
                 end, i))
-                table.insert(t, th)
+                table.insert(threads, th)
             end
-            local improve = require("apisix.core.improve")
-            for i, th in ipairs(t) do
+            for i, th in ipairs(threads) do
                 ngx.thread.wait(th)
-                ngx.say(improve.enable_route_cache())
             end
+
+            ngx.say("done")
         }
     }
 --- response_body
-false
-false
+done
 --- no_error_log
-hit route cache, key: /hello1-GET-127.0.0.1-127.0.0.1
+use ai plane to match route
 
 
 
-=== TEST 5: method changed, create different route cache
+=== TEST 3: method changed, create different route cache
 --- config
     location /t {
         content_by_lua_block {
@@ -247,9 +190,9 @@ hit route cache, key: /hello1-GET-127.0.0.1-127.0.0.1
                     local httpc = http.new()
                     local res, err
                     if i % 2 == 0 then
-                        res, err =httpc:request_uri(uri, { method = "POST" })
+                        res, err = httpc:request_uri(uri, { method = "POST" })
                     else
-                        res, err =httpc:request_uri(uri)
+                        res, err = httpc:request_uri(uri)
                     end
                     assert(res.status == 200)
                     if not res then
@@ -259,27 +202,21 @@ hit route cache, key: /hello1-GET-127.0.0.1-127.0.0.1
                 end, i))
                 table.insert(t, th)
             end
-            local improve = require("apisix.core.improve")
             for i, th in ipairs(t) do
                 ngx.thread.wait(th)
-                ngx.say(improve.enable_route_cache())
             end
+
+            ngx.say("done")
         }
     }
 --- response_body
-true
-true
-true
-true
---- grep_error_log eval
-qr/hit route cache, key: [^,]+/
---- grep_error_log_out
-hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
-hit route cache, key: /hello-POST-127.0.0.1-127.0.0.1
+done
+--- error_log
+use ai plane to match route
 
 
 
-=== TEST 6: route with plugins, enable
+=== TEST 4: route with plugins, enable
 --- config
     location /t {
         content_by_lua_block {
@@ -325,32 +262,29 @@ hit route cache, key: /hello-POST-127.0.0.1-127.0.0.1
                 end, i))
                 table.insert(t, th)
             end
-            local improve = require("apisix.core.improve")
             for i, th in ipairs(t) do
                 ngx.thread.wait(th)
-                ngx.say(improve.enable_route_cache())
             end
+
+            ngx.say("done")
         }
     }
 --- response_body
-true
-true
---- grep_error_log eval
-qr/hit route cache, key: [^,]+/
---- grep_error_log_out
-hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
+done
+--- error_log
+use ai plane to match route
 
 
 
-=== TEST 7: enable ->disable -> enable -> diable
+=== TEST 5: enable -> disable -> enable -> diable
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local improve = require("apisix.core.improve")
             local http = require "resty.http"
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local uri2 = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1?k=v"
+            local uri2 = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1?k=a"
+            local uri3 = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1?k=v"
 
             -- round 1: all routes without vars or filter_fun, enable route cache
             local code, body = t('/apisix/admin/routes/1',
@@ -390,7 +324,6 @@ hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
 
             for i, th in ipairs(threads1) do
                 ngx.thread.wait(th)
-                ngx.say(improve.enable_route_cache())
             end
 
             -- round 2: routes with vars or filter_fun, disable route cache
@@ -398,7 +331,7 @@ hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
                  ngx.HTTP_PUT,
                  [[{
                     "methods": ["GET"],
-                    "vars": [ ["arg_k", "==", "v"] ],
+                    "vars": [ ["arg_k", "~=", "v"] ],
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1
@@ -420,8 +353,16 @@ hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
             for i = 1, 2 do
                 local th = assert(ngx.thread.spawn(function(i)
                     local httpc = http.new()
-                    local res, err = httpc:request_uri(uri2)
-                    assert(res.status == 200)
+                    local res, err
+                    if i == 1 then
+                        -- arg_k = a, match route 2
+                        res, err = httpc:request_uri(uri2)
+                        assert(res.status == 200)
+                    else
+                        -- arg_k = v, not match route 2
+                        res, err = httpc:request_uri(uri3)
+                        assert(res.status == 404)
+                    end
                     if not res then
                         ngx.log(ngx.ERR, err)
                         return
@@ -432,7 +373,6 @@ hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
 
             for i, th in ipairs(threads2) do
                 ngx.thread.wait(th)
-                ngx.say(improve.enable_route_cache())
             end
 
            -- round 3: delete route with vars, the remaining route
@@ -463,7 +403,6 @@ hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
 
             for i, th in ipairs(threads3) do
                 ngx.thread.wait(th)
-                ngx.say(improve.enable_route_cache())
             end
 
             -- round 4: routes with vars or filter_fun, disable route cache
@@ -471,7 +410,7 @@ hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
                  ngx.HTTP_PUT,
                  [[{
                     "methods": ["GET"],
-                    "vars": [ ["arg_k", "==", "v"] ],
+                    "vars": [ ["arg_k", "~=", "v"] ],
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1
@@ -493,8 +432,16 @@ hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
             for i = 1, 2 do
                 local th = assert(ngx.thread.spawn(function(i)
                     local httpc = http.new()
-                    local res, err = httpc:request_uri(uri2)
-                    assert(res.status == 200)
+                    local res, err
+                    if i == 1 then
+                        -- arg_k = a, match route 2
+                        res, err = httpc:request_uri(uri2)
+                        assert(res.status == 200)
+                    else
+                        -- arg_k = v, not match route 2
+                        res, err = httpc:request_uri(uri3)
+                        assert(res.status == 404)
+                    end
                     if not res then
                         ngx.log(ngx.ERR, err)
                         return
@@ -505,7 +452,6 @@ hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
 
             for i, th in ipairs(threads4) do
                 ngx.thread.wait(th)
-                ngx.say(improve.enable_route_cache())
             end
 
             -- clean route 2
@@ -517,21 +463,14 @@ hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
                 ngx.say(body)
                 return
             end
+
+            ngx.say("done")
         }
     }
 --- response_body
-true
-true
-false
-false
-true
-true
-false
-false
+done
 --- grep_error_log eval
-qr/hit route cache, key: [^,]+/
+qr/use ai plane to match route/
 --- grep_error_log_out
-hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
-hit route cache, key: /hello-GET-127.0.0.1-127.0.0.1
---- no_error_log
-hit route cache, key: /hello1-GET-127.0.0.1-127.0.0.1
+use ai plane to match route
+use ai plane to match route
