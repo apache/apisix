@@ -21,7 +21,7 @@ local service_fetch = require("apisix.http.service").get
 local core = require("apisix.core")
 local expr = require("resty.expr.v1")
 local plugin_checker = require("apisix.plugin").plugin_checker
-local routes_analyze = require("apisix.core.ai_plane").routes_analyze
+local ai_plane = require("apisix.core.ai_plane")
 local ipairs = ipairs
 local type = type
 local error = error
@@ -92,7 +92,7 @@ function _M.create_radixtree_uri_router(routes, uri_routes, with_parameter)
         end
     end
 
-    routes_analyze(uri_routes)
+    ai_plane.routes_analyze(uri_routes)
     core.log.info("route items: ", core.json.delay_encode(uri_routes, true))
 
     if with_parameter then
