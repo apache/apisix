@@ -16,7 +16,26 @@
 --
 local require         = require
 local core            = require("apisix.core")
+local template        = require("resty.template")
 local ipairs          = ipairs
+
+local get_cache_key_func
+
+local get_cache_key_func_def_render = template.compile([[
+return function(ctx)
+    local key = ctx.var.uri
+
+    {% if route_flags["methods"] then %}
+    key = key .. "\0" .. ctx.var.method
+    {% end %}
+
+    {% if route_flags["host"] then %}
+    key = key .. "\1" .. ctx.var.host
+    {% end %}
+
+    return key
+end
+]])
 
 local route_lrucache = core.lrucache.new({
     -- TODO: we need to set the cache size by count of routes
@@ -36,8 +55,7 @@ end
 
 
 local function ai_match(ctx)
-    -- TODO: we need to generate cache key dynamically
-    local key = ctx.var.uri .. "-" .. ctx.var.method .. "-" .. ctx.var.host
+    local key = get_cache_key_func(ctx)
     local ver = router.user_routes.conf_version
     local route_cache = route_lrucache(key, ver,
                                        match_route, ctx)
@@ -52,6 +70,14 @@ function  _M.routes_analyze(routes)
     -- TODO: we need to add a option in config.yaml to enable this feature(default is true)
     local route_flags = core.table.new(0, 2)
     for _, route in ipairs(routes) do
+        if route.methods then
+            route_flags["methods"] = true
+        end
+
+        if route.host or route.hosts then
+            route_flags["host"] = true
+        end
+
         if route.vars then
             route_flags["vars"] = true
         end
@@ -71,6 +97,10 @@ function  _M.routes_analyze(routes)
     else
         core.log.info("use ai plane to match route")
         router.match = ai_match
+        local str = get_cache_key_func_def_render({route_flags = route_flags})
+        local ok, func = pcall(str)
+        assert(ok)
+        get_cache_key_func = func()
     end
 end
 
