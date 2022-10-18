@@ -20,6 +20,7 @@ local template        = require("resty.template")
 local ipairs          = ipairs
 local pcall           = pcall
 local assert          = assert
+local loadstring      = loadstring
 
 local get_cache_key_func
 
@@ -98,9 +99,10 @@ function  _M.routes_analyze(routes)
         core.log.info("use ai plane to match route")
         router.match = ai_match
         local str = get_cache_key_func_def_render({route_flags = route_flags})
-        local ok, func = pcall(str)
+        local func = loadstring(str)
+        assert(func)
+        local ok, get_cache_key_func = pcall(func)
         assert(ok)
-        get_cache_key_func = func()
     end
 end
 
