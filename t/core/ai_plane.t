@@ -276,7 +276,7 @@ use ai plane to match route
 
 
 
-=== TEST 5: enable -> disable -> enable -> diable
+=== TEST 5: enable -> disable -> enable -> disable
 --- config
     location /t {
         content_by_lua_block {
