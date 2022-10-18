@@ -37,8 +37,7 @@ end
 
 local function ai_match(ctx)
     -- TODO: we need to generate cache key dynamically
-    local key = ctx.var.uri .. "-" .. ctx.var.method .. "-" ..
-                ctx.var.host .. "-" .. ctx.var.remote_addr
+    local key = ctx.var.uri .. "-" .. ctx.var.method .. "-" .. ctx.var.host
     local ver = router.user_routes.conf_version
     local route_cache = route_lrucache(key, ver,
                                        match_route, ctx)
@@ -54,15 +53,20 @@ function  _M.routes_analyze(routes)
     local route_flags = core.table.new(0, 2)
     for _, route in ipairs(routes) do
         if route.vars then
-            route_flags.vars = true
+            route_flags["vars"] = true
         end
 
         if route.filter_fun then
-            route_flags.filter_fun = true
+            route_flags["filter_fun"] = true
+        end
+
+        if route.remote_addr or route.remote_addrs then
+            route_flags["remote_addr"] = true
         end
     end
 
-    if route_flags.vars or route_flags.filter_fun then
+    if route_flags["vars"] or route_flags["filter_fun"]
+         or route_flags["remote_addr"] then
         router.match = orig_router_match
     else
         core.log.info("use ai plane to match route")
