@@ -17,6 +17,25 @@
 local require         = require
 local core            = require("apisix.core")
 local ipairs          = ipairs
+local pcall           = pcall
+local loadstring      = loadstring
+local encode_base64   = ngx.encode_base64
+
+local get_cache_key_func
+local get_cache_key_func_def_render
+
+local get_cache_key_func_def = [[
+return function(ctx)
+    local var = ctx.var
+    return var.uri
+        {% if route_flags["methods"] then %}
+        .. "\0" .. var.method
+        {% end %}
+        {% if route_flags["host"] then %}
+        .. "\0" .. var.host
+        {% end %}
+end
+]]
 
 local route_lrucache = core.lrucache.new({
     -- TODO: we need to set the cache size by count of routes
@@ -36,8 +55,8 @@ end
 
 
 local function ai_match(ctx)
-    -- TODO: we need to generate cache key dynamically
-    local key = ctx.var.uri .. "-" .. ctx.var.method .. "-" .. ctx.var.host
+    local key = get_cache_key_func(ctx)
+    core.log.info("route cache key: ", core.log.delay_exec(encode_base64, key))
     local ver = router.user_routes.conf_version
     local route_cache = route_lrucache(key, ver,
                                        match_route, ctx)
@@ -48,10 +67,40 @@ local function ai_match(ctx)
 end
 
 
+local function gen_get_cache_key_func(route_flags)
+    if get_cache_key_func_def_render == nil then
+        local template = require("resty.template")
+        get_cache_key_func_def_render = template.compile(get_cache_key_func_def)
+    end
+
+    local str = get_cache_key_func_def_render({route_flags = route_flags})
+    local func, err = loadstring(str)
+    if func == nil then
+        return false, err
+    else
+        local ok, err_or_function = pcall(func)
+        if not ok then
+            return false, err_or_function
+        end
+        get_cache_key_func = err_or_function
+    end
+
+    return true
+end
+
+
 function  _M.routes_analyze(routes)
     -- TODO: we need to add a option in config.yaml to enable this feature(default is true)
     local route_flags = core.table.new(0, 2)
     for _, route in ipairs(routes) do
+        if route.methods then
+            route_flags["methods"] = true
+        end
+
+        if route.host or route.hosts then
+            route_flags["host"] = true
+        end
+
         if route.vars then
             route_flags["vars"] = true
         end
@@ -71,6 +120,12 @@ function  _M.routes_analyze(routes)
     else
         core.log.info("use ai plane to match route")
         router.match = ai_match
+
+        local ok, err = gen_get_cache_key_func(route_flags)
+        if not ok then
+            core.log.error("generate get_cache_key_func failed:", err)
+            router.match = orig_router_match
+        end
     end
 end
 
