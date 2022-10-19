@@ -75,15 +75,17 @@ local function gen_get_cache_key_func(route_flags)
     local str = get_cache_key_func_def_render({route_flags = route_flags})
     local func, err = loadstring(str)
     if func == nil then
-        return err
+        return false, err
     else
         local ok
         ok, get_cache_key_func = pcall(func)
         if not ok then
             local err = get_cache_key_func
-            return err
+            return false, err
         end
     end
+
+    return true
 end
 
 
@@ -119,8 +121,8 @@ function  _M.routes_analyze(routes)
         core.log.info("use ai plane to match route")
         router.match = ai_match
 
-        local err = gen_get_cache_key_func(route_flags)
-        if err then
+        local ok, err = gen_get_cache_key_func(route_flags)
+        if not ok then
             core.log.error("generate get_cache_key_func failed:", err)
             router.match = orig_router_match
         end
