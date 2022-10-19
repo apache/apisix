@@ -27,6 +27,7 @@ function _M.push(type, ...)
 end
 
 function _M.register(type, handler)
+    -- TODO: we can register more than one handler
     events[type] = handler
 end
 
