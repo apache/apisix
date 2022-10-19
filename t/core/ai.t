@@ -474,3 +474,150 @@ qr/use ai plane to match route/
 --- grep_error_log_out
 use ai plane to match route
 use ai plane to match route
+
+
+
+=== TEST 6: route key: uri
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(1)
+
+            for i = 1, 2 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri)
+                assert(res.status == 200)
+                if not res then
+                    ngx.log(ngx.ERR, err)
+                    return
+                end
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+route cache key: L2hlbGxv
+
+
+
+=== TEST 7: route key: uri + method
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(1)
+
+            for i = 1, 2 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri)
+                assert(res.status == 200)
+                if not res then
+                    ngx.log(ngx.ERR, err)
+                    return
+                end
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+route cache key: L2hlbGxvAEdFVA==
+
+
+
+=== TEST 8: route key: uri + method + host
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "host": "127.0.0.1",
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(1)
+
+            for i = 1, 2 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri)
+                assert(res.status == 200)
+                if not res then
+                    ngx.log(ngx.ERR, err)
+                    return
+                end
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+route cache key: L2hlbGxvAEdFVAAxMjcuMC4wLjE=
