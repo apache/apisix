@@ -16,6 +16,7 @@
 --
 local require         = require
 local core            = require("apisix.core")
+local router          = require("apisix.router")
 local ipairs          = ipairs
 
 local route_lrucache = core.lrucache.new({
@@ -26,8 +27,7 @@ local route_lrucache = core.lrucache.new({
 
 local _M = {}
 
-local orig_router_match
-local router
+local orig_router_match = router.router_http.match
 
 local function match_route(ctx)
     orig_router_match(ctx)
@@ -38,7 +38,7 @@ end
 local function ai_match(ctx)
     -- TODO: we need to generate cache key dynamically
     local key = ctx.var.uri .. "-" .. ctx.var.method .. "-" .. ctx.var.host
-    local ver = router.user_routes.conf_version
+    local ver = router.router_http.user_routes.conf_version
     local route_cache = route_lrucache(key, ver,
                                        match_route, ctx)
     -- if the version has not changed, use the cached route
@@ -48,7 +48,7 @@ local function ai_match(ctx)
 end
 
 
-function  _M.routes_analyze(routes)
+local function routes_analyze(routes)
     -- TODO: we need to add a option in config.yaml to enable this feature(default is true)
     local route_flags = core.table.new(0, 2)
     for _, route in ipairs(routes) do
@@ -67,17 +67,16 @@ function  _M.routes_analyze(routes)
 
     if route_flags["vars"] or route_flags["filter_fun"]
          or route_flags["remote_addr"] then
-        router.match = orig_router_match
+        router.router_http.match = orig_router_match
     else
         core.log.info("use ai plane to match route")
-        router.match = ai_match
+        router.router_http.match = ai_match
     end
 end
 
-
-function _M.init_worker(router_http)
-    router = router_http
-    orig_router_match = router.match
+function _M.init_worker()
+    local help = require("apisix.ai.help")
+    help.register_event("routes_change", routes_analyze)
 end
 
 return _M
