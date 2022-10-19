@@ -16,7 +16,7 @@
 --
 
 local CONST = {
-    CREATE_NEW_HTTP_ROUTER = 1,
+    BUILD_ROUTER = 1,
 }
 
 local _M = {

@@ -142,7 +142,7 @@ end
 
 
 function _M.init()
-    event.register(event.CONST.CREATE_NEW_HTTP_ROUTER, routes_analyze)
+    event.register(event.CONST.BUILD_ROUTER, routes_analyze)
 end
 
 return _M
