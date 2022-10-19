@@ -25,6 +25,7 @@ local _M = {
 
 local events = {}
 
+
 function _M.push(type, ...)
     local handler = events[type]
     if handler then
