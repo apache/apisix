@@ -143,8 +143,8 @@ function _M.http_init_worker()
         end
     end
 
-    plugin.init_worker()
     router.http_init_worker()
+    plugin.init_worker()
     require("apisix.http.service").init_worker()
     plugin_config.init_worker()
     require("apisix.consumer").init_worker()
