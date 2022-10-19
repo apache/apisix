@@ -15,12 +15,12 @@
 -- limitations under the License.
 --
 
-local constants = {
+local CONST = {
     CREATE_NEW_HTTP_ROUTER = 1,
 }
 
 local _M = {
-    constants = constants,
+    CONST = CONST,
 }
 
 local events = {}

@@ -45,11 +45,7 @@ local route_lrucache = core.lrucache.new({
     count = 512
 })
 
-local schema = {
-    type = "object",
-    properties = {
-    }
-}
+local schema = {}
 
 local plugin_name = "ai"
 
@@ -146,7 +142,7 @@ end
 
 
 function _M.init()
-    event.register(event.constants.CREATE_NEW_HTTP_ROUTER, routes_analyze)
+    event.register(event.CONST.CREATE_NEW_HTTP_ROUTER, routes_analyze)
 end
 
 return _M
