@@ -78,11 +78,11 @@ local function gen_get_cache_key_func(route_flags)
     if func == nil then
         return false, err
     else
-        local ok, err = pcall(func)
+        local ok, err_or_function = pcall(func)
         if not ok then
-            return false, err
+            return false, err_or_function
         end
-        get_cache_key_func = err
+        get_cache_key_func = err_or_function
     end
 
     return true
