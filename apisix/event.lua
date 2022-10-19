@@ -19,14 +19,14 @@ local _M = {}
 
 local events = {}
 
-function _M.push_event(type, ...)
+function _M.push(type, ...)
     local handler = events[type]
     if handler then
         handler(...)
     end
 end
 
-function _M.register_event(type, handler)
+function _M.register(type, handler)
     events[type] = handler
 end
 

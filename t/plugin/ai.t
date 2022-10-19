@@ -39,36 +39,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: set ai plugin on global rule
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/global_rules/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "ai": {}
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 2: enable route cache
+=== TEST 1: enable route cache
 --- config
     location /t {
         content_by_lua_block {
@@ -122,7 +93,7 @@ use ai plane to match route
 
 
 
-=== TEST 3: route has vars, disable route cache
+=== TEST 2: route has vars, disable route cache
 --- config
     location /t {
         content_by_lua_block {
@@ -186,7 +157,7 @@ use ai plane to match route
 
 
 
-=== TEST 4: method changed, create different route cache
+=== TEST 3: method changed, create different route cache
 --- config
     location /t {
         content_by_lua_block {
@@ -244,7 +215,7 @@ use ai plane to match route
 
 
 
-=== TEST 5: route with plugins, enable
+=== TEST 4: route with plugins, enable
 --- config
     location /t {
         content_by_lua_block {
@@ -304,7 +275,7 @@ use ai plane to match route
 
 
 
-=== TEST 6: enable -> disable -> enable -> disable
+=== TEST 5: enable -> disable -> enable -> disable
 --- config
     location /t {
         content_by_lua_block {

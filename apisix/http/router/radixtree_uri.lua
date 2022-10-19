@@ -29,6 +29,7 @@ local _M = {version = 0.2}
     local uri_router
     local match_opts = {}
 function _M.match(api_ctx)
+    ngx.log(ngx.WARN, debug.traceback())
     local user_routes = _M.user_routes
     local _, service_version = get_services()
     if not cached_router_version or cached_router_version ~= user_routes.conf_version

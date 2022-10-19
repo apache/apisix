@@ -17,7 +17,7 @@
 local require         = require
 local core            = require("apisix.core")
 local router          = require("apisix.router")
-local internal_event  = require("apisix.internal_event")
+local event          = require("apisix.event")
 local ipairs          = ipairs
 
 local route_lrucache = core.lrucache.new({
@@ -90,7 +90,7 @@ local function routes_analyze(routes)
 end
 
 function _M.init()
-    internal_event.register_event("routes_change", routes_analyze)
+    event.register("create_new_http_router", routes_analyze)
 end
 
 return _M

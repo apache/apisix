@@ -21,7 +21,7 @@ local service_fetch = require("apisix.http.service").get
 local core = require("apisix.core")
 local expr = require("resty.expr.v1")
 local plugin_checker = require("apisix.plugin").plugin_checker
-local internal_event = require("apisix.internal_event")
+local event = require("apisix.event")
 local ipairs = ipairs
 local type = type
 local error = error
@@ -92,7 +92,7 @@ function _M.create_radixtree_uri_router(routes, uri_routes, with_parameter)
         end
     end
 
-    internal_event.push_event("routes_change", uri_routes)
+    event.push("create_new_http_router", uri_routes)
     core.log.info("route items: ", core.json.delay_encode(uri_routes, true))
 
     if with_parameter then
