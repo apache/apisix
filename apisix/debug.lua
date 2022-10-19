@@ -157,7 +157,7 @@ do
     local pre_mtime
     local enabled_hooks = {}
 
-local function apple_new_fun(module, fun_name, file_path, hook_conf)
+local function apply_new_fun(module, fun_name, file_path, hook_conf)
     local log_level = hook_conf.log_level or "warn"
 
     if not module or type(module[fun_name]) ~= "function" then
@@ -244,7 +244,7 @@ function sync_debug_hooks()
 
         else
             for _, fun_name in ipairs(fun_names) do
-                apple_new_fun(module, fun_name, file_path, hook_conf)
+                apply_new_fun(module, fun_name, file_path, hook_conf)
             end
         end
     end
