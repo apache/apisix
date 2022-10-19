@@ -26,12 +26,13 @@ local get_cache_key_func_def_render
 
 local get_cache_key_func_def = [[
 return function(ctx)
-    return ctx.var.uri
+    local var = ctx.var
+    return var.uri
         {% if route_flags["methods"] then %}
-        .. "\0" .. ctx.var.method
+        .. "\0" .. var.method
         {% end %}
         {% if route_flags["host"] then %}
-        .. "\0" .. ctx.var.host
+        .. "\0" .. var.host
         {% end %}
 end
 ]]
@@ -77,12 +78,11 @@ local function gen_get_cache_key_func(route_flags)
     if func == nil then
         return false, err
     else
-        local ok
-        ok, get_cache_key_func = pcall(func)
+        local ok, err = pcall(func)
         if not ok then
-            local err = get_cache_key_func
             return false, err
         end
+        get_cache_key_func = err
     end
 
     return true

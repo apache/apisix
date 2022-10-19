@@ -505,8 +505,7 @@ use ai plane to match route
             end
             ngx.sleep(1)
 
-            -- enable
-            do
+            for i = 1, 2 do
                 local httpc = http.new()
                 local res, err = httpc:request_uri(uri)
                 assert(res.status == 200)
@@ -514,14 +513,6 @@ use ai plane to match route
                     ngx.log(ngx.ERR, err)
                     return
                 end
-            end
-
-            local httpc = http.new()
-            local res, err = httpc:request_uri(uri)
-            assert(res.status == 200)
-            if not res then
-                ngx.log(ngx.ERR, err)
-                return
             end
 
             ngx.say("done")
@@ -563,8 +554,7 @@ route cache key: L2hlbGxv
             end
             ngx.sleep(1)
 
-            -- enable
-            do
+            for i = 1, 2 do
                 local httpc = http.new()
                 local res, err = httpc:request_uri(uri)
                 assert(res.status == 200)
@@ -572,14 +562,6 @@ route cache key: L2hlbGxv
                     ngx.log(ngx.ERR, err)
                     return
                 end
-            end
-
-            local httpc = http.new()
-            local res, err = httpc:request_uri(uri)
-            assert(res.status == 200)
-            if not res then
-                ngx.log(ngx.ERR, err)
-                return
             end
 
             ngx.say("done")
@@ -622,8 +604,7 @@ route cache key: L2hlbGxvAEdFVA==
             end
             ngx.sleep(1)
 
-            -- enable
-            do
+            for i = 1, 2 do
                 local httpc = http.new()
                 local res, err = httpc:request_uri(uri)
                 assert(res.status == 200)
@@ -631,14 +612,6 @@ route cache key: L2hlbGxvAEdFVA==
                     ngx.log(ngx.ERR, err)
                     return
                 end
-            end
-
-            local httpc = http.new()
-            local res, err = httpc:request_uri(uri)
-            assert(res.status == 200)
-            if not res then
-                ngx.log(ngx.ERR, err)
-                return
             end
 
             ngx.say("done")
