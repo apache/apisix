@@ -57,7 +57,8 @@ local _M = {
     scope = "global",
 }
 
-local orig_router_match = router.router_http.match
+local orig_router_match
+
 
 local function match_route(ctx)
     orig_router_match(ctx)
@@ -143,6 +144,11 @@ end
 
 function _M.init()
     event.register(event.CONST.BUILD_ROUTER, routes_analyze)
+end
+
+
+function _M.init_worker()
+    orig_router_match = router.router_http.match
 end
 
 return _M
