@@ -44,7 +44,6 @@ local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
 local debug           = require("apisix.debug")
 local pubsub_kafka    = require("apisix.pubsub.kafka")
-local ai_help         = require("apisix.ai.help")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -144,8 +143,8 @@ function _M.http_init_worker()
         end
     end
 
-    plugin.init_worker()
     router.http_init_worker()
+    plugin.init_worker()
     require("apisix.http.service").init_worker()
     plugin_config.init_worker()
     require("apisix.consumer").init_worker()
@@ -159,8 +158,6 @@ function _M.http_init_worker()
     if local_conf.apisix and local_conf.apisix.enable_server_tokens == false then
         ver_header = "APISIX"
     end
-
-    ai_help.init_worker()
 end
 
 

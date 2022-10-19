@@ -48,6 +48,7 @@
           "type": "category",
           "label": "General",
           "items": [
+            "plugins/ai",
             "plugins/batch-requests",
             "plugins/redirect",
             "plugins/echo",

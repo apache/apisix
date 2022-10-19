@@ -17,6 +17,7 @@
 local require         = require
 local core            = require("apisix.core")
 local router          = require("apisix.router")
+local internal_event  = require("apisix.internal_event")
 local ipairs          = ipairs
 
 local route_lrucache = core.lrucache.new({
@@ -25,7 +26,21 @@ local route_lrucache = core.lrucache.new({
     count = 512
 })
 
-local _M = {}
+local schema = {
+    type = "object",
+    properties = {
+    }
+}
+
+local plugin_name = "ai"
+
+local _M = {
+    version = 0.1,
+    priority = 25000,
+    name = plugin_name,
+    schema = schema,
+    scope = "global",
+}
 
 local orig_router_match = router.router_http.match
 
@@ -74,9 +89,8 @@ local function routes_analyze(routes)
     end
 end
 
-function _M.init_worker()
-    local help = require("apisix.ai.help")
-    help.register_event("routes_change", routes_analyze)
+function _M.init()
+    internal_event.register_event("routes_change", routes_analyze)
 end
 
 return _M

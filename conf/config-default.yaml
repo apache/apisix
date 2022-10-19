@@ -389,6 +389,7 @@ graphql:
   #cmd: ["ls", "-l"]
 
 plugins:                          # plugin list (sorted by priority)
+  - ai                             # priority: 25000
   - real-ip                        # priority: 23000
   - client-control                 # priority: 22000
   - proxy-control                  # priority: 21990
