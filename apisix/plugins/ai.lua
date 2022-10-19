@@ -102,7 +102,7 @@ end
 
 
 local function routes_analyze(routes)
-    -- TODO: we need to add a option in config.yaml to enable this feature(default is true)
+    -- TODO: need to add a option in config.yaml to enable this feature(default is true)
     local route_flags = core.table.new(0, 2)
     for _, route in ipairs(routes) do
         if route.methods then
