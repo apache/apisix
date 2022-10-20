@@ -21,11 +21,12 @@ local router          = require("apisix.router")
 local event           = require("apisix.core.event")
 local load_balancer   = require("apisix.balancer")
 local balancer        = require("ngx.balancer")
+local is_http         = ngx.config.subsystem == "http"
+local enable_keepalive = balancer.enable_keepalive and is_http
 local ipairs          = ipairs
 local pcall           = pcall
 local loadstring      = loadstring
 local type            = type
-local encode_base64   = ngx.encode_base64
 
 local get_cache_key_func
 local get_cache_key_func_def_render
@@ -115,13 +116,17 @@ end
 local pool_opt = { pool_size = 320 }
 local function ai_balancer_run(route)
     local server = route.value.upstream.nodes[1]
-    local ok, err = balancer.set_current_peer(server.host, server.port or 80, pool_opt)
-    if not ok then
-        core.log.error("failed to set server peer [", server.host, ":",
-                       server.port, "] err: ", err)
-        return ok, err
+    if enable_keepalive then
+        local ok, err = balancer.set_current_peer(server.host, server.port or 80, pool_opt)
+        if not ok then
+            core.log.error("failed to set server peer [", server.host, ":",
+                           server.port, "] err: ", err)
+            return ok, err
+        end
+        balancer.enable_keepalive(60, 1000)
+    else
+        balancer.set_current_peer(server.host, server.port)
     end
-    balancer.enable_keepalive(60, 1000)
 end
 
 local function routes_analyze(routes)

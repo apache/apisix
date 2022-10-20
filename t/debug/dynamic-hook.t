@@ -406,7 +406,7 @@ hook_test:                      # module and function list, name: hook_test
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1,
-                            "127.0.0.1:1980": 1
+                            "127.0.0.1:1981": 1
                         },
                         "type": "roundrobin"
                     }
