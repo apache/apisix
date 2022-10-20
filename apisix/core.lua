@@ -54,4 +54,5 @@ return {
     os          = require("apisix.core.os"),
     pubsub      = require("apisix.core.pubsub"),
     math        = require("apisix.core.math"),
+    event       = require("apisix.core.event"),
 }
