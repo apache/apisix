@@ -31,10 +31,10 @@ return function(ctx)
     local var = ctx.var
     return var.uri
         {% if route_flags["methods"] then %}
-        .. "\0" .. var.method
+        .. "#" .. var.method
         {% end %}
         {% if route_flags["host"] then %}
-        .. "\0" .. var.host
+        .. "#" .. var.host
         {% end %}
 end
 ]]
@@ -68,7 +68,7 @@ end
 
 local function ai_match(ctx)
     local key = get_cache_key_func(ctx)
-    core.log.info("route cache key: ", core.log.delay_exec(encode_base64, key))
+    core.log.info("route cache key: ", key)
     local ver = router.router_http.user_routes.conf_version
     local route_cache = route_lrucache(key, ver,
                                        match_route, ctx)
