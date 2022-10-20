@@ -51,7 +51,7 @@ local plugin_name = "ai"
 
 local _M = {
     version = 0.1,
-    priority = 25000,
+    priority = 22900,
     name = plugin_name,
     schema = schema,
     scope = "global",
