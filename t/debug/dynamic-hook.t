@@ -405,6 +405,7 @@ hook_test:                      # module and function list, name: hook_test
                     "uri": "/hello",
                     "upstream": {
                         "nodes": {
+                            "127.0.0.1:1980": 1,
                             "127.0.0.1:1980": 1
                         },
                         "type": "roundrobin"

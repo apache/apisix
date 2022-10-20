@@ -19,7 +19,8 @@ local apisix          = require("apisix")
 local core            = require("apisix.core")
 local router          = require("apisix.router")
 local event           = require("apisix.core.event")
-local apisix_upstream = require("apisix.upstream")
+local load_balancer   = require("apisix.balancer")
+local balancer        = require("ngx.balancer")
 local ipairs          = ipairs
 local pcall           = pcall
 local loadstring      = loadstring
@@ -62,6 +63,7 @@ local _M = {
 
 local orig_router_match
 local orig_handle_upstream = apisix.handle_upstream
+local orig_balancer_run = load_balancer.run
 
 
 local function match_route(ctx)
@@ -105,13 +107,26 @@ local function gen_get_cache_key_func(route_flags)
 end
 
 
-local function ai_upstream(api_ctx, route)
+local function ai_upstream()
     core.log.info("enable sample upstream")
-    local up_conf = route.value.upstream
-    local upstream_key = up_conf.type .. "#route_" .. route.value.id
-    apisix_upstream.set(api_ctx, upstream_key, api_ctx.conf_version, up_conf)
 end
 
+
+local pool_opt = { pool_size = 320 }
+local function ai_balancer_run(route)
+    local server = route.value.upstream.nodes[1]
+    -- only work for http
+    if not server.port then
+        server.port = 80
+    end
+    local ok, err = balancer.set_current_peer(server.host, server.port, pool_opt)
+    if not ok then
+        core.log.error("failed to set server peer [", server.host, ":",
+                       server.port, "] err: ", err)
+        return ok, err
+    end
+    balancer.enable_keepalive(60, 1000)
+end
 
 local function routes_analyze(routes)
     -- TODO: need to add a option in config.yaml to enable this feature(default is true)
@@ -222,8 +237,10 @@ local function routes_analyze(routes)
             and not route_up_flags["keepalive"] then
             -- replace the upstream module
         apisix.handle_upstream = ai_upstream
+        load_balancer.run = ai_balancer_run
     else
         apisix.handle_upstream = orig_handle_upstream
+        load_balancer.run = orig_balancer_run
     end
 end
 
