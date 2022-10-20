@@ -18,9 +18,12 @@ local require         = require
 local core            = require("apisix.core")
 local router          = require("apisix.router")
 local event           = require("apisix.core.event")
+local apisix_upstream = require("apisix.upstream")
 local ipairs          = ipairs
 local pcall           = pcall
 local loadstring      = loadstring
+local type            = type
+local apisix          = apisix
 local encode_base64   = ngx.encode_base64
 
 local get_cache_key_func
@@ -58,6 +61,7 @@ local _M = {
 }
 
 local orig_router_match
+local orig_handle_upstream = apisix.handle_upstream
 
 
 local function match_route(ctx)
@@ -101,28 +105,88 @@ local function gen_get_cache_key_func(route_flags)
 end
 
 
+local function ai_upstream(api_ctx, route)
+    core.log.info("enable sample upstream")
+    local up_conf = route.value.upstream
+    local upstream_key = up_conf.type .. "#route_" .. route.value.id
+    apisix_upstream.set(api_ctx, upstream_key, api_ctx.conf_version, up_conf)
+end
+
+
 local function routes_analyze(routes)
     -- TODO: need to add a option in config.yaml to enable this feature(default is true)
-    local route_flags = core.table.new(0, 2)
+    local route_flags = core.table.new(0, 5)
+    local route_up_flags = core.table.new(0, 8)
     for _, route in ipairs(routes) do
-        if route.methods then
-            route_flags["methods"] = true
-        end
+        if type(route) == "table" then
+            if route.value.methods then
+                route_flags["methods"] = true
+            end
 
-        if route.host or route.hosts then
-            route_flags["host"] = true
-        end
+            if route.value.host or route.hosts then
+                route_flags["host"] = true
+            end
 
-        if route.vars then
-            route_flags["vars"] = true
-        end
+            if route.value.vars then
+                route_flags["vars"] = true
+            end
 
-        if route.filter_fun then
-            route_flags["filter_fun"] = true
-        end
+            if route.value.filter_fun then
+                route_flags["filter_fun"] = true
+            end
 
-        if route.remote_addr or route.remote_addrs then
-            route_flags["remote_addr"] = true
+            if route.value.remote_addr or route.remote_addrs then
+                route_flags["remote_addr"] = true
+            end
+
+            if route.value.service then
+                route_flags["service"] = true
+            end
+
+            if route.value.enable_websocket then
+                route_flags["enable_websocket"] = true
+            end
+
+            if route.value.plugins then
+                route_flags["plugins"] = true
+            end
+
+            local upstream = route.value.upstream
+            if upstream and upstream.nodes and #upstream.nodes == 1 then
+                local node = upstream.nodes[1]
+                if not core.utils.parse_ipv4(node.host)
+                   and not core.utils.parse_ipv6(node.host) then
+                    route_up_flags["has_domain"] = true
+                end
+
+                if upstream.pass_host == "pass" then
+                    route_up_flags["pass_host"] = true
+                end
+
+                if upstream.scheme == "http" then
+                    route_up_flags["scheme"] = true
+                end
+
+                if upstream.checks then
+                    route_up_flags["checks"] = true
+                end
+
+                if upstream.retries then
+                    route_up_flags["retries"] = true
+                end
+
+                if upstream.timeout then
+                    route_up_flags["timeout"] = true
+                end
+
+                if upstream.tls then
+                    route_up_flags["tls"] = true
+                end
+
+                if upstream.keepalive then
+                    route_up_flags["keepalive"] = true
+                end
+            end
         end
     end
 
@@ -138,6 +202,23 @@ local function routes_analyze(routes)
             core.log.error("generate get_cache_key_func failed:", err)
             router.router_http.match = orig_router_match
         end
+    end
+
+    if not route_flags["service"]
+            and not route_flags["enable_websocket"]
+            and not route_flags["plugins"]
+            and not route_up_flags["has_domain"]
+            and route_up_flags["pass_host"]
+            and route_up_flags["scheme"]
+            and not route_up_flags["checks"]
+            and not route_up_flags["retries"]
+            and not route_up_flags["timeout"]
+            and not route_up_flags["timeout"]
+            and not route_up_flags["keepalive"] then
+            -- replace the upstream module
+        apisix.handle_upstream = ai_upstream
+    else
+        apisix.handle_upstream = orig_handle_upstream
     end
 end
 
