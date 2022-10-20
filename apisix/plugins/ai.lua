@@ -125,7 +125,7 @@ local function ai_balancer_run(route)
         end
         balancer.enable_keepalive(60, 1000)
     else
-        balancer.set_current_peer(server.host, server.port)
+        balancer.set_current_peer(server.host, server.port or 80)
     end
 end
 
