@@ -23,7 +23,7 @@ local ipairs          = ipairs
 local pcall           = pcall
 local loadstring      = loadstring
 local type            = type
-local apisix          = apisix
+local apisix          = _G.apisix
 local encode_base64   = ngx.encode_base64
 
 local get_cache_key_func
