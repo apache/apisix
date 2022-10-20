@@ -21,7 +21,6 @@ local event           = require("apisix.core.event")
 local ipairs          = ipairs
 local pcall           = pcall
 local loadstring      = loadstring
-local encode_base64   = ngx.encode_base64
 
 local get_cache_key_func
 local get_cache_key_func_def_render
