@@ -16,6 +16,8 @@
 --
 local require         = require
 local core            = require("apisix.core")
+local router          = require("apisix.router")
+local event           = require("apisix.core.event")
 local ipairs          = ipairs
 local pcall           = pcall
 local loadstring      = loadstring
@@ -43,10 +45,20 @@ local route_lrucache = core.lrucache.new({
     count = 512
 })
 
-local _M = {}
+local schema = {}
+
+local plugin_name = "ai"
+
+local _M = {
+    version = 0.1,
+    priority = 25000,
+    name = plugin_name,
+    schema = schema,
+    scope = "global",
+}
 
 local orig_router_match
-local router
+
 
 local function match_route(ctx)
     orig_router_match(ctx)
@@ -57,7 +69,7 @@ end
 local function ai_match(ctx)
     local key = get_cache_key_func(ctx)
     core.log.info("route cache key: ", core.log.delay_exec(encode_base64, key))
-    local ver = router.user_routes.conf_version
+    local ver = router.router_http.user_routes.conf_version
     local route_cache = route_lrucache(key, ver,
                                        match_route, ctx)
     -- if the version has not changed, use the cached route
@@ -89,8 +101,8 @@ local function gen_get_cache_key_func(route_flags)
 end
 
 
-function  _M.routes_analyze(routes)
-    -- TODO: we need to add a option in config.yaml to enable this feature(default is true)
+local function routes_analyze(routes)
+    -- TODO: need to add a option in config.yaml to enable this feature(default is true)
     local route_flags = core.table.new(0, 2)
     for _, route in ipairs(routes) do
         if route.methods then
@@ -116,23 +128,27 @@ function  _M.routes_analyze(routes)
 
     if route_flags["vars"] or route_flags["filter_fun"]
          or route_flags["remote_addr"] then
-        router.match = orig_router_match
+        router.router_http.match = orig_router_match
     else
         core.log.info("use ai plane to match route")
-        router.match = ai_match
+        router.router_http.match = ai_match
 
         local ok, err = gen_get_cache_key_func(route_flags)
         if not ok then
             core.log.error("generate get_cache_key_func failed:", err)
-            router.match = orig_router_match
+            router.router_http.match = orig_router_match
         end
     end
 end
 
 
-function _M.init_worker(router_http)
-    router = router_http
-    orig_router_match = router.match
+function _M.init()
+    event.register(event.CONST.BUILD_ROUTER, routes_analyze)
+end
+
+
+function _M.init_worker()
+    orig_router_match = router.router_http.match
 end
 
 return _M

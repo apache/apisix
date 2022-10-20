@@ -152,6 +152,8 @@ function _M.http_init_worker()
 
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()
+    -- TODO: need to revisit code layering and avoid similar hacking
+    require("apisix.plugins.ai").init_worker()
 
     local_conf = core.config.local_conf()
 

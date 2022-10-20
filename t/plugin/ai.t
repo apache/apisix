@@ -130,7 +130,6 @@ use ai plane to match route
                     if i == 1 then
                         -- arg_k = a, match route
                         res, err = httpc:request_uri(uri1)
-                        ngx.log(ngx.WARN, "res : ", require("inspect")(res))
                         assert(res.status == 200)
                     else
                         -- arg_k = v, not match route
