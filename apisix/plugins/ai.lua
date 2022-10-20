@@ -151,16 +151,16 @@ local function routes_analyze(routes)
                 route_flags["plugins"] = true
             end
 
+            if route.value.upstream_id then
+                route_flags["upstream_id"] = true
+            end
+
             local upstream = route.value.upstream
             if upstream and upstream.nodes and #upstream.nodes == 1 then
                 local node = upstream.nodes[1]
                 if not core.utils.parse_ipv4(node.host)
                    and not core.utils.parse_ipv6(node.host) then
                     route_up_flags["has_domain"] = true
-                end
-
-                if upstream.id then
-                    route_up_flags["id"] = true
                 end
 
                 if upstream.pass_host == "pass" then
@@ -209,10 +209,10 @@ local function routes_analyze(routes)
     end
 
     if not route_flags["service"]
+            and not route_flags["upstream_id"]
             and not route_flags["enable_websocket"]
             and not route_flags["plugins"]
             and not route_up_flags["has_domain"]
-            and route_up_flags["id"]
             and route_up_flags["pass_host"]
             and route_up_flags["scheme"]
             and not route_up_flags["checks"]
@@ -221,8 +221,10 @@ local function routes_analyze(routes)
             and not route_up_flags["timeout"]
             and not route_up_flags["keepalive"] then
             -- replace the upstream module
+        ngx.log(ngx.WARN, "replace the upstream module")
         apisix.handle_upstream = ai_upstream
     else
+        ngx.log(ngx.WARN, "origin the upstream module")
         apisix.handle_upstream = orig_handle_upstream
     end
 end
