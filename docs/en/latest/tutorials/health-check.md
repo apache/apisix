@@ -34,13 +34,13 @@ This article mainly introduces the health check function of Apache APISIX. The h
 
 Active health check mainly means that APISIX actively detects the survivability of upstream nodes through preset probe types. APISIX supports three probe types: `HTTP`, `HTTPS`, and `TCP`.
 
-When N consecutive probes sent to healthy node A fail (depending on how it is configured), the node will be marked as unhealthy, and the unhealthy node will be ignored by APISIX's load balancer and cannot receive requests; if For an unhealthy node, if M consecutive probes are successful, the node will be re-marked as healthy and can be proxied.
+When N consecutive probes sent to healthy node `A` fail, the node will be marked as unhealthy, and the unhealthy node will be ignored by APISIX's load balancer and cannot receive requests; if For an unhealthy node, if M consecutive probes are successful, the node will be re-marked as healthy and can be proxied.
 
 ## Passive check
 
 Passive health check refers to judging whether the corresponding upstream node is healthy by judging the response status of the request forwarded from APISIX to the upstream node. Compared with the active health check, the passive health check method does not need to initiate additional probes, but it cannot sense the node status in advance, and there may be a certain amount of failed requests.
 
-If `N` consecutive requests to a healthy node A fail (depending on how it is configured), the node will be marked as unhealthy.
+If `N` consecutive requests to a healthy node A fail, the node will be marked as unhealthy.
 
 :::note
 
@@ -136,6 +136,22 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
+
+If APISIX detects an unhealthy node, the following logs will be output in the error log:
+
+```shell
+enabled healthcheck passive while logging request
+failed to receive status line from 'nil (127.0.0.1:1980)': closed
+unhealthy TCP increment (1/2) for '(127.0.0.1:1980)'
+failed to receive status line from 'nil (127.0.0.1:1980)': closed
+unhealthy TCP increment (2/2) for '(127.0.0.1:1980'
+```
+
+:::tip
+
+To observe the above log information, you need to adjust the error log level to `info`.
+
+:::
 
 The health check status can be fetched via `GET /v1/healthcheck` in [Control API](./control-api.md).
 
