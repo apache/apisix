@@ -159,6 +159,10 @@ local function routes_analyze(routes)
                     route_up_flags["has_domain"] = true
                 end
 
+                if upstream.id then
+                    route_up_flags["id"] = true
+                end
+
                 if upstream.pass_host == "pass" then
                     route_up_flags["pass_host"] = true
                 end
@@ -208,6 +212,7 @@ local function routes_analyze(routes)
             and not route_flags["enable_websocket"]
             and not route_flags["plugins"]
             and not route_up_flags["has_domain"]
+            and route_up_flags["id"]
             and route_up_flags["pass_host"]
             and route_up_flags["scheme"]
             and not route_up_flags["checks"]
