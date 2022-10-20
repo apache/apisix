@@ -1175,3 +1175,62 @@ passed
 --- response_body
 true
 --- error_code: 302
+
+
+=== TEST 32: Obtain valid token and access route with it, checking userinfo in header.
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Obtain valid access token from Keycloak using known username and password.
+            local json_decode = require("toolkit.json").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token"
+            local res, err = httpc:request_uri(uri, {
+                    method = "POST",
+                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
+                    }
+                })
+
+            -- Check response from keycloak and fail quickly if there's no response.
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            -- Check if response code was ok.
+            if res.status == 200 then
+                -- Get access token from JSON response body.
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
+
+                -- Access route using access token. Should work.
+                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "Bearer " .. body["access_token"]
+                    }
+                 })
+
+                if res.status == 200 then
+                    -- Route accessed successfully.
+                    ngx.say(true)
+                else
+                    -- Couldn't access route.
+                    ngx.say(false)
+                end
+            else
+                -- Response from Keycloak not ok.
+                ngx.say(false)
+            end
+        }
+    }
+--- response_body
+true
+--- grep_error_log eval
+qr/set userinfo in header/
+--- grep_error_log_out
+set userinfo in header

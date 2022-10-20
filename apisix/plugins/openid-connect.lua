@@ -237,7 +237,7 @@ local function introspect(ctx, conf)
         -- Token successfully validated.
         local method = (conf.public_key and "public_key") or (conf.use_jwks and "jwks")
         core.log.debug("token validate successfully by ", method)
-        return res, err, token, nil
+        return res, err, token, res
     else
         -- Validate token against introspection endpoint.
         -- TODO: Same as above for public key validation.
@@ -317,6 +317,7 @@ function _M.rewrite(plugin_conf, ctx)
 
             if userinfo and conf.set_userinfo_header then
                 -- Set X-Userinfo header to introspection endpoint response.
+                core.log.debug('set userinfo in header')
                 core.request.set_header(ctx, "X-Userinfo",
                     ngx_encode_base64(core.json.encode(userinfo)))
             end
