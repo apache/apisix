@@ -19,7 +19,8 @@
       "items": [
         "tutorials/expose-api",
         "tutorials/protect-api",
-        "tutorials/observe-your-api"
+        "tutorials/observe-your-api",
+        "tutorials/health-check"
       ]
     },
     {
@@ -246,10 +247,6 @@
             "discovery/control-plane-service-discovery",
             "discovery/kubernetes"
           ]
-        },
-        {
-          "type": "doc",
-          "id": "health-check"
         },
         {
           "type": "doc",

@@ -1202,7 +1202,7 @@ title: CHANGELOG
 
 ### Core
 
-- :sunrise: **[健康检查和服务熔断](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//health-check.md)**: 对上游节点开启健康检查，智能判断服务状态进行熔断和连接。[#249](https://github.com/apache/incubator-apisix/pull/249)
+- :sunrise: **[健康检查和服务熔断](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest/tutorials/health-check..md)**: 对上游节点开启健康检查，智能判断服务状态进行熔断和连接。[#249](https://github.com/apache/incubator-apisix/pull/249)
 - 阻止 ReDoS(Regular expression Denial of Service). [#252](https://github.com/apache/incubator-apisix/pull/250)
 - 支持 debug 模式。[#319](https://github.com/apache/incubator-apisix/pull/319)
 - 允许自定义路由。[#364](https://github.com/apache/incubator-apisix/pull/364)

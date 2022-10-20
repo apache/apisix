@@ -124,7 +124,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-You can learn more about health checks [here](../health-check.md).
+You can learn more about health checks [here](../tutorials/health-check.md).
 
 The examples below show configurations that use different `hash_on` types.
 

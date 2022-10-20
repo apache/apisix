@@ -1,5 +1,10 @@
 ---
 title: Health Check
+keywords:
+  - APISIX
+  - API Gateway
+  - Health Check
+description: This article describes how to use the health check feature of API Gateway Apache APISIX to check the health status of upstream nodes.
 ---
 
 <!--
@@ -21,22 +26,39 @@ title: Health Check
 #
 -->
 
-## Health Checks for Upstream
+## Description
 
-Health Check of Apache APISIX is based on [lua-resty-healthcheck](https://github.com/api7/lua-resty-healthcheck).
+This article mainly introduces the health check function of Apache APISIX. The health check function can proxy requests to healthy nodes when the upstream node fails or migrates, avoiding the problem of service unavailability to the greatest extent. The health check function of APISIX is implemented using [lua-resty-healthcheck](https://github.com/api7/lua-resty-healthcheck), which is divided into active check and passive check.
 
-Note:
+## Active check
 
-* We only start the health check when the upstream is hit by a request.
-There won't be any health check if an upstream is configured but isn't in used.
-* If there is no healthy node can be chosen, we will continue to access the upstream.
-* We won't start the health check when the upstream only has one node, as we will access
-it whether this unique node is healthy or not.
-* Active health check is required so that the unhealthy node can recover.
+Active health check mainly means that APISIX actively detects the survivability of upstream nodes through preset probe types. APISIX supports three probe types: `HTTP`, `HTTPS`, and `TCP`.
+
+When N consecutive probes sent to healthy node A fail (depending on how it is configured), the node will be marked as unhealthy, and the unhealthy node will be ignored by APISIX's load balancer and cannot receive requests; if For an unhealthy node, if M consecutive probes are successful, the node will be re-marked as healthy and can be proxied.
+
+## Passive check
+
+Passive health check refers to judging whether the corresponding upstream node is healthy by judging the response status of the request forwarded from APISIX to the upstream node. Compared with the active health check, the passive health check method does not need to initiate additional probes, but it cannot sense the node status in advance, and there may be a certain amount of failed requests.
+
+If `N` consecutive requests to a healthy node A fail (depending on how it is configured), the node will be marked as unhealthy.
+
+:::note
+
+Since unhealthy nodes cannot receive requests, nodes cannot be re-marked as healthy using the passive health check strategy alone, so combining the active health check strategy is usually necessary.
+
+:::
+
+:::tip
+
+- We only start the health check when the upstream is hit by a request. There won't be any health check if an upstream is configured but isn't in used.
+- If there is no healthy node can be chosen, we will continue to access the upstream.
+- We won't start the health check when the upstream only has one node, as we will access it whether this unique node is healthy or not.
+
+:::
 
 ### Configuration instructions
 
-| Configuration item                              | Configuration type              | Value type | Value option         | Defaults                                                                                      | Description                                                                                                          |
+| Name                                      | Configuration type              | Value type | Valid values         | Default                                                                                      | Description                                                                                                          |
 | ----------------------------------------------- | ------------------------------- | ---------- | -------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | upstream.checks.active.type                     | Active check                    | string     | `http` `https` `tcp` | http                                                                                          | The type of active check.                                                                                            |
 | upstream.checks.active.timeout                  | Active check                    | integer    |                      | 1                                                                                             | The timeout period of the active check (unit: second).                                                               |
@@ -62,6 +84,8 @@ it whether this unique node is healthy or not.
 | upstream.checks.passive.unhealthy.http_failures | Passive check (unhealthy node) | integer    | `0` to `254`         | 5                                                                                             | Passive check (unhealthy node) The number of times that the node is not healthy during HTTP or HTTPS type checking.  |
 
 ### Configuration example
+
+You can enable health checks in routes via the Admin API:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -114,3 +138,9 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 ```
 
 The health check status can be fetched via `GET /v1/healthcheck` in [Control API](./control-api.md).
+
+```shell
+
+curl http://127.0.0.1:9090/v1/healthcheck/upstreams/healthycheck -s | jq .
+
+```
