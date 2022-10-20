@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local require         = require
+local apisix          = require("apisix")
 local core            = require("apisix.core")
 local router          = require("apisix.router")
 local event           = require("apisix.core.event")
@@ -23,7 +24,6 @@ local ipairs          = ipairs
 local pcall           = pcall
 local loadstring      = loadstring
 local type            = type
-local apisix          = _G.apisix
 local encode_base64   = ngx.encode_base64
 
 local get_cache_key_func
