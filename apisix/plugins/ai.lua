@@ -115,11 +115,7 @@ end
 local pool_opt = { pool_size = 320 }
 local function ai_balancer_run(route)
     local server = route.value.upstream.nodes[1]
-    -- only work for http
-    if not server.port then
-        server.port = 80
-    end
-    local ok, err = balancer.set_current_peer(server.host, server.port, pool_opt)
+    local ok, err = balancer.set_current_peer(server.host, server.port or 80, pool_opt)
     if not ok then
         core.log.error("failed to set server peer [", server.host, ":",
                        server.port, "] err: ", err)
