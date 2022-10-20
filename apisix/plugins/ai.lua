@@ -221,10 +221,8 @@ local function routes_analyze(routes)
             and not route_up_flags["timeout"]
             and not route_up_flags["keepalive"] then
             -- replace the upstream module
-        ngx.log(ngx.WARN, "replace the upstream module")
         apisix.handle_upstream = ai_upstream
     else
-        ngx.log(ngx.WARN, "origin the upstream module")
         apisix.handle_upstream = orig_handle_upstream
     end
 end
