@@ -171,6 +171,10 @@ local function routes_analyze(routes)
                 route_flags["upstream_id"] = true
             end
 
+            if route.value.service_id then
+                route_flags["service_id"] = true
+            end
+
             local upstream = route.value.upstream
             if upstream and upstream.nodes and #upstream.nodes == 1 then
                 local node = upstream.nodes[1]
@@ -211,7 +215,8 @@ local function routes_analyze(routes)
     end
 
     if route_flags["vars"] or route_flags["filter_fun"]
-         or route_flags["remote_addr"] then
+         or route_flags["remote_addr"]
+         or route_flags["service_id"] then
         router.router_http.match = orig_router_match
     else
         core.log.info("use ai plane to match route")
@@ -225,6 +230,7 @@ local function routes_analyze(routes)
     end
 
     if not route_flags["service"]
+            and not route_flags["service_id"]
             and not route_flags["upstream_id"]
             and not route_flags["enable_websocket"]
             and not route_flags["plugins"]
