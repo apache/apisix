@@ -520,7 +520,7 @@ use ai plane to match route
 --- response_body
 done
 --- error_log
-route cache key: L2hlbGxv
+route cache key: /hello
 
 
 
@@ -569,7 +569,7 @@ route cache key: L2hlbGxv
 --- response_body
 done
 --- error_log
-route cache key: L2hlbGxvAEdFVA==
+route cache key: /hello#GET
 
 
 
@@ -619,4 +619,4 @@ route cache key: L2hlbGxvAEdFVA==
 --- response_body
 done
 --- error_log
-route cache key: L2hlbGxvAEdFVAAxMjcuMC4wLjE=
+route cache key: /hello#GET#127.0.0.1
