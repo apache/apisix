@@ -3,8 +3,10 @@ title: Admin API
 keywords:
   - APISIX
   - API 网关
-  - 查询资源
-  - 创建资源
+  - Admin API
+  - 路由
+  - 插件
+  - 上游
 description: 本文介绍了 Apache APISIX Admin API 支持的功能，你可以通过 Admin API 来获取、创建、更新以及删除资源。
 ---
 
@@ -29,7 +31,7 @@ description: 本文介绍了 Apache APISIX Admin API 支持的功能，你可以
 
 ## 描述
 
-Admid API 是一组用于配置 Apache APISIX 路由、上游、服务、SSL 证书等功能的RESTful API。你可以通过 Admin API 来获取、创建、更新以及删除资源。同时得益于 APISIX 的热更新能力，资源配置完成后 APISIX 将会自动更新配置，无需重启服务。如果你想要了解其工作原理，请参考 [Architecture Design](./architecture-design/apisix.md)。
+Admid API 是一组用于配置 Apache APISIX 路由、上游、服务、SSL 证书等功能的 RESTful API。你可以通过 Admin API 来获取、创建、更新以及删除资源。同时得益于 APISIX 的热更新能力，资源配置完成后 APISIX 将会自动更新配置，无需重启服务。如果你想要了解其工作原理，请参考 [Architecture Design](./architecture-design/apisix.md)。
 
 ## 相关配置
 
@@ -51,12 +53,12 @@ deployment:
         admin_key:
         - name: admin
             key: edd1c9f034335f136f87ad84b625c8f1  # using fixed API token has security risk, please update it when you deploy to production environment
-            role: admin    
+            role: admin
         allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
             - 127.0.0.0/24
         admin_listen:                 # use a separate port
             ip: 0.0.0.0                 # Specific IP, if not set, the default value is `0.0.0.0`.
-            port: 9180                  # Specific port, which must be different from node_listen's port.             
+            port: 9180                  # Specific port, which must be different from node_listen's port.
 ```
 
 ## 基础功能
@@ -200,7 +202,7 @@ Route 也称之为路由，可以通过定义一些规则来匹配客户端的�
 
 :::tip 提示
 
-在启用 Admin API 时，它会占用前缀为 `/apisix/admin` 的 API。因此，为了避免您设计 API 与 `/apisix/admin` 冲突，建议为 Admin API 使用其他端口，您可以在 `conf/config.yaml` 中通过 `admin_listen` 进行自定义 Admin API 端口。
+在启用 Admin API 时，它会占用前缀为 `/apisix/admin` 的 API。因此，为了避免你设计 API 与 `/apisix/admin` 冲突，建议为 Admin API 使用其他端口，你可以在 `conf/config.yaml` 中通过 `admin_listen` 进行自定义 Admin API 端口。
 
 :::
 
@@ -1286,12 +1288,12 @@ Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 
 ### 请求方法
 
-| 名称        | 请求  uri                           | 请求  body | 描述          |
+| 名称        | 请求 URI                            | 请求 body | 描述          |
 | ----------- | ----------------------------------- | ---------- | ------------- |
 | GET         | /apisix/admin/plugins/list          | 无         | 获取资源列表。  |
 | GET         | /apisix/admin/plugins/{plugin_name} | 无         | 获取资源。      |
 | GET         | /apisix/admin/plugins?all=true      | 无         | 获取所有插件的所有属性。 |
-| GET         | /apisix/admin/plugins?all=true&subsystem=stream| 无| 获取所有 Stream 插件的属性。|
+| GET         | /apisix/admin/plugins?all=true&subsystem=stream| 无 | 获取所有 Stream 插件的属性。|
 
 ### 使用示例
 
