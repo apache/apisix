@@ -165,7 +165,7 @@ local function routes_analyze(routes)
 
                 -- collect upstream flags
                 if key == "upstream" then
-                    if #value.nodes == 1 then
+                    if value.nodes and #value.nodes == 1 then
                         for k, v in pairs(value) do
                             if k == "nodes" then
                                 if (not core.utils.parse_ipv4(v[1].host)
@@ -186,7 +186,11 @@ local function routes_analyze(routes)
                                 route_up_flags["tls"] = true
                             elseif k == "keepalive" then
                                 route_up_flags["keepalive"] = true
+                            elseif k == "service_name" then
+                                route_up_flags["service_name"] = true
                             end
+
+                            ngx.log(ngx.WARN, "route_up_flags : ", require("inspect")(route_up_flags))
                         end
                     else
                         route_up_flags["more_nodes"] = true
@@ -225,6 +229,7 @@ local function routes_analyze(routes)
          or route_up_flags["timeout"]
          or route_up_flags["tls"]
          or route_up_flags["keepalive"]
+         or route_up_flags["service_name"]
          or route_up_flags["more_nodes"] then
         apisix.handle_upstream = orig_handle_upstream
         load_balancer.run = orig_balancer_run
