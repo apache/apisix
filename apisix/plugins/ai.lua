@@ -175,6 +175,10 @@ local function routes_analyze(routes)
                 route_flags["service_id"] = true
             end
 
+            if route.value.plugin_config_id then
+                route_flags["plugin_config_id"] = true
+            end
+
             local upstream = route.value.upstream
             if upstream and upstream.nodes and #upstream.nodes == 1 then
                 local node = upstream.nodes[1]
@@ -216,7 +220,8 @@ local function routes_analyze(routes)
 
     if route_flags["vars"] or route_flags["filter_fun"]
          or route_flags["remote_addr"]
-         or route_flags["service_id"] then
+         or route_flags["service_id"]
+         or route_flags["plugin_config_id"] then
         router.router_http.match = orig_router_match
     else
         core.log.info("use ai plane to match route")
