@@ -189,8 +189,6 @@ local function routes_analyze(routes)
                             elseif k == "service_name" then
                                 route_up_flags["service_name"] = true
                             end
-
-                            ngx.log(ngx.WARN, "route_up_flags : ", require("inspect")(route_up_flags))
                         end
                     else
                         route_up_flags["more_nodes"] = true
