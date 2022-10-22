@@ -31,19 +31,23 @@ description: 本文介绍了 Apache APISIX Admin API 支持的功能，你可以
 
 ## 描述
 
-Admid API 是一组用于配置 Apache APISIX 路由、上游、服务、SSL 证书等功能的 RESTful API。你可以通过 Admin API 来获取、创建、更新以及删除资源。同时得益于 APISIX 的热更新能力，资源配置完成后 APISIX 将会自动更新配置，无需重启服务。如果你想要了解其工作原理，请参考 [Architecture Design](./architecture-design/apisix.md)。
+Admid API 是一组用于配置 Apache APISIX 路由、上游、服务、SSL 证书等功能的 RESTful API。
+
+你可以通过 Admin API 来获取、创建、更新以及删除资源。同时得益于 APISIX 的热更新能力，资源配置完成后 APISIX 将会自动更新配置，无需重启服务。如果你想要了解其工作原理，请参考 [Architecture Design](./architecture-design/apisix.md)。
 
 ## 相关配置
 
-当 APISIX 启动时，Admin API 默认情况下将会监听 `9180` 端口，你可以通过修改配置文件 [`conf/config.yaml`](https://github.com/apache/apisix/blob/master/conf/config.yaml) 中的配置修改默认监听端口。
+当 APISIX 启动时，Admin API 默认情况下将会监听 `9180` 端口，并且会占用前缀为 `/apisix/admin` 的 API。
 
-APISIX 支持设置 Admin API 的 IP 访问白名单，防止 APISIX 被非法访问和攻击。你可以在 `./conf/config.yaml` 文件中的 `apisix.allow_admin` 选项中，配置允许访问的 IP 地址。
+因此，为了避免你设计的 API 与 `/apisix/admin` 冲突，你可以通过修改配置文件 [`/conf/config.yaml`](https://github.com/apache/apisix/blob/master/conf/config.yaml) 中的配置修改默认监听端口。
+
+APISIX 支持设置 Admin API 的 IP 访问白名单，防止 APISIX 被非法访问和攻击。你可以在 `./conf/config.yaml` 文件中的 `deployment.admin.allow_admin` 选项中，配置允许访问的 IP 地址。
 
 在下文出现的 `X-API-KEY` 指的是 `./conf/config.yaml` 文件中的 `deployment.admin.admin_key.key`，它是 Admin API 的访问 token。
 
 :::tip 提示
 
-强烈建议你修改默认的监听端口、IP 访问白名单以及 Admin API 的 token，以保证你的 API 安全。
+建议你修改 Admin API 默认的监听端口、IP 访问白名单以及 Admin API 的 token，以保证你的 API 安全。
 
 :::
 
@@ -61,13 +65,13 @@ deployment:
             port: 9180                  # Specific port, which must be different from node_listen's port.
 ```
 
-## 基础功能
+## APISIX v3 版本新功能
 
 在 APISIX v3 版本中，Admin API 支持了一些不向下兼容的新特性，比如支持新的响应体格式、支持分页查询、支持过滤资源等。
 
 ### 支持新的响应体格式
 
-Apache APISIX 在 V3 版本对响应体做了以下调整：
+APISIX 在 v3 版本对响应体做了以下调整：
 
 - 移除旧版本响应体中的 `action` 字段；
 - 调整获取资源列表时的响应体结构，新的响应体结构示例如下：
@@ -156,7 +160,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10" \
 
 ### 支持过滤资源
 
-在 APISIX v3 版本中，获取资源列表时可以根据 `name`、`label` 和 `uri` 过滤资源。支持参数如下：
+在 APISIX v3 版本中，在获取资源列表时，你可以使用 `name`、`label` 和 `uri` 参数过滤资源。支持参数如下：
 
 | 名称   | 描述                                                                                                                      |
 | ----- | ------------------------------------------------------------------------------------------------------------------------ |
@@ -166,16 +170,18 @@ curl "http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10" \
 
 :::tip 提示
 
-当启用了多个过滤参数时，对不同过滤参数的查询结果取交集。
+当使用了多个过滤参数时，APISIX 将对不同过滤参数的查询结果取交集。
 
 :::
 
-以下示例将返回一个路由列表，该路由列表中的所有路由满足以下条件：路由的 `name` 包含字符串 `test`；`uri` 包含字符串 `foo`；对路由的 `label` 没有限制，因为查询的 `label` 是空字符串。
+以下示例将返回一个路由列表，该路由列表中的所有路由满足以下条件：路由的 `name` 包含字符串 `test`；`uri` 包含字符串 `foo`；对路由的 `label` 没有限制，因为 `label` 为空字符串。
 
 ```shell
 curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET
 ```
+
+返回结果：
 
 ```json
 {
@@ -194,17 +200,7 @@ curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
 
 路由资源请求地址：/apisix/admin/routes/{id}?ttl=0
 
-:::note 注意
-
 Route 也称之为路由，可以通过定义一些规则来匹配客户端的请求，然后根据匹配结果加载并执行相应的插件，并把请求转发给到指定 Upstream（上游）。
-
-:::
-
-:::tip 提示
-
-在启用 Admin API 时，它会占用前缀为 `/apisix/admin` 的 API。因此，为了避免你设计 API 与 `/apisix/admin` 冲突，建议为 Admin API 使用其他端口，你可以在 `conf/config.yaml` 中通过 `admin_listen` 进行自定义 Admin API 端口。
-
-:::
 
 ### 请求方法
 
@@ -213,16 +209,16 @@ Route 也称之为路由，可以通过定义一些规则来匹配客户端的�
 | GET    | /apisix/admin/routes             | 无        | 获取资源列表。                                                                                                                              |
 | GET    | /apisix/admin/routes/{id}        | 无        | 获取资源。                                                                                                                                         |
 | PUT    | /apisix/admin/routes/{id}        | {...}     | 根据 id 创建资源。                                                                                                                        |
-| POST   | /apisix/admin/routes             | {...}     | 创建资源，id 由后台服务自动生成。                                                                                                                      |
+| POST   | /apisix/admin/routes             | {...}     | 创建资源，id 将会自动生成成。                                                                                                                      |
 | DELETE | /apisix/admin/routes/{id}        | 无        | 删除指定资源。                                                                                                                                                |
-| PATCH  | /apisix/admin/routes/{id}        | {...}     | 标准 PATCH，修改已有 Route 的部分属性，其他不涉及的属性会原样保留；如果你需要删除某个属性，可以将该属性的值设置为 `null`；当需要修改属性的值为数组时，该属性将全量更新。 |
-| PATCH  | /apisix/admin/routes/{id}/{path} | {...}     | SubPath PATCH，通过 `{path}` 指定 Route 要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。两种 PATCH 的区别，请参考后续示例。                         |
+| PATCH  | /apisix/admin/routes/{id}        | {...}     | 标准 PATCH，修改指定 Route 的部分属性，其他不涉及的属性会原样保留；如果你需要删除某个属性，可以将该属性的值设置为 `null`；当需要修改属性的值为数组时，该属性将全量更新。 |
+| PATCH  | /apisix/admin/routes/{id}/{path} | {...}     | SubPath PATCH，通过 `{path}` 指定 Route 要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。两种 PATCH 的区别，请参考使用示例。                         |
 
 ### URL 请求参数
 
 | 名称 | 必选项  | 类型  | 描述                                         | 示例  |
 | ---- | ------ | ---- | -------------------------------------------- | ----- |
-| ttl  | 否     | 辅助 | 路由存活时间，超过该时间将会自动删除，单位为秒。  | ttl=1 |
+| ttl  | 否     | 辅助 | 路由的有效期。超过定义的时间，APISIX 将会自动删除路由，单位为秒。  | ttl=1 |
 
 ### body 请求参数
 
@@ -235,32 +231,32 @@ Route 也称之为路由，可以通过定义一些规则来匹配客户端的�
 | upstream         | 否                               | Upstream | Upstream 配置，请参考 [Upstream](terminology/upstream.md)。                                                                                                                                                                                                                              |                                                      |
 | upstream_id      | 否                               | Upstream | 需要使用的 Upstream id，请参考 [Upstream](terminology/upstream.md)。                                                                                                                                                                                                                     |                                                      |
 | service_id       | 否                               | Service  | 需要绑定的 Service 配置，请参考 [Service](terminology/service.md)。                                                                                                                                                                                                                        |                                                      |
-| plugin_config_id | 否，无法跟 script 一起配置。      | Plugin   | 绑定的 Plugin Config 配置，请参考 [Plugin Config](terminology/plugin-config.md)。                                                                                                                                                                                                           |                                                      |
+| plugin_config_id | 否，不能与 Script 共同使用。      | Plugin   | 绑定的 Plugin Config 配置，请参考 [Plugin Config](terminology/plugin-config.md)。                                                                                                                                                                                                           |                                                      |
 | name             | 否                               | 辅助     | 路由名称。                                                                                                                                                                                                                                                                                | route-test                                          |
-| desc             | 否                               | 辅助     | 路由描述信息。                                                                                                                                                                                                                                                                     | 路由 xxxx                                            |
+| desc             | 否                               | 辅助     | 路由描述信息。                                                                                                                                                                                                                                                                     | 用来测试的路由。                                            |
 | host             | 否，与 `hosts` 二选一。      | 匹配规则 | 当前请求域名，比如 `foo.com`；也支持泛域名，比如 `*.foo.com`。                                                                                                                                                                                                                                            | "foo.com"                                            |
 | hosts            | 否，与 `host` 二选一。       | 匹配规则 | 非空列表形态的 `host`，表示允许有多个不同 `host`，匹配其中任意一个即可。                                                                                                                                                                                                                                           | ["foo.com", "\*.bar.com"]                            |
-| remote_addr      | 否，与 `remote_addrs` 二选一。| 匹配规则 | 客户端请求的 IP 地址，支持 IPv4 地址，如：`192.168.1.101` 以及 CIDR 格式的支持 `192.168.1.0/24`。也完整支持 IPv6 地址匹配，如 `::1`，`fe80::1`，`fe80::1/64` 等。                                                                                                                                                 | "192.168.1.0/24"                                     |
+| remote_addr      | 否，与 `remote_addrs` 二选一。| 匹配规则 | 客户端请求的 IP 地址。支持 IPv4 地址，如：`192.168.1.101` 以及 CIDR 格式的支持 `192.168.1.0/24`；支持 IPv6 地址匹配，如 `::1`，`fe80::1`，`fe80::1/64` 等。                                                                                                                                                 | "192.168.1.0/24"                                     |
 | remote_addrs     | 否，与 `remote_addr` 二选一。| 匹配规则 | 非空列表形态的 `remote_addr`，表示允许有多个不同 IP 地址，符合其中任意一个即可。                                                                                                                                                                                                                                     | ["127.0.0.1", "192.0.0.0/8", "::1"]                  |
-| methods          | 否                               | 匹配规则 | 如果为空或没有该选项，则表示没有任何 `method` 限制，也可以是一个或多个的组合：`GET`，`POST`，`PUT`，`DELETE`，`PATCH`，`HEAD`，`OPTIONS`，`CONNECT`，`TRACE`，`PURGE`。                                                                                                                                                                    | ["GET", "POST"]                                      |
+| methods          | 否                               | 匹配规则 | 如果为空或没有该选项，则表示没有任何 `method` 限制。你也可以配置一个或多个的组合：`GET`，`POST`，`PUT`，`DELETE`，`PATCH`，`HEAD`，`OPTIONS`，`CONNECT`，`TRACE`，`PURGE`。                                                                                                                                                                    | ["GET", "POST"]                                      |
 | priority         | 否                               | 匹配规则 | 如果不同路由包含相同的 `uri`，则根据属性 `priority` 确定哪个 `route` 被优先匹配，值越大优先级越高，默认值为 `0`。                                                                                                                                                                                                                  | priority = 10                                        |
-| vars             | 否                               | 匹配规则 | 由一个或多个`[var, operator, val]`元素组成的列表，类似 `[[var, operator, val], [var, operator, val], ...]]`。例如：`["arg_name", "==", "json"]` 则表示当前请求参数 `name` 是 `json`。此处 `var` 与 NGINX 内部自身变量命名是保持一致的，所以也可以使用 `request_uri`、`host` 等。更多细节请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr) | [["arg_name", "==", "json"], ["arg_age", ">", 18]]   |
+| vars             | 否                               | 匹配规则 | 由一个或多个`[var, operator, val]`元素组成的列表，类似 `[[var, operator, val], [var, operator, val], ...]]`。例如：`["arg_name", "==", "json"]` 则表示当前请求参数 `name` 是 `json`。此处 `var` 与 NGINX 内部自身变量命名是保持一致的，所以也可以使用 `request_uri`、`host` 等。更多细节请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 | [["arg_name", "==", "json"], ["arg_age", ">", 18]]   |
 | filter_func      | 否                               | 匹配规则 | 用户自定义的过滤函数。可以使用它来实现特殊场景的匹配要求实现。该函数默认接受一个名为 `vars` 的输入参数，可以用它来获取 NGINX 变量。                                                                                                                                                                                                               | function(vars) return vars["arg_name"] == "json" end |
-| labels           | 否                               | 匹配规则 | 标识附加属性的键值对                                                                                                                                                                                                                                                                            | {"version":"v2","build":"16","env":"production"}     |
-| timeout          | 否                               | 辅助     | 为 Route 设置 Upstream 的连接、发送消息、接收消息的超时时间（单位为秒）。这个配置将会覆盖在 Upstream 中配置的 [timeout](#upstream) 选项。                                                                                                                                                                                               | {"connect": 3, "send": 3, "read": 3}              |
-| enable_websocket | 否                               | 辅助     | 是否启用 `websocket`(boolean), 默认值为 `false`。                                                                                                                                                                                                                                                |                                                      |
-| status           | 否                               | 辅助     | 是否启用此路由，默认值为 `1`。                                                                                                                                                                                                                                                                       | `1` 表示启用，`0` 表示禁用                           |
-| create_time      | 否                               | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建。                                                                                                                                                                                                                                                            | 1602883670                                           |
-| update_time      | 否                               | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建。                                                                                                                                                                                                                                                            | 1602883670                                           |
+| labels           | 否                               | 匹配规则 | 标识附加属性的键值对。                                                                                                                                                                                                                                                                            | {"version":"v2","build":"16","env":"production"}     |
+| timeout          | 否                               | 辅助     | 为 Route 设置 Upstream 连接、发送消息和接收消息的超时时间（单位为秒）。该配置将会覆盖在 Upstream 中配置的 [timeout](#upstream) 选项。                                                                                                                                                                                               | {"connect": 3, "send": 3, "read": 3}              |
+| enable_websocket | 否                               | 辅助     |当设置为 `true` 时，启用 `websocket`(boolean), 默认值为 `false`。                                                                                                                                                                                                                                                |                                                      |
+| status           | 否                               | 辅助     | 当设置为 `1` 时，启用该路由，默认值为 `1`。                                                                                                                                                                                                                                                                       | `1` 表示启用，`0` 表示禁用                           |
+| create_time      | 否                               | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                                                                                                                                                                                            | 1602883670                                           |
+| update_time      | 否                               | 辅助     |  epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                                                                                                                                                                                            | 1602883670                                           |
 
 :::note 注意
 
-- 对于同一类参数比如 `uri`与 `uris`，`upstream` 与 `upstream_id`，`host` 与 `hosts`，`remote_addr` 与 `remote_addrs` 等，是不能同时存在，二者只能选择其一。如果同时启用，接口会报错。
+- 对于同一类参数比如 `uri`与 `uris`，`upstream` 与 `upstream_id`，`host` 与 `hosts`，`remote_addr` 与 `remote_addrs` 等，是不能同时存在，二者只能选择其一。如果同时启用，则会出现异常。
 - 在 `vars` 中，当获取 Cookie 的值时，Cookie name 是**区分大小写字母**的。例如：`var` 等于 `cookie_x_foo`与 `var` 等于 `cookie_X_Foo` 表示不同的 `cookie`。
 
 :::
 
-Route 对象 JSON 配置：
+Route 对象 JSON 配置示例：
 
 ```shell
 {
@@ -363,7 +359,7 @@ Route 对象 JSON 配置：
     }
     ```
 
-- 更新路由中上游节点的权重
+- 更新路由中上游节点的权重：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -418,7 +414,7 @@ Route 对象 JSON 配置：
     }
     ```
 
-- 替换路由中的 `methods` 数组
+- 更新路由中的 `methods` 数组
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -438,7 +434,7 @@ Route 对象 JSON 配置：
     ["GET", "POST"]
     ```
 
-- 使用 `sub path` 替换路由中的上游节点：
+- 使用 `sub path` 更新路由中的上游节点：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1/upstream/nodes \
@@ -461,7 +457,7 @@ Route 对象 JSON 配置：
     }
     ```
 
-- 使用 `sub path` 替换路由中的 `methods`：
+- 使用 `sub path` 更新路由中的 `methods`：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1/methods \
@@ -546,7 +542,7 @@ Route 对象 JSON 配置：
 | PUT    | /apisix/admin/services/{id}        | {...}     | 创建指定 id 资源。                                                                                                                                                  |
 | POST   | /apisix/admin/services             | {...}     | 创建资源，id 由后台服务自动生成。                                                                                                                                    |
 | DELETE | /apisix/admin/services/{id}        | 无        | 删除资源。                                                                                                                                                          |
-| PATCH  | /apisix/admin/services/{id}        | {...}     | 标准 PATCH ，修改已有 Service 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为 null 即可删除；注意，当需要修改属性的值为数组时，该属性将全量更新。|
+| PATCH  | /apisix/admin/services/{id}        | {...}     | 标准 PATCH ，修改已有 Service 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为 null 即可删除；注意：当需要修改属性的值为数组时，该属性将全量更新。|
 | PATCH  | /apisix/admin/services/{id}/{path} | {...}     | SubPath PATCH，通过 {path} 指定 Service 需要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。                                                                |
 
 ### body 请求参数
@@ -561,8 +557,8 @@ Route 对象 JSON 配置：
 | labels           | 否                     | 匹配规则 | 标识附加属性的键值对。                                                 | {"version":"v2","build":"16","env":"production"} |
 | enable_websocket | 否                     | 辅助     | `websocket`(boolean) 配置，默认值为 `false`。                       |                                                  |
 | hosts            | 否                     | 匹配规则 | 非空列表形态的 `host`，表示允许有多个不同 `host`，匹配其中任意一个即可。| ["foo.com", "\*.bar.com"]                        |
-| create_time      | 否                     | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建。                         | 1602883670                                       |
-| update_time      | 否                     | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建。                         | 1602883670                                       |
+| create_time      | 否                     | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                         | 1602883670                                       |
+| update_time      | 否                     | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                           | 1602883670                                       |
 
 Service 对象 JSON 配置示例：
 
@@ -666,7 +662,7 @@ Service 对象 JSON 配置示例：
     }
     ```
 
-- 给 Service 删除一个 upstream node
+- 删除 Service 中的一个上游节点：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/services/201 \
@@ -708,7 +704,7 @@ Service 对象 JSON 配置示例：
     ...
     ```
 
-    执行成功后，上游节点将不保留原来的数据，将更新为：
+    执行成功后，上游节点不再保留原来的数据，将更新为：
 
     ```
     {
@@ -726,11 +722,7 @@ Service 对象 JSON 配置示例：
 
 Consumer 资源请求地址：/apisix/admin/consumers/{username}
 
-:::note 注意
-
 Consumer 是某类服务的消费者，需要与用户认证体系配合才能使用。Consumer 使用 `username` 作为唯一标识，仅支持使用 HTTP `PUT` 方法创建 Consumer。
-
-:::
 
 ### 请求方法
 
@@ -753,7 +745,7 @@ Consumer 是某类服务的消费者，需要与用户认证体系配合才能�
 | create_time | 否   | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建。                                                                                       | 1602883670                                       |
 | update_time | 否   | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建。                                                                                       | 1602883670                                       |
 
-Consumer 对象 JSON 配置内容：
+Consumer 对象 JSON 配置示例：
 
 ```shell
 {
@@ -763,11 +755,11 @@ Consumer 对象 JSON 配置内容：
 }
 ```
 
-当认证插件与 Consumer 一起使用时，需要提供用户名、密码等信息；当它与 Route 或 Service 绑定时，则不需要任何参数，因为此时是根据用户请求数据来反向推出用户对应的是哪个 Consumer。
+当认证插件与 Consumer 一起使用时，需要提供用户名、密码等信息；当认证插件与 Route 或 Service 绑定时，则不需要任何参数，因为此时是根据用户请求数据判断用户对应的是哪个 Consumer。
 
 ### 使用示例
 
-- 创建 Consumer ，指定认证插件 `key-auth`，并开启特定插件 `limit-count`：
+- 创建 Consumer，并指定认证插件 `key-auth`，并开启指定插件 `limit-count`：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/consumers  \
@@ -798,7 +790,7 @@ Consumer 对象 JSON 配置内容：
 
 :::note 注意
 
-APISIX 自 `v2.2` 及以后版本，同一个 Consumer 可以绑定多个认证插件。
+自 APISIX v2.2 及以上版本，同一个 Consumer 可以绑定多个认证插件。
 
 :::
 
@@ -832,41 +824,41 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 | 名称           | 必选项                             | 类型           | 描述                                                                                                                                                                                                                                                                                                                                                        | 示例                                             |
 | -------------- | ---------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | type           | 是                                | 枚举           | 负载均衡算法。                                                                                                                                                                                                                                                                                                                                                            |                                      |     |
-| nodes          | 是，与 `service_name` 二选一。 | Node           | 哈希表或数组。当它是哈希表时，内部元素的 key 是上游机器地址列表，格式为`地址 +（可选的）端口`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。对于哈希表的情况，如果 key 是 IPv6 地址加端口，则必须用中括号将 IPv6 地址括起来。value 则是节点的权重。当它是数组时，数组中每个元素都是一个哈希表，其中包含 `host`、`weight` 以及可选的 `port`、`priority`。`nodes` 可以为空，这通常用作占位符。客户端命中这样的上游会返回 `502`。                                        | `192.168.1.100:80`, `[::1]:80`                               |
+| nodes          | 是，与 `service_name` 二选一。 | Node           | 哈希表或数组。当它是哈希表时，内部元素的 key 是上游机器地址列表，格式为`地址 +（可选的）端口`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。对于哈希表的情况，如果 key 是 IPv6 地址加端口，则必须用中括号将 IPv6 地址括起来。`value` 则是节点的权重。当它是数组时，数组中每个元素都是一个哈希表，其中包含 `host`、`weight` 以及可选的 `port`、`priority`。`nodes` 可以为空，这通常用作占位符。客户端命中这样的上游会返回 `502`。                                        | `192.168.1.100:80`, `[::1]:80`                               |
 | service_name   | 是，与 `nodes` 二选一。        | string         | 服务发现时使用的服务名，请参考 [集成服务发现注册中心](./discovery.md)。                                                                                                                                                                                                                                                                                            | `a-bootiful-client`                              |
 | discovery_type | 是，与 `service_name` 配合使用。   | string         | 服务发现类型，请参考 [集成服务发现注册中心](./discovery.md)。                                                                                                                                                                                                                                                                                                      | `eureka`                                         |
-| key            | 条件必需                           | 匹配类型       | 该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的 node `id`，相同的 `key` 在同一个对象中，则返回相同 id。目前支持的 NGINX 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自 URL 的请求参数，详细请参考[NGINX 变量列表](http://nginx.org/en/docs/varindex.html)。 |                                                  |
-| checks         | 否                               | health_checker | 配置健康检查的参数，请参考[health-check](health-check.md)。                                                                                                                                                                                                                                                                                               |                                                  |
-| retries        | 否                               | 整型           | 使用底层的 NGINX 重试机制将请求传递给下一个上游，默认启用重试且次数为后端可用的 node 数量。如果指定了具体重试次数，它将覆盖默认值。`0` 代表不启用重试机制。                                                                                                                                                                                                 |                                                  |
-| retry_timeout  | 否                               | number         | 限制是否继续重试的时间，若之前的请求和重试请求花费太多时间就不再继续重试。`0` 代表不启用重试超时机制。                                                                                                                                                                                                 |                                                  |
+| key            | 条件必需                           | 匹配类型       | 该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的节点 `id`，相同的 `key` 在同一个对象中，则返回相同 id。目前支持的 NGINX 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自 URL 的请求参数，详细信息请参考 [NGINX 变量列表](http://nginx.org/en/docs/varindex.html)。 |                                                  |
+| checks         | 否                               | health_checker | 配置健康检查的参数，详细信息请参考 [health-check](health-check.md)。                                                                                                                                                                                                                                                                                               |                                                  |
+| retries        | 否                               | 整型           | 使用 NGINX 重试机制将请求传递给下一个上游，默认启用重试机制且次数为后端可用的节点数量。如果指定了具体重试次数，它将覆盖默认值。当设置为 `0` 时，表示不启用重试机制。                                                                                                                                                                                                 |                                                  |
+| retry_timeout  | 否                               | number         | 限制是否继续重试的时间，若之前的请求和重试请求花费太多时间就不再继续重试。当设置为 `0` 时，表示不启用重试超时机制。                                                                                                                                                                                                 |                                                  |
 | timeout        | 否                               | 超时时间对象   | 设置连接、发送消息、接收消息的超时时间，以秒为单位。                                                                                                                                                                                                                                                                                                      |                                                  |
 | hash_on        | 否                               | 辅助           | `hash_on` 支持的类型有 `vars`（NGINX 内置变量），`header`（自定义 header），`cookie`，`consumer`，默认值为 `vars`。                                                                                                                                                                                                                                           |
 | name           | 否                               | 辅助           | 标识上游服务名称、使用场景等。                                                                                                                                                                                                                                                                                                                              |                                                  |
 | desc           | 否                               | 辅助           | 上游服务描述、使用场景等。                                                                                                                                                                                                                                                                                                                                  |                                                  |
-| pass_host      | 否                               | 枚举           | 请求发给上游时的 host 设置选型。 [`pass`，`node`，`rewrite`] 之一，默认是`pass`。`pass`: 将客户端的 host 透传给上游； `node`: 使用 `upstream`  node 中配置的 host； `rewrite`: 使用配置项 `upstream_host` 的值。                                                                                                                                                                        |                                                  |
+| pass_host      | 否                               | 枚举           | 请求发给上游时的 `host` 设置选型。 [`pass`，`node`，`rewrite`] 之一，默认是 `pass`。`pass`: 将客户端的 host 透传给上游； `node`: 使用 `upstream` node 中配置的 `host`； `rewrite`: 使用配置项 `upstream_host` 的值。                                                                                                                                                                        |                                                  |
 | upstream_host  | 否                               | 辅助           | 指定上游请求的 host，只在 `pass_host` 配置为 `rewrite` 时有效。                                                                                                                                                                                                                                                                                                                  |                                                  |
-| scheme         | 否                               | 辅助           | 跟上游通信时使用的 scheme。对于 7 层代理，可选值为 [`http`, `https`, `grpc`, `grpcs`]。对于 4 层代理，可选值为 [`tcp`, `udp`, `tls`]。默认值为 `http`。详情见下文。                                                                                                                                                                                                                                                           |
-| labels         | 否                               | 匹配规则       | 标识附加属性的键值对                                                                                                                                                                                                                                                                                                                                        | {"version":"v2","build":"16","env":"production"} |
-| create_time    | 否                               | 辅助           | 单位为秒的 epoch 时间戳，如果不指定则自动创建。                                                                                                                                                                                                                                                                                                               | 1602883670                                       |
-| update_time    | 否                               | 辅助           | 单位为秒的 epoch 时间戳，如果不指定则自动创建。                                                                                                                                                                                                                                                                                                               | 1602883670                                       |
-| tls.client_cert    | 否，不能和 `tls.client_cert_id` 一起使用 | https 证书           | 设置跟上游通信时的客户端证书，详情见下文。                                                                          | |
-| tls.client_key	 | 否，不能和 `tls.client_cert_id` 一起使用 | https 证书私钥           | 设置跟上游通信时的客户端私钥，详情见下文。                                                                                                                                                                                                                                                                                                              | |
-| tls.client_cert_id | 否，不能和 `tls.client_cert`、`tls.client_key` 一起使用  | SSL           | 设置引用的 ssl id，详见 [SSL](#ssl)。                                                                                                                                                                                                                                                                                                              | |
-|keepalive_pool.size  | 否 | 辅助 | 动态设置 `keepalive` 指令，详情见下文。 |
-|keepalive_pool.idle_timeout  | 否 | 辅助 | 动态设置 `keepalive_timeout` 指令，详情见下文。 |
-|keepalive_pool.requests  | 否 | 辅助 | 动态设置 `keepalive_requests` 指令，详情见下文。 |
+| scheme         | 否                               | 辅助           | 跟上游通信时使用的 scheme。对于 7 层代理，可选值为 [`http`, `https`, `grpc`, `grpcs`]。对于 4 层代理，可选值为 [`tcp`, `udp`, `tls`]。默认值为 `http`，详细信息请参考下文。                                                                                                                                                                                                                                                           |
+| labels         | 否                               | 匹配规则       | 标识附加属性的键值对。                                                                                                                                                                                                                                                                                                                                        | {"version":"v2","build":"16","env":"production"} |
+| create_time    | 否                               | 辅助           | epoch 时间戳,单位为秒。如果不指定则自动创建。                                                                                                                                                                                                                                                                                                               | 1602883670                                       |
+| update_time    | 否                               | 辅助           | epoch 时间戳,单位为秒。如果不指定则自动创建。                                                                                                                                                                                                                                                                                                               | 1602883670                                       |
+| tls.client_cert    | 否，不能和 `tls.client_cert_id` 一起使用 | https 证书           | 设置跟上游通信时的客户端证书，详细信息请参考下文。                                                                        | |
+| tls.client_key	 | 否，不能和 `tls.client_cert_id` 一起使用 | https 证书私钥           | 设置跟上游通信时的客户端私钥，详细信息请参考下文。                                                                                                                                                                                                                                                                                                              | |
+| tls.client_cert_id | 否，不能和 `tls.client_cert`、`tls.client_key` 一起使用  | SSL           | 设置引用的 SSL id，详见 [SSL](#ssl)。                                                                                                                                                                                                                                                                                                              | |
+|keepalive_pool.size  | 否 | 辅助 | 动态设置 `keepalive` 指令，详细信息请参考下文。 |
+|keepalive_pool.idle_timeout  | 否 | 辅助 | 动态设置 `keepalive_timeout` 指令，详细信息请参考下文。 |
+|keepalive_pool.requests  | 否 | 辅助 | 动态设置 `keepalive_requests` 指令，详细信息请参考下文。 |
 
 `type` 详细信息如下：
 
-- `roundrobin`: 带权重的 roundrobin。
+- `roundrobin`: 带权重的 Round Robin。
 - `chash`: 一致性哈希。
-- `ewma`: 选择延迟最小的节点，请参考[EWMA_chart](https://en.wikipedia.org/wiki/EWMA_chart)。
+- `ewma`: 选择延迟最小的节点，请参考 [EWMA_chart](https://en.wikipedia.org/wiki/EWMA_chart)。
 - `least_conn`: 选择 `(active_conn + 1) / weight` 最小的节点。此处的 `active connection` 概念跟 NGINX 的相同，它是当前正在被请求使用的连接。
 - 用户自定义的 balancer，需要可以通过 `require("apisix.balancer.your_balancer")` 来加载。
 
 `hash_on` 详细信息如下：
 
-- 设为 `vars` 时，`key` 为必传参数，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自 URL 的请求参数。详细信息请参考[NGINX 变量列表](http://nginx.org/en/docs/varindex.html)。
+- 设为 `vars` 时，`key` 为必传参数，目前支持的 Nginx 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自 URL 的请求参数。详细信息请参考 [NGINX 变量列表](http://nginx.org/en/docs/varindex.html)。
 - 设为 `header` 时，`key` 为必传参数，其值为自定义的 header name，即 "http\_`key`"。
 - 设为 `cookie` 时，`key` 为必传参数，其值为自定义的 cookie name，即 "cookie\_`key`"。请注意 cookie name 是**区分大小写字母**的。例如：`cookie_x_foo` 与 `cookie_X_Foo` 表示不同的 `cookie`。
 - 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_name`。
@@ -877,9 +869,9 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 - `scheme` 可以设置成 `tls`，表示 `TLS over TCP`。
 - `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
 - `tls.client_cert_id` 可以用来指定引用的 SSL 对象。只有当 SSL 对象的 `type` 字段为 client 时才能被引用，否则请求会被 APISIX 拒绝。另外，SSL 对象中只有 `cert`和`key` 会被使用。
-- `keepalive_pool` 允许 upstream 对象有自己单独的连接池。它下属的字段，比如 `requests`，可以用了配置上游连接保持的参数。这个特性需要 APISIX 运行于 [APISIX-Base](./FAQ.md#如何构建-apisix-base-环境)。
+- `keepalive_pool` 允许 Upstream 对象有自己单独的连接池。它下属的字段，比如 `requests`，可以用了配置上游连接保持的参数。该特性需要 APISIX 运行于 [APISIX-Base](./FAQ.md#如何构建-apisix-base-环境)。
 
-Upstream 对象 JSON 配置内容：
+Upstream 对象 JSON 配置示例：
 
 ```shell
 {
@@ -924,7 +916,7 @@ Upstream 对象 JSON 配置内容：
     ...
     ```
 
-2. 在 Upstream 添加一个 node：
+2. 在 Upstream 中添加一个节点：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/upstreams/100 \
@@ -941,7 +933,7 @@ Upstream 对象 JSON 配置内容：
     ...
     ```
 
-    执行成功后，nodes 将更新为：
+    执行成功后，`nodes` 将更新为：
 
     ```
     {
@@ -950,7 +942,7 @@ Upstream 对象 JSON 配置内容：
     }
     ```
 
-3. 给 Upstream 更新一个 node 的权重。
+3. 更新 Upstream 中单个节点的权重：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/upstreams/100 \
@@ -967,7 +959,7 @@ Upstream 对象 JSON 配置内容：
     ...
     ```
 
-    执行成功后，nodes 将更新为：
+    执行成功后，`nodes` 将更新为：
 
     ```
     {
@@ -976,7 +968,7 @@ Upstream 对象 JSON 配置内容：
     }
     ```
 
-4. 给 Upstream 删除一个 node。
+4. 删除 Upstream 中的一个节点：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/upstreams/100 \
@@ -1001,7 +993,7 @@ Upstream 对象 JSON 配置内容：
     }
     ```
 
-5. 替换 Upstream 的 nodes。
+5. 更新 Upstream 的 `nodes`：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/upstreams/100/nodes \
@@ -1016,7 +1008,7 @@ Upstream 对象 JSON 配置内容：
     ...
     ```
 
-    执行成功后，nodes 将不再保留原来的数据，更新为：
+    执行成功后，`nodes` 将不再保留原来的数据，更新为：
 
     ```
     {
@@ -1136,12 +1128,12 @@ Consumer 资源请求地址：/apisix/admin/ssls/{id}
 | client.depth | 否   | 辅助 |  设置客户端证书校验的深度，默认为 1。该特性需要 OpenResty 为 1.19 及以上版本。 |                                             |
 | snis        | 是   | 匹配规则       | 非空数组形式，可以匹配多个 SNI。                                                                         |                                                  |
 | labels      | 否   | 匹配规则       | 标识附加属性的键值对。                                                                                   | {"version":"v2","build":"16","env":"production"} |
-| create_time | 否   | 辅助           | epoch 时间戳，单位为秒，如果不指定则自动创建。                                                          | 1602883670                                       |
-| update_time | 否   | 辅助           | epoch 时间戳，单位为秒，如果不指定则自动创建。                                                          | 1602883670                                       |
-| type        | 否   | 辅助           | 标识证书的类型，默认值为 `server`。                                                                             | `client` 表示证书是客户端证书，APISIX 访问上游时使用；`server` 表示证书是服务端证书，APISIX 验证客户端请求时使用。     |
-| status      | 可选   | 辅助           | 当设置为 `1` 时启用此 SSL，默认值为 `1`。                                                                             | `1` 表示启用，`0` 表示禁用                       |
+| create_time | 否   | 辅助           | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                          | 1602883670                                       |
+| update_time | 否   | 辅助           | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                          | 1602883670                                       |
+| type        | 否   | 辅助           | 标识证书的类型，默认值为 `server`。                                                                     | `client` 表示证书是客户端证书，APISIX 访问上游时使用；`server` 表示证书是服务端证书，APISIX 验证客户端请求时使用。     |
+| status      | 否   | 辅助           | 当设置为 `1` 时，启用此 SSL，默认值为 `1`。                                                               | `1` 表示启用，`0` 表示禁用                       |
 
-SSL 对象 JSON 配置内容：
+SSL 对象 JSON 配置示例：
 
 ```shell
 {
@@ -1197,7 +1189,7 @@ Consumer Group 资源请求地址：/apisix/admin/consumer_groups/{id}
 | GET    | /apisix/admin/consumer_groups/{id}        | 无        | 获取资源。                                                                                                                                                                                 |
 | PUT    | /apisix/admin/consumer_groups/{id}        | {...}     | 将创建指定 id 的资源。                                                                                                                                                                        |
 | DELETE | /apisix/admin/consumer_groups/{id}        | 无        | 删除资源。                                                                                                                                                                                 |
-| PATCH  | /apisix/admin/consumer_groups/{id}        | {...}     | 标准 PATCH，修改已有 Consumer Group 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为 null 即可删除；注意，当需要修改属性的值为数组时，该属性将全量更新。 |
+| PATCH  | /apisix/admin/consumer_groups/{id}        | {...}     | 标准 PATCH，修改已有 Consumer Group 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为 null 即可删除；**注意**：当需要修改属性的值为数组时，该属性将全量更新。 |
 | PATCH  | /apisix/admin/consumer_groups/{id}/{path} | {...}     | SubPath PATCH，通过 {path} 指定 Consumer Group 要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。                                                                           |
 
 ### body 请求参数
@@ -1205,7 +1197,7 @@ Consumer Group 资源请求地址：/apisix/admin/consumer_groups/{id}
 | 名称      | 必选项  | 类型  | 描述                                          | 示例值 |
 |--------- |--------- |------|----------------------------------------------- |------|
 |plugins  | 是        |Plugin| 插件配置。详细信息请参考 [Plugin](terminology/plugin.md)。 |      |
-|desc     | 否        | 辅助 | 标识描述、使用场景等。                          |customer xxxx|
+|desc     | 否        | 辅助 | 标识描述、使用场景等。                          | Consumer 测试。|
 |labels   | 否        | 辅助 | 标识附加属性的键值对。                          |{"version":"v2","build":"16","env":"production"}|
 |create_time| 否      | 辅助 | epoch 时间戳，单位为秒，如果不指定则自动创建。 |1602883670|
 |update_time| 否      | 辅助 | epoch 时间戳，单位为秒，如果不指定则自动创建。 |1602883670|
@@ -1216,9 +1208,7 @@ Consumer Group 资源请求地址：/apisix/admin/consumer_groups/{id}
 
 Plugin Config 资源请求地址：/apisix/admin/plugin_configs/{id}
 
-你可以使用该资源配置一组可以在路由间复用的插件。
-
-:::
+你可以使用该资源创建一组可以在路由间复用的插件。
 
 ### 请求方法
 
