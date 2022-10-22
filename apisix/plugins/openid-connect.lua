@@ -86,6 +86,14 @@ local schema = {
             type = "string",
             description = "the URI will be redirect when request logout_path",
         },
+        unauth_action = {
+            type = "string",
+            default = "auth",
+            enum = {"auth", "deny", "pass"},
+            description = "The action performed when client is not authorized. Use auth to " ..
+                "redirect user to identity provider, deny to respond with 401 Unauthorized, and " ..
+                "pass to allow the request regardless."
+        },
         public_key = {type = "string"},
         token_signing_alg_values_expected = {type = "string"},
         use_pkce = {
@@ -333,7 +341,7 @@ function _M.rewrite(plugin_conf, ctx)
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, _, session  = openidc.authenticate(conf, nil, nil, conf.session)
+        response, err, _, session  = openidc.authenticate(conf, nil, conf.unauth_action, conf.session)
 
         if err then
             core.log.error("OIDC authentication failed: ", err)
