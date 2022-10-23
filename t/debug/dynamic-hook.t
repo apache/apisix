@@ -377,6 +377,11 @@ qr/call\srequire\(\"apisix.plugin\"\).filter\(\)\sreturn.*GET\s\/mysleep\?second
 
 
 === TEST 6: hook function with ctx as param
+# ai module would conflict with the debug module
+--- extra_yaml_config
+plugins:
+    #ai
+    - example-plugin
 --- debug_config
 basic:
   enable: true
