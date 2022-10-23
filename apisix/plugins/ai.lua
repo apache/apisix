@@ -46,8 +46,6 @@ end
 ]]
 
 local route_lrucache = core.lrucache.new({
-    -- TODO: we need to set the cache size by count of routes
-    -- if we have done this feature, we need to release the origin lrucache
     count = 512
 })
 
@@ -206,6 +204,12 @@ local function routes_analyze(routes)
     else
         core.log.info("use ai plane to match route")
         router.router_http.match = ai_match
+
+        local count = #routes + 3000
+        core.log.info("renew route cache: count=", count)
+        route_lrucache = core.lrucache.new({
+            count = count
+        })
 
         local ok, err = gen_get_cache_key_func(route_flags)
         if not ok then
