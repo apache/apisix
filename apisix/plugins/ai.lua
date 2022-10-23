@@ -177,6 +177,8 @@ local function routes_analyze(routes)
                     route_flags["service_id"] = true
                 elseif key == "plugin_config_id" then
                     route_flags["plugin_config_id"] = true
+                elseif key == "script" then
+                    route_flags["script"] = true
                 end
 
                 -- collect upstream flags
@@ -214,7 +216,8 @@ local function routes_analyze(routes)
         end
     end
 
-    local global_rules_flag = #router.global_rules.values ~= 0
+    local global_rules_flag = router.global_rules and router.global_rules.values
+                              and #router.global_rules.values ~= 0
 
     if route_flags["vars"] or route_flags["filter_fun"]
          or route_flags["remote_addr"]
@@ -234,6 +237,7 @@ local function routes_analyze(routes)
     end
 
     if route_flags["service"]
+         or route_flags["script"]
          or route_flags["service_id"]
          or route_flags["upstream_id"]
          or route_flags["enable_websocket"]
