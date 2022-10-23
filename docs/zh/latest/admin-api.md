@@ -33,7 +33,7 @@ description: 本文介绍了 Apache APISIX Admin API 支持的功能，你可以
 
 Admid API 是一组用于配置 Apache APISIX 路由、上游、服务、SSL 证书等功能的 RESTful API。
 
-你可以通过 Admin API 来获取、创建、更新以及删除资源。同时得益于 APISIX 的热更新能力，资源配置完成后 APISIX 将会自动更新配置，无需重启服务。如果你想要了解其工作原理，请参考 [Architecture Design](./architecture-design/apisix.md)。
+你可以通过 Admin API 来获取、创建、更新以及删除资源。同时得益于 APISIX 的热加载能力，资源配置完成后 APISIX 将会自动更新配置，无需重启服务。如果你想要了解其工作原理，请参考 [Architecture Design](./architecture-design/apisix.md)。
 
 ## 相关配置
 
@@ -252,7 +252,7 @@ Route 也称之为路由，可以通过定义一些规则来匹配客户端的�
 :::note 注意
 
 - 对于同一类参数比如 `uri`与 `uris`，`upstream` 与 `upstream_id`，`host` 与 `hosts`，`remote_addr` 与 `remote_addrs` 等，是不能同时存在，二者只能选择其一。如果同时启用，则会出现异常。
-- 在 `vars` 中，当获取 Cookie 的值时，Cookie name 是**区分大小写字母**的。例如：`var` 等于 `cookie_x_foo`与 `var` 等于 `cookie_X_Foo` 表示不同的 `cookie`。
+- 在 `vars` 中，当获取 Cookie 的值时，Cookie name 是**区分大小写字母**的。例如：`var = cookie_x_foo` 与 `var  = cookie_X_Foo` 表示不同的 `cookie`。
 
 :::
 
@@ -790,7 +790,7 @@ Consumer 对象 JSON 配置示例：
 
 :::note 注意
 
-自 APISIX v2.2 及以上版本，同一个 Consumer 可以绑定多个认证插件。
+从 APISIX v2.2 版本开始，同一个 Consumer 可以绑定多个认证插件。
 
 :::
 
@@ -868,8 +868,8 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 
 - `scheme` 可以设置成 `tls`，表示 `TLS over TCP`。
 - `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
-- `tls.client_cert_id` 可以用来指定引用的 SSL 对象。只有当 SSL 对象的 `type` 字段为 client 时才能被引用，否则请求会被 APISIX 拒绝。另外，SSL 对象中只有 `cert`和`key` 会被使用。
-- `keepalive_pool` 允许 Upstream 对象有自己单独的连接池。它下属的字段，比如 `requests`，可以用了配置上游连接保持的参数。该特性需要 APISIX 运行于 [APISIX-Base](./FAQ.md#如何构建-apisix-base-环境)。
+- `tls.client_cert_id` 可以用来指定引用的 SSL 对象。只有当 SSL 对象的 `type` 字段为 client 时才能被引用，否则请求会被 APISIX 拒绝。另外，SSL 对象中只有 `cert` 和 `key` 会被使用。
+- `keepalive_pool` 允许 Upstream 有自己单独的连接池。它下属的字段，比如 `requests`，可以用于配置上游连接保持的参数。该特性需要 APISIX 运行于 [APISIX-Base](./FAQ.md#如何构建-apisix-base-环境) 中。
 
 Upstream 对象 JSON 配置示例：
 
@@ -896,7 +896,7 @@ Upstream 对象 JSON 配置示例：
 
 ### 使用示例
 
-#### 创建一个 Upstream 并对 `nodes` 的数据做修改
+#### 创建一个 Upstream 并对 `nodes` 的数据进行修改
 
 1. 创建一个 Upstream：
 

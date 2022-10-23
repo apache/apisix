@@ -239,7 +239,7 @@ APISIX 中一些插件添加了自己的 control API。如果你对他们感兴�
 
 ```json
 {
-    "log_format": {
+    "log_format": { 
         "upstream_response_time": "$upstream_response_time"
     },
     "id": "file-logger"
