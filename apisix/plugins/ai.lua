@@ -125,12 +125,7 @@ local function ai_http_balancer_phase()
     end
 
     if is_apisix_or then
-        local ok, err = response.skip_header_filter_by_lua()
-        if not ok then
-            core.log.error("failed to skip header filter by lua: ", err)
-        end
-
-        ok, err = response.skip_body_filter_by_lua()
+        local ok, err = response.skip_body_filter_by_lua()
         if not ok then
             core.log.error("failed to skip body filter by lua: ", err)
         end
@@ -219,10 +214,13 @@ local function routes_analyze(routes)
         end
     end
 
+    local global_rules_flag = #router.global_rules.values ~= 0
+
     if route_flags["vars"] or route_flags["filter_fun"]
          or route_flags["remote_addr"]
          or route_flags["service_id"]
-         or route_flags["plugin_config_id"] then
+         or route_flags["plugin_config_id"]
+         or global_rules_flag then
         router.router_http.match = orig_router_match
     else
         core.log.info("use ai plane to match route")
@@ -250,7 +248,8 @@ local function routes_analyze(routes)
          or route_up_flags["tls"]
          or route_up_flags["keepalive"]
          or route_up_flags["service_name"]
-         or route_up_flags["more_nodes"] then
+         or route_up_flags["more_nodes"]
+         or global_rules_flag then
         apisix.handle_upstream = orig_handle_upstream
         apisix.http_balancer_phase = orig_http_balancer_phase
     else

@@ -14,7 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-use t::APISIX 'no_plan';
+use t::APISIX;
+
+my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
+my $version = eval { `$nginx_binary -V 2>&1` };
+
+if ($version !~ m/\/apisix-nginx-module/) {
+    plan(skip_all => "apisix-nginx-module not installed");
+} else {
+    plan('no_plan');
+}
 
 repeat_each(1);
 log_level('info');
@@ -32,14 +41,24 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
-
 });
 
 run_tests();
 
 __DATA__
+--- extra_init_by_lua
+    local apisix = require("apisix")
+    apisix.http_header_filter_phase = function ()
+        ngx.header.content_length = nil
+    end
 
-=== TEST 1: enable skip header and body filter
+    apisix.http_body_filter_phase = function ()
+        ngx.arg[1] = "do body filter"
+    end
+
+
+
+=== TEST 1: enable skip body filter
 --- config
     location /t {
         content_by_lua_block {
@@ -72,16 +91,24 @@ __DATA__
                 ngx.log(ngx.ERR, err)
                 return
             end
-            local headers = res.headers
-            ngx.say(headers["Server"])
+            ngx.print(res.body)
         }
     }
---- response_body eval
-qr/openresty\/\d+/
+--- response_body
+hello world
 
 
 
-=== TEST 2: route with plugin_config_id, disable skip header and body filter
+=== TEST 2: route with plugin_config_id, disable skip body filter
+--- extra_init_by_lua
+    local apisix = require("apisix")
+    apisix.http_header_filter_phase = function ()
+        ngx.header.content_length = 14
+    end
+
+    apisix.http_body_filter_phase = function ()
+        ngx.arg[1] = "do body filter"
+    end
 --- config
     location /t {
         content_by_lua_block {
@@ -133,12 +160,11 @@ qr/openresty\/\d+/
                 ngx.log(ngx.ERR, err)
                 return
             end
-            local headers = res.headers
-            ngx.say(headers["Server"])
+            ngx.say(res.body)
         }
     }
---- response_body eval
-qr/APISIX\/\d+/
+--- response_body
+do body filter
 --- error_log
 run before_proxy phase balancer_ip : 127.0.0.1
 --- no_error_log
@@ -146,7 +172,16 @@ enable sample upstream
 
 
 
-=== TEST 3: route with plugins, disable skip header and body filter
+=== TEST 3: route with plugins, disable skip body filter
+--- extra_init_by_lua
+    local apisix = require("apisix")
+    apisix.http_header_filter_phase = function ()
+        ngx.header.content_length = 14
+    end
+
+    apisix.http_body_filter_phase = function ()
+        ngx.arg[1] = "do body filter"
+    end
 --- config
     location /t {
         content_by_lua_block {
@@ -202,12 +237,11 @@ enable sample upstream
                 ngx.log(ngx.ERR, err)
                 return
             end
-            local headers = res.headers
-            ngx.say(headers["Server"])
+            ngx.say(res.body)
         }
     }
---- response_body eval
-qr/APISIX\/\d+/
+--- response_body
+do body filter
 --- error_log
 run before_proxy phase balancer_ip : 127.0.0.1
 --- no_error_log
@@ -215,7 +249,16 @@ enable sample upstream
 
 
 
-=== TEST 4: one of route has plugins, disable skip header and body filter
+=== TEST 4: one of route has plugins, disable skip body filter
+--- extra_init_by_lua
+    local apisix = require("apisix")
+    apisix.http_header_filter_phase = function ()
+        ngx.header.content_length = 14
+    end
+
+    apisix.http_body_filter_phase = function ()
+        ngx.arg[1] = "do body filter"
+    end
 --- config
     location /t {
         content_by_lua_block {
@@ -276,11 +319,10 @@ enable sample upstream
                 ngx.log(ngx.ERR, err)
                 return
             end
-            local headers = res.headers
-            ngx.say(headers["Server"])
+            ngx.say(res.body)
         }
     }
---- response_body eval
-qr/APISIX\/\d+/
+--- response_body
+do body filter
 --- no_error_log
 enable sample upstream
