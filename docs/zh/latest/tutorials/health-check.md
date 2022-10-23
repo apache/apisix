@@ -152,7 +152,7 @@ unhealthy TCP increment (2/2) for '(127.0.0.1:1980'
 
 :::
 
-你可以通过[控制接口](../control-api.md) 中的 `GET /v1/healthcheck` 接口获取健康检查信息。 如下所示：
+你可以通过[控制接口](../control-api.md) 中的 `GET /v1/healthcheck` 接口获取健康检查信息。如下所示：
 
 ```shell
 
