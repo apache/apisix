@@ -41,11 +41,28 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
+
+    if (!defined $block->extra_init_by_lua) {
+        my $extra_init_by_lua = <<_EOC_;
+            local apisix = require("apisix")
+            apisix.http_header_filter_phase = function ()
+                ngx.header.content_length = 14
+            end
+
+            apisix.http_body_filter_phase = function ()
+                ngx.arg[1] = "do body filter"
+            end
+_EOC_
+
+        $block->set_value("extra_init_by_lua", $extra_init_by_lua);
+    }
 });
 
 run_tests();
 
 __DATA__
+
+=== TEST 1: enable skip body filter
 --- extra_init_by_lua
     local apisix = require("apisix")
     apisix.http_header_filter_phase = function ()
@@ -55,10 +72,6 @@ __DATA__
     apisix.http_body_filter_phase = function ()
         ngx.arg[1] = "do body filter"
     end
-
-
-
-=== TEST 1: enable skip body filter
 --- config
     location /t {
         content_by_lua_block {
@@ -100,15 +113,6 @@ hello world
 
 
 === TEST 2: route with plugin_config_id, disable skip body filter
---- extra_init_by_lua
-    local apisix = require("apisix")
-    apisix.http_header_filter_phase = function ()
-        ngx.header.content_length = 14
-    end
-
-    apisix.http_body_filter_phase = function ()
-        ngx.arg[1] = "do body filter"
-    end
 --- config
     location /t {
         content_by_lua_block {
@@ -173,15 +177,6 @@ enable sample upstream
 
 
 === TEST 3: route with plugins, disable skip body filter
---- extra_init_by_lua
-    local apisix = require("apisix")
-    apisix.http_header_filter_phase = function ()
-        ngx.header.content_length = 14
-    end
-
-    apisix.http_body_filter_phase = function ()
-        ngx.arg[1] = "do body filter"
-    end
 --- config
     location /t {
         content_by_lua_block {
@@ -250,15 +245,6 @@ enable sample upstream
 
 
 === TEST 4: one of route has plugins, disable skip body filter
---- extra_init_by_lua
-    local apisix = require("apisix")
-    apisix.http_header_filter_phase = function ()
-        ngx.header.content_length = 14
-    end
-
-    apisix.http_body_filter_phase = function ()
-        ngx.arg[1] = "do body filter"
-    end
 --- config
     location /t {
         content_by_lua_block {
