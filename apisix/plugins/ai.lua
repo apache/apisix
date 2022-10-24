@@ -45,9 +45,7 @@ return function(ctx)
 end
 ]]
 
-local route_lrucache = core.lrucache.new({
-    count = 512
-})
+local route_lrucache
 
 local schema = {}
 
@@ -76,8 +74,7 @@ end
 local function ai_match(ctx)
     local key = get_cache_key_func(ctx)
     core.log.info("route cache key: ", key)
-    local ver = router.router_http.user_routes.conf_version
-    local route_cache = route_lrucache(key, ver,
+    local route_cache = route_lrucache(key, nil,
                                        match_route, ctx)
     -- if the version has not changed, use the cached route
     if route_cache then
