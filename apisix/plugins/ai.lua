@@ -81,7 +81,7 @@ local function ai_router_http_matching(api_ctx)
     if api_ctx then
         api_ctx.matched_route = api_ctx_cache.matched_route
         if api_ctx_cache.curr_req_matched then
-            api_ctx.curr_req_matched = core.table.deepcopy(api_ctx_cache.curr_req_matched)
+            api_ctx.curr_req_matched = core.table.clone(api_ctx_cache.curr_req_matched)
         end
     end
 end
