@@ -24,6 +24,7 @@ local ngx             = ngx
 local is_http         = ngx.config.subsystem == "http"
 local enable_keepalive = balancer.enable_keepalive and is_http
 local is_apisix_or, response = pcall(require, "resty.apisix.response")
+local base_router     = require("apisix.http.route")
 local ipairs          = ipairs
 local pcall           = pcall
 local loadstring      = loadstring
@@ -46,11 +47,7 @@ return function(ctx)
 end
 ]]
 
-local route_lrucache = core.lrucache.new({
-    -- TODO: we need to set the cache size by count of routes
-    -- if we have done this feature, we need to release the origin lrucache
-    count = 512
-})
+local route_lrucache
 
 local schema = {}
 
@@ -70,21 +67,20 @@ local orig_http_balancer_phase = apisix.http_balancer_phase
 
 local default_keepalive_pool = {}
 
-local function match_route(ctx)
-    orig_router_match(ctx)
-    return ctx.matched_route or false
+local function match_route(uri_router, match_opts, api_ctx)
+    orig_router_match(uri_router, match_opts, api_ctx)
+    return api_ctx.matched_route or false
 end
 
 
-local function ai_match(ctx)
-    local key = get_cache_key_func(ctx)
+local function ai_match_uri(uri_router, match_opts, api_ctx)
+    local key = get_cache_key_func(api_ctx)
     core.log.info("route cache key: ", key)
-    local ver = router.router_http.user_routes.conf_version
-    local route_cache = route_lrucache(key, ver,
-                                       match_route, ctx)
+    local route_cache = route_lrucache(key, nil,
+                                       match_route, uri_router, match_opts, api_ctx)
     -- if the version has not changed, use the cached route
     if route_cache then
-        ctx.matched_route = route_cache
+        api_ctx.matched_route = route_cache
     end
 end
 
@@ -224,15 +220,20 @@ local function routes_analyze(routes)
          or route_flags["service_id"]
          or route_flags["plugin_config_id"]
          or global_rules_flag then
-        router.router_http.match = orig_router_match
+            base_router.match_uri = orig_router_match
     else
         core.log.info("use ai plane to match route")
-        router.router_http.match = ai_match
+        base_router.match_uri = ai_match_uri
+        local count = #routes + 3000
+        core.log.info("renew route cache: count=", count)
+        route_lrucache = core.lrucache.new({
+            count = count
+        })
 
         local ok, err = gen_get_cache_key_func(route_flags)
         if not ok then
             core.log.error("generate get_cache_key_func failed:", err)
-            router.router_http.match = orig_router_match
+            base_router.match_uri = orig_router_match
         end
     end
 
@@ -280,7 +281,8 @@ end
 
 
 function _M.init_worker()
-    orig_router_match = router.router_http.match
+    orig_router_match = base_router.match_uri
 end
+
 
 return _M
