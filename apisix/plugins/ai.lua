@@ -61,25 +61,28 @@ local _M = {
 }
 
 local orig_router_http_matching
-local orig_handle_upstream = apisix.handle_upstream
-local orig_http_balancer_phase = apisix.http_balancer_phase
+local orig_handle_upstream
+local orig_http_balancer_phase
 
 local default_keepalive_pool = {}
 
 local function create_router_matching_cache(api_ctx)
     orig_router_http_matching(api_ctx)
-    return api_ctx.matched_route or false
+    return core.table.deepcopy(api_ctx)
 end
 
 
 local function ai_router_http_matching(api_ctx)
     local key = get_cache_key_func(api_ctx)
     core.log.info("route cache key: ", key)
-    local route_cache = route_lrucache(key, nil,
-                                       create_router_matching_cache, api_ctx)
+    local api_ctx_cache = route_lrucache(key, nil,
+                                   create_router_matching_cache, api_ctx)
     -- if the version has not changed, use the cached route
-    if route_cache then
-        api_ctx.matched_route = route_cache
+    if api_ctx then
+        api_ctx.matched_route = api_ctx_cache.matched_route
+        if api_ctx_cache.curr_req_matched then
+            api_ctx.curr_req_matched = core.table.deepcopy(api_ctx_cache.curr_req_matched)
+        end
     end
 end
 
@@ -146,6 +149,14 @@ end
 local function routes_analyze(routes)
     if orig_router_http_matching == nil then
         orig_router_http_matching = router.router_http.matching
+    end
+
+    if orig_handle_upstream == nil then
+        orig_handle_upstream = apisix.handle_upstream
+    end
+
+    if orig_http_balancer_phase == nil then
+        orig_http_balancer_phase = apisix.http_balancer_phase
     end
 
     local route_flags = core.table.new(0, 16)
