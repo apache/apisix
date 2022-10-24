@@ -80,15 +80,19 @@ local function extra_labels(name, ctx)
         for _, kv in ipairs(labels) do
             local val, v = next(kv)
             if ctx then
-                val = ctx.var[v:sub(2)]
-                if val == nil then
-                    val = ""
+                if v:find("$",1, true) then
+                    val = ctx.var[v:sub(2)]
+                    if val == nil then
+                        val = ""
+                    end
+                else
+                    -- if label value is a literal const, use the literal const directly
+                    val = v
                 end
             end
             core.table.insert(extra_labels_tbl, val)
         end
     end
-
     return extra_labels_tbl
 end
 
