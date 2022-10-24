@@ -33,7 +33,7 @@ __DATA__
 # ai module would conflict with the debug module
 --- extra_yaml_config
 plugins:
-    #ai
+    #- ai
     - example-plugin
 --- debug_config eval: $::debug_config
 --- config
@@ -94,7 +94,7 @@ call require("apisix").http_access_phase() args:{}
 # ai module would conflict with the debug module
 --- extra_yaml_config
 plugins:
-    #ai
+    #- ai
     - example-plugin
 --- debug_config eval: $::debug_config
 --- config
