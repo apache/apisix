@@ -144,6 +144,10 @@ end
 
 
 local function routes_analyze(routes)
+    if orig_router_http_matching == nil then
+        orig_router_http_matching = router.router_http.matching
+    end
+
     local route_flags = core.table.new(0, 16)
     local route_up_flags = core.table.new(0, 12)
     for _, route in ipairs(routes) do
@@ -280,8 +284,23 @@ function _M.init()
 end
 
 
-function _M.init_worker()
-    orig_router_http_matching = router.router_http.matching
+function _M.destroy()
+    -- TODO: add test cases to cover this function
+    -- if the ai plugin is disabled at runtime, all functions replaced by the ai plugin are restored
+    if orig_router_http_matching then
+        router.router_http.matching = orig_router_http_matching
+        orig_router_http_matching = nil
+    end
+
+    if orig_handle_upstream then
+        apisix.handle_upstream = orig_handle_upstream
+        orig_handle_upstream = nil
+    end
+
+    if orig_http_balancer_phase then
+        apisix.http_balancer_phase = orig_http_balancer_phase
+        orig_http_balancer_phase = nil
+    end
 end
 
 
