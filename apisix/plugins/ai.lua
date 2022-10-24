@@ -19,10 +19,11 @@ local apisix          = require("apisix")
 local core            = require("apisix.core")
 local router          = require("apisix.router")
 local event           = require("apisix.core.event")
-local load_balancer   = require("apisix.balancer")
 local balancer        = require("ngx.balancer")
+local ngx             = ngx
 local is_http         = ngx.config.subsystem == "http"
 local enable_keepalive = balancer.enable_keepalive and is_http
+local is_apisix_or, response = pcall(require, "resty.apisix.response")
 local ipairs          = ipairs
 local pcall           = pcall
 local loadstring      = loadstring
@@ -65,7 +66,7 @@ local _M = {
 
 local orig_router_match
 local orig_handle_upstream = apisix.handle_upstream
-local orig_balancer_run = load_balancer.run
+local orig_http_balancer_phase = apisix.http_balancer_phase
 
 local default_keepalive_pool = {}
 
@@ -116,7 +117,21 @@ end
 
 
 local pool_opt
-local function ai_balancer_run(route)
+local function ai_http_balancer_phase()
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        core.log.error("invalid api_ctx")
+        return core.response.exit(500)
+    end
+
+    if is_apisix_or then
+        local ok, err = response.skip_body_filter_by_lua()
+        if not ok then
+            core.log.error("failed to skip body filter by lua: ", err)
+        end
+    end
+
+    local route = api_ctx.matched_route
     local server = route.value.upstream.nodes[1]
     if enable_keepalive then
         local ok, err = balancer.set_current_peer(server.host, server.port or 80, pool_opt)
@@ -131,6 +146,7 @@ local function ai_balancer_run(route)
         balancer.set_current_peer(server.host, server.port or 80)
     end
 end
+
 
 local function routes_analyze(routes)
     local route_flags = core.table.new(0, 16)
@@ -161,6 +177,8 @@ local function routes_analyze(routes)
                     route_flags["service_id"] = true
                 elseif key == "plugin_config_id" then
                     route_flags["plugin_config_id"] = true
+                elseif key == "script" then
+                    route_flags["script"] = true
                 end
 
                 -- collect upstream flags
@@ -198,10 +216,14 @@ local function routes_analyze(routes)
         end
     end
 
+    local global_rules_flag = router.global_rules and router.global_rules.values
+                              and #router.global_rules.values ~= 0
+
     if route_flags["vars"] or route_flags["filter_fun"]
          or route_flags["remote_addr"]
          or route_flags["service_id"]
-         or route_flags["plugin_config_id"] then
+         or route_flags["plugin_config_id"]
+         or global_rules_flag then
         router.router_http.match = orig_router_match
     else
         core.log.info("use ai plane to match route")
@@ -215,10 +237,12 @@ local function routes_analyze(routes)
     end
 
     if route_flags["service"]
+         or route_flags["script"]
          or route_flags["service_id"]
          or route_flags["upstream_id"]
          or route_flags["enable_websocket"]
          or route_flags["plugins"]
+         or route_flags["plugin_config_id"]
          or route_up_flags["has_domain"]
          or route_up_flags["pass_host"]
          or route_up_flags["scheme"]
@@ -228,13 +252,14 @@ local function routes_analyze(routes)
          or route_up_flags["tls"]
          or route_up_flags["keepalive"]
          or route_up_flags["service_name"]
-         or route_up_flags["more_nodes"] then
+         or route_up_flags["more_nodes"]
+         or global_rules_flag then
         apisix.handle_upstream = orig_handle_upstream
-        load_balancer.run = orig_balancer_run
+        apisix.http_balancer_phase = orig_http_balancer_phase
     else
-        -- replace the upstream module
+        -- replace the upstream and balancer module
         apisix.handle_upstream = ai_upstream
-        load_balancer.run = ai_balancer_run
+        apisix.http_balancer_phase = ai_http_balancer_phase
     end
 end
 
