@@ -1106,7 +1106,7 @@ ssl 证书资源。
 
 ### 请求地址 {#ssl-uri}
 
-Consumer 资源请求地址：/apisix/admin/ssls/{id}
+SSL 资源请求地址：/apisix/admin/ssls/{id}
 
 ### 请求方法 {#ssl-request-methods}
 
