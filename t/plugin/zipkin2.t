@@ -128,7 +128,7 @@ x-b3-sampled: 0
 x-b3-traceid: 80f198ee56343ba864fe8b2a57d3eff7
 x-b3-parentspanid: e457b5a2e4d86bd1
 --- raw_response_headers_unlike
-x-b3-spanid:
+.*x-b3-spanid:.*
 
 
 
