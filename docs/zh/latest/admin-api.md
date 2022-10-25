@@ -31,7 +31,7 @@ description: 本文介绍了 Apache APISIX Admin API 支持的功能，你可以
 
 ## 描述
 
-Admid API 是一组用于配置 Apache APISIX 路由、上游、服务、SSL 证书等功能的 RESTful API。
+Admin API 是一组用于配置 Apache APISIX 路由、上游、服务、SSL 证书等功能的 RESTful API。
 
 你可以通过 Admin API 来获取、创建、更新以及删除资源。同时得益于 APISIX 的热加载能力，资源配置完成后 APISIX 将会自动更新配置，无需重启服务。如果你想要了解其工作原理，请参考 [Architecture Design](./architecture-design/apisix.md)。
 
@@ -56,13 +56,13 @@ deployment:
     admin:
         admin_key:
         - name: admin
-            key: edd1c9f034335f136f87ad84b625c8f1  # using fixed API token has security risk, please update it when you deploy to production environment
+            key: edd1c9f034335f136f87ad84b625c8f1  # 使用默认的 Admin API 的 Key 存在安全风险，部署到生产环境时请及时更新
             role: admin
         allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
             - 127.0.0.0/24
-        admin_listen:                 # use a separate port
-            ip: 0.0.0.0                 # Specific IP, if not set, the default value is `0.0.0.0`.
-            port: 9180                  # Specific port, which must be different from node_listen's port.
+        admin_listen:
+            ip: 0.0.0.0                 # 监听的 IP, 如果不设置，默认为`0.0.0.0`。
+            port: 9180                  # Admin API 的端口，不能与 node_listen 的端口相同。
 ```
 
 ## APISIX v3 版本新功能
@@ -575,7 +575,7 @@ Service 对象 JSON 配置示例：
 }
 ```
 
-### 使用示例：
+### 使用示例
 
 - 创建一个 Service：
 
