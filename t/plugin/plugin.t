@@ -646,7 +646,6 @@ GET /hello
 
 
 === TEST 25: use response var in meta.filter
---- FIRST
 --- config
     location /t {
         content_by_lua_block {
@@ -689,7 +688,6 @@ passed
 
 
 === TEST 26: hit route: disable proxy-rewrite plugin
---- LAST
 --- request
 GET /hello
 --- response_headers
