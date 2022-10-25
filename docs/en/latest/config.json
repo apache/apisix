@@ -20,7 +20,8 @@
         "tutorials/expose-api",
         "tutorials/protect-api",
         "tutorials/observe-your-api",
-        "tutorials/cache-api-responses"
+        "tutorials/cache-api-responses",
+        "tutorials/health-check"
       ]
     },
     {
@@ -284,10 +285,6 @@
         {
           "type": "doc",
           "id": "deployment-modes"
-        },
-        {
-          "type": "doc",
-          "id": "health-check"
         },
         {
           "type": "doc",
