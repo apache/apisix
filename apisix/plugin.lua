@@ -464,9 +464,7 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
             goto continue
         end
 
-        --local matched = meta_filter(ctx, name, plugin_conf)
-        local disable = check_disable(plugin_conf)
-        if not disable --[[and matched]] then
+        if not check_disable(plugin_conf) then
             if plugin_obj.run_policy == "prefer_route" and route_plugin_conf ~= nil then
                 local plugin_conf_in_route = route_plugin_conf[name]
                 local disable_in_route = check_disable(plugin_conf_in_route)
