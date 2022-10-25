@@ -546,7 +546,6 @@ x-api-version: v4
                                 "headers": {
                                     "set": {
                                         "test-header": "error"
-                                        
                                     }
                                 }
                             }
@@ -631,7 +630,7 @@ passed
 
 
 
-=== TEST 23: return 403
+=== TEST 23: real-ip plugin will change $remote_addr, response-rewrite plugin return 403
 --- request
 GET /hello
 --- more_headers
@@ -640,6 +639,6 @@ x-forwarded-for: 192.168.1.1
 
 
 
-=== TEST 24: return 200
+=== TEST 24: response-rewrite plugin disable, return 200
 --- request
 GET /hello
