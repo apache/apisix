@@ -597,13 +597,15 @@ GET /hello
                  ngx.HTTP_PUT,
                  [[{
                         "plugins": {
-                            "real-ip": {
-                                "source": "http_x_forwarded_for"
+                            "proxy-rewrite": {
+                                "headers": {
+                                    "foo-age": "$arg_age"
+                                }
                             },
                             "response-rewrite": {
                                 "_meta": {
                                     "filter": [
-                                        ["remote_addr", "==", "192.168.1.1"]
+                                        ["http_foo_age", "==", "18"]
                                     ]
                                 },
                                "status_code": 403
@@ -630,11 +632,9 @@ passed
 
 
 
-=== TEST 23: real-ip plugin will change $remote_addr, response-rewrite plugin return 403
+=== TEST 23: proxy-rewrite plugin will set $http_foo_age, response-rewrite plugin return 403
 --- request
-GET /hello
---- more_headers
-x-forwarded-for: 192.168.1.1
+GET /hello?age=18
 --- error_code: 403
 
 
@@ -642,3 +642,55 @@ x-forwarded-for: 192.168.1.1
 === TEST 24: response-rewrite plugin disable, return 200
 --- request
 GET /hello
+
+
+
+=== TEST 25: use response var in meta.filter
+--- FIRST
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "_meta": {
+                                    "filter": [
+                                        ["upstream_status", "==", "200"]
+                                    ]
+                                },
+                                "uri": "/echo",
+                                "headers": {
+                                    "x-version": "v1"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 26: hit route: disable proxy-rewrite plugin
+--- LAST
+--- request
+GET /hello
+--- response_headers
+!x-version
