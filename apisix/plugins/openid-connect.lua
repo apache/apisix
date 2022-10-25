@@ -343,6 +343,10 @@ function _M.rewrite(plugin_conf, ctx)
         -- the configured redirect URI after successful authentication.
         response, err, _, session  = openidc.authenticate(conf, nil, conf.unauth_action, conf.session)
 
+        if err == 'unauthorized request' then
+            return 401
+        end
+
         if err then
             core.log.error("OIDC authentication failed: ", err)
             return 500
