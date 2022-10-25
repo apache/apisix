@@ -96,7 +96,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 \
             "rejected_code": 503
         }
     }
-}
+}'
 ```
 
 在路由中引入 Plugin Config：
@@ -125,7 +125,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
             "key": "remote_addr"
         }
     }
-}
+}'
 ```
 
 最后实现的效果如下：
@@ -159,5 +159,5 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
             "key": "remote_addr"
         }
     }
-}
+}'
 ```
