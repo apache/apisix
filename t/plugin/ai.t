@@ -875,3 +875,57 @@ done
 qr/enable sample upstream/
 --- grep_error_log_out
 enable sample upstream
+
+
+
+=== TEST 14: renew route cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            for k = 1, 2 do
+                local code, body = t('/apisix/admin/routes/' .. k,
+                     ngx.HTTP_PUT,
+                     [[{
+                        "host": "127.0.0.1",
+                        "methods": ["GET"],
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "uri": "/hello"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello]] .. k .. [["
+                    }]]
+                )
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say(body)
+                    return
+                end
+                ngx.sleep(1)
+                for i = 1, 2 do
+                    local httpc = http.new()
+                    local res, err = httpc:request_uri(uri .. k)
+                    assert(res.status == 200)
+                    if not res then
+                        ngx.log(ngx.ERR, err)
+                        return
+                    end
+                end
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+renew route cache: count=3001
+renew route cache: count=3002
