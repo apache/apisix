@@ -90,7 +90,7 @@ title: Changelog
 - :sunrise: Support set resolve domain in proxy-mirror plugin: [#7861](https://github.com/apache/apisix/pull/7861)
 - :sunrise: Support `brokers` property in kafka-logger plugin, which supports different broker to set the same host: [#7999](https://github.com/apache/apisix/pull/7999)
 - :sunrise: Support get response body in ext-plugin-post-resp: [#7947](https://github.com/apache/apisix/pull/7947)
-- Added cas-auth plugin to support CAS authentication: [#7932](https://github.com/apache/apisix/pull/7932)
+- :sunrise: Added cas-auth plugin to support CAS authentication: [#7932](https://github.com/apache/apisix/pull/7932)
 
 ### Bugfix
 
