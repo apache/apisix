@@ -46,11 +46,7 @@ return function(ctx)
 end
 ]]
 
-local route_lrucache = core.lrucache.new({
-    -- TODO: we need to set the cache size by count of routes
-    -- if we have done this feature, we need to release the origin lrucache
-    count = 512
-})
+local route_lrucache
 
 local schema = {}
 
@@ -64,27 +60,29 @@ local _M = {
     scope = "global",
 }
 
-local orig_router_match
-local orig_handle_upstream = apisix.handle_upstream
-local orig_http_balancer_phase = apisix.http_balancer_phase
+local orig_router_http_matching
+local orig_handle_upstream
+local orig_http_balancer_phase
 
 local default_keepalive_pool = {}
 
-local function match_route(ctx)
-    orig_router_match(ctx)
-    return ctx.matched_route or false
+local function create_router_matching_cache(api_ctx)
+    orig_router_http_matching(api_ctx)
+    return core.table.deepcopy(api_ctx)
 end
 
 
-local function ai_match(ctx)
-    local key = get_cache_key_func(ctx)
+local function ai_router_http_matching(api_ctx)
+    local key = get_cache_key_func(api_ctx)
     core.log.info("route cache key: ", key)
-    local ver = router.router_http.user_routes.conf_version
-    local route_cache = route_lrucache(key, ver,
-                                       match_route, ctx)
+    local api_ctx_cache = route_lrucache(key, nil,
+                                   create_router_matching_cache, api_ctx)
     -- if the version has not changed, use the cached route
-    if route_cache then
-        ctx.matched_route = route_cache
+    if api_ctx then
+        api_ctx.matched_route = api_ctx_cache.matched_route
+        if api_ctx_cache.curr_req_matched then
+            api_ctx.curr_req_matched = core.table.clone(api_ctx_cache.curr_req_matched)
+        end
     end
 end
 
@@ -149,6 +147,18 @@ end
 
 
 local function routes_analyze(routes)
+    if orig_router_http_matching == nil then
+        orig_router_http_matching = router.router_http.matching
+    end
+
+    if orig_handle_upstream == nil then
+        orig_handle_upstream = apisix.handle_upstream
+    end
+
+    if orig_http_balancer_phase == nil then
+        orig_http_balancer_phase = apisix.http_balancer_phase
+    end
+
     local route_flags = core.table.new(0, 16)
     local route_up_flags = core.table.new(0, 12)
     for _, route in ipairs(routes) do
@@ -224,15 +234,21 @@ local function routes_analyze(routes)
          or route_flags["service_id"]
          or route_flags["plugin_config_id"]
          or global_rules_flag then
-        router.router_http.match = orig_router_match
+        router.router_http.matching = orig_router_http_matching
     else
         core.log.info("use ai plane to match route")
-        router.router_http.match = ai_match
+        router.router_http.matching = ai_router_http_matching
+
+        local count = #routes + 3000
+        core.log.info("renew route cache: count=", count)
+        route_lrucache = core.lrucache.new({
+            count = count
+        })
 
         local ok, err = gen_get_cache_key_func(route_flags)
         if not ok then
             core.log.error("generate get_cache_key_func failed:", err)
-            router.router_http.match = orig_router_match
+            router.router_http.matching = orig_router_http_matching
         end
     end
 
@@ -279,8 +295,24 @@ function _M.init()
 end
 
 
-function _M.init_worker()
-    orig_router_match = router.router_http.match
+function _M.destroy()
+    -- TODO: add test cases to cover this function
+    -- if the ai plugin is disabled at runtime, all functions replaced by the ai plugin are restored
+    if orig_router_http_matching then
+        router.router_http.matching = orig_router_http_matching
+        orig_router_http_matching = nil
+    end
+
+    if orig_handle_upstream then
+        apisix.handle_upstream = orig_handle_upstream
+        orig_handle_upstream = nil
+    end
+
+    if orig_http_balancer_phase then
+        apisix.http_balancer_phase = orig_http_balancer_phase
+        orig_http_balancer_phase = nil
+    end
 end
+
 
 return _M

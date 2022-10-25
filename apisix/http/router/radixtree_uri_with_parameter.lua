@@ -45,6 +45,11 @@ function _M.match(api_ctx)
         return true
     end
 
+    return _M.matching(api_ctx)
+end
+
+
+function _M.matching(api_ctx)
     return base_router.match_uri(uri_router, match_opts, api_ctx)
 end
 
