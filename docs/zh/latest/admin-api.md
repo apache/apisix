@@ -57,12 +57,12 @@ deployment:
         admin_key:
         - name: admin
             key: edd1c9f034335f136f87ad84b625c8f1  # 使用默认的 Admin API Key 存在安全风险，部署到生产环境时请及时更新
-            role: admin    
+            role: admin
         allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
             - 127.0.0.0/24
         admin_listen:
-            ip: 0.0.0.0                 # Admin API 监听的 IP, 如果不设置，默认为`0.0.0.0`。
-            port: 9180                  # Admin API 监听的 端口, 必须使用与 node_listen 不同的端口。            
+            ip: 0.0.0.0                 # Admin API 监听的 IP，如果不设置，默认为“0.0.0.0”。
+            port: 9180                  # Admin API 监听的 端口，必须使用与 node_listen 不同的端口。
 ```
 
 ## v3 版本新功能 {#v3-new-function}
