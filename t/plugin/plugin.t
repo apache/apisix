@@ -525,3 +525,121 @@ passed
 GET /hello1?version=v4
 --- response_headers
 x-api-version: v4
+
+
+
+=== TEST 19: use _meta.filter in response-rewrite plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "response-rewrite": {
+                                "_meta": {
+                                    "filter": [
+                                        ["upstream_status", "~=", 200]
+                                    ]
+                                },
+                                "headers": {
+                                    "set": {
+                                        "test-header": "error"
+                                        
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: upstream_status = 502, enable response-rewrite plugin
+--- request
+GET /specific_status
+--- more_headers
+x-test-upstream-status: 502
+--- response_headers
+test-header: error
+--- error_code: 502
+
+
+
+=== TEST 21: upstream_status = 200, disable response-rewrite plugin
+--- request
+GET /hello
+
+
+
+=== TEST 22: use _meta.filter in response-rewrite plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "real-ip": {
+                                "source": "http_x_forwarded_for"
+                            },
+                            "response-rewrite": {
+                                "_meta": {
+                                    "filter": [
+                                        ["remote_addr", "==", "192.168.1.1"]
+                                    ]
+                                },
+                               "status_code": 403
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 23: return 403
+--- request
+GET /hello
+--- more_headers
+x-forwarded-for: 192.168.1.1
+--- error_code: 403
+
+
+
+=== TEST 24: return 200
+--- request
+GET /hello
