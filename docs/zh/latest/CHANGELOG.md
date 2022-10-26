@@ -85,7 +85,7 @@ title: CHANGELOG
     - [#8130](https://github.com/apache/apisix/pull/8130)
     - [#8149](https://github.com/apache/apisix/pull/8149)
     - [#8157](https://github.com/apache/apisix/pull/8157)
-- :sunrise: openid-connect 插件支持设置 `session_secret`，解决多个 worker 间 `session_secret` 不一致：[#8068](https://github.com/apache/apisix/pull/8068)
+- :sunrise: openid-connect 插件支持设置 `session_secret`，解决多个 worker 间 `session_secret` 不一致的问题：[#8068](https://github.com/apache/apisix/pull/8068)
 - :sunrise: kafka-logger 插件支持设置 sasl 相关配置：[#8050](https://github.com/apache/apisix/pull/8050)
 - :sunrise: proxy-mirror 插件支持设置域名作为 host：[#7861](https://github.com/apache/apisix/pull/7861)
 - :sunrise: kafka-logger 插件新增 brokers 属性，支持不同 broker 设置相同 host：[#7999](https://github.com/apache/apisix/pull/7999)
