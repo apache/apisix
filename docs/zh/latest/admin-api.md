@@ -527,7 +527,7 @@ Route 对象 JSON 配置示例：
 
 ## Service
 
-`Service` 是某类 API 的抽象（也可以理解为一组 Route 的抽象）。它通常与上游服务抽象是一一对应的，`Route` 与 `Service` 之间，通常是 N:1 的关系。
+Service 是某类 API 的抽象（也可以理解为一组 Route 的抽象）。它通常与上游服务抽象是一一对应的，`Route` 与 `Service` 之间，通常是 N:1 的关系。
 
 ### 请求地址 {#service-uri}
 
@@ -1102,7 +1102,7 @@ Upstream 对象 JSON 配置示例：
 
 ## SSL
 
-ssl 证书资源。
+你可以使用 SSL 证书资源配置SSL 证书。
 
 ### 请求地址 {#ssl-uri}
 
@@ -1177,11 +1177,11 @@ Global Rule 资源请求地址：/apisix/admin/global_rules/{id}
 
 ## Consumer Group
 
-Consumer Group 资源请求地址：/apisix/admin/consumer_groups/{id}
+你可以使用该资源配置一组可以在 Consumer 间复用的插件。
 
 ### 请求地址 {#consumer-group-uri}
 
-你可以使用该资源配置一组可以在 Consumer 间复用的插件。
+Consumer Group 资源请求地址：/apisix/admin/consumer_groups/{id}
 
 ### 请求方法 {#consumer-group-request-methods}
 
