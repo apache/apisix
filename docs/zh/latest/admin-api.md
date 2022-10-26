@@ -1102,7 +1102,7 @@ Upstream 对象 JSON 配置示例：
 
 ## SSL
 
-你可以使用 SSL 证书资源配置SSL 证书。
+你可以使用该资源创建 SSL 证书。
 
 ### 请求地址 {#ssl-uri}
 
