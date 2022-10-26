@@ -585,6 +585,8 @@ test-header: error
 === TEST 21: upstream_status = 200, disable response-rewrite plugin
 --- request
 GET /hello
+--- response_headers
+!test-header
 
 
 

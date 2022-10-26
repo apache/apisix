@@ -415,7 +415,8 @@ local function meta_filter(ctx, plugin_name, plugin_conf)
         return true
     end
 
-    local match_cache_key = ctx.conf_type .. plugin_name .. "meta_filter_matched"
+    local match_cache_key =
+        ctx.conf_type .. "#" .. plugin_name .. "#meta_filter_matched"
     if ctx[match_cache_key] ~= nil then
         return ctx[match_cache_key]
     end
@@ -924,8 +925,6 @@ function _M.run_plugin(phase, plugins, api_ctx)
     if not plugins or #plugins == 0 then
         return api_ctx
     end
-
-    --local matched = meta_filter(ctx, name, plugin_conf)
 
     if phase ~= "log"
         and phase ~= "header_filter"
