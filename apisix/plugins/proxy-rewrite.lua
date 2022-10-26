@@ -201,6 +201,9 @@ function _M.rewrite(conf, ctx)
             conf.headers_arr = {}
 
             for field, value in pairs(conf.headers) do
+		if field == "X-Forwarded-Port" then
+                    ngx.var.var_x_forwarded_port = value
+		end
                 core.table.insert_tail(conf.headers_arr, field, value)
             end
         end
