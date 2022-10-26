@@ -16,12 +16,12 @@
 --
 
 package = "apisix"
-version = "3.0-0"
+version = "3.0.0-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/apache/apisix",
-    branch = "3.0",
+    branch = "3.0.0",
 }
 
 description = {
