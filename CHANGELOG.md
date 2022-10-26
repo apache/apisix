@@ -94,7 +94,7 @@ title: Changelog
 
 ### Bugfix
 
-- Conditional expressions of workflow plugins should support operators: [#8121](https://github.com/apache/apisix/pull/8121)
+- Conditional expressions of workflow plugin should support operators: [#8121](https://github.com/apache/apisix/pull/8121)
 - Fix loading problem of batch processor plugin when prometheus plugin is disabled: [#8079](https://github.com/apache/apisix/pull/8079)
 - When APISIX starts, delete the old conf server sock file if it exists: [#8022](https://github.com/apache/apisix/pull/8022)
 - Disable core.grpc when gRPC-client-nginx-module module is not compiled: [#8007](https://github.com/apache/apisix/pull/8007)
