@@ -136,10 +136,9 @@ x-b3-parentspanid: e457b5a2e4d86bd1
 b3: 0
 --- response_headers
 x-b3-sampled: 0
---- raw_response_headers_unlike
-x-b3-traceid:
-x-b3-parentspanid:
-x-b3-spanid:
+--- raw_response_headers_like
+x-b3-traceid: .*
+x-b3-spanid: .*
 
 
 
