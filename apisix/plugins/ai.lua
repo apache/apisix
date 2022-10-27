@@ -312,7 +312,15 @@ function _M.destroy()
         apisix.http_balancer_phase = orig_http_balancer_phase
         orig_http_balancer_phase = nil
     end
+
+    event.unregister(event.CONST.BUILD_ROUTER)
 end
+
+
+-- for test
+_M.route_matching = ai_router_http_matching
+_M.handle_upstream = ai_upstream
+_M.http_balancer_phase = ai_http_balancer_phase
 
 
 return _M

@@ -25,6 +25,51 @@ no_shuffle();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
+    if (!defined $block->extra_init_by_lua) {
+        my $extra_init_by_lua = <<_EOC_;
+        unload_ai_module = function ()
+            local t = require("lib.test_admin").test
+            local data = [[
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+apisix:
+  node_listen: 1984
+plugins:
+            ]]
+            require("lib.test_admin").set_config_yaml(data)
+
+            return t('/apisix/admin/plugins/reload',
+                                    ngx.HTTP_PUT)
+        end
+
+        load_ai_module = function ()
+            local t = require("lib.test_admin").test
+            local data = [[
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+apisix:
+  node_listen: 1984
+plugins:
+  - ai
+            ]]
+            require("lib.test_admin").set_config_yaml(data)
+            ngx.log(ngx.INFO, "load ai module again")
+            return t('/apisix/admin/plugins/reload',
+                                        ngx.HTTP_PUT)
+        end
+_EOC_
+
+        $block->set_value("extra_init_by_lua", $extra_init_by_lua);
+    }
+
     if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
         $block->set_value("no_error_log", "[error]");
     }
@@ -929,3 +974,204 @@ done
 --- error_log
 renew route cache: count=3001
 renew route cache: count=3002
+
+
+
+=== TEST 15: enable(default) -> disable -> enable
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local ai = require("apisix.plugins.ai")
+            local router = require("apisix.router")
+            local org_match = router.router_http.matching
+            local ai_match = ai.route_matching
+
+            local apisix = require("apisix")
+            local org_upstream = apisix.handle_upstream
+            local ai_upstream = ai.handle_upstream
+
+            local org_balancer_phase = apisix.http_balancer_phase
+            local ai_balancer_phase = ai.http_balancer_phase
+
+            local t = require("lib.test_admin").test
+            -- register route
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "host": "127.0.0.1",
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code = t('/hello', ngx.HTTP_GET)
+            assert(code == 200)
+            assert(router.router_http.matching == ai_match)
+            assert(apisix.handle_upstream == ai_upstream)
+            assert(apisix.http_balancer_phase == ai_balancer_phase)
+
+            -- disable ai plugin
+            local code = unload_ai_module()
+            assert(code == 200)
+            ngx.sleep(2)
+            local code = t('/hello', ngx.HTTP_GET)
+            assert(code == 200)
+            assert(router.router_http.matching == org_match)
+            assert(apisix.handle_upstream == org_upstream)
+            assert(apisix.http_balancer_phase == org_balancer_phase)
+
+            -- enable ai plugin
+            local code = load_ai_module()
+            assert(code == 200)
+            ngx.sleep(2)
+            local code = t('/hello', ngx.HTTP_GET)
+            assert(code == 200)
+            -- TODO: It's not very reasonable, we need to fix it
+            assert(router.router_http.matching == org_match)
+            assert(apisix.handle_upstream == org_upstream)
+            assert(apisix.http_balancer_phase == org_balancer_phase)
+
+            -- register a new route and trigger a route tree rebuild
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "host": "127.0.0.1",
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/echo"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code = t('/echo', ngx.HTTP_GET)
+            assert(code == 200)
+            local new_ai = require("apisix.plugins.ai")
+            assert(router.router_http.matching == new_ai.route_matching)
+            assert(apisix.handle_upstream == new_ai.handle_upstream)
+            assert(apisix.http_balancer_phase == new_ai.http_balancer_phase)
+        }
+    }
+
+
+
+=== TEST 16: disable(default) -> enable -> disable
+--- ONLY
+--- yaml_config
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+apisix:
+  node_listen: 1984
+plugins:
+--- http_config eval: $::HttpConfig
+--- config
+    location /t {
+        content_by_lua_block {
+            local router = require("apisix.router")
+            local org_match = router.router_http.matching
+            local apisix = require("apisix")
+            local org_upstream = apisix.handle_upstream
+            local org_balancer_phase = apisix.http_balancer_phase
+
+            local t = require("lib.test_admin").test
+            -- register route
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "host": "127.0.0.1",
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code = t('/hello', ngx.HTTP_GET)
+            assert(code == 200)
+            assert(router.router_http.matching == org_match)
+            assert(apisix.handle_upstream == org_upstream)
+            assert(apisix.http_balancer_phase == org_balancer_phase)
+
+            -- enable ai plugin
+            local code = load_ai_module()
+            assert(code == 200)
+            ngx.sleep(2)
+            local code = t('/hello', ngx.HTTP_GET)
+            assert(code == 200)
+            -- TODO: It's not very reasonable, we need to fix it
+            assert(router.router_http.matching == org_match)
+            assert(apisix.handle_upstream == org_upstream)
+            assert(apisix.http_balancer_phase == org_balancer_phase)
+
+            -- register a new route and trigger a route tree rebuild
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "host": "127.0.0.1",
+                    "methods": ["GET"],
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/echo"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code = t('/echo', ngx.HTTP_GET)
+            assert(code == 200)
+            local ai = require("apisix.plugins.ai")
+            assert(router.router_http.matching == ai.route_matching)
+            assert(apisix.handle_upstream == ai.handle_upstream)
+            assert(apisix.http_balancer_phase == ai.http_balancer_phase)
+
+            -- disable ai plugin
+            local code = unload_ai_module()
+            assert(code == 200)
+            ngx.sleep(2)
+            local code = t('/hello', ngx.HTTP_GET)
+            assert(code == 200)
+            assert(router.router_http.matching == org_match)
+            assert(apisix.handle_upstream == org_upstream)
+            assert(apisix.http_balancer_phase == org_balancer_phase)
+        }
+    }

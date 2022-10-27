@@ -38,4 +38,8 @@ function _M.register(type, handler)
     events[type] = handler
 end
 
+function _M.unregister(type)
+    events[type] = nil
+end
+
 return _M
