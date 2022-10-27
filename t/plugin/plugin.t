@@ -28,7 +28,6 @@ add_block_preprocessor(sub {
     $block;
 });
 
-repeat_each(1);
 no_long_string();
 no_root_location();
 log_level("info");
