@@ -675,7 +675,6 @@ http {
             set $var_x_forwarded_for        $remote_addr;
             set $var_x_forwarded_proto      $scheme;
             set $var_x_forwarded_host       $host;
-	    ### set $var_x_forwarded_port       $server_port;  this direction been setted before lua.
 
             if ($http_x_forwarded_for != "") {
                 set $var_x_forwarded_for "${http_x_forwarded_for}, ${realip_remote_addr}";
