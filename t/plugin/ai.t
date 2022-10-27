@@ -978,6 +978,7 @@ renew route cache: count=3002
 
 
 === TEST 15: enable(default) -> disable -> enable
+--- ONLY
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
@@ -1017,31 +1018,31 @@ renew route cache: count=3002
             end
 
             local code = t('/hello', ngx.HTTP_GET)
-            assert(code == 200)
-            assert(router.router_http.matching == ai_match)
-            assert(apisix.handle_upstream == ai_upstream)
-            assert(apisix.http_balancer_phase == ai_balancer_phase)
+            assert(code == 200, "enable(default): access /hello")
+            assert(router.router_http.matching == ai_match, "enable(default): router_http.matching")
+            assert(apisix.handle_upstream == ai_upstream, "enable(default): ai_upstream")
+            assert(apisix.http_balancer_phase == ai_balancer_phase, "enable(default): http_balancer_phase")
 
             -- disable ai plugin
             local code = unload_ai_module()
-            assert(code == 200)
+            assert(code == 200, "disable ai plugin")
             ngx.sleep(2)
             local code = t('/hello', ngx.HTTP_GET)
-            assert(code == 200)
-            assert(router.router_http.matching == org_match)
-            assert(apisix.handle_upstream == org_upstream)
-            assert(apisix.http_balancer_phase == org_balancer_phase)
+            assert(code == 200, "disable: access /hello")
+            assert(router.router_http.matching == org_match, "disable: router_http.matching")
+            assert(apisix.handle_upstream == org_upstream, "disable: ai_upstream")
+            assert(apisix.http_balancer_phase == org_balancer_phase, "disable: http_balancer_phase")
 
             -- enable ai plugin
             local code = load_ai_module()
-            assert(code == 200)
+            assert(code == 200, "enable ai plugin")
             ngx.sleep(2)
             local code = t('/hello', ngx.HTTP_GET)
-            assert(code == 200)
+            assert(code == 200, "enable: access /hello")
             -- TODO: It's not very reasonable, we need to fix it
-            assert(router.router_http.matching == org_match)
-            assert(apisix.handle_upstream == org_upstream)
-            assert(apisix.http_balancer_phase == org_balancer_phase)
+            assert(router.router_http.matching == org_match, "enable: router_http.matching")
+            assert(apisix.handle_upstream == org_upstream, "enable: ai_upstream")
+            assert(apisix.http_balancer_phase == org_balancer_phase, "enable: http_balancer_phase")
 
             -- register a new route and trigger a route tree rebuild
             local code, body = t('/apisix/admin/routes/2',
@@ -1065,11 +1066,11 @@ renew route cache: count=3002
             end
 
             local code = t('/echo', ngx.HTTP_GET)
-            assert(code == 200)
+            assert(code == 200, "register again: access /echo")
             local new_ai = require("apisix.plugins.ai")
-            assert(router.router_http.matching == new_ai.route_matching)
-            assert(apisix.handle_upstream == new_ai.handle_upstream)
-            assert(apisix.http_balancer_phase == new_ai.http_balancer_phase)
+            assert(router.router_http.matching == new_ai.route_matching, "enable(after require): router_http.matching")
+            assert(apisix.handle_upstream == new_ai.handle_upstream, "enable(after require): handle_upstream")
+            assert(apisix.http_balancer_phase == new_ai.http_balancer_phase, "enable(after require): http_balancer_phase")
         }
     }
 
@@ -1119,21 +1120,21 @@ plugins:
             end
 
             local code = t('/hello', ngx.HTTP_GET)
-            assert(code == 200)
-            assert(router.router_http.matching == org_match)
-            assert(apisix.handle_upstream == org_upstream)
-            assert(apisix.http_balancer_phase == org_balancer_phase)
+            assert(code == 200, "disable(default): access /hello")
+            assert(router.router_http.matching == org_match, "disable(default): router_http.matching")
+            assert(apisix.handle_upstream == org_upstream, "disable(default): handle_upstream")
+            assert(apisix.http_balancer_phase == org_balancer_phase, "disable(default): http_balancer_phase")
 
             -- enable ai plugin
             local code = load_ai_module()
-            assert(code == 200)
+            assert(code == 200, "enable ai plugin")
             ngx.sleep(2)
             local code = t('/hello', ngx.HTTP_GET)
-            assert(code == 200)
+            assert(code == 200, "enable: access /hello")
             -- TODO: It's not very reasonable, we need to fix it
-            assert(router.router_http.matching == org_match)
-            assert(apisix.handle_upstream == org_upstream)
-            assert(apisix.http_balancer_phase == org_balancer_phase)
+            assert(router.router_http.matching == org_match, "enable: router_http.matching")
+            assert(apisix.handle_upstream == org_upstream, "enable: handle_upstream")
+            assert(apisix.http_balancer_phase == org_balancer_phase, "enable: http_balancer_phase")
 
             -- register a new route and trigger a route tree rebuild
             local code, body = t('/apisix/admin/routes/2',
@@ -1157,20 +1158,20 @@ plugins:
             end
 
             local code = t('/echo', ngx.HTTP_GET)
-            assert(code == 200)
+            assert(code == 200, "register again: access /echo")
             local ai = require("apisix.plugins.ai")
-            assert(router.router_http.matching == ai.route_matching)
-            assert(apisix.handle_upstream == ai.handle_upstream)
-            assert(apisix.http_balancer_phase == ai.http_balancer_phase)
+            assert(router.router_http.matching == ai.route_matching, "enable(after require): router_http.matching")
+            assert(apisix.handle_upstream == ai.handle_upstream, "enable(after require): handle_upstream")
+            assert(apisix.http_balancer_phase == ai.http_balancer_phase, "enable(after require): http_balancer_phase")
 
             -- disable ai plugin
             local code = unload_ai_module()
-            assert(code == 200)
+            assert(code == 200, "unload ai plugin")
             ngx.sleep(2)
             local code = t('/hello', ngx.HTTP_GET)
-            assert(code == 200)
-            assert(router.router_http.matching == org_match)
-            assert(apisix.handle_upstream == org_upstream)
-            assert(apisix.http_balancer_phase == org_balancer_phase)
+            assert(code == 200, "disable: access /hello")
+            assert(router.router_http.matching == org_match, "disable: router_http.matching")
+            assert(apisix.handle_upstream == org_upstream, "disable: handle_upstream")
+            assert(apisix.http_balancer_phase == org_balancer_phase, "disable: http_balancer_phase")
         }
     }
