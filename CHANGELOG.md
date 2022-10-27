@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.0.0](#300)
 - [3.0.0-beta](#300-beta)
 - [2.15.0](#2150)
 - [2.14.1](#2141)
@@ -61,6 +62,42 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.0.0
+
+### Change
+
+- `enable_cpu_affinity` is disabled by default to avoid this configuration affecting the behavior of APSISIX deployed in the container: [#8074](https://github.com/apache/apisix/pull/8074)
+
+### Core
+
+- :sunrise: Added Consumer Group entity to manage multiple consumers: [#7980](https://github.com/apache/apisix/pull/7980)
+- :sunrise: Supports configuring the order in which DNS resolves domain name types: [#7935](https://github.com/apache/apisix/pull/7935)
+- :sunrise: Support configuring multiple `key_encrypt_salt` for rotation: [#7925](https://github.com/apache/apisix/pull/7925)
+
+### Plugin
+
+- :sunrise: Added ai plugin to dynamically optimize the execution path of APISIX according to the scene:
+    - [#8102](https://github.com/apache/apisix/pull/8102)
+    - [#8113](https://github.com/apache/apisix/pull/8113)
+    - [#8120](https://github.com/apache/apisix/pull/8120)
+    - [#8128](https://github.com/apache/apisix/pull/8128)
+    - [#8130](https://github.com/apache/apisix/pull/8130)
+    - [#8149](https://github.com/apache/apisix/pull/8149)
+    - [#8157](https://github.com/apache/apisix/pull/8157)
+- :sunrise: Support `session_secret` in openid-connect plugin to resolve the inconsistency of `session_secret` among multiple workers: [#8068](https://github.com/apache/apisix/pull/8068)
+- :sunrise: Support sasl config in kafka-logger plugin: [#8050](https://github.com/apache/apisix/pull/8050)
+- :sunrise: Support set resolve domain in proxy-mirror plugin: [#7861](https://github.com/apache/apisix/pull/7861)
+- :sunrise: Support `brokers` property in kafka-logger plugin, which supports different broker to set the same host: [#7999](https://github.com/apache/apisix/pull/7999)
+- :sunrise: Support get response body in ext-plugin-post-resp: [#7947](https://github.com/apache/apisix/pull/7947)
+- :sunrise: Added cas-auth plugin to support CAS authentication: [#7932](https://github.com/apache/apisix/pull/7932)
+
+### Bugfix
+
+- Conditional expressions of workflow plugin should support operators: [#8121](https://github.com/apache/apisix/pull/8121)
+- Fix loading problem of batch processor plugin when prometheus plugin is disabled: [#8079](https://github.com/apache/apisix/pull/8079)
+- When APISIX starts, delete the old conf server sock file if it exists: [#8022](https://github.com/apache/apisix/pull/8022)
+- Disable core.grpc when gRPC-client-nginx-module module is not compiled: [#8007](https://github.com/apache/apisix/pull/8007)
 
 ## 3.0.0-beta
 

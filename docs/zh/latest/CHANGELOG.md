@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [3.0.0](#300)
 - [3.0.0-beta](#300-beta)
 - [2.15.0](#2150)
 - [2.14.1](#2141)
@@ -61,6 +62,42 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.0.0
+
+### Change
+
+- 默认关闭 `enable_cpu_affinity`，避免在容器部署场景中该配置影响 APSISIX 的行为：[#8074](https://github.com/apache/apisix/pull/8074)
+
+### Core
+
+- :sunrise: 新增 Consumer Group 实体，用于管理多个 Consumer：[#7980](https://github.com/apache/apisix/pull/7980)
+- :sunrise: 支持配置 DNS 解析域名类型的顺序：[#7935](https://github.com/apache/apisix/pull/7935)
+- :sunrise: 支持配置多个 `key_encrypt_salt` 进行轮转：[#7925](https://github.com/apache/apisix/pull/7925)
+
+### Plugin
+
+- :sunrise: 新增 ai 插件，根据场景动态优化 APISIX 的执行路径：
+    - [#8102](https://github.com/apache/apisix/pull/8102)
+    - [#8113](https://github.com/apache/apisix/pull/8113)
+    - [#8120](https://github.com/apache/apisix/pull/8120)
+    - [#8128](https://github.com/apache/apisix/pull/8128)
+    - [#8130](https://github.com/apache/apisix/pull/8130)
+    - [#8149](https://github.com/apache/apisix/pull/8149)
+    - [#8157](https://github.com/apache/apisix/pull/8157)
+- :sunrise: openid-connect 插件支持设置 `session_secret`，解决多个 worker 间 `session_secret` 不一致的问题：[#8068](https://github.com/apache/apisix/pull/8068)
+- :sunrise: kafka-logger 插件支持设置 sasl 相关配置：[#8050](https://github.com/apache/apisix/pull/8050)
+- :sunrise: proxy-mirror 插件支持设置域名作为 host：[#7861](https://github.com/apache/apisix/pull/7861)
+- :sunrise: kafka-logger 插件新增 brokers 属性，支持不同 broker 设置相同 host：[#7999](https://github.com/apache/apisix/pull/7999)
+- :sunrise: ext-plugin-post-resp 插件支持获取上游响应体：[#7947](https://github.com/apache/apisix/pull/7947)
+- :sunrise: 新增 cas-auth 插件，支持 CAS 认证：[#7932](https://github.com/apache/apisix/pull/7932)
+
+### Bugfix
+
+- workflow 插件的条件表达式应该支持操作符：[#8121](https://github.com/apache/apisix/pull/8121)
+- 修复禁用 prometheus 插件时 batch processor 加载问题：[#8079](https://github.com/apache/apisix/pull/8079)
+- APISIX 启动时，如果存在旧的 conf server 的 sock 文件则删除：[#8022](https://github.com/apache/apisix/pull/8022)
+- 没有编译 gRPC-client-nginx-module 模块时禁用 core.grpc：[#8007](https://github.com/apache/apisix/pull/8007)
 
 ## 3.0.0-beta
 
