@@ -15,7 +15,7 @@
     },
     {
       "type": "category",
-      "label": "入门教程",
+      "label": "Tutorials",
       "items": [
         "tutorials/expose-api",
         "tutorials/protect-api",
@@ -25,7 +25,7 @@
     },
     {
       "type": "category",
-      "label": "基本概念",
+      "label": "Terminology",
       "items": [
         "terminology/api-gateway",
         "terminology/consumer",
@@ -41,11 +41,11 @@
     },
     {
       "type": "category",
-      "label": "插件列表",
+      "label": "Plugins",
       "items": [
         {
           "type": "category",
-          "label": "通用插件",
+          "label": "General",
           "items": [
             "plugins/batch-requests",
             "plugins/redirect",
@@ -72,7 +72,7 @@
         },
         {
           "type": "category",
-          "label": "认证鉴权",
+          "label": "Authentication",
           "items": [
             "plugins/authz-keycloak",
             "plugins/authz-casdoor",
@@ -90,7 +90,7 @@
         },
         {
           "type": "category",
-          "label": "安全防护",
+          "label": "Security",
           "items": [
             "plugins/cors",
             "plugins/uri-blocker",
@@ -104,7 +104,7 @@
         },
         {
           "type": "category",
-          "label": "流量治理",
+          "label": "Traffic",
           "items": [
             "plugins/limit-req",
             "plugins/limit-conn",
@@ -121,11 +121,11 @@
         },
         {
           "type": "category",
-          "label": "可观测性",
+          "label": "Observability",
           "items": [
             {
               "type": "category",
-              "label": "链路追踪",
+              "label": "Tracers",
               "items": [
                 "plugins/zipkin",
                 "plugins/skywalking",
@@ -134,7 +134,7 @@
             },
             {
               "type": "category",
-              "label": "指标",
+              "label": "Metrics",
               "items": [
                 "plugins/prometheus",
                 "plugins/node-status",
@@ -143,7 +143,7 @@
             },
             {
               "type": "category",
-              "label": "日志",
+              "label": "Loggers",
               "items": [
                 "plugins/http-logger",
                 "plugins/skywalking-logger",
@@ -168,7 +168,7 @@
         },
         {
           "type": "category",
-          "label": "无服务器",
+          "label": "Serverless",
           "items": [
             "plugins/serverless",
             "plugins/azure-functions",
@@ -180,7 +180,7 @@
         },
         {
           "type": "category",
-          "label": "协议代理",
+          "label": "Other protocols",
           "items": [
             "plugins/dubbo-proxy",
             "plugins/mqtt-proxy"
@@ -204,7 +204,7 @@
     },
     {
       "type": "category",
-      "label": "开发指南",
+      "label": "Development",
       "items": [
         {
           "type": "doc",
@@ -234,11 +234,11 @@
     },
     {
       "type": "category",
-      "label": "其他",
+      "label": "Others",
       "items": [
         {
           "type": "category",
-          "label": "服务发现",
+          "label": "Discovery",
           "items": [
             "discovery",
             "discovery/dns",
