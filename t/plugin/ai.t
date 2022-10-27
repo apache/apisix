@@ -1076,7 +1076,6 @@ renew route cache: count=3002
 
 
 === TEST 16: disable(default) -> enable -> disable
---- ONLY
 --- yaml_config
 deployment:
   role: traditional
