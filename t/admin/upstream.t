@@ -727,3 +727,31 @@ GET /t
 {"error_msg":"failed to fetch ssl info by ssl id [1], wrong ssl type"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 22: type with default vale
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "id": 1,
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    }
+                }]]
+            )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- response_body chomp
+passed
+--- no_error_log
+[error]
