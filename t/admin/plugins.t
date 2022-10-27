@@ -62,6 +62,7 @@ __DATA__
 
 --- response_body
 real-ip
+ai
 client-control
 proxy-control
 request-id

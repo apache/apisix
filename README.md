@@ -80,7 +80,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [Response Rewrite](docs/en/latest/plugins/response-rewrite.md): Set customized response status code, body and header to the client.
   - Dynamic Load Balancing: Round-robin load balancing with weight.
   - Hash-based Load Balancing: Load balance with consistent hashing sessions.
-  - [Health Checks](docs/en/latest/health-check.md): Enable health check on the upstream node and will automatically filter unhealthy nodes during load balancing to ensure system stability.
+  - [Health Checks](docs/en/latest/tutorials/health-check.md): Enable health check on the upstream node and will automatically filter unhealthy nodes during load balancing to ensure system stability.
   - Circuit-Breaker: Intelligent tracking of unhealthy upstream services.
   - [Proxy Mirror](docs/en/latest/plugins/proxy-mirror.md): Provides the ability to mirror client requests.
   - [Traffic Split](docs/en/latest/plugins/traffic-split.md): Allows users to incrementally direct percentages of traffic between various upstreams.
