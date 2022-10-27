@@ -63,7 +63,7 @@ mkdir apisix-${APISIX_VERSION}
 git clone --depth 1 --branch ${APISIX_VERSION} https://github.com/apache/apisix.git apisix-${APISIX_VERSION}
 ```
 
-你可以从[下载页面](https://apisix.apache.org/downloads/)下载源码包。但是官网的源码包，缺少测试用例，可能会对你后续操作产生困扰。
+你可以从[下载页面](https://apisix.apache.org/downloads/)下载源码包。但是官网的源码包缺少测试用例，可能会对你后续操作产生困扰。
 
 另外，你也可以在该页面找到 APISIX Dashboard 和 APISIX Ingress Controller 的源码包。
 
