@@ -61,7 +61,7 @@ plugins:
   - ai
             ]]
             require("lib.test_admin").set_config_yaml(data)
-            ngx.log(ngx.INFO, "load ai module again")
+
             return t('/apisix/admin/plugins/reload',
                                         ngx.HTTP_PUT)
         end
