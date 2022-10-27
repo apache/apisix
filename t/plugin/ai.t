@@ -978,7 +978,6 @@ renew route cache: count=3002
 
 
 === TEST 15: enable(default) -> disable -> enable
---- ONLY
 --- http_config eval: $::HttpConfig
 --- config
     location /t {
