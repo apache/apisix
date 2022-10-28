@@ -415,6 +415,13 @@ local function meta_filter(ctx, plugin_name, plugin_conf)
         return true
     end
 
+    local match_cache_key =
+        ctx.conf_type .. "#" .. ctx.conf_id .. "#"
+            .. ctx.conf_version .. "#" .. plugin_name .. "#meta_filter_matched"
+    if ctx[match_cache_key] ~= nil then
+        return ctx[match_cache_key]
+    end
+
     local ex, ok, err
     if ctx then
         ex, err = expr_lrucache(plugin_name .. ctx.conf_type .. ctx.conf_id,
@@ -433,6 +440,8 @@ local function meta_filter(ctx, plugin_name, plugin_conf)
                          " plugin_name: ", plugin_name)
         return true
     end
+
+    ctx[match_cache_key] = ok
     return ok
 end
 
@@ -457,9 +466,7 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
             goto continue
         end
 
-        local matched = meta_filter(ctx, name, plugin_conf)
-        local disable = check_disable(plugin_conf)
-        if not disable and matched then
+        if not check_disable(plugin_conf) then
             if plugin_obj.run_policy == "prefer_route" and route_plugin_conf ~= nil then
                 local plugin_conf_in_route = route_plugin_conf[name]
                 local disable_in_route = check_disable(plugin_conf_in_route)
@@ -941,8 +948,12 @@ function _M.run_plugin(phase, plugins, api_ctx)
             end
 
             if phase_func then
-                plugin_run = true
                 local conf = plugins[i + 1]
+                if not meta_filter(api_ctx, plugins[i]["name"], conf)then
+                    goto CONTINUE
+                end
+
+                plugin_run = true
                 local code, body = phase_func(conf, api_ctx)
                 if code or body then
                     if is_http then
@@ -975,9 +986,10 @@ function _M.run_plugin(phase, plugins, api_ctx)
 
     for i = 1, #plugins, 2 do
         local phase_func = plugins[i][phase]
-        if phase_func then
+        local conf = plugins[i + 1]
+        if phase_func and meta_filter(api_ctx, plugins[i]["name"], conf) then
             plugin_run = true
-            phase_func(plugins[i + 1], api_ctx)
+            phase_func(conf, api_ctx)
         end
     end
 
