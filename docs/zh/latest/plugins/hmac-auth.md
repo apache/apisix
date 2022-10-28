@@ -220,9 +220,11 @@ X-HMAC-DIGEST: base64(hmac-sha(<body>))
 
 如果没有请求 body，你可以将 `X-HMAC-DIGEST` 的值设置为空字符串的 HMAC-SHA。
 
-:::note
+:::note 注意
 
-当开启 body 校验时，为了计算请求 body 的 `hmac-sha` 值，插件会把 body 加载到内存中，在请求 body 较大的情况下，可能会造成较高的内存消耗。为了避免这种情况，你可以通过设置 `max_req_body`（默认值是 512KB）配置项来配置最大允许的 body 大小，body 超过此大小的请求会被拒绝。
+当开启 body 校验时，为了计算请求 body 的 `hmac-sha` 值，该插件会把 body 加载到内存中，在请求 body 较大的情况下，可能会造成较高的内存消耗。
+
+为了避免这种情况，你可以通过设置 `max_req_body`（默认值是 512KB）配置项来配置最大允许的 body 大小，body 超过此大小的请求会被拒绝。
 
 :::
 
