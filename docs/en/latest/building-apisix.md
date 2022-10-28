@@ -62,7 +62,7 @@ You can now clone the APISIX source code from Github by running the command belo
 git clone --depth 1 --branch ${APISIX_VERSION} https://github.com/apache/apisix.git apisix-${APISIX_VERSION}
 ```
 
-You can also download the source package from the [Downloads page](https://apisix.apache.org/downloads/). But the source package missing the test case. This may affect subsequent operations. 
+You can also download the source package from the [Downloads page](https://apisix.apache.org/downloads/). But the source package missing the test case. This may affect subsequent operations.
 
 And you will also find source packages for APISIX Dashboard and APISIX Ingress Controller from [Downloads page](https://apisix.apache.org/downloads/).
 
