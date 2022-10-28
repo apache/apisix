@@ -735,27 +735,40 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "id": 1,
+            local etcd = require("apisix.core.etcd")
+            local code, body = t('/apisix/admin/upstreams/admin_up',
+                ngx.HTTP_PUT,
+                [[{
                     "nodes": {
                         "127.0.0.1:8080": 1
-                    }
+                    },
+                    "desc": "new upstream"
+                }]],
+                [[{
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin",
+                        "desc": "new upstream"
+                    },
+                    "key": "/apisix/upstreams/admin_up"
                 }]]
             )
 
             ngx.status = code
-            ngx.print(body)
+            ngx.say(body)
 
-            local res = assert(etcd.get('/upstreams'))
-            local type = res.body.node.value.type
-            assert(type ~= "roundrobin", "type is roundrobin")
+            local res = assert(etcd.get('/upstreams/admin_up'))
+            local create_time = res.body.node.value.create_time
+            assert(create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
         }
     }
 --- request
 GET /t
---- response_body chomp
+--- response_body
 passed
 --- no_error_log
 [error]
