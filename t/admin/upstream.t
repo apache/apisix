@@ -747,6 +747,10 @@ GET /t
 
             ngx.status = code
             ngx.print(body)
+
+            local res = assert(etcd.get('/upstreams'))
+            local type = res.body.node.value.type
+            assert(type ~= "roundrobin", "type is roundrobin")
         }
     }
 --- request
