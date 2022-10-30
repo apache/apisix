@@ -15,10 +15,27 @@
 -- limitations under the License.
 --
 
---- Return APISIX current version.
---
--- @module core.version
-
-return {
-    VERSION = "3.0.0"
+local CONST = {
+    BUILD_ROUTER = 1,
 }
+
+local _M = {
+    CONST = CONST,
+}
+
+local events = {}
+
+
+function _M.push(type, ...)
+    local handler = events[type]
+    if handler then
+        handler(...)
+    end
+end
+
+function _M.register(type, handler)
+    -- TODO: we can register more than one handler
+    events[type] = handler
+end
+
+return _M
