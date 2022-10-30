@@ -48,6 +48,10 @@ local schema = {
         cookie = {
             type = "string",
             default = "jwt"
+        },
+        hide_credentials = {
+            type = "boolean",
+            default = false
         }
     },
 }
@@ -357,8 +361,31 @@ local function algorithm_handler(consumer, method_only)
     end
 end
 
+local function set_our_cookie(name, val)
+    core.response.add_header("Set-Cookie", name .. "=" .. val)
+end
+
 
 function _M.rewrite(conf, ctx)
+    local from_header = true
+    local header_key = core.request.header(ctx, conf.header)
+
+    local from_query = true
+
+    if not header_key then
+        from_header = false
+        local uri_args = core.request.get_uri_args(ctx) or {}
+        header_key = uri_args[conf.query]
+        if not header_key then
+            from_query = false
+            local cookie = ctx.var["cookie_" .. conf.cookie]
+            if not cookie then
+                core.log.info("failed to fetch JWT token")
+                return 401, {message = "Missing JWT token in request"}
+            end
+        end
+    end
+
     local jwt_token, err = fetch_jwt_token(conf, ctx)
     if not jwt_token then
         core.log.info("failed to fetch JWT token: ", err)
@@ -405,6 +432,27 @@ function _M.rewrite(conf, ctx)
     if not jwt_obj.verified then
         core.log.warn("failed to verify jwt: ", jwt_obj.reason)
         return 401, {message = "failed to verify jwt"}
+    end
+
+    -- check for hiding `Authorization` request header if `hide_credentials` is `true`
+    if conf.hide_credentials then
+        -- hide sensitive field
+        if from_header then
+            -- hide for header
+            local temp_token = core.request.header(ctx, conf.header)
+            core.request.set_header(ctx, conf.header, nil)
+
+
+        elseif from_query then
+            -- hide for query
+            local args = core.request.get_uri_args(ctx)
+            args[conf.query] = nil
+            core.request.set_uri_args(ctx, args)
+
+        else
+            -- hide for cookie
+            set_our_cookie(conf.cookie, "deleted; Max-Age=0")
+        end
     end
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
