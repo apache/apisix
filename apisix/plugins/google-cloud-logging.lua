@@ -87,9 +87,8 @@ local schema = {
             type = "string",
             default = "apisix.apache.org%2Flogs"
         },
-        -- Allow for inclusion of request body or response body in payload
+        -- Allow for inclusion of request body in payload
         include_req_body = {type = "boolean", default = false},
-        include_resp_body = {type = "boolean", default = false},
     },
     oneOf = {
         { required = { "auth_config" } },
@@ -181,7 +180,6 @@ local function get_logger_entry(conf, ctx, oauth)
         jsonPayload = {
             route_id = entry.route_id,
             service_id = entry.service_id,
-            response_body = core.json.decode(entry.resp_body),
             request_body = core.json.decode(entry.request.body),
         },
         labels = {
