@@ -46,6 +46,7 @@ description: API 网关 Apache APISIX 的 google-cloud-logging 插件可用于�
 | ssl_verify              | 否       | true                                             | 当设置为 `true` 时，启用 `SSL` 验证。                 |
 | resource                | 否       | {"type": "global"}                               | 谷歌监控资源，请参考 [MonitoredResource](https://cloud.google.com/logging/docs/reference/v2/rest/v2/MonitoredResource)。             |
 | log_id                  | 否       | apisix.apache.org%2Flogs                         | 谷歌日志 ID，请参考 [LogEntry](https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry)。                                |
+| include_req_body        | 否    | false                                         | Include the request body in the log JSON payload. |
 
 该插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免该插件频繁地提交数据。默认情况下每 `5` 秒钟或队列中的数据达到 `1000` 条时，批处理器会自动提交数据，如需了解更多信息或自定义配置，请参考 [Batch Processor](../batch-processor.md#配置)。
 
