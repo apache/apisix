@@ -181,7 +181,13 @@ curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
 }'
 ```
 
-Now every request will share the same count limitation regardless of their remote address.
+The above configuration means that when the `group` attribute of the `limit-count` plugin is configured to `services_1#1640140620` for multiple routes, requests to those routes will share the same counter, even if the requests come from different IP addresses.
+
+:::note
+
+The configuration of `limit-count` in the same `group` must be consistent. If you want to change the configuration, you need to update the value of the corresponding `group` at the same time.
+
+:::
 
 For cluster-level traffic limiting, you can use a Redis server. The counter will be shared between different APISIX nodes to achieve traffic limiting.
 
