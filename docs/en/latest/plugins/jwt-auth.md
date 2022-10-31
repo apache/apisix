@@ -66,7 +66,7 @@ For Route:
 | header | string | False    | authorization | The header to get the token from.                                   |
 | query  | string | False    | jwt           | The query string to get the token from. Lower priority than header. |
 | cookie | string | False    | jwt           | The cookie to get the token from. Lower priority than query.        |
-| hide_credentials | boolean | False     | false  | 该参数设置为 `true` 时，则不会将含有认证信息的 header\query\cookie string 传递给 Upstream。|
+| hide_credentials | boolean | False     | false  | Set to true will not pass the authorization request of header\query\cookie to the Upstream.|
 
 ## API
 
