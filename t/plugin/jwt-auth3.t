@@ -99,7 +99,7 @@ jwt-header: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIs
 
 
 
-=== TEST 4: verify (in cookie) with not hidden auth
+=== TEST 4: verify (in cookie) with not hide credentials
 --- request
 GET /echo
 --- more_headers
