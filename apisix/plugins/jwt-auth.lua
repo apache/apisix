@@ -441,7 +441,6 @@ function _M.rewrite(conf, ctx)
             -- hide for header
             core.request.set_header(ctx, conf.header, nil)
 
-
         elseif from_query then
             -- hide for query
             local args = core.request.get_uri_args(ctx)
