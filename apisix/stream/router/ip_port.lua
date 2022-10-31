@@ -93,14 +93,14 @@ do
             if route.protocol and route.protocol.superior_id then
                 -- subordinate route won't be matched in the entry
                 local key="/apisix/stream_routes/"..route.protocol.superior_id
-        		if routeid_to_protocols[key] == nil then
-	               core.log.warn("There is not exist stream_route: "..key)
+                if routeid_to_protocols[key] == nil then
+	                core.log.warn("There is not exist stream_route: "..key)
 	            elseif routeid_to_protocols[key] == "No-Protocol" then
-	               core.log.warn("The stream_route: "..key.." may lacks procotol configuration")
+	                core.log.warn("The stream_route: "..key.." may lacks procotol configuration")
 	            elseif routeid_to_protocols[key] == route.protocol.name then
-		           goto CONTINUE
+		            goto CONTINUE
 		        else 
-	               core.log.warn("RPC procotol is different in stream_route:"..item.key.." and "..key)
+	                core.log.warn("RPC procotol is different in stream_route:"..item.key.." and "..key)
 		        end
                 goto CONTINUE
             end
