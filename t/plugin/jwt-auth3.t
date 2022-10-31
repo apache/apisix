@@ -109,7 +109,7 @@ Cookie: jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIs
 
 
 
-=== TEST 5: enable jwt auth plugin using admin api with not hide 
+=== TEST 5: enable jwt auth plugin using admin api with not hide credentials
 # the `proxy-rewrite` play role as upstream to check sensitive param
 --- config
     location /t {
@@ -152,7 +152,7 @@ passed
 
 
 
-=== TEST 6: verify (in query) not hidden auth
+=== TEST 6: verify (in query) not hidden credentials
 --- request
 GET /echo?foo=bar&hello=world&jwt-query=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- response_body
@@ -204,7 +204,7 @@ passed
 
 
 
-=== TEST 8: verify (in header) with hidden auth
+=== TEST 8: verify (in header) with hidden credentials
 --- request
 GET /echo
 --- more_headers
@@ -214,7 +214,7 @@ jwt-header: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI
 
 
 
-=== TEST 9: verify (in cookie) with hidden auth
+=== TEST 9: verify (in cookie) with hidden credentials
 --- request
 GET /echo
 --- more_headers
@@ -267,7 +267,7 @@ passed
 
 
 
-=== TEST 11: verify (in query) with hidden auth
+=== TEST 11: verify (in query) with hidden credentials
 --- request
 GET /echo?foo=bar&hello=world&jwt-query=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- response_body
