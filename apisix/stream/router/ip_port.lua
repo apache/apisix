@@ -99,9 +99,9 @@ do
 	                core.log.warn("The stream_route: "..key.." may lacks procotol configuration")
 	            elseif routeid_to_protocols[key] == route.protocol.name then
 		            goto CONTINUE
-		        else 
-	                core.log.warn("RPC procotol is different in stream_route:"..item.key.." and "..key)
-		        end
+                else 
+                    core.log.warn("RPC procotol is different in stream_route:"..item.key.." and "..key)
+                end
                 goto CONTINUE
             end
 
