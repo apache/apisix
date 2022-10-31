@@ -284,3 +284,56 @@ GET /print_uri_detailed HTTP/1.1
 --- response_body
 ngx.var.uri: /print_uri_detailed
 ngx.var.request_uri: /print_uri_detailed
+
+
+
+=== TEST 12: set route(rewrite X-Forwarded-Host)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "headers": {
+                                    "X-Forwarded-Host": "test.com"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 13: rewrite X-Forwarded-Host
+--- request
+GET /echo HTTP/1.1
+--- more_headers
+X-Forwarded-Host: apisix.ai
+--- response_headers
+X-Forwarded-Host: test.com
+--- no_error_log
+[error]
