@@ -89,7 +89,7 @@ passed
 
 
 
-=== TEST 3: verify (in header) with not hidden auth
+=== TEST 3: verify (in header) with not hide credentials
 --- request
 GET /echo
 --- more_headers
