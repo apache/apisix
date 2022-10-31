@@ -73,6 +73,8 @@ end
 
 
 local function ai_router_http_matching(api_ctx)
+    core.log.info("route match mode: ai_match")
+
     local key = get_cache_key_func(api_ctx)
     core.log.info("route cache key: ", key)
     local api_ctx_cache = route_lrucache(key, nil,
@@ -234,6 +236,7 @@ local function routes_analyze(routes)
          or route_flags["service_id"]
          or route_flags["plugin_config_id"]
          or global_rules_flag then
+        core.log.info("use origin plane to match route")
         router.router_http.matching = orig_router_http_matching
     else
         core.log.info("use ai plane to match route")
