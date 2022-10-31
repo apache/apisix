@@ -127,7 +127,7 @@ done
 
 
 
-=== TEST 2: add r2 with vars, diable route cache
+=== TEST 2: add r2 with vars, disable route cache
 --- config
     location /t {
         content_by_lua_block {
@@ -406,7 +406,7 @@ done
 
 
 
-=== TEST 13: add r1 with vars, diable route cache still
+=== TEST 13: add r1 with vars, disable route cache still
 --- config
     location /t {
         content_by_lua_block {
@@ -461,7 +461,7 @@ done
 
 
 
-=== TEST 15: add r1 without vars, diable route cache still
+=== TEST 15: add r1 without vars, disable route cache still
 --- config
     location /t {
         content_by_lua_block {
@@ -532,7 +532,7 @@ done
 
 
 
-=== TEST 17: update r1 without vars, diable route cache still
+=== TEST 17: update r1 without vars, disable route cache still
 --- config
     location /t {
         content_by_lua_block {
