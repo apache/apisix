@@ -461,13 +461,13 @@ git checkout conf/config.yaml
 
 make init
 
-grep -E "worker_cpu_affinity" conf/nginx.conf > /dev/null
-if [ ! $? -eq 0 ]; then
-    echo "failed: nginx.conf file is missing worker_cpu_affinity configuration"
+count=`grep -c "worker_cpu_affinity" conf/nginx.conf  || true`
+if [ $count -ne 0 ]; then
+    echo "failed: nginx.conf file found worker_cpu_affinity when disabling it"
     exit 1
 fi
 
-echo "passed: nginx.conf file contains worker_cpu_affinity configuration"
+echo "passed: nginx.conf file disables cpu affinity"
 
 # check the 'worker_shutdown_timeout' in 'nginx.conf' .
 
@@ -525,18 +525,18 @@ git checkout conf/config.yaml
 
 echo '
 nginx_config:
-  enable_cpu_affinity: false
+  enable_cpu_affinity: true
 ' > conf/config.yaml
 
 make init
 
-count=`grep -c "worker_cpu_affinity" conf/nginx.conf  || true`
-if [ $count -ne 0 ]; then
-    echo "failed: nginx.conf file found worker_cpu_affinity when disable it"
+grep -E "worker_cpu_affinity" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: nginx.conf file is missing worker_cpu_affinity configuration"
     exit 1
 fi
 
-echo "passed: nginx.conf file disable cpu affinity"
+echo "passed: nginx.conf file contains worker_cpu_affinity configuration"
 
 # set worker processes with env
 git checkout conf/config.yaml

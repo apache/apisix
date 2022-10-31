@@ -80,7 +80,7 @@ For example, if we configure a Plugin Config as shown below
             "rejected_code": 503
         }
     }
-}
+}'
 ```
 
 to a Route as shown below,
@@ -107,7 +107,7 @@ to a Route as shown below,
             "key": "remote_addr"
         }
     }
-}
+}'
 ```
 
 the effective configuration will be as the one shown below:
@@ -138,5 +138,5 @@ the effective configuration will be as the one shown below:
             "rejected_code": 503
         }
     }
-}
+}'
 ```

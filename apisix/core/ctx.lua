@@ -318,6 +318,7 @@ do
 -- @function core.ctx.register_var
 -- @tparam string name custom variable name
 -- @tparam function getter The fetch function for custom variables.
+-- @tparam table opts An optional options table which controls the behavior about the variable
 -- @usage
 -- local core = require "apisix.core"
 --
@@ -328,12 +329,21 @@ do
 --     end
 --     return nil
 -- end)
-function _M.register_var(name, getter)
+--
+-- We support the options below in the `opts`:
+-- * no_cacheable: if the result of getter is cacheable or not. Default to `false`.
+function _M.register_var(name, getter, opts)
     if type(getter) ~= "function" then
         error("the getter of registered var should be a function")
     end
 
     apisix_var_names[name] = getter
+
+    if opts then
+        if opts.no_cacheable then
+            no_cacheable_var_names[name] = true
+        end
+    end
 end
 
 function _M.set_vars_meta(ctx)
