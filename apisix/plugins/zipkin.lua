@@ -100,6 +100,21 @@ local function parse_b3(b3)
     return nil, pieces[1], pieces[2], pieces[3], pieces[4]
 end
 
+local function inject_header(ctx)
+    local opentracing = ctx.opentracing
+    local tracer = opentracing.tracer
+    local outgoing_headers = {}
+
+    local span = opentracing.request_span
+    if ctx.opentracing_sample then
+        span = opentracing.proxy_span
+    end
+    tracer:inject(span, "http_headers", outgoing_headers)
+
+    for k, v in pairs(outgoing_headers) do
+        core.request.set_header(ctx, k, v)
+    end
+end
 
 function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
@@ -151,24 +166,6 @@ function _M.rewrite(plugin_conf, ctx)
         request_span_id = headers["x-b3-spanid"]
     end
 
-    if sampled == "1" or sampled == "true" then
-        per_req_sample_ratio = 1
-    elseif sampled == "0" or sampled == "false" then
-        per_req_sample_ratio = 0
-    end
-
-    ctx.opentracing_sample = tracer.sampler:sample(per_req_sample_ratio or conf.sample_ratio)
-    if not ctx.opentracing_sample then
-        core.request.set_header(ctx, "x-b3-sampled", "0")
-        -- pass the trace ids even the sample is rejected
-        -- see https://github.com/openzipkin/b3-propagation#why-send-
-        -- trace-ids-with-a-reject-sampling-decision
-        core.request.set_header(ctx, "x-b3-traceid", trace_id)
-        core.request.set_header(ctx, "x-b3-parentspanid", parent_span_id)
-        core.request.set_header(ctx, "x-b3-spanid", request_span_id)
-        return
-    end
-
     local zipkin_ctx = core.tablepool.fetch("zipkin_ctx", 0, 3)
     zipkin_ctx.trace_id = trace_id
     zipkin_ctx.parent_span_id = parent_span_id
@@ -198,11 +195,24 @@ function _M.rewrite(plugin_conf, ctx)
         request_span = request_span,
     }
 
+    -- Process sampled
+    if sampled == "1" or sampled == "true" then
+        per_req_sample_ratio = 1
+    elseif sampled == "0" or sampled == "false" then
+        per_req_sample_ratio = 0
+    end
+
+    ctx.opentracing_sample = tracer.sampler:sample(per_req_sample_ratio or conf.sample_ratio)
+    if not ctx.opentracing_sample then
+        request_span:set_baggage_item("x-b3-sampled","0")
+        return
+    end
+    request_span:set_baggage_item("x-b3-sampled","1")
+
     local request_span = ctx.opentracing.request_span
     if conf.span_version == ZIPKIN_SPAN_VER_1 then
         ctx.opentracing.rewrite_span = request_span:start_child_span("apisix.rewrite",
                                                                      start_timestamp)
-
         ctx.REWRITE_END_TIME = tracer:time()
         ctx.opentracing.rewrite_span:finish(ctx.REWRITE_END_TIME)
     else
@@ -212,10 +222,6 @@ function _M.rewrite(plugin_conf, ctx)
 end
 
 function _M.access(conf, ctx)
-    if not ctx.opentracing_sample then
-        return
-    end
-
     local opentracing = ctx.opentracing
     local tracer = opentracing.tracer
 
@@ -231,11 +237,7 @@ function _M.access(conf, ctx)
     end
 
     -- send headers to upstream
-    local outgoing_headers = {}
-    tracer:inject(opentracing.proxy_span, "http_headers", outgoing_headers)
-    for k, v in pairs(outgoing_headers) do
-        core.request.set_header(ctx, k, v)
-    end
+    inject_header(ctx)
 end
 
 
@@ -261,10 +263,6 @@ end
 
 
 function _M.log(conf, ctx)
-    if not ctx.opentracing_sample then
-        return
-    end
-
     local opentracing = ctx.opentracing
 
     local log_end_time = opentracing.tracer:time()
@@ -276,8 +274,7 @@ function _M.log(conf, ctx)
         if opentracing.proxy_span then
             opentracing.proxy_span:finish(log_end_time)
         end
-
-    else
+    elseif opentracing.response_span then
         opentracing.response_span:finish(log_end_time)
     end
 
