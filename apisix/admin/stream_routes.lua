@@ -16,6 +16,8 @@
 --
 local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
+local config_util = require("apisix.core.config_util")
+local routes = require("apisix.stream.router.ip_port").routes
 local stream_route_checker = require("apisix.stream.router.ip_port").stream_route_checker
 local tostring = tostring
 
@@ -24,6 +26,51 @@ local _M = {
     version = 0.1,
     need_v3_filter = true,
 }
+
+local function check_router_refer(items, key)
+    local refer_list = {}
+    for _, item in config_util.iterate_values(items) do
+        if item.value == nil then
+            goto CONTINUE
+        end
+        local route = item.value
+        if route.protocol and route.protocol.superior_id then
+	        local data
+            local setkey="/stream_routes/"..route.protocol.superior_id.."/refer"
+            local res, err = core.etcd.get(setkey,false)
+            if res then
+	            if #res.body.node.value == 0 then
+                    local v = core.json.decode("{}")
+	                local  r_id = item["key"]
+	                v[r_id]=1
+	                data = core.json.encode(v)
+                else
+                    local v = core.json.decode(res.body.node.value)
+	            local  r_id = item["key"]
+	            v[r_id]=1
+	            data = core.json.encode(v)
+                end
+            end 
+            local setres, err = core.etcd.set(setkey, data)
+            if not setres then
+                core.log.error("failed to put stream route[", key, "]: ", err)
+            end
+        end
+        ::CONTINUE::
+     end
+     local referkey = key .. "/refer"
+     local rescheck, err = core.etcd.get(referkey,false)
+     if rescheck then
+         if rescheck.body.node  ~= nil then
+             local refer_values=core.json.decode(rescheck.body.node.value)
+             for v,_ in pairs(refer_values) do
+	         table.insert(refer_list,v)
+             end
+         end
+     end
+     return refer_list
+end
+
 
 
 local function check_conf(id, conf, need_id)
@@ -142,14 +189,23 @@ function _M.delete(id)
         return 400, {error_msg = "missing stream route id"}
     end
 
+    local items,_ = routes()
     local key = "/stream_routes/" .. id
     -- core.log.info("key: ", key)
+    local refer_list=check_router_refer(items,key)
+    local warn_message
+    if #refer_list >0 then
+        warn_message = key.." is refered by "..table.concat(refer_list,";;")
+    else 
+        warn_message = key.." is refered by None"
+    end
+
     local res, err = core.etcd.delete(key)
     if not res then
         core.log.error("failed to delete stream route[", key, "]: ", err)
         return 503, {error_msg = err}
     end
-
+    res.body["refer"]=warn_message
     return res.status, res.body
 end
 

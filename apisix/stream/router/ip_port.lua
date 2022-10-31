@@ -63,6 +63,7 @@ local create_router
 do
     local sni_to_items = {}
     local tls_routes = {}
+    local routeid_to_protocols = {}
 
     function create_router(items)
         local tls_routes_idx = 1
@@ -70,16 +71,38 @@ do
         core.table.clear(tls_routes)
         core.table.clear(other_routes)
         core.table.clear(sni_to_items)
+        core.table.clear(routeid_to_protocols)
+        for _, item in config_util.iterate_values(items) do
+            if item.value == nil then
+                goto CONTINUE
+            end
+            local route = item.value
+            if route.protocol  then
+               routeid_to_protocols[item.key]=route.protocol.name
+            else
+               routeid_to_protocols[item.key]="No-Protocol"
+            end
+            ::CONTINUE::
+        end
 
         for _, item in config_util.iterate_values(items) do
             if item.value == nil then
                 goto CONTINUE
             end
-
             local route = item.value
             if route.protocol and route.protocol.superior_id then
                 -- subordinate route won't be matched in the entry
-                -- TODO: check the subordinate relationship in the Admin API
+                local key="/apisix/stream_routes/"..route.protocol.superior_id
+	       -- core.log.warn("GGGGGGGG "..table.concat(subroute_to_superoutes,";"))
+        		if routeid_to_protocols[key] == nil then
+	               core.log.warn("There is not exist stream_route: "..key)
+	            elseif routeid_to_protocols[key] == "No-Protocol" then
+	               core.log.warn("The stream_route: "..key.." may lacks procotol configuration")
+	            elseif routeid_to_protocols[key] == route.protocol.name then
+		           goto CONTINUE
+		        else 
+	               core.log.warn("RPC procotol is different in stream_route:"..item.key.." and "..key)
+		        end
                 goto CONTINUE
             end
 
@@ -146,7 +169,7 @@ do
         if router_ver ~= user_routes.conf_version then
             local err = create_router(user_routes.values)
             if err then
-                return false, "failed to create router: " .. err
+               return false, "failed to create router: " .. err
             end
 
             router_ver = user_routes.conf_version
@@ -236,6 +259,7 @@ function _M.stream_init_worker(filter)
             checker = stream_route_checker,
             filter = filter,
         })
+    
 
     if not user_routes then
         error("failed to create etcd instance for fetching /stream_routes : "
