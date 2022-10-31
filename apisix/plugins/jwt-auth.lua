@@ -439,7 +439,6 @@ function _M.rewrite(conf, ctx)
         -- hide sensitive field
         if from_header then
             -- hide for header
-            local temp_token = core.request.header(ctx, conf.header)
             core.request.set_header(ctx, conf.header, nil)
 
 

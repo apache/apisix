@@ -222,6 +222,8 @@ Cookie: jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIs
 --- response_headers
 Set-Cookie: jwt-cookie=deleted; Max-Age=0
 
+
+
 === TEST 10: enable jwt auth plugin using admin api with hidden auth
 # the `proxy-rewrite` play role as upstream to check sensitive param
 --- config
@@ -274,5 +276,3 @@ foo: bar
 hello: world
 --- no_error_log
 [error]
-
-
