@@ -229,7 +229,7 @@ print(base64.b64encode(hash.digest()))
 | --------- | -------------------------------------------- |
 | SIGNATURE | 8XV1GB7Tq23OJcoz6wjqTs4ZLxr9DiLoY4PxzScWGYg= |
 
-您也可以参考 [Generating HMAC signatures](../examples/plugins-hmac-auth-generate-signature.md) 了解如何为不同的编程语言生成签名。
+您也可以参考 [Generating HMAC signatures](../../../en/latest/examples/plugins-hmac-auth-generate-signature.md) 了解如何为不同的编程语言生成签名。
 
 ### Body 校验
 
