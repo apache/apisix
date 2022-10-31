@@ -97,6 +97,22 @@ _EOC_
         $block->set_value("extra_init_by_lua", $extra_init_by_lua);
     }
 
+    if (!defined $block->config) {
+        my $default_config = <<_EOC_;
+            location /t {
+                content_by_lua_block {
+                    local t = require("lib.test_admin").test
+
+                    enable_ai_route_match()
+
+                    ngx.say("done")
+                }
+            }
+_EOC_
+
+        $block->set_value("config", $default_config);
+    }
+
     if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
         $block->set_value("no_error_log", "[error]");
     }
@@ -112,16 +128,6 @@ run_tests();
 __DATA__
 
 === TEST 1: enable route cache
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-
-            enable_ai_route_match()
-
-            ngx.say("done")
-        }
-    }
 --- response_body
 done
 
@@ -152,16 +158,6 @@ route match mode: radixtree_uri
 
 
 === TEST 3: enable route cache
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-
-            enable_ai_route_match()
-
-            ngx.say("done")
-        }
-    }
 --- response_body
 done
 
@@ -204,16 +200,6 @@ route match mode: radixtree_uri
 
 
 === TEST 5: enable route cache
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-
-            enable_ai_route_match()
-
-            ngx.say("done")
-        }
-    }
 --- response_body
 done
 
@@ -261,16 +247,6 @@ route cache key: /hello1#GET
 
 
 === TEST 7: enable route cache
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-
-            enable_ai_route_match()
-
-            ngx.say("done")
-        }
-    }
 --- response_body
 done
 
@@ -338,7 +314,7 @@ route cache key: /hello#GET
 
             local code = t("/hello1", ngx.HTTP_GET)
             assert(code == 200)
-            
+
             ngx.say("done")
         }
     }
@@ -425,7 +401,7 @@ done
                     type = "roundrobin"
                 }
             }
-            
+
             update_route("1", data)
 
             local code = t("/hello?k=s", ngx.HTTP_GET)
@@ -477,7 +453,7 @@ done
                     type = "roundrobin"
                 }
             }
-            
+
             update_route("1", data)
 
             local code = t("/hello", ngx.HTTP_GET)
@@ -518,7 +494,7 @@ route match mode: ai_match
                     type = "roundrobin"
                 }
             }
-            
+
             update_route("1", data)
 
             local code = t("/hello?k=s", ngx.HTTP_GET)
@@ -548,7 +524,7 @@ done
                     type = "roundrobin"
                 }
             }
-            
+
             update_route("1", data)
 
             local code = t("/hello", ngx.HTTP_GET)
@@ -581,7 +557,7 @@ route match mode: ai_match
                     type = "roundrobin"
                 }
             }
-            
+
             update_route("2", data)
 
             local code = t("/hello1", ngx.HTTP_GET)
@@ -721,3 +697,294 @@ route cache key: /echo#GET
     }
 --- response_body
 ok
+
+
+
+=== TEST 23: enable route cache
+--- response_body
+done
+
+
+
+=== TEST 24: update r1 with remote_addr, disable route cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local data = {
+                methods = {"GET"},
+                uri = "/hello",
+                remote_addrs = {"127.0.0.1"},
+                upstream = {
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            }
+
+            update_route("1", data)
+
+            local code = t("/hello", ngx.HTTP_GET)
+            assert(code == 200)
+
+            assert(clear_route("1") == 200)
+        }
+    }
+--- error_log
+use origin plane to match route
+route match mode: radixtree_uri
+--- no_error_log
+use ai plane to match route
+route match mode: ai_match
+
+
+
+=== TEST 25: enable route cache
+--- response_body
+done
+
+
+
+=== TEST 26: add r2 with remote_addr, disable route cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local data = {
+                methods = {"GET"},
+                uri = "/hello1",
+                remote_addrs = {"127.0.0.1"},
+                upstream = {
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            }
+
+            update_route("2", data)
+
+            local code = t("/hello1", ngx.HTTP_GET)
+            assert(code == 200)
+
+            assert(clear_route("1") == 200)
+            assert(clear_route("2") == 200)
+        }
+    }
+--- error_log
+use origin plane to match route
+route match mode: radixtree_uri
+--- no_error_log
+use ai plane to match route
+route match mode: ai_match
+
+
+
+=== TEST 27: enable route cache, add service
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+
+        enable_ai_route_match()
+
+        local data = {
+            upstream = {
+                nodes = {
+                    ["127.0.0.1:1980"] = 1
+                },
+                type = "roundrobin"
+            }
+        }
+        local json = require("cjson")
+        local code, body = t('/apisix/admin/services/1',ngx.HTTP_PUT, json.encode(data))
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+        ngx.say("done")
+    }
+}
+--- response_body
+done
+
+
+
+=== TEST 28: update r1 with service_id, disable route cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local data = {
+                methods = {"GET"},
+                uri = "/hello",
+                service_id = 1
+            }
+
+            update_route("1", data)
+
+            local code = t("/hello", ngx.HTTP_GET)
+            assert(code == 200)
+
+            assert(clear_route("1") == 200)
+        }
+    }
+--- error_log
+use origin plane to match route
+route match mode: radixtree_uri
+--- no_error_log
+use ai plane to match route
+route match mode: ai_match
+
+
+
+=== TEST 29: enable route cache
+--- response_body
+done
+
+
+
+=== TEST 30: add r2 with service_id, disable route cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local data = {
+                methods = {"GET"},
+                uri = "/hello1",
+                service_id = 1
+            }
+
+            update_route("2", data)
+
+            local code = t("/hello1", ngx.HTTP_GET)
+            assert(code == 200)
+
+            assert(clear_route("1") == 200)
+            assert(clear_route("2") == 200)
+        }
+    }
+--- error_log
+use origin plane to match route
+route match mode: radixtree_uri
+--- no_error_log
+use ai plane to match route
+route match mode: ai_match
+
+
+
+=== TEST 31: enable route cache, add plugin_configs
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+
+        enable_ai_route_match()
+
+        local data = {
+            plugins = {
+                ["fault-injection"] = {
+                    abort = {
+                        http_status = 200
+                    }
+                }
+            }
+        }
+        local json = require("cjson")
+        local code, body = t('/apisix/admin/plugin_configs/1',ngx.HTTP_PUT, json.encode(data))
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+
+        ngx.say("done")
+    }
+}
+--- response_body
+done
+
+
+
+=== TEST 32: update r1 with plugin_config_id, disable route cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local data = {
+                methods = {"GET"},
+                uri = "/hello",
+                plugin_config_id = 1,
+                upstream = {
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            }
+
+            update_route("1", data)
+
+            local code = t("/hello", ngx.HTTP_GET)
+            assert(code == 200, "tt code")
+
+            assert(clear_route("1") == 200)
+        }
+    }
+--- error_log
+use origin plane to match route
+route match mode: radixtree_uri
+--- no_error_log
+use ai plane to match route
+route match mode: ai_match
+
+
+
+=== TEST 33: enable route cache
+--- response_body
+done
+
+
+
+=== TEST 34: add r2 with plugin_config_id, disable route cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local data = {
+                methods = {"GET"},
+                uri = "/hello1",
+                plugin_config_id = 1,
+                upstream = {
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            }
+
+            update_route("2", data)
+
+            local code = t("/hello1", ngx.HTTP_GET)
+            assert(code == 200)
+
+            assert(clear_route("1") == 200)
+            assert(clear_route("2") == 200)
+        }
+    }
+--- error_log
+use origin plane to match route
+route match mode: radixtree_uri
+--- no_error_log
+use ai plane to match route
+route match mode: ai_match
