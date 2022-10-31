@@ -93,7 +93,6 @@ do
             if route.protocol and route.protocol.superior_id then
                 -- subordinate route won't be matched in the entry
                 local key="/apisix/stream_routes/"..route.protocol.superior_id
-	       -- core.log.warn("GGGGGGGG "..table.concat(subroute_to_superoutes,";"))
         		if routeid_to_protocols[key] == nil then
 	               core.log.warn("There is not exist stream_route: "..key)
 	            elseif routeid_to_protocols[key] == "No-Protocol" then
