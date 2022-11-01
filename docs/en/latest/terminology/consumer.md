@@ -45,7 +45,7 @@ The fields for defining a Consumer are defined as below.
 
 | Field      | Required | Description                                                                                                                                                                      |
 | ---------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `username` | Ture      | Name of the consumer.                                                                                                                                                             |
+| `username` | True      | Name of the consumer.                                                                                                                                                             |
 | `plugins`  | False       | Plugin configuration of the **Consumer**. For specific Plugin configurations, please refer the [Plugins](./plugin.md) section. |
 
 ## Identifying a Consumer
