@@ -16,6 +16,7 @@
 --
 local core     = require("apisix.core")
 local jwt      = require("resty.jwt")
+local ck       = require("resty.cookie")
 local consumer_mod = require("apisix.consumer")
 local resty_random = require("resty.random")
 local vault        = require("apisix.core.vault")
@@ -196,6 +197,11 @@ end
 local function fetch_jwt_token(conf, ctx)
     local token = core.request.header(ctx, conf.header)
     if token then
+        if conf.hide_credentials then
+            -- hide for header
+            core.request.set_header(ctx, conf.header, nil)
+        end
+
         local prefix = sub_str(token, 1, 7)
         if prefix == 'Bearer ' or prefix == 'bearer ' then
             return sub_str(token, 8)
@@ -204,8 +210,14 @@ local function fetch_jwt_token(conf, ctx)
         return token
     end
 
-    token = ctx.var["arg_" .. conf.query]
+    local uri_args = core.request.get_uri_args(ctx) or {}
+    token = uri_args[conf.query]
     if token then
+        if conf.hide_credentials then
+            -- hide for query
+            uri_args[conf.query] = nil
+            core.request.set_uri_args(ctx, uri_args)
+        end
         return token
     end
 
@@ -213,6 +225,16 @@ local function fetch_jwt_token(conf, ctx)
     if not val then
         return nil, "JWT not found in cookie"
     end
+
+    if conf.hide_credentials then
+        -- hide for cookie
+        ck:new():set({
+            key = conf.cookie,
+            value = "deleted",
+            max_age = 0
+        })
+    end
+
     return val
 end
 
@@ -361,31 +383,8 @@ local function algorithm_handler(consumer, method_only)
     end
 end
 
-local function set_our_cookie(name, val)
-    core.response.add_header("Set-Cookie", name .. "=" .. val)
-end
-
-
 function _M.rewrite(conf, ctx)
-    local from_header = true
-    local header_key = core.request.header(ctx, conf.header)
-
-    local from_query = true
-
-    if not header_key then
-        from_header = false
-        local uri_args = core.request.get_uri_args(ctx) or {}
-        header_key = uri_args[conf.query]
-        if not header_key then
-            from_query = false
-            local cookie = ctx.var["cookie_" .. conf.cookie]
-            if not cookie then
-                core.log.info("failed to fetch JWT token")
-                return 401, {message = "Missing JWT token in request"}
-            end
-        end
-    end
-
+    -- fetch token and hide credentials if necessary
     local jwt_token, err = fetch_jwt_token(conf, ctx)
     if not jwt_token then
         core.log.info("failed to fetch JWT token: ", err)
@@ -432,25 +431,6 @@ function _M.rewrite(conf, ctx)
     if not jwt_obj.verified then
         core.log.warn("failed to verify jwt: ", jwt_obj.reason)
         return 401, {message = "failed to verify jwt"}
-    end
-
-    -- check for hiding `Authorization` request header if `hide_credentials` is `true`
-    if conf.hide_credentials then
-        -- hide sensitive field
-        if from_header then
-            -- hide for header
-            core.request.set_header(ctx, conf.header, nil)
-
-        elseif from_query then
-            -- hide for query
-            local args = core.request.get_uri_args(ctx)
-            args[conf.query] = nil
-            core.request.set_uri_args(ctx, args)
-
-        else
-            -- hide for cookie
-            set_our_cookie(conf.cookie, "deleted; Max-Age=0")
-        end
     end
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
