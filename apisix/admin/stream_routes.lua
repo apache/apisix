@@ -27,8 +27,11 @@ local _M = {
     need_v3_filter = true,
 }
 
-local function check_router_refer(items, key)
+local function check_router_refer(items, id)
     local refer_list = {}
+    local referkey = "/stream_routes/refer/".. id
+    local _, err = core.etcd.delete(referkey)
+    core.log.warn(err)
     for _, item in config_util.iterate_values(items) do
         if item.value == nil then
             goto CONTINUE
@@ -36,7 +39,7 @@ local function check_router_refer(items, key)
         local route = item.value
         if route.protocol and route.protocol.superior_id then
 	        local data
-            local setkey="/stream_routes/"..route.protocol.superior_id.."/refer"
+            local setkey="/stream_routes/refer"..route.protocol.superior_id
             local res, err = core.etcd.get(setkey,false)
             if res then
 	            if #res.body.node.value == 0 then
@@ -53,7 +56,7 @@ local function check_router_refer(items, key)
             end 
             local setres, err = core.etcd.set(setkey, data)
             if not setres then
-                core.log.error("failed to put stream route[", key, "]: ", err)
+                core.log.error("failed to put stream route[", setkey, "]: ", err)
             end
         end
         ::CONTINUE::
@@ -192,7 +195,7 @@ function _M.delete(id)
     local items,_ = routes()
     local key = "/stream_routes/" .. id
     -- core.log.info("key: ", key)
-    local refer_list=check_router_refer(items,key)
+    local refer_list=check_router_refer(items,id)
     local warn_message
     if #refer_list >0 then
         warn_message = key.." is refered by "..table.concat(refer_list,";;")
