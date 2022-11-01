@@ -118,7 +118,7 @@ The example below shows how you can enable a Plugin for a specific Consumer.
     curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
     ```
 
-    The third test returns 503 and the request is restricted
+    The third test returns `503` and the request is restricted.
 
     ```shell
     HTTP/1.1 503 Service Temporarily Unavailable
