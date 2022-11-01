@@ -639,3 +639,30 @@ passed
 {"error_msg":"property \"faults\" validation failed: wrong type: expected array, got string"}
 --- no_error_log
 [error]
+
+=== TEST 17:  return reference info, DELETE
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, message, res = t('/apisix/admin/stream_routes/1',
+                 ngx.HTTP_DELETE
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            assert(res.refer ~= nil)
+        }
+    }
+--- response_body
+passed
+--- request
+GET /t
+--- no_error_log
+[error]
