@@ -93,7 +93,7 @@ The example below shows how you can enable a Plugin for a specific Consumer.
     }'
     ```
 
-2. Create a Router, set routing rules and enable plugin configuration：
+2. Create a Router, set routing rules and enable plugin configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -127,7 +127,7 @@ The example below shows how you can enable a Plugin for a specific Consumer.
 
 We can use the [consumer-restriction](../plugins/consumer-restriction.md) Plugin to restrict our user "Jack" from accessing the API.
 
-1. Add Jack to the blacklist
+1. Add Jack to the blacklist.
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -151,13 +151,13 @@ We can use the [consumer-restriction](../plugins/consumer-restriction.md) Plugin
     }'
     ```
 
-Repeated tests, all return 403; Jack is forbidden to access this API:
+2. Repeated tests, all return `403`; Jack is forbidden to access this API:
 
-```
-curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
-```
+    ```shell
+    curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
+    ```
 
-```
-HTTP/1.1 403
-...
-```
+    ```shell
+    HTTP/1.1 403
+    ...
+    ```
