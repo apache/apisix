@@ -415,6 +415,7 @@ done
 enable sample upstream
 
 
+
 === TEST 15: enable sample upstream
 --- response_body
 done
