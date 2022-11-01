@@ -1,5 +1,11 @@
 ---
 title: Upstream
+keywords:
+  - Apache APISIX
+  - API Gateway
+  - APISIX Upstream
+  - Upstream
+description: This article describes the role of the Apache APISIX Upstream object and how to use the Upstream.
 ---
 
 <!--
@@ -128,7 +134,7 @@ You can learn more about health checks [here](../tutorials/health-check.md).
 
 The examples below show configurations that use different `hash_on` types.
 
-#### Consumer
+### Consumer
 
 Creating a Consumer object:
 
@@ -170,7 +176,7 @@ To test the request, the `consumer_name` passed for authentication will be used 
 curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
 ```
 
-#### Cookie
+### Cookie
 
 Creating a Route and an upstream object:
 
@@ -196,7 +202,7 @@ The client can then send a request with a cookie:
  curl http://127.0.0.1:9080/hash_on_cookie -H "Cookie: sid=3c183a30cffcda1408daf1c61d47b274"
 ```
 
-#### Header
+### Header
 
 Creating a Route and an upstream object:
 

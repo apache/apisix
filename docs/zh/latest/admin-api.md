@@ -158,7 +158,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10" \
 }
 ```
 
-### 支持过滤资源 {#support filtering query}
+### 支持过滤资源 {#support-filtering-query}
 
 在 APISIX v3 版本中，在获取资源列表时，你可以使用 `name`、`label` 和 `uri` 参数过滤资源。支持参数如下：
 
@@ -209,7 +209,7 @@ Route 也称之为路由，可以通过定义一些规则来匹配客户端的�
 | GET    | /apisix/admin/routes             | 无        | 获取资源列表。                                                                                                                              |
 | GET    | /apisix/admin/routes/{id}        | 无        | 获取资源。                                                                                                                                         |
 | PUT    | /apisix/admin/routes/{id}        | {...}     | 根据 id 创建资源。                                                                                                                        |
-| POST   | /apisix/admin/routes             | {...}     | 创建资源，id 将会自动生成成。                                                                                                                      |
+| POST   | /apisix/admin/routes             | {...}     | 创建资源，id 将会自动生成。                                                                                                                      |
 | DELETE | /apisix/admin/routes/{id}        | 无        | 删除指定资源。                                                                                                                                                |
 | PATCH  | /apisix/admin/routes/{id}        | {...}     | 标准 PATCH，修改指定 Route 的部分属性，其他不涉及的属性会原样保留；如果你需要删除某个属性，可以将该属性的值设置为 `null`；当需要修改属性的值为数组时，该属性将全量更新。 |
 | PATCH  | /apisix/admin/routes/{id}/{path} | {...}     | SubPath PATCH，通过 `{path}` 指定 Route 要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。两种 PATCH 的区别，请参考使用示例。                         |
@@ -739,11 +739,11 @@ Consumer 资源请求地址：/apisix/admin/consumers/{username}
 | ----------- | ----- | ------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | username    | 是   | 辅助     | Consumer 名称。                                                                                                                  |                                                  |
 | group_id    | 否   | 辅助     | Consumer Group 名称。                                                                                                            |                                                  |
-| plugins     | 否   | Plugin   | 该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Service。对于具体插件配置，请可以参考 [Plugins](#plugin)。     |                                                  |
+| plugins     | 否   | Plugin   | 该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Plugin Config >Service。对于具体插件配置，请可以参考 [Plugins](#plugin)。     |                                                  |
 | desc        | 否   | 辅助     | consumer 描述。                                                                                                                  |                                                  |
 | labels      | 否   | 匹配规则  | 标识附加属性的键值对。                                                                                                             | {"version":"v2","build":"16","env":"production"} |
-| create_time | 否   | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建。                                                                                       | 1602883670                                       |
-| update_time | 否   | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建。                                                                                       | 1602883670                                       |
+| create_time | 否   | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                       | 1602883670                                       |
+| update_time | 否   | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                       | 1602883670                                       |
 
 Consumer 对象 JSON 配置示例：
 
@@ -825,10 +825,10 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 | -------------- | ---------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | type           | 是                                | 枚举           | 负载均衡算法。                                                                                                                                                                                                                                                                                                                                                            |                                      |     |
 | nodes          | 是，与 `service_name` 二选一。 | Node           | 哈希表或数组。当它是哈希表时，内部元素的 key 是上游机器地址列表，格式为`地址 +（可选的）端口`，其中地址部分可以是 IP 也可以是域名，比如 `192.168.1.100:80`、`foo.com:80`等。对于哈希表的情况，如果 key 是 IPv6 地址加端口，则必须用中括号将 IPv6 地址括起来。`value` 则是节点的权重。当它是数组时，数组中每个元素都是一个哈希表，其中包含 `host`、`weight` 以及可选的 `port`、`priority`。`nodes` 可以为空，这通常用作占位符。客户端命中这样的上游会返回 `502`。                                        | `192.168.1.100:80`, `[::1]:80`                               |
-| service_name   | 是，与 `nodes` 二选一。        | string         | 服务发现时使用的服务名，请参考 [集成服务发现注册中心](./discovery.md)。                                                                                                                                                                                                                                                                                            | `a-bootiful-client`                              |
-| discovery_type | 是，与 `service_name` 配合使用。   | string         | 服务发现类型，请参考 [集成服务发现注册中心](./discovery.md)。                                                                                                                                                                                                                                                                                                      | `eureka`                                         |
+| service_name   | 是，与 `nodes` 二选一。        | string         | 服务发现时使用的服务名，请参考[集成服务发现注册中心](./discovery.md)。                                                                                                                                                                                                                                                                                            | `a-bootiful-client`                              |
+| discovery_type | 是，与 `service_name` 配合使用。   | string         | 服务发现类型，请参考[集成服务发现注册中心](./discovery.md)。                                                                                                                                                                                                                                                                                                      | `eureka`                                         |
 | key            | 条件必需                           | 匹配类型       | 该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的节点 `id`，相同的 `key` 在同一个对象中，则返回相同 id。目前支持的 NGINX 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自 URL 的请求参数，详细信息请参考 [NGINX 变量列表](http://nginx.org/en/docs/varindex.html)。 |                                                  |
-| checks         | 否                               | health_checker | 配置健康检查的参数，详细信息请参考 [health-check](health-check.md)。                                                                                                                                                                                                                                                                                               |                                                  |
+| checks         | 否                               | health_checker | 配置健康检查的参数，详细信息请参考 [health-check](./tutorials/health-check.md)。                                                                                                                                                                                                                                                                                               |                                                  |
 | retries        | 否                               | 整型           | 使用 NGINX 重试机制将请求传递给下一个上游，默认启用重试机制且次数为后端可用的节点数量。如果指定了具体重试次数，它将覆盖默认值。当设置为 `0` 时，表示不启用重试机制。                                                                                                                                                                                                 |                                                  |
 | retry_timeout  | 否                               | number         | 限制是否继续重试的时间，若之前的请求和重试请求花费太多时间就不再继续重试。当设置为 `0` 时，表示不启用重试超时机制。                                                                                                                                                                                                 |                                                  |
 | timeout        | 否                               | 超时时间对象   | 设置连接、发送消息、接收消息的超时时间，以秒为单位。                                                                                                                                                                                                                                                                                                      |                                                  |
@@ -869,7 +869,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 - `scheme` 可以设置成 `tls`，表示 `TLS over TCP`。
 - `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
 - `tls.client_cert_id` 可以用来指定引用的 SSL 对象。只有当 SSL 对象的 `type` 字段为 client 时才能被引用，否则请求会被 APISIX 拒绝。另外，SSL 对象中只有 `cert` 和 `key` 会被使用。
-- `keepalive_pool` 允许 Upstream 有自己单独的连接池。它下属的字段，比如 `requests`，可以用于配置上游连接保持的参数。该特性需要 APISIX 运行于 [APISIX-Base](./FAQ.md#如何构建-apisix-base-环境) 中。
+- `keepalive_pool` 允许 Upstream 有自己单独的连接池。它下属的字段，比如 `requests`，可以用于配置上游连接保持的参数。
 
 Upstream 对象 JSON 配置示例：
 
