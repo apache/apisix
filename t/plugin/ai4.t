@@ -1037,3 +1037,91 @@ done
     }
 --- no_error_log
 enable sample upstream
+
+
+
+=== TEST 46: enable sample upstream
+--- response_body
+done
+
+
+
+=== TEST 47: update r1 with service_name, disable sample upstream
+--- yaml_config
+discovery:                        # service discovery center
+  dns:
+    servers:
+      - "127.0.0.1"
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local data = {
+                methods = {"GET"},
+                uri = "/hello",
+                upstream = {
+                    service_name = "sd.test.local",
+                    discovery_type = "dns",
+                    type = "roundrobin"
+                }
+            }
+
+            update_route("1", data)
+
+            local code = t("/hello", ngx.HTTP_GET)
+            assert(code == 503)
+
+            assert(clear_route("1") == 200)
+        }
+    }
+--- no_error_log
+enable sample upstream
+--- error_log
+discovery dns with host sd.test.local
+
+
+
+=== TEST 48: enable sample upstream
+--- response_body
+done
+
+
+
+=== TEST 49: add r2 with service_name, disable sample upstream
+--- yaml_config
+discovery:                        # service discovery center
+  dns:
+    servers:
+      - "127.0.0.1"
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("t/certs/mtls_client.crt")
+            local ssl_key = t.read_file("t/certs/mtls_client.key")
+
+            local data = {
+                methods = {"GET"},
+                uri = "/hello1",
+                upstream = {
+                    service_name = "sd.test.local",
+                    discovery_type = "dns",
+                    type = "roundrobin"
+                }
+            }
+
+            update_route("2", data)
+
+            local code = t.test("/hello1", ngx.HTTP_GET)
+            assert(code == 503)
+
+            assert(clear_route("1") == 200)
+            assert(clear_route("2") == 200)
+        }
+    }
+--- no_error_log
+enable sample upstream
+--- error_log
+discovery dns with host sd.test.local
