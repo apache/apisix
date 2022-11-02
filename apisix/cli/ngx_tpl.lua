@@ -680,9 +680,6 @@ http {
             if ($http_x_forwarded_host != "") {
                 set $var_x_forwarded_host $http_x_forwarded_host;
             }
-            if ($http_x_forwarded_port != "") {
-                set $var_x_forwarded_port $http_x_forwarded_port;
-            }
 
             proxy_set_header   X-Forwarded-For      $var_x_forwarded_for;
             proxy_set_header   X-Forwarded-Proto    $var_x_forwarded_proto;
