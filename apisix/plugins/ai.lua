@@ -73,6 +73,8 @@ end
 
 
 local function ai_router_http_matching(api_ctx)
+    core.log.info("route match mode: ai_match")
+
     local key = get_cache_key_func(api_ctx)
     core.log.info("route cache key: ", key)
     local api_ctx_cache = route_lrucache(key, nil,
@@ -296,8 +298,6 @@ end
 
 
 function _M.destroy()
-    -- TODO: add test cases to cover this function
-    -- if the ai plugin is disabled at runtime, all functions replaced by the ai plugin are restored
     if orig_router_http_matching then
         router.router_http.matching = orig_router_http_matching
         orig_router_http_matching = nil
@@ -315,12 +315,6 @@ function _M.destroy()
 
     event.unregister(event.CONST.BUILD_ROUTER)
 end
-
-
--- for test
-_M.route_matching = ai_router_http_matching
-_M.handle_upstream = ai_upstream
-_M.http_balancer_phase = ai_http_balancer_phase
 
 
 return _M

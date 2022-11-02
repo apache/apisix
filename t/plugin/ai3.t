@@ -41,8 +41,13 @@ plugins:
             ]]
             require("lib.test_admin").set_config_yaml(data)
 
-            return t('/apisix/admin/plugins/reload',
+            local code, body = t('/apisix/admin/plugins/reload',
                                     ngx.HTTP_PUT)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
         end
 
         load_ai_module = function ()
@@ -61,8 +66,13 @@ plugins:
             ]]
             require("lib.test_admin").set_config_yaml(data)
 
-            return t('/apisix/admin/plugins/reload',
-                                        ngx.HTTP_PUT)
+            local code, body = t('/apisix/admin/plugins/reload',
+                                    ngx.HTTP_PUT)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
         end
 _EOC_
 
@@ -88,18 +98,6 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local ai = require("apisix.plugins.ai")
-            local router = require("apisix.router")
-            local org_match = router.router_http.matching
-            local ai_match = ai.route_matching
-
-            local apisix = require("apisix")
-            local org_upstream = apisix.handle_upstream
-            local ai_upstream = ai.handle_upstream
-
-            local org_balancer_phase = apisix.http_balancer_phase
-            local ai_balancer_phase = ai.http_balancer_phase
-
             local t = require("lib.test_admin").test
             -- register route
             local code, body = t('/apisix/admin/routes/1',
@@ -121,33 +119,24 @@ __DATA__
                 ngx.say(body)
                 return
             end
-
+            -- enable route cache
             local code = t('/hello', ngx.HTTP_GET)
-            assert(code == 200, "enable(default): access /hello")
-            assert(router.router_http.matching == ai_match, "enable(default): router_http.matching")
-            assert(apisix.handle_upstream == ai_upstream, "enable(default): ai_upstream")
-            assert(apisix.http_balancer_phase == ai_balancer_phase, "enable(default): http_balancer_phase")
+            assert(code == 200)
 
             -- disable ai plugin
-            local code = unload_ai_module()
-            assert(code == 200, "disable ai plugin")
-            ngx.sleep(2)
+            unload_ai_module()
+
             local code = t('/hello', ngx.HTTP_GET)
-            assert(code == 200, "disable: access /hello")
-            assert(router.router_http.matching == org_match, "disable: router_http.matching")
-            assert(apisix.handle_upstream == org_upstream, "disable: ai_upstream")
-            assert(apisix.http_balancer_phase == org_balancer_phase, "disable: http_balancer_phase")
+            assert(code == 200)
 
             -- enable ai plugin
-            local code = load_ai_module()
-            assert(code == 200, "enable ai plugin")
-            ngx.sleep(2)
+            load_ai_module()
+
+            -- TODO: The route cache should be enabled, but since no new routes are registered,
+            -- the route tree is not rebuilt, 
+            -- so it is not possible to switch to route cache mode, we should fix it
             local code = t('/hello', ngx.HTTP_GET)
             assert(code == 200, "enable: access /hello")
-            -- TODO: It's not very reasonable, we need to fix it
-            assert(router.router_http.matching == org_match, "enable: router_http.matching")
-            assert(apisix.handle_upstream == org_upstream, "enable: ai_upstream")
-            assert(apisix.http_balancer_phase == org_balancer_phase, "enable: http_balancer_phase")
 
             -- register a new route and trigger a route tree rebuild
             local code, body = t('/apisix/admin/routes/2',
@@ -170,14 +159,23 @@ __DATA__
                 return
             end
 
-            local code = t('/echo', ngx.HTTP_GET)
-            assert(code == 200, "register again: access /echo")
-            local new_ai = require("apisix.plugins.ai")
-            assert(router.router_http.matching == new_ai.route_matching, "enable(after require): router_http.matching")
-            assert(apisix.handle_upstream == new_ai.handle_upstream, "enable(after require): handle_upstream")
-            assert(apisix.http_balancer_phase == new_ai.http_balancer_phase, "enable(after require): http_balancer_phase")
+            local code = t('/hello', ngx.HTTP_GET)
+            assert(code == 200)
+
+            ngx.say("done")
         }
     }
+--- response_body
+done
+--- grep_error_log eval
+qr/route match mode: \S[^,]+/
+--- grep_error_log_out
+route match mode: ai_match
+route match mode: radixtree_uri
+route match mode: radixtree_uri
+route match mode: radixtree_uri
+route match mode: ai_match
+route match mode: radixtree_uri
 
 
 
@@ -196,12 +194,6 @@ plugins:
 --- config
     location /t {
         content_by_lua_block {
-            local router = require("apisix.router")
-            local org_match = router.router_http.matching
-            local apisix = require("apisix")
-            local org_upstream = apisix.handle_upstream
-            local org_balancer_phase = apisix.http_balancer_phase
-
             local t = require("lib.test_admin").test
             -- register route
             local code, body = t('/apisix/admin/routes/1',
@@ -225,21 +217,13 @@ plugins:
             end
 
             local code = t('/hello', ngx.HTTP_GET)
-            assert(code == 200, "disable(default): access /hello")
-            assert(router.router_http.matching == org_match, "disable(default): router_http.matching")
-            assert(apisix.handle_upstream == org_upstream, "disable(default): handle_upstream")
-            assert(apisix.http_balancer_phase == org_balancer_phase, "disable(default): http_balancer_phase")
+            assert(code == 200)
 
             -- enable ai plugin
-            local code = load_ai_module()
-            assert(code == 200, "enable ai plugin")
-            ngx.sleep(2)
+            load_ai_module()
+
             local code = t('/hello', ngx.HTTP_GET)
-            assert(code == 200, "enable: access /hello")
-            -- TODO: It's not very reasonable, we need to fix it
-            assert(router.router_http.matching == org_match, "enable: router_http.matching")
-            assert(apisix.handle_upstream == org_upstream, "enable: handle_upstream")
-            assert(apisix.http_balancer_phase == org_balancer_phase, "enable: http_balancer_phase")
+            assert(code == 200)
 
             -- register a new route and trigger a route tree rebuild
             local code, body = t('/apisix/admin/routes/2',
@@ -262,21 +246,25 @@ plugins:
                 return
             end
 
-            local code = t('/echo', ngx.HTTP_GET)
-            assert(code == 200, "register again: access /echo")
-            local ai = require("apisix.plugins.ai")
-            assert(router.router_http.matching == ai.route_matching, "enable(after require): router_http.matching")
-            assert(apisix.handle_upstream == ai.handle_upstream, "enable(after require): handle_upstream")
-            assert(apisix.http_balancer_phase == ai.http_balancer_phase, "enable(after require): http_balancer_phase")
+            local code = t('/hello', ngx.HTTP_GET)
+            assert(code == 200)
 
             -- disable ai plugin
-            local code = unload_ai_module()
-            assert(code == 200, "unload ai plugin")
-            ngx.sleep(2)
+            unload_ai_module()
+
             local code = t('/hello', ngx.HTTP_GET)
-            assert(code == 200, "disable: access /hello")
-            assert(router.router_http.matching == org_match, "disable: router_http.matching")
-            assert(apisix.handle_upstream == org_upstream, "disable: handle_upstream")
-            assert(apisix.http_balancer_phase == org_balancer_phase, "disable: http_balancer_phase")
+            assert(code == 200)
+
+            ngx.say("done")
         }
     }
+--- response_body
+done
+--- grep_error_log eval
+qr/route match mode: \S[^,]+/
+--- grep_error_log_out
+route match mode: radixtree_uri
+route match mode: radixtree_uri
+route match mode: ai_match
+route match mode: radixtree_uri
+route match mode: radixtree_uri
