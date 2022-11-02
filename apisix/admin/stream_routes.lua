@@ -29,29 +29,26 @@ local _M = {
 
 local function check_router_refer(items, id)
     local refer_list = {}
-    local referkey = "/stream_routes/refer/".. id
+    local referkey = "/stream_routes_refer/".. id
     local _, err = core.etcd.delete(referkey)
     core.log.warn(err)
     for _, item in config_util.iterate_values(items) do
         if item.value == nil then
             goto CONTINUE
         end
+        local  r_id = string.gsub(item["key"],"/","_")
         local route = item.value
         if route.protocol and route.protocol.superior_id then
 	        local data
-            local setkey="/stream_routes/refer"..route.protocol.superior_id
+            local setkey="/stream_routes_refer/"..route.protocol.superior_id
             local res, err = core.etcd.get(setkey,false)
             if res then
-	            if #res.body.node.value == 0 then
-                    local v = core.json.decode("{}")
-	                local  r_id = item["key"]
-	                v[r_id]=1
-	                data = core.json.encode(v)
+	            if res.body.node == nil then
+                    data = core.json.decode("{}")
+	                data[r_id]=1
                 else
-                    local v = core.json.decode(res.body.node.value)
-	            local  r_id = item["key"]
-	            v[r_id]=1
-	            data = core.json.encode(v)
+                    data = res.body.node.value
+	                data[r_id]=1
                 end
             end 
             local setres, err = core.etcd.set(setkey, data)
@@ -61,13 +58,13 @@ local function check_router_refer(items, id)
         end
         ::CONTINUE::
      end
-     local referkey = key .. "/refer"
-     local rescheck, err = core.etcd.get(referkey,false)
+     local rescheck, _ = core.etcd.get(referkey,not id) 
      if rescheck then
          if rescheck.body.node  ~= nil then
-             local refer_values=core.json.decode(rescheck.body.node.value)
-             for v,_ in pairs(refer_values) do
-	         table.insert(refer_list,v)
+             if type(rescheck.body.node.value) == "table" then
+                 for v,_ in pairs(rescheck.body.node.value) do
+	             table.insert(refer_list,v)
+                 end
              end
          end
      end
