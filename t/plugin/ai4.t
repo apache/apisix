@@ -133,7 +133,7 @@ __DATA__
             load_ai_module()
 
             -- TODO: The route cache should be enabled, but since no new routes are registered,
-            -- the route tree is not rebuilt, 
+            -- the route tree is not rebuilt,
             -- so it is not possible to switch to route cache mode, we should fix it
             local code = t('/hello', ngx.HTTP_GET)
             assert(code == 200, "enable: access /hello")
