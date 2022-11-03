@@ -335,19 +335,26 @@ function _M.rewrite(plugin_conf, ctx)
         -- Either token validation via introspection endpoint or public key is
         -- not configured, and/or token could not be extracted from the request.
 
+        local unauth_action = conf.unauth_action
+        if unauth_action ~= "auth" then
+            unauth_action = "deny"
+        end
+
         -- Authenticate the request. This will validate the access token if it
         -- is stored in a session cookie, and also renew the token if required.
         -- If no token can be extracted, the response will redirect to the ID
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, _, session  = openidc.authenticate(conf, nil, conf.unauth_action, conf.session)
-
-        if err == 'unauthorized request' then
-            return 401
-        end
+        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action, conf.session)
 
         if err then
+            if err == "unauthorized request" then
+                if conf.unauth_action == "pass" then
+                    return nil
+                end
+                return 401
+            end
             core.log.error("OIDC authentication failed: ", err)
             return 500
         end
