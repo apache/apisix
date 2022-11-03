@@ -223,7 +223,7 @@ apisix_bandwidth{type="ingress",route="bar"
 
 
 
-==== TEST 1: route has filter_func, disable route cache
+==== TEST 3: route has filter_func, disable route cache
 --- config
     location /t {
         content_by_lua_block {
