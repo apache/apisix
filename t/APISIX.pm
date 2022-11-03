@@ -771,9 +771,6 @@ _EOC_
             if (\$http_x_forwarded_for != "") {
                 set \$var_x_forwarded_for "\${http_x_forwarded_for}, \${realip_remote_addr}";
             }
-            if (\$http_x_forwarded_host != "") {
-                set \$var_x_forwarded_host \$http_x_forwarded_host;
-            }
             if (\$http_x_forwarded_port != "") {
                 set \$var_x_forwarded_port \$http_x_forwarded_port;
             }
