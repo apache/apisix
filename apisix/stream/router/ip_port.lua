@@ -99,8 +99,8 @@ do
 	                core.log.warn("The stream_route: "..key.." may lacks procotol configuration")
 	            elseif routeid_to_protocols[key] == route.protocol.name then
 		            goto CONTINUE
-                else 
-                    core.log.warn("RPC procotol is different in stream_route:"..item.key.." and "..key)
+                else
+                    core.log.warn("Different between stream_route:"..item.key.." and "..key)
                 end
                 goto CONTINUE
             end
@@ -258,8 +258,6 @@ function _M.stream_init_worker(filter)
             checker = stream_route_checker,
             filter = filter,
         })
-    
-
     if not user_routes then
         error("failed to create etcd instance for fetching /stream_routes : "
               .. err)

@@ -32,6 +32,7 @@ local function check_router_refer(items, id)
     local referkey = "/stream_routes_refer/".. id
     local _, err = core.etcd.delete(referkey)
     core.log.warn(err)
+    core.log.warn(items)
     for _, item in config_util.iterate_values(items) do
         if item.value == nil then
             goto CONTINUE
@@ -50,6 +51,8 @@ local function check_router_refer(items, id)
                     data = res.body.node.value
 	                data[r_id]=1
                 end
+            else 
+                core.log.error("In function check_router_refer  error: ",err)
             end 
             local setres, err = core.etcd.set(setkey, data)
             if not setres then
@@ -192,12 +195,15 @@ function _M.delete(id)
     local items,_ = routes()
     local key = "/stream_routes/" .. id
     -- core.log.info("key: ", key)
-    local refer_list=check_router_refer(items,id)
+    local refer_list = {}
+    if items ~= nil then
+        refer_list=check_router_refer(items,id)
+    end
     local warn_message
     if #refer_list >0 then
-        warn_message = key.." is refered by "..table.concat(refer_list,";;")
+        warn_message = key.." is referred by "..table.concat(refer_list,";;")
     else 
-        warn_message = key.." is refered by None"
+        warn_message = key.." is referred by None"
     end
 
     local res, err = core.etcd.delete(key)
