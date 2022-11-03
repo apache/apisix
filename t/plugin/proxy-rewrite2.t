@@ -186,7 +186,7 @@ localhost
 
 
 
-=== TEST 6: pass duplicate  X-Forwarded-Proto
+=== TEST 6: pass duplicate X-Forwarded-Proto
 --- apisix_yaml
 routes:
   -
