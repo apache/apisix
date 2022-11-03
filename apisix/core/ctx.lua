@@ -200,6 +200,7 @@ do
 
         var_x_forwarded_proto = true,
         var_x_forwarded_port  = true,
+        var_x_forwarded_host  = true,
     }
 
     -- sort in alphabetical

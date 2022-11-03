@@ -29,29 +29,29 @@ description: 本文介绍了 Apache APISIX limit-count 插件的相关操作，�
 
 ## 描述
 
-`limit-count` 插件用于限制客户端在指定的时间范围内对服务的总请求数，并且在 HTTP 响应头中返回剩余可以请求的个数。该插件的原理与 [GitHub API 的速率限制](https://docs.github.com/en/rest/reference/rate-limit)类似。
+`limit-count` 插件使用固定时间窗口算法，主要用于限制**单个客户端**在指定的时间范围内对服务的总请求数，并且会在 HTTP 响应头中返回剩余可以请求的个数。该插件原理与 [GitHub API 的速率限制](https://docs.github.com/en/rest/reference/rate-limit)类似。
 
 ## 属性
 
-| 名称                | 类型    | 必选项                               | 默认值        | 有效值                                                                                                  | 描述                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ------------------- | ------- | --------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| count               | integer | 是                               |               | count > 0                                                                                               | 每个客户端在指定时间窗口内的总请求数量阈值。                                                                                                                                                                                                                                                                                                                                                                                          |
-| time_window         | integer | 是                               |               | time_window > 0                                                                                         | 时间窗口的大小（以秒为单位），。超过该属性定义的时间，则会重新开始计数。                                                                                                                                                                                                                                                                                                                                                                    |
-| key_type      | string | 否   |  "var"      | ["var", "var_combination", "constant"]                                          | key 的类型。 |
-| key           | string  | 否   |    "remote_addr"    |  | 用来做请求计数的依据。如果 `key_type` 为 `constant`，那么 key 会被当作常量；如果 `key_type` 为 `var`，那么 key 会被当作变量；如果 `key_type` 为 `var_combination`，那么 key 会被当作变量组合，如 `$remote_addr $consumer_name`，插件会同时受 `$remote_addr` 和 `$consumer_name` 两个变量的约束；如果 key 的值为空，`$remote_addr` 会被作为默认 key。 |
-| rejected_code       | integer | 否                               | 503           | [200,...,599]                                                                                           | 当请求超过阈值被拒绝时，返回的 HTTP 状态码。                                                                                                                                                                                                                                                                                                                                                                            |
-| rejected_msg       | string | 否                                |            | 非空                                                                                           | 当请求超过阈值被拒绝时，返回的响应体。                                                                                                                                                                                                             |
-| policy              | string  | 否                               | "local"       | ["local", "redis", "redis-cluster"]                                                                     | 用于检索和增加限制计数的策略。当设置为 `local` 时，计数器被以内存方式保存在节点本地；当设置为 `redis` 时，计数器保存在 Redis 服务节点上，从而可以跨节点共享结果，通常用它来完成全局限速；当设置为 `redis-cluster` 时，使用 Redis 集群而不是单个实例。                                                                                                                                                        |
-| allow_degradation              | boolean  | 否                                | false       |                                                                     | 当插件功能临时不可用时（例如 Redis 超时），当设置为 `true` 时，则表示可以允许插件降级并进行继续请求的操作。 |
-| show_limit_quota_header              | boolean  | 否                                | true       |                                                                     | 当设置为 `true` 时，在响应头中显示 `X-RateLimit-Limit`（限制的总请求数）和 `X-RateLimit-Remaining`（剩余还可以发送的请求数）字段。 |
-| group               | string | 否                                |            | 非空                                                                                           | 配置相同 group 的路由将共享相同的限流计数器。 |
-| redis_host          | string  | 否                      |               |                                                                                                         | 当使用 `redis` 限速策略时，Redis 服务节点的地址。**当 `policy` 属性设置为 `redis` 时必选。**                                                                                                                                                                                                                                                                                                                                                         |
-| redis_port          | integer | 否                               | 6379          | [1,...]                                                                                                 | 当使用 `redis` 限速策略时，Redis 服务节点的端口。                                                                                                                                                                                                                                                                                                                                                              |
-| redis_password      | string  | 否                               |               |                                                                                                         | 当使用 `redis`  或者 `redis-cluster`  限速策略时，Redis 服务节点的密码。                                                                                                                                                                                                                                                                                                                                                            |
-| redis_database      | integer | 否                               | 0             | redis_database >= 0                                                                                     | 当使用 `redis` 限速策略时，Redis 服务节点中使用的 `database`，并且只针对非 Redis 集群模式（单实例模式或者提供单入口的 Redis 公有云服务）生效。                                                                                                                                                                                                                                                                 |
-| redis_timeout       | integer | 否                               | 1000          | [1,...]                                                                                                 | 当 `policy` 设置为 `redis` 或 `redis-cluster` 时，Redis 服务节点的超时时间（以毫秒为单位）。                                                                                                                                                                                                                                                                                                                                              |
-| redis_cluster_nodes | array   |  否  |               |                                                                                                         | 当使用 `redis-cluster` 限速策略时，Redis 集群服务节点的地址列表（至少需要两个地址）。**当 `policy` 属性设置为 `redis-cluster` 时必选。**                                                                                                                                                                                                                                                                                                                                           |
-| redis_cluster_name  | string  |  否  |               |                                                                                                         | 当使用 `redis-cluster` 限速策略时，Redis 集群服务节点的名称。**当 `policy` 设置为 `redis-cluster` 时必选。**                                                                                                                                                                                                                                                                                                                                          |
+| 名称                | 类型    | 必选项      | 默认值        | 有效值                                   | 描述                                                                                                                                                                                                                                 |
+| ------------------- | ------- | ---------- | ------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| count               | integer | 是        |                | count > 0                               | 每个客户端在指定时间窗口内的总请求数量阈值。|
+| time_window         | integer | 是        |                | time_window > 0                         | 时间窗口的大小（以秒为单位）。超过该属性定义的时间，则会重新开始计数。|
+| key_type            | string | 否         |  "var"         | ["var", "var_combination", "constant"] | key 的类型。 |
+| key                 | string  | 否        |  "remote_addr" |                                        | 用来做请求计数的依据。如果 `key_type` 为 `constant`，那么 key 会被当作常量；如果 `key_type` 为 `var`，那么 key 会被当作变量；如果 `key_type` 为 `var_combination`，那么 key 会被当作变量组合，如 `$remote_addr $consumer_name`，插件会同时受 `$remote_addr` 和 `$consumer_name` 两个变量的约束；如果 `key` 的值为空，`$remote_addr` 会被作为默认 `key`。 |
+| rejected_code       | integer | 否        | 503            | [200,...,599]                          | 当请求超过阈值被拒绝时，返回的 HTTP 状态码。|
+| rejected_msg        | string  | 否        |                | 非空                                   | 当请求超过阈值被拒绝时，返回的响应体。|
+| policy              | string  | 否        | "local"        | ["local", "redis", "redis-cluster"]    | 用于检索和增加限制计数的策略。当设置为 `local` 时，计数器被以内存方式保存在节点本地；当设置为 `redis` 时，计数器保存在 Redis 服务节点上，从而可以跨节点共享结果，通常用它来完成全局限速；当设置为 `redis-cluster` 时，使用 Redis 集群而不是单个实例。|
+| allow_degradation   | boolean | 否        | false          |                                         | 当插件功能临时不可用时（例如 Redis 超时），当设置为 `true` 时，则表示可以允许插件降级并进行继续请求的操作。 |
+| show_limit_quota_header | boolean | 否    | true          |                                          | 当设置为 `true` 时，在响应头中显示 `X-RateLimit-Limit`（限制的总请求数）和 `X-RateLimit-Remaining`（剩余还可以发送的请求数）字段。 |
+| group               | string | 否         |               | 非空                                    | 配置相同 group 的路由将共享相同的限流计数器。 |
+| redis_host          | string  | 否        |               |                                         | 当使用 `redis` 限速策略时，Redis 服务节点的地址。**当 `policy` 属性设置为 `redis` 时必选。**|
+| redis_port          | integer | 否        | 6379          | [1,...]                                 | 当使用 `redis` 限速策略时，Redis 服务节点的端口。|
+| redis_password      | string  | 否        |               |                                         | 当使用 `redis`  或者 `redis-cluster`  限速策略时，Redis 服务节点的密码。|
+| redis_database      | integer | 否        | 0             | redis_database >= 0                     | 当使用 `redis` 限速策略时，Redis 服务节点中使用的 `database`，并且只针对非 Redis 集群模式（单实例模式或者提供单入口的 Redis 公有云服务）生效。|
+| redis_timeout       | integer | 否        | 1000          | [1,...]                                 | 当 `policy` 设置为 `redis` 或 `redis-cluster` 时，Redis 服务节点的超时时间（以毫秒为单位）。|
+| redis_cluster_nodes | array   | 否        |               |                                         | 当使用 `redis-cluster` 限速策略时，Redis 集群服务节点的地址列表（至少需要两个地址）。**当 `policy` 属性设置为 `redis-cluster` 时必选。**|
+| redis_cluster_name  | string  | 否        |               |                                         | 当使用 `redis-cluster` 限速策略时，Redis 集群服务节点的名称。**当 `policy` 设置为 `redis-cluster` 时必选。**|
 
 ## 启用插件
 
@@ -149,12 +149,6 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/2 \
 }'
 ```
 
-:::note 注意
-
-同一个 `group` 里面的 `limit-count` 的配置必须保持一致。一旦修改了配置，你需要更新对应的 `group` 的值。
-
-:::
-
 通过将 `key_type` 设置为 `"constant"`，你也可以在所有请求间共享同一个限流计数器：
 
 ```shell
@@ -181,6 +175,12 @@ curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
 ```
 
 以上配置表示：当多个路由中 `limit-count` 插件的 `group` 属性均配置为 `services_1#1640140620` 时，访问这些路由的请求将会共享同一个计数器，即使这些请求来自于不同的 IP 地址。
+
+:::note 注意
+
+同一个 `group` 里面的 `limit-count` 的配置必须保持一致。如果修改配置，需要同时更新对应的 `group` 的值。
+
+:::
 
 如果你需要一个集群级别的流量控制，我们可以借助 Redis 服务器来完成。不同的 APISIX 节点之间将共享流量限速结果，实现集群流量限速。
 
