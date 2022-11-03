@@ -39,6 +39,190 @@ run_tests();
 
 __DATA__
 
+=== TEST 1: keep priority behavior consistent
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "methods": ["GET"],
+                    "priority": 1,
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/server_port"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "methods": ["GET"],
+                    "priority": 10,
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1981": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/server_port"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/server_port"
+            local t = {}
+            for i = 1, 2 do
+                local th = assert(ngx.thread.spawn(function(i)
+                    local httpc = http.new()
+                    local res, err = httpc:request_uri(uri)
+                    assert(res.status == 200)
+                    if not res then
+                        ngx.log(ngx.ERR, err)
+                        return
+                    end
+                    ngx.say(res.body)
+                end, i))
+                table.insert(t, th)
+            end
+            for i, th in ipairs(t) do
+                ngx.thread.wait(th)
+            end
+        }
+    }
+--- response_body
+1981
+1981
+--- error_log
+use ai plane to match route
+
+
+
+=== TEST 2: keep route cache as latest data
+# update the attributes that do not participate in the route cache key to ensure
+# that the route cache use the latest data
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/pm',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "public-api": {}
+                    },
+                    "uri": "/apisix/prometheus/metrics"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "name": "foo",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "prometheus": {
+                            "prefer_name": true
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri)
+            assert(res.status == 200)
+            if not res then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            local metrics_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/prometheus/metrics"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(metrics_uri)
+            assert(res.status == 200)
+            if not res then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            local m, err = ngx.re.match(res.body, "apisix_bandwidth{type=\"ingress\",route=\"foo\"", "jo")
+            ngx.say(m[0])
+
+            -- update name by patch
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PATCH,
+                [[{
+                    "name": "bar"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri)
+            assert(res.status == 200)
+            if not res then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            local metrics_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/prometheus/metrics"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(metrics_uri)
+            assert(res.status == 200)
+            if not res then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            local m, err = ngx.re.match(res.body, "apisix_bandwidth{type=\"ingress\",route=\"bar\"", "jo")
+            ngx.say(m[0])
+        }
+    }
+--- response_body
+apisix_bandwidth{type="ingress",route="foo"
+apisix_bandwidth{type="ingress",route="bar"
+
+
+
 ==== TEST 1: route has filter_func, disable route cache
 --- config
     location /t {
