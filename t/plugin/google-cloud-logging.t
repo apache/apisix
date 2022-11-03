@@ -31,6 +31,61 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
+     my $http_config = $block->http_config // <<_EOC_;
+server {
+        listen 12001;
+
+        location /google-cloud-logging/test {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local data = ngx.req.get_body_data()
+                ngx.log(ngx.WARN, "google cloud logging request body: ", data)
+                ngx.log(ngx.ERR, data)
+                ngx.say('test-http-logger-response')
+                ngx.log(ngx.WARN, "loggingBody:", data)
+            }
+        }
+
+        
+        location /google/logging/entries {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local body = ngx.req.get_body_data()
+
+                local data, err = require("cjson").decode(body)
+                if err then
+                    ngx.log(ngx.WARN, "loggingBody", body)
+                end
+
+                ngx.log(ngx.WARN, "loggingBody", body)
+                ngx.say("ok")
+                 ngx.print(body)
+            }
+        }
+
+         location /google/logging/test1 {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local json_decode = require("toolkit.json").decode
+                local json_encode = require("toolkit.json").encode
+                local data = ngx.req.get_body_data()
+                local decoded_data = json_decode(data)
+                
+                ngx.log(ngx.WARN,"gcp logs body entries: ", json_encode(decoded_data["entries"][1]["jsonPayload"]))
+                ngx.say("ok")
+            }
+        }
+    }
+_EOC_
+
+    $block->set_value("http_config", $http_config);
+
+my $extra_init_by_lua = <<_EOC_;
+    local bpm = require("apisix.utils.batch-processor-manager")
+    bpm.set_check_stale_interval(1)
+_EOC_
+
+    $block->set_value("extra_init_by_lua", $extra_init_by_lua);
 
 });
 
@@ -753,6 +808,8 @@ GET /hello
 --- response_body
 hello world
 
+
+
 === TEST 26: set include_req_body = true on route succeeds
 --- config
     location /t {
@@ -793,9 +850,90 @@ passed
 
 
 
-=== TEST 27: test route (set include_req_body = true on route succeeds)
---- request
-GET /hello
---- wait: 2
+=== TEST 28: set fetch request body and response body route
+--- config
+    location /t {
+        content_by_lua_block {
+            local config = {
+                uri = "/google-cloud-logging/test",
+                method = 'POST',
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:12001"] = 1
+                    }
+                },
+                plugins = {
+                    ["google-cloud-logging"] = {
+                        auth_file = "t/plugin/google-cloud-logging/config.json",
+                        inactive_timeout = 1,
+                        batch_max_size = 1,
+                        include_req_body = true,
+                    }
+                }
+            }
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
 --- response_body
-hello world
+passed
+
+
+
+=== TEST 28: set fetch request body and response body route
+--- config
+    location /t {
+        content_by_lua_block {
+            local config = {
+                uri = "/google-cloud-logging/test",
+                method = 'POST',
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:12001"] = 1
+                    }
+                },
+                plugins = {
+                    ["google-cloud-logging"] = {
+                        auth_file = "t/plugin/google-cloud-logging/config.json",
+                        inactive_timeout = 1,
+                        batch_max_size = 1,
+                        include_req_body = true,
+                    }
+                }
+            }
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 29: check request body included in log entry
+--- request
+POST /google-cloud-logging/test
+{"bodyItem": "something"}
+--- grep_error_log eval
+qr/gcp logs body entries: .*/
+--- grep_error_log_out eval	
+qr/gcp logs body entries: \{"request_body":\{"bodyItem":"something"\},"route_id":"1","service_id":""\}, client: 127.0.0.1, server: , request: "POST \/clickhouse-logger\/test1 HTTP\/1.1", host: "127.0.0.1:12001/
+--- wait: 2
