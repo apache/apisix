@@ -728,7 +728,6 @@ Example 1: Create an Upstream and modify the data in `nodes`
 # Create upstream
 $ curl http://127.0.0.1:9180/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
-    "type":"roundrobin",
     "nodes":{
         "127.0.0.1:1980": 1
     }
@@ -811,7 +810,6 @@ $ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f0343
 {
     "uri": "/get",
     "upstream": {
-        "type": "roundrobin",
         "scheme": "https",
         "nodes": {
             "httpbin.org:443": 1
