@@ -208,6 +208,8 @@ X-Forwarded-Proto: grpc
 --- response_headers
 X-Forwarded-Proto: http
 
+
+
 === TEST 7: customize X-Forwarded-Port
 --- apisix_yaml
 routes:
@@ -228,5 +230,8 @@ upstreams:
 #END
 --- request
 GET /echo
+--- more_headers
+X-Forwarded-Port: 8080
 --- response_headers
-X-Forwarded-Port: 10080
+X-Forwarded-Proto: 10080
+
