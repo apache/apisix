@@ -447,3 +447,25 @@ deployment:
             - http://127.0.0.1:2379
 --- response_body
 30
+
+
+
+=== TEST 11: ipv6
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/apisix/test", "foo"))
+            local res = assert(etcd.get("/apisix/test"))
+            ngx.say(res.body.node.value)
+        }
+    }
+--- yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    etcd:
+        prefix: "/apisix"
+        host:
+            - http://[::1]:2379
