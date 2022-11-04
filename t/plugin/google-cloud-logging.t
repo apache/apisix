@@ -46,7 +46,7 @@ server {
             }
         }
 
-        
+
         location /google/logging/entries {
             content_by_lua_block {
                 ngx.req.read_body()
@@ -70,7 +70,7 @@ server {
                 local json_encode = require("toolkit.json").encode
                 local data = ngx.req.get_body_data()
                 local decoded_data = json_decode(data)
-                
+
                 ngx.log(ngx.WARN,"gcp logs body entries: ", json_encode(decoded_data["entries"][1]["jsonPayload"]))
                 ngx.say("ok")
             }
