@@ -103,7 +103,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 为了生成签名需要两个参数：`secret_key` 和 `signing_string`。其中 `secret_key` 由对应 Consumer 配置，`signing_string` 的计算公式为 `signing_string = HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n + signed_headers_string`。如果 `signing_string` 中的某一项不存在，则需要使用一个空字符串代替：
 
 - **HTTP Method**：指 HTTP 协议中定义的 GET、PUT、POST 等请求方法，必须使用全大写的形式。
-- **HTTP URI**：HTTP URI。必须以 “/” 开头，“/” 表示空路径。
+- **HTTP URI**：HTTP URI。必须以 `/` 开头，`/` 表示空路径。
 - **Date**：请求头中的日期（GMT 格式）。
 - **canonical_query_string**：对 URL 中的 query（query 即 URL 中 `?` 后面的 `key1=valve1&key2=valve2` 字符串）进行编码后的结果。
 - **signed_headers_string**：从请求头中获取客户端指定的字段，并按顺序拼接字符串的结果。
@@ -316,7 +316,7 @@ Accept-Ranges: bytes
 :::note
 
 1. ACCESS_KEY、SIGNATURE、ALGORITHM、DATE、SIGNED_HEADERS 分别代表对应的变量。
-2. SIGNED_HEADERS 为客户端指定的加入加密计算的 headers。若存在多个 headers 需以 “;” 分割，例如：`x-custom-header-a;x-custom-header-b`。
+2. SIGNED_HEADERS 为客户端指定的加入加密计算的 headers。若存在多个 headers 需以 `;` 分割，例如：`x-custom-header-a;x-custom-header-b`。
 3. SIGNATURE 需要使用 base64 进行加密：`base64_encode(SIGNATURE)`。
 
 :::
