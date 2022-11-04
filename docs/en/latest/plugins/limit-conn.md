@@ -120,70 +120,6 @@ curl -i http://127.0.0.1:9080/index.html?sleep=20
 </html>
 ```
 
-## Limit the number of concurrent WebSocket connections
-
-Apache APISIX supports WebSocket proxy, we can use `limit-conn` plugin to limit the number of concurrent WebSocket connections.
-
-1. Create a Route, enable the WebSocket proxy and the `limit-conn` plugin.
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "uri": "/ws",
-    "enable_websocket": true,
-    "plugins": {
-        "limit-conn": {
-            "conn": 1,
-            "burst": 0,
-            "default_conn_delay": 0.1,
-            "rejected_code": 503,
-            "key_type": "var",
-            "key": "remote_addr"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
-
-The above route enables the WebSocket proxy on `/ws`, and limits the number of concurrent WebSocket connections to 1. More than 1 concurrent WebSocket connection will return `503` to reject the request.
-
-2. Initiate a WebSocket request, and the connection is established successfully.
-
-```shell
-curl --include \
-     --no-buffer \
-     --header "Connection: Upgrade" \
-     --header "Upgrade: websocket" \
-     --header "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==" \
-     --header "Sec-WebSocket-Version: 13" \
-     --http1.1 \
-     http://127.0.0.1:9080/ws
-```
-
-```shell
-HTTP/1.1 101 Switching Protocols
-```
-
-3. Initiate the WebSocket request again in another terminal, the request will be rejected.
-
-```shell
-HTTP/1.1 503 Service Temporarily Unavailable
-···
-<html>
-<head><title>503 Service Temporarily Unavailable</title></head>
-<body>
-<center><h1>503 Service Temporarily Unavailable</h1></center>
-<hr><center>openresty</center>
-</body>
-</html>
-```
-
 ## Disable Plugin
 
 To disable the `limit-conn` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
@@ -205,3 +141,69 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
     }
 }'
 ```
+
+## Example of application scenarios
+
+### Limit the number of concurrent WebSocket connections
+
+Apache APISIX supports WebSocket proxy, we can use `limit-conn` plugin to limit the number of concurrent WebSocket connections.
+
+1. Create a Route, enable the WebSocket proxy and the `limit-conn` plugin.
+
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    {
+        "uri": "/ws",
+        "enable_websocket": true,
+        "plugins": {
+            "limit-conn": {
+                "conn": 1,
+                "burst": 0,
+                "default_conn_delay": 0.1,
+                "rejected_code": 503,
+                "key_type": "var",
+                "key": "remote_addr"
+            }
+        },
+        "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+        }
+    }'
+    ```
+
+    The above route enables the WebSocket proxy on `/ws`, and limits the number of concurrent WebSocket connections to 1. More than 1 concurrent WebSocket connection will return `503` to reject the request.
+
+2. Initiate a WebSocket request, and the connection is established successfully.
+
+    ```shell
+    curl --include \
+        --no-buffer \
+        --header "Connection: Upgrade" \
+        --header "Upgrade: websocket" \
+        --header "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==" \
+        --header "Sec-WebSocket-Version: 13" \
+        --http1.1 \
+        http://127.0.0.1:9080/ws
+    ```
+
+    ```shell
+    HTTP/1.1 101 Switching Protocols
+    ```
+
+3. Initiate the WebSocket request again in another terminal, the request will be rejected.
+
+    ```shell
+    HTTP/1.1 503 Service Temporarily Unavailable
+    ···
+    <html>
+    <head><title>503 Service Temporarily Unavailable</title></head>
+    <body>
+    <center><h1>503 Service Temporarily Unavailable</h1></center>
+    <hr><center>openresty</center>
+    </body>
+    </html>
+    ```

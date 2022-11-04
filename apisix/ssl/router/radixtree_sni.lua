@@ -118,6 +118,30 @@ local function set_pem_ssl_key(sni, cert, pkey)
 end
 
 
+-- export the set cert/key process so we can hook it in the other plugins
+function _M.set_cert_and_key(sni, value)
+    local ok, err = set_pem_ssl_key(sni, value.cert, value.key)
+    if not ok then
+        return false, err
+    end
+
+    -- multiple certificates support.
+    if value.certs then
+        for i = 1, #value.certs do
+            local cert = value.certs[i]
+            local key = value.keys[i]
+
+            ok, err = set_pem_ssl_key(sni, cert, key)
+            if not ok then
+                return false, err
+            end
+        end
+    end
+
+    return true
+end
+
+
 function _M.match_and_set(api_ctx, match_only)
     local err
     if not radixtree_router or
@@ -182,23 +206,9 @@ function _M.match_and_set(api_ctx, match_only)
 
     ngx_ssl.clear_certs()
 
-    ok, err = set_pem_ssl_key(sni, matched_ssl.value.cert,
-                              matched_ssl.value.key)
+    ok, err = _M.set_cert_and_key(sni, matched_ssl.value)
     if not ok then
         return false, err
-    end
-
-    -- multiple certificates support.
-    if matched_ssl.value.certs then
-        for i = 1, #matched_ssl.value.certs do
-            local cert = matched_ssl.value.certs[i]
-            local key = matched_ssl.value.keys[i]
-
-            ok, err = set_pem_ssl_key(sni, cert, key)
-            if not ok then
-                return false, err
-            end
-        end
     end
 
     if matched_ssl.value.client then
