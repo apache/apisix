@@ -233,5 +233,6 @@ GET /echo
 --- more_headers
 X-Forwarded-Port: 8080
 --- response_headers
-X-Forwarded-Proto: 10080
+X-Forwarded-Port: 10080
+
 
