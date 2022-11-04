@@ -46,7 +46,7 @@ The fields for defining a Consumer are defined as below.
 | Field      | Required | Description                                                                                                                                                                      |
 | ---------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `username` | True      | Name of the consumer.                                                                                                                                                             |
-| `plugins`  | False       | Plugin configuration of the **Consumer**. For specific Plugin configurations, please refer the [Plugins](./plugin.md) section. |
+| `plugins`  | False       | Plugin configuration of the **Consumer**. For specific Plugin configurations, please refer the [Plugins](./plugin.md). |
 
 ## Identifying a Consumer
 
@@ -72,7 +72,7 @@ For more information about the Consumer object, you can refer to the [Admin API 
 
 The example below shows how you can enable a Plugin for a specific Consumer.
 
-1. Create a Consumer, specify the authentication plugin `key-auth`, and enable the specific plugin `limit-count`:
+1. Create a Consumer, specify the authentication plugin `key-auth`, and enable the specific plugin `limit-count`.
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/consumers \
@@ -93,7 +93,7 @@ The example below shows how you can enable a Plugin for a specific Consumer.
     }'
     ```
 
-2. Create a Router, set routing rules and enable plugin configuration:
+2. Create a Router, set routing rules and enable plugin configuration.
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -112,7 +112,7 @@ The example below shows how you can enable a Plugin for a specific Consumer.
     }'
     ```
 
-3. Send a test request, the first two return to normal, did not reach the speed limit threshold:
+3. Send a test request, the first two return to normal, did not reach the speed limit threshold.
 
     ```shell
     curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
@@ -151,7 +151,7 @@ We can use the [consumer-restriction](../plugins/consumer-restriction.md) Plugin
     }'
     ```
 
-2. Repeated tests, all return `403`; Jack is forbidden to access this API:
+2. Repeated tests, all return `403`; Jack is forbidden to access this API.
 
     ```shell
     curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I

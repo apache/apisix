@@ -43,7 +43,7 @@ Upstream（也称之为上游）是对虚拟主机抽象，即应用层服务或
 
 APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上游做主被动健康检查、重试等逻辑。更多信息，请参考 [Admin API 中的 Upstream 资源](../admin-api.md#upstream)。
 
-1. 创建上游对象用例：
+1. 创建上游对象用例。
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/upstreams/1 \
@@ -60,7 +60,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
 
     上游对象创建后，可以被路由或服务引用。
 
-2. 在路由中使用创建的上游对象，例如：
+2. 在路由中使用创建的上游对象。
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -71,7 +71,9 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
     }'
     ```
 
-3. 为方便使用，你也可以直接把上游信息直接配置在某个路由或服务。以下示例是将上游信息直接配置在路由中，例如：
+3. 为方便使用，你也可以直接把上游信息直接配置在某个路由或服务。
+
+以下示例是将上游信息直接配置在路由中：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -97,7 +99,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
 
 ## 使用示例
 
-- 配置健康检查的示例：
+- 配置健康检查的示例。
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -157,7 +159,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
     }'
     ```
 
-2. 创建路由，启用 `key-auth` 插件，配置 `upstream.hash_on` 的类型为 `consumer`：
+2. 创建路由，启用 `key-auth` 插件，配置 `upstream.hash_on` 的类型为 `consumer`。
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -178,7 +180,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
     }'
     ```
 
-3. 测试请求，认证通过后的 `consumer_name` 将作为负载均衡哈希算法的哈希值：
+3. 测试请求，认证通过后的 `consumer_name` 将作为负载均衡哈希算法的哈希值。
 
     ```shell
     curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
@@ -186,7 +188,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
 
 ### Cookie
 
-1. 创建路由并配置 `upstream.hash_on` 的类型为 `cookie`：
+1. 创建路由并配置 `upstream.hash_on` 的类型为 `cookie`。
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -205,7 +207,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
     }'
     ```
 
-2. 客户端请求携带 `Cookie`：
+2. 客户端请求携带 `Cookie`。
 
     ```shell
     curl http://127.0.0.1:9080/hash_on_cookie \
@@ -215,7 +217,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
 
 ### Header
 
-1. 创建路由并配置 `upstream.hash_on` 的类型为 `header`，`key` 为 `content-type`：
+1. 创建路由并配置 `upstream.hash_on` 的类型为 `header`，`key` 为 `content-type`。
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -234,7 +236,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
     }'
     ```
 
-2. 客户端请求携带 `content-type` 的 `header`：
+2. 客户端请求携带 `content-type` 的 `header`。
 
 ```shell
  curl http://127.0.0.1:9080/hash_on_header \

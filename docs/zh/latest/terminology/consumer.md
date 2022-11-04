@@ -31,7 +31,7 @@ description: 本文介绍了 Apache APISIX Consumer 对象的作用以及如何�
 
 Consumer 是某类服务的消费者，需要与用户认证配合才可以使用。当不同的消费者请求同一个 API 时，APISIX 会根据当前请求的用户信息，对应不同的 Plugin 或 Upstream 配置。如果 [Route](./route.md)、[Service](./service.md)、[Consumer](./consumer.md) 和 [Plugin Config](./plugin-config.md) 都绑定了相同的插件，只有消费者的插件配置会生效。插件配置的优先级由高到低的顺序是：Consumer > Route > Plugin Config > Service。
 
-对于 API 网关而言，一般情况可以通过请求域名、客户端 IP 地址等字段识别到某类请求方，然后进行插件过滤并转发请求到指定上游，但有时候这个深度不够。
+对于 API 网关而言，一般情况可以通过请求域名、客户端 IP 地址等字段识别到某类请求方，然后进行插件过滤并转发请求到指定上游。但有时候该方式达不到用户需求，因此 APISIX 支持了 Consumer 对象。
 
 ![Consumer](../../../assets/images/consumer-who.png)
 
@@ -52,8 +52,8 @@ Consumer 是某类服务的消费者，需要与用户认证配合才可以使�
 
 ![Consumer Internal](../../../assets/images/consumer-internal.png)
 
-1. 授权认证：比如有 [key-auth](../plugins/key-auth.md)、[JWT](../plugins/jwt-auth.md) 等。
-2. 获取 consumer_name：通过授权认证，即可自然获取到对应的 Consumer name，它是 Consumer 对象的唯一识别标识。
+1. 授权认证：比如有 [key-auth](../plugins/key-auth.md)、[JWT](../plugins/jwt-auth.md) 等；
+2. 获取 consumer_name：通过授权认证，即可自然获取到对应的 Consumer name，它是 Consumer 对象的唯一识别标识；
 3. 获取 Consumer 上绑定的 Plugin 或 Upstream 信息：完成对不同 Consumer 做不同配置的效果。
 
 你可以参考 [key-auth](../plugins/key-auth.md) 认证授权插件的调用逻辑，进一步理解 Consumer 概念和使用。
@@ -68,7 +68,7 @@ Consumer 是某类服务的消费者，需要与用户认证配合才可以使�
 
 以下示例介绍了如何对某个 Consumer 开启指定插件：
 
-1. 创建 Consumer，指定认证插件 `key-auth`，并开启特定插件 `limit-count`：
+1. 创建 Consumer，指定认证插件 `key-auth`，并开启特定插件 `limit-count`。
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/consumers \
@@ -89,7 +89,7 @@ Consumer 是某类服务的消费者，需要与用户认证配合才可以使�
     }'
     ```
 
-2. 创建路由，设置路由规则和启用插件配置：
+2. 创建路由，设置路由规则和启用插件配置。
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -108,7 +108,7 @@ Consumer 是某类服务的消费者，需要与用户认证配合才可以使�
     }'
     ```
 
-3. 测试插件
+3. 测试插件。
 
     连续发送三次测试请求，前两次返回正常，没达到限速阈值。
 

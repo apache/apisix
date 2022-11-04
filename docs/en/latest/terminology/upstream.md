@@ -41,9 +41,9 @@ An Upstream configuration can be directly bound to a Route or a Service, but the
 
 ## Configuration
 
-In addition to the equalization algorithm selections, Upstream also supports passive health check and retry for the upstream. You can learn more about this [here](../admin-api.md#upstream).
+In addition to the equalization algorithm selections, Upstream also supports passive health check and retry for the upstream. You can learn more about this [Admin API Upstream](../admin-api.md#upstream).
 
-To create an Upstream object, you can use the Admin API as shown below:
+To create an Upstream object, you can use the Admin API as shown below.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/upstreams/1 \
@@ -58,7 +58,7 @@ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 \
 }'
 ```
 
-After creating an Upstream object, it can be referenced by a specific Route or Service as shown below:
+After creating an Upstream object, it can be referenced by a specific Route or Service as shown below.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -69,7 +69,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 }'
 ```
 
-For convenience, you can directly bind the upstream address to a Route or Service:
+For convenience, you can directly bind the upstream address to a Route or Service.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -95,7 +95,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ## Example
 
-The example below shows how you can configure a health check:
+The example below shows how you can configure a health check.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -134,13 +134,13 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 }'
 ```
 
-You can learn more about health checks [here](../tutorials/health-check.md).
+You can learn more about health checks [health-check](../tutorials/health-check.md).
 
 The examples below show configurations that use different `hash_on` types.
 
 ### Consumer
 
-Creating a Consumer object:
+Creating a Consumer object.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers \
@@ -155,7 +155,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 }'
 ```
 
-Creating a Route object and enabling the `key-auth` authentication Plugin:
+Creating a Route object and enabling the `key-auth` authentication Plugin.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -184,7 +184,7 @@ curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
 
 ### Cookie
 
-Creating a Route and an upstream object:
+Creating a Route and an upstream object.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -203,7 +203,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 }'
 ```
 
-The client can then send a request with a cookie:
+The client can then send a request with a cookie.
 
 ```shell
  curl http://127.0.0.1:9080/hash_on_cookie \
@@ -212,7 +212,7 @@ The client can then send a request with a cookie:
 
 ### Header
 
-Creating a Route and an upstream object:
+Creating a Route and an upstream object.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -231,7 +231,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 }'
 ```
 
-The client can now send requests with a header. The example below shows using the header `Content-Type`:
+The client can now send requests with a header. The example below shows using the header `Content-Type`.
 
 ```shell
  curl http://127.0.0.1:9080/hash_on_header \
