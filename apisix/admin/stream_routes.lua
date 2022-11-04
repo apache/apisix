@@ -51,9 +51,9 @@ local function check_router_refer(items, id)
                     data = res.body.node.value
 	                data[r_id]=1
                 end
-            else 
+            else
                 core.log.error("In function check_router_refer  error: ",err)
-            end 
+            end
             local setres, err = core.etcd.set(setkey, data)
             if not setres then
                 core.log.error("failed to put stream route[", setkey, "]: ", err)
@@ -61,7 +61,7 @@ local function check_router_refer(items, id)
         end
         ::CONTINUE::
      end
-     local rescheck, _ = core.etcd.get(referkey,not id) 
+     local rescheck, _ = core.etcd.get(referkey,not id)
      if rescheck then
          if rescheck.body.node  ~= nil then
              if type(rescheck.body.node.value) == "table" then
@@ -202,7 +202,7 @@ function _M.delete(id)
     local warn_message
     if #refer_list >0 then
         warn_message = key.." is referred by "..table.concat(refer_list,";;")
-    else 
+    else
         warn_message = key.." is referred by None"
     end
 
