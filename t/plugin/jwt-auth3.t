@@ -105,7 +105,7 @@ passed
 
 
 
-=== TEST 3: verify (in header) with not hide credentials
+=== TEST 3: verify (in header) not hiding credentials
 --- request
 GET /echo
 --- more_headers
@@ -115,7 +115,7 @@ jwt-header: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIs
 
 
 
-=== TEST 4: verify (in cookie) with not hide credentials
+=== TEST 4: verify (in cookie) not hiding credentials
 --- request
 GET /echo
 --- more_headers
@@ -125,7 +125,7 @@ Cookie: jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIs
 
 
 
-=== TEST 5: enable jwt auth plugin using admin api with not hide credentials
+=== TEST 5: enable jwt auth plugin using admin api without hiding credentials
 # the `proxy-rewrite` play role as upstream to check sensitive param
 --- config
     location /t {
@@ -168,7 +168,7 @@ passed
 
 
 
-=== TEST 6: verify (in query) not hidden credentials
+=== TEST 6: verify (in query) without hiding credentials
 --- request
 GET /echo?foo=bar&hello=world&jwt-query=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- response_body
@@ -181,7 +181,7 @@ jwt-query: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6
 
 
 
-=== TEST 7: enable jwt auth plugin using admin api with hide auth
+=== TEST 7: enable jwt auth plugin using admin api with hiding credentials
 --- config
     location /t {
         content_by_lua_block {
@@ -220,7 +220,7 @@ passed
 
 
 
-=== TEST 8: verify (in header) with hidden credentials
+=== TEST 8: verify (in header) with hiding credentials
 --- request
 GET /echo
 --- more_headers
@@ -230,17 +230,7 @@ jwt-header: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI
 
 
 
-=== TEST 9: verify (in cookie) with hidden credentials
---- request
-GET /echo
---- more_headers
-Cookie: jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
---- response_headers
-Set-Cookie: jwt-cookie=deleted; Max-Age=0
-
-
-
-=== TEST 10: enable jwt auth plugin using admin api with hidden auth
+=== TEST 9: enable jwt auth plugin using admin api with hiding credentials
 # the `proxy-rewrite` play role as upstream to check sensitive param
 --- config
     location /t {
@@ -283,7 +273,7 @@ passed
 
 
 
-=== TEST 11: verify (in query) with hidden credentials
+=== TEST 10: verify (in query) with hiding credentials
 --- request
 GET /echo?foo=bar&hello=world&jwt-query=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- response_body
@@ -292,3 +282,52 @@ foo: bar
 hello: world
 --- no_error_log
 [error]
+
+
+
+=== TEST 11: verify (in cookie) with hiding credentials
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {
+                            "header": "jwt-header",
+                            "query": "jwt-query",
+                            "cookie": "jwt-cookie",
+                            "hide_credentials": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "httpbin.org:80": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/get"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 12: verify (in cookie) with hiding credentials
+--- request
+GET /get
+--- more_headers
+Cookie: jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
+--- response_body eval
+qr/"Cookie": "jwt-cookie=deleted; Max-Age=0"/

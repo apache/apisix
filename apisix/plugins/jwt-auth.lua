@@ -16,7 +16,6 @@
 --
 local core     = require("apisix.core")
 local jwt      = require("resty.jwt")
-local ck       = require("resty.cookie")
 local consumer_mod = require("apisix.consumer")
 local resty_random = require("resty.random")
 local vault        = require("apisix.core.vault")
@@ -228,11 +227,8 @@ local function fetch_jwt_token(conf, ctx)
 
     if conf.hide_credentials then
         -- hide for cookie
-        ck:new():set({
-            key = conf.cookie,
-            value = "deleted",
-            max_age = 0
-        })
+        local reset_val = conf.cookie .. "=deleted; Max-Age=0"
+        core.request.set_header(ctx, "Cookie", reset_val)
     end
 
     return val
