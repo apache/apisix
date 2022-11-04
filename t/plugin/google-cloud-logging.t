@@ -850,7 +850,7 @@ passed
 
 
 
-=== TEST 28: set fetch request body and response body route
+=== TEST 27: set fetch request body and response body route
 --- config
     location /t {
         content_by_lua_block {
@@ -932,8 +932,6 @@ passed
 --- request
 POST /google-cloud-logging/test
 {"bodyItem": "something"}
---- grep_error_log eval
-qr/gcp logs body entries: .*/
---- grep_error_log_out eval	
-qr/gcp logs body entries: \{"request_body":\{"bodyItem":"something"\},"route_id":"1","service_id":""\}, client: 127.0.0.1, server: , request: "POST \/clickhouse-logger\/test1 HTTP\/1.1", host: "127.0.0.1:12001/
+--- error_log eval
+qr/gcp logs body entries/
 --- wait: 2
