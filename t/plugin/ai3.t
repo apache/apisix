@@ -220,3 +220,44 @@ use ai plane to match route
 --- response_body
 apisix_bandwidth{type="ingress",route="foo"
 apisix_bandwidth{type="ingress",route="bar"
+
+
+
+==== TEST 3: route has filter_func, disable route cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "methods": ["GET"],
+                    "filter_func": "function(vars) return vars.arg_k ~= 'v' end",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code = t('/hello??k=a', ngx.HTTP_GET)
+            ngx.say(code)
+
+            local code = t('/hello??k=v', ngx.HTTP_GET)
+            ngx.say(code)
+        }
+    }
+--- response_body
+200
+404
+--- no_error_log
+use ai plane to match route
