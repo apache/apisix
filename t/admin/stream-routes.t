@@ -640,29 +640,85 @@ passed
 --- no_error_log
 [error]
 
-=== TEST 17:  return reference info, DELETE
+
+
+=== TEST 17:  put reference route +  delete
+xrpc:
+  protocols:
+    - name: pingpong
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("toolkit.json")
             local t = require("lib.test_admin").test
-            local code, message, res = t('/apisix/admin/stream_routes/1',
-                 ngx.HTTP_DELETE
+            local etcd = require("apisix.core.etcd")
+            local code, body = t('/apisix/admin/stream_routes/12',
+                ngx.HTTP_PUT,
+                [[{
+                    "remote_addr": "127.0.0.1",
+                    "desc": "test-desc",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "protocol": {
+                        "name": "pingpong",
+                        "superior_id": "1",
+                        "conf": {
+                            "faults": [{
+                                "commands": ["get", "ping"],
+                                "delay": 5
+                            }]
+                        }
+                    "desc": "new route"
+                }]],
+                [[{
+                    "value": {
+                        "remote_addr": "127.0.0.1",
+                        "desc": "test-desc",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "protocol": {
+                            "name": "pingpong",
+                            "superior_id": "1",
+                            "conf": {
+                                "faults": [{
+                                    "commands": ["get", "ping"],
+                                    "delay": 5
+                                }]
+                            }
+                        "desc": "new route"
+                    },
+                    "key": "/apisix/stream_routes/12"
+                }]]
                 )
-
-            if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            local res = assert(etcd.get('/stream_routes/12'))
+            local create_time = res.body.node.value.create_time
+            assert(create_time ~= nil, "create_time is nil")
+            local update_time = res.body.node.value.update_time
+            assert(update_time ~= nil, "update_time is nil")
+            if code ~= 200 then
                 ngx.status = code
                 ngx.say(message)
                 return
             end
-
-            res = json.decode(res)
-            assert(res.refer ~= nil)
+            ngx.say("[push] code: ", code, " message: ", message)
+            local id = string.sub(res.key, #"/apisix/stream_routes/" + 1)
+            code, message = t('/apisix/admin/stream_routes/' .. id, ngx.HTTP_DELETE)
+            ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
---- response_body
-passed
 --- request
 GET /t
+--- response_body
+[push] code: 200 message: passed
+[delete] code: 400 message: /stream_routes/1 is refered by _apisix_stream_routes_12
 --- no_error_log
 [error]

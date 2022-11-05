@@ -29,49 +29,18 @@ local _M = {
 
 local function check_router_refer(items, id)
     local refer_list = {}
-    local referkey = "/stream_routes_refer/".. id
-    local _, err = core.etcd.delete(referkey)
-    core.log.warn(err)
-    core.log.warn(items)
     for _, item in config_util.iterate_values(items) do
         if item.value == nil then
             goto CONTINUE
         end
-        local  r_id = string.gsub(item["key"],"/","_")
+        local r_id = string.gsub(item["key"], "/", "_")
         local route = item.value
-        if route.protocol and route.protocol.superior_id then
-	        local data
-            local setkey="/stream_routes_refer/"..route.protocol.superior_id
-            local res, err = core.etcd.get(setkey,false)
-            if res then
-	            if res.body.node == nil then
-                    data = core.json.decode("{}")
-	                data[r_id]=1
-                else
-                    data = res.body.node.value
-	                data[r_id]=1
-                end
-            else
-                core.log.error("In function check_router_refer  error: ",err)
-            end
-            local setres, err = core.etcd.set(setkey, data)
-            if not setres then
-                core.log.error("failed to put stream route[", setkey, "]: ", err)
-            end
+        if route.protocol and route.protocol.superior_id and route.protocol.superior_id == id then
+            table.insert(refer_list,r_id)
         end
         ::CONTINUE::
-     end
-     local rescheck, _ = core.etcd.get(referkey,not id)
-     if rescheck then
-         if rescheck.body.node  ~= nil then
-             if type(rescheck.body.node.value) == "table" then
-                 for v,_ in pairs(rescheck.body.node.value) do
-	             table.insert(refer_list,v)
-                 end
-             end
-         end
-     end
-     return refer_list
+    end
+    return refer_list
 end
 
 
@@ -202,8 +171,7 @@ function _M.delete(id)
     local warn_message
     if #refer_list >0 then
         warn_message = key.." is referred by "..table.concat(refer_list,";;")
-    else
-        warn_message = key.." is referred by None"
+        return 400,warn_message
     end
 
     local res, err = core.etcd.delete(key)
