@@ -179,7 +179,7 @@ function _M.delete(id)
         core.log.error("failed to delete stream route[", key, "]: ", err)
         return 503, {error_msg = err}
     end
-    res.body["refer"]=warn_message
+
     return res.status, res.body
 end
 

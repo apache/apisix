@@ -72,6 +72,7 @@ do
         core.table.clear(other_routes)
         core.table.clear(sni_to_items)
         core.table.clear(routeid_to_protocols)
+
         for _, item in config_util.iterate_values(items) do
             if item.value == nil then
                 goto CONTINUE
@@ -168,7 +169,7 @@ do
         if router_ver ~= user_routes.conf_version then
             local err = create_router(user_routes.values)
             if err then
-               return false, "failed to create router: " .. err
+                return false, "failed to create router: " .. err
             end
 
             router_ver = user_routes.conf_version
@@ -258,6 +259,7 @@ function _M.stream_init_worker(filter)
             checker = stream_route_checker,
             filter = filter,
         })
+
     if not user_routes then
         error("failed to create etcd instance for fetching /stream_routes : "
               .. err)
