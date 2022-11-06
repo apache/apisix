@@ -286,7 +286,7 @@ To configure Apache APISIX to listen on multiple ports, you can:
 
 2. Reload or restart Apache APISIX.
 
-## After enabling the SSL certificate, why can't the corresponding route be accessed through HTTPS + IP?
+## After uploading the SSL certificate, why can't the corresponding route be accessed through HTTPS + IP?
 
 If you directly use HTTPS + IP address to access the server, the server will use the IP address to compare with the bound SNI. Since the SSL certificate is bound to the domain name, the corresponding resource cannot be found in the SNI, so that the certificate will be verified. The authentication fails, and the user cannot access the gateway via HTTPS + IP.
 

@@ -119,8 +119,8 @@ make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 
 举个例子，比如：`foo.com/product/index.html?id=204&page=2`，并考虑您需要根据查询字符串中的 `id` 在此条件下进行灰度发布：
 
-1. Group A：`id <= 1000`
-2. Group B：`id > 1000`
+1. Group A:`id <= 1000`
+2. Group B:`id > 1000`
 
 在 Apache APISIX 中有两种不同的方法来实现这一点：
 
