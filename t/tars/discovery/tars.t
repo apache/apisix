@@ -54,7 +54,7 @@ _EOC_
 
     $block->set_value("apisix_yaml", $apisix_yaml);
 
-    my $extra_init_by_lua_start = <<_EOC_;
+    my $extra_init_by_lua = <<_EOC_;
         -- reduce incremental_fetch_interval,full_fetch_interval
         local schema = require("apisix.discovery.tars.schema")
         schema.properties.incremental_fetch_interval.minimum=1
@@ -63,7 +63,7 @@ _EOC_
         schema.properties.full_fetch_interval.default = 3
 _EOC_
 
-    $block->set_value("extra_init_by_lua_start", $extra_init_by_lua_start);
+    $block->set_value("extra_init_by_lua", $extra_init_by_lua);
 
     my $config = $block->config // <<_EOC_;
         location /count {
