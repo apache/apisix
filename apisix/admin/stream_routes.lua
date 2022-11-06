@@ -20,6 +20,8 @@ local config_util = require("apisix.core.config_util")
 local routes = require("apisix.stream.router.ip_port").routes
 local stream_route_checker = require("apisix.stream.router.ip_port").stream_route_checker
 local tostring = tostring
+local string = string
+local table = table
 
 
 local _M = {
@@ -168,9 +170,8 @@ function _M.delete(id)
     if items ~= nil then
         refer_list=check_router_refer(items,id)
     end
-    local warn_message
     if #refer_list >0 then
-        warn_message = key.." is referred by "..table.concat(refer_list,";;")
+        local warn_message = key.." is referred by "..table.concat(refer_list,";;")
         return 400,warn_message
     end
 

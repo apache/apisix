@@ -719,6 +719,6 @@ xrpc:
 GET /t
 --- response_body
 [push] code: 200 message: passed
-[delete] code: 400 message: /stream_routes/1 is refered by _apisix_stream_routes_12
+[delete] code: 400 message: /stream_routes/1 is referred by _apisix_stream_routes_12
 --- no_error_log
 [error]
