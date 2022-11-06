@@ -234,5 +234,3 @@ GET /echo
 X-Forwarded-Port: 8080
 --- response_headers
 X-Forwarded-Port: 10080
-
-

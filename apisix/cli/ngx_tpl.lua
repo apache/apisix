@@ -677,7 +677,6 @@ http {
             if ($http_x_forwarded_for != "") {
                 set $var_x_forwarded_for "${http_x_forwarded_for}, ${realip_remote_addr}";
             }
-          
 
             proxy_set_header   X-Forwarded-For      $var_x_forwarded_for;
             proxy_set_header   X-Forwarded-Proto    $var_x_forwarded_proto;
