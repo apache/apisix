@@ -505,6 +505,8 @@ _EOC_
 
     require "resty.core"
 
+    $extra_init_by_lua
+
     apisix = require("apisix")
     local args = {
         dns_resolver = $dns_addrs_tbl_str,
@@ -515,8 +517,6 @@ _EOC_
     -- it may be used by plugins to determine the work path of apisix
     local constants = require("apisix.constants")
     constants.apisix_lua_home = "$apisix_home"
-
-    $extra_init_by_lua
 _EOC_
 
     my $extra_init_worker_by_lua = $block->extra_init_worker_by_lua // "";
