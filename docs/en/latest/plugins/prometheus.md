@@ -59,6 +59,8 @@ For http request related metrics, you could specify extra labels, which match th
 
 If you specify label for nonexist APISIX variable, the label value would be "".
 
+If you specify label not started with "$", the label value would be a constant value.
+
 Currently, only below metrics are supported:
 
 * http_status
