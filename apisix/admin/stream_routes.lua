@@ -30,7 +30,7 @@ local _M = {
 }
 
 local function check_router_refer(items, id)
-    local refer_list = {}
+    local refer_list =  core.tablepool.fetch("refer_list",#items,0)
     for _, item in config_util.iterate_values(items) do
         if item.value == nil then
             goto CONTINUE
@@ -42,7 +42,12 @@ local function check_router_refer(items, id)
         end
         ::CONTINUE::
     end
-    return refer_list
+    if #refer_list > 0  then
+        local warn_message = "/stream_routes/" .. id .. "is referred by " .. table.concat(refer_list,";;")
+        core.tablepool.release("refer_list",refer_list)
+        return warn_message
+    end
+    return nil
 end
 
 
@@ -167,9 +172,8 @@ function _M.delete(id)
     local key = "/stream_routes/" .. id
     -- core.log.info("key: ", key)
     if items ~= nil then
-        local refer_list = check_router_refer(items,id)
-        if #refer_list >0 then
-            local warn_message = key.." is referred by "..table.concat(refer_list,";;")
+        local warn_message = check_router_refer(items,id)
+        if warn_message ~= nil then
             return 400,warn_message
         end
     end
