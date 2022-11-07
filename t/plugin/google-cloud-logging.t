@@ -810,47 +810,7 @@ hello world
 
 
 
-=== TEST 26: set include_req_body = true on route succeeds
---- config
-    location /t {
-        content_by_lua_block {
-
-            local config = {
-                uri = "/hello",
-                upstream = {
-                    type = "roundrobin",
-                    nodes = {
-                        ["127.0.0.1:1980"] = 1
-                    }
-                },
-                plugins = {
-                    ["google-cloud-logging"] = {
-                        auth_file = "t/plugin/google-cloud-logging/config-https-ip.json",
-                        inactive_timeout = 1,
-                        batch_max_size = 1,
-                        ssl_verify = false,
-                        include_req_body = true,
-                    }
-                }
-            }
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 27: set fetch request body and response body route
+=== TEST 26: set fetch request body true in configuration
 --- config
     location /t {
         content_by_lua_block {
@@ -889,46 +849,7 @@ passed
 
 
 
-=== TEST 28: set fetch request body and response body route
---- config
-    location /t {
-        content_by_lua_block {
-            local config = {
-                uri = "/google-cloud-logging/test",
-                method = 'POST',
-                upstream = {
-                    type = "roundrobin",
-                    nodes = {
-                        ["127.0.0.1:12001"] = 1
-                    }
-                },
-                plugins = {
-                    ["google-cloud-logging"] = {
-                        auth_file = "t/plugin/google-cloud-logging/config.json",
-                        inactive_timeout = 1,
-                        batch_max_size = 1,
-                        include_req_body = true,
-                    }
-                }
-            }
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 29: check request body included in log entry
+=== TEST 27: check request body included in log entry
 --- request
 POST /google-cloud-logging/test
 {"bodyItem": "something"}
