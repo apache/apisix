@@ -140,9 +140,6 @@ Cookie: jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIs
                             "query": "jwt-query",
                             "cookie": "jwt-cookie",
                             "hide_credentials": false
-                        },
-                        "proxy-rewrite": {
-                            "uri": "/plugin_proxy_rewrite_args"
                         }
                     },
                     "upstream": {
@@ -170,7 +167,7 @@ passed
 
 === TEST 6: verify (in query) without hiding credentials
 --- request
-GET /echo?foo=bar&hello=world&jwt-query=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
+GET /plugin_proxy_rewrite_args?foo=bar&hello=world&jwt-query=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- response_body
 uri: /plugin_proxy_rewrite_args
 foo: bar
@@ -245,9 +242,6 @@ jwt-header: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI
                             "query": "jwt-query",
                             "cookie": "jwt-cookie",
                             "hide_credentials": true
-                        },
-                        "proxy-rewrite": {
-                            "uri": "/plugin_proxy_rewrite_args"
                         }
                     },
                     "upstream": {
@@ -256,7 +250,7 @@ jwt-header: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/echo"
+                    "uri": "/plugin_proxy_rewrite_args"
                 }]]
                 )
 
@@ -275,7 +269,7 @@ passed
 
 === TEST 10: verify (in query) with hiding credentials
 --- request
-GET /echo?foo=bar&hello=world&jwt-query=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
+GET /plugin_proxy_rewrite_args?foo=bar&hello=world&jwt-query=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- response_body
 uri: /plugin_proxy_rewrite_args
 foo: bar
@@ -328,6 +322,6 @@ passed
 --- request
 GET /get
 --- more_headers
-Cookie: jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
+Cookie: hello=world; jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs; foo=bar
 --- response_body eval
-qr/"Cookie": "jwt-cookie=deleted; Max-Age=0"/
+qr/^(?:(?!jwt-cookie).)*\z/s

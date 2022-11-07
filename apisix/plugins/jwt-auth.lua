@@ -192,6 +192,24 @@ function _M.check_schema(conf, schema_type)
     return true
 end
 
+local function remove_specified_cookie(src, key)
+    local ret = ""
+    local append = false
+    local cookie_key_pattern = "([a-zA-Z0-9-_]*)"
+    local cookie_val_pattern = "([a-zA-Z0-9-._]*)"
+
+    for k, v in string.gmatch(src, cookie_key_pattern .. "=" .. cookie_val_pattern) do
+        if k ~= key then
+            if append then
+                ret = ret .. "; "
+            end
+            ret = ret .. k .. "=" .. v
+            append = true
+        end
+    end
+
+    return ret
+end
 
 local function fetch_jwt_token(conf, ctx)
     local token = core.request.header(ctx, conf.header)
@@ -227,7 +245,8 @@ local function fetch_jwt_token(conf, ctx)
 
     if conf.hide_credentials then
         -- hide for cookie
-        local reset_val = conf.cookie .. "=deleted; Max-Age=0"
+        local src = core.request.header(ctx, "Cookie")
+        local reset_val = remove_specified_cookie(src, conf.cookie)
         core.request.set_header(ctx, "Cookie", reset_val)
     end
 
