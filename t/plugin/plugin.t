@@ -781,7 +781,7 @@ passed
 
 
 
-=== TEST 30: hit route: proxy-rewrite enable with post_arg_xx in mata.filter
+=== TEST 30: hit route: proxy-rewrite enable with post_arg_xx in meta.filter
 --- request
 POST /hello
 key=abc
