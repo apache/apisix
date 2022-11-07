@@ -1,11 +1,11 @@
 ---
-title: 缓存 API 响应
+title: API 缓存
 keywords:
   - API 网关
   - Apache APISIX
   - 缓存
   - 性能
-description: 本文主要关注如何使用 APISIX 处理网关级别的缓存。通过本教程，用户能够了解如何使用`proxy-cache`插件为您的 Web 应用或微服务 API 提升响应效率。
+description: 本文主要介绍了如何使用 APISIX 处理网关级别的缓存。通过本教程，用户能够了解如何使用 `proxy-cache` 插件为你的 Web 应用或微服务 API 提升响应效率。
 ---
 
 <!--
@@ -27,38 +27,32 @@ description: 本文主要关注如何使用 APISIX 处理网关级别的缓存�
 #
 -->
 
-本文主要关注如何使用 APISIX 处理网关级别的缓存。通过本教程，用户能够了解如何使用`proxy-cache`插件为您的 Web 应用或微服务 API 提升响应效率。
+## 描述
 
-**本文概览:**
-
--  API 网关中如何进行缓存
--  [APISIX](https://apisix.apache.org/docs/apisix/getting-started/) 如何支持 API 网关缓存
-- 运行示例项目 [apisix-dotnet-docker](https://github.com/Boburmirzo/apisix-dotnet-docker)
-- 配置 [Proxy Cache](https://apisix.apache.org/docs/apisix/plugins/proxy-cache/) 插件
-- 验证缓存效果
+本文介绍了如何使用 APISIX 来处理网关级别的缓存。通过本教程，你可以了解到如何使用 `proxy-cache` 插件为你的 Web 应用或微服务 API 提升响应效率。
 
 ## 通过缓存提升性能
 
-我们总是希望构建简单快速的 API ，但随着 API 请求的并发数增加，如下问题日益凸显，此时考虑使用缓存：
+我们总是希望构建简单快速的 API，但随着 API 请求的并发数增加，如下问题日益凸显，此时考虑使用缓存：
 
 - 请求延时增加，影响用户体验。
 - 高并发传递到数据库，使得数据库查询时间明显增加。
-- API可用性降低，甚至会时不时发生网络故障。
+- API 可用性降低，甚至会时不时发生网络故障。
 
-##  API 网关缓存
+## API 网关缓存
 
 [缓存](https://en.wikipedia.org/wiki/Cache_(computing))能够将请求的响应存储下来，在下次请求到来时直接使用。在 Web 应用架构的不同层级中，缓存均有应用，比如：
 
 - 浏览器缓存
 - 边缘缓存或 CDN
-- 服务端缓存（ API 缓存）
+- 服务端缓存（API 缓存）
 - 数据库缓存
 
 本文讨论另一种缓存机制——**反向代理缓存**，通常在 API 网关中实现，通过在网关中缓存后端服务的响应，以达到减少对后端服务的访问次数，降低请求延迟的目的。
 
-其基本工作原理为：如果API网关已经缓存了请求资源的最新副本，则直接用该副本响应请求，不会再请求后端服务；否则，请求将会被转发到对应的后端服务。
+其基本工作原理为：如果 API 网关已经缓存了请求资源的最新副本，则直接用该副本响应请求，不会再请求后端服务；否则，请求将会被转发到对应的后端服务。
 
-##  APISIX 网关缓存
+## APISIX 网关缓存
 
 在 APISIX 中，用户可通过 `proxy-cache` 插件开启缓存功能。当前支持基于磁盘和内存的缓存。
 
@@ -68,13 +62,15 @@ description: 本文主要关注如何使用 APISIX 处理网关级别的缓存�
 
 ## 运行示例项目
 
-首先将该示例项目（ [apisix-dotnet-docker](https://github.com/Boburmirzo/apisix-dotnet-docker) ）运行起来。用户可在Github上获取完整源码，并了解如何用Docker命令行工具构建镜它。
+首先将该示例项目（ [apisix-dotnet-docker](https://github.com/Boburmirzo/apisix-dotnet-docker) ）运行起来。用户可在 Github 上获取完整源码，并了解如何用 Docker 命令行工具构建镜它。
 
-此项目暴露了一个简单 API ——在 [ProductsControllers.cs](https://github.com/Boburmirzo/apisix-dotnet-docker/blob/main/ProductApi/Controllers/ProductsController.cs) 中调用sevice层获取产品列表。
+此项目暴露了一个简单 API ——在 [ProductsControllers.cs](https://github.com/Boburmirzo/apisix-dotnet-docker/blob/main/ProductApi/Controllers/ProductsController.cs) 中调用 sevice 层获取产品列表。
 
 假设该产品列表每天仅更新一次，而后端服务每天会接收数以亿计获取该列表的请求。此时， `proxy-cache` 插件就有了用武之地。作为演示，我们仅为 `GET` 请求开启缓存。
 
-> 注意：一般来说，除特殊情况外，`GET`请求应默认开启缓存。
+:::note 注意
+注意：一般来说，除特殊情况外，`GET`请求应默认开启缓存。
+:::
 
 ## 配置缓存插件
 
@@ -212,12 +208,12 @@ Apisix-Cache-Status: EXPIRED
 curl -i 'http://localhost:9080/api/products' -s -o /dev/null -w "Response time: %{time_starttransfer} seconds\n"
 ```
 
-## What's next
+## 下一步
 
-通过本文，我们了解到，有了 APISIX 的赋能，为示例项目设置 API 响应缓存将会非常简单。它能显著减少对后端服务的访问次数，降低 API 访问延迟。此外， APISIX 中还有很多其它内建的插件可用，具体请参考[插件中心](https://apisix.apache.org/plugins/)，根据需要取用。
+通过本文，我们了解到，有了 APISIX 的赋能，为示例项目设置 API 响应缓存将会非常简单。它能显著减少对后端服务的访问次数，降低 API 访问延迟。此外，APISIX 中还有很多其它内建的插件可用，具体请参考[插件中心](https://apisix.apache.org/plugins/)，根据需要取用。
 
-## Recommended content
+## 推荐内容
 
-你可参考 [发布 API ](https://apisix.apache.org/zh/docs/apisix/tutorials/expose-api/)了解如何发布你的第一个API。
+你可参考[发布 API](https://apisix.apache.org/zh/docs/apisix/tutorials/expose-api/)了解如何发布你的第一个 API。
 
-也可参考 [保护 API ](https://apisix.apache.org/zh/docs/apisix/tutorials/protect-api/)了解如何保护你的API。
+也可参考[保护 API](https://apisix.apache.org/zh/docs/apisix/tutorials/protect-api/)了解如何保护你的 API。
