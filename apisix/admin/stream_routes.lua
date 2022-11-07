@@ -20,7 +20,7 @@ local config_util = require("apisix.core.config_util")
 local routes = require("apisix.stream.router.ip_port").routes
 local stream_route_checker = require("apisix.stream.router.ip_port").stream_route_checker
 local tostring = tostring
-local string = string
+local ngx = ngx
 local table = table
 
 
@@ -35,7 +35,7 @@ local function check_router_refer(items, id)
         if item.value == nil then
             goto CONTINUE
         end
-        local r_id = string.gsub(item["key"], "/", "_")
+        local r_id = ngx.re.gsub(item["key"], "/", "_")
         local route = item.value
         if route.protocol and route.protocol.superior_id and route.protocol.superior_id == id then
             table.insert(refer_list,r_id)
@@ -163,16 +163,15 @@ function _M.delete(id)
         return 400, {error_msg = "missing stream route id"}
     end
 
-    local items,_ = routes()
+    local items, _ = routes()
     local key = "/stream_routes/" .. id
     -- core.log.info("key: ", key)
-    local refer_list = {}
     if items ~= nil then
-        refer_list=check_router_refer(items,id)
-    end
-    if #refer_list >0 then
-        local warn_message = key.." is referred by "..table.concat(refer_list,";;")
-        return 400,warn_message
+        local refer_list = check_router_refer(items,id)
+        if #refer_list >0 then
+            local warn_message = key.." is referred by "..table.concat(refer_list,";;")
+            return 400,warn_message
+        end
     end
 
     local res, err = core.etcd.delete(key)
