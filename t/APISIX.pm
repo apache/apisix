@@ -359,7 +359,7 @@ _EOC_
                     local shell = require("resty.shell")
                     local ok, stdout, stderr, reason, status = shell.run([[ $exec_snippet ]], $stdin, @{[$timeout*1000]}, $max_size)
                     if not ok then
-                        ngx.log(ngx.WARN, "failed to execute the script with status: " .. status .. ", reason: " .. reason .. ", stderr: " .. stderr)
+                        ngx.log(ngx.ERR, "failed to execute the script with status: " .. status .. ", reason: " .. reason .. ", stderr: " .. stderr)
                         return
                     end
                     ngx.print(stdout)

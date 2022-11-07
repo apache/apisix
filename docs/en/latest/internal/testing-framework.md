@@ -356,7 +356,7 @@ ONLY:
 
 ### Executing Shell Commands
 
-It is possible to execute shell commands while writing tests in test-nginx for APISIX. We expose this feature via `exec` code block. The `stdout` of the executed process can be captured via `response_body` code block and `stderr` (if any) can be captured by filtering error.log through `grep_error_log`. Here is an example:
+It is possible to execute shell commands while writing tests in test-nginx for APISIX. We expose this feature via `exec` code block. The `stdout` of the executed process can be captured via `response_body` code block. When the command failed, the `stderr` will be logged in `error` level so we can capture it by filtering error.log. Here is an example:
 
 ```
 === TEST 1: check exec stdout
@@ -369,8 +369,6 @@ hello world
 === TEST 2: when exec returns an error
 --- exec
 echxo hello world
---- grep_error_log eval
-qr/failed to execute the script [ -~]*/
---- grep_error_log_out
+--- error_log
 failed to execute the script with status: 127, reason: exit, stderr: /bin/sh: 1: echxo: not found
 ```
