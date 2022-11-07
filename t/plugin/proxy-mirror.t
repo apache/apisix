@@ -787,6 +787,8 @@ hello world
 --- error_log
 dns resolver resolves domain: not-find-domian.notfind error:
 
+
+
 === TEST 27: custom path with prefix mode
 --- config
        location /t {
