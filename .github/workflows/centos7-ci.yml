@@ -65,7 +65,7 @@ jobs:
         if [[ $test_dir =~ 't/admin ' ]]; then
           echo "type=first" >>$GITHUB_OUTPUT
         fi
-        if [[ $test_dir =~ ' t/xrpc' ]]; then
+        if [[ $test_dir =~ ' t/xds-library' ]]; then
           echo "type=last" >>$GITHUB_OUTPUT
         fi
 
