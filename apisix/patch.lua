@@ -203,7 +203,7 @@ local luasocket_wrapper = {
 
         if host:byte(1) == string.byte('[') then
             -- ipv6, form as '[::1]', remove '[' and ']'
-            host = host:sub(2,-2)
+            host = host:sub(2, -2)
             self.sock = self.tcp6
         else
             self.sock = self.tcp4
