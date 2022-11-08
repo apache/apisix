@@ -338,3 +338,28 @@ qr/sending a batch logs to 127.0.0.1:(\d+)/
 --- grep_error_log_out
 sending a batch logs to 127.0.0.1:5044
 sending a batch logs to 127.0.0.1:5045
+
+
+=== TEST 9: add log format
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/syslog',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "log_format": {
+                        "host": "$host",
+                        "client_ip": "$remote_addr"
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
