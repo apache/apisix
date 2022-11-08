@@ -337,3 +337,98 @@ X-Forwarded-Host: apisix.ai
 X-Forwarded-Host: test.com
 --- no_error_log
 [error]
+
+
+
+=== TEST 14: set route (test if X-Forwarded-For can be set before proxy)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 15: test if X-Forwarded-For can be set before proxy
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- request
+GET /echo HTTP/1.1
+--- more_headers
+X-Forwarded-For: 11.11.11.11
+--- response_headers
+X-Forwarded-For: 11.11.11.11
+--- no_error_log
+[error]
+
+
+
+=== TEST 16: set route (test if X-Forwarded-Port can be set before proxy)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: test if X-Forwarded-Port can be set before proxy
+--- request
+GET /echo HTTP/1.1
+--- more_headers
+X-Forwarded-Port: 9881
+--- response_headers
+X-Forwarded-Port: 9881
+--- no_error_log
+[error]
