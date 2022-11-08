@@ -5,5 +5,5 @@
   "scopes": [
     "https://apisix.apache.org/logs:admin"
   ],
-  "entries_uri": "http://127.0.0.1:12001/google/logging/test1"
+  "entries_uri": "http://127.0.0.1:12001/google/logging/entries"
 }

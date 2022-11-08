@@ -46,31 +46,13 @@ server {
             }
         }
 
-
         location /google/logging/entries {
-            content_by_lua_block {
-                ngx.req.read_body()
-                local body = ngx.req.get_body_data()
-
-                local data, err = require("cjson").decode(body)
-                if err then
-                    ngx.log(ngx.WARN, "loggingBody", body)
-                end
-
-                ngx.log(ngx.WARN, "loggingBody", body)
-                ngx.say("ok")
-                 ngx.print(body)
-            }
-        }
-
-         location /google/logging/test1 {
             content_by_lua_block {
                 ngx.req.read_body()
                 local json_decode = require("toolkit.json").decode
                 local json_encode = require("toolkit.json").encode
                 local data = ngx.req.get_body_data()
                 local decoded_data = json_decode(data)
-
                 ngx.log(ngx.WARN,"gcp logs body entries: ", json_encode(decoded_data["entries"][1]["jsonPayload"]))
                 ngx.say("ok")
             }
