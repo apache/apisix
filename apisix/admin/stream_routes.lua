@@ -30,6 +30,7 @@ local _M = {
 }
 
 local function check_router_refer(items, id)
+    local warn_message = nil
     local refer_list =  core.tablepool.fetch("refer_list",#items,0)
     for _, item in config_util.iterate_values(items) do
         if item.value == nil then
@@ -43,11 +44,11 @@ local function check_router_refer(items, id)
         ::CONTINUE::
     end
     if #refer_list > 0  then
-        local warn_message = "/stream_routes/" .. id .. "is referred by " .. table.concat(refer_list,";;")
-        core.tablepool.release("refer_list",refer_list)
-        return warn_message
+        warn_message = "/stream_routes/" .. id .. " is referred by " 
+                        .. table.concat(refer_list,";;")
     end
-    return nil
+    core.tablepool.release("refer_list",refer_list)
+    return warn_message
 end
 
 
