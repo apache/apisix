@@ -496,7 +496,6 @@ _EOC_
     # The new directive is introduced here to modify the schema
     # before apisix validate in require("apisix")
 
-    my $extra_init_by_lua = $block->extra_init_by_lua // "";
     my $init_by_lua_block = $block->init_by_lua_block // <<_EOC_;
     if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
         require("luacov.runner")("t/apisix.luacov")
@@ -504,7 +503,9 @@ _EOC_
     end
 
     require "resty.core"
-
+_EOC_
+    if (index($extra_init_by_lua, "apisix.discovery.tars.schema") != -1) {
+        $init_by_lua_block .= <<_EOC_;
     $extra_init_by_lua
 
     apisix = require("apisix")
@@ -518,6 +519,24 @@ _EOC_
     local constants = require("apisix.constants")
     constants.apisix_lua_home = "$apisix_home"
 _EOC_
+    }
+    else {
+        $init_by_lua_block .= <<_EOC_;
+
+    apisix = require("apisix")
+    local args = {
+        dns_resolver = $dns_addrs_tbl_str,
+    }
+    apisix.http_init(args)
+
+    -- set apisix_lua_home into constans module
+    -- it may be used by plugins to determine the work path of apisix
+    local constants = require("apisix.constants")
+    constants.apisix_lua_home = "$apisix_home"
+    $extra_init_by_lua
+_EOC_
+    }
+
 
     my $extra_init_worker_by_lua = $block->extra_init_worker_by_lua // "";
 
