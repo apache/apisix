@@ -36,7 +36,7 @@ local Facility = {
 
 local Severity = {
      emerg = 0,  alert = 1, crit = 2,   err = 3,
-    waring = 4, notice = 5, info = 6, debug = 7
+    warning = 4, notice = 5, info = 6, debug = 7
 }
 ---
 
@@ -130,13 +130,13 @@ function _M.log(conf, ctx)
     local token = conf.token
     local tag = conf.tag
     local msg = json_str
-	
-    local log_message = "<" .. pri .. ">1 " .. t .. " " .. hostname .. " " .. appname 
+
+    local log_message = "<" .. pri .. ">1 " .. t .. " " .. hostname .. " " .. appname
                         .. " - - [" .. token .. "@32473 tag=\"" .. tag .. "\"] " .. msg .. "\n"
 
     local entries = {
         route_conf = conf,
-        log_message = log_message  
+        log_message = log_message
     }
 
     if batch_processor_manager:add_entry(conf, entries) then
