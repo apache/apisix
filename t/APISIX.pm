@@ -495,7 +495,7 @@ _EOC_
 
     # The new directive is introduced here to modify the schema
     # before apisix validate in require("apisix")
-
+    my $extra_init_by_lua = $block->extra_init_by_lua // "";
     my $init_by_lua_block = $block->init_by_lua_block // <<_EOC_;
     if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
         require("luacov.runner")("t/apisix.luacov")
