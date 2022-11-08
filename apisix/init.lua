@@ -266,7 +266,12 @@ local function set_upstream_headers(api_ctx, picked_server)
 
     local x_forwarded_for = api_ctx.var.http_x_forwarded_for
     if x_forwarded_for then
-        api_ctx.var.http_x_forwarded_for = x_forwarded_for .. ", " .. api_ctx.var.realip_remote_addr
+        local realip_remote_addr = api_ctx.var.realip_remote_addr
+        if realip_remote_addr then
+            api_ctx.var.http_x_forwarded_for = x_forwarded_for .. ", " .. api_ctx.var.realip_remote_addr
+        else
+            api_ctx.var.http_x_forwarded_for = x_forwarded_for
+        end
     end
 
     local x_forwarded_port = api_ctx.var.http_x_forwarded_port
