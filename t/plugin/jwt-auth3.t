@@ -148,7 +148,7 @@ Cookie: jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIs
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/echo"
+                    "uri": "/plugin_proxy_rewrite_args"
                 }]]
                 )
 
@@ -158,10 +158,6 @@ Cookie: jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIs
             ngx.say(body)
         }
     }
---- request
-GET /t
---- response_body
-passed
 
 
 
@@ -210,10 +206,6 @@ jwt-query: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6
             ngx.say(body)
         }
     }
---- request
-GET /t
---- response_body
-passed
 
 
 
@@ -260,10 +252,6 @@ jwt-header: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI
             ngx.say(body)
         }
     }
---- request
-GET /t
---- response_body
-passed
 
 
 
@@ -311,10 +299,6 @@ hello: world
             ngx.say(body)
         }
     }
---- request
-GET /t
---- response_body
-passed
 
 
 

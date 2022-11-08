@@ -193,22 +193,17 @@ function _M.check_schema(conf, schema_type)
 end
 
 local function remove_specified_cookie(src, key)
-    local ret = ""
-    local append = false
     local cookie_key_pattern = "([a-zA-Z0-9-_]*)"
     local cookie_val_pattern = "([a-zA-Z0-9-._]*)"
+    local t = {}
 
     for k, v in string.gmatch(src, cookie_key_pattern .. "=" .. cookie_val_pattern) do
         if k ~= key then
-            if append then
-                ret = ret .. "; "
-            end
-            ret = ret .. k .. "=" .. v
-            append = true
+            table.insert(t, k .. "=" .. v)
         end
     end
 
-    return ret
+    return table.concat(t, "; ")
 end
 
 local function fetch_jwt_token(conf, ctx)
