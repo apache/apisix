@@ -643,6 +643,7 @@ passed
 
 
 === TEST 17:  put reference route +  delete
+--- extra_yaml_config
 xrpc:
   protocols:
     - name: pingpong
