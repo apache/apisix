@@ -52,7 +52,7 @@ jobs:
       id: branch_env
       shell: bash
       run: |
-        echo "##[set-output name=version;]$(echo ${GITHUB_REF##*/})"
+        echo "version=${GITHUB_REF##*/}" >>$GITHUB_OUTPUT
 
     - name: Extract test type
       shell: bash
@@ -60,13 +60,13 @@ jobs:
       run: |
         test_dir="${{ matrix.test_dir }}"
         if [[ $test_dir =~ 't/plugin' ]]; then
-          echo "##[set-output name=type;]$(echo 'plugin')"
+          echo "type=plugin" >>$GITHUB_OUTPUT
         fi
         if [[ $test_dir =~ 't/admin ' ]]; then
-          echo "##[set-output name=type;]$(echo 'first')"
+          echo "type=first" >>$GITHUB_OUTPUT
         fi
         if [[ $test_dir =~ ' t/xds-library' ]]; then
-          echo "##[set-output name=type;]$(echo 'last')"
+          echo "type=last" >>$GITHUB_OUTPUT
         fi
 
     - name: Linux launch common services
