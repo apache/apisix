@@ -98,10 +98,6 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
---- response_body
-passed
 
 
 
@@ -169,8 +165,6 @@ uri: /plugin_proxy_rewrite_args
 foo: bar
 hello: world
 jwt-query: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
---- no_error_log
-[error]
 
 
 
@@ -262,8 +256,6 @@ GET /plugin_proxy_rewrite_args?foo=bar&hello=world&jwt-query=eyJhbGciOiJIUzI1NiI
 uri: /plugin_proxy_rewrite_args
 foo: bar
 hello: world
---- no_error_log
-[error]
 
 
 
