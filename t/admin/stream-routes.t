@@ -651,7 +651,6 @@ xrpc:
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
             local code, body = t('/apisix/admin/stream_routes/12',
                 ngx.HTTP_PUT,
                 [[{
@@ -669,27 +668,19 @@ xrpc:
                     }
                 }]]
                 )
-            ngx.status = code
-            ngx.say(body)
-            local res = assert(etcd.get('/stream_routes/12'))
-            local create_time = res.body.node.value.create_time
-            assert(create_time ~= nil, "create_time is nil")
-            local update_time = res.body.node.value.update_time
-            assert(update_time ~= nil, "update_time is nil")
             if code ~= 200 then
                 ngx.status = code
-                ngx.say(message)
+                ngx.print(body)
                 return
             end
-            ngx.say("[push] code: ", code, " message: ", message)
-            code, message = t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
-            ngx.say("[delete] code: ", code, " message: ", message)
+
+            code2, message = t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
+            ngx.say("[delete] code: ", code2, " message: ", message)
         }
     }
 --- request
 GET /t
 --- response_body
-[push] code: 200 message: passed
 [delete] code: 400 message: /stream_routes/1 is referred by _apisix_stream_routes_12
 --- no_error_log
 [error]
