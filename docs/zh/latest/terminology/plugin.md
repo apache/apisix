@@ -5,7 +5,7 @@ keywords:
   - Apache APISIX
   - 插件
   - 插件优先级
-description: 本文介绍了 APISIX Plugin 对象的相关信息及其使用方法，并且介绍了如何自定义插件优先级、自定义错误响应、动态控制插件执行状态等新。
+description: 本文介绍了 APISIX Plugin 对象的相关信息及其使用方法，并且介绍了如何自定义插件优先级、自定义错误响应、动态控制插件执行状态等。
 ---
 
 <!--
