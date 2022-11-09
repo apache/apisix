@@ -347,7 +347,9 @@ skywalking run prepareForReport
                 [[{
                     "plugins": {
                         "skywalking": {
-                            "disable": 1
+                            "_meta": {
+                                "disable": true
+                            }
                         }
                     },
                     "upstream": {
