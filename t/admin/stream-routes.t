@@ -655,7 +655,7 @@ xrpc:
                 ngx.HTTP_PUT,
                 [[{
                     "remote_addr": "127.0.0.1",
-                    "desc": "test-desc",
+                    "desc": "test-refer",
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:8080": 1
@@ -664,37 +664,8 @@ xrpc:
                     },
                     "protocol": {
                         "name": "pingpong",
-                        "superior_id": "1",
-                        "conf": {
-                            "faults": [{
-                                "commands": ["get", "ping"],
-                                "delay": 5
-                            }]
-                        }
-                    "desc": "new route"
-                }]],
-                [[{
-                    "value": {
-                        "remote_addr": "127.0.0.1",
-                        "desc": "test-desc",
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "protocol": {
-                            "name": "pingpong",
-                            "superior_id": "1",
-                            "conf": {
-                                "faults": [{
-                                    "commands": ["get", "ping"],
-                                    "delay": 5
-                                }]
-                            }
-                        "desc": "new route"
-                    },
-                    "key": "/apisix/stream_routes/12"
+                        "superior_id": "1"
+                    }
                 }]]
                 )
             ngx.status = code
@@ -710,8 +681,7 @@ xrpc:
                 return
             end
             ngx.say("[push] code: ", code, " message: ", message)
-            local id = string.sub(res.key, #"/apisix/stream_routes/" + 1)
-            code, message = t('/apisix/admin/stream_routes/' .. id, ngx.HTTP_DELETE)
+            code, message = t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
