@@ -122,7 +122,6 @@ Cookie: jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIs
 
 
 === TEST 5: enable jwt auth plugin using admin api without hiding credentials
-# the `proxy-rewrite` play role as upstream to check sensitive param
 --- config
     location /t {
         content_by_lua_block {
@@ -214,7 +213,6 @@ jwt-header: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI
 
 
 === TEST 9: enable jwt auth plugin using admin api with hiding credentials
-# the `proxy-rewrite` play role as upstream to check sensitive param
 --- config
     location /t {
         content_by_lua_block {

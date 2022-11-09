@@ -29,7 +29,7 @@ local ngx_time = ngx.time
 local sub_str  = string.sub
 local table_insert = table.insert
 local table_concat = table.concat
-local str_gmatch = string.gmatch
+local ngx_re_gmatch     = ngx.re.gmatch
 local plugin_name = "jwt-auth"
 local pcall = pcall
 
@@ -201,9 +201,22 @@ local function remove_specified_cookie(src, key)
     local cookie_val_pattern = "([a-zA-Z0-9-._]*)"
     local t = new_tab(1, 0)
 
-    for k, v in str_gmatch(src, cookie_key_pattern .. "=" .. cookie_val_pattern) do
-        if k ~= key then
-            table_insert(t, k .. "=" .. v)
+    local it, err = ngx_re_gmatch(src, cookie_key_pattern .. "=" .. cookie_val_pattern, "jo")
+    if not it then
+        core.log.error("match origins failed: ", err)
+        return nil
+    end
+    while true do
+        local m, err = it()
+        if err then
+            core.log.error("iterate origins failed: ", err)
+            return nil
+        end
+        if not m then
+            break
+        end
+        if m[1] ~= key then
+            table_insert(t, m[0])
         end
     end
 
