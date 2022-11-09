@@ -19,6 +19,7 @@ local jwt      = require("resty.jwt")
 local consumer_mod = require("apisix.consumer")
 local resty_random = require("resty.random")
 local vault        = require("apisix.core.vault")
+local new_tab = require ("table.new")
 
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
@@ -26,6 +27,9 @@ local ipairs   = ipairs
 local ngx      = ngx
 local ngx_time = ngx.time
 local sub_str  = string.sub
+local table_insert = table.insert
+local table_concat = table.concat
+local str_gmatch = string.gmatch
 local plugin_name = "jwt-auth"
 local pcall = pcall
 
@@ -195,15 +199,15 @@ end
 local function remove_specified_cookie(src, key)
     local cookie_key_pattern = "([a-zA-Z0-9-_]*)"
     local cookie_val_pattern = "([a-zA-Z0-9-._]*)"
-    local t = {}
+    local t = new_tab(1, 0)
 
-    for k, v in string.gmatch(src, cookie_key_pattern .. "=" .. cookie_val_pattern) do
+    for k, v in str_gmatch(src, cookie_key_pattern .. "=" .. cookie_val_pattern) do
         if k ~= key then
-            table.insert(t, k .. "=" .. v)
+            table_insert(t, k .. "=" .. v)
         end
     end
 
-    return table.concat(t, "; ")
+    return table_concat(t, "; ")
 end
 
 local function fetch_jwt_token(conf, ctx)
