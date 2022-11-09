@@ -79,8 +79,10 @@ local _M = {
 
 如果一个请求因为某个插件而被拒绝，会有类似如下 `warn` 级别的日志：
 
-```
-`ip-restriction exits with http status code 403`
+```shell
+
+ip-restriction exits with http status code 403
+
 ```
 
 ## 通用配置
