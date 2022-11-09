@@ -1,5 +1,12 @@
 ---
 title: Plugin
+keywords:
+  - API Gateway
+  - Apache APISIX
+  - Plugin
+  - Filter
+  - Priority
+description: This article introduces the related information of the APISIX Plugin object and how to use it, and introduces how to customize the plugin priority, customize the error response, and dynamically control the execution status of the plugin.
 ---
 
 <!--
@@ -24,6 +31,8 @@ title: Plugin
 ## Description
 
 This represents the configuration of the plugins that are executed during the HTTP request/response lifecycle. A **Plugin** configuration can be bound directly to a [`Route`](./route.md), a [`Service`](./service.md), a [`Consumer`](./consumer.md) or a [`Plugin Config`](./plugin-config.md).
+
+You can also refer to [Admin API](../admin-api.md#plugin) for how to use this resource.
 
 :::note
 

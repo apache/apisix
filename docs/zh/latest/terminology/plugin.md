@@ -4,8 +4,8 @@ keywords:
   - API 网关
   - Apache APISIX
   - 插件
-  - Plugin
-description: 本文介绍了 APISIX Plugin 对象的相关信息及其使用方法
+  - 插件优先级
+description: 本文介绍了 APISIX Plugin 对象的相关信息及其使用方法，并且介绍了如何自定义插件优先级、自定义错误响应、动态控制插件执行状态等新。
 ---
 
 <!--
@@ -30,6 +30,8 @@ description: 本文介绍了 APISIX Plugin 对象的相关信息及其使用方�
 ## 描述
 
 Plugin 表示将在 HTTP 请求/响应生命周期期间执行的插件配置。Plugin 的配置信息可以直接绑定在 [Route](./route.md) 上，也可以被绑定在 [Service](./service.md)、[Consumer](./consumer.md) 或 [Plugin Config](./plugin-config.md) 上。
+
+你也可以参考 [Admin API](../admin-api.md#plugin) 了解如何使用该资源。
 
 :::note 注意
 
@@ -162,7 +164,7 @@ local _M = {
 
 :::
 
-### 动态控制插件是否执行
+### 动态控制插件执行状态
 
 默认情况下，在路由中指定的插件都会被执行。但是你可以通过 `filter` 配置项为插件添加一个过滤器，通过过滤器的执行结果控制插件是否执行。
 
