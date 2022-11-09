@@ -44,7 +44,7 @@ local function check_router_refer(items, id)
         ::CONTINUE::
     end
     if #refer_list > 0  then
-        warn_message = "/stream_routes/" .. id .. " is referred by " 
+        warn_message = "/stream_routes/" .. id .. " is referred by "
                         .. table.concat(refer_list,";;")
     end
     core.tablepool.release("refer_list",refer_list)
