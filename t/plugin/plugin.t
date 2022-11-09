@@ -762,7 +762,8 @@ GET /hello
                     upstream = {
                         nodes = {
                             ["127.0.0.1:1980"] = 1
-                        }
+                        },
+                        type = "roundrobin"
                     },
                     uri = "/hello"
                 }
