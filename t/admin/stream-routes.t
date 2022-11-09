@@ -668,7 +668,7 @@ xrpc:
                     }
                 }]]
                 )
-            if code ~= 200 then
+            if code > 300 then
                 ngx.status = code
                 ngx.print(body)
                 return
