@@ -204,13 +204,13 @@ local function remove_specified_cookie(src, key)
     local it, err = ngx_re_gmatch(src, cookie_key_pattern .. "=" .. cookie_val_pattern, "jo")
     if not it then
         core.log.error("match origins failed: ", err)
-        return nil
+        return src
     end
     while true do
         local m, err = it()
         if err then
             core.log.error("iterate origins failed: ", err)
-            return nil
+            return src
         end
         if not m then
             break
