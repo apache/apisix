@@ -603,7 +603,6 @@ _EOC_
 
     init_worker_by_lua_block {
         require("apisix").http_init_worker()
-        require("apisix").stream_init_worker()
         $extra_init_worker_by_lua
     }
 
