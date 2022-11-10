@@ -603,7 +603,6 @@ _EOC_
 
     init_worker_by_lua_block {
         require("apisix").http_init_worker()
-        require("apisix").stream_init_worker()
         $extra_init_worker_by_lua
     }
 
@@ -708,6 +707,10 @@ _EOC_
         }
 
         location /apisix/admin {
+            init_worker_by_lua_block {
+                require("apisix").stream_init_worker()
+            }
+
             set \$upstream_scheme             'http';
             set \$upstream_host               \$http_host;
             set \$upstream_uri                '';
