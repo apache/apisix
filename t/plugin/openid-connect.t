@@ -502,6 +502,8 @@ passed
     }
 --- response_body
 true
+--- skip_openssl
+1: >= 1.1.2
 
 
 
@@ -562,6 +564,8 @@ host: localhost
 x-access-token: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhMSI6IkRhdGEgMSIsImlhdCI6MTU4NTEyMjUwMiwiZXhwIjoxOTAwNjk4NTAyLCJhdWQiOiJodHRwOi8vbXlzb2Z0Y29ycC5pbiIsImlzcyI6Ik15c29mdCBjb3JwIiwic3ViIjoic29tZUB1c2VyLmNvbSJ9.u1ISx7JbuK_GFRIUqIMP175FqXRyF9V7y86480Q4N3jNxs3ePbc51TFtIHDrKttstU4Tub28PYVSlr-HXfjo7w
 x-real-ip: 127.0.0.1
 --- error_code: 200
+--- skip_openssl
+1: >= 1.1.2
 
 
 
@@ -625,6 +629,8 @@ authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhMSI6IkRhdGEgM
 host: localhost
 x-real-ip: 127.0.0.1
 --- error_code: 200
+--- skip_openssl
+1: >= 1.1.2
 
 
 

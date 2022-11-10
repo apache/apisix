@@ -311,6 +311,8 @@ hello world
 qr/failed to verify jwt/
 --- error_log eval
 qr/ailed to verify jwt: 'exp' claim expired at/
+--- skip_openssl
+1: >= 1.1.2
 
 
 
@@ -466,3 +468,5 @@ qr/ailed to verify jwt: 'exp' claim expired at/
     }
 --- response_body
 hello world
+--- skip_openssl
+1: >= 1.1.2

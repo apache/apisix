@@ -572,6 +572,8 @@ property "key" is required
     }
 --- response_body
 passed
+--- skip_openssl
+1: >= 1.1.2
 
 
 
@@ -604,6 +606,8 @@ passed
     }
 --- response_body
 passed
+--- skip_openssl
+1: >= 1.1.2
 
 
 
@@ -632,6 +636,8 @@ passed
     }
 --- response_body
 hello world
+--- skip_openssl
+1: >= 1.1.2
 
 
 
@@ -662,6 +668,8 @@ hello world
     }
 --- response_body
 passed
+--- skip_openssl
+1: >= 1.1.2
 
 
 
@@ -694,6 +702,8 @@ passed
     }
 --- response_body
 passed
+--- skip_openssl
+1: >= 1.1.2
 
 
 
@@ -722,6 +732,8 @@ passed
     }
 --- response_body
 hello world
+--- skip_openssl
+1: >= 1.1.2
 
 
 
@@ -750,6 +762,8 @@ hello world
     }
 --- response_body
 hello world
+--- skip_openssl
+1: >= 1.1.2
 
 
 
@@ -780,6 +794,7 @@ hello world
     }
 --- response_body
 passed
+--- error_code_like: ^(?:200|201)?$
 
 
 
@@ -1287,6 +1302,8 @@ passed
     }
 --- response_body
 passed
+--- skip_openssl
+1: >= 1.1.2
 
 
 
@@ -1315,3 +1332,5 @@ passed
     }
 --- response_body
 hello world
+--- skip_openssl
+1: >= 1.1.2
