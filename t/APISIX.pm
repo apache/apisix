@@ -712,7 +712,6 @@ _EOC_
             set \$upstream_uri                '';
 
             content_by_lua_block {
-                apisix.stream_init_worker()
                 apisix.http_admin()
             }
         }
