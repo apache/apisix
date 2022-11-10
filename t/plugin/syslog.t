@@ -360,6 +360,61 @@ sending a batch logs to 127.0.0.1:5045
             ngx.say(body)
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
+
+
+=== TEST 10: Add route and Enable Syslog Plugin, batch_max_size=1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "syslog": {
+                                "batch_max_size": 1,
+                                "disable": false,
+                                "flush_limit": 1,
+                                "host" : "127.0.0.1",
+                                "port" : 5044
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 11: hit route and report sys logger
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 0.5
+--- no_error_log
+[error]
+--- grep_error_log eval
+qr/sending a batch logs to 127.0.0.1:(\d+)/
+--- grep_error_log_out
+sending a batch logs to 127.0.0.1:5044
