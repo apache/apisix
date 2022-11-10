@@ -639,3 +639,47 @@ passed
 {"error_msg":"property \"faults\" validation failed: wrong type: expected array, got string"}
 --- no_error_log
 [error]
+
+
+
+=== TEST 17:  put reference route +  delete
+--- extra_yaml_config
+xrpc:
+  protocols:
+    - name: pingpong
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/12',
+                ngx.HTTP_PUT,
+                [[{
+                    "remote_addr": "127.0.0.1",
+                    "desc": "test-refer",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "protocol": {
+                        "name": "pingpong",
+                        "superior_id": "1"
+                    }
+                }]]
+                )
+            if code > 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+            code2, message = t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
+            ngx.say("[delete] code: ", code2, " message: ", message)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[delete] code: 400 message: /stream_routes/1 is referred by _apisix_stream_routes_12
+--- no_error_log
+[error]

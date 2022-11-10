@@ -16,14 +16,41 @@
 --
 local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
+local config_util = require("apisix.core.config_util")
+local routes = require("apisix.stream.router.ip_port").routes
 local stream_route_checker = require("apisix.stream.router.ip_port").stream_route_checker
 local tostring = tostring
+local ngx = ngx
+local table = table
 
 
 local _M = {
     version = 0.1,
     need_v3_filter = true,
 }
+
+
+local function check_router_refer(items, id)
+    local warn_message = nil
+    local refer_list =  core.tablepool.fetch("refer_list",#items,0)
+    for _, item in config_util.iterate_values(items) do
+        if item.value == nil then
+            goto CONTINUE
+        end
+        local r_id = ngx.re.gsub(item["key"], "/", "_")
+        local route = item.value
+        if route.protocol and route.protocol.superior_id and route.protocol.superior_id == id then
+            table.insert(refer_list,r_id)
+        end
+        ::CONTINUE::
+    end
+    if #refer_list > 0  then
+        warn_message = "/stream_routes/" .. id .. " is referred by "
+                        .. table.concat(refer_list,";;")
+    end
+    core.tablepool.release("refer_list",refer_list)
+    return warn_message
+end
 
 
 local function check_conf(id, conf, need_id)
@@ -140,6 +167,14 @@ end
 function _M.delete(id)
     if not id then
         return 400, {error_msg = "missing stream route id"}
+    end
+
+    local items, _ = routes()
+    if items ~= nil then
+        local warn_message = check_router_refer(items,id)
+        if warn_message ~= nil then
+            return 400,warn_message
+        end
     end
 
     local key = "/stream_routes/" .. id
