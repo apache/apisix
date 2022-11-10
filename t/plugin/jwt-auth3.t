@@ -35,7 +35,6 @@ add_block_preprocessor(sub {
     if (!$block->response_body) {
         $block->set_value("response_body", "passed\n");
     }
-    
 });
 
 run_tests;
