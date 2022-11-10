@@ -33,7 +33,7 @@ local schema = {
             type = "string",
             pattern = [[^/[^?&]+$]],
         },
-        mode = {
+        path_concat_mode = {
             type = "string",
             default = "replace",
             enum = {"replace", "prefix"},
@@ -89,7 +89,7 @@ end
 
 
 local function enable_mirror(ctx, conf)
-    if conf.path and conf.mode == "prefix" then
+    if conf.path and conf.path_concat_mode == "prefix" then
         ctx.var.upstream_mirror_uri = resolver_host(conf.host) .. conf.path .. ctx.var.uri ..
                                     ctx.var.is_args .. (ctx.var.args or '')
     else

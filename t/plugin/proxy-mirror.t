@@ -789,7 +789,7 @@ dns resolver resolves domain: not-find-domian.notfind error:
 
 
 
-=== TEST 27: custom path with prefix mode
+=== TEST 27: custom path with prefix path_concat_mode
 --- config
        location /t {
            content_by_lua_block {
@@ -801,7 +801,7 @@ dns resolver resolves domain: not-find-domian.notfind error:
                             "proxy-mirror": {
                                "host": "http://127.0.0.1:1986",
                                "path": "/a",
-                               "mode": "prefix"
+                               "path_concat_mode": "prefix"
                             }
                         },
                         "upstream": {
@@ -825,7 +825,7 @@ passed
 
 
 
-=== TEST 28: hit route with prefix mode
+=== TEST 28: hit route with prefix path_concat_mode
 --- request
 GET /hello
 --- response_body
@@ -835,7 +835,7 @@ uri: /a/hello,
 
 
 
-=== TEST 29: hit route with args and prefix mode
+=== TEST 29: hit route with args and prefix path_concat_mode
 --- request
 GET /hello?a=1
 --- response_body
