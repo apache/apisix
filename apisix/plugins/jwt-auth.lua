@@ -29,7 +29,7 @@ local ngx_time = ngx.time
 local sub_str  = string.sub
 local table_insert = table.insert
 local table_concat = table.concat
-local ngx_re_gmatch     = ngx.re.gmatch
+local ngx_re_gmatch = ngx.re.gmatch
 local plugin_name = "jwt-auth"
 local pcall = pcall
 
