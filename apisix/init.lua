@@ -269,7 +269,7 @@ local function set_upstream_headers(api_ctx, picked_server)
         local realip_remote_addr = api_ctx.var.realip_remote_addr
         if realip_remote_addr then
             api_ctx.var.var_x_forwarded_for =
-            x_forwarded_for .. ", " .. api_ctx.var.realip_remote_addr
+                x_forwarded_for .. ", " .. api_ctx.var.realip_remote_addr
         else
             api_ctx.var.var_x_forwarded_for = x_forwarded_for
         end

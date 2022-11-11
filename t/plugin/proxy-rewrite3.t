@@ -349,6 +349,13 @@ X-Forwarded-Host: test.com
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "headers": {
+                                    "X-Forwarded-For": "22.22.22.22"
+                                }
+                            }
+                        },
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1
@@ -380,7 +387,7 @@ GET /echo HTTP/1.1
 --- more_headers
 X-Forwarded-For: 11.11.11.11
 --- response_headers
-X-Forwarded-For: 11.11.11.11, 127.0.0.1
+X-Forwarded-For: 22.22.22.22, 127.0.0.1
 --- no_error_log
 [error]
 
@@ -395,6 +402,13 @@ X-Forwarded-For: 11.11.11.11, 127.0.0.1
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "headers": {
+                                    "X-Forwarded-Port": "9882"
+                                }
+                            }
+                        },
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1
@@ -426,6 +440,6 @@ GET /echo HTTP/1.1
 --- more_headers
 X-Forwarded-Port: 9881
 --- response_headers
-X-Forwarded-Port: 9881
+X-Forwarded-Port: 9882
 --- no_error_log
 [error]
