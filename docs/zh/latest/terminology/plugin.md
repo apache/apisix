@@ -100,7 +100,7 @@ ip-restriction exits with http status code 403
 
 ### 禁用指定插件
 
-通过 `disable` 参数，你可以新增一个处于禁用状态的插件，请求不会经过该插件。
+通过 `disable` 参数，你可以将某个插件调整为“禁用状态”，即请求不会经过该插件。
 
 ```json
 {
