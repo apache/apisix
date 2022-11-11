@@ -277,7 +277,6 @@ local function set_upstream_headers(api_ctx, picked_server)
 
     local port = api_ctx.var.http_x_forwarded_port
     if port then
-        core.log.error("================= levy x_forwarded_port: ", api_ctx.var.var_x_forwarded_port)
         api_ctx.var.var_x_forwarded_port = port
     end
 end

@@ -402,7 +402,6 @@ end
 function _M.echo()
     ngx.req.read_body()
     local hdrs = ngx.req.get_headers()
-    ngx.log(ngx.ERR, "================= levy request headers: ", require "cjson" .encode(hdrs))
     for k, v in pairs(hdrs) do
         ngx.header[k] = v
     end
