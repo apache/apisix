@@ -375,15 +375,12 @@ passed
 
 
 === TEST 15: test if X-Forwarded-For can be set before proxy
---- http_config
-set_real_ip_from 127.0.0.1;
-real_ip_header X-Forwarded-For;
 --- request
 GET /echo HTTP/1.1
 --- more_headers
 X-Forwarded-For: 11.11.11.11
 --- response_headers
-X-Forwarded-For: 11.11.11.11
+X-Forwarded-For: 11.11.11.11, 127.0.0.1
 --- no_error_log
 [error]
 
