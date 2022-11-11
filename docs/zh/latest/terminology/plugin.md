@@ -35,7 +35,7 @@ Plugin 表示将在 HTTP 请求/响应生命周期期间执行的插件配置。
 
 :::note 注意
 
-对于同一个插件的配置，只能有一个是有效的，优先级为 Consumer > Route > Plugin Config > Service。
+对于同一个插件的配置，只能有一个是有效的，其插件配置优先级为 Consumer > Route > Plugin Config > Service。
 
 :::
 
