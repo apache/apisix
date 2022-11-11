@@ -75,7 +75,7 @@ The same plugin in the Plugin Config will not override the ones configured direc
 
 :::
 
-For example, if you configure a Plugin Config as shown below
+For example, if you configure a Plugin Config as shown below:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 \
