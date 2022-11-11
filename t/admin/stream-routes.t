@@ -643,7 +643,6 @@ passed
 
 
 === TEST 17:  put reference route +  delete
---- stream_enable
 --- extra_yaml_config
 xrpc:
   protocols:
