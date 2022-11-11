@@ -63,8 +63,8 @@ jobs:
         shell: bash
         if: steps.cache-openssl.outputs.cache-hit != 'true'
         run: |
-          echo "##[set-output name=openssl3;]$(echo 'yes')"
-          echo "##[set-output name=openssl3_prefix;]$HOME"
+          echo "openssl3=yes" >>$GITHUB_OUTPUT
+          echo "openssl3_prefix=$HOME" >>$GITHUB_OUTPUT
 
       - name: Extract test type
         shell: bash
@@ -72,13 +72,13 @@ jobs:
         run: |
           test_dir="${{ matrix.test_dir }}"
           if [[ $test_dir =~ 't/plugin' ]]; then
-            echo "##[set-output name=type;]$(echo 'plugin')"
+            echo "type=plugin" >>$GITHUB_OUTPUT
           fi
           if [[ $test_dir =~ 't/admin' ]]; then
-            echo "##[set-output name=type;]$(echo 'first')"
+            echo "type=first" >>$GITHUB_OUTPUT
           fi
           if [[ $test_dir =~ 't/node' ]]; then
-            echo "##[set-output name=type;]$(echo 'last')"
+            echo "type=last" >>$GITHUB_OUTPUT
           fi
 
       - name: Linux launch common services
@@ -126,5 +126,6 @@ jobs:
 
       - name: Linux Script
         env:
+          OPENSSL_FIPS: yes
           TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
         run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script

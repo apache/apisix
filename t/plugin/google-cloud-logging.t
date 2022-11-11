@@ -313,8 +313,8 @@ qr/\{\"error\"\:\"[\w+\s+]*\"\}/
 --- error_log
 Batch Processor[google-cloud-logging] failed to process entries
 Batch Processor[google-cloud-logging] exceeded the max_retry_count
---- skip_openssl
-1: >= 1.1.2
+--- skip_eval
+1: $ENV{OPENSSL_FIPS} eq 'yes'
 
 
 
@@ -378,8 +378,8 @@ GET /hello
 --- wait: 2
 --- response_body
 hello world
---- skip_openssl
-1: >= 1.1.2
+--- skip_eval
+1: $ENV{OPENSSL_FIPS} eq 'yes'
 
 
 
@@ -443,8 +443,8 @@ GET /hello
 --- wait: 2
 --- response_body
 hello world
---- skip_openssl
-1: >= 1.1.2
+--- skip_eval
+1: $ENV{OPENSSL_FIPS} eq 'yes'
 
 
 
@@ -562,8 +562,8 @@ GET /hello
 --- wait: 2
 --- response_body
 hello world
---- skip_openssl
-1: >= 1.1.2
+--- skip_eval
+1: $ENV{OPENSSL_FIPS} eq 'yes'
 
 
 
@@ -661,8 +661,8 @@ GET /hello
 --- wait: 2
 --- response_body
 hello world
---- skip_openssl
-1: >= 1.1.2
+--- skip_eval
+1: $ENV{OPENSSL_FIPS} eq 'yes'
 
 
 
@@ -761,5 +761,5 @@ GET /hello
 --- wait: 2
 --- response_body
 hello world
---- skip_openssl
-1: >= 1.1.2
+--- skip_eval
+1: $ENV{OPENSSL_FIPS} eq 'yes'
