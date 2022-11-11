@@ -17,11 +17,11 @@
 local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
 local config_util = require("apisix.core.config_util")
-local routes = require("apisix.stream.router.ip_port").routes
 local stream_route_checker = require("apisix.stream.router.ip_port").stream_route_checker
 local tostring = tostring
 local ngx = ngx
 local table = table
+local tonumber = tonumber
 
 
 local _M = {
@@ -169,16 +169,17 @@ function _M.delete(id)
         return 400, {error_msg = "missing stream route id"}
     end
 
-    local items, _ = routes()
-    local key = "/stream_routes/" .. id
-    -- core.log.info("key: ", key)
-    if items ~= nil then
+    local status, body = _M.get()
+    local items = body.list
+    if tonumber(status) == 200 and #items > 1 then
         local warn_message = check_router_refer(items,id)
         if warn_message ~= nil then
-            return 400,warn_message
+            return 400, warn_message
         end
     end
 
+    local key = "/stream_routes/" .. id
+    -- core.log.info("key: ", key)
     local res, err = core.etcd.delete(key)
     if not res then
         core.log.error("failed to delete stream route[", key, "]: ", err)

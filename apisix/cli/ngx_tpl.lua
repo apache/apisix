@@ -447,7 +447,6 @@ http {
 
     init_worker_by_lua_block {
         apisix.http_init_worker()
-        apisix.stream_init_worker()
     }
 
     exit_worker_by_lua_block {

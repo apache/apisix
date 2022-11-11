@@ -643,6 +643,7 @@ passed
 
 
 === TEST 17:  put reference route +  delete
+--- stream_enable
 --- extra_yaml_config
 xrpc:
   protocols:
@@ -673,14 +674,15 @@ xrpc:
                 ngx.print(body)
                 return
             end
+            ngx.sleep(0.5)
 
-            code2, message = t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
+            local code2, message = t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code2, " message: ", message)
         }
     }
 --- request
 GET /t
 --- response_body
-[delete] code: 200 message: passed
+[delete] code: 400 message: /stream_routes/1 is referred by _apisix_stream_routes_12
 --- no_error_log
 [error]
