@@ -392,6 +392,12 @@ function _M.run(route, ctx, plugin_funcs)
     end
 
     ctx.proxy_passed = true
+
+    local hdrs = ngx.req.get_headers()
+    core.log.error("==================== levy headers in balancer: ", core.json.encode(hdrs))
+
+
+    core.log.error("==================== levy ngx.var.var_x_forwarded_port in balancer: ", ngx.var.var_x_forwarded_port)
 end
 
 
