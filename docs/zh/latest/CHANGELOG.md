@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.15.1](#2151)
 - [2.15.0](#2150)
 - [2.14.1](#2141)
 - [2.14.0](#2140)
@@ -59,6 +60,23 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.15.1
+
+### Bugfix
+
+- 修复一些变量在插件配置中的 `_meta.filter` 无法正常使用的问题：
+    - [#8162](https://github.com/apache/apisix/pull/8162)
+    - [#8256](https://github.com/apache/apisix/pull/8256)
+- gRPC 代理设置 :authority 请求头为配置的上游 Host： [#7939](https://github.com/apache/apisix/pull/7939)
+- 修复同时使用 Plugin Config 和 Consumer，有一定概率发生插件配置没有更新的问题：[#7965](https://github.com/apache/apisix/pull/7965)
+- 默认不应开启被动健康检查： [#7850](https://github.com/apache/apisix/pull/7850)
+- zipkin 插件即使不进行 sample，也要向上游传递 trace IDs： [#7833](https://github.com/apache/apisix/pull/7833)
+- limit-count 插件中，同样配置的不同路由不应该共享同一个计数器：[#7750](https://github.com/apache/apisix/pull/7750)
+- 当代理到上游之前发生 500 错误时，代理到上游之后运行的插件不应被跳过 [#7703](https://github.com/apache/apisix/pull/7703)
+- 允许配置上游节点时直接使用 IPv6 字面量： [#7594](https://github.com/apache/apisix/pull/7594)
+- 升级 lua-resty-etcd 到 1.8.3。该版本修复了若干问题。 [#7565](https://github.com/apache/apisix/pull/7565)
+- 当 consumer 上绑定了多个插件且该插件定义了 rewrite 方法时，避免抛出异常 [#7531](https://github.com/apache/apisix/pull/7531)
 
 ## 2.15.0
 

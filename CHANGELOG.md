@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.15.1](#2151)
 - [2.15.0](#2150)
 - [2.14.1](#2141)
 - [2.14.0](#2140)
@@ -59,6 +60,23 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.15.1
+
+### Bugfix
+
+- Plugin configuration's `_meta.filter` doesn't work well with some variables:
+    - [#8162](https://github.com/apache/apisix/pull/8162)
+    - [#8256](https://github.com/apache/apisix/pull/8256)
+- gRPC proxy sets :authority request header to configured upstream Host: [#7939](https://github.com/apache/apisix/pull/7939)
+- Fix the problem that when using Plugin Config and Consumer at the same time, there is a certain probability that the plugin configuration is not updated: [#7965](https://github.com/apache/apisix/pull/7965)
+- Passive health checks should not be enabled by default: [#7850](https://github.com/apache/apisix/pull/7850)
+- The zipkin plugin should pass trace IDs upstream even if it does not sample: [#7833](https://github.com/apache/apisix/pull/7833)
+- in limit-count plugin, different routes with the same configuration should not share the same counter: [#7750](https://github.com/apache/apisix/pull/7750)
+- the phases after proxy didn't run when 500 error happens before proxy: [#7703](https://github.com/apache/apisix/pull/7703)
+- Allow direct use of IPv6 literals when configuring upstream nodes: [#7594](https://github.com/apache/apisix/pull/7594)
+- upgrade lua-resty-etcd to 1.8.3 which fixes various issues: [#7565](https://github.com/apache/apisix/pull/7565)
+- avoid error when multiple plugins associated with consumer and have rewrite phase: [#7531](https://github.com/apache/apisix/pull/7531)
 
 ## 2.15.0
 
