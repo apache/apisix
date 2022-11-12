@@ -496,6 +496,7 @@ _EOC_
     # The new directive is introduced here to modify the schema
     # before apisix validate in require("apisix")
     my $extra_init_by_lua = $block->extra_init_by_lua // "";
+    my $extra_init_before_apisix_init = $block->extra_init_before_apisix_init // "";
     my $init_by_lua_block = $block->init_by_lua_block // <<_EOC_;
     if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
         require("luacov.runner")("t/apisix.luacov")
@@ -504,7 +505,7 @@ _EOC_
 
     require "resty.core"
 _EOC_
-    if (index($extra_init_by_lua, "apisix.discovery.tars.schema") != -1) {
+    if (defined $extra_init_before_apisix_init) {
         $init_by_lua_block .= <<_EOC_;
     $extra_init_by_lua
 
