@@ -298,18 +298,6 @@ apisix
     fallback_sni: "${your sni}"
 ```
 
-## After enabling the SSL certificate, why can't the corresponding route be accessed through HTTPS + IP?
-
-If you directly use HTTPS + IP address to access the server, the server will use the IP address to compare with the bound SNI. Since the SSL certificate is bound to the domain name, the corresponding resource cannot be found in the SNI, so that the certificate will be verified. The authentication fails, and the user cannot access the gateway via HTTPS + IP.
-
-You can implement this function by setting the `fallback_sni` parameter in the configuration file and configuring the domain name. When the user uses HTTPS + IP to access the gateway, when the SNI is empty, it will fall back to the default SNI to achieve HTTPS + IP access to the gateway.
-
-```yaml title="./conf/config.yaml"
-apisix
-  ssl：
-    fallback_sni: "${your sni}"
-```
-
 ## How does Apache APISIX achieve millisecond-level configuration synchronization?
 
 Apache APISIX uses etcd for its configuration center. etcd provides subscription functions like [watch](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watch) and [watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir) that can monitor changes to specific keywords or directories.
