@@ -324,6 +324,8 @@ do
                 end
 
                 pool_opt.pool = pool
+            else
+                pool_opt.pool = scheme
             end
 
             local ok, err = balancer.set_current_peer(server.host, server.port,

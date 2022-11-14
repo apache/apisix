@@ -28,12 +28,16 @@ import (
 	"crypto/x509"
 	"flag"
 	"fmt"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"io"
 	"io/ioutil"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -51,8 +55,8 @@ var (
 	grpcsAddr     = ":50052"
 	grpcsMtlsAddr string
 
-	crtFilePath = "../t/cert/apisix.crt"
-	keyFilePath = "../t/cert/apisix.key"
+	crtFilePath = "../certs/apisix.crt"
+	keyFilePath = "../certs/apisix.key"
 	caFilePath  string
 )
 
@@ -201,6 +205,21 @@ func (s *server) Run(ctx context.Context, in *pb.Request) (*pb.Response, error) 
 	return &pb.Response{Body: in.User.Name + " " + in.Body}, nil
 }
 
+func gRPCAndHTTPFunc(grpcServer *grpc.Server) http.Handler {
+	return h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mux := http.NewServeMux()
+		mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("hello http"))
+		})
+
+		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
+			grpcServer.ServeHTTP(w, r)
+		} else {
+			mux.ServeHTTP(w, r)
+		}
+	}), &http2.Server{})
+}
+
 func main() {
 	flag.Parse()
 
@@ -210,11 +229,13 @@ func main() {
 			log.Fatalf("failed to listen: %v", err)
 		}
 		s := grpc.NewServer()
+
 		reflection.Register(s)
 		pb.RegisterGreeterServer(s, &server{})
 		pb.RegisterTestImportServer(s, &server{})
-		if err := s.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
+
+		if err := http.Serve(lis, gRPCAndHTTPFunc(s)); err != nil {
+			log.Fatalf("failed to serve grpc: %v", err)
 		}
 	}()
 
