@@ -49,24 +49,6 @@ local function check_router_refer(items, id)
     return warn_message
 end
 
-local function check_router_protocol(conf)
-    if conf.protocol and conf.protocol.superior_id then
-        local status, body = _M.get(conf.protocol.superior_id)
-        if tonumber(status) == 200  then
-            local item = body.node
-            if item.value.protocol then
-                if item.value.protocol.name ~= conf.protocol.name then
-                    return false, "Inconsistent protocol between super and sub."
-                end
-            else
-                return false, "No defined protocol in super route."
-            end
-        end
-    end
-    return true, nil
-end
-
-
 local function check_conf(id, conf, need_id)
     if not conf then
         return nil, {error_msg = "missing configurations"}
@@ -133,12 +115,6 @@ function _M.put(id, conf)
         return 503, {error_msg = err}
     end
 
-    local check, err = check_router_protocol(conf)
-    if not check then
-        return 400, err
-    end
-
-
     local res, err = core.etcd.set(key, conf)
     if not res then
         core.log.error("failed to put stream route[", key, "]: ", err)
@@ -174,11 +150,6 @@ function _M.post(id, conf)
 
     local key = "/stream_routes"
     utils.inject_timestamp(conf)
-    local check, err = check_router_protocol(conf)
-    if not check then
-        return 400, err
-    end
-
     local res, err = core.etcd.push(key, conf)
     if not res then
         core.log.error("failed to post stream route[", key, "]: ", err)
