@@ -135,7 +135,6 @@ function _M.put(id, conf)
 
     local check, err = check_router_protocol(conf)
     if not check then
-        core.log.error("failed to post stream route[", key, "]: ", err)
         return 400, err
     end
 
@@ -177,7 +176,6 @@ function _M.post(id, conf)
     utils.inject_timestamp(conf)
     local check, err = check_router_protocol(conf)
     if not check then
-        core.log.error("failed to post stream route[", key, "]: ", err)
         return 400, err
     end
 
