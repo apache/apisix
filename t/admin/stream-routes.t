@@ -733,7 +733,7 @@ xrpc:
                 }]]
                 )
             ngx.status = code2
-            ngx.print(body2)
+            ngx.say(body2)
         }
     }
 --- request
