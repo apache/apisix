@@ -75,6 +75,7 @@ do
             if item.value == nil then
                 goto CONTINUE
             end
+
             local route = item.value
             if route.protocol and route.protocol.superior_id then
                 -- subordinate route won't be matched in the entry
