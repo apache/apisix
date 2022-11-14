@@ -381,7 +381,7 @@ passed
                                 "disable": false,
                                 "flush_limit": 1,
                                 "host" : "127.0.0.1",
-                                "port" : 5044
+                                "port" : 5050
                             }
                         },
                         "upstream": {
@@ -417,4 +417,4 @@ hello world
 --- grep_error_log eval
 qr/sending a batch logs to 127.0.0.1:(\d+)/
 --- grep_error_log_out
-sending a batch logs to 127.0.0.1:5044
+sending a batch logs to 127.0.0.1:5050
