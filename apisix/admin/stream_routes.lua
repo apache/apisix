@@ -55,11 +55,11 @@ local function check_router_protocol(conf)
         if tonumber(status) == 200  then
             local item = body.node
             if item.value.protocol then
-	            if item.value.protocol.name ~= conf.protocol.name then
-		            return false, "Inconsistent protocol between super and sub."
+                if item.value.protocol.name ~= conf.protocol.name then
+                    return false, "Inconsistent protocol between super and sub."
                 end
             else
-		        return false, "No defined protocol in super route."
+                return false, "No defined protocol in super route."
             end
         end
     end
