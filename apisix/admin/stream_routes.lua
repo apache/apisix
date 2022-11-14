@@ -16,10 +16,9 @@
 --
 local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
-local config_util = require("apisix.core.config_util")
+local iterate_values = require("apisix.core.config_util").iterate_values
 local stream_route_checker = require("apisix.stream.router.ip_port").stream_route_checker
 local tostring = tostring
-local ngx = ngx
 local table = table
 local tonumber = tonumber
 
@@ -32,14 +31,13 @@ local _M = {
 local function check_router_refer(items, id)
     local warn_message = nil
     local refer_list =  core.tablepool.fetch("refer_list",#items,0)
-    for _, item in config_util.iterate_values(items) do
+    for _, item in iterate_values(items) do
         if item.value == nil then
             goto CONTINUE
         end
-        local r_id = ngx.re.gsub(item["key"], "/", "_")
         local route = item.value
         if route.protocol and route.protocol.superior_id and route.protocol.superior_id == id then
-            table.insert(refer_list,r_id)
+            table.insert(refer_list,item["key"])
         end
         ::CONTINUE::
     end
