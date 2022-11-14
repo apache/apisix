@@ -504,7 +504,7 @@ _EOC_
 
     require "resty.core"
 _EOC_
-    if (defined $block->extra_init_before_apisix_ini) {
+    if (defined $block->extra_init_before_apisix_init) {
         $init_by_lua_block .= <<_EOC_;
     $extra_init_by_lua
 
