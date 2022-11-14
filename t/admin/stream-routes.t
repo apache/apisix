@@ -732,15 +732,12 @@ xrpc:
                     }
                 }]]
                 )
-            ngx.status = code2
-            ngx.say(body2)
+            ngx.say("[deny] code: ", code2, " message: ", body2)
         }
     }
 --- request
 GET /t
---- error_code: 503
 --- response_body
-{"error_msg":"No defined protocol in super route."}
-
+[deny] code: 503 message: {"error_msg":"No defined protocol in super route."}
 --- no_error_log
 [error]
