@@ -80,6 +80,8 @@ boofuzz-results/
 t/grpc_server_example/grpc_server_example
 t/plugin/grpc-web/grpc-web-server
 t/plugin/grpc-web/node_modules/
+pack
+pack-v*-linux.tgz*
 
 # release tar package
 *.tgz
