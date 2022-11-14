@@ -682,6 +682,65 @@ xrpc:
 --- request
 GET /t
 --- response_body
-[delete] code: 400 message: /stream_routes/1 is referred by _apisix_stream_routes_12
+[delete] code: 400 message: /stream_routes/1 is referred by /apisix/stream_routes/12
+--- no_error_log
+[error]
+
+
+
+=== TEST 18:  validate  the protocol consistent
+--- extra_yaml_config
+xrpc:
+  protocols:
+    - name: pingpong
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/superproto',
+                ngx.HTTP_PUT,
+                [[{
+                    "remote_addr": "127.0.0.1",
+                    "desc": "test-refer",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+            if code > 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+            ngx.sleep(0.5)
+
+            local code2, body2 = t('/apisix/admin/stream_routes/subproto',
+                ngx.HTTP_PUT,
+                [[{
+                    "remote_addr": "127.0.0.1",
+                    "desc": "test-refer",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "protocol": {
+                        "name": "pingpong",
+                        "superior_id": "superproto"
+                    }
+                }]]
+                )
+            ngx.status = code2
+            ngx.print(body)
+        }
+    }
+GET /t
+--- error_code: 503
+--- response_body
+{"error_msg":"No defined protocol in super route."}
 --- no_error_log
 [error]
