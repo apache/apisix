@@ -136,7 +136,7 @@ function _M.put(id, conf)
     local check, err = check_router_protocol(conf)
     if not check then
         core.log.error("failed to post stream route[", key, "]: ", err)
-        return 503, {error_msg = err}
+        return 400, err
     end
 
 
@@ -178,7 +178,7 @@ function _M.post(id, conf)
     local check, err = check_router_protocol(conf)
     if not check then
         core.log.error("failed to post stream route[", key, "]: ", err)
-        return 503, {error_msg = err}
+        return 400, err
     end
 
     local res, err = core.etcd.push(key, conf)

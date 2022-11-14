@@ -716,7 +716,7 @@ xrpc:
             end
             ngx.sleep(0.5)
 
-            local code2, body2 = t('/apisix/admin/stream_routes/subproto',
+            local code2, message = t('/apisix/admin/stream_routes/subproto',
                 ngx.HTTP_PUT,
                 [[{
                     "remote_addr": "127.0.0.1",
@@ -732,16 +732,12 @@ xrpc:
                     }
                 }]]
                 )
-            if code2 >= 300 then
-                ngx.status = code2
-            end
-            ngx.print(body2)
+            ngx.say("[deny] code: ", code2, " message: ", message)
         }
     }
 --- request
 GET /t
---- error_code: 503
 --- response_body
-{"error_msg":"No defined protocol in super route."}
+[deny] code: 400 message: No defined protocol in super route.
 --- no_error_log
 [error]
