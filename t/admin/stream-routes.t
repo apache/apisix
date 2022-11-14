@@ -701,7 +701,6 @@ xrpc:
                 ngx.HTTP_PUT,
                 [[{
                     "remote_addr": "127.0.0.1",
-                    "desc": "test-refer",
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:8080": 1
@@ -721,7 +720,6 @@ xrpc:
                 ngx.HTTP_PUT,
                 [[{
                     "remote_addr": "127.0.0.1",
-                    "desc": "test-refer",
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:8080": 1
@@ -738,6 +736,7 @@ xrpc:
             ngx.print(body)
         }
     }
+--- request
 GET /t
 --- error_code: 503
 --- response_body
