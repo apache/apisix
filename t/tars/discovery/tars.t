@@ -64,7 +64,6 @@ _EOC_
 _EOC_
 
     $block->set_value("extra_init_by_lua", $extra_init_by_lua);
-    $block->set_value("extra_init_before_apisix_init");
 
     my $config = $block->config // <<_EOC_;
         location /count {

@@ -19,6 +19,8 @@ package t::APISIX;
 use lib 'lib';
 use Cwd qw(cwd);
 use Test::Nginx::Socket::Lua::Stream -Base;
+use File::Spec::Functions qw(rel2abs);
+use strict;
 
 repeat_each(1);
 log_level('info');
@@ -504,7 +506,8 @@ _EOC_
 
     require "resty.core"
 _EOC_
-    if (defined $block->extra_init_before_apisix_init) {
+    my $calling_sub = (caller(1))[1];
+    if (index($calling_sub, "tars") != -1) {
         $init_by_lua_block .= <<_EOC_;
     $extra_init_by_lua
 
@@ -536,7 +539,6 @@ _EOC_
     $extra_init_by_lua
 _EOC_
     }
-
 
     my $extra_init_worker_by_lua = $block->extra_init_worker_by_lua // "";
 
