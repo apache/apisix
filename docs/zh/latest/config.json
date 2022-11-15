@@ -29,6 +29,7 @@
       "items": [
         "terminology/api-gateway",
         "terminology/consumer",
+        "terminology/consumer-group",
         "terminology/global-rule",
         "terminology/plugin",
         "terminology/plugin-config",
