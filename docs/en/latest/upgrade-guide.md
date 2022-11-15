@@ -28,7 +28,7 @@ description: This document will guide on you how to upgrade your APISIX version.
 
 ## Upgrade path for APISIX
 
-APISIX adheres to [semantic versioning](https://semver.org/), the format of the version number is: major.minor.patch, for example: 2.15.0.
+APISIX adheres to [semantic versioning](https://semver.org/), the format of the version number is: `major.minor.patch`, for example: 2.15.0.
 
 Upgrading to APISIX 3.0.0 is a major version upgrade and we recommend that you upgrade to 2.15.0 first and then to 3.0.0.
 

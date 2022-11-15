@@ -28,7 +28,7 @@ description: 本文档将引导你了解如何升级 APISIX 版本。
 
 ## APISIX 的版本升级方式
 
-APISIX 的版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)，版本号格式为：主版本号.次版本号.修订号，例如：2.15.0。
+APISIX 的版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)，版本号格式为：`主版本号.次版本号.修订号`，例如：2.15.0。
 
 升级到 APISIX 3.0.0 是一个重大的版本升级，我们建议您先升级到 2.15.0，然后再升级到 3.0.0。
 
@@ -76,7 +76,7 @@ APISIX 的版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)，�
 
 以 [#6196](https://github.com/apache/apisix/pull/6196) 为例，如果你基于 Admin API 开发了契合自己业务系统的管理界面，或者使用开源插件的 public API，或者开发自己的私有插件且使用了 public API，那么你需要根据实际情况来决定是否需要修改你的代码。
 
-比如你使用了 jwt-auth 插件，并且使用了其 public API（默认为 `/apisix/plugin/jwt/sign`） 来签发 jwt，那么升级到 2.15.0 后，你需要为 jwt-auth 插件的 public API 配置一个路由，然后将你的代码中的请求地址修改为这个路由的地址。具体参考 [注册公共接口](./plugin-develop.md#注册公共接口)。
+比如你使用了 jwt-auth 插件，并且使用了其 public API（默认为 `/apisix/plugin/jwt/sign`）来签发 jwt，那么升级到 2.15.0 后，你需要为 jwt-auth 插件的 public API 配置一个路由，然后将你的代码中的请求地址修改为这个路由的地址。具体参考 [注册公共接口](./plugin-develop.md#注册公共接口)。
 
 ## 升级到 3.0.0
 
