@@ -19,8 +19,6 @@ package t::APISIX;
 use lib 'lib';
 use Cwd qw(cwd);
 use Test::Nginx::Socket::Lua::Stream -Base;
-use File::Spec::Functions qw(rel2abs);
-use strict;
 
 repeat_each(1);
 log_level('info');
