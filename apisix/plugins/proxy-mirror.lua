@@ -33,6 +33,12 @@ local schema = {
             type = "string",
             pattern = [[^/[^?&]+$]],
         },
+        path_concat_mode = {
+            type = "string",
+            default = "replace",
+            enum = {"replace", "prefix"},
+            description = "the concatenation mode for custom path"
+        },
         sample_ratio = {
             type = "number",
             minimum = 0.00001,
@@ -83,8 +89,13 @@ end
 
 
 local function enable_mirror(ctx, conf)
-    ctx.var.upstream_mirror_uri = resolver_host(conf.host) .. (conf.path or ctx.var.uri) ..
-                                ctx.var.is_args .. (ctx.var.args or '')
+    if conf.path and conf.path_concat_mode == "prefix" then
+        ctx.var.upstream_mirror_uri = resolver_host(conf.host) .. conf.path .. ctx.var.uri ..
+                                    ctx.var.is_args .. (ctx.var.args or '')
+    else
+        ctx.var.upstream_mirror_uri = resolver_host(conf.host) .. (conf.path or ctx.var.uri) ..
+                                    ctx.var.is_args .. (ctx.var.args or '')
+    end
 
     if has_mod then
         apisix_ngx_client.enable_mirror()
