@@ -70,7 +70,7 @@ APISIX 的版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)，�
 
 #### 更新动态数据
 
-以 [#6551](https://github.com/apache/apisix/pull/6551) 为例，如果你使用了 syslog 插件，并且配置了 `max_retry_times` 和 `retry_interval` 属性，那么升级到 2.15.0 后，你需要将 `syslog` 插件的配置中的 `max_retry_times` 字段改为 `max_retry_times`，并将 `retry_interval` 字段改为 `retry_delay`。如果你在很多路由中使用了 syslog 插件，那么你需要手动更新这些配置，或者自己编写脚本来统一修改。目前，我们还没有提供脚本来帮助你完成这个工作。
+以 [#6551](https://github.com/apache/apisix/pull/6551) 为例，如果你使用了 syslog 插件，并且配置了 `max_retry_times` 和 `retry_interval` 属性，那么升级到 2.15.0 后，你需要将 `syslog` 插件的配置中的 `max_retry_times` 字段改为 `max_retry_times`，并将 `retry_interval` 字段改为 `retry_delay`。如果在很多路由中使用了 syslog 插件，那么你需要手动更新这些配置，或者自己编写脚本来统一修改。目前，我们还没有提供脚本来帮助你完成这个工作。
 
 #### 更新业务逻辑
 
@@ -94,8 +94,6 @@ APISIX 的版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)，�
 - CentOS 7 和 CentOS 8 的 RPM 包，支持 amd64 和 arm64 架构，参考 [通过 RPM 仓库安装](./installation-guide.md#通过-rpm-仓库安装)；
 - Debian 11(bullseye) 的 DEB 包，支持 amd64 和 arm64 架构，参考 [通过 DEB 仓库安装](./installation-guide.md#通过-deb-仓库安装)。
 
-部署相关的配置被移动到了顶级目录 `deployment` 下，具体参考 [移动 config_center、etcd 和 Admin API 的配置到 deployment 下面](./CHANGELOG.md#移动-config_centeretcd-和-admin-api-的配置到-deployment-下面)。
-
 3.0.0 对部署模式做了重大更新，具体如下：
 
 - 支持数据面与控制面分离的部署模式，请参考 [Decoupled](../../en/latest/deployment-modes.md#decoupled)；
@@ -112,4 +110,336 @@ APISIX 的一些特性需要在 OpenResty 中引入额外的 NGINX 模块。如�
 
 #### 迁移
 
-我们并未提供数据备份和迁移的工具，如果你需要备份与恢复数据，可以利用 ETCD 的备份与恢复功能，参考 [etcdctl snapshot](https://etcd.io/docs/v3.5/op-guide/maintenance/#snapshot-backup)。
+##### 静态配置迁移
+
+APISIX 的配置方式是用自定义的 `conf/config.yaml` 中的内容覆盖默认的 `conf/config-default.yaml`，如果某个配置项在 `conf/config.yaml` 中不存在，那么就使用 `conf/config-default.yaml` 中的配置。在 3.0.0 中，我们调整了 `conf/config-default.yaml`。
+
+###### 移动配置项
+
+从 2.15.0 到 3.0.0 版本，在 `conf/config-default.yaml` 有一些配置项的位置被移动了。如果你使用了这些配置项，那么你需要将它们移动到新的位置。
+
+调整内容：
+
+  * `config_center` 功能改由 `deployment` 下面的 `config_provider` 实现
+  * `etcd` 字段整体搬迁到 `deployment` 下面
+  * 以下的 Admin API 配置移动到 `deployment` 下面的 `admin` 字段
+    - admin_key
+    - enable_admin_cors
+    - allow_admin
+    - admin_listen
+    - https_admin
+    - admin_api_mtls
+    - admin_api_version
+
+你可以在 `conf/config-default.yaml` 中找到这些配置的新的确切位置。
+
+###### 更新配置项
+
+某些配置在 3.0.0 中被移除了，并被新的配置项替代。如果你使用了这些配置项，那么你需要将它们更新为新的配置项。
+
+调整内容：
+
+  * 去除 `apisix.ssl.enable_http2` 和 `apisix.ssl.listen_port`，使用 `apisix.ssl.listen` 替代
+
+  如果在 `conf/config.yaml` 中有这样的配置
+
+  ```yaml
+    ssl:
+      enable_http2: true
+      listen_port: 9443
+  ```
+
+  在 3.0.0 中需要转换成
+
+  ```yaml
+    ssl:
+      listen:
+        - port: 9443
+          enable_http2: true
+  ```
+
+  * 去除 `nginx_config.http.lua_shared_dicts`， 用 `nginx_config.http.custom_lua_shared_dict` 替代，这个配置用于声明自定义插件的共享内存
+
+  如果在 `conf/config.yaml` 中有这样的配置
+
+  ```yaml
+  nginx_config:
+    http:
+      lua_shared_dicts:
+        my_dict: 1m
+  ```
+
+  在 3.0.0 中需要转换成
+
+  ```yaml
+  nginx_config:
+    http:
+      custom_lua_shared_dict:
+        my_dict: 1m
+  ```
+
+  * 去除 `etcd.health_check_retry`，用 `deployment.etcd.startup_retry` 替代，这个配置用于在启动时，重试连接 etcd 的次数
+
+  如果在 `conf/config.yaml` 中有这样的配置
+
+  ```yaml
+  etcd:
+    health_check_retry: 2
+  ```
+
+  在 3.0.0 中需要转换成
+
+  ```yaml
+  deployment:
+    etcd:
+      startup_retry: 2
+  ```
+
+  * 去除 `apisix.port_admin`，用 `apisix.admin_listen` 替代
+
+  如果在 `conf/config.yaml` 中有这样的配置
+
+  ```yaml
+  apisix:
+    port_admin: 9180
+  ```
+
+  在 3.0.0 中需要转换成
+
+  ```yaml
+  apisix:
+    admin_listen:
+      ip: 127.0.0.1 #替换成实际暴露的 IP
+      port: 9180
+  ```
+
+  * 修改 `enable_cpu_affinity` 的默认值为 `false`，这个配置用于绑定 worker 进程到 CPU 核心。如果你需要绑定 worker 进程到 CPU 核心，那么你需要在 `conf/config.yaml` 将这个配置项设置为 `true`
+  * 去除 `apisix.real_ip_header`，用 `nginx_config.http.real_ip_header` 替代
+
+##### 数据迁移
+
+如果你需要备份与恢复数据，可以利用 ETCD 的备份与恢复功能，参考 [etcdctl snapshot](https://etcd.io/docs/v3.5/op-guide/maintenance/#snapshot-backup)。
+
+#### 数据兼容
+
+在 3.0.0 中，我们调整了部分数据结构，这些调整影响到 APISIX 的路由、上游、插件等数据。直接用 3.0.0 版本连接到 2.15.0 版本使用的 ETCD 会导致数据不兼容。
+
+为了保持数据兼容，有两种方式，仅供参考：
+
+  1. 梳理 ETCD 中的数据，将不兼容的数据备份然后清除，将备份的数据结构转换成 3.0.0 版本的数据结构，通过 3.0.0 版本的 Admin API 来恢复数据
+  2. 梳理 ETCD 中的数据，编写脚本，将 2.15.0 版本的数据结构批量转换成 3.0.0 版本的数据结构
+
+具体调整内容
+
+  * 将插件配置的元属性 `disable` 移动到 `_meta` 中
+
+  `disable` 表示该插件的启用/禁用状态，如果在 ETCD 中存在这样的数据结构
+
+  ```json
+  {
+      "plugins":{
+          "limit-count":{
+              ... // 插件配置
+              "disable":true
+          }
+      }
+  }
+  ```
+
+  在 3.0.0 中，这个插件的数据结构应该变成
+
+  ```json
+  {
+      "plugins":{
+          "limit-count":{
+              ... // 插件配置
+              "_meta":{
+                  "disable":true
+              }
+          }
+      }
+  }
+  ```
+
+  注意：`disable` 是插件的元配置，这个调整对所有插件配置生效，不仅仅是 `limit-count` 插件。
+
+  * 去除路由的 `service_protocol` 字段，使用 `upstream.scheme` 替代
+
+  在路由配置中指定 `service_protocol` 为 `grpc`，它在 ETCD 中的数据结构
+
+  ```json
+  {
+      "uri":"/hello",
+      "service_protocol":"grpc",
+      "upstream":{
+          "type":"roundrobin",
+          "nodes":{
+              "127.0.0.1:1980":1
+          }
+      }
+  }
+  ```
+
+  在 3.0.0 中，这个路由的数据结构应该变成
+
+  ```json
+  {
+      "uri":"/hello",
+      "upstream":{
+          "type":"roundrobin",
+          "scheme":"grpc",
+          "nodes":{
+              "127.0.0.1:1980":1
+          }
+      }
+  }
+  ```
+
+  * 去除 authz-keycloak 插件中的 `audience` 字段，使用 `client_id` 替代
+
+  如果在 ETCD 中 authz-keycloak 的插件配置存在这样的数据结构
+
+  ```json
+  {
+      "plugins":{
+          "authz-keycloak":{
+              ... // 插件配置
+              "audience":"Client ID"
+          }
+      }
+  }
+  ```
+
+  在 3.0.0 中，这个路由的数据结构应该变成
+
+  ```json
+  {
+      "plugins":{
+          "authz-keycloak":{
+              ... // 插件配置
+              "client_id":"Client ID"
+          }
+      }
+  }
+  ```
+
+  * 去除 mqtt-proxy 插件中的 `upstream`，在插件外部配置 `upstream`，并在插件中引用
+
+  如果在 ETCD 中 mqtt-proxy 的插件配置存在这样的数据结构
+
+  ```json
+  {
+      "remote_addr":"127.0.0.1",
+      "plugins":{
+          "mqtt-proxy":{
+              "protocol_name":"MQTT",
+              "protocol_level":4,
+              "upstream":{
+                  "ip":"127.0.0.1",
+                  "port":1980
+              }
+          }
+      }
+  }
+  ```
+
+  在 3.0.0 中，这个插件的数据结构应该变成
+
+  ```json
+  {
+      "remote_addr":"127.0.0.1",
+      "plugins":{
+          "mqtt-proxy":{
+              "protocol_name":"MQTT",
+              "protocol_level":4
+          }
+      },
+      "upstream":{
+          "type":"chash",
+          "key":"mqtt_client_id",
+          "nodes":[
+              {
+                  "host":"127.0.0.1",
+                  "port":1980,
+                  "weight":1
+              }
+          ]
+      }
+  }
+  ```
+
+  * 去除 syslog 插件中的 `max_retry_times` 和 `retry_interval` 字段，使用 `max_retry_count` 和 `retry_delay` 替代
+
+  如果在 ETCD 中 syslog 的插件配置存在这样的数据结构
+
+  ```json
+  {
+      "plugins":{
+          "syslog":{
+              "max_retry_times":1,
+              "retry_interval":1,
+              ... // 其他配置
+          }
+      }
+  }
+  ```
+
+  在 3.0.0 中，这个插件的数据结构应该变成
+
+  ```json
+  {
+      "plugins":{
+          "syslog":{
+              "max_retry_count":1,
+              "retry_delay":1,
+              ... // 其他配置
+          }
+      }
+  }
+  ```
+
+  * 去除 proxy-rewrite 插件中的 `scheme` 字段，在配置上游时，用 `upstream.scheme` 替代
+
+  如果在 ETCD 中 proxy-rewrite 的插件配置存在这样的数据结构
+
+  ```json
+  {
+      "plugins":{
+          "proxy-rewrite":{
+              "scheme":"https",
+              ... // 其他配置
+          }
+      },
+      "upstream":{
+          "nodes":{
+              "127.0.0.1:1983":1
+          },
+          "type":"roundrobin"
+      },
+      "uri":"/hello"
+  }
+  ```
+
+  在 3.0.0 中，这个插件的数据结构应该变成
+
+  ```json
+  {
+    "plugins":{
+        "proxy-rewrite":{
+            ... // 其他配置
+        }
+    },
+    "upstream":{
+        "scheme":"https",
+        "nodes":{
+            "127.0.0.1:1983":1
+        },
+        "type":"roundrobin"
+    },
+    "uri":"/hello"
+  }
+  ```
+
+#### Admin API
+
+我们调整了 Admin API 的响应格式，参考 [新的 Admin API 响应格式](./CHANGELOG.md#新的-admin-api-响应格式)，也调整了 Admin API 的端口为 9180。
