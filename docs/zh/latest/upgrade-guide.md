@@ -28,7 +28,7 @@ description: 本文档将引导你了解如何升级 APISIX 版本。
 
 ## APISIX 的版本升级方式
 
-APISIX 的版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)，版本号格式为：`主版本号.次版本号.修订号`，例如：2.15.0。
+APISIX 的版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
 升级到 APISIX 3.0.0 是一个重大的版本升级，我们建议您先升级到 2.15.0，然后再升级到 3.0.0。
 
