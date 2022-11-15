@@ -66,15 +66,15 @@ APISIX 的版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)，�
 
 #### 更新配置文件
 
-以 [#7304](https://github.com/apache/apisix/pull/7304) 为例，你可以在你的当前版本的配置文件中搜索 `etcd.health_check_retry`，如果有对应的配置，那么在升级 APISIX 的版本到 2.15.0 后，你需要将这个配置项改为 `startup_retry`。如果你的配置文件中没有对应的配置，那么你就不需要做任何修改。
+以 [#7304](https://github.com/apache/apisix/pull/7304) 为例，你可以在配置文件中搜索 `etcd.health_check_retry`，如果有对应的配置，那么在升级 APISIX 的版本到 2.15.0 后，你需要将这个配置项改为 `startup_retry`。如果你的配置文件中没有对应的配置，那么你就不需要做任何修改。
 
-#### 更新动态数据
+#### 更新数据结构
 
 以 [#6551](https://github.com/apache/apisix/pull/6551) 为例，如果你使用了 syslog 插件，并且配置了 `max_retry_times` 和 `retry_interval` 属性，那么升级到 2.15.0 后，你需要将 `syslog` 插件的配置中的 `max_retry_times` 字段改为 `max_retry_times`，并将 `retry_interval` 字段改为 `retry_delay`。如果在很多路由中使用了 syslog 插件，那么你需要手动更新这些配置，或者自己编写脚本来统一修改。目前，我们还没有提供脚本来帮助你完成这个工作。
 
 #### 更新业务逻辑
 
-以 [#6196](https://github.com/apache/apisix/pull/6196) 为例，如果你基于 Admin API 开发了契合自己业务系统的管理界面，或者使用开源插件的 public API，或者开发自己的私有插件且使用了 public API，那么你需要理解这个 Change，然后根据你的实际情况来决定是否需要修改你的代码。
+以 [#6196](https://github.com/apache/apisix/pull/6196) 为例，如果你基于 Admin API 开发了契合自己业务系统的管理界面，或者使用开源插件的 public API，或者开发自己的私有插件且使用了 public API，那么你需要根据实际情况来决定是否需要修改你的代码。
 
 比如你使用了 jwt-auth 插件，并且使用了其 public API（默认为 `/apisix/plugin/jwt/sign`） 来签发 jwt，那么升级到 2.15.0 后，你需要为 jwt-auth 插件的 public API 配置一个路由，然后将你的代码中的请求地址修改为这个路由的地址。具体参考 [注册公共接口](./plugin-develop.md#注册公共接口)。
 
@@ -90,15 +90,15 @@ APISIX 的版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)，�
 
 目前，我们提供了：
 
-- 基于 debian/centos 的镜像，你可以在 [DockerHub](https://hub.docker.com/r/apache/apisix/tags?page=1&ordering=last_updated) 上找到它们；
-- CentOS 7 和 CentOS 8 的 RPM 包，支持 amd64 和 arm64 架构，参考 [通过 RPM 仓库安装](./installation-guide.md#通过-rpm-仓库安装)；
-- Debian 11(bullseye) 的 DEB 包，支持 amd64 和 arm64 架构，参考 [通过 DEB 仓库安装](./installation-guide.md#通过-deb-仓库安装)。
+- 基于 debian/centos 的镜像，你可以在 [DockerHub](https://hub.docker.com/r/apache/apisix/tags?page=1&ordering=last_updated) 上找到它们
+- CentOS 7 和 CentOS 8 的 RPM 包，支持 amd64 和 arm64 架构，参考 [通过 RPM 仓库安装](./installation-guide.md#通过-rpm-仓库安装)
+- Debian 11(bullseye) 的 DEB 包，支持 amd64 和 arm64 架构，参考 [通过 DEB 仓库安装](./installation-guide.md#通过-deb-仓库安装)
 
 3.0.0 对部署模式做了重大更新，具体如下：
 
-- 支持数据面与控制面分离的部署模式，请参考 [Decoupled](../../en/latest/deployment-modes.md#decoupled)；
-- 如果需要继续使用原来的部署模式，那么可以使用部署模式中的 `traditional` 模式，并且更新配置文件，请参考 [Traditional](../../en/latest/deployment-modes.md#traditional)；
-- 继续支持 Standalone 模式，需要更新配置文件，请参考 [Standalone](../../en/latest/deployment-modes.md#standalone)。
+- 支持数据面与控制面分离的部署模式，请参考 [Decoupled](../../en/latest/deployment-modes.md#decoupled)
+- 如果需要继续使用原来的部署模式，那么可以使用部署模式中的 `traditional` 模式，并且更新配置文件，请参考 [Traditional](../../en/latest/deployment-modes.md#traditional)
+- 支持 Standalone 模式，需要更新配置文件，请参考 [Standalone](../../en/latest/deployment-modes.md#standalone)
 
 #### 依赖项
 
@@ -195,7 +195,7 @@ APISIX 的配置方式是用自定义的 `conf/config.yaml` 中的内容覆盖�
       startup_retry: 2
   ```
 
-  * 去除 `apisix.port_admin`，用 `apisix.admin_listen` 替代
+  * 去除 `apisix.port_admin`，用 `deployment.apisix.admin_listen` 替代
 
   如果在 `conf/config.yaml` 中有这样的配置
 
@@ -207,10 +207,11 @@ APISIX 的配置方式是用自定义的 `conf/config.yaml` 中的内容覆盖�
   在 3.0.0 中需要转换成
 
   ```yaml
-  apisix:
-    admin_listen:
-      ip: 127.0.0.1 #替换成实际暴露的 IP
-      port: 9180
+  deployment:
+    apisix:
+      admin_listen:
+        ip: 127.0.0.1 # 替换成实际暴露的 IP
+        port: 9180
   ```
 
   * 修改 `enable_cpu_affinity` 的默认值为 `false`，这个配置用于绑定 worker 进程到 CPU 核心。如果你需要绑定 worker 进程到 CPU 核心，那么你需要在 `conf/config.yaml` 将这个配置项设置为 `true`
@@ -222,14 +223,14 @@ APISIX 的配置方式是用自定义的 `conf/config.yaml` 中的内容覆盖�
 
 #### 数据兼容
 
-在 3.0.0 中，我们调整了部分数据结构，这些调整影响到 APISIX 的路由、上游、插件等数据。直接用 3.0.0 版本连接到 2.15.0 版本使用的 ETCD 会导致数据不兼容。
+在 3.0.0 中，我们调整了部分数据结构，这些调整影响到 APISIX 的路由、上游、插件等数据。3.0.0 版本与 2.15.0 版本之间数据不完全兼容。不能用 3.0.0 版本的 APISIX 直接连接到 2.15.0 版本的 APISIX 使用的 ETCD 集群。
 
 为了保持数据兼容，有两种方式，仅供参考：
 
   1. 梳理 ETCD 中的数据，将不兼容的数据备份然后清除，将备份的数据结构转换成 3.0.0 版本的数据结构，通过 3.0.0 版本的 Admin API 来恢复数据
   2. 梳理 ETCD 中的数据，编写脚本，将 2.15.0 版本的数据结构批量转换成 3.0.0 版本的数据结构
 
-具体调整内容
+调整内容：
 
   * 将插件配置的元属性 `disable` 移动到 `_meta` 中
 
@@ -265,7 +266,7 @@ APISIX 的配置方式是用自定义的 `conf/config.yaml` 中的内容覆盖�
 
   * 去除路由的 `service_protocol` 字段，使用 `upstream.scheme` 替代
 
-  在路由配置中指定 `service_protocol` 为 `grpc`，它在 ETCD 中的数据结构
+  如果在 ETCD 中存在这样的数据结构
 
   ```json
   {

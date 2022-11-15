@@ -130,6 +130,29 @@ sudo yum install apisix-2.13.1
 
 :::
 
+### Installation via DEB repository
+
+Currently the only DEB repository supported by APISIX is Debian 11 (Bullseye) and supports both amd64 and arm64 architectures.
+
+```shell
+# amd64
+sudo echo "deb http://openresty.org/package/debian bullseye openresty" | tee /etc/apt/sources.list.d/openresty.list
+wget -O - http://repos.apiseven.com/pubkey.gpg | apt-key add -
+echo "deb http://repos.apiseven.com/packages/debian bullseye main" | tee /etc/apt/sources.list.d/apisix.list
+
+# arm64
+sudo echo "deb http://openresty.org/package/debian bullseye openresty" | tee /etc/apt/sources.list.d/openresty.list
+wget -O - http://repos.apiseven.com/pubkey.gpg | apt-key add -
+echo "deb http://repos.apiseven.com/packages/arm64/debian bullseye main" | tee /etc/apt/sources.list.d/apisix.list
+```
+
+Then, to install APISIX, run:
+
+```shell
+sudo apt update
+sudo apt install -y apisix=3.0.0-0
+```
+
 ### Installation via RPM offline package
 
 First, download APISIX RPM offline package to an `apisix` folder:
