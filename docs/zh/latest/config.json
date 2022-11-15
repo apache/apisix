@@ -305,6 +305,10 @@
     {
       "type": "doc",
       "id": "CHANGELOG"
+    },
+    {
+      "type": "doc",
+      "id": "upgrade-guide"
     }
   ]
 }
