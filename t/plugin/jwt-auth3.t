@@ -30,10 +30,9 @@ add_block_preprocessor(sub {
 
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
-    }
-
-    if (!$block->response_body) {
-        $block->set_value("response_body eval", "qr/^$/");
+        if (!$block->response_body) {
+            $block->set_value("response_body", "passed\n");
+        }
     }
 });
 
