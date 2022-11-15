@@ -30,14 +30,14 @@ local _M = {
 
 local function check_router_refer(items, id)
     local warn_message = nil
-    local refer_list =  core.tablepool.fetch("refer_list",#items,0)
+    local refer_list =  core.tablepool.fetch("refer_list", #items, 0)
     for _, item in iterate_values(items) do
         if item.value == nil then
             goto CONTINUE
         end
         local route = item.value
         if route.protocol and route.protocol.superior_id and route.protocol.superior_id == id then
-            table.insert(refer_list,item["key"])
+            table.insert(refer_list, item["key"])
         end
         ::CONTINUE::
     end
@@ -45,7 +45,7 @@ local function check_router_refer(items, id)
         warn_message = "/stream_routes/" .. id .. " is referred by "
                         .. table.concat(refer_list,";;")
     end
-    core.tablepool.release("refer_list",refer_list)
+    core.tablepool.release("refer_list", refer_list)
     return warn_message
 end
 
@@ -168,7 +168,7 @@ function _M.delete(id)
     local status, body = _M.get()
     local items = body.list
     if tonumber(status) == 200 and #items > 1 then
-        local warn_message = check_router_refer(items,id)
+        local warn_message = check_router_refer(items, id)
         if warn_message ~= nil then
             return 400, warn_message
         end
