@@ -46,7 +46,7 @@ For Route:
 
 | Name             | Type    | Required | Default | Description                                                            |
 |------------------|---------|----------|---------|------------------------------------------------------------------------|
-| hide_credentials | boolean | False    | false   | Set to true to pass the authorization request headers to the Upstream. |
+| hide_credentials | boolean | False    | false   | Set to true will not pass the authorization request headers to the Upstream. |
 
 ## Enabling the Plugin
 
