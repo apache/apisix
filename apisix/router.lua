@@ -109,8 +109,8 @@ function _M.stream_init_worker()
     local router_ssl_name = "radixtree_sni"
 
     local router_stream = require("apisix.stream.router.ip_port")
-    _M.router_stream = router_stream
     router_stream.stream_init_worker(filter)
+    _M.router_stream = router_stream
 
     local router_ssl = require("apisix.ssl.router." .. router_ssl_name)
     router_ssl.init_worker()

@@ -104,8 +104,8 @@ end
 function _M.stream_routes()
     core.config.init()
     local router_stream = require("apisix.stream.router.ip_port")
-    _M.router_stream = router_stream
     router_stream.stream_init_worker(filter)
+    _M.router_stream = router_stream
     return _M.router_stream.routes()
 end
 
