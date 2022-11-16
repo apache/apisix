@@ -20,7 +20,7 @@ local iterate_values = require("apisix.core.config_util").iterate_values
 local stream_route_checker = require("apisix.stream.router.ip_port").stream_route_checker
 local tostring = tostring
 local table = table
-local tonumber = tonumber
+local filter = require("apisix.router").filter
 
 
 local _M = {
@@ -43,7 +43,7 @@ local function check_router_refer(items, id)
     end
     if #refer_list > 0  then
         warn_message = "/stream_routes/" .. id .. " is referred by "
-                        .. table.concat(refer_list,";;")
+                        .. table.concat(refer_list,",")
     end
     core.tablepool.release("refer_list", refer_list)
     return warn_message
@@ -99,6 +99,14 @@ local function check_conf(id, conf, need_id)
     end
 
     return need_id and id or true
+end
+
+function _M.stream_routes()
+    core.config.init()
+    local router_stream = require("apisix.stream.router.ip_port")
+    _M.router_stream = router_stream
+    router_stream.stream_init_worker(filter)
+    return _M.router_stream.routes()
 end
 
 
@@ -165,9 +173,8 @@ function _M.delete(id)
         return 400, {error_msg = "missing stream route id"}
     end
 
-    local status, body = _M.get()
-    local items = body.list
-    if tonumber(status) == 200 and #items > 1 then
+    local items, _ = _M.stream_routes()
+    if items ~= nil then
         local warn_message = check_router_refer(items, id)
         if warn_message ~= nil then
             return 400, warn_message
