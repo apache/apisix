@@ -339,7 +339,8 @@ X-Forwarded-Host: test.com
 [error]
 
 
-=== TEST 14: try config header: add, set, remove
+
+=== TEST 14: set route add test
 --- config
     location /t {
         content_by_lua_block {
@@ -381,7 +382,8 @@ passed
 [error]
 
 
-=== TEST 15: test add exist header in muti-header is working
+
+=== TEST 15: add exist header in muti-header
 --- request
 GET /echo HTTP/1.1
 --- more_headers
@@ -393,7 +395,8 @@ test: sssss, bbb, 123
 [error]
 
 
-=== TEST 16: test add header to exist header is working
+
+=== TEST 16: add header to exist header
 --- request
 GET /echo HTTP/1.1
 --- more_headers
@@ -404,7 +407,8 @@ test: sssss, 123
 [error]
 
 
-=== TEST 17: test remove header
+
+=== TEST 17: remove header
 --- request
 GET /echo HTTP/1.1
 --- more_headers
@@ -415,7 +419,9 @@ hello:
 [error]
 
 
-=== TEST 18: test add header success
+
+=
+== TEST 18: remove header success
 --- request
 GET /echo HTTP/1.1
 --- response_headers
