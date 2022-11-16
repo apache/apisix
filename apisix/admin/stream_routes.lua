@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
 local iterate_values = require("apisix.core.config_util").iterate_values
