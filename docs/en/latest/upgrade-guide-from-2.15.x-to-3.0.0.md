@@ -66,11 +66,11 @@ If you want APISIX to run on native OpenResty, then only OpenResty 1.19.3.2 and 
 
 ##### Static configuration migration
 
-APISIX is configured to override the default `conf/config-default.yaml` with the contents of custom `conf/config.yaml`, or if a config item item does not exist in `conf/config.yaml`, then use the config item in `conf/config-default.yaml`. In 3.0.0, we adjusted `conf/config-default.yaml`.
+APISIX is configured to override the default `conf/config-default.yaml` with the contents of custom `conf/config.yaml`, or if a configuration does not exist in `conf/config.yaml`, then use the configuration in `conf/config-default.yaml`. In 3.0.0, we adjusted `conf/config-default.yaml`.
 
-###### Move config items
+###### Move configuration
 
-From version 2.15.x to 3.0.0, the location of some config items in `conf/config-default.yaml` has been moved. If you are using these config items, then you need to move them to the new location.
+From version 2.15.x to 3.0.0, the location of some configuration in `conf/config-default.yaml` has been moved. If you are using these configuration, then you need to move them to the new location.
 
 Adjustment content:
 
@@ -85,17 +85,17 @@ Adjustment content:
     - admin_api_mtls
     - admin_api_version
 
-You can find the exact new location of these config items in `conf/config-default.yaml`.
+You can find the exact new location of these configuration in `conf/config-default.yaml`.
 
-###### Update config items
+###### Update configuration
 
-Some config items have been removed in 3.0.0 and replaced with new config items. If you are using these config items, then you need to update them to the new config items.
+Some configuration have been removed in 3.0.0 and replaced with new configuration. If you are using these configuration, then you need to update them to the new configuration.
 
 Adjustment content:
 
   * Removed `enable_http2` and `listen_port` from `apisix.ssl` and replaced with `apisix.ssl.listen`
 
-  If you have this config item in `conf/config.yaml` like:
+  If you have this configuration in `conf/config.yaml` like:
 
   ```yaml
     ssl:
@@ -112,7 +112,7 @@ Adjustment content:
           enable_http2: true
   ```
 
-  * Removed `nginx_config.http.lua_shared_dicts` and replaced with `nginx_config.http.custom_lua_shared_dict`, this config item is used to declare custom shared memory blocks. If you have this config item in `conf/config.yaml` like:
+  * Removed `nginx_config.http.lua_shared_dicts` and replaced with `nginx_config.http.custom_lua_shared_dict`, this configuration is used to declare custom shared memory blocks. If you have this configuration in `conf/config.yaml` like:
 
   ```yaml
   nginx_config:
@@ -130,7 +130,7 @@ Adjustment content:
         my_dict: 1m
   ```
 
-  * Removed `etcd.health_check_retry` and replaced with `deployment.etcd.startup_retry`, this config item is used to configure the number of retries when APISIX starts to connect to etcd. If you have this config item in `conf/config.yaml` like:
+  * Removed `etcd.health_check_retry` and replaced with `deployment.etcd.startup_retry`, this configuration is used to configure the number of retries when APISIX starts to connect to etcd. If you have this configuration in `conf/config.yaml` like:
 
   ```yaml
   etcd:
@@ -145,7 +145,7 @@ Adjustment content:
       startup_retry: 2
   ```
 
-  * Removed `apisix.port_admin` and replaced with `deployment.admin.admin_listen`, this config item is used to configure the Admin API listening port. If you have this config item in `conf/config.yaml` like:
+  * Removed `apisix.port_admin` and replaced with `deployment.admin.admin_listen`, this configuration is used to configure the Admin API listening port. If you have this configuration in `conf/config.yaml` like:
 
   ```yaml
   apisix:
@@ -162,7 +162,7 @@ Adjustment content:
         port: 9180
   ```
 
-  * Change the default value of `enable_cpu_affinity` to `false`, this configuration is used to bind worker processes to CPU cores. If you need to bind worker processes to CPU cores, then you need to set this configuration to `true` in `conf/config.yaml`
+  * Change the default value of `enable_cpu_affinity` to `false`. Reason: More and more users are deploying APISIX via containers. Since Nginx's worker_cpu_affinity does not count against the cgroup, enabling worker_cpu_affinity by default can affect APISIX behavior, for example, if multiple instances are bound to a single CPU. To avoid this problem, we disable the `enable_cpu_affinity` option by default in `conf/config-default.yaml`.
   * Removed `apisix.real_ip_header` and replaced with `nginx_config.http.real_ip_header`
 
 ##### Data Migration
@@ -203,7 +203,7 @@ Adjustment content:
   {
       "plugins":{
           "limit-count":{
-              ... // 插件配置
+              ... // plugin configuration
               "_meta":{
                   "disable":true
               }
@@ -254,7 +254,7 @@ Adjustment content:
   {
       "plugins":{
           "authz-keycloak":{
-              ... // 插件配置
+              ... // plugin configuration
               "audience":"Client ID"
           }
       }
@@ -267,7 +267,7 @@ Adjustment content:
   {
       "plugins":{
           "authz-keycloak":{
-              ... // 插件配置
+              ... // plugin configuration
               "client_id":"Client ID"
           }
       }
@@ -358,7 +358,7 @@ Adjustment content:
       "plugins":{
           "proxy-rewrite":{
               "scheme":"https",
-              ... // 其他配置
+              ... // other configuration
           }
       },
       "upstream":{
@@ -377,7 +377,7 @@ Adjustment content:
   {
     "plugins":{
         "proxy-rewrite":{
-            ... // 其他配置
+            ... // other configuration
         }
     },
     "upstream":{

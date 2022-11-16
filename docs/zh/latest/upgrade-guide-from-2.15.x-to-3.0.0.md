@@ -168,7 +168,7 @@ APISIX 的配置方式是用自定义的 `conf/config.yaml` 中的内容覆盖�
         port: 9180
   ```
 
-  * 修改 `enable_cpu_affinity` 的默认值为 `false`，这个配置用于绑定 worker 进程到 CPU 核心。如果你需要绑定 worker 进程到 CPU 核心，那么你需要在 `conf/config.yaml` 将这个配置项设置为 `true`
+  * 修改 `enable_cpu_affinity` 的默认值为 `false`。原因：越来越多的用户通过容器部署 APISIX。由于 Nginx 的 worker_cpu_affinity 不计入 cgroup，默认启用 worker_cpu_affinity 会影响 APISIX 的行为，例如，多个实例会被绑定到一个 CPU 上。为了避免这个问题，我们在 `conf/config-default.yaml` 中默认禁用 `enable_cpu_affinity` 选项。
   * 去除 `apisix.real_ip_header`，用 `nginx_config.http.real_ip_header` 替代
 
 ##### 数据迁移
