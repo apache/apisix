@@ -106,11 +106,6 @@ local function strip_etcd_resp(data)
         data.header = nil
         data.responses = nil
         data.succeeded = nil
-
-        if data.node then
-            data.node.createdIndex = nil
-            data.node.modifiedIndex = nil
-        end
     end
 
     return data
