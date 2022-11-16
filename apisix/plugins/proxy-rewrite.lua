@@ -163,6 +163,12 @@ local function check_set_headers(headers)
         if #field == 0 then
             return false, 'invalid field length in header'
         end
+        if not core.utils.validate_header_field(field) then
+            return false, 'invalid field character in header'
+        end
+        if not core.utils.validate_header_value(value) then
+            return false, 'invalid value character in header'
+        end
     end
 
     return true
@@ -315,7 +321,8 @@ do
     end
 
     if conf.headers then
-        local hdr_op, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_header_operation, conf.headers)
+        local hdr_op, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
+                                    create_header_operation, conf.headers)
         if not hdr_op then
             core.log.error("failed to create header operation: ", err)
             return

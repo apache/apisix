@@ -42,7 +42,7 @@ description: 本文介绍了关于 Apache APISIX `proxy-rewrite` 插件的基本
 | headers   | object        | 否    |         |                   |   |
 | headers.add     | object   | 否     |        |                 | 添加新的请求头，如果头已经存在，会追加到末尾。格式为 `{"name: value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。                                                                                              |
 | headers.set     | object  | 否     |        |                 | 改写请求头。格式为 `{"name": "value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。                                                                                                |
-| headers.remove  | array   | 否     |        |                 | 移除响应头。格式为 `["name", ...]`。   
+| headers.remove  | array   | 否     |        |                 | 移除响应头。格式为 `["name", ...]`。
 
 ## 启用插件
 
