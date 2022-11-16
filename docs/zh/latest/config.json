@@ -308,7 +308,7 @@
     },
     {
       "type": "doc",
-      "id": "upgrade-guide"
+      "id": "upgrade-guide-from-2.15.x-to-3.0.0"
     }
   ]
 }

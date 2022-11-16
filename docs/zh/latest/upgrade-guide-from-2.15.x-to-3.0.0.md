@@ -30,55 +30,9 @@ description: 本文档将引导你了解如何升级 APISIX 版本。
 
 APISIX 的版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-升级到 APISIX 3.0.0 是一个重大的版本升级，我们建议您先升级到 2.15.0，然后再升级到 3.0.0。
+升级到 APISIX 3.0.0 是一个重大的版本升级，我们建议您先升级到 2.15.x，然后再升级到 3.0.0。
 
-## 升级到 2.15.0
-
-从 2.x 升级到 2.15.0，你可以参考 [ChangeLog](./CHANGELOG.md#2150)，主要包括以下内容：
-
-- Change：不兼容的修改
-- Core：核心功能更新
-- Plugin：插件更新
-- Bugfix：修复 bug
-
-其中尤其需要关注的是 Change 部分，这里列出了一些重要的修改：
-
-- grpc 状态码 OUT_OF_RANGE 如今会在 grpc-transcode 插件中作为 http 状态码 400: [#7419](https://github.com/apache/apisix/pull/7419)
-- 重命名 `etcd.health_check_retry` 配置项为 `startup_retry`。 [#7304](https://github.com/apache/apisix/pull/7304)
-- 移除 `upstream.enable_websocket`。该配置已于 2020 年标记成已过时。 [#7222](https://github.com/apache/apisix/pull/7222)
-- 为了适应 OpenTelemetry 规范的变化，OTLP/HTTP 的默认端口改为 4318: [#7007](https://github.com/apache/apisix/pull/7007)
-- 更正 syslog 插件的配置 [#6551](https://github.com/apache/apisix/pull/6551)
-- server-info 插件使用新方法来上报 DP 面信息 [#6202](https://github.com/apache/apisix/pull/6202)
-- Admin API 返回的空 nodes 应当被编码为数组 [#6384](https://github.com/apache/apisix/pull/6384)
-- 更正 prometheus 统计指标 apisix_nginx_http_current_connections{state="total"} [#6327](https://github.com/apache/apisix/pull/6327)
-- 不再默认暴露 public API 并移除 plugin interceptor [#6196](https://github.com/apache/apisix/pull/6196)
-- 重命名 serverless 插件的 "balancer" phase 为 "before_proxy" [#5992](https://github.com/apache/apisix/pull/5992)
-- 不再承诺支持 Tengine [#5961](https://github.com/apache/apisix/pull/5961)
-- 当 L4 支持 和 Admin API 都启用时，自动开启 HTTP 支持 [#5867](https://github.com/apache/apisix/pull/5867)
-- wolf-rbac 插件变更默认端口，并在文档中增加 authType 参数 [#5477](https://github.com/apache/apisix/pull/5477)
-- 将 enable_debug 配置从 config.yaml 移到 debug.yaml [#5046](https://github.com/apache/apisix/pull/5046)
-- 更改自定义 lua_shared_dict 配置的名称 [#5030](https://github.com/apache/apisix/pull/5030)
-- 不再提供 APISIX 安装 shell 脚本 [#4985](https://github.com/apache/apisix/pull/4985)
-
-### 如何根据 Change 来升级
-
-你需要理解 ChangeLog 中的内容，然后根据你的实际情况来决定是否需要修改你的配置。
-
-#### 更新配置文件
-
-以 [#7304](https://github.com/apache/apisix/pull/7304) 为例，你可以在配置文件中搜索 `etcd.health_check_retry`，如果有对应的配置，那么在升级 APISIX 的版本到 2.15.0 后，你需要将这个配置项改为 `startup_retry`。如果你的配置文件中没有对应的配置，那么你就不需要做任何修改。
-
-#### 更新数据结构
-
-以 [#6551](https://github.com/apache/apisix/pull/6551) 为例，如果你使用了 syslog 插件，并且配置了 `max_retry_times` 和 `retry_interval` 属性，那么升级到 2.15.0 后，你需要将 `syslog` 插件的配置中的 `max_retry_times` 字段改为 `max_retry_times`，并将 `retry_interval` 字段改为 `retry_delay`。如果在很多路由中使用了 syslog 插件，那么你需要手动更新这些配置，或者自己编写脚本来统一修改。目前，我们还没有提供脚本来帮助你完成这个工作。
-
-#### 更新业务逻辑
-
-以 [#6196](https://github.com/apache/apisix/pull/6196) 为例，如果你基于 Admin API 开发了契合自己业务系统的管理界面，或者使用开源插件的 public API，或者开发自己的私有插件且使用了 public API，那么你需要根据实际情况来决定是否需要修改你的代码。
-
-比如你使用了 jwt-auth 插件，并且使用了其 public API（默认为 `/apisix/plugin/jwt/sign`）来签发 jwt，那么升级到 2.15.0 后，你需要为 jwt-auth 插件的 public API 配置一个路由，然后将你的代码中的请求地址修改为这个路由的地址。具体参考 [注册公共接口](./plugin-develop.md#注册公共接口)。
-
-## 升级到 3.0.0
+## 从 2.15.x 升级到 3.0.0
 
 ### 升级注意事项和重大更新
 
@@ -116,7 +70,7 @@ APISIX 的配置方式是用自定义的 `conf/config.yaml` 中的内容覆盖�
 
 ###### 移动配置项
 
-从 2.15.0 到 3.0.0 版本，在 `conf/config-default.yaml` 有一些配置项的位置被移动了。如果你使用了这些配置项，那么你需要将它们移动到新的位置。
+从 2.15.x 到 3.0.0 版本，在 `conf/config-default.yaml` 有一些配置项的位置被移动了。如果你使用了这些配置项，那么你需要将它们移动到新的位置。
 
 调整内容：
 
@@ -223,12 +177,12 @@ APISIX 的配置方式是用自定义的 `conf/config.yaml` 中的内容覆盖�
 
 #### 数据兼容
 
-在 3.0.0 中，我们调整了部分数据结构，这些调整影响到 APISIX 的路由、上游、插件等数据。3.0.0 版本与 2.15.0 版本之间数据不完全兼容。不能用 3.0.0 版本的 APISIX 直接连接到 2.15.0 版本的 APISIX 使用的 ETCD 集群。
+在 3.0.0 中，我们调整了部分数据结构，这些调整影响到 APISIX 的路由、上游、插件等数据。3.0.0 版本与 2.15.x 版本之间数据不完全兼容。不能用 3.0.0 版本的 APISIX 直接连接到 2.15.x 版本的 APISIX 使用的 ETCD 集群。
 
 为了保持数据兼容，有两种方式，仅供参考：
 
   1. 梳理 ETCD 中的数据，将不兼容的数据备份然后清除，将备份的数据结构转换成 3.0.0 版本的数据结构，通过 3.0.0 版本的 Admin API 来恢复数据
-  2. 梳理 ETCD 中的数据，编写脚本，将 2.15.0 版本的数据结构批量转换成 3.0.0 版本的数据结构
+  2. 梳理 ETCD 中的数据，编写脚本，将 2.15.x 版本的数据结构批量转换成 3.0.0 版本的数据结构
 
 调整内容：
 
@@ -443,4 +397,116 @@ APISIX 的配置方式是用自定义的 `conf/config.yaml` 中的内容覆盖�
 
 #### Admin API
 
-我们调整了 Admin API 的响应格式，参考 [新的 Admin API 响应格式](./CHANGELOG.md#新的-admin-api-响应格式)，也调整了 Admin API 的端口为 9180。
+我们对 Admin API 进行了一些调整，这些调整是为了使 Admin API 更加易用，更加符合 RESTful 的设计理念。
+
+具体内容：
+
+  * 查询资源时（包括查询单个资源和列表资源），删除了响应体中的 `count`、 `action` 和 `node` 字段，并且将 `node` 中的内容提升到响应体的根节点
+
+  在 2.x 版本中，通过 Admin API 查询 `/apisix/admin/routes/1` 的响应格式：
+
+  ```json
+  {
+    "count":1,
+    "action":"get",
+    "node":{
+        "key":"\/apisix\/routes\/1",
+        "value":{
+            ... // 配置内容
+        }
+    }
+  }
+  ```
+
+  在 3.0.0 中，通过 Admin API 查询 `/apisix/admin/routes/1` 资源的响应格式：
+
+  ```json
+  {
+    "key":"\/apisix\/routes\/1",
+    "value":{
+        ... // 配置内容
+    }
+  }
+  ```
+
+  * 查询列表资源时，删除 `dir` 字段，新增 `list` 字段，存放列表资源的数据，新增 `total` 字段，存放列表资源的总数
+
+  在 2.x 版本中，通过 Admin API 查询 `/apisix/admin/routes` 的响应格式：
+
+  ```json
+  {
+    "action":"get",
+    "count":2,
+    "node":{
+        "key":"\/apisix\/routes",
+        "nodes":[
+            {
+                "key":"\/apisix\/routes\/1",
+                "value":{
+                    ... // 配置内容
+                }
+            },
+            {
+                "key":"\/apisix\/routes\/2",
+                "value":{
+                    ... // 配置内容
+                }
+            }
+        ],
+        "dir":true
+    }
+  }
+  ```
+
+  在 3.0.0 中，通过 Admin API 查询 `/apisix/admin/routes` 资源的响应格式：
+
+  ```json
+  {
+    "list":[
+        {
+            "key":"\/apisix\/routes\/1",
+            "value":{
+                ... // 配置内容
+            }
+
+        },
+        {
+            "key":"\/apisix\/routes\/2",
+            "value":{
+                ... // 配置内容
+            }
+        }
+    ],
+    "total":2
+  }
+  ```
+
+  * 调整 ssl 资源的请求路径，从 `/apisix/admin/ssl/{id}` 改为 `/apisix/admin/ssls/{id}`
+
+  在 2.x 版本中，通过 Admin API 操作 ssl 资源：
+
+  ```shell
+  curl -i http://{apisix_listen_address}/apisix/admin/ssl/{id}
+  ```
+
+  在 3.0.0 中，通过 Admin API 操作 ssl 资源：
+
+  ```shell
+  curl -i http://{apisix_listen_address}/apisix/admin/ssls/{id}
+  ```
+
+  * 调整 proto 资源的请求路径，从 `/apisix/admin/proto/{id}` 改为 `/apisix/admin/protos/{id}`
+
+  在 2.x 版本中，通过 Admin API 操作 proto 资源：
+
+  ```shell
+  curl -i http://{apisix_listen_address}/apisix/admin/proto/{id}
+  ```
+
+  在 3.0.0 中，通过 Admin API 操作 proto 资源：
+
+  ```shell
+  curl -i http://{apisix_listen_address}/apisix/admin/protos/{id}
+  ```
+
+我们也调整了 Admin API 的端口为 9180。

@@ -28,57 +28,11 @@ description: This document will guide on you how to upgrade your APISIX version.
 
 ## Upgrade path for APISIX
 
-APISIX adheres to [semantic versioning](https://semver.org/), the format of the version number is: `major.minor.patch`, for example: 2.15.0.
+APISIX adheres to [semantic versioning](https://semver.org/).
 
-Upgrading to APISIX 3.0.0 is a major version upgrade and we recommend that you upgrade to 2.15.0 first and then to 3.0.0.
+Upgrading to APISIX 3.0.0 is a major version upgrade and we recommend that you upgrade to 2.15.x first and then to 3.0.0.
 
-## Upgrade to 2.15.0
-
-To upgrade from 2.x to 2.15.0, you can refer to [ChangeLog](../../../CHANGELOG.md#2150), which mainly includes the following:
-
-- Change: incompatible modifications
-- Core: core functionality update
-- Plugin: plugin updates
-- Bugfix: bug fixes
-
-Of particular interest is the Change section, where some important changes are listed:
-
-- We now map the grpc error code OUT_OF_RANGE to http code 400 in grpc-transcode plugin: [#7419](https://github.com/apache/apisix/pull/7419)
-- Rename health_check_retry configuration in etcd section of `config-default.yaml` to startup_retry: [#7304](https://github.com/apache/apisix/pull/7304)
-- Remove `upstream.enable_websocket` which is deprecated since 2020: [#7222](https://github.com/apache/apisix/pull/7222)
-- To adapt the change of OpenTelemetry spec, the default port of OTLP/HTTP is changed to 4318: [#7007](https://github.com/apache/apisix/pull/7007)
-- change(syslog): correct the configuration [#6551](https://github.com/apache/apisix/pull/6551)
-- change(server-info): use a new approach(keepalive) to report DP info [#6202](https://github.com/apache/apisix/pull/6202)
-- change(admin): empty nodes should be encoded as array [#6384](https://github.com/apache/apisix/pull/6384)
-- change(prometheus): replace wrong apisix_nginx_http_current_connections{state="total"} label [#6327](https://github.com/apache/apisix/pull/6327)
-- change: don't expose public API by default & remove plugin interceptor [#6196](https://github.com/apache/apisix/pull/6196)
-- change(serverless): rename "balancer" phase to "before_proxy" [#5992](https://github.com/apache/apisix/pull/5992)
-- change: don't promise to support Tengine [#5961](https://github.com/apache/apisix/pull/5961)
-- change: enable HTTP when stream proxy is set and enable_admin is true [#5867](https://github.com/apache/apisix/pull/5867)
-- change(wolf-rbac): change default port number and add `authType` parameter to documentation [#5477](https://github.com/apache/apisix/pull/5477)
-- change(debug): move 'enable_debug' form config.yaml to debug.yaml [#5046](https://github.com/apache/apisix/pull/5046)
-- change: use a new name to customize lua_shared_dict in nginx.conf [#5030](https://github.com/apache/apisix/pull/5030)
-- change: drop the support of shell script installation [#4985](https://github.com/apache/apisix/pull/4985)
-
-### How to upgrade according to Change
-
-You need to understand what is in the ChangeLog and then decide if you need to change your configuration based on your actual situation.
-
-#### Update configuration file
-
-Using [#7304](https://github.com/apache/apisix/pull/7304) as an example, you can search for `etcd.health_check_retry` in the configuration file, and if there is a corresponding config item, then after upgrading APISIX to version 2.15.0 you need to change this config item to `startup_retry`. If there is no corresponding config item in your configuration file, then you do not need to make any changes.
-
-#### Update data structure
-
-Using [#6551](https://github.com/apache/apisix/pull/6551) as an example, if you are using the syslog plugin and have the `max_retry_times` and `retry_interval` properties, then after upgrading to 2.15.0, you need to change the `syslog` plugin properties to `max_retry_times` and `retry_interval` to `retry_delay`. If the syslog plugin is used in many routes, then you will need to update these properties manually or write your scripts to change them consistently. Currently, we do not provide scripts to help you do this.
-
-#### Update business logic
-
-Using [#6196](https://github.com/apache/apisix/pull/6196) as an example, if you have developed an admin interface based on the Admin API that fits your business system, or if you are using the public API of an open source plugin, or if you are developing your own private plugin and using the public API, then you need to understand the Change and decide if you need to change your code based on your situation. Then you need to decide whether you need to modify your code according to your actual situation.
-
-For example, if you use the jwt-auth plugin and use its public API (default is `/apisix/plugin/jwt/sign`) to issue jwt, then after upgrading to 2.15.0, you need to configure a route for the jwt-auth plugin's public API, and then change the request address in your code to address of this route. See [register public api](./plugin-develop.md#register-public-api).
-
-## Upgrade to 3.0.0
+## From 2.15.x upgrade to 3.0.0
 
 ### Upgrade Notes and Major Updates
 
@@ -116,7 +70,7 @@ APISIX is configured to override the default `conf/config-default.yaml` with the
 
 ###### Move config items
 
-From version 2.15.0 to 3.0.0, the location of some config items in `conf/config-default.yaml` has been moved. If you are using these config items, then you need to move them to the new location.
+From version 2.15.x to 3.0.0, the location of some config items in `conf/config-default.yaml` has been moved. If you are using these config items, then you need to move them to the new location.
 
 Adjustment content:
 
@@ -217,12 +171,12 @@ If you need to backup and restore your data, you can use the backup and restore 
 
 #### Data Compatible
 
-In 3.0.0, we have adjusted some of the data structures that affect the routing, upstream, and plugin data of APISIX. The data is not fully compatible between version 3.0.0 and version 2.15.0. You cannot use APISIX version 3.0.0 to connect directly to the ETCD cluster used by APISIX version 2.15.0.
+In 3.0.0, we have adjusted some of the data structures that affect the routing, upstream, and plugin data of APISIX. The data is not fully compatible between version 3.0.0 and version 2.15.x. You cannot use APISIX version 3.0.0 to connect directly to the ETCD cluster used by APISIX version 2.15.x.
 
 In order to keep the data compatible, there are two ways, for reference only.
 
   1. Review the data in ETCD, back up the incompatible data and then clear it, convert the backed up data structure to that of version 3.0.0, and restore the data through the Admin API of version 3.0.0
-  2. Review the data in ETCD, write scripts to convert the data structure of version 2.15.0 into the data structure of version 3.0.0 in batch
+  2. Review the data in ETCD, write scripts to convert the data structure of version 2.15.x into the data structure of version 3.0.0 in batch
 
 Adjustment content:
 
@@ -241,6 +195,7 @@ Adjustment content:
           }
       }
   }
+  ```
 
   In 3.0.0, the data structure of this plugin should be transformed to
 
@@ -438,4 +393,116 @@ Adjustment content:
 
 #### Admin API
 
-We have adjusted the response format of Admin API, refer to [New Admin API response format](../../../CHANGELOG.md#new-admin-api-response-format), and also adjusted the port of Admin API to 9180.
+We have made some tweaks to the Admin API that are designed to make it easier to use and more in line with RESTful design ideas.
+
+Adjustment content:
+
+  * When querying resources (both single resources and list resources), the `count`, `action` and `node` fields in the response body are removed and the contents of `node` are moved up to the root of the response body
+
+  In version 2.x, the response format for querying `/apisix/admin/routes/1` via the Admin API is
+
+  ```json
+  {
+    "count":1,
+    "action":"get",
+    "node":{
+        "key":"\/apisix\/routes\/1",
+        "value":{
+            ... // content
+        }
+    }
+  }
+  ```
+
+  In 3.0.0, the response format for querying the `/apisix/admin/routes/1` resource via the Admin API is
+
+  ```json
+  {
+    "key":"\/apisix\/routes\/1",
+    "value":{
+        ... // content
+    }
+  }
+  ```
+
+  * When querying the list resources, delete the `dir` field, add a new `list` field to store the data of the list resources, and add a new `total` field to store the total number of list resources
+
+  In version 2.x, the response format for querying `/apisix/admin/routes` via the Admin API is
+
+  ```json
+  {
+    "action":"get",
+    "count":2,
+    "node":{
+        "key":"\/apisix\/routes",
+        "nodes":[
+            {
+                "key":"\/apisix\/routes\/1",
+                "value":{
+                    ... // content
+                }
+            },
+            {
+                "key":"\/apisix\/routes\/2",
+                "value":{
+                    ... // content
+                }
+            }
+        ],
+        "dir":true
+    }
+  }
+  ```
+
+  In 3.0.0, the response format for querying the `/apisix/admin/routes` resource via the Admin API is
+
+  ```json
+  {
+    "list":[
+        {
+            "key":"\/apisix\/routes\/1",
+            "value":{
+                ... // content
+            }
+
+        },
+        {
+            "key":"\/apisix\/routes\/2",
+            "value":{
+                ... // content
+            }
+        }
+    ],
+    "total":2
+  }
+  ```
+
+  * Adjust the request path of the ssl resource from `/apisix/admin/ssl/{id}` to `/apisix/admin/ssls/{id}`
+
+  In version 2.x, operating with ssl resources via the Admin API
+
+  ```shell
+  curl -i http://{apisix_listen_address}/apisix/admin/ssl/{id}
+  ```
+
+  In 3.0.0, operating with ssl resources via the Admin API
+
+  ```shell
+  curl -i http://{apisix_listen_address}/apisix/admin/ssls/{id}
+  ```
+
+  * Adjust the request path of the proto resource from `/apisix/admin/proto/{id}` to `/apisix/admin/protos/{id}`
+
+  In version 2.x, operating with proto resources via the Admin API
+
+  ```shell
+  curl -i http://{apisix_listen_address}/apisix/admin/proto/{id}
+  ```
+
+  In 3.0.0, operating with proto resources via the Admin API
+
+  ```shell
+  curl -i http://{apisix_listen_address}/apisix/admin/protos/{id}
+  ```
+
+We also adjusted the Admin API port to 9180.
