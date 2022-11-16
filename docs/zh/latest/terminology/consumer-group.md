@@ -1,9 +1,9 @@
 ---
-title: Consumer Group
+title: Consumer Groups
 keywords:
   - API 网关
   - Apache APISIX
-  - Consumer Group
+  - Consumer Groups
 description: 本文介绍了 Apache APISIX Consumer Group 对象的概念及使用方法。
 ---
 
@@ -29,8 +29,6 @@ description: 本文介绍了 Apache APISIX Consumer Group 对象的概念及使�
 ## 描述
 
 通过 Consumer Groups，你可以在同一个消费者组中启用任意数量的[插件](./plugin.md)，并在一个或者多个[消费者](./consumer.md)中引用该消费者组。
-
-当在同一个路由中配置相同的插件时，只有一份配置是生效的。关于插件配置的优先级，请参考 [Plugin](./plugin.md)。
 
 ## 配置示例
 
@@ -67,7 +65,16 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 
 当 APISIX 无法找到 `group_id` 中定义的消费者组时，创建或者更新消费者的请求将会终止，并返回错误码 `404`。
 
-如果消费者已经配置了 `plugins` 字段，那么消费者中定义的插件将与之合并。如果消费者和消费者组配置了相同的插件，则消费者组中的插件将会失效。
+如果消费者已经配置了 `plugins` 字段，那么消费者组中配置的插件将与之合并。
+
+:::tip
+
+此处需要注意两点：
+
+1. 当在同一个插件分别配置在[消费者](./consumer.md)、[路由](./route.md)、[插件配置](./plugin-config.md)和[服务](./service.md)中时，只有一份配置是生效的，并且消费者的优先级最高。更多信息，请参考 [Plugin](./plugin.md)。
+2. 如果消费者和消费者组配置了相同的插件，则消费者中的插件配置优先级更高。对于第一点，因为消费者组需要配置在消费者中，因此你只需关心消费者中插件的优先级。
+
+:::
 
 如下示例，假如你配置了一个消费者组：
 
@@ -100,4 +107,4 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 }
 ```
 
-那么 `response-rewrite` 中的 `body` 保留 `world`。
+那么 `response-rewrite` 中的 `body` 将保留 `world`。

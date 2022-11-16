@@ -4,7 +4,7 @@ keywords:
   - API 网关
   - Apache APISIX
   - Router
-description: 本文介绍了 Apache APISIX 的 Script 对象及使用方法。
+description: 本文介绍了 Apache APISIX Script 的使用方法及注意事项。
 ---
 
 <!--
