@@ -337,3 +337,88 @@ X-Forwarded-Host: apisix.ai
 X-Forwarded-Host: test.com
 --- no_error_log
 [error]
+
+
+=== TEST 14: try config header: add, set, remove
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "headers": {
+                                    "add":{"test": "123"},
+                                    "set":{"test2": "2233"},
+                                    "remove":["hello"]
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+=== TEST 15: test add exist header in muti-header is working
+--- request
+GET /echo HTTP/1.1
+--- more_headers
+test: sssss
+test: bbb
+--- response_headers
+test: sssss, bbb, 123
+--- no_error_log
+[error]
+
+
+=== TEST 16: test add header to exist header is working
+--- request
+GET /echo HTTP/1.1
+--- more_headers
+test: sssss
+--- response_headers
+test: sssss, 123
+--- no_error_log
+[error]
+
+
+=== TEST 17: test remove header
+--- request
+GET /echo HTTP/1.1
+--- more_headers
+hello: word
+--- response_headers
+hello:
+--- no_error_log
+[error]
+
+
+=== TEST 18: test add header success
+--- request
+GET /echo HTTP/1.1
+--- response_headers
+test2: 2233
+--- no_error_log
+[error]
