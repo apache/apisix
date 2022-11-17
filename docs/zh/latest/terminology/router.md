@@ -30,7 +30,7 @@ description: 本文介绍了如何选择 Apache APISIX 的 Router。
 
 APISIX 区别于其他 API 网关的一大特点是允许用户选择不同 Router 来更好匹配自由业务，在性能、自由之间做最适合选择。
 
-你可以通过配置 `conf/config.yaml` 设置符合自身业务需求的路由。
+你可以通过配置 `conf/config.yaml` 文件，来设置符合自身业务需求的路由。
 
 ## 配置简介
 
