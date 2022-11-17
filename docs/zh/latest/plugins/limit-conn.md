@@ -28,21 +28,21 @@ description: 本文介绍了 Apache APISIX limit-conn 插件的相关操作，�
 
 ## 描述
 
-`limit-conn` 插件用于限制客户端对服务的并发请求数。
+`limit-conn` 插件用于限制客户端对单个服务的并发请求数。当客户端对路由的并发请求数达到限制时，可以返回自定义的状态码和响应信息。
 
 ## 属性
 
-| 名称               | 类型    | 必选项   | 默认值 | 有效值                                                                                    | 描述                                                                                                                                                                                                       |
-| ------------------ | ------- | -------- | ------ | ----------------------------------------------------------------------------------------- |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| conn               | integer | 是 |        | conn > 0                                                                                  | 允许的最大并发请求数。超过 `conn` 的限制、但是低于 `conn` + `burst` 的请求，将被延迟处理。                                                                                                                                               |
-| burst              | integer | 是 |        | burst >= 0                                                                                | 每秒允许被延迟处理的额外并发请求数。                                                                                                                                                                                           |
-| default_conn_delay | number  | 是 |        | default_conn_delay > 0                                                                    | 默认的典型连接（或请求）的处理延迟时间。                                                                                                                                                                                     |
-| only_use_default_delay  | boolean | 否 | false  | [true,false]                                                                              | 延迟时间的严格模式。 当设置为 `true` 时，将会严格按照设置的 `default_conn_delay` 时间来进行延迟处理。                                                                                                                                                                |
-| key_type      | string | 否   |  "var"      | ["var", "var_combination"]                                          | `key` 的类型                                                                                                                                                                                                  |
-| key           | string  | 是   |        |  | 用来做请求计数的依据。如果 `key_type` 为 `"var"`，那么 `key` 会被当作变量名称，如 `remote_addr` 和 `consumer_name`；如果 `key_type` 为 `"var_combination"`，那么 `key` 会当作变量组合，如 `$remote_addr $consumer_name`；如果 `key` 的值为空，`$remote_addr` 会被作为默认 `key`。 |
-| rejected_code      | string  | 否 | 503    | [200,...,599]                                                                             | 当请求数超过 `conn` + `burst` 阈值时，返回的 HTTP 状态码。                                                                                                                                                                |
-| rejected_msg       | string | 否                                |            | 非空                                          | 当请求数超过 `conn` + `burst` 阈值时，返回的响应体。                                                                                                                                                                     |
-| allow_degradation              | boolean  | 否                                | false       |                                                                     | 当设置为 `true` 时，启用插件降级并自动允许请求继续。                                                                                                                                                    |
+| 名称               | 类型    | 必选项 | 默认值 | 有效值                      | 描述                                                                                                                                                                                                       |
+| ------------------ | ------- | ----- | ------ | -------------------------- |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| conn               | integer | 是    |        | conn > 0                   | 允许的最大并发请求数。超过 `conn` 的限制、但是低于 `conn` + `burst` 的请求，将被延迟处理。                                                                                                                       |
+| burst              | integer | 是    |        | burst >= 0                 | 每秒允许被延迟处理的额外并发请求数。                                                                                                                                                                          |
+| default_conn_delay | number  | 是    |        | default_conn_delay > 0     | 默认的典型连接（或请求）的处理延迟时间。                                                                                                                                                                      |
+| only_use_default_delay | boolean | 否 | false | [true,false]               | 延迟时间的严格模式。当设置为 `true` 时，将会严格按照设置的 `default_conn_delay` 时间来进行延迟处理。                                                                                                              |
+| key_type           | string | 否     |  "var" | ["var", "var_combination"] | `key` 的类型。                                                                              |
+| key                | string | 是     |        |                            | 用来做请求计数的依据。如果 `key_type` 为 `"var"`，那么 `key` 会被当作变量名称，如 `remote_addr` 和 `consumer_name`；如果 `key_type` 为 `"var_combination"`，那么 `key` 会当作变量组合，如 `$remote_addr $consumer_name`；如果 `key` 的值为空，`$remote_addr` 会被作为默认 `key`。 |
+| rejected_code      | string  | 否    | 503    | [200,...,599]              | 当请求数超过 `conn` + `burst` 阈值时，返回的 HTTP 状态码。                                                                                                                                                       |
+| rejected_msg       | string | 否     |        | 非空                       | 当请求数超过 `conn` + `burst` 阈值时，返回的信息。                                                                                                                                                               |
+| allow_degradation  | boolean | 否    | false  |                            | 当设置为 `true` 时，启用插件降级并自动允许请求继续。                                                                                                                                                              |
 
 ## 启用插件
 
@@ -122,70 +122,6 @@ curl -i http://127.0.0.1:9080/index.html?sleep=20
 </html>
 ```
 
-## 限制 WebSocket 连接的并发数
-
-Apache APISIX 支持 WebSocket 代理，我们可以使用 `limit-conn` 插件限制 WebSocket 连接的并发数。
-
-1、创建路由并启用 WebSocket 代理和 `limit-conn` 插件。
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "uri": "/ws",
-    "enable_websocket": true,
-    "plugins": {
-        "limit-conn": {
-            "conn": 1,
-            "burst": 0,
-            "default_conn_delay": 0.1,
-            "rejected_code": 503,
-            "key_type": "var",
-            "key": "remote_addr"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
-
-上述路由在 `/ws` 上开启了 WebSocket 代理，并限制了 WebSocket 连接并发数为 1，超过 1 个并发的 WebSocket 连接将返回 `503` 拒绝请求。
-
-2、发起 WebSocket 请求，返回 `101` HTTP 状态码表示连接建立成功。
-
-```shell
-curl --include \
-     --no-buffer \
-     --header "Connection: Upgrade" \
-     --header "Upgrade: websocket" \
-     --header "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==" \
-     --header "Sec-WebSocket-Version: 13" \
-     --http1.1 \
-     http://127.0.0.1:9080/ws
-```
-
-```shell
-HTTP/1.1 101 Switching Protocols
-```
-
-3、在另一个终端中再次发起 WebSocket 请求，返回 `503` HTTP 状态码表示请求将被拒绝。
-
-```shell
-HTTP/1.1 503 Service Temporarily Unavailable
-···
-<html>
-<head><title>503 Service Temporarily Unavailable</title></head>
-<body>
-<center><h1>503 Service Temporarily Unavailable</h1></center>
-<hr><center>openresty</center>
-</body>
-</html>
-```
-
 ## 禁用插件
 
 当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
@@ -204,3 +140,71 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
     }
 }'
 ```
+
+## 应用场景示例
+
+### 限制 WebSocket 连接的并发数
+
+Apache APISIX 支持 WebSocket 代理，我们可以使用 `limit-conn` 插件限制 WebSocket 连接的并发数。
+
+1. 创建路由并启用 WebSocket 代理和 `limit-conn` 插件。
+
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    {
+        "uri": "/ws",
+        "enable_websocket": true,
+        "plugins": {
+            "limit-conn": {
+                "conn": 1,
+                "burst": 0,
+                "default_conn_delay": 0.1,
+                "rejected_code": 503,
+                "key_type": "var",
+                "key": "remote_addr"
+            }
+        },
+        "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
+        }
+    }'
+    ```
+
+    上述路由在 `/ws` 上开启了 WebSocket 代理，并限制了 WebSocket 连接并发数为 `1`。
+
+    当 WebSocket 连接并发数超过 `1` 时，APISIX 将会拒绝请求，并返回 HTTP 状态码 `503`。
+
+2. 发起 WebSocket 请求，返回 `101` HTTP 状态码表示连接建立成功。
+
+    ```shell
+    curl --include \
+        --no-buffer \
+        --header "Connection: Upgrade" \
+        --header "Upgrade: websocket" \
+        --header "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==" \
+        --header "Sec-WebSocket-Version: 13" \
+        --http1.1 \
+        http://127.0.0.1:9080/ws
+    ```
+
+    ```shell
+    HTTP/1.1 101 Switching Protocols
+    ```
+
+3. 在另一个终端中再次发起 WebSocket 请求，返回 `503` HTTP 状态码表示请求将被拒绝。
+
+    ```shell
+    HTTP/1.1 503 Service Temporarily Unavailable
+    ···
+    <html>
+    <head><title>503 Service Temporarily Unavailable</title></head>
+    <body>
+    <center><h1>503 Service Temporarily Unavailable</h1></center>
+    <hr><center>openresty</center>
+    </body>
+    </html>
+    ```

@@ -167,7 +167,7 @@ plugins:
 ### 启用 SSL
 
 ```yml
-ssl:
+ssls:
     -
         cert: |
             -----BEGIN CERTIFICATE-----

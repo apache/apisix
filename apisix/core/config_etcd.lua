@@ -716,32 +716,17 @@ function _M.fetch_created_obj(key)
 end
 
 
-local function read_etcd_version(etcd_cli)
-    if not etcd_cli then
-        return nil, "not inited"
-    end
-
-    local data, err = etcd_cli:version()
-    if not data then
-        return nil, err
-    end
-
-    local body = data.body
-    if type(body) ~= "table" then
-        return nil, "failed to read response body when try to fetch etcd "
-                    .. "version"
-    end
-
-    return body
-end
-
-
 function _M.server_version(self)
     if not self.running then
         return nil, "stopped"
     end
 
-    return read_etcd_version(self.etcd_cli)
+    local res, err = etcd_apisix.server_version()
+    if not res then
+        return nil, err
+    end
+
+    return res.body
 end
 
 

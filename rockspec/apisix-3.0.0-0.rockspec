@@ -16,12 +16,12 @@
 --
 
 package = "apisix"
-version = "master-0"
+version = "3.0.0-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/apache/apisix",
-    branch = "master",
+    branch = "3.0.0",
 }
 
 description = {
@@ -63,7 +63,7 @@ dependencies = {
     "lua-resty-expr = 1.3.2",
     "graphql = 0.0.2",
     "argparse = 0.7.1-1",
-    "luasocket = 3.1.0-1",
+    "luasocket = 3.0rc1-2",
     "luasec = 0.9-1",
     "lua-resty-consul = 0.3-2",
     "penlight = 1.9.2-1",

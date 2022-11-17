@@ -174,9 +174,9 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "uri": "/hash_on_cookie",
     "upstream": {
         "key": "sid",
-        "type ": "chash",
-        "hash_on ": "cookie",
-        "nodes ": {
+        "type": "chash",
+        "hash_on": "cookie",
+        "nodes": {
             "127.0.0.1:1980": 1,
             "127.0.0.1:1981": 1
         }
@@ -200,9 +200,9 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "uri": "/hash_on_header",
     "upstream": {
         "key": "content-type",
-        "type ": "chash",
-        "hash_on ": "header",
-        "nodes ": {
+        "type": "chash",
+        "hash_on": "header",
+        "nodes": {
             "127.0.0.1:1980": 1,
             "127.0.0.1:1981": 1
         }
