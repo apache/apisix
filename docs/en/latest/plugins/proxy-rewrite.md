@@ -45,6 +45,11 @@ The `proxy-rewrite` Plugin rewrites Upstream proxy information such as `scheme`,
 | headers.remove  | array   | false     |        |                 | Remove the headers. The format is `["name", ...]`.
 | use_real_request_uri_unsafe | boolean       | False    | false   |                                                                                                                                        | Use real_request_uri (original $request_uri in nginx) to bypass URI normalization. **Enabling this is considered unsafe as it bypasses all URI normalization steps**.                                                                                                                                                                                                                                                                                                     |
 
+## Header Priority
+Header Configures the header according to the following priorities:
+
+`remove` > `set` > `add`
+
 ## Enabling the Plugin
 
 The example below enables the `proxy-rewrite` Plugin on a specific Route:
