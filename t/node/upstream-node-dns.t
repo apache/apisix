@@ -67,7 +67,7 @@ passed
 
     local utils = require("apisix.core.utils")
     utils.dns_parse = function (domain)  -- mock: DNS parser
-        if domain == "test.com" then
+        if domain == "test2.com" then
             return {address = "127.0.0.2"}
         end
 
@@ -164,8 +164,11 @@ passed
 
     local utils = require("apisix.core.utils")
     utils.dns_parse = function (domain)  -- mock: DNS parser
-        if domain == "test.com" or domain == "test2.com" then
-            return {address = "127.0.0.2"}
+        if domain == "test.com" then
+            return {address = "127.0.0.1" }
+        end
+        if domain == "test2.com" then
+            return {address = "127.0.0.2" }
         end
 
         error("unknown domain: " .. domain)
@@ -187,12 +190,9 @@ hello world
     apisix.http_init()
 
     local utils = require("apisix.core.utils")
-    local count = 0
     utils.dns_parse = function (domain)  -- mock: DNS parser
-        count = count + 1
-
-        if domain == "test.com" or domain == "test2.com" then
-            return {address = "127.0.0." .. count}
+        if domain == "test2.com" then
+            return {address = "127.0.0.2" }
         end
 
         error("unknown domain: " .. domain)
@@ -214,10 +214,10 @@ GET /t
 qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy request to 127.0.0.\d:1980/
 --- grep_error_log_out eval
 qr/call \/hello(
+dns resolver domain: test2.com to 127.0.0.2
+dns resolver domain: test.com to 127.0.0.1|
 dns resolver domain: test.com to 127.0.0.1
-dns resolver domain: test2.com to 127.0.0.2|
-dns resolver domain: test2.com to 127.0.0.1
-dns resolver domain: test.com to 127.0.0.2)
+dns resolver domain: test2.com to 127.0.0.2)
 proxy request to 127.0.0.[12]:1980
 /
 
@@ -361,12 +361,9 @@ passed
     apisix.http_init()
 
     local utils = require("apisix.core.utils")
-    local count = 0
     utils.dns_parse = function (domain)  -- mock: DNS parser
-        count = count + 1
-
-        if domain == "test.com" or domain == "test2.com" then
-            return {address = "127.0.0." .. count}
+        if domain == "test2.com" then
+            return {address = "127.0.0.2" }
         end
 
         error("unknown domain: " .. domain)
@@ -389,8 +386,8 @@ qr/dns resolver domain: \w+.com to 127.0.0.\d|call \/hello|proxy request to 127.
 qr/call \/hello(
 dns resolver domain: test.com to 127.0.0.1
 dns resolver domain: test2.com to 127.0.0.2|
-dns resolver domain: test2.com to 127.0.0.1
-dns resolver domain: test.com to 127.0.0.2)
+dns resolver domain: test2.com to 127.0.0.2
+dns resolver domain: test.com to 127.0.0.1)
 proxy request to 127.0.0.[12]:1980
 /
 
@@ -477,11 +474,9 @@ passed
     apisix.http_init()
 
     local utils = require("apisix.core.utils")
-    local count = 0
     utils.dns_parse = function (domain)  -- mock: DNS parser
-        count = count + 1
-        if domain == "test.com" or domain == "test2.com" then
-            return {address = "127.0.0." .. count}
+        if domain == "test2.com" then
+            return {address = "127.0.0.2" }
         end
 
         error("unknown domain: " .. domain)
