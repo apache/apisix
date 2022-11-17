@@ -249,25 +249,25 @@ do
         }
     end
 
-    local function addHeader(ctx, header_name, header_value)
-        local oldHeader = core.request.header(ctx, header_name)
-        if oldHeader == nil then
+    local function add_header(ctx, header_name, header_value)
+        local old_header = core.request.header(ctx, header_name)
+        if old_header == nil then
             return header_value
         end
 
-        if type(oldHeader) == "string" then
-            return oldHeader .. ", " .. header_value
+        if type(old_header) == "string" then
+            return old_header .. ", " .. header_value
         end
 
-        if type(oldHeader) == "table" then
+        if type(old_header) == "table" then
             -- core.log.error("oldHeader",#oldHeader)
             local result = ""
-            local field_cnt = #oldHeader
+            local field_cnt = #old_header
             for i = 1, field_cnt, 1 do
                 if result == "" then
-                    result = oldHeader[i]
+                    result = old_header[i]
                 else
-                    result = result .. ", " .. oldHeader[i]
+                    result = result .. ", " .. old_header[i]
                 end
             end
             return result .. ", " .. header_value
@@ -334,7 +334,7 @@ do
         for i = 1, field_cnt, 2 do
             local val = core.utils.resolve_var(hdr_op.add[i + 1], ctx.var)
             local header = hdr_op.add[i]
-            val = addHeader(ctx, header, val)
+            val = add_header(ctx, header, val)
             core.request.set_header(header, val)
         end
 
