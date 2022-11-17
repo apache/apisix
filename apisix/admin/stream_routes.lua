@@ -22,7 +22,6 @@ local stream_route_checker = require("apisix.stream.router.ip_port").stream_rout
 local routes = require("apisix.stream.router.ip_port").routes
 local tostring = tostring
 local table = table
-local filter = require("apisix.router").filter
 
 
 local _M = {
