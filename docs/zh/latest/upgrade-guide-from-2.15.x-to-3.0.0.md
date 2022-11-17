@@ -401,7 +401,7 @@ APISIX 的配置方式是用自定义的 `conf/config.yaml` 中的内容覆盖�
 
 具体内容：
 
-  * 查询资源时（包括查询单个资源和列表资源），删除了响应体中的 `count`、 `action` 和 `node` 字段，并且将 `node` 中的内容提升到响应体的根节点
+  * 操作资源时（包括查询单个资源和列表资源），删除了响应体中的 `count`、 `action` 和 `node` 字段，并且将 `node` 中的内容提升到响应体的根节点
 
   在 2.x 版本中，通过 Admin API 查询 `/apisix/admin/routes/1` 的响应格式：
 

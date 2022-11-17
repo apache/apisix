@@ -397,7 +397,7 @@ We have made some tweaks to the Admin API that are designed to make it easier to
 
 Adjustment content:
 
-  * When querying resources (both single resources and list resources), the `count`, `action` and `node` fields in the response body are removed and the contents of `node` are moved up to the root of the response body
+  * When operating resources (both single resources and list resources), the `count`, `action` and `node` fields in the response body are removed and the contents of `node` are moved up to the root of the response body
 
   In version 2.x, the response format for querying `/apisix/admin/routes/1` via the Admin API is
 
