@@ -19,6 +19,7 @@ local core = require("apisix.core")
 local route = require("apisix.utils.router")
 local plugin = require("apisix.plugin")
 local v3_adapter = require("apisix.admin.v3_adapter")
+local filter = require("apisix.router").filter
 local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_time = ngx.time
@@ -148,6 +149,8 @@ local function run()
             core.response.exit(400, {error_msg = "stream mode is disabled, " ..
                                "can not add stream routes"})
         end
+        local router_stream = require("apisix.stream.router.ip_port")
+        router_stream.stream_init_worker(filter)
     end
 
     local resource = resources[seg_res]

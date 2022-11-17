@@ -19,6 +19,7 @@ local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
 local iterate_values = require("apisix.core.config_util").iterate_values
 local stream_route_checker = require("apisix.stream.router.ip_port").stream_route_checker
+local routes = require("apisix.stream.router.ip_port").routes
 local tostring = tostring
 local table = table
 local filter = require("apisix.router").filter
@@ -102,14 +103,6 @@ local function check_conf(id, conf, need_id)
     return need_id and id or true
 end
 
-function _M.stream_routes()
-    core.config.init()
-    local router_stream = require("apisix.stream.router.ip_port")
-    router_stream.stream_init_worker(filter)
-    _M.router_stream = router_stream
-    return _M.router_stream.routes()
-end
-
 
 function _M.put(id, conf)
     local id, err = check_conf(id, conf, true)
@@ -174,7 +167,7 @@ function _M.delete(id)
         return 400, {error_msg = "missing stream route id"}
     end
 
-    local items, _ = _M.stream_routes()
+    local items, _ = routes()
     if items ~= nil then
         local warn_message = check_router_refer(items, id)
         if warn_message ~= nil then
