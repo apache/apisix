@@ -21,6 +21,14 @@ no_long_string();
 no_root_location();
 log_level("info");
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+});
+
 run_tests;
 
 __DATA__
@@ -40,8 +48,6 @@ __DATA__
             ngx.say("ip_info: ", require("toolkit.json").encode(ip_info))
         }
     }
---- request
-GET /t
 --- response_body
 ip_info: "127.0.0.1"
 --- no_error_log
@@ -56,6 +62,13 @@ ip_info: "127.0.0.1"
             local core = require("apisix.core")
             local resolver = require("apisix.core.resolver")
             local domain = "apisix.apache.org"
+            resolver.parse_domain = function(domain) -- mock: resolver parser
+
+                if domain == "apisix.apache.org" then
+                    return {address = "127.0.0.2" }
+                end
+                error("unknown domain: " .. domain)
+            end
             local ip_info, err = resolver.parse_domain(domain)
             if not ip_info then
                 core.log.error("failed to parse domain: ", domain, ", error: ",err)
@@ -64,12 +77,8 @@ ip_info: "127.0.0.1"
             ngx.say("ip_info: ", require("toolkit.json").encode(ip_info))
         }
     }
---- request
-GET /t
 --- response_body
-ip_info: "151.101.2.132"
---- no_error_log
-[error]
+ip_info: {"address":"127.0.0.2"}
 
 
 
@@ -81,10 +90,8 @@ ip_info: "151.101.2.132"
             local resolver = require("apisix.core.resolver")
             local domain = "abc1.test"
             resolver.parse_domain(domain)
-
         }
     }
---- request
-GET /t
+
 --- error_log
 failed to parse domain
