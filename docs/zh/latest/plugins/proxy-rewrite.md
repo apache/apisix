@@ -44,7 +44,8 @@ description: 本文介绍了关于 Apache APISIX `proxy-rewrite` 插件的基本
 | headers.set     | object  | 否     |        |                 | 改写请求头，如果请求头不存在，则会添加这个请求头。格式为 `{"name": "value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。                                                                                                |
 | headers.remove  | array   | 否     |        |                 | 移除响应头。格式为 `["name", ...]`。
 
-## Header优先级
+## Header 优先级
+
 Header 头的相关配置，遵循如下优先级：
 
 `remove` > `set` > `add`
