@@ -70,7 +70,7 @@ When APISIX can't find the Consumer Group with the `group_id`, the Admin API is 
 
 :::tip
 
-1. When the same plugin is configured in [consumer](./consumer.md), [routing](./route.md), [plugin config](./plugin-config.md) and [service] (./service.md), only one configuration is in effect, and the consumer has the highest priority. Please refer to [Plugin](./plugin.md).
+1. When the same plugin is configured in [consumer](./consumer.md), [routing](./route.md), [plugin config](./plugin-config.md) and [service](./service.md), only one configuration is in effect, and the consumer has the highest priority. Please refer to [Plugin](./plugin.md).
 2. If a Consumer already has the `plugins` field configured, the plugins in the Consumer Group will effectively be merged into it. The same plugin in the Consumer Group will not override the one configured directly in the Consumer.
 
 :::
