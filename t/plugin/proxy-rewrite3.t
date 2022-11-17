@@ -340,7 +340,7 @@ X-Forwarded-Host: test.com
 
 
 
-=== TEST 14: set route add test
+=== TEST 14: set route header test
 --- config
     location /t {
         content_by_lua_block {
@@ -420,11 +420,62 @@ hello:
 
 
 
-=
-== TEST 18: remove header success
+=== TEST 18: set header success
 --- request
 GET /echo HTTP/1.1
 --- response_headers
 test2: 2233
+--- no_error_log
+[error]
+
+
+
+=== TEST 19: header priority test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "headers": {
+                                    "add":{"test": "test_in_add"},
+                                    "set":{"test": "test_in_set"}
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 20: set and test priority test
+--- request
+GET /echo HTTP/1.1
+--- response_headers
+test: test_in_set
 --- no_error_log
 [error]
