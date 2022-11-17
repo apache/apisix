@@ -673,7 +673,7 @@ xrpc:
                 ngx.print(body)
                 return
             end
-            ngx.sleep(0.5)
+            ngx.sleep(5)
 
             local code2, message = t('/apisix/admin/stream_routes/1', ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code2, " message: ", message)
