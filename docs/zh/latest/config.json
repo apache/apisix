@@ -305,6 +305,10 @@
     {
       "type": "doc",
       "id": "CHANGELOG"
+    },
+    {
+      "type": "doc",
+      "id": "upgrade-guide-from-2.15.x-to-3.0.0"
     }
   ]
 }
