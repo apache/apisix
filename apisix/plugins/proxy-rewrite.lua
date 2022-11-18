@@ -74,7 +74,7 @@ local schema = {
         },
         headers = {
             description = "new headers for request",
-            oneOf = {
+            anyOf = {
                 {
                     type = "object",
                     minProperties = 1,
