@@ -1,5 +1,13 @@
 ---
+id: support-fips-in-apisix
 title: Support FIPS in APISIX
+keywords:
+  - API gateway
+  - Apache APISIX
+  - Code Contribution
+  - Building APISIX
+  - OpenSSL 3.0 FIPS
+description: Compile apisix-base with OpenSSL 3.0 (FIPS enabled)
 ---
 
 <!--
@@ -21,15 +29,13 @@ title: Support FIPS in APISIX
 #
 -->
 
-OpenSSL 3.0 [supports](https://www.openssl.org/blog/blog/2022/08/24/FIPS-validation-certificate-issued/)
-[FIPS](https://en.wikipedia.org/wiki/FIPS_140-2) mode. So to support
-FIPS in APISIX, we just need to compile apisix-base with OpenSSL 3.0.
+OpenSSL 3.0 [supports](https://www.openssl.org/blog/blog/2022/08/24/FIPS-validation-certificate-issued/) [FIPS](https://en.wikipedia.org/wiki/FIPS_140-2) mode. To support FIPS in APISIX, you can compile apisix-base with OpenSSL 3.0.
 
 ## Compilation
 
-```bash
-# should be as root user
+To compile apisix-base with OpenSSL 3.0, run the commands below as root user:
 
+```bash
 cd $(mktemp -d)
 OPENSSL3_PREFIX=${OPENSSL3_PREFIX-/usr/local}
 apt install -y build-essential
@@ -51,4 +57,4 @@ chmod +x build-apisix-base.sh
 ./build-apisix-base.sh latest
 ```
 
-The apisix-base would be installed into `/usr/local/openresty-debug`.
+This will install apisix-base to `/usr/local/openresty-debug`.
