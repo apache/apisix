@@ -75,11 +75,14 @@ end
 
 
 local function get_last_index(str, key)
-    local rev = str_reverse(str)
-    local _, idx = str_find(rev, key)
+    local str_rev = str_reverse(str)
+    local key_rev = str_reverse(key)
+    local _, idx = str_find(str_rev, key_rev)
+
     local n
     if idx then
-        n = #rev - idx + 1
+        -- n = #rev - idx + 1 - (#key - 1)
+        n = #str - idx - #key + 2
     end
 
     return n
