@@ -113,5 +113,5 @@ client certificate was not present
 curl --cert t/certs/apisix.crt --key t/certs/apisix.key -k https://localhost:1994/hello
 --- response_body eval
 qr/400 Bad Request/
---- error_log
-client certificate verification is not passed: FAILED:self signed certificate
+--- error_log eval
+qr/client certificate verification is not passed: FAILED:self[- ]signed certificate/
