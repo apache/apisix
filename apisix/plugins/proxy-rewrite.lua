@@ -118,7 +118,7 @@ local schema = {
                             minItems = 1,
                             items = {
                                 type = "string",
-                                -- "Set-Cookie"
+                                -- "Referer"
                                 pattern = "^[^:]+$"
                             }
                         },
@@ -334,8 +334,9 @@ do
         for i = 1, field_cnt, 2 do
             local val = core.utils.resolve_var(hdr_op.add[i + 1], ctx.var)
             local header = hdr_op.add[i]
-            val = add_header(ctx, header, val)
-            core.request.set_header(header, val)
+            core.request.add_header(header,val)
+            -- val = add_header(ctx, header, val)
+            -- core.request.set_header(header, val)
         end
 
         local field_cnt = #hdr_op.set

@@ -319,12 +319,8 @@ ngx.var.request_uri: /print_uri_detailed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -463,12 +459,8 @@ test2: 2233
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 

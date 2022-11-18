@@ -22,6 +22,7 @@
 local lfs = require("lfs")
 local log = require("apisix.core.log")
 local io = require("apisix.core.io")
+local ngx_req = require "ngx.req"
 local is_apisix_or, a6_request = pcall(require, "resty.apisix.request")
 local ngx = ngx
 local get_headers = ngx.req.get_headers
@@ -37,6 +38,7 @@ local req_get_body_file = ngx.req.get_body_file
 local req_get_post_args = ngx.req.get_post_args
 local req_get_uri_args = ngx.req.get_uri_args
 local req_set_uri_args = ngx.req.set_uri_args
+local req_add_header = ngx_req.add_header
 
 
 local _M = {}
@@ -138,6 +140,25 @@ function _M.set_header(ctx, header_name, header_value)
     end
 end
 
+function _M.add_header(ctx,header_name, header_value)
+    if type(ctx) == "string" then
+        -- It would be simpler to keep compatibility if we put 'ctx'
+        -- after 'header_value', but the style is too ugly!
+        header_value = header_name
+        header_name = ctx
+        ctx = nil
+
+        log.warn("DEPRECATED: use add_header(ctx, header_name, header_value) instead")
+    end
+    
+    local err
+    header_name, err = _validate_header_name(header_name)
+    if err then
+        error(err)
+    end
+
+    req_add_header(header_name,header_value)
+end
 
 -- return the remote address of client which directly connecting to APISIX.
 -- so if there is a load balancer between downstream client and APISIX,
