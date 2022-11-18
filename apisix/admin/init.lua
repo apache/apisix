@@ -14,12 +14,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local filter = require("apisix.router").filter
 local require = require
 local core = require("apisix.core")
 local route = require("apisix.utils.router")
 local plugin = require("apisix.plugin")
 local v3_adapter = require("apisix.admin.v3_adapter")
-local filter = require("apisix.router").filter
 local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_time = ngx.time
