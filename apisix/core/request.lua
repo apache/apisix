@@ -140,17 +140,7 @@ function _M.set_header(ctx, header_name, header_value)
     end
 end
 
-function _M.add_header(ctx,header_name, header_value)
-    if type(ctx) == "string" then
-        -- It would be simpler to keep compatibility if we put 'ctx'
-        -- after 'header_value', but the style is too ugly!
-        header_value = header_name
-        header_name = ctx
-        ctx = nil
-
-        log.warn("DEPRECATED: use add_header(ctx, header_name, header_value) instead")
-    end
-    
+function _M.add_header(header_name, header_value)
     local err
     header_name, err = _validate_header_name(header_name)
     if err then
