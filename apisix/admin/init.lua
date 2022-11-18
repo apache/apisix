@@ -149,9 +149,6 @@ local function run()
             core.response.exit(400, {error_msg = "stream mode is disabled, " ..
                                "can not add stream routes"})
         end
-        core.config.init()
-        local router_stream = require("apisix.stream.router.ip_port")
-        router_stream.stream_init_worker(filter)
     end
 
     local resource = resources[seg_res]
@@ -353,6 +350,11 @@ function _M.init_worker()
     local local_conf = core.config.local_conf()
     if not local_conf.apisix or not local_conf.apisix.enable_admin then
         return
+    end
+
+    if local_conf.apisix.stream_proxy then
+        local router_stream = require("apisix.stream.router.ip_port")
+        router_stream.stream_init_worker(filter)
     end
 
     router = route.new(uri_route)
