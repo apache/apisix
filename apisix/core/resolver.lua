@@ -23,6 +23,7 @@ local json           = require("apisix.core.json")
 local log            = require("apisix.core.log")
 local utils          = require("apisix.core.utils")
 local dns_utils      = require("resty.dns.utils")
+local config_local   = require("apisix.core.config_local")
 
 
 local HOSTS_IP_MATCH_CACHE = {}
@@ -59,10 +60,11 @@ end
 -- local ip, err = core.resolver.parse_domain("apache.org") -- "198.18.10.114"
 function _M.parse_domain(host)
     local rev = HOSTS_IP_MATCH_CACHE[host]
+    local enable_ipv6 = config_local.local_conf().apisix.enable_ipv6
     if rev then
         -- use ipv4 in high priority
         local ip = rev["ipv4"]
-        if not ip then
+        if enable_ipv6 and not ip then
             ip = rev["ipv6"]
         end
         if ip then

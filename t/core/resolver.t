@@ -27,6 +27,10 @@ add_block_preprocessor(sub {
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
+
+    if (!$block->no_error_log && !$block->error_log) {
+        $block->set_value("no_error_log", "[error]");
+    }
 });
 
 run_tests;
@@ -50,8 +54,6 @@ __DATA__
     }
 --- response_body
 ip_info: "127.0.0.1"
---- no_error_log
-[error]
 
 
 
@@ -92,6 +94,58 @@ ip_info: {"address":"127.0.0.2"}
             resolver.parse_domain(domain)
         }
     }
+--- error_log
+failed to parse domain
 
+
+
+=== TEST 4: test dns config with ipv6 enable
+--- yaml_config
+apisix:
+  enable_ipv6: true
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local resolver = require("apisix.core.resolver")
+            local domain = "localhost6"
+            resolver.parse_domain = function(domain)  -- mock: resolver parse_domain
+                 if domain == "localhost6" then
+                    return {address = "::1" }
+                 end
+                 error("unknown domain: " .. domain)
+
+            end
+            local ip_info, err = resolver.parse_domain(domain)
+            if not ip_info then
+                core.log.error("failed to parse domain: ", domain, ", error: ",err)
+                return
+            end
+            ngx.say("ip_info: ", require("toolkit.json").encode(ip_info))
+        }
+    }
+--- response_body
+ip_info: {"address":"::1"}
+
+
+
+=== TEST 5: test dns config with ipv6 disable
+--- yaml_config
+apisix:
+  enable_ipv6: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local resolver = require("apisix.core.resolver")
+            local domain = "localhost6"
+            local ip_info, err = resolver.parse_domain(domain)
+            if not ip_info then
+                core.log.error("failed to parse domain: ", domain, ", error: ",err)
+                return
+            end
+            ngx.say("ip_info: ", require("toolkit.json").encode(ip_info))
+        }
+    }
 --- error_log
 failed to parse domain
