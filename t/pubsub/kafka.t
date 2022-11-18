@@ -330,8 +330,8 @@ all brokers failed in fetch topic metadata
             test_pubsub:close_ws()
         }
     }
---- error_log
-self signed certificate
+--- error_log eval
+qr/self[- ]signed certificate/
 
 
 
