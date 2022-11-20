@@ -32,15 +32,6 @@ _EOC_
 
     $block->set_value("apisix_yaml", $apisix_yaml);
 
-    my $main_config = $block->main_config // '';
-    $main_config .= <<_EOC_;
-env MyPort=99;
-env KUBERNETES_SERVICE_HOST=host;
-env KUBERNETES_SERVICE_PORT=99;
-_EOC_
-
-    $block->set_value("main_config", $main_config);
-
     my $config = $block->config // <<_EOC_;
 
         location /compare {
@@ -130,6 +121,7 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
+--- ignore_error_log
 
 
 
@@ -163,6 +155,7 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
+--- ignore_error_log
 
 
 
@@ -197,6 +190,7 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
+--- ignore_error_log
 
 
 
@@ -233,13 +227,11 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
+--- ignore_error_log
 
 
 
 === TEST 5: multi cluster mode configuration
---- http_config
-lua_shared_dict kubernetes-debug 1m;
-lua_shared_dict kubernetes-release 1m;
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -298,3 +290,4 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
+--- ignore_error_log
