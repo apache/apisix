@@ -16,6 +16,7 @@
 --
 
 local core    = require("apisix.core")
+local constants = require("apisix.constants")
 local ngx_re  = require("ngx.re")
 local openidc = require("resty.openidc")
 local random  = require("resty.random")
@@ -131,6 +132,7 @@ local schema = {
 local _M = {
     version = 0.2,
     priority = 2599,
+    category = constants.PLUGIN_CATEGORY_AUTHENTICATION,
     name = plugin_name,
     schema = schema,
 }

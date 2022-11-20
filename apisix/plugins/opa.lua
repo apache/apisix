@@ -16,6 +16,7 @@
 --
 
 local core   = require("apisix.core")
+local constants = require("apisix.constants")
 local http   = require("resty.http")
 local helper = require("apisix.plugins.opa.helper")
 local type   = type
@@ -50,6 +51,7 @@ local schema = {
 local _M = {
     version = 0.1,
     priority = 2001,
+    category = constants.PLUGIN_CATEGORY_AUTHENTICATION,
     name = "opa",
     schema = schema,
 }

@@ -29,6 +29,7 @@ local phases = {
 
 return function(plugin_name, priority)
     local core = require("apisix.core")
+    local constants = require("apisix.constants")
 
 
     local lrucache = core.lrucache.new({
@@ -56,6 +57,7 @@ return function(plugin_name, priority)
         version = 0.1,
         priority = priority,
         name = plugin_name,
+        category = constants.PLUGIN_CATEGORY_SERVERLESS,
         schema = schema,
     }
 

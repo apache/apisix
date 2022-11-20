@@ -17,6 +17,7 @@
 
 local casbin          = require("casbin")
 local core            = require("apisix.core")
+local constants = require("apisix.constants")
 local plugin          = require("apisix.plugin")
 
 local plugin_name = "authz-casbin"
@@ -49,6 +50,7 @@ local _M = {
     version = 0.1,
     priority = 2560,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_AUTHENTICATION,
     schema = schema,
     metadata_schema = metadata_schema
 }

@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local plugin = require("apisix.plugin")
 local tab_insert = table.insert
 local tab_concat = table.concat
@@ -71,6 +72,7 @@ local _M = {
     version = 0.1,
     priority = 900,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_GENERAL,
     schema = schema,
 }
 

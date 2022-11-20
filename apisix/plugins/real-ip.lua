@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local ngx_re_split = require("ngx.re").split
 local is_apisix_or, client = pcall(require, "resty.apisix.client")
 local str_byte = string.byte
@@ -53,6 +54,7 @@ local plugin_name = "real-ip"
 local _M = {
     version = 0.1,
     priority = 23000,
+    category = constants.PLUGIN_CATEGORY_GENERAL,
     name = plugin_name,
     schema = schema,
 }

@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local is_apisix_or, response = pcall(require, "resty.apisix.response")
 local ngx_header = ngx.header
 local req_http_version = ngx.req.http_version
@@ -91,6 +92,7 @@ local _M = {
     version = 0.1,
     priority = 995,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_GENERAL,
     schema = schema,
 }
 

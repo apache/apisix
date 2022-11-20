@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core     = require("apisix.core")
+local constants = require("apisix.constants")
 local consumer_mod = require("apisix.consumer")
 local plugin_name = "key-auth"
 local ipairs   = ipairs
@@ -55,6 +56,7 @@ local _M = {
     version = 0.1,
     priority = 2500,
     type = 'auth',
+    category = constants.PLUGIN_CATEGORY_AUTHENTICATION,
     name = plugin_name,
     schema = schema,
     consumer_schema = consumer_schema,

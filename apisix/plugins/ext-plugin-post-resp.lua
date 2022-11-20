@@ -32,6 +32,7 @@ local _M = {
     version = 0.1,
     priority = -4000,
     name = name,
+    category = constants.PLUGIN_CATEGORY_GENERAL,
     schema = ext.schema,
 }
 

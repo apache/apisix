@@ -16,6 +16,7 @@
 --
 local limit_req_new = require("resty.limit.req").new
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local plugin_name = "limit-req"
 local sleep = core.sleep
 
@@ -53,6 +54,7 @@ local _M = {
     version = 0.1,
     priority = 1001,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_TRAFFIC,
     schema = schema,
 }
 

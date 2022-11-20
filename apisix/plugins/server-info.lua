@@ -16,6 +16,7 @@
 --
 local require = require
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local timers = require("apisix.timers")
 local plugin = require("apisix.plugin")
 
@@ -55,6 +56,7 @@ local _M = {
     version = 0.1,
     priority = 990,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_GENERAL,
     schema = schema,
     scope = "global",
 }

@@ -16,6 +16,7 @@
 --
 
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local syslog = require("apisix.plugins.syslog.init")
@@ -46,6 +47,7 @@ local _M = {
     version = 0.1,
     priority = 401,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_OBSERVABILITY,
     schema = schema,
     flush_syslog = syslog.flush_syslog,
 }

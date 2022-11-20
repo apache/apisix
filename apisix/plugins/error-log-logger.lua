@@ -16,6 +16,7 @@
 --
 
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local errlog = require("ngx.errlog")
 local batch_processor = require("apisix.utils.batch-processor")
 local plugin = require("apisix.plugin")
@@ -114,6 +115,7 @@ local _M = {
     version = 0.1,
     priority = 1091,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_OBSERVABILITY,
     schema = schema,
     metadata_schema = metadata_schema,
     scope = "global",

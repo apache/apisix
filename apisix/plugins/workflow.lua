@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core        = require("apisix.core")
+local constants = require("apisix.constants")
 local limit_count = require("apisix.plugins.limit-count.init")
 local expr        = require("resty.expr.v1")
 local ipairs      = ipairs
@@ -61,6 +62,7 @@ local _M = {
     version = 0.1,
     priority = 1006,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_SERVERLESS,
     schema = schema
 }
 

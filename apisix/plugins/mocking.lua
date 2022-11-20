@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local xml2lua = require("xml2lua")
 
 local json = core.json
@@ -61,6 +62,7 @@ local _M = {
     version = 0.1,
     priority = 10900,
     name = "mocking",
+    category = constants.PLUGIN_CATEGORY_TRANSFORMATION,
     schema = schema,
 }
 

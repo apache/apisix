@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 
 
 local schema = {
@@ -40,6 +41,7 @@ local _M = {
     version = 0.1,
     priority = 508,
     name = "kafka-proxy",
+    category = constants.PLUGIN_CATEGORY_OTHER_PROTOCOLS,
     schema = schema,
 }
 

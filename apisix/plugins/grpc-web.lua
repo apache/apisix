@@ -17,6 +17,7 @@
 local ngx               = ngx
 local ngx_arg           = ngx.arg
 local core              = require("apisix.core")
+local constants = require("apisix.constants")
 local req_set_uri       = ngx.req.set_uri
 local req_set_body_data = ngx.req.set_body_data
 local decode_base64     = ngx.decode_base64
@@ -51,6 +52,7 @@ local _M = {
     version = 0.1,
     priority = 505,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_TRANSFORMATION,
     schema = schema,
 }
 

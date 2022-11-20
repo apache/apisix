@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local ngx_var = ngx.var
 
 
@@ -43,6 +44,7 @@ local _M = {
     version = 0.1,
     priority = 507,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_OTHER_PROTOCOLS,
     schema = schema,
 }
 

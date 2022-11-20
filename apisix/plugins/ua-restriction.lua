@@ -16,6 +16,7 @@
 --
 local ipairs = ipairs
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local re_compile = require("resty.core.regex").re_match_compile
 local stringx = require('pl.stringx')
 local type = type
@@ -66,6 +67,7 @@ local _M = {
     version = 0.1,
     priority = 2999,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_SECURITY,
     schema = schema,
 }
 

@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local ext = require("apisix.plugins.ext-plugin.init")
 
 
@@ -23,6 +24,7 @@ local _M = {
     version = 0.1,
     priority = 12000,
     name = name,
+    category = constants.PLUGIN_CATEGORY_GENERAL,
     schema = ext.schema,
 }
 

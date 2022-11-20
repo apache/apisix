@@ -16,6 +16,7 @@
 --
 local require = require
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local plugin = require("apisix.plugin")
 local process = require("ngx.process")
 local sw_tracer = require("skywalking.tracer")
@@ -64,6 +65,7 @@ local _M = {
     version = 0.1,
     priority = 12010,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_OBSERVABILITY,
     schema = schema,
     attr_schema = attr_schema,
     run_policy = "prefer_route",

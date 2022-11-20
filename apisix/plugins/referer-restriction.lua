@@ -16,6 +16,7 @@
 --
 local ipairs    = ipairs
 local core      = require("apisix.core")
+local constants = require("apisix.constants")
 local http      = require "resty.http"
 local lrucache  = core.lrucache.new({
     ttl = 300, count = 512
@@ -60,6 +61,7 @@ local _M = {
     version = 0.1,
     priority = 2990,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_SECURITY,
     schema = schema,
 }
 

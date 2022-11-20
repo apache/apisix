@@ -16,6 +16,7 @@
 --
 
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local plugin_name = "api-breaker"
 local ngx = ngx
 local math = math
@@ -129,6 +130,7 @@ end
 local _M = {
     version = 0.1,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_TRAFFIC,
     priority = 1005,
     schema = schema,
 }

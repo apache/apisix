@@ -16,6 +16,7 @@
 --
 
 local core     = require("apisix.core")
+local constants = require("apisix.constants")
 local consumer = require("apisix.consumer")
 local json     = require("apisix.core.json")
 local sleep    = core.sleep
@@ -60,6 +61,7 @@ local _M = {
     version = 0.1,
     priority = 2555,
     type = 'auth',
+    category = constants.PLUGIN_CATEGORY_AUTHENTICATION,
     name = plugin_name,
     schema = schema,
 }

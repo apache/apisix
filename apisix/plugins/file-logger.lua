@@ -16,6 +16,7 @@
 --
 local log_util     =   require("apisix.utils.log-util")
 local core         =   require("apisix.core")
+local constants = require("apisix.constants")
 local plugin       =   require("apisix.plugin")
 local ngx          =   ngx
 local io_open      =   io.open
@@ -48,6 +49,7 @@ local _M = {
     version = 0.1,
     priority = 399,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_OBSERVABILITY,
     schema = schema,
     metadata_schema = metadata_schema
 }

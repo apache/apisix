@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core      = require("apisix.core")
+local constants = require("apisix.constants")
 local http      = require "resty.http"
 local sub_str   = string.sub
 local type      = type
@@ -106,6 +107,7 @@ local schema = {
 local _M = {
     version = 0.1,
     priority = 2000,
+    category = constants.PLUGIN_CATEGORY_AUTHENTICATION,
     name = plugin_name,
     schema = schema,
 }

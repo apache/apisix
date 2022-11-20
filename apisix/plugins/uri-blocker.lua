@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local re_compile = require("resty.core.regex").re_match_compile
 local re_find = ngx.re.find
 local ipairs = ipairs
@@ -55,6 +56,7 @@ local _M = {
     version = 0.1,
     priority = 2900,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_SECURITY,
     schema = schema,
 }
 

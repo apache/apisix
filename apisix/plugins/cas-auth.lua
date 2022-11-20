@@ -15,6 +15,7 @@
 ---- limitations under the License.
 ----
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local http = require("resty.http")
 local ngx = ngx
 local ngx_re_match = ngx.re.match
@@ -44,6 +45,7 @@ local schema = {
 local _M = {
     version = 0.1,
     priority = 2597,
+    category = constants.PLUGIN_CATEGORY_AUTHENTICATION,
     name = plugin_name,
     schema = schema
 }

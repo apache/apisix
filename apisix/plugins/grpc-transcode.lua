@@ -16,6 +16,7 @@
 --
 local ngx         = ngx
 local core        = require("apisix.core")
+local constants = require("apisix.constants")
 local schema_def  = require("apisix.schema_def")
 local proto       = require("apisix.plugins.grpc-transcode.proto")
 local request     = require("apisix.plugins.grpc-transcode.request")
@@ -101,6 +102,7 @@ local _M = {
     version = 0.1,
     priority = 506,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_TRANSFORMATION,
     schema = schema,
 }
 

@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local resty_sha256 = require("resty.sha256")
 local str = require("resty.string")
 local ngx = ngx
@@ -52,6 +53,7 @@ local _M = {
     version = 0.1,
     priority = 2980,
     name = "csrf",
+    category = constants.PLUGIN_CATEGORY_SECURITY,
     schema = schema,
 }
 

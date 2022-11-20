@@ -18,6 +18,7 @@
 local ngx = ngx
 local bit = require("bit")
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local snowflake = require("snowflake")
 local uuid = require("resty.jit-uuid")
 local nanoid = require("nanoid")
@@ -66,6 +67,7 @@ local _M = {
     version = 0.1,
     priority = 12015,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_TRAFFIC,
     schema = schema
 }
 

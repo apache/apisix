@@ -15,12 +15,14 @@
 -- limitations under the License.
 --
 local limit_count = require("apisix.plugins.limit-count.init")
+local constants = require("apisix.constants")
 
 local plugin_name = "limit-count"
 local _M = {
     version = 0.4,
     priority = 1002,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_TRAFFIC,
     schema = limit_count.schema,
 }
 

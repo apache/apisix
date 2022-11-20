@@ -16,6 +16,7 @@
 --
 local require = require
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local ok, apisix_ngx_client = pcall(require, "resty.apisix.client")
 
 
@@ -35,6 +36,7 @@ local _M = {
     version = 0.1,
     priority = 21990,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_TRAFFIC,
     schema = schema,
 }
 

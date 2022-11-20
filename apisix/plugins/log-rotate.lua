@@ -16,6 +16,7 @@
 --
 
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local timers = require("apisix.timers")
 local plugin = require("apisix.plugin")
 local process = require("ngx.process")
@@ -60,6 +61,7 @@ local _M = {
     version = 0.1,
     priority = 100,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_OBSERVABILITY,
     schema = schema,
     scope = "global",
 }

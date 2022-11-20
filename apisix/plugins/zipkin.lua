@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local new_tracer = require("opentracing.tracer").new
 local zipkin_codec = require("apisix.plugins.zipkin.codec")
 local new_random_sampler = require("apisix.plugins.zipkin.random_sampler").new
@@ -61,6 +62,7 @@ local _M = {
     version = 0.1,
     priority = 12011,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_OBSERVABILITY,
     schema = schema,
 }
 

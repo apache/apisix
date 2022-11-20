@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local pairs       = pairs
 local type        = type
 local ngx         = ngx
@@ -54,6 +55,7 @@ local plugin_name = "echo"
 local _M = {
     version = 0.1,
     priority = 412,
+    category = constants.PLUGIN_CATEGORY_GENERAL,
     name = plugin_name,
     schema = schema,
 }

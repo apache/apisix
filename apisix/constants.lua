@@ -41,4 +41,13 @@ return {
         ["/stream_routes"] = true,
         ["/plugin_metadata"] = true,
     },
+    -- Plugin category enum
+    PLUGIN_CATEGORY_GENERAL = "General",
+    PLUGIN_CATEGORY_TRANSFORMATION = "Transformation",
+    PLUGIN_CATEGORY_AUTHENTICATION = "Authentication",
+    PLUGIN_CATEGORY_SECURITY = "Security",
+    PLUGIN_CATEGORY_TRAFFIC = "Traffic",
+    PLUGIN_CATEGORY_OBSERVABILITY = "Observability",
+    PLUGIN_CATEGORY_SERVERLESS = "Serverless",
+    PLUGIN_CATEGORY_OTHER_PROTOCOLS = "Other protocols",
 }

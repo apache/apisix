@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core          = require("apisix.core")
+local constants = require("apisix.constants")
 local plugin_name   = "request-validation"
 local ngx           = ngx
 
@@ -38,6 +39,7 @@ local _M = {
     priority = 2800,
     type = 'validation',
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_TRAFFIC,
     schema = schema,
 }
 

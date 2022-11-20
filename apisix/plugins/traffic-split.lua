@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core       = require("apisix.core")
+local constants = require("apisix.constants")
 local upstream   = require("apisix.upstream")
 local schema_def = require("apisix.schema_def")
 local roundrobin = require("resty.roundrobin")
@@ -97,6 +98,7 @@ local _M = {
     version = 0.1,
     priority = 966,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_TRAFFIC,
     schema = schema
 }
 

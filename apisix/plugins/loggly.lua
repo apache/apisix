@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local plugin = require("apisix.plugin")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local log_util = require("apisix.utils.log-util")
@@ -143,6 +144,7 @@ local _M = {
     version = 0.1,
     priority = 411,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_OBSERVABILITY,
     schema = batch_processor_manager:wrap_schema(schema),
     metadata_schema = metadata_schema
 }

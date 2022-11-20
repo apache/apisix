@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core      = require("apisix.core")
+local constants = require("apisix.constants")
 local http      = require("resty.http")
 local plugin    = require("apisix.plugin")
 local ngx       = ngx
@@ -117,6 +118,7 @@ local _M = {
     version = 0.1,
     priority = 4010,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_GENERAL,
     schema = schema,
     metadata_schema = metadata_schema,
     attr_schema = attr_schema,

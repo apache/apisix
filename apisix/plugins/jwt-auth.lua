@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core     = require("apisix.core")
+local constants = require("apisix.constants")
 local jwt      = require("resty.jwt")
 local consumer_mod = require("apisix.consumer")
 local resty_random = require("resty.random")
@@ -131,6 +132,7 @@ local _M = {
     version = 0.1,
     priority = 2510,
     type = 'auth',
+    category = constants.PLUGIN_CATEGORY_AUTHENTICATION,
     name = plugin_name,
     schema = schema,
     consumer_schema = consumer_schema

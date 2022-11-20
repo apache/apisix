@@ -17,6 +17,7 @@
 
 local ipairs = ipairs
 local core   = require("apisix.core")
+local constants = require("apisix.constants")
 local http   = require("resty.http")
 
 local schema = {
@@ -71,6 +72,7 @@ local _M = {
     version = 0.1,
     priority = 2002,
     name = "forward-auth",
+    category = constants.PLUGIN_CATEGORY_AUTHENTICATION,
     schema = schema,
 }
 

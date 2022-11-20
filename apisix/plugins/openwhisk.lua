@@ -16,6 +16,7 @@
 --
 
 local core              = require("apisix.core")
+local constants = require("apisix.constants")
 local http              = require("resty.http")
 local ngx_encode_base64 = ngx.encode_base64
 local tostring          = tostring
@@ -57,6 +58,7 @@ local _M = {
     version = 0.1,
     priority = -1901,
     name = "openwhisk",
+    category = constants.PLUGIN_CATEGORY_SERVERLESS,
     schema = schema,
 }
 

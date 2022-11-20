@@ -16,6 +16,7 @@
 --
 
 local core   = require("apisix.core")
+local constants = require("apisix.constants")
 local router = require("apisix.router")
 
 local schema = {
@@ -30,6 +31,7 @@ local _M = {
     version = 0.1,
     priority = 501,
     name = "public-api",
+    category = constants.PLUGIN_CATEGORY_SECURITY,
     schema = schema,
 }
 

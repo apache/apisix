@@ -16,6 +16,7 @@
 --
 local ipairs    = ipairs
 local core      = require("apisix.core")
+local constants = require("apisix.constants")
 local ngx       = ngx
 local schema = {
     type = "object",
@@ -67,6 +68,7 @@ local _M = {
     version = 0.1,
     priority = 2400,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_SECURITY,
     schema = schema,
 }
 

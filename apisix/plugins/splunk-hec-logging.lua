@@ -16,6 +16,7 @@
 --
 
 local core            = require("apisix.core")
+local constants = require("apisix.constants")
 local ngx             = ngx
 local ngx_now         = ngx.now
 local http            = require("resty.http")
@@ -65,6 +66,7 @@ local _M = {
     version = 0.1,
     priority = 409,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_OBSERVABILITY,
     schema = batch_processor_manager:wrap_schema(schema),
 }
 

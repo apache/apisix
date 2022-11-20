@@ -19,6 +19,7 @@ local memory_handler = require("apisix.plugins.proxy-cache.memory_handler")
 local disk_handler = require("apisix.plugins.proxy-cache.disk_handler")
 local util = require("apisix.plugins.proxy-cache.util")
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local ipairs = ipairs
 
 local plugin_name = "proxy-cache"
@@ -110,6 +111,7 @@ local _M = {
     version = 0.2,
     priority = 1009,
     name = plugin_name,
+    category = constants.PLUGIN_CATEGORY_TRAFFIC,
     schema = schema,
 }
 
