@@ -23,6 +23,11 @@ no_shuffle();
 log_level("info");
 
 
+# Because this whole test file is only used to verify the configuration set or not,
+# but the configuration content is invalid, which contains non-exist consul server address,
+# so we have to ignore consul connect errors in some test cases.
+
+
 our $yaml_config = <<_EOC_;
 apisix:
   enable_control: true
