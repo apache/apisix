@@ -22,10 +22,9 @@
 local lfs = require("lfs")
 local log = require("apisix.core.log")
 local io = require("apisix.core.io")
-local ngx_req
 local req_add_header
 if ngx.config.subsystem == "http" then
-    ngx_req = require "ngx.req"
+    local ngx_req = require "ngx.req"
     req_add_header = ngx_req.add_header
 end
 local is_apisix_or, a6_request = pcall(require, "resty.apisix.request")
@@ -152,7 +151,7 @@ function _M.add_header(header_name, header_value)
         error(err)
     end
 
-    req_add_header(header_name,header_value)
+    req_add_header(header_name, header_value)
 end
 
 -- return the remote address of client which directly connecting to APISIX.

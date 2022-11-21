@@ -308,7 +308,7 @@ do
         for i = 1, field_cnt, 2 do
             local val = core.utils.resolve_var(hdr_op.add[i + 1], ctx.var)
             local header = hdr_op.add[i]
-            core.request.add_header(header,val)
+            core.request.add_header(header, val)
         end
 
         local field_cnt = #hdr_op.set
