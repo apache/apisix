@@ -24,6 +24,7 @@ const _ = grpc.SupportPackageIsVersion7
 type GreeterClient interface {
 	// Unary RPC.
 	SayHello(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error)
+	GetErrResp(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error)
 	Plus(ctx context.Context, in *PlusRequest, opts ...grpc.CallOption) (*PlusReply, error)
 	SayHelloAfterDelay(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error)
 	SayMultipleHello(ctx context.Context, in *MultipleHelloRequest, opts ...grpc.CallOption) (*MultipleHelloReply, error)
@@ -46,6 +47,15 @@ func NewGreeterClient(cc grpc.ClientConnInterface) GreeterClient {
 func (c *greeterClient) SayHello(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error) {
 	out := new(HelloReply)
 	err := c.cc.Invoke(ctx, "/helloworld.Greeter/SayHello", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *greeterClient) GetErrResp(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloReply, error) {
+	out := new(HelloReply)
+	err := c.cc.Invoke(ctx, "/helloworld.Greeter/GetErrResp", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -182,6 +192,7 @@ func (x *greeterSayHelloBidirectionalStreamClient) Recv() (*HelloReply, error) {
 type GreeterServer interface {
 	// Unary RPC.
 	SayHello(context.Context, *HelloRequest) (*HelloReply, error)
+	GetErrResp(context.Context, *HelloRequest) (*HelloReply, error)
 	Plus(context.Context, *PlusRequest) (*PlusReply, error)
 	SayHelloAfterDelay(context.Context, *HelloRequest) (*HelloReply, error)
 	SayMultipleHello(context.Context, *MultipleHelloRequest) (*MultipleHelloReply, error)
@@ -200,6 +211,9 @@ type UnimplementedGreeterServer struct {
 
 func (UnimplementedGreeterServer) SayHello(context.Context, *HelloRequest) (*HelloReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SayHello not implemented")
+}
+func (UnimplementedGreeterServer) GetErrResp(context.Context, *HelloRequest) (*HelloReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetErrResp not implemented")
 }
 func (UnimplementedGreeterServer) Plus(context.Context, *PlusRequest) (*PlusReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Plus not implemented")
@@ -246,6 +260,24 @@ func _Greeter_SayHello_Handler(srv interface{}, ctx context.Context, dec func(in
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GreeterServer).SayHello(ctx, req.(*HelloRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Greeter_GetErrResp_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HelloRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GreeterServer).GetErrResp(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/helloworld.Greeter/GetErrResp",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GreeterServer).GetErrResp(ctx, req.(*HelloRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -387,6 +419,10 @@ var Greeter_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SayHello",
 			Handler:    _Greeter_SayHello_Handler,
+		},
+		{
+			MethodName: "GetErrResp",
+			Handler:    _Greeter_GetErrResp_Handler,
 		},
 		{
 			MethodName: "Plus",
