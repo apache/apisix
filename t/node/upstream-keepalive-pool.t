@@ -774,7 +774,7 @@ $/
                 ngx.print(body)
                 return
             end
-            
+
             data.uri = "/hello"
             data.upstream.scheme = "http"
             local code, body = test('/apisix/admin/routes/2',
