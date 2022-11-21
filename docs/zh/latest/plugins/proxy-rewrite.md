@@ -46,9 +46,9 @@ description: 本文介绍了关于 Apache APISIX `proxy-rewrite` 插件的基本
 
 ## Header 优先级
 
-Header 头的相关配置，遵循如下优先级：
+Header 头的相关配置，遵循如下优先级进行执行：
 
-`remove` > `set` > `add`
+`add` > `remove` > `set`
 
 ## 启用插件
 
