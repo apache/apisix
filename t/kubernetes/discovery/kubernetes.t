@@ -22,6 +22,9 @@ no_root_location();
 no_shuffle();
 workers(4);
 
+our $token_file = "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token";
+our $token_value = eval {`cat $token_file 2>/dev/null`};
+
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -36,6 +39,7 @@ _EOC_
 env MyPort=6443;
 env KUBERNETES_SERVICE_HOST=127.0.0.1;
 env KUBERNETES_SERVICE_PORT=6443;
+env KUBERNETES_CLIENT_TOKEN=$::token_value;
 _EOC_
 
     $block->set_value("main_config", $main_config);
@@ -112,7 +116,7 @@ deployment:
 discovery:
   kubernetes:
     client:
-        token: "test"
+        token: ${KUBERNETES_CLIENT_TOKEN}
 --- request
 GET /compare
 {
@@ -122,7 +126,7 @@ GET /compare
     "port": "${KUBERNETES_SERVICE_PORT}"
   },
   "client": {
-    "token": "test"
+    "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
   "shared_size": "1m",
   "default_weight": 50
@@ -146,7 +150,7 @@ discovery:
   kubernetes:
     service: {}
     client:
-        token: "test"
+        token: ${KUBERNETES_CLIENT_TOKEN}
 --- request
 GET /compare
 {
@@ -156,7 +160,7 @@ GET /compare
     "port": "${KUBERNETES_SERVICE_PORT}"
   },
   "client": {
-    "token": "test"
+    "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
   "shared_size": "1m",
   "default_weight": 50
@@ -182,7 +186,7 @@ discovery:
         host: "sample.com"
     shared_size: "2m"
     client:
-        token: "test"
+        token: ${KUBERNETES_CLIENT_TOKEN}
 --- request
 GET /compare
 {
@@ -192,7 +196,7 @@ GET /compare
     "port": "${KUBERNETES_SERVICE_PORT}"
   },
   "client": {
-    "token" : "test"
+    "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
   "shared_size": "2m",
   "default_weight": 50
@@ -214,21 +218,18 @@ deployment:
     config_provider: yaml
 discovery:
   kubernetes:
-    service:
-        schema: "http"
     client:
-        token: "test"
+        token: ${KUBERNETES_CLIENT_TOKEN}
     default_weight: 33
 --- request
 GET /compare
 {
   "service": {
-    "schema": "http",
     "host": "${KUBERNETES_SERVICE_HOST}",
     "port": "${KUBERNETES_SERVICE_PORT}"
   },
   "client": {
-    "token": "test"
+    "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
   "shared_size": "1m",
   "default_weight": 33
@@ -258,14 +259,14 @@ discovery:
         host: "1.cluster.com"
         port: "6445"
     client:
-        token: "token"
+        token: ${KUBERNETES_CLIENT_TOKEN}
   - id: "release"
     service:
         schema: "http"
         host: "2.cluster.com"
         port: "${MyPort}"
     client:
-        token: "test"
+        token: ${KUBERNETES_CLIENT_TOKEN}
     default_weight: 33
     shared_size: "2m"
 --- request
@@ -279,7 +280,7 @@ GET /compare
       "port": "6445"
     },
     "client": {
-      "token": "token"
+      "token": "${KUBERNETES_CLIENT_TOKEN}"
     },
     "default_weight": 50,
     "shared_size": "1m"
@@ -292,7 +293,7 @@ GET /compare
       "port": "${MyPort}"
     },
     "client": {
-      "token": "test"
+      "token": "${KUBERNETES_CLIENT_TOKEN}"
     },
     "default_weight": 33,
     "shared_size": "2m"
