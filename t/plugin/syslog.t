@@ -407,6 +407,14 @@ passed
 
 
 === TEST 11: hit route and report sys logger
+--- extra_init_by_lua
+    local syslog = require("apisix.plugins.syslog.init")
+    local core = require("apisix.core")
+    local old_f = syslog.push_entry
+    syslog.push_entry = function(conf, ctx, entry)
+        core.log.info("syslog-log-format => " ..  core.json.encode(entry))
+        return old_f(conf, ctx, entry)
+    end
 --- request
 GET /hello
 --- response_body
@@ -414,7 +422,5 @@ hello world
 --- wait: 0.5
 --- no_error_log
 [error]
---- grep_error_log eval
-qr/sending a batch logs to 127.0.0.1:(\d+)/
---- grep_error_log_out
-sending a batch logs to 127.0.0.1:5050
+--- error_log eval
+qr/syslog-log-format.*\{.*"host":"localhost"/
