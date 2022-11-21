@@ -22,6 +22,9 @@ no_root_location();
 no_shuffle();
 workers(4);
 
+our $token_file = "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token";
+our $token_value = eval {`cat $token_file 2>/dev/null`};
+
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -31,6 +34,16 @@ routes: []
 _EOC_
 
     $block->set_value("apisix_yaml", $apisix_yaml);
+
+    my $main_config = $block->main_config // <<_EOC_;
+env MyPort=6443;
+env KUBERNETES_SERVICE_HOST=127.0.0.1;
+env KUBERNETES_SERVICE_PORT=6443;
+env KUBERNETES_CLIENT_TOKEN=$::token_value;
+env KUBERNETES_CLIENT_TOKEN_FILE=$::token_file;
+_EOC_
+
+    $block->set_value("main_config", $main_config);
 
     my $config = $block->config // <<_EOC_;
 
@@ -121,7 +134,6 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
---- ignore_error_log
 
 
 
@@ -155,7 +167,6 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
---- ignore_error_log
 
 
 
@@ -190,7 +201,6 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
---- ignore_error_log
 
 
 
@@ -227,11 +237,13 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
---- ignore_error_log
 
 
 
 === TEST 5: multi cluster mode configuration
+--- http_config
+lua_shared_dict kubernetes-debug 1m;
+lua_shared_dict kubernetes-release 1m;
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -290,4 +302,3 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
---- ignore_error_log
