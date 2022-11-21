@@ -47,7 +47,7 @@ The `proxy-rewrite` Plugin rewrites Upstream proxy information such as `scheme`,
 
 ## Header Priority
 
-Header Header configurations are executed according to the following priorities:
+Header configurations are executed according to the following priorities:
 
 `add` > `remove` > `set`
 
