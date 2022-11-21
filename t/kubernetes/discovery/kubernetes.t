@@ -22,9 +22,6 @@ no_root_location();
 no_shuffle();
 workers(4);
 
-our $token_file = "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token";
-our $token_value = eval {`cat $token_file 2>/dev/null`};
-
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -39,8 +36,6 @@ _EOC_
 env MyPort=6443;
 env KUBERNETES_SERVICE_HOST=127.0.0.1;
 env KUBERNETES_SERVICE_PORT=6443;
-env KUBERNETES_CLIENT_TOKEN=$::token_value;
-env KUBERNETES_CLIENT_TOKEN_FILE=$::token_file;
 _EOC_
 
     $block->set_value("main_config", $main_config);
@@ -115,7 +110,9 @@ deployment:
   role_data_plane:
     config_provider: yaml
 discovery:
-  kubernetes: {}
+  kubernetes:
+    client:
+        token: "test"
 --- request
 GET /compare
 {
@@ -125,7 +122,7 @@ GET /compare
     "port": "${KUBERNETES_SERVICE_PORT}"
   },
   "client": {
-    "token_file": "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    "token": "test"
   },
   "shared_size": "1m",
   "default_weight": 50
@@ -148,7 +145,8 @@ deployment:
 discovery:
   kubernetes:
     service: {}
-    client: {}
+    client:
+        token: "test"
 --- request
 GET /compare
 {
@@ -158,7 +156,7 @@ GET /compare
     "port": "${KUBERNETES_SERVICE_PORT}"
   },
   "client": {
-    "token_file": "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    "token": "test"
   },
   "shared_size": "1m",
   "default_weight": 50
@@ -183,6 +181,8 @@ discovery:
     service:
         host: "sample.com"
     shared_size: "2m"
+    client:
+        token: "test"
 --- request
 GET /compare
 {
@@ -192,7 +192,7 @@ GET /compare
     "port": "${KUBERNETES_SERVICE_PORT}"
   },
   "client": {
-    "token_file" : "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    "token" : "test"
   },
   "shared_size": "2m",
   "default_weight": 50
@@ -265,7 +265,7 @@ discovery:
         host: "2.cluster.com"
         port: "${MyPort}"
     client:
-        token_file: "/var/token"
+        token: "test"
     default_weight: 33
     shared_size: "2m"
 --- request
@@ -292,7 +292,7 @@ GET /compare
       "port": "${MyPort}"
     },
     "client": {
-      "token_file": "/var/token"
+      "token": "test"
     },
     "default_weight": 33,
     "shared_size": "2m"
