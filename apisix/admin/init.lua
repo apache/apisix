@@ -14,8 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local filter = require("apisix.router").filter
 local require = require
+local filter = require("apisix.router").filter
 local core = require("apisix.core")
 local route = require("apisix.utils.router")
 local plugin = require("apisix.plugin")
