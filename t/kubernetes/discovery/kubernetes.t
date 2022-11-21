@@ -225,6 +225,7 @@ discovery:
 GET /compare
 {
   "service": {
+    "schema": "https",
     "host": "${KUBERNETES_SERVICE_HOST}",
     "port": "${KUBERNETES_SERVICE_PORT}"
   },
