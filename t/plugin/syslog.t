@@ -43,8 +43,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -65,8 +63,6 @@ GET /t
 --- response_body
 property "port" is required
 done
---- no_error_log
-[error]
 
 
 
@@ -90,8 +86,6 @@ GET /t
 --- response_body
 property "port" validation failed: wrong type: expected integer, got string
 done
---- no_error_log
-[error]
 
 
 
@@ -128,8 +122,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -138,8 +130,6 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 --- wait: 0.2
 
 
@@ -178,8 +168,6 @@ hello world
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -241,8 +229,6 @@ GET /t
 --- response_body
 passed
 hello world
---- no_error_log
-[error]
 --- error_log
 try to lock with key route#1
 unlock with key route#1

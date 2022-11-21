@@ -55,8 +55,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -65,8 +63,6 @@ passed
 GET /server_port/aa
 --- response_body eval
 1980
---- no_error_log
-[error]
 
 
 
@@ -98,8 +94,6 @@ GET /server_port/aa
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -108,8 +102,6 @@ passed
 GET /server_port/aa
 --- response_body eval
 1980
---- no_error_log
-[error]
 
 
 
@@ -141,8 +133,6 @@ GET /server_port/aa
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -151,8 +141,6 @@ passed
 GET /server_port/aa
 --- response_body eval
 1981
---- no_error_log
-[error]
 
 
 
@@ -174,5 +162,3 @@ GET /server_port/aa
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]

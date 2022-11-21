@@ -76,8 +76,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -112,8 +110,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -130,8 +126,6 @@ passed
 GET /t
 --- response_body
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -194,8 +188,6 @@ GET /t
 --- response_body
 [push] code: 200 message: passed
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -238,8 +230,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -284,8 +274,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -302,8 +290,6 @@ passed
 GET /t
 --- response_body
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -334,8 +320,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -355,8 +339,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -386,8 +368,6 @@ passed
 --- request
 GET /t
 --- error_code: 400
---- no_error_log
-[error]
 
 
 
@@ -444,8 +424,6 @@ GET /t
 {"value":{"remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -486,8 +464,6 @@ GET /t
 {"key":"/apisix/stream_routes/1","value":{"id":"1","remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -523,8 +499,6 @@ GET /t
 {"key":"/apisix/stream_routes/1","value":{"id":"1","remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"}}}
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -552,8 +526,6 @@ GET /t
 {"deleted":"1","key":"/apisix/stream_routes/1"}
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -583,8 +555,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"unknown plugin [mqttt-proxy]"}
---- no_error_log
-[error]
 
 
 
@@ -637,5 +607,3 @@ GET /t
 {"error_msg":"unknown protocol [xxx]"}
 passed
 {"error_msg":"property \"faults\" validation failed: wrong type: expected array, got string"}
---- no_error_log
-[error]

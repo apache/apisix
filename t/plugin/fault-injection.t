@@ -69,8 +69,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/validation failed/
---- no_error_log
-[error]
 
 
 
@@ -106,8 +104,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/validation failed/
---- no_error_log
-[error]
 
 
 
@@ -141,8 +137,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/expect object to have at least 1 properties/
---- no_error_log
-[error]
 
 
 
@@ -178,8 +172,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/validation failed/
---- no_error_log
-[error]
 
 
 
@@ -222,8 +214,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/wrong type: expected number, got string/
---- no_error_log
-[error]
 
 
 
@@ -426,8 +416,6 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -436,8 +424,6 @@ passed
 GET /hello HTTP/1.1
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -481,8 +467,6 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -492,8 +476,6 @@ GET /hello HTTP/1.1
 --- error_code: 200
 --- response_body
 Fault Injection!
---- no_error_log
-[error]
 
 
 
@@ -537,8 +519,6 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -548,8 +528,6 @@ GET /hello HTTP/1.1
 --- error_code: 405
 --- response_body
 Fault Injection!
---- no_error_log
-[error]
 
 
 
@@ -594,8 +572,6 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -605,8 +581,6 @@ GET /hello HTTP/1.1
 --- error_code: 200
 --- response_body
 Fault Injection!
---- no_error_log
-[error]
 
 
 
@@ -652,8 +626,6 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -661,8 +633,6 @@ passed
 --- request
 GET /hello HTTP/1.1
 --- error_code: 302
---- no_error_log
-[error]
 
 
 
@@ -706,8 +676,6 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -717,8 +685,6 @@ GET /hello HTTP/1.1
 --- error_code: 200
 --- response_body
 hello1 world
---- no_error_log
-[error]
 
 
 
@@ -761,8 +727,6 @@ hello1 world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -771,8 +735,6 @@ passed
 GET /hello
 --- response_body
 client addr: 127.0.0.1
---- no_error_log
-[error]
 
 
 
@@ -814,8 +776,6 @@ client addr: 127.0.0.1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -823,8 +783,6 @@ passed
 --- request
 GET /hello
 --- response_body
---- no_error_log
-[error]
 
 
 
@@ -871,8 +829,6 @@ GET /hello
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -964,8 +920,6 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -977,8 +931,6 @@ apikey: api-key
 --- error_code: 403
 --- response_body
 Fault Injection!
---- no_error_log
-[error]
 
 
 
@@ -988,8 +940,6 @@ GET /hello?name=jack&age=20
 --- error_code: 403
 --- response_body
 Fault Injection!
---- no_error_log
-[error]
 
 
 
@@ -1001,8 +951,6 @@ apikey:api-key
 --- error_code: 403
 --- response_body
 Fault Injection!
---- no_error_log
-[error]
 
 
 
@@ -1011,8 +959,6 @@ Fault Injection!
 GET /hello?name=allen
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -1021,8 +967,6 @@ hello world
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -1067,8 +1011,6 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1077,8 +1019,6 @@ passed
 GET /hello?name=jack&age=22
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -1088,8 +1028,6 @@ GET /hello HTTP/1.1
 --- error_code: 200
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -1143,8 +1081,6 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1156,8 +1092,6 @@ apikey: api-key
 --- error_code: 403
 --- response_body
 Fault Injection!
---- no_error_log
-[error]
 
 
 
@@ -1168,5 +1102,3 @@ GET /hello?name=jack&age=16
 apikey: api-key
 --- response_body
 hello world
---- no_error_log
-[error]

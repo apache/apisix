@@ -194,8 +194,6 @@ deployment:
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -232,8 +230,6 @@ deployment:
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -302,8 +298,6 @@ GET /t
 --- response_body
 passed
 passed
---- no_error_log
-[error]
 
 
 

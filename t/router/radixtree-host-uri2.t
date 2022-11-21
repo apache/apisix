@@ -65,8 +65,6 @@ Host: test.com
 qr/1981/
 --- error_log
 use config_provider: yaml
---- no_error_log
-[error]
 
 
 
@@ -97,8 +95,6 @@ Host: www.test.com
 qr/1981/
 --- error_log
 use config_provider: yaml
---- no_error_log
-[error]
 
 
 
@@ -129,8 +125,6 @@ Host: www.test.com
 qr/1981/
 --- error_log
 use config_provider: yaml
---- no_error_log
-[error]
 
 
 
@@ -162,8 +156,6 @@ Host: www.test.com
 qr/1980/
 --- error_log
 use config_provider: yaml
---- no_error_log
-[error]
 
 
 
@@ -195,8 +187,6 @@ Host: www.test.com
 qr/1981/
 --- error_log
 use config_provider: yaml
---- no_error_log
-[error]
 
 
 
@@ -235,8 +225,6 @@ apisix:
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -249,8 +237,6 @@ apisix:
 GET /file:listReputationHistories
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -262,8 +248,6 @@ apisix:
 --- request
 GET /file:xx
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
@@ -303,8 +287,6 @@ apisix:
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -319,8 +301,6 @@ GET /do:listReputationHistories
 Host: t.com
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -334,8 +314,6 @@ GET /do:xx
 --- more_headers
 Host: t.com
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
@@ -355,8 +333,6 @@ routes:
 GET /server_port
 --- more_headers
 Host: tEst.com
---- no_error_log
-[error]
 
 
 
@@ -376,8 +352,6 @@ routes:
 GET /server_port
 --- more_headers
 Host: test.com
---- no_error_log
-[error]
 
 
 
@@ -412,5 +386,3 @@ Host: www.foo.com
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]

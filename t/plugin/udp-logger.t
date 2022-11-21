@@ -40,8 +40,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -63,8 +61,6 @@ GET /t
 --- response_body
 property "host" is required
 done
---- no_error_log
-[error]
 
 
 
@@ -86,8 +82,6 @@ GET /t
 --- response_body
 property "timeout" validation failed: wrong type: expected integer, got string
 done
---- no_error_log
-[error]
 
 
 
@@ -126,8 +120,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -136,8 +128,6 @@ passed
 GET /opentracing
 --- response_body
 opentracing
---- no_error_log
-[error]
 --- wait: 1
 
 

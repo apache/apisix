@@ -48,10 +48,6 @@ routes:
 _EOC_
 
     $block->set_value("apisix_yaml", $block->apisix_yaml . $routes);
-
-    if (!$block->no_error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 our $debug_config = t::APISIX::read_file("conf/debug.yaml");
