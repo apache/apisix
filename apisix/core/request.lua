@@ -22,7 +22,7 @@
 local lfs = require("lfs")
 local log = require("apisix.core.log")
 local io = require("apisix.core.io")
-local ngx_req = require "ngx.req"
+local ngx_req = require("ngx.req")
 local is_apisix_or, a6_request = pcall(require, "resty.apisix.request")
 local ngx = ngx
 local get_headers = ngx.req.get_headers
