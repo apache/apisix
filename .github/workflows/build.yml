@@ -30,7 +30,8 @@ jobs:
           - linux_openresty
           - linux_openresty_1_19
         test_dir:
-          - t/plugin
+          - t/plugin/[a-k]*
+          - t/plugin/[l-z]*
           - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/deployment t/discovery t/error_page t/misc
           - t/node t/pubsub t/router t/script t/stream-node t/utils t/wasm t/xds-library t/xrpc
 
@@ -42,7 +43,7 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.1.0
         with:
           submodules: recursive
 
@@ -64,8 +65,8 @@ jobs:
         id: branch_env
         shell: bash
         run: |
-          echo "##[set-output name=version;]$(echo ${GITHUB_REF##*/})"
-          echo "##[set-output name=fullname;]$(echo apache-apisix-${GITHUB_REF##*/}-src.tgz)"
+          echo "version=${GITHUB_REF##*/}" >>$GITHUB_OUTPUT
+          echo "fullname=apache-apisix-${GITHUB_REF##*/}-src.tgz" >>$GITHUB_OUTPUT
 
       - name: Extract test type
         shell: bash
@@ -73,13 +74,13 @@ jobs:
         run: |
           test_dir="${{ matrix.test_dir }}"
           if [[ $test_dir =~ 't/plugin' ]]; then
-            echo "##[set-output name=type;]$(echo 'plugin')"
+            echo "type=plugin" >>$GITHUB_OUTPUT
           fi
           if [[ $test_dir =~ 't/admin ' ]]; then
-            echo "##[set-output name=type;]$(echo 'first')"
+            echo "type=first" >>$GITHUB_OUTPUT
           fi
           if [[ $test_dir =~ ' t/xrpc' ]]; then
-            echo "##[set-output name=type;]$(echo 'last')"
+            echo "type=last" >>$GITHUB_OUTPUT
           fi
 
       - name: Linux launch common services
@@ -106,7 +107,10 @@ jobs:
       - name: Start CI env (PLUGIN_TEST)
         if: steps.test_env.outputs.type == 'plugin'
         run: |
-          sh ci/pod/openfunction/build-function-image.sh
+          # download keycloak cas provider
+          sudo wget https://github.com/jacekkow/keycloak-protocol-cas/releases/download/18.0.2/keycloak-protocol-cas-18.0.2.jar -O /opt/keycloak-protocol-cas-18.0.2.jar
+
+          ./ci/pod/openfunction/build-function-image.sh
           make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
           sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
 

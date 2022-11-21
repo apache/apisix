@@ -25,12 +25,14 @@ local v3_adapter        = require("apisix.admin.v3_adapter")
 local etcd              = require("resty.etcd")
 local clone_tab         = require("table.clone")
 local health_check      = require("resty.etcd.health_check")
+local pl_path           = require("pl.path")
 local ipairs            = ipairs
 local setmetatable      = setmetatable
 local string            = string
 local tonumber          = tonumber
 local ngx_config_prefix = ngx.config.prefix()
 local ngx_socket_tcp    = ngx.socket.tcp
+local ngx_get_phase     = ngx.get_phase
 
 
 local is_http = ngx.config.subsystem == "http"
@@ -157,7 +159,7 @@ _M.new = new
 -- @treturn table|nil the etcd client, or nil if failed.
 -- @treturn string|nil the configured prefix of etcd keys, or nil if failed.
 -- @treturn nil|string the error message.
-function _M.new_without_proxy()
+local function new_without_proxy()
     local local_conf, err = fetch_local_conf()
     if not local_conf then
         return nil, nil, err
@@ -166,7 +168,31 @@ function _M.new_without_proxy()
     local etcd_conf = clone_tab(local_conf.etcd)
     return _new(etcd_conf)
 end
+_M.new_without_proxy = new_without_proxy
 
+
+local function switch_proxy()
+    if ngx_get_phase() == "init" or ngx_get_phase() == "init_worker" then
+        return new_without_proxy()
+    end
+
+    local etcd_cli, prefix, err = new()
+    if not etcd_cli or err then
+        return etcd_cli, prefix, err
+    end
+
+    if not etcd_cli.unix_socket_proxy then
+        return etcd_cli, prefix, err
+    end
+    local sock_path = etcd_cli.unix_socket_proxy:sub(#"unix:" + 1)
+    local ok = pl_path.exists(sock_path)
+    if not ok then
+        return new_without_proxy()
+    end
+
+    return etcd_cli, prefix, err
+end
+_M.switch_proxy = switch_proxy
 
 -- convert ETCD v3 entry to v2 one
 local function kvs_to_node(kvs)
@@ -281,7 +307,7 @@ end
 
 
 function _M.get(key, is_dir)
-    local etcd_cli, prefix, err = new()
+    local etcd_cli, prefix, err = switch_proxy()
     if not etcd_cli then
         return nil, err
     end
@@ -300,7 +326,7 @@ end
 
 
 local function set(key, value, ttl)
-    local etcd_cli, prefix, err = new()
+    local etcd_cli, prefix, err = switch_proxy()
     if not etcd_cli then
         return nil, err
     end
@@ -344,7 +370,7 @@ _M.set = set
 
 
 function _M.atomic_set(key, value, ttl, mod_revision)
-    local etcd_cli, prefix, err = new()
+    local etcd_cli, prefix, err = switch_proxy()
     if not etcd_cli then
         return nil, err
     end
@@ -403,7 +429,7 @@ end
 
 
 function _M.push(key, value, ttl)
-    local etcd_cli, _, err = new()
+    local etcd_cli, _, err = switch_proxy()
     if not etcd_cli then
         return nil, err
     end
@@ -435,7 +461,7 @@ end
 
 
 function _M.delete(key)
-    local etcd_cli, prefix, err = new()
+    local etcd_cli, prefix, err = switch_proxy()
     if not etcd_cli then
         return nil, err
     end
@@ -473,7 +499,7 @@ end
 -- --   etcdserver = "3.5.0"
 -- -- }
 function _M.server_version()
-    local etcd_cli, _, err = new()
+    local etcd_cli, _, err = switch_proxy()
     if not etcd_cli then
         return nil, err
     end
@@ -483,7 +509,7 @@ end
 
 
 function _M.keepalive(id)
-    local etcd_cli, _, err = new()
+    local etcd_cli, _, err = switch_proxy()
     if not etcd_cli then
         return nil, err
     end

@@ -95,9 +95,14 @@ location /t {
         ngx.sleep(0.5)
 
         local data = [[
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
 apisix:
   node_listen: 1984
-  admin_key: null
 plugins:
     - jwt-auth
 stream_plugins:
@@ -133,7 +138,6 @@ filter(): [{"name":"jwt-auth"},{"name":"mqtt-proxy","stream":true}]
 --- yaml_config
 apisix:
   node_listen: 1984
-  admin_key: null
 plugins:
     - example-plugin
 plugin_attr:
@@ -145,9 +149,14 @@ location /t {
         local core = require "apisix.core"
         ngx.sleep(0.1)
         local data = [[
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
 apisix:
   node_listen: 1984
-  admin_key: null
 plugins:
     - example-plugin
 plugin_attr:
@@ -165,9 +174,14 @@ plugin_attr:
         ngx.sleep(0.1)
 
         local data = [[
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
 apisix:
   node_listen: 1984
-  admin_key: null
 plugins:
     - example-plugin
 plugin_attr:
@@ -207,7 +221,6 @@ example-plugin get plugin attr val: 1
 --- yaml_config
 apisix:
   node_listen: 1984
-  admin_key: null
 plugins:
   - public-api
   - prometheus
@@ -238,9 +251,14 @@ location /t {
         ngx.say(code)
 
         local data = [[
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
 apisix:
   node_listen: 1984
-  admin_key: null
 plugins:
   - public-api
   - prometheus
@@ -275,7 +293,6 @@ done
 --- yaml_config
 apisix:
   node_listen: 1984
-  admin_key: null
 plugins:
   - skywalking
 plugin_attr:
@@ -292,9 +309,14 @@ location /t {
         local t = require("lib.test_admin").test
 
         local data = [[
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
 apisix:
   node_listen: 1984
-  admin_key: null
 plugins:
   - prometheus
         ]]

@@ -48,7 +48,7 @@ local function enable_v3()
         return false
     end
 
-    local api_ver = try_read_attr(local_conf, "apisix", "admin_api_version")
+    local api_ver = try_read_attr(local_conf, "deployment", "admin", "admin_api_version")
     if api_ver ~= "v3" then
         admin_api_version = "default"
         return false
@@ -177,7 +177,7 @@ end
 
 function _M.filter(body)
     if not enable_v3() then
-        return
+        return body
     end
 
     local args = request.get_uri_args()

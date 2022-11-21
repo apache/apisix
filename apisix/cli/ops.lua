@@ -183,8 +183,10 @@ local function init(env)
 
     -- check the Admin API token
     local checked_admin_key = false
-    if yaml_conf.apisix.enable_admin and yaml_conf.apisix.allow_admin then
-        for _, allow_ip in ipairs(yaml_conf.apisix.allow_admin) do
+    local allow_admin = yaml_conf.deployment.admin and
+        yaml_conf.deployment.admin.allow_admin
+    if yaml_conf.apisix.enable_admin and allow_admin then
+        for _, allow_ip in ipairs(allow_admin) do
             if allow_ip == "127.0.0.0/24" then
                 checked_admin_key = true
             end
@@ -198,13 +200,17 @@ local function init(env)
 Please modify "admin_key" in conf/config.yaml .
 
 ]]
-        if type(yaml_conf.apisix.admin_key) ~= "table" or
-           #yaml_conf.apisix.admin_key == 0
+        local admin_key = yaml_conf.deployment.admin
+        if admin_key then
+            admin_key = admin_key.admin_key
+        end
+
+        if type(admin_key) ~= "table" or #admin_key == 0
         then
             util.die(help:format("ERROR: missing valid Admin API token."))
         end
 
-        for _, admin in ipairs(yaml_conf.apisix.admin_key) do
+        for _, admin in ipairs(admin_key) do
             if type(admin.key) == "table" then
                 admin.key = ""
             else
@@ -224,10 +230,23 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
+    if yaml_conf.deployment.admin then
+        local admin_api_mtls = yaml_conf.deployment.admin.admin_api_mtls
+        local https_admin = yaml_conf.deployment.admin.https_admin
+        if https_admin and not (admin_api_mtls and
+            admin_api_mtls.admin_ssl_cert and
+            admin_api_mtls.admin_ssl_cert ~= "" and
+            admin_api_mtls.admin_ssl_cert_key and
+            admin_api_mtls.admin_ssl_cert_key ~= "")
+        then
+            util.die("missing ssl cert for https admin")
+        end
+    end
+
     if yaml_conf.apisix.enable_admin and
-        yaml_conf.apisix.config_center == "yaml"
+        yaml_conf.deployment.config_provider == "yaml"
     then
-        util.die("ERROR: Admin API can only be used with etcd config_center.\n")
+        util.die("ERROR: Admin API can only be used with etcd config_provider.\n")
     end
 
     local or_ver = get_openresty_version()
@@ -315,8 +334,8 @@ Please modify "admin_key" in conf/config.yaml .
     -- listen in admin use a separate port, support specific IP, compatible with the original style
     local admin_server_addr
     if yaml_conf.apisix.enable_admin then
-        local ip = yaml_conf.apisix.admin_listen.ip
-        local port = yaml_conf.apisix.admin_listen.port
+        local ip = yaml_conf.deployment.admin.admin_listen.ip
+        local port = yaml_conf.deployment.admin.admin_listen.port
         admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0", ip,
                                                           9180, port)
     end
@@ -464,17 +483,6 @@ Please modify "admin_key" in conf/config.yaml .
         yaml_conf.apisix.ssl.ssl_trusted_certificate = cert_path
     end
 
-    local admin_api_mtls = yaml_conf.apisix.admin_api_mtls
-    if yaml_conf.apisix.https_admin and
-       not (admin_api_mtls and
-            admin_api_mtls.admin_ssl_cert and
-            admin_api_mtls.admin_ssl_cert ~= "" and
-            admin_api_mtls.admin_ssl_cert_key and
-            admin_api_mtls.admin_ssl_cert_key ~= "")
-    then
-        util.die("missing ssl cert for https admin")
-    end
-
     -- enable ssl with place holder crt&key
     yaml_conf.apisix.ssl.ssl_cert = "cert/ssl_PLACE_HOLDER.crt"
     yaml_conf.apisix.ssl.ssl_cert_key = "cert/ssl_PLACE_HOLDER.key"
@@ -570,6 +578,11 @@ Please modify "admin_key" in conf/config.yaml .
     for k,v in pairs(yaml_conf.nginx_config) do
         sys_conf[k] = v
     end
+    if yaml_conf.deployment.admin then
+        for k,v in pairs(yaml_conf.deployment.admin) do
+            sys_conf[k] = v
+        end
+    end
     sys_conf["wasm"] = yaml_conf.wasm
 
 
@@ -586,10 +599,6 @@ Please modify "admin_key" in conf/config.yaml .
 
     elseif tonumber(sys_conf["worker_processes"]) == nil then
         sys_conf["worker_processes"] = "auto"
-    end
-
-    if sys_conf.allow_admin and #sys_conf.allow_admin == 0 then
-        sys_conf.allow_admin = nil
     end
 
     local dns_resolver = sys_conf["dns_resolver"]
@@ -653,35 +662,51 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
-    -- inject kubernetes discovery environment variable
+    -- inject kubernetes discovery shared dict and environment variable
     if enabled_discoveries["kubernetes"] then
+
+        if not sys_conf["discovery_shared_dicts"] then
+            sys_conf["discovery_shared_dicts"] = {}
+        end
 
         local kubernetes_conf = yaml_conf.discovery["kubernetes"]
 
-        local keys = {
-            kubernetes_conf.service.host,
-            kubernetes_conf.service.port,
-        }
+        local inject_environment = function(conf, envs)
+            local keys = {
+                conf.service.host,
+                conf.service.port,
+            }
 
-        if kubernetes_conf.client.token then
-            table_insert(keys, kubernetes_conf.client.token)
-        end
+            if conf.client.token then
+                table_insert(keys, conf.client.token)
+            end
 
-        if kubernetes_conf.client.token_file then
-            table_insert(keys, kubernetes_conf.client.token_file)
+            if conf.client.token_file then
+                table_insert(keys, conf.client.token_file)
+            end
+
+            for _, key in ipairs(keys) do
+                if #key > 3 then
+                    local first, second = str_byte(key, 1, 2)
+                    if first == str_byte('$') and second == str_byte('{') then
+                        local last = str_byte(key, #key)
+                        if last == str_byte('}') then
+                            envs[str_sub(key, 3, #key - 1)] = ""
+                        end
+                    end
+                end
+            end
+
         end
 
         local envs = {}
-
-        for _, key in ipairs(keys) do
-            if #key > 3 then
-                local first, second = str_byte(key, 1, 2)
-                if first == str_byte('$') and second == str_byte('{') then
-                    local last = str_byte(key, #key)
-                    if last == str_byte('}') then
-                        envs[str_sub(key, 3, #key - 1)] = ""
-                    end
-                end
+        if #kubernetes_conf == 0 then
+            sys_conf["discovery_shared_dicts"]["kubernetes"] = kubernetes_conf.shared_size
+            inject_environment(kubernetes_conf, envs)
+        else
+            for _, item in ipairs(kubernetes_conf) do
+                sys_conf["discovery_shared_dicts"]["kubernetes-" .. item.id] = item.shared_size
+                inject_environment(item, envs)
             end
         end
 
@@ -692,6 +717,7 @@ Please modify "admin_key" in conf/config.yaml .
         for item in pairs(envs) do
             table_insert(sys_conf["envs"], item)
         end
+
     end
 
     -- fix up lua path
@@ -756,6 +782,17 @@ local function start(env, ...)
 
         print("nginx.pid exists but there's no corresponding process with pid ", pid,
               ", the file will be overwritten")
+    end
+
+    -- start a new APISIX instance
+
+    local conf_server_sock_path = env.apisix_home .. "/conf/config_listen.sock"
+    if pl_path.exists(conf_server_sock_path) then
+        -- remove stale sock (if exists) so that APISIX can start
+        local ok, err = os_remove(conf_server_sock_path)
+        if not ok then
+            util.die("failed to remove stale conf server sock file, error: ", err)
+        end
     end
 
     local parser = argparse()

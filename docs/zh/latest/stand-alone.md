@@ -35,14 +35,15 @@ APISIX 节点服务启动后会立刻加载 `conf/apisix.yaml` 文件中的路�
 由于目前 Admin API 都是基于 etcd 配置中心解决方案，当开启 Stand-alone 模式后，
 Admin API 将不再被允许使用。
 
-通过设置 `conf/config.yaml` 中的 `apisix.config_center` 选项为 `yaml` ，并禁用 Admin API 即可启用 Stand-alone 模式。
+只有当 APISIX 的角色设置为 data plane 时，才能开启 Stand-alone 模式。通过设置 `deployment.role` 为 `data_plane`，设置 `deployment.role_data_plane.config_provider` 为 `yaml` 即可启用 Stand-alone 模式。
 
 参考下面示例：
 
 ```yaml
-apisix:
-  enable_admin: false
-  config_center: yaml
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 ```
 
 ### 如何配置规则
@@ -166,7 +167,7 @@ plugins:
 ### 启用 SSL
 
 ```yml
-ssl:
+ssls:
     -
         cert: |
             -----BEGIN CERTIFICATE-----

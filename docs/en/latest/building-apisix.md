@@ -52,23 +52,19 @@ curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-depend
 Then, create a directory and set the environment variable `APISIX_VERSION`:
 
 ```shell
-APISIX_VERSION='2.15.0'
+APISIX_VERSION='3.0.0'
 mkdir apisix-${APISIX_VERSION}
 ```
 
-You can now download the APISIX source code by running the command below:
+You can now clone the APISIX source code from Github by running the command below:
 
 ```shell
-wget https://downloads.apache.org/apisix/${APISIX_VERSION}/apache-apisix-${APISIX_VERSION}-src.tgz
+git clone --depth 1 --branch ${APISIX_VERSION} https://github.com/apache/apisix.git apisix-${APISIX_VERSION}
 ```
 
-You can also download the source package from the [Downloads page](https://apisix.apache.org/downloads/). You will also find source packages for APISIX Dashboard and APISIX Ingress Controller.
+You can also download the source package from the [Downloads page](https://apisix.apache.org/downloads/). But the source package missing the test case. This may affect subsequent operations.
 
-After you have downloaded the package, you can extract the files to the folder created previously:
-
-```shell
-tar zxvf apache-apisix-${APISIX_VERSION}-src.tgz -C apisix-${APISIX_VERSION}
-```
+And you will also find source packages for APISIX Dashboard and APISIX Ingress Controller from [Downloads page](https://apisix.apache.org/downloads/).
 
 Now, navigate to the directory, create dependencies, and install APISIX as shown below:
 

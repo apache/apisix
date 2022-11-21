@@ -1,5 +1,11 @@
 ---
 title: Plugin Config
+keywords:
+  - API 网关
+  - Apache APISIX
+  - 插件配置
+  - Plugin Config
+description: Plugin Config 对象，可以用于创建一组通用的插件配置，并在路由中使用这组配置。
 ---
 
 <!--
@@ -21,15 +27,20 @@ title: Plugin Config
 #
 -->
 
-如果你想要复用一组通用的插件配置，你可以把它们提取成一个 Plugin config，并绑定到对应的路由上。
+## 描述
 
-举个例子，你可以这么做：
+在很多情况下，我们在不同的路由中会使用相同的插件规则，此时就可以通过 `Plugin Config` 来设置这些规则。`plugins` 的配置可以通过 Admin API `/apisix/admin/plugin_configs` 进行单独配置，在路由中使用`plugin_config_id` 与之进行关联。插件配置属于一组通用插件配置的抽象。
+
+## 配置步骤
+
+你可以参考如下步骤将 Plugin Config 绑定在路由上。
+
+1. 创建 Plugin config。
 
 ```shell
-# 创建 Plugin config
-$ curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
-    "desc": "吾乃插件配置 1",
+    "desc": "enable limit-count plugin",
     "plugins": {
         "limit-count": {
             "count": 2,
@@ -38,9 +49,13 @@ $ curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9
         }
     }
 }'
+```
 
-# 绑定到路由上
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+2. 创建路由并绑定 `Plugin Config 1`。
+
+```
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uris": ["/index.html"],
     "plugin_config_id": 1,
@@ -55,14 +70,19 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 
 如果找不到对应的 Plugin config，该路由上的请求会报 503 错误。
 
-如果这个路由已经配置了 `plugins`，那么 Plugin config 里面的插件配置会合并进去。
+## 注意事项
+
+如果路由中已经配置了 `plugins`，那么 Plugin Config 里面的插件配置将会与 `plugins` 合并。
+
 相同的插件不会覆盖掉 `plugins` 原有的插件。
 
-举个例子：
+例如：
 
-```
+```shell
+curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
-    "desc": "吾乃插件配置 1",
+    "desc": "enable ip-restruction and limit-count plugin",
     "plugins": {
         "ip-restriction": {
             "whitelist": [
@@ -76,12 +96,14 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
             "rejected_code": 503
         }
     }
-}
+}'
 ```
 
-加上
+在路由中引入 Plugin Config：
 
-```
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uris": ["/index.html"],
     "plugin_config_id": 1,
@@ -103,12 +125,14 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
             "key": "remote_addr"
         }
     }
-}
+}'
 ```
 
-等于
+最后实现的效果如下：
 
-```
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uris": ["/index.html"],
     "upstream": {
@@ -131,8 +155,9 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
         "limit-count": {
             "count": 20,
             "time_window": 60,
-            "rejected_code": 503
+            "rejected_code": 503,
+            "key": "remote_addr"
         }
     }
-}
+}'
 ```

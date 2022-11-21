@@ -22,6 +22,7 @@ local aes = require("resty.aes")
 local str_lower = string.lower
 local assert = assert
 local type = type
+local ipairs = ipairs
 
 
 local cert_cache = core.lrucache.new {
@@ -55,23 +56,32 @@ function _M.server_name()
 end
 
 
-local _aes_128_cbc_with_iv = false
+local _aes_128_cbc_with_iv_tbl
 local function get_aes_128_cbc_with_iv()
-    if _aes_128_cbc_with_iv == false then
+    if _aes_128_cbc_with_iv_tbl == nil then
+        _aes_128_cbc_with_iv_tbl = core.table.new(2, 0)
         local local_conf = core.config.local_conf()
-        local iv = core.table.try_read_attr(local_conf, "apisix", "ssl", "key_encrypt_salt")
-        if type(iv) =="string" and #iv == 16 then
-            _aes_128_cbc_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv = iv}))
-        else
-            _aes_128_cbc_with_iv = nil
+        local ivs = core.table.try_read_attr(local_conf, "apisix", "ssl", "key_encrypt_salt")
+        local type_ivs = type(ivs)
+
+        if type_ivs == "table" then
+            for _, iv in ipairs(ivs) do
+                local aes_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv = iv}))
+                core.table.insert(_aes_128_cbc_with_iv_tbl, aes_with_iv)
+            end
+        elseif type_ivs == "string" then
+            local aes_with_iv = assert(aes:new(ivs, nil, aes.cipher(128, "cbc"), {iv = ivs}))
+            core.table.insert(_aes_128_cbc_with_iv_tbl, aes_with_iv)
         end
     end
-    return _aes_128_cbc_with_iv
+
+    return _aes_128_cbc_with_iv_tbl
 end
 
 
 function _M.aes_encrypt_pkey(origin)
-    local aes_128_cbc_with_iv = get_aes_128_cbc_with_iv()
+    local aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv()
+    local aes_128_cbc_with_iv = aes_128_cbc_with_iv_tbl[1]
     if aes_128_cbc_with_iv ~= nil and core.string.has_prefix(origin, "---") then
         local encrypted = aes_128_cbc_with_iv:encrypt(origin)
         if encrypted == nil then
@@ -86,32 +96,32 @@ function _M.aes_encrypt_pkey(origin)
 end
 
 
-local function decrypt_priv_pkey(iv, key)
-    local decoded_key = ngx_decode_base64(key)
-    if not decoded_key then
-        core.log.error("base64 decode ssl key failed. key[", key, "] ")
-        return nil
-    end
-
-    local decrypted = iv:decrypt(decoded_key)
-    if not decrypted then
-        core.log.error("decrypt ssl key failed. key[", key, "] ")
-    end
-
-    return decrypted
-end
-
-
 local function aes_decrypt_pkey(origin)
     if core.string.has_prefix(origin, "---") then
         return origin
     end
 
-    local aes_128_cbc_with_iv = get_aes_128_cbc_with_iv()
-    if aes_128_cbc_with_iv ~= nil then
-        return decrypt_priv_pkey(aes_128_cbc_with_iv, origin)
+    local aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv()
+    if #aes_128_cbc_with_iv_tbl == 0 then
+        return origin
     end
-    return origin
+
+    local decoded_key = ngx_decode_base64(origin)
+    if not decoded_key then
+        core.log.error("base64 decode ssl key failed. key[", origin, "] ")
+        return nil
+    end
+
+    for _, aes_128_cbc_with_iv in ipairs(aes_128_cbc_with_iv_tbl) do
+        local decrypted = aes_128_cbc_with_iv:decrypt(decoded_key)
+        if decrypted then
+            return decrypted
+        end
+    end
+
+    core.log.error("decrypt ssl key failed")
+
+    return nil
 end
 
 

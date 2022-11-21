@@ -59,6 +59,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  \
             "conf" : [
                 {"name": "ext-plugin-A", "value": "{\"enable\":\"feature\"}"}
             ]
+        }
     },
     "upstream": {
         "type": "roundrobin",

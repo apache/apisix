@@ -2,10 +2,9 @@
 title: limit-count
 keywords:
   - APISIX
-  - Plugin
+  - API Gateway
   - Limit Count
-  - limit-count
-description: This document contains information about the Apache APISIX limit-count Plugin.
+description: This document contains information about the Apache APISIX limit-count Plugin, you can use it to limit the number of requests to your service by a given count per time.
 ---
 
 <!--
@@ -29,7 +28,7 @@ description: This document contains information about the Apache APISIX limit-co
 
 ## Description
 
-The `limit-count` Plugin limits the number of requests to your service by a given count per time.
+The `limit-count` Plugin limits the number of requests to your service by a given count per time. The plugin is using Fixed Window algorithm.
 
 ## Attributes
 
@@ -57,8 +56,9 @@ The `limit-count` Plugin limits the number of requests to your service by a give
 
 You can enable the Plugin on a Route as shown below:
 
-```bash
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -81,8 +81,9 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 
 You can also configure the `key_type` to `var_combination` as shown:
 
-```bash
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -103,12 +104,11 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-<!-- ![Add limit-count plugin.](../../../assets/images/plugin/limit-count-1.png) -->
-
 You can also create a group to share the same counter across multiple Routes:
 
-```bash
-curl -i http://127.0.0.1:9180/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "limit-count": {
@@ -130,34 +130,37 @@ curl -i http://127.0.0.1:9180/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f0343
 
 Now every Route which belongs to group `services_1#1640140620` (or the service with ID `1`) will share the same counter.
 
-```bash
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "service_id": "1",
     "uri": "/hello"
 }'
 ```
 
-```bash
-curl -i http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/routes/2 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "service_id": "1",
     "uri": "/hello2"
 }'
 ```
 
-```bash
+```shell
 curl -i http://127.0.0.1:9080/hello
 ```
 
-```bash
+```shell
 HTTP/1.1 200 ...
 ```
 
 You can also share the same limit counter for all your requests by setting the `key_type` to `constant`:
 
-```bash
-curl -i http://127.0.0.1:9180/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "limit-count": {
@@ -178,14 +181,21 @@ curl -i http://127.0.0.1:9180/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f0343
 }'
 ```
 
-Now every request will share the same count limitation regardless of their remote address.
+The above configuration means that when the `group` attribute of the `limit-count` plugin is configured to `services_1#1640140620` for multiple routes, requests to those routes will share the same counter, even if the requests come from different IP addresses.
+
+:::note
+
+The configuration of `limit-count` in the same `group` must be consistent. If you want to change the configuration, you need to update the value of the corresponding `group` at the same time.
+
+:::
 
 For cluster-level traffic limiting, you can use a Redis server. The counter will be shared between different APISIX nodes to achieve traffic limiting.
 
 The example below shows how you can use the `redis` policy:
 
-```bash
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -213,8 +223,9 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 
 Similarly you can also configure the `redis-cluster` policy:
 
-```bash
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -245,11 +256,11 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
 
 The above configuration limits to 2 requests in 60 seconds. The first two requests will work and the response headers will contain the headers `X-RateLimit-Limit` and `X-RateLimit-Remaining`:
 
-```bash
+```shell
 curl -i http://127.0.0.1:9080/index.html
 ```
 
-```bash
+```shell
 HTTP/1.1 200 OK
 Content-Type: text/html
 Content-Length: 13175
@@ -261,25 +272,17 @@ Server: APISIX web server
 
 When you visit for a third time in the 60 seconds, you will receive a response with 503 code:
 
-```bash
+```shell
 HTTP/1.1 503 Service Temporarily Unavailable
 Content-Type: text/html
 Content-Length: 194
 Connection: keep-alive
 Server: APISIX web server
-
-<html>
-<head><title>503 Service Temporarily Unavailable</title></head>
-<body>
-<center><h1>503 Service Temporarily Unavailable</h1></center>
-<hr><center>openresty</center>
-</body>
-</html>
 ```
 
 You can also set a custom response by configuring the `rejected_msg` attribute:
 
-```bash
+```shell
 HTTP/1.1 503 Service Temporarily Unavailable
 Content-Type: text/html
 Content-Length: 194
@@ -293,8 +296,9 @@ Server: APISIX web server
 
 To disable the `limit-count` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
-```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",

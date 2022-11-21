@@ -150,7 +150,7 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 
 		errorLog, err := utils.Log(apisixPod, cliSet.KubeCli, timeStart)
 		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Ω(errorLog).Should(gomega.ContainSubstring("no healthy etcd endpoint available"))
+		gomega.Ω(errorLog).Should(gomega.ContainSubstring("invalid response code: 502"))
 	})
 
 	ginkgo.It("ingress bandwidth per second not change much", func() {

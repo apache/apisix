@@ -46,7 +46,7 @@ For Route:
 
 | Name             | Type    | Required | Default | Description                                                            |
 |------------------|---------|----------|---------|------------------------------------------------------------------------|
-| hide_credentials | boolean | False    | false   | Set to true to pass the authorization request headers to the Upstream. |
+| hide_credentials | boolean | False    | false   | Set to true will not pass the authorization request headers to the Upstream. |
 
 ## Enabling the Plugin
 
@@ -127,7 +127,7 @@ HTTP/1.1 401 Unauthorized
 To disable the `jwt-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

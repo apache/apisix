@@ -1,5 +1,11 @@
 ---
 title: 常见问题
+keywords:
+  - APISIX
+  - API 网关
+  - 常见问题
+  - FAQ
+description: 本文列举了使用 Apache APISIX 时常见问题解决方法。
 ---
 
 <!--
@@ -284,6 +290,18 @@ nginx_config:
 
 2. 重启或者重新加载 APISIX。
 
+## 启用 SSL 证书后，为什么无法通过 HTTPS + IP 访问对应的路由？
+
+如果直接使用 HTTPS + IP 地址访问服务器，服务器将会使用 IP 地址与绑定的 SNI 进行比对，由于 SSL 证书是和域名进行绑定的，无法在 SNI 中找到对应的资源，因此证书就会校验失败，进而导致用户无法通过 HTTPS + IP 访问网关。
+
+此时你可以通过在配置文件中设置 `fallback_sni` 参数，并配置域名，实现该功能。当用户使用 HTTPS + IP 访问网关时，SNI 为空时，则 fallback 到默认 SNI，从而实现 HTTPS + IP 访问网关。
+
+```yaml title="./conf/config.yaml"
+apisix
+  ssl：
+    fallback_sni: "${your sni}"
+```
+
 ## APISIX 如何利用 etcd 如何实现毫秒级别的配置同步？
 
 Apache APISIX 使用 etcd 作为它的配置中心。etcd 提供以下订阅功能（比如：[watch](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watch)、[watchdir](https://github.com/api7/lua-resty-etcd/blob/master/api_v3.md#watchdir)）。它可以监视对特定关键字或目录的更改。
@@ -368,10 +386,11 @@ make: *** [deps] Error 1
 1. 为 Apache APISIX 代理和 Admin API 配置不同的端口，或者禁用 Admin API。
 
 ```yaml
-apisix:
-  admin_listen: # use a separate port
-    ip: 127.0.0.1
-    port: 9180
+deployment:
+  admin:
+    admin_listen: # use a separate port
+      ip: 127.0.0.1
+      port: 9180
 ```
 
 2、添加 APISIX Dashboard 的代理路由：
@@ -457,17 +476,17 @@ curl http://127.0.0.1:9080/ip -i
 
 ## Admin API 的 `X-API-KEY` 指的是什么？是否可以修改？
 
-Admin API 的 `X-API-KEY` 指的是 `./conf/config.yaml` 文件中的 `apisix.admin_key.key`，默认值是 `edd1c9f034335f136f87ad84b625c8f1`。它是 Admin API 的访问 token。
+Admin API 的 `X-API-KEY` 指的是 `./conf/config.yaml` 文件中的 `deployment.admin.admin_key.key`，默认值是 `edd1c9f034335f136f87ad84b625c8f1`。它是 Admin API 的访问 token。
 
 默认情况下，它被设置为 `edd1c9f034335f136f87ad84b625c8f1`，也可以通过修改 `./conf/conf/config` 中的参数来修改，如下示例：
 
 ```yaml
-apisix:
-  admin_key
-    -
-      name: "admin"
-      key: newkey
-      role: admin
+deployment:
+  admin:
+    admin_key
+      - name: "admin"
+        key: newkey
+        role: admin
 ```
 
 然后访问 Admin API：
@@ -502,9 +521,10 @@ Apache APISIX 默认只允许 `127.0.0.0/24` 的 IP 段范围访问 `Admin API`�
 如果你想允许所有的 IP 访问，只需在 `./conf/config.yaml` 配置文件中添加如下的配置，然后重启或重新加载 APISIX 就可以让所有 IP 访问 `Admin API`。
 
 ```yaml
-apisix:
-  allow_admin:
-    - 0.0.0.0/0
+deployment:
+  admin:
+    allow_admin:
+      - 0.0.0.0/0
 ```
 
 **注意**：你可以在非生产环境中使用此方法，以允许所有客户端从任何地方访问 Apache APISIX 实例，但是在生产环境中该设置并不安全。在生产环境中，请仅授权特定的 IP 地址或地址范围访问 Apache APISIX 实例。
@@ -624,6 +644,58 @@ curl http://127.0.0.1:9180/apisix/admin/routes/health-info \
 这个方式只是探测 APISIX 数据平面是否存活，并不代表 APISIX 的路由和其他功能是正常的，这些需要更多路由级别的探测。
 
 :::
+
+## APISIX 与 [etcd](https://etcd.io/) 相关的延迟较高的问题有哪些，如何修复？
+
+etcd 作为 APISIX 的数据存储组件，它的稳定性关乎 APISIX 的稳定性。在实际场景中，如果 APISIX 使用证书通过 HTTPS 的方式连接 etcd，可能会出现以下 2 种数据查询或写入延迟较高的问题：
+
+1. 通过接口操作 APISIX Admin API 进行数据的查询或写入，延迟较高。
+2. 在监控系统中，Prometheus 抓取 APISIX 数据面 Metrics 接口超时。
+
+这些延迟问题，严重影响了 APISIX 的服务稳定性，而之所以会出现这类问题，主要是因为 etcd 对外提供了 2 种操作方式：HTTP（HTTPS）、gRPC。而 APISIX 是基于 HTTP（HTTPS）协议来操作 etcd 的。
+
+在这个场景中，etcd 存在一个关于 HTTP/2 的 BUG：如果通过 HTTPS 操作 etcd（HTTP 不受影响），HTTP/2 的连接数上限为 Golang 默认的 `250` 个。
+
+所以，当 APISIX 数据面节点数较多时，一旦所有 APISIX 节点与 etcd 连接数超过这个上限，则 APISIX 的接口响应会非常的慢。
+
+Golang 中，默认的 HTTP/2 上限为 `250`，代码如下：
+
+```go
+package http2
+
+import ...
+
+const (
+    prefaceTimeout         = 10 * time.Second
+    firstSettingsTimeout   = 2 * time.Second // should be in-flight with preface anyway
+    handlerChunkWriteSize  = 4 << 10
+    defaultMaxStreams      = 250 // TODO: make this 100 as the GFE seems to?
+    maxQueuedControlFrames = 10000
+)
+
+```
+
+目前，etcd 官方主要维护了 `3.4` 和 `3.5` 这两个主要版本。在 `3.4` 系列中，近期发布的 `3.4.20` 版本已修复了这个问题。至于 `3.5` 版本，其实，官方很早之前就在筹备发布 `3.5.5` 版本了，但截止目前（2022.09.13）仍尚未发布。所以，如果你使用的是 etcd 的版本小于 `3.5.5`，可以参考以下几种方式解决这个问题：
+
+1. 将 APISIX 与 etcd 的通讯方式由 HTTPS 改为 HTTP。
+2. 将 etcd 版本回退到 `3.4.20`。
+3. 将 etcd 源码克隆下来，直接编译 `release-3.5` 分支（此分支已修复，只是尚未发布新版本而已）。
+
+重新编译 etcd 的方式如下：
+
+```shell
+git checkout release-3.5
+make GOOS=linux GOARCH=amd64
+```
+
+编译的二进制在 `bin` 目录下，将其替换掉你服务器环境的 etcd 二进制后，然后重启 etcd 即可。
+
+更多信息，请参考：
+
+- [when etcd node have many http long polling connections, it may cause etcd to respond slowly to http requests.](https://github.com/etcd-io/etcd/issues/14185)
+- [bug: when apisix starts for a while, its communication with etcd starts to time out](https://github.com/apache/apisix/issues/7078)
+- [the prometheus metrics API is tool slow](https://github.com/apache/apisix/issues/7353)
+- [Support configuring `MaxConcurrentStreams` for http2](https://github.com/etcd-io/etcd/pull/14169)
 
 ## 如果在使用 APISIX 过程中遇到问题，我可以在哪里寻求更多帮助？
 

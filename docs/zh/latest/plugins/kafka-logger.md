@@ -35,14 +35,21 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 
 | 名称                   | 类型    | 必选项 | 默认值          | 有效值                | 描述                                             |
 | ---------------------- | ------- | ------ | -------------- | --------------------- | ------------------------------------------------ |
-| broker_list            | object  | 是     |                |                       | 需要推送的 Kafka 的 broker 列表。                  |
+| broker_list            | object  | 是     |                |                       | 已废弃，现使用 `brokers` 属性代替。原指需要推送的 Kafka 的 broker 列表。                  |
+| brokers                | array   | 是     |                |                       | 需要推送的 Kafka 的 broker 列表。                   |
+| brokers.host           | string  | 是     |                |                       | Kafka broker 的节点 host 配置，例如 `192.168.1.1`                     |
+| brokers.port           | string  | 是     |                |                       | Kafka broker 的节点端口配置                         |
+| brokers.sasl_config    | object  | 否     |                |                       | Kafka broker 中的 sasl_config                     |
+| brokers.sasl_config.mechanism  | string  | 否     | "PLAIN"          | ["PLAIN"]   | Kafka broker 中的 sasl 认证机制                     |
+| brokers.sasl_config.user       | string  | 是     |                  |             | Kafka broker 中 sasl 配置中的 user，如果 sasl_config 存在，则必须填写                 |
+| brokers.sasl_config.password   | string  | 是     |                  |             | Kafka broker 中 sasl 配置中的 password，如果 sasl_config 存在，则必须填写             |
 | kafka_topic            | string  | 是     |                |                       | 需要推送的 topic。                                 |
 | producer_type          | string  | 否     | async          | ["async", "sync"]     | 生产者发送消息的模式。          |
 | required_acks          | integer | 否     | 1              | [0, 1, -1]            | 生产者在确认一个请求发送完成之前需要收到的反馈信息的数量。该参数是为了保证发送请求的可靠性。该属性的配置与 Kafka `acks` 属性相同，具体配置请参考 [Apache Kafka 文档](https://kafka.apache.org/documentation/#producerconfigs_acks)。  |
 | key                    | string  | 否     |                |                       | 用于消息分区而分配的密钥。                             |
 | timeout                | integer | 否     | 3              | [1,...]               | 发送数据的超时时间。                             |
 | name                   | string  | 否     | "kafka logger" |                       | batch processor 的唯一标识。                     |
-| meta_format            | enum    | 否     | "default"      | ["default"，"origin"] | `default`：获取请求信息以默认的 JSON 编码方式。`origin`：获取请求信息以 HTTP 原始请求方式。更多信息，请参考 [meta_format](#meta_format-参考示例)。|
+| meta_format            | enum    | 否     | "default"      | ["default"，"origin"] | `default`：获取请求信息以默认的 JSON 编码方式。`origin`：获取请求信息以 HTTP 原始请求方式。更多信息，请参考 [meta_format](#meta_format-示例)。|
 | include_req_body       | boolean | 否     | false          | [false, true]         | 当设置为 `true` 时，包含请求体。**注意**：如果请求体无法完全存放在内存中，由于 NGINX 的限制，APISIX 无法将它记录下来。|
 | include_req_body_expr  | array   | 否     |                |                       | 当 `include_req_body` 属性设置为 `true` 时进行过滤。只有当此处设置的表达式计算结果为 `true` 时，才会记录请求体。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
 | include_resp_body      | boolean | 否     | false          | [false, true]         | 当设置为 `true` 时，包含响应体。 |
@@ -162,10 +169,12 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 {
     "plugins": {
        "kafka-logger": {
-           "broker_list" :
-             {
-               "127.0.0.1":9092
-             },
+            "brokers" : [
+              {
+               "host": "127.0.0.1",
+               "port": 9092
+              }
+            ],
            "kafka_topic" : "test2",
            "key" : "key1"
        }
@@ -183,10 +192,16 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 该插件还支持一次推送到多个 Broker，示例如下：
 
 ```json
-{
-    "127.0.0.1":9092,
-    "127.0.0.1":9093
-}
+"brokers" : [
+    {
+      "host" :"127.0.0.1",
+      "port" : 9092
+    },
+    {
+      "host" :"127.0.0.1",
+      "port" : 9093
+    }
+],
 ```
 
 ## 测试插件

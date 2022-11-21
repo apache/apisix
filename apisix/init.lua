@@ -30,6 +30,7 @@ local core            = require("apisix.core")
 local conf_server     = require("apisix.conf_server")
 local plugin          = require("apisix.plugin")
 local plugin_config   = require("apisix.plugin_config")
+local consumer_group  = require("apisix.consumer_group")
 local script          = require("apisix.script")
 local service_fetch   = require("apisix.http.service").get
 local admin_init      = require("apisix.admin.init")
@@ -55,6 +56,7 @@ local re_split        = require("ngx.re").split
 local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
+local type            = type
 local pairs           = pairs
 local control_api_router
 
@@ -109,6 +111,13 @@ function _M.http_init_worker()
     -- for testing only
     core.log.info("random test in [1, 10000]: ", math.random(1, 10000))
 
+    -- Because go's scheduler doesn't work after fork, we have to load the gRPC module
+    -- in each worker.
+    core.grpc = require("apisix.core.grpc")
+    if type(core.grpc) ~= "table" then
+        core.grpc = nil
+    end
+
     local we = require("resty.worker.events")
     local ok, err = we.configure({shm = "worker-events", interval = 0.1})
     if not ok then
@@ -139,6 +148,7 @@ function _M.http_init_worker()
     require("apisix.http.service").init_worker()
     plugin_config.init_worker()
     require("apisix.consumer").init_worker()
+    consumer_group.init_worker()
 
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()
@@ -152,6 +162,9 @@ end
 
 
 function _M.http_exit_worker()
+    -- TODO: we can support stream plugin later - currently there is not `destory` method
+    -- in stream plugins
+    plugin.exit_worker()
     require("apisix.plugins.ext-plugin.init").exit_worker()
 end
 
@@ -172,6 +185,22 @@ function _M.http_ssl_phase()
         end
         ngx_exit(-1)
     end
+end
+
+
+local function stash_ngx_ctx()
+    local ref = ctxdump.stash_ngx_ctx()
+    core.log.info("stash ngx ctx: ", ref)
+    ngx_var.ctx_ref = ref
+end
+
+
+local function fetch_ctx()
+    local ref = ngx_var.ctx_ref
+    core.log.info("fetch ngx ctx: ", ref)
+    local ctx = ctxdump.apply_ngx_ctx(ref)
+    ngx_var.ctx_ref = ''
+    return ctx
 end
 
 
@@ -228,6 +257,16 @@ local function set_upstream_headers(api_ctx, picked_server)
     local proto = api_ctx.var.http_x_forwarded_proto
     if proto then
         api_ctx.var.var_x_forwarded_proto = proto
+    end
+
+    local x_forwarded_host = api_ctx.var.http_x_forwarded_host
+    if x_forwarded_host then
+        api_ctx.var.var_x_forwarded_host = x_forwarded_host
+    end
+
+    local port = api_ctx.var.http_x_forwarded_port
+    if port then
+        api_ctx.var.var_x_forwarded_port = port
     end
 end
 
@@ -314,6 +353,115 @@ local function common_phase(phase_name)
     end
 
     return plugin.run_plugin(phase_name, nil, api_ctx)
+end
+
+
+
+function _M.handle_upstream(api_ctx, route, enable_websocket)
+    local up_id = route.value.upstream_id
+
+    -- used for the traffic-split plugin
+    if api_ctx.upstream_id then
+        up_id = api_ctx.upstream_id
+    end
+
+    if up_id then
+        local upstream = apisix_upstream.get_by_id(up_id)
+        if not upstream then
+            if is_http then
+                return core.response.exit(502)
+            end
+
+            return ngx_exit(1)
+        end
+
+        api_ctx.matched_upstream = upstream
+
+    else
+        if route.has_domain then
+            local err
+            route, err = parse_domain_in_route(route)
+            if err then
+                core.log.error("failed to get resolved route: ", err)
+                return core.response.exit(500)
+            end
+
+            api_ctx.conf_version = route.modifiedIndex
+            api_ctx.matched_route = route
+        end
+
+        local route_val = route.value
+
+        api_ctx.matched_upstream = (route.dns_value and
+                                    route.dns_value.upstream)
+                                   or route_val.upstream
+    end
+
+    if api_ctx.matched_upstream and api_ctx.matched_upstream.tls and
+        api_ctx.matched_upstream.tls.client_cert_id then
+
+        local cert_id = api_ctx.matched_upstream.tls.client_cert_id
+        local upstream_ssl = router.router_ssl.get_by_id(cert_id)
+        if not upstream_ssl or upstream_ssl.type ~= "client" then
+            local err  = upstream_ssl and
+                "ssl type should be 'client'" or
+                "ssl id [" .. cert_id .. "] not exits"
+            core.log.error("failed to get ssl cert: ", err)
+
+            if is_http then
+                return core.response.exit(502)
+            end
+
+            return ngx_exit(1)
+        end
+
+        core.log.info("matched ssl: ",
+                  core.json.delay_encode(upstream_ssl, true))
+        api_ctx.upstream_ssl = upstream_ssl
+    end
+
+    if enable_websocket then
+        api_ctx.var.upstream_upgrade    = api_ctx.var.http_upgrade
+        api_ctx.var.upstream_connection = api_ctx.var.http_connection
+        core.log.info("enabled websocket for route: ", route.value.id)
+    end
+
+    -- load balancer is not required by kafka upstream, so the upstream
+    -- node selection process is intercepted and left to kafka to
+    -- handle on its own
+    if api_ctx.matched_upstream and api_ctx.matched_upstream.scheme == "kafka" then
+        return pubsub_kafka.access(api_ctx)
+    end
+
+    local code, err = set_upstream(route, api_ctx)
+    if code then
+        core.log.error("failed to set upstream: ", err)
+        core.response.exit(code)
+    end
+
+    local server, err = load_balancer.pick_server(route, api_ctx)
+    if not server then
+        core.log.error("failed to pick server: ", err)
+        return core.response.exit(502)
+    end
+
+    api_ctx.picked_server = server
+
+    set_upstream_headers(api_ctx, server)
+
+    -- run the before_proxy method in access phase first to avoid always reinit request
+    common_phase("before_proxy")
+
+    local up_scheme = api_ctx.upstream_scheme
+    if up_scheme == "grpcs" or up_scheme == "grpc" then
+        stash_ngx_ctx()
+        return ngx.exec("@grpc_pass")
+    end
+
+    if api_ctx.dubbo_proxy_enabled then
+        stash_ngx_ctx()
+        return ngx.exec("@dubbo_pass")
+    end
 end
 
 
@@ -417,10 +565,6 @@ function _M.http_access_phase()
     api_ctx.route_id = route.value.id
     api_ctx.route_name = route.value.name
 
-    local ref = ctxdump.stash_ngx_ctx()
-    core.log.info("stash ngx ctx: ", ref)
-    ngx_var.ctx_ref = ref
-
     -- run global rule
     plugin.run_global_rules(api_ctx, router.global_rules, nil)
 
@@ -435,9 +579,21 @@ function _M.http_access_phase()
         plugin.run_plugin("rewrite", plugins, api_ctx)
         if api_ctx.consumer then
             local changed
+            local group_conf
+
+            if api_ctx.consumer.group_id then
+                group_conf = consumer_group.get(api_ctx.consumer.group_id)
+                if not group_conf then
+                    core.log.error("failed to fetch consumer group config by ",
+                        "id: ", api_ctx.consumer.group_id)
+                    return core.response.exit(503)
+                end
+            end
+
             route, changed = plugin.merge_consumer_route(
                 route,
                 api_ctx.consumer,
+                group_conf,
                 api_ctx
             )
 
@@ -456,117 +612,7 @@ function _M.http_access_phase()
         plugin.run_plugin("access", plugins, api_ctx)
     end
 
-    local up_id = route.value.upstream_id
-
-    -- used for the traffic-split plugin
-    if api_ctx.upstream_id then
-        up_id = api_ctx.upstream_id
-    end
-
-    if up_id then
-        local upstream = apisix_upstream.get_by_id(up_id)
-        if not upstream then
-            if is_http then
-                return core.response.exit(502)
-            end
-
-            return ngx_exit(1)
-        end
-
-        api_ctx.matched_upstream = upstream
-
-    else
-        if route.has_domain then
-            local err
-            route, err = parse_domain_in_route(route)
-            if err then
-                core.log.error("failed to get resolved route: ", err)
-                return core.response.exit(500)
-            end
-
-            api_ctx.conf_version = route.modifiedIndex
-            api_ctx.matched_route = route
-        end
-
-        local route_val = route.value
-
-        api_ctx.matched_upstream = (route.dns_value and
-                                    route.dns_value.upstream)
-                                   or route_val.upstream
-    end
-
-    if api_ctx.matched_upstream and api_ctx.matched_upstream.tls and
-        api_ctx.matched_upstream.tls.client_cert_id then
-
-        local cert_id = api_ctx.matched_upstream.tls.client_cert_id
-        local upstream_ssl = router.router_ssl.get_by_id(cert_id)
-        if not upstream_ssl or upstream_ssl.type ~= "client" then
-            local err  = upstream_ssl and
-                "ssl type should be 'client'" or
-                "ssl id [" .. cert_id .. "] not exits"
-            core.log.error("failed to get ssl cert: ", err)
-
-            if is_http then
-                return core.response.exit(502)
-            end
-
-            return ngx_exit(1)
-        end
-
-        core.log.info("matched ssl: ",
-                  core.json.delay_encode(upstream_ssl, true))
-        api_ctx.upstream_ssl = upstream_ssl
-    end
-
-    if enable_websocket then
-        api_ctx.var.upstream_upgrade    = api_ctx.var.http_upgrade
-        api_ctx.var.upstream_connection = api_ctx.var.http_connection
-        core.log.info("enabled websocket for route: ", route.value.id)
-    end
-
-    -- load balancer is not required by kafka upstream, so the upstream
-    -- node selection process is intercepted and left to kafka to
-    -- handle on its own
-    if api_ctx.matched_upstream and api_ctx.matched_upstream.scheme == "kafka" then
-        return pubsub_kafka.access(api_ctx)
-    end
-
-    local code, err = set_upstream(route, api_ctx)
-    if code then
-        core.log.error("failed to set upstream: ", err)
-        core.response.exit(code)
-    end
-
-    local server, err = load_balancer.pick_server(route, api_ctx)
-    if not server then
-        core.log.error("failed to pick server: ", err)
-        return core.response.exit(502)
-    end
-
-    api_ctx.picked_server = server
-
-    set_upstream_headers(api_ctx, server)
-
-    -- run the before_proxy method in access phase first to avoid always reinit request
-    common_phase("before_proxy")
-
-    local up_scheme = api_ctx.upstream_scheme
-    if up_scheme == "grpcs" or up_scheme == "grpc" then
-        return ngx.exec("@grpc_pass")
-    end
-
-    if api_ctx.dubbo_proxy_enabled then
-        return ngx.exec("@dubbo_pass")
-    end
-end
-
-
-local function fetch_ctx()
-    local ref = ngx_var.ctx_ref
-    core.log.info("fetch ngx ctx: ", ref)
-    local ctx = ctxdump.apply_ngx_ctx(ref)
-    ngx_var.ctx_ref = ''
-    return ctx
+    _M.handle_upstream(api_ctx, route, enable_websocket)
 end
 
 
@@ -617,16 +663,6 @@ end
 
 
 function _M.http_header_filter_phase()
-    if ngx_var.ctx_ref ~= '' then
-        -- prevent for the table leak
-        local stash_ctx = fetch_ctx()
-
-        -- internal redirect, so we should apply the ctx
-        if ngx_var.from_error_page == "true" then
-            ngx.ctx = stash_ctx
-        end
-    end
-
     core.response.set_header("Server", ver_header)
 
     local up_status = get_var("upstream_status")
@@ -712,16 +748,6 @@ end
 
 
 function _M.http_log_phase()
-    if ngx_var.ctx_ref ~= '' then
-        -- prevent for the table leak
-        local stash_ctx = fetch_ctx()
-
-        -- internal redirect, so we should apply the ctx
-        if ngx_var.from_error_page == "true" then
-            ngx.ctx = stash_ctx
-        end
-    end
-
     local api_ctx = common_phase("log")
     if not api_ctx then
         return
@@ -759,7 +785,7 @@ end
 
 local function cors_admin()
     local_conf = core.config.local_conf()
-    if local_conf.apisix and not local_conf.apisix.enable_admin_cors then
+    if not core.table.try_read_attr(local_conf, "deployment", "admin", "enable_admin_cors") then
         return
     end
 

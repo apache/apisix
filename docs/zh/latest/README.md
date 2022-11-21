@@ -40,7 +40,7 @@ Apache APISIX 的技术架构如下图所示：
 
 - 邮件列表 - 发送任意内容到 dev-subscribe@apisix.apache.org 后，根据回复以订阅邮件列表。
 - QQ 群 - 781365357
-- Slack - [查看加入方式](https://apisix.apache.org/docs/general/join/#join-the-slack-channel)
+- Slack - [查看加入方式](https://apisix.apache.org/zh/docs/general/join/#join-the-slack-channel)
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - 使用标签 `#ApacheAPISIX` 关注我们并与我们互动。
 - [哔哩哔哩](https://space.bilibili.com/551921247)
 - **新手任务列表**
@@ -89,7 +89,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
     - [Serverless](plugins/serverless.md)：在 APISIX 的每一个阶段，你都可以添加并调用自己编写的函数。
     - 动态负载均衡：动态支持有权重的 round-robin 负载平衡。
     - 支持一致性 hash 的负载均衡：动态支持一致性 hash 的负载均衡。
-    - [健康检查](health-check.md)：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
+    - [健康检查](./tutorials/health-check.md)：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
     - 熔断器：智能跟踪不健康上游服务。
     - [代理镜像](plugins/proxy-mirror.md)：提供镜像客户端请求的能力。
     - [流量拆分](plugins/traffic-split.md)：允许用户逐步控制各个上游之间的流量百分比。
@@ -143,7 +143,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
     - 高性能：在单核上 QPS 可以达到 18k，同时延迟只有 0.2 毫秒。
     - [故障注入](plugins/fault-injection.md)
     - [REST Admin API](admin-api.md)：使用 REST Admin API 来控制 Apache APISIX，默认只允许 127.0.0.1 访问，你可以修改 `conf/config.yaml` 中的 `allow_admin` 字段，指定允许调用 Admin API 的 IP 列表。同时需要注意的是，Admin API 使用 key auth 来校验调用者身份，**在部署前需要修改 `conf/config.yaml` 中的 `admin_key` 字段，来保证安全。**
-    - 外部日志记录器：将访问日志导出到外部日志管理工具。（[HTTP Logger](plugins/http-logger.md)、[TCP Logger](plugins/tcp-logger.md)、[Kafka Logger](plugins/kafka-logger.md)、[UDP Logger](plugins/udp-logger.md)、[RocketMQ Logger](plugins/rocketmq-logger.md)、[SkyWalking Logger](plugins/skywalking-logger.md)、[Alibaba Cloud Logging(SLS)](plugins/sls-logger.md)、[Google Cloud Logging](plugins/google-cloud-logging.md)、[Splunk HEC Logging](plugins/splunk-hec-logging.md)、[File Logger](plugins/file-logger.md)、[Elasticsearch Logger](plugins/elasticsearch-logger.md)）
+    - 外部日志记录器：将访问日志导出到外部日志管理工具。（[HTTP Logger](plugins/http-logger.md)、[TCP Logger](plugins/tcp-logger.md)、[Kafka Logger](plugins/kafka-logger.md)、[UDP Logger](plugins/udp-logger.md)、[RocketMQ Logger](plugins/rocketmq-logger.md)、[SkyWalking Logger](plugins/skywalking-logger.md)、[Alibaba Cloud Logging(SLS)](plugins/sls-logger.md)、[Google Cloud Logging](plugins/google-cloud-logging.md)、[Splunk HEC Logging](plugins/splunk-hec-logging.md)、[File Logger](plugins/file-logger.md)、[Elasticsearch Logger](plugins/elasticsearch-logger.md)、[TencentCloud CLS](plugins/tencent-cloud-cls.md)）
     - [Helm charts](https://github.com/apache/apisix-helm-chart)
 
 - **高度可扩展**
@@ -167,11 +167,11 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 
 1. 安装
 
-   请参考[APISIX 安装指南](./installation-guide.md)。
+   请参考[APISIX 安装指南](https://apisix.apache.org/zh/docs/apisix/installation-guide/)。
 
 2. 入门指南
 
-   入门指南是学习 APISIX 基础知识的好方法。按照 [入门指南](getting-started.md)的步骤即可。
+   入门指南是学习 APISIX 基础知识的好方法。按照 [入门指南](https://apisix.apache.org/zh/docs/apisix/getting-started/)的步骤即可。
 
    更进一步，你可以跟着文档来尝试更多的[插件](plugins)。
 
@@ -184,7 +184,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
    可以参考[插件开发指南](plugin-develop.md)，以及示例插件 `example-plugin` 的代码实现。
    阅读[插件概念](terminology/plugin.md) 会帮助你学到更多关于插件的知识。
 
-更多文档请参考 [Apache APISIX 文档站](https://apisix.apache.org/docs/apisix/getting-started/)。
+更多文档请参考 [Apache APISIX 文档站](https://apisix.apache.org/zh/docs/apisix/getting-started/)。
 
 ## 性能测试
 

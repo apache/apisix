@@ -62,6 +62,7 @@ __DATA__
 
 --- response_body
 real-ip
+ai
 client-control
 proxy-control
 request-id
@@ -78,6 +79,7 @@ csrf
 uri-blocker
 request-validation
 openid-connect
+cas-auth
 authz-casbin
 authz-casdoor
 wolf-rbac
@@ -375,10 +377,7 @@ qr/\{"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\
 
 
 === TEST 12: confirm the scope of plugin
---- yaml_config
-apisix:
-  node_listen: 1984
-  admin_key: null
+--- extra_yaml_config
 plugins:
   - batch-requests
   - error-log-logger

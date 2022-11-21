@@ -33,6 +33,13 @@ local yaml_conf, err = file.read_yaml_conf("t/servroot")
 if not yaml_conf then
     error(err)
 end
+
+if yaml_conf.deployment.role == "data_plane" and
+    yaml_conf.deployment.config_provider == "yaml"
+    or yaml_conf.deployment.config_provider == "xds" then
+    return
+end
+
 local ok, err = schema.validate(yaml_conf)
 if not ok then
     error(err)

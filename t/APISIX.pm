@@ -33,6 +33,13 @@ my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
 $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
 $ENV{TEST_NGINX_FAST_SHUTDOWN} ||= 1;
 
+Test::Nginx::Socket::set_http_config_filter(sub {
+    my $config = shift;
+    my $snippet = `$apisix_home/t/bin/gen_snippet.lua conf_server`;
+    $config .= $snippet;
+    return $config;
+});
+
 sub read_file($) {
     my $infile = shift;
     open my $in, "$apisix_home/$infile"
@@ -90,13 +97,14 @@ my $ssl_ecc_crt = read_file("t/certs/apisix_ecc.crt");
 my $ssl_ecc_key = read_file("t/certs/apisix_ecc.key");
 my $test2_crt = read_file("t/certs/test2.crt");
 my $test2_key = read_file("t/certs/test2.key");
+my $etcd_pem = read_file("t/certs/etcd.pem");
+my $etcd_key = read_file("t/certs/etcd.key");
 $user_yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
   stream_proxy:
     tcp:
       - 9100
-  admin_key: null
   enable_resolv_search_opt: false
 _EOC_
 
@@ -104,9 +112,13 @@ my $etcd_enable_auth = $ENV{"ETCD_ENABLE_AUTH"} || "false";
 
 if ($etcd_enable_auth eq "true") {
     $user_yaml_config .= <<_EOC_;
-etcd:
-  user: root
-  password: 5tHkHhYkjr6cQY
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    user: root
+    password: 5tHkHhYkjr6cQY
 _EOC_
 }
 
@@ -177,6 +189,19 @@ my $grpc_location = <<_EOC_;
                 apisix.grpc_access_phase()
             }
 
+_EOC_
+
+if ($version =~ m/\/apisix-nginx-module/) {
+    $grpc_location .= <<_EOC_;
+            grpc_set_header   ":authority" \$upstream_host;
+_EOC_
+} else {
+    $grpc_location .= <<_EOC_;
+            grpc_set_header   "Host" \$upstream_host;
+_EOC_
+}
+
+$grpc_location .= <<_EOC_;
             grpc_set_header   Content-Type application/grpc;
             grpc_socket_keepalive on;
             grpc_pass         \$upstream_scheme://apisix_backend;
@@ -220,8 +245,11 @@ add_block_preprocessor(sub {
         $user_yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
     enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 _EOC_
     }
 
@@ -241,6 +269,8 @@ _EOC_
 
     if ($version =~ m/\/apisix-nginx-module/) {
         $main_config .= <<_EOC_;
+thread_pool grpc-client-nginx-module threads=1;
+
 lua {
     lua_shared_dict prometheus-metrics 15m;
 }
@@ -463,6 +493,11 @@ _EOC_
 
     $block->set_value("main_config", $main_config);
 
+    # The new directive is introduced here to modify the schema
+    # before apisix validate in require("apisix")
+    # Todo: merge extra_init_by_lua_start and extra_init_by_lua
+    my $extra_init_by_lua_start = $block->extra_init_by_lua_start // "";
+
     my $extra_init_by_lua = $block->extra_init_by_lua // "";
     my $init_by_lua_block = $block->init_by_lua_block // <<_EOC_;
     if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
@@ -472,11 +507,19 @@ _EOC_
 
     require "resty.core"
 
+    $extra_init_by_lua_start
+
     apisix = require("apisix")
     local args = {
         dns_resolver = $dns_addrs_tbl_str,
     }
     apisix.http_init(args)
+
+    -- set apisix_lua_home into constans module
+    -- it may be used by plugins to determine the work path of apisix
+    local constants = require("apisix.constants")
+    constants.apisix_lua_home = "$apisix_home"
+
     $extra_init_by_lua
 _EOC_
 
@@ -505,9 +548,12 @@ _EOC_
     lua_shared_dict etcd-cluster-health-check 10m; # etcd health check
     lua_shared_dict ext-plugin 1m;
     lua_shared_dict kubernetes 1m;
+    lua_shared_dict kubernetes-first 1m;
+    lua_shared_dict kubernetes-second 1m;
     lua_shared_dict tars 1m;
     lua_shared_dict xds-config 1m;
     lua_shared_dict xds-config-version 1m;
+    lua_shared_dict cas_sessions 10m;
 
     proxy_ssl_name \$upstream_host;
     proxy_ssl_server_name on;
@@ -518,8 +564,6 @@ _EOC_
     underscores_in_headers on;
     lua_socket_log_errors off;
     client_body_buffer_size 8k;
-
-    error_page 500 \@50x.html;
 
     variables_hash_bucket_size 128;
 
@@ -597,21 +641,6 @@ _EOC_
 
             more_clear_headers Date;
         }
-
-        # this configuration is needed as error_page is configured in http block
-        location \@50x.html {
-            set \$from_error_page 'true';
-            content_by_lua_block {
-                require("apisix.error_handling").handle_500()
-            }
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
-        }
     }
 
     $a6_ngx_directives
@@ -687,20 +716,6 @@ _EOC_
             }
         }
 
-        location \@50x.html {
-            set \$from_error_page 'true';
-            content_by_lua_block {
-                require("apisix.error_handling").handle_500()
-            }
-            header_filter_by_lua_block {
-                apisix.http_header_filter_phase()
-            }
-
-            log_by_lua_block {
-                apisix.http_log_phase()
-            }
-        }
-
         location /v1/ {
             content_by_lua_block {
                 apisix.http_control()
@@ -716,7 +731,6 @@ _EOC_
             set \$upstream_host               \$http_host;
             set \$upstream_uri                '';
             set \$ctx_ref                     '';
-            set \$from_error_page             '';
 
             set \$upstream_cache_zone            off;
             set \$upstream_cache_key             '';
@@ -756,12 +770,6 @@ _EOC_
 
             if (\$http_x_forwarded_for != "") {
                 set \$var_x_forwarded_for "\${http_x_forwarded_for}, \${realip_remote_addr}";
-            }
-            if (\$http_x_forwarded_host != "") {
-                set \$var_x_forwarded_host \$http_x_forwarded_host;
-            }
-            if (\$http_x_forwarded_port != "") {
-                set \$var_x_forwarded_port \$http_x_forwarded_port;
             }
 
             proxy_set_header   X-Forwarded-For      \$var_x_forwarded_for;
@@ -819,6 +827,19 @@ _EOC_
 
     my $yaml_config = $block->yaml_config // $user_yaml_config;
 
+    my $default_deployment = <<_EOC_;
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+_EOC_
+
+    if ($yaml_config !~ m/deployment:/) {
+        $yaml_config = $default_deployment . $yaml_config;
+    }
+
     if ($block->extra_yaml_config) {
         $yaml_config .= $block->extra_yaml_config;
     }
@@ -845,6 +866,10 @@ $ssl_ecc_key
 $test2_crt
 >>> ../conf/cert/test2.key
 $test2_key
+>>> ../conf/cert/etcd.pem
+$etcd_pem
+>>> ../conf/cert/etcd.key
+$etcd_key
 $user_apisix_yaml
 _EOC_
 
