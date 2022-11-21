@@ -331,8 +331,6 @@ GET /echo HTTP/1.1
 X-Forwarded-Host: apisix.ai
 --- response_headers
 X-Forwarded-Host: test.com
---- no_error_log
-[error]
 
 
 
@@ -372,8 +370,6 @@ X-Forwarded-Host: test.com
     }
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -385,8 +381,6 @@ test: sssss
 test: bbb
 --- response_headers
 test: sssss, bbb, 123
---- no_error_log
-[error]
 
 
 
@@ -397,8 +391,6 @@ GET /echo HTTP/1.1
 test: sssss
 --- response_headers
 test: sssss, 123
---- no_error_log
-[error]
 
 
 
@@ -409,8 +401,6 @@ GET /echo HTTP/1.1
 hello: word
 --- response_headers
 hello:
---- no_error_log
-[error]
 
 
 
@@ -419,8 +409,6 @@ hello:
 GET /echo HTTP/1.1
 --- response_headers
 test2: 2233
---- no_error_log
-[error]
 
 
 
@@ -467,5 +455,3 @@ passed
 GET /echo HTTP/1.1
 --- response_headers
 test: test_in_set
---- no_error_log
-[error]
