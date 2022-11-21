@@ -64,8 +64,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -99,8 +97,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -117,8 +113,6 @@ passed
 GET /t
 --- response_body
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -136,8 +130,6 @@ GET /t
 GET /t
 --- response_body
 [delete] code: 404
---- no_error_log
-[error]
 
 
 
@@ -186,8 +178,6 @@ GET /t
 --- response_body
 [push] code: 200 message: passed
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -233,8 +223,6 @@ GET /t
 GET /t
 --- response_body
 [push] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -284,8 +272,6 @@ GET /t
 GET /t
 --- response_body
 [push] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -314,8 +300,6 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- no_error_log
-[error]
 
 
 
@@ -341,8 +325,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"wrong service id"}
---- no_error_log
-[error]
 
 
 
@@ -373,8 +355,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -400,8 +380,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -427,8 +405,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -454,8 +430,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"upstream_id\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -481,8 +455,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to fetch upstream info by upstream id [9999999999], response code: 404"}
---- no_error_log
-[error]
 
 
 
@@ -507,8 +479,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"wrong service id, do not need it"}
---- no_error_log
-[error]
 
 
 
@@ -534,8 +504,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"wrong service id, do not need it"}
---- no_error_log
-[error]
 
 
 
@@ -577,8 +545,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -614,8 +580,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -657,8 +621,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -689,8 +651,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"missing key"}
---- no_error_log
-[error]
 
 
 
@@ -722,8 +682,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"missing key"}
---- no_error_log
-[error]
 
 
 
@@ -755,8 +713,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"missing key"}
---- no_error_log
-[error]
 
 
 
@@ -787,5 +743,3 @@ GET /t
 GET /t
 --- response_body
 200 passed
---- no_error_log
-[error]

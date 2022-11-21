@@ -68,8 +68,6 @@ Host: test.com
 qr/1980/
 --- error_log
 use config_provider: yaml
---- no_error_log
-[error]
 
 
 
@@ -103,8 +101,6 @@ Host: test.com
 qr/1981/
 --- error_log
 use config_provider: yaml
---- no_error_log
-[error]
 
 
 
@@ -137,8 +133,6 @@ Host: test.com
 qr/1980/
 --- error_log
 use config_provider: yaml
---- no_error_log
-[error]
 
 
 
@@ -171,5 +165,3 @@ Host: test.com
 qr/1981/
 --- error_log
 use config_provider: yaml
---- no_error_log
-[error]

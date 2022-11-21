@@ -61,8 +61,6 @@ __DATA__
     }
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -101,8 +99,6 @@ GET /t
     }
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -141,5 +137,3 @@ GET /t
     }
 --- request
 GET /t
---- no_error_log
-[error]

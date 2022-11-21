@@ -22,6 +22,9 @@ no_root_location();
 no_shuffle();
 workers(4);
 
+our $token_file = "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token";
+our $token_value = eval {`cat $token_file 2>/dev/null`};
+
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -31,6 +34,15 @@ routes: []
 _EOC_
 
     $block->set_value("apisix_yaml", $apisix_yaml);
+
+    my $main_config = $block->main_config // <<_EOC_;
+env MyPort=6443;
+env KUBERNETES_SERVICE_HOST=127.0.0.1;
+env KUBERNETES_SERVICE_PORT=6443;
+env KUBERNETES_CLIENT_TOKEN=$::token_value;
+_EOC_
+
+    $block->set_value("main_config", $main_config);
 
     my $config = $block->config // <<_EOC_;
 
@@ -102,7 +114,9 @@ deployment:
   role_data_plane:
     config_provider: yaml
 discovery:
-  kubernetes: {}
+  kubernetes:
+    client:
+        token: ${KUBERNETES_CLIENT_TOKEN}
 --- request
 GET /compare
 {
@@ -112,7 +126,7 @@ GET /compare
     "port": "${KUBERNETES_SERVICE_PORT}"
   },
   "client": {
-    "token_file": "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
   "shared_size": "1m",
   "default_weight": 50
@@ -135,7 +149,8 @@ deployment:
 discovery:
   kubernetes:
     service: {}
-    client: {}
+    client:
+        token: ${KUBERNETES_CLIENT_TOKEN}
 --- request
 GET /compare
 {
@@ -145,7 +160,7 @@ GET /compare
     "port": "${KUBERNETES_SERVICE_PORT}"
   },
   "client": {
-    "token_file": "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
   "shared_size": "1m",
   "default_weight": 50
@@ -170,6 +185,8 @@ discovery:
     service:
         host: "sample.com"
     shared_size: "2m"
+    client:
+        token: ${KUBERNETES_CLIENT_TOKEN}
 --- request
 GET /compare
 {
@@ -179,7 +196,7 @@ GET /compare
     "port": "${KUBERNETES_SERVICE_PORT}"
   },
   "client": {
-    "token_file" : "/var/run/secrets/kubernetes.io/serviceaccount/token"
+    "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
   "shared_size": "2m",
   "default_weight": 50
@@ -201,21 +218,19 @@ deployment:
     config_provider: yaml
 discovery:
   kubernetes:
-    service:
-        schema: "http"
     client:
-        token: "test"
+        token: ${KUBERNETES_CLIENT_TOKEN}
     default_weight: 33
 --- request
 GET /compare
 {
   "service": {
-    "schema": "http",
+    "schema": "https",
     "host": "${KUBERNETES_SERVICE_HOST}",
     "port": "${KUBERNETES_SERVICE_PORT}"
   },
   "client": {
-    "token": "test"
+    "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
   "shared_size": "1m",
   "default_weight": 33
@@ -228,6 +243,9 @@ true
 
 
 === TEST 5: multi cluster mode configuration
+--- http_config
+lua_shared_dict kubernetes-debug 1m;
+lua_shared_dict kubernetes-release 1m;
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -242,14 +260,14 @@ discovery:
         host: "1.cluster.com"
         port: "6445"
     client:
-        token: "token"
+        token: ${KUBERNETES_CLIENT_TOKEN}
   - id: "release"
     service:
         schema: "http"
         host: "2.cluster.com"
         port: "${MyPort}"
     client:
-        token_file: "/var/token"
+        token: ${KUBERNETES_CLIENT_TOKEN}
     default_weight: 33
     shared_size: "2m"
 --- request
@@ -263,7 +281,7 @@ GET /compare
       "port": "6445"
     },
     "client": {
-      "token": "token"
+      "token": "${KUBERNETES_CLIENT_TOKEN}"
     },
     "default_weight": 50,
     "shared_size": "1m"
@@ -276,7 +294,7 @@ GET /compare
       "port": "${MyPort}"
     },
     "client": {
-      "token_file": "/var/token"
+      "token": "${KUBERNETES_CLIENT_TOKEN}"
     },
     "default_weight": 33,
     "shared_size": "2m"

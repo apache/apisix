@@ -51,8 +51,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -96,8 +94,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -107,7 +103,5 @@ GET /hello
 --- response_body
 hello world
 --- wait: 0.5
---- no_error_log
-[error]
 --- error_log eval
 qr/send data to kafka: \{.*"host":"localhost"/

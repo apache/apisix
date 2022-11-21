@@ -360,8 +360,6 @@ passed
 --- error_log
 RPC is not finished
 call pingpong's log, ctx unfinished: true
---- no_error_log
-[error]
 
 
 

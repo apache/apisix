@@ -41,8 +41,6 @@ __DATA__
 PUT /apisix/admin/routes/1
 {"uri":"/server_port","upstream":{"type":"roundrobin","nodes":{"127.0.0.1:1980":1,"127.0.0.1:1981":1},"checks":{"active":{"http_path":"/status","host":"foo.com","healthy":{"interval":1,"successes":1},"unhealthy":{"interval":1,"http_failures":2}}}}}
 --- error_code_like: ^20\d$
---- no_error_log
-[error]
 
 
 
@@ -95,8 +93,6 @@ try to release checker: table: 0x
 PUT /apisix/admin/routes/1
 {"uri":"/server_port","upstream":{"type":"roundrobin","nodes":{"127.0.0.1:1980":1,"127.0.0.1:1981":1},"checks":{"active":{"http_path":"/status","host":"foo.com","healthy":{"interval":1,"successes":1},"unhealthy":{"interval":1,"http_failures":2}}}}}
 --- error_code: 201
---- no_error_log
-[error]
 
 
 

@@ -42,8 +42,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -66,8 +64,6 @@ GET /t
 --- response_body
 property "i" is required
 done
---- no_error_log
-[error]
 
 
 
@@ -89,8 +85,6 @@ GET /t
 --- response_body
 property "i" validation failed: expected -1 to be at least 0
 done
---- no_error_log
-[error]
 
 
 
@@ -112,8 +106,6 @@ GET /t
 --- response_body
 property "s" validation failed: wrong type: expected string, got number
 done
---- no_error_log
-[error]
 
 
 
@@ -135,8 +127,6 @@ GET /t
 --- response_body
 property "t" validation failed: expect array to have at least 1 items
 done
---- no_error_log
-[error]
 
 
 
@@ -218,8 +208,6 @@ qr/module 'apisix.plugins.not-exist-plugin' not found/
 GET /t
 --- response_body
 plugin [example-plugin] config: {"i":1,"s":"s","t":[1,2]}
---- no_error_log
-[error]
 
 
 
@@ -252,8 +240,6 @@ plugin [example-plugin] config: {"i":1,"s":"s","t":[1,2]}
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -262,8 +248,6 @@ passed
 GET /server_port
 --- response_body_like eval
 qr/1981/
---- no_error_log
-[error]
 
 
 
@@ -287,8 +271,6 @@ qr/1981/
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -312,8 +294,6 @@ done
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -346,8 +326,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -361,5 +339,3 @@ plugin body_filter phase, eof: false
 plugin delayed_body_filter phase, eof: false
 plugin body_filter phase, eof: true
 plugin delayed_body_filter phase, eof: true
---- no_error_log
-[error]

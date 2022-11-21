@@ -70,8 +70,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -109,8 +107,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -129,8 +125,6 @@ passed
 GET /t
 --- response_body
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -149,8 +143,6 @@ GET /t
 GET /t
 --- response_body
 [delete] code: 404
---- no_error_log
-[error]
 
 
 
@@ -213,8 +205,6 @@ GET /t
 --- response_body
 [push] code: 200 message: passed
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -268,8 +258,6 @@ GET /t
 GET /t
 --- response_body
 [push] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -320,8 +308,6 @@ GET /t
 GET /t
 --- response_body
 [push] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -352,8 +338,6 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body_like
---- no_error_log
-[error]
 
 
 
@@ -379,8 +363,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"methods\" validation failed: failed to validate item 1: matches none of the enum values"}
---- no_error_log
-[error]
 
 
 
@@ -406,8 +388,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"service_id\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -433,8 +413,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to fetch service info by service id [99999999999999], response code: 404"}
---- no_error_log
-[error]
 
 
 
@@ -460,8 +438,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"wrong route id"}
---- no_error_log
-[error]
 
 
 
@@ -487,8 +463,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -514,8 +488,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -541,8 +513,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"upstream_id\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -568,8 +538,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to fetch upstream info by upstream id [99999999], response code: 404"}
---- no_error_log
-[error]
 
 
 
@@ -596,8 +564,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"wrong route id, do not need it"}
---- no_error_log
-[error]
 
 
 
@@ -623,8 +589,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"wrong route id, do not need it"}
---- no_error_log
-[error]
 
 
 
@@ -665,8 +629,6 @@ GET /t
 GET /t
 --- response_body
 [push] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -710,8 +672,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -743,8 +703,6 @@ GET /t
 --- error_code: 400
 --- response_body_like
 {"error_msg":"invalid configuration: property \\"host\\" validation failed: failed to match pattern .*
---- no_error_log
-[error]
 
 
 
@@ -776,5 +734,3 @@ GET /t
 --- error_code: 400
 --- response_body_like
 {"error_msg":"invalid configuration: property \\"host\\" validation failed: failed to match pattern .*
---- no_error_log
-[error]

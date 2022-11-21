@@ -81,8 +81,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -92,8 +90,6 @@ GET /not_found
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -103,8 +99,6 @@ GET /name/json2/foo
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -114,8 +108,6 @@ GET /name/json/
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -125,8 +117,6 @@ GET /name//bar
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -136,8 +126,6 @@ GET /name/json/bar
 --- error_code: 404
 --- response_body eval
 qr/404 Not Found/
---- no_error_log
-[error]
 
 
 
@@ -181,8 +169,6 @@ qr/404 Not Found/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -192,8 +178,6 @@ GET /json/foo
 --- error_code: 404
 --- response_body eval
 qr/404 Not Found/
---- no_error_log
-[error]
 
 
 
@@ -203,8 +187,6 @@ GET /json/bbb/foo
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -278,8 +260,6 @@ GET /json/bbb/foo
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -290,5 +270,3 @@ Host: www.foo.com
 GET /john/hello
 --- response_body
 hello world
---- no_error_log
-[error]

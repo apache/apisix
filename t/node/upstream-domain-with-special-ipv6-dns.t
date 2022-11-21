@@ -67,7 +67,5 @@ upstreams:
 GET /hello
 --- error_log
 connect to [::1]:1053
---- no_error_log
-[error]
 --- response_body
 hello world

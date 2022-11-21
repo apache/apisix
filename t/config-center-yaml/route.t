@@ -52,8 +52,6 @@ GET /hello
 hello world
 --- error_log
 use config_provider: yaml
---- no_error_log
-[error]
 
 
 
@@ -75,8 +73,6 @@ GET /hello
 --- error_code: 404
 --- error_log
 use config_provider: yaml
---- no_error_log
-[error]
 
 
 
@@ -99,8 +95,6 @@ host: foo.com
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -146,8 +140,6 @@ routes:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -239,6 +231,8 @@ routes:
 --- request
 GET /hello
 --- error_code: 404
+--- error_log
+failed to validate the 'vars' expression
 
 
 
@@ -265,6 +259,8 @@ routes:
 --- request
 GET /hello
 --- error_code: 200
+--- error_log
+missing loaded script object
 
 
 
@@ -289,8 +285,6 @@ host: v1_test-api.com
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
