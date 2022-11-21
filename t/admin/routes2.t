@@ -56,8 +56,6 @@ GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/property \\"remote_addrs\\" validation failed:/
---- no_error_log
-[error]
 
 
 
@@ -91,8 +89,6 @@ GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/property \\"remote_addrs\\" validation failed:/
---- no_error_log
-[error]
 
 
 
@@ -127,8 +123,6 @@ qr/property \\"remote_addrs\\" validation failed:/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -162,8 +156,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to validate the 'vars' expression: invalid operator '='"}
---- no_error_log
-[error]
 
 
 
@@ -206,8 +198,6 @@ GET /t
 GET /t
 --- response_body
 {"value":{"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/not_unwanted_data_post"}}
---- no_error_log
-[error]
 
 
 
@@ -248,8 +238,6 @@ GET /t
 GET /t
 --- response_body
 {"key":"/apisix/routes/1","value":{"id":1,"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index.html"}}
---- no_error_log
-[error]
 
 
 
@@ -289,8 +277,6 @@ GET /t
 GET /t
 --- response_body
 {"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index"}}
---- no_error_log
-[error]
 
 
 
@@ -326,8 +312,6 @@ GET /t
 GET /t
 --- response_body
 {"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index"}}
---- no_error_log
-[error]
 
 
 
@@ -355,8 +339,6 @@ GET /t
 GET /t
 --- response_body
 {"deleted":"1","key":"/apisix/routes/1"}
---- no_error_log
-[error]
 
 
 
@@ -389,8 +371,6 @@ GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/property \\"remote_addrs\\" validation failed:/
---- no_error_log
-[error]
 
 
 
@@ -422,8 +402,6 @@ GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/property \\"uris\\" validation failed:/
---- no_error_log
-[error]
 
 
 
@@ -456,8 +434,6 @@ GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/property \\"hosts\\" validation failed:/
---- no_error_log
-[error]
 
 
 
@@ -490,8 +466,6 @@ GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/value should match only one schema/
---- no_error_log
-[error]
 
 
 
@@ -524,8 +498,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"only one of remote_addr or remote_addrs is allowed"}
---- no_error_log
-[error]
 
 
 
@@ -578,8 +550,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -614,8 +584,6 @@ GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/invalid configuration: property \\"labels\\" validation failed/
---- no_error_log
-[error]
 
 
 
@@ -648,8 +616,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to fetch plugin config info by plugin config id [not_found], response code: 404"}
---- no_error_log
-[error]
 
 
 
@@ -685,5 +651,3 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]

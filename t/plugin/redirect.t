@@ -48,8 +48,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -74,8 +72,6 @@ done
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -107,8 +103,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -118,8 +112,6 @@ GET /hello
 --- response_headers
 Location: /test/add
 --- error_code: 301
---- no_error_log
-[error]
 
 
 
@@ -151,8 +143,6 @@ Location: /test/add
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -162,8 +152,6 @@ GET /hello
 --- response_headers
 Location: /hello/test/add
 --- error_code: 301
---- no_error_log
-[error]
 
 
 
@@ -195,8 +183,6 @@ Location: /hello/test/add
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -206,8 +192,6 @@ GET /hello?name=json
 --- response_headers
 Location: /hello/test/ajsonc
 --- error_code: 302
---- no_error_log
-[error]
 
 
 
@@ -239,8 +223,6 @@ Location: /hello/test/ajsonc
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -250,8 +232,6 @@ GET /hello?name=json
 --- response_headers
 Location: /foo$/hello
 --- error_code: 302
---- no_error_log
-[error]
 
 
 
@@ -283,8 +263,6 @@ Location: /foo$/hello
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -294,8 +272,6 @@ GET /hello
 --- response_headers
 Location: \$uri/foo/hello\$uri/bar
 --- error_code: 301
---- no_error_log
-[error]
 
 
 
@@ -327,8 +303,6 @@ Location: \$uri/foo/hello\$uri/bar
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -338,8 +312,6 @@ GET /hello
 --- response_headers
 Location: /hello//bar
 --- error_code: 301
---- no_error_log
-[error]
 
 
 
@@ -379,8 +351,6 @@ Location: /hello//bar
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -423,8 +393,6 @@ Location: https://foo.com/hello
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -538,8 +506,6 @@ Location: https://foo.com/hello
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -584,8 +550,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/error_msg":"failed to check the configuration of plugin redirect err: value should match only one schema, but matches both schemas 1 and 3/
---- no_error_log
-[error]
 
 
 
@@ -623,8 +587,6 @@ qr/error_msg":"failed to check the configuration of plugin redirect err: value s
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -665,8 +627,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -774,8 +734,6 @@ close: 1 nil}
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -787,8 +745,6 @@ Host: test.com
 --- response_headers
 Location: https://test.com:9443/hello-https
 --- error_code: 308
---- no_error_log
-[error]
 
 
 
@@ -800,8 +756,6 @@ Host: test.com
 --- response_headers
 Location: https://test.com:9443/hello-https
 --- error_code: 301
---- no_error_log
-[error]
 
 
 
@@ -813,8 +767,6 @@ Host: test.com
 --- response_headers
 Location: https://test.com:9443/hello-https
 --- error_code: 301
---- no_error_log
-[error]
 
 
 
@@ -852,8 +804,6 @@ Location: https://test.com:9443/hello-https
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -863,8 +813,6 @@ GET /test/1
 --- response_headers
 Location: http://test.com/1
 --- error_code: 301
---- no_error_log
-[error]
 
 
 
@@ -874,8 +822,6 @@ GET /hello
 --- error_code: 200
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -914,8 +860,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -926,8 +870,6 @@ GET /test/with%20space
 --- response_headers
 Location: http://test.com/with%20space
 --- error_code: 301
---- no_error_log
-[error]
 
 
 
@@ -960,8 +902,6 @@ Location: http://test.com/with%20space
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -971,8 +911,6 @@ GET /hello/with%20space
 --- response_headers
 Location: /hello/with%20space
 --- error_code: 301
---- no_error_log
-[error]
 
 
 
@@ -1005,8 +943,6 @@ Location: /hello/with%20space
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1016,8 +952,6 @@ GET /hello?name=json
 --- response_headers
 Location: /hello?name=json
 --- error_code: 302
---- no_error_log
-[error]
 
 
 
@@ -1050,8 +984,6 @@ Location: /hello?name=json
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1061,8 +993,6 @@ GET /hello?name=json
 --- response_headers
 Location: /hello?type=string&name=json
 --- error_code: 302
---- no_error_log
-[error]
 
 
 
@@ -1101,8 +1031,6 @@ Location: /hello?type=string&name=json
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1148,5 +1076,3 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/error_msg":"failed to check the configuration of plugin redirect err: only one of `http_to_https` and `append_query_string` can be configured."/
---- no_error_log
-[error]

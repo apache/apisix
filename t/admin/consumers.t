@@ -54,8 +54,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -111,8 +109,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -146,8 +142,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -169,8 +163,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -190,8 +182,6 @@ passed
 GET /t
 --- response_body
 [delete] code: 404
---- no_error_log
-[error]
 
 
 
@@ -221,8 +211,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"username\" is required"}
---- no_error_log
-[error]
 
 
 
@@ -264,8 +252,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -294,8 +280,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"labels\" validation failed: failed to validate env (matching \".*\"): wrong type: expected string, got table"}
---- no_error_log
-[error]
 
 
 
@@ -318,8 +302,6 @@ GET /t
 --- error_code: 405
 --- response_body
 {"error_msg":"not supported `POST` method for consumer"}
---- no_error_log
-[error]
 
 
 
@@ -355,8 +337,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -378,5 +358,3 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
