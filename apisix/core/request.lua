@@ -23,8 +23,10 @@ local lfs = require("lfs")
 local log = require("apisix.core.log")
 local io = require("apisix.core.io")
 local ngx_req
+local req_add_header
 if ngx.config.subsystem == "http" then
     ngx_req = require "ngx.req"
+    req_add_header = ngx_req.add_header
 end
 local is_apisix_or, a6_request = pcall(require, "resty.apisix.request")
 local ngx = ngx
@@ -41,7 +43,7 @@ local req_get_body_file = ngx.req.get_body_file
 local req_get_post_args = ngx.req.get_post_args
 local req_get_uri_args = ngx.req.get_uri_args
 local req_set_uri_args = ngx.req.set_uri_args
-local req_add_header = ngx_req.add_header
+
 
 
 local _M = {}
