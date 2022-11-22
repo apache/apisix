@@ -54,8 +54,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -65,8 +63,6 @@ GET /not_found
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -76,8 +72,6 @@ GET /hello?k=not-hit
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -86,8 +80,6 @@ GET /hello?k=not-hit
 GET /hello?k=v
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -120,8 +112,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -131,8 +121,6 @@ GET /hello
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -144,8 +132,6 @@ GET /hello
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -156,8 +142,6 @@ Cookie: k=v; kkk=vvv;
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -190,8 +174,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -201,8 +183,6 @@ GET /hello
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -214,8 +194,6 @@ GET /hello
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -226,8 +204,6 @@ k: v
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -260,8 +236,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -271,8 +245,6 @@ GET /hello
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -284,8 +256,6 @@ GET /hello
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -297,8 +267,6 @@ k: header
 GET /hello?k=uri_arg
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -331,8 +299,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -342,8 +308,6 @@ GET /hello
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -354,8 +318,6 @@ POST /hello
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -368,8 +330,6 @@ Content-Type: multipart/form-data
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -381,5 +341,3 @@ k=post_form
 Content-Type: application/x-www-form-urlencoded
 --- response_body
 hello world
---- no_error_log
-[error]

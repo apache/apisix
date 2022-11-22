@@ -62,10 +62,6 @@ _EOC_
         $block->set_value("request", "GET /t");
     }
 
-    if (!$block->no_error_log && !$block->error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     $block;
 });
 

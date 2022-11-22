@@ -26,10 +26,6 @@ add_block_preprocessor( sub{
         $block->set_value("request", "GET /t");
     }
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     my $TEST_NGINX_HTML_DIR ||= html_dir();
 
     my $config = <<_EOC_;
@@ -55,8 +51,23 @@ location /t {
 
             local sess, err = sock:sslhandshake(nil, "www.test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
-                return
+                sock = ngx.socket.tcp()
+
+                sock:settimeout(2000)
+
+                local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+                if not ok then
+                    ngx.say("failed to connect: ", err)
+                    return
+                end
+
+                ngx.say("connected: ", ok)
+
+                sess, err = sock:sslhandshake(nil, "www.test.com", true)
+                if not sess then
+                    ngx.say("failed to do SSL handshake: ", err)
+                    return
+                end
             end
 
             ngx.say("ssl handshake: ", sess ~= nil)
@@ -254,9 +265,7 @@ received: Connection: close
 received: Server: APISIX/\d\.\d+(\.\d+)?
 received: \nreceived: hello world
 close: 1 nil}
---- error_log
-server name: "www.test.com"
-[alert]
+--- ignore_error_log
 
 
 

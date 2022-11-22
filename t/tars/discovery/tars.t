@@ -152,10 +152,6 @@ _EOC_
 
     $block->set_value("config", $config);
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
 });
 
 run_tests();

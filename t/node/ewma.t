@@ -53,8 +53,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -101,8 +99,6 @@ GET /t
 --- response_body
 [{"count":1,"port":"1981"},{"count":11,"port":"1980"}]
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
@@ -197,8 +193,6 @@ GET /t
 --- response_body
 {"count":1,"port":"1981"}
 --- error_code: 200
---- no_error_log
-[error]
 
 
 

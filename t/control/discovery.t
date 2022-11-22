@@ -23,14 +23,15 @@ no_shuffle();
 log_level("info");
 
 
+# Because this whole test file is only used to verify the configuration set or not,
+# but the configuration content is invalid, which contains non-exist consul server address,
+# so we have to ignore consul connect errors in some test cases.
+
+
 our $yaml_config = <<_EOC_;
 apisix:
   enable_control: true
   node_listen: 1984
-deployment:
-    role: data_plane
-    role_data_plane:
-        config_provider: yaml
 discovery:
   eureka:
     host:
@@ -77,6 +78,8 @@ GET /t
 --- response_body
 {}
 {"fetch_interval":3,"keepalive":true,"prefix":"upstreams","servers":["http://127.0.0.1:8500","http://127.0.0.1:8600"],"timeout":{"connect":2000,"read":2000,"wait":60},"weight":1}
+--- error_log
+connect consul
 
 
 
@@ -116,6 +119,8 @@ GET /t
 --- error_code: 200
 --- response_body
 passed
+--- error_log
+connect consul
 
 
 
@@ -124,6 +129,8 @@ passed
 --- request
 GET /v1/discovery/dns/dump
 --- error_code: 404
+--- error_log
+connect consul
 
 
 
@@ -132,10 +139,6 @@ GET /v1/discovery/dns/dump
 apisix:
   enable_control: true
   node_listen: 1984
-deployment:
-  role: data_plane
-  role_data_plane:
-    config_provider: yaml
 discovery:
   consul_kv:
     servers:
@@ -145,6 +148,8 @@ discovery:
 --- request
 GET /v1/discovery/eureka/dump
 --- error_code: 404
+--- error_log
+connect consul
 
 
 

@@ -15,7 +15,8 @@ jobs:
       - name: spell check
         run: |
           pip install codespell==2.1.0
-          git grep --cached -l '' | xargs codespell --ignore-words=.ignore_words
+          # codespell considers some repo name in go.sum are misspelled
+          git grep --cached -l '' | grep -v go.sum |xargs codespell --ignore-words=.ignore_words
       - name: Merge conflict
         run: |
           bash ./utils/check-merge-conflict.sh

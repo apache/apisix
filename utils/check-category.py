@@ -24,10 +24,9 @@ from os import path
 EXT = ".md"
 
 try:
-    UNICODE_EXISTS = bool(type(unicode))
-except:
-    # Py2
-    unicode = str
+    unicode  # Python 2
+except NameError:
+    unicode = str  # Python 3
 
 def collect_fn(entries, topic):
     if "id" in topic:

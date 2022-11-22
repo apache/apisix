@@ -51,8 +51,6 @@ __DATA__
     }
 --- response_body_like eval
 qr/\{"appid":"unset","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"\}/
---- no_error_log
-[error]
 
 
 
@@ -72,8 +70,6 @@ qr/\{"appid":"unset","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"
 --- response_body
 property "appid" validation failed: wrong type: expected string, got number
 done
---- no_error_log
-[error]
 
 
 
@@ -150,8 +146,6 @@ done
     }
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -184,8 +178,6 @@ passed
     }
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -198,8 +190,6 @@ Content-Type: application/x-www-form-urlencoded
 --- error_code: 400
 --- response_body_like eval
 qr/appid is missing/
---- no_error_log
-[error]
 
 
 
@@ -212,8 +202,6 @@ Content-Type: application/x-www-form-urlencoded
 --- error_code: 400
 --- response_body_like eval
 qr/appid not found/
---- no_error_log
-[error]
 
 
 
@@ -299,8 +287,6 @@ qr/ERR_PASSWORD_ERROR/
             ngx.status = code
         }
     }
---- no_error_log
-[error]
 
 
 
@@ -310,8 +296,6 @@ GET /hello
 --- error_code: 401
 --- response_body
 {"message":"Missing rbac token in request"}
---- no_error_log
-[error]
 
 
 
@@ -323,8 +307,6 @@ GET /hello
 x-rbac-token: invalid-rbac-token
 --- response_body
 {"message":"invalid rbac token: parse failed"}
---- no_error_log
-[error]
 
 
 
@@ -336,6 +318,8 @@ GET /hello
 x-rbac-token: V1#invalid-appid#rbac-token
 --- response_body
 {"message":"Invalid appid in rbac token"}
+--- error_log
+consumer [invalid-appid] not found
 
 
 
@@ -365,8 +349,6 @@ X-Username: admin
 X-Nickname: administrator
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -381,8 +363,6 @@ X-Username: admin
 X-Nickname: administrator
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -397,8 +377,6 @@ X-Username: admin
 X-Nickname: administrator
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -413,8 +391,6 @@ X-Username: admin
 X-Nickname: administrator
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -424,8 +400,6 @@ GET /apisix/plugin/wolf-rbac/user_info
 --- error_code: 401
 --- response_body
 {"message":"Missing rbac token in request"}
---- no_error_log
-[error]
 
 
 
@@ -437,8 +411,6 @@ GET /apisix/plugin/wolf-rbac/user_info
 x-rbac-token: invalid-rbac-token
 --- response_body
 {"message":"invalid rbac token: parse failed"}
---- no_error_log
-[error]
 
 
 
@@ -458,8 +430,6 @@ x-rbac-token: invalid-rbac-token
             ngx.status = code
         }
     }
---- no_error_log
-[error]
 
 
 
@@ -502,8 +472,6 @@ X-Username: admin
 X-Nickname: administrator
 --- response_body
 id:100,username:admin,nickname:administrator
---- no_error_log
-[error]
 
 
 

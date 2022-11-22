@@ -53,8 +53,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -95,8 +93,6 @@ passed
 GET /t
 --- response_body
 passed: 30
---- no_error_log
-[error]
 
 
 
@@ -129,8 +125,6 @@ passed: 30
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -151,5 +145,3 @@ passed
 GET /t
 --- response_body eval
 qr/ok: false err: .* invalid JSON type: invalid type/
---- no_error_log
-[error]
