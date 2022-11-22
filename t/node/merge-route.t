@@ -58,8 +58,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -93,8 +91,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -104,8 +100,6 @@ GET /not_found
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -117,8 +111,6 @@ X-RateLimit-Limit: 2
 X-RateLimit-Remaining: 1
 --- response_body eval
 qr/1981/
---- no_error_log
-[error]
 
 
 
@@ -147,8 +139,6 @@ qr/1981/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -160,8 +150,6 @@ X-RateLimit-Limit: 2
 X-RateLimit-Remaining: 1
 --- response_body eval
 qr/1980/
---- no_error_log
-[error]
 
 
 
@@ -200,8 +188,6 @@ qr/1980/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -212,8 +198,6 @@ GET /server_port
 qr/X-RateLimit-Limit/
 --- response_body eval
 qr/1980/
---- no_error_log
-[error]
 
 
 
@@ -270,8 +254,6 @@ qr/merge_service_route.*"time_window":60/]
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -304,8 +286,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -316,8 +296,6 @@ GET /fake
 host: httpbin.org
 --- response_body eval
 qr/"Host": "httpbin.org"/
---- no_error_log
-[error]
 --- timeout: 5
 
 
@@ -328,8 +306,6 @@ GET /fake
 --- more_headers
 host: httpbin.orgxxx
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
@@ -360,8 +336,6 @@ host: httpbin.orgxxx
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -387,8 +361,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -400,8 +372,6 @@ uri: /uri
 connection: close
 host: localhost
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 --- error_log
 enabled websocket for route: 33
 
@@ -425,8 +395,6 @@ enabled websocket for route: 33
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -470,8 +438,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -480,8 +446,6 @@ passed
 GET /hello
 --- response_body
 {"version":"v2"}
---- no_error_log
-[error]
 
 
 
@@ -538,8 +502,6 @@ GET /hello
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -548,5 +510,3 @@ passed
 GET /hello
 --- response_body
 {"version":"v2"}
---- no_error_log
-[error]

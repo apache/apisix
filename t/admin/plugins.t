@@ -29,10 +29,6 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    if (!defined $block->error_log && !defined $block->no_error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     $block;
 });
 
@@ -62,6 +58,7 @@ __DATA__
 
 --- response_body
 real-ip
+ai
 client-control
 proxy-control
 request-id
@@ -78,6 +75,7 @@ csrf
 uri-blocker
 request-validation
 openid-connect
+cas-auth
 authz-casbin
 authz-casdoor
 wolf-rbac
@@ -109,6 +107,7 @@ grpc-web
 public-api
 prometheus
 datadog
+elasticsearch-logger
 echo
 loggly
 http-logger
@@ -128,6 +127,7 @@ example-plugin
 aws-lambda
 azure-functions
 openwhisk
+openfunction
 serverless-post-function
 ext-plugin-post-req
 ext-plugin-post-resp
@@ -373,10 +373,7 @@ qr/\{"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\
 
 
 === TEST 12: confirm the scope of plugin
---- yaml_config
-apisix:
-  node_listen: 1984
-  admin_key: null
+--- extra_yaml_config
 plugins:
   - batch-requests
   - error-log-logger

@@ -27,18 +27,16 @@ add_block_preprocessor(sub {
     my $yaml_config = $block->yaml_config // <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
-    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
 
     if (!$block->request) {
         $block->set_value("request", "GET /hello");
-    }
-
-    if (!$block->error_log && !$block->no_error_log) {
-        $block->set_value("no_error_log", "[error]");
     }
 });
 
@@ -184,7 +182,7 @@ localhost
 
 
 
-=== TEST 6: pass duplicate  X-Forwarded-Proto
+=== TEST 6: pass duplicate X-Forwarded-Proto
 --- apisix_yaml
 routes:
   -
@@ -205,3 +203,30 @@ X-Forwarded-Proto: http
 X-Forwarded-Proto: grpc
 --- response_headers
 X-Forwarded-Proto: http
+
+
+
+=== TEST 7: customize X-Forwarded-Port
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /echo
+    plugins:
+        proxy-rewrite:
+            headers:
+                X-Forwarded-Port: 10080
+    upstream_id: 1
+upstreams:
+  -
+    id: 1
+    nodes:
+        "127.0.0.1:1980": 1
+    type: roundrobin
+#END
+--- request
+GET /echo
+--- more_headers
+X-Forwarded-Port: 8080
+--- response_headers
+X-Forwarded-Port: 10080

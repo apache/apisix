@@ -140,7 +140,7 @@ allow {
 Then, you can configure the `opa` Plugin on a specific Route:
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -258,7 +258,7 @@ reason = input'
 Now we can configure the Plugin on the Route to send APISIX data:
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -302,7 +302,7 @@ curl -X GET 127.0.0.1:9080/get
 To disable the `opa` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:2379/apisix/admin/routes/1 -X PUT -d value='
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

@@ -31,6 +31,18 @@ description: API 网关 Apache APISIX file-logger 插件可用于将日志数据
 
 `file-logger` 插件可用于将日志数据存储到指定位置。
 
+:::tip 提示
+
+`file-logger` 插件特点如下：
+
+- 可将指定路由的日志发送到指定位置，方便你在本地统计各个路由的请求和响应数据。在使用 [debug mode](../../../en/latest/debug-mode.md) 时，你可以很轻松地将出现问题的路由的日志输出到指定文件中，从而更方便地排查问题。
+- 可以获取 [APISIX 变量](../../../en/latest/apisix-variable.md)和 [NGINX 变量](http://nginx.org/en/docs/varindex.html)，而 `access.log` 仅能使用 NGINX 变量。
+- 支持热加载，你可以在路由中随时更改其配置并立即生效。而修改 `access.log` 相关配置，则需要重新加载 APISIX。
+- 支持以 JSON 格式保存日志数据。
+- 可以在 `log phase` 阶段修改 `file-logger` 执行的函数来收集你所需要的信息。
+
+:::
+
 ## 属性
 
 | 名称             | 类型     | 必选项 | 描述                                             |
@@ -41,12 +53,18 @@ description: API 网关 Apache APISIX file-logger 插件可用于将日志数据
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [Nginx 内置变量](http://nginx.org/en/docs/varindex.html)。请注意，**该设置是全局生效的**，因此在指定 `log_format` 后，将对所有绑定 `file-logger` 插件的路由或服务生效。 |
+| log_format       | object  | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+
+:::note 注意
+
+该设置全局生效。如果指定了 `log_format`，则所有绑定 `file-logger` 的路由或服务都将使用该日志格式。
+
+:::
 
 以下示例展示了如何通过 Admin API 配置插件元数据：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/file-logger \
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/file-logger \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "log_format": {
@@ -69,7 +87,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/file-logger \
 你可以通过以下命令在指定路由中启用该插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "plugins": {
@@ -108,7 +126,7 @@ hello, world
 当你需要禁用该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],

@@ -26,7 +26,6 @@ our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
     delete_uri_tail_slash: true
-    admin_key: null
 _EOC_
 
 run_tests();
@@ -62,8 +61,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -73,8 +70,6 @@ GET /hello
 --- yaml_config eval: $::yaml_config
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -83,5 +78,3 @@ hello world
 GET /hello/
 --- yaml_config eval: $::yaml_config
 --- error_code: 404
---- no_error_log
-[error]

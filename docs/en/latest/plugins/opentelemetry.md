@@ -46,6 +46,8 @@ The Plugin only supports binary-encoded [OLTP over HTTP](https://opentelemetry.i
 | sampler.options.root.options.fraction | number        | False    | 0                                               | [0, 1]                                                       | Root sampling probability for `trace_id_ratio`.                                                                                                                                                                                              |
 | additional_attributes                 | array[string] | False    |                                                 |                                                              | Variables and its values which will be appended to the trace span.                                                                                                                                                                           |
 | additional_attributes[0]              | string        | True     |                                                 |                                                              | APISIX or Nginx variables. For example, `http_header` or `route_id`.                                                                                                                                                                         |
+| additional_header_prefix_attributes   | array[string] | False    |                                                 |                                                              | Headers or headers prefixes to be appended to the trace span's attributes.                                                                                                                                                                   |
+| additional_header_prefix_attributes[0]| string        | True     |                                                 |                                                              | Request headers. For example, `x-my-header"` or `x-my-headers-*` to include all headers with the prefix `x-my-headers-`.                                                                                                                     |
 
 ### Configuring the collector
 
@@ -100,7 +102,7 @@ plugins:
 Now, you can enable the Plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uris": [
@@ -127,7 +129,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 To disable the `opentelemetry` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uris": [

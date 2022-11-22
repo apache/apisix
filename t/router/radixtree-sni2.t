@@ -49,12 +49,10 @@ location /t {
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "sni": "test.com"
-                    },
-                    "key": "/apisix/ssls/1"
-                }
+                "value": {
+                    "sni": "test.com"
+                },
+                "key": "/apisix/ssls/1"
             }]]
         )
         ngx.status = code
@@ -65,8 +63,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -170,14 +166,12 @@ location /t {
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "sni": "*.test2.com"
-                    },
-                    "key": "/apisix/ssls/1"
-                }
+                "value": {
+                    "sni": "*.test2.com"
+                },
+                "key": "/apisix/ssls/1"
             }]]
-            )
+        )
 
         ngx.status = code
         ngx.say(body)
@@ -187,8 +181,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -271,7 +263,7 @@ location /t {
         local code, body = t.test('/apisix/admin/ssls/1',
             ngx.HTTP_PUT,
             core.json.encode(data)
-            )
+        )
 
         ngx.status = code
         ngx.print(body)
@@ -282,6 +274,8 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to handle cert-key pair[1]: failed to decrypt previous encrypted key"}
+--- error_log
+decrypt ssl key failed
 
 
 
@@ -392,8 +386,6 @@ location /t {
 }
 --- request
 GET /t
---- no_error_log
-[error]
 --- response_body
 ssl handshake: true
 
@@ -423,8 +415,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -457,8 +447,6 @@ location /t {
 }
 --- request
 GET /t
---- no_error_log
-[error]
 --- response_body
 ssl handshake: true
 
@@ -488,8 +476,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -522,8 +508,6 @@ location /t {
 }
 --- request
 GET /t
---- no_error_log
-[error]
 --- response_body
 ssl handshake: true
 
@@ -571,8 +555,6 @@ location /t {
     end
 --- request
 GET /t
---- no_error_log
-[error]
 --- response_body
 ssl handshake: true
 --- grep_error_log eval

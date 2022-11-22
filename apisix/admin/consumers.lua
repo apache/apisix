@@ -18,11 +18,11 @@ local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
 local utils   = require("apisix.admin.utils")
 local plugin  = require("apisix.plugin")
-local v3_adapter = require("apisix.admin.v3_adapter")
 local pairs   = pairs
 
 local _M = {
     version = 0.1,
+    need_v3_filter = true,
 }
 
 
@@ -59,6 +59,22 @@ local function check_conf(username, conf)
 
         if count_auth_plugin == 0 then
             return nil, {error_msg = "require one auth plugin"}
+        end
+    end
+
+    if conf.group_id then
+        local key = "/consumer_groups/" .. conf.group_id
+        local res, err = core.etcd.get(key)
+        if not res then
+            return nil, {error_msg = "failed to fetch consumer group info by "
+                                     .. "consumer group id [" .. conf.group_id .. "]: "
+                                     .. err}
+        end
+
+        if res.status ~= 200 then
+            return nil, {error_msg = "failed to fetch consumer group info by "
+                                     .. "consumer group id [" .. conf.group_id .. "], "
+                                     .. "response code: " .. res.status}
         end
     end
 
@@ -103,7 +119,6 @@ function _M.get(consumer_name)
     end
 
     utils.fix_count(res.body, consumer_name)
-    v3_adapter.filter(res.body)
     return res.status, res.body
 end
 

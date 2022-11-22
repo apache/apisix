@@ -130,6 +130,29 @@ sudo yum install apisix-2.13.1
 
 :::
 
+### Installation via DEB repository
+
+Currently the only DEB repository supported by APISIX is Debian 11 (Bullseye) and supports both amd64 and arm64 architectures.
+
+```shell
+# amd64
+sudo echo "deb http://openresty.org/package/debian bullseye openresty" | tee /etc/apt/sources.list.d/openresty.list
+wget -O - http://repos.apiseven.com/pubkey.gpg | apt-key add -
+echo "deb http://repos.apiseven.com/packages/debian bullseye main" | tee /etc/apt/sources.list.d/apisix.list
+
+# arm64
+sudo echo "deb http://openresty.org/package/debian bullseye openresty" | tee /etc/apt/sources.list.d/openresty.list
+wget -O - http://repos.apiseven.com/pubkey.gpg | apt-key add -
+echo "deb http://repos.apiseven.com/packages/arm64/debian bullseye main" | tee /etc/apt/sources.list.d/apisix.list
+```
+
+Then, to install APISIX, run:
+
+```shell
+sudo apt update
+sudo apt install -y apisix=3.0.0-0
+```
+
 ### Installation via RPM offline package
 
 First, download APISIX RPM offline package to an `apisix` folder:
@@ -240,8 +263,13 @@ Now, if you decide you want to change the etcd address to `http://foo:2379`, you
 apisix:
   node_listen: 8000
 
-etcd:
-  host: "http://foo:2379"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://foo:2379"
 ```
 
 :::warning
@@ -267,18 +295,19 @@ It is recommended to modify the Admin API key to ensure security.
 You can update your configuration file as shown below:
 
 ```yaml title="conf/config.yaml"
-apisix:
-  admin_key
-    -
-      name: "admin"
-      key: newsupersecurekey
-      role: admin
+deployment:
+  admin:
+    admin_key
+      -
+        name: "admin"
+        key: newsupersecurekey
+        role: admin
 ```
 
 Now, to access the Admin API, you can use the new key:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes?api_key=newsupersecurekey -i
+curl http://127.0.0.1:9180/apisix/admin/routes?api_key=newsupersecurekey -i
 ```
 
 ### Adding APISIX systemd unit file

@@ -520,8 +520,272 @@ passed
 
 
 
-=== TEST 18: hit route: run proxy-rewrite plugin
+=== TEST 18: hit route: run global proxy-rewrite plugin
 --- request
 GET /hello1?version=v4
 --- response_headers
 x-api-version: v4
+
+
+
+=== TEST 19: different global_rules with the same plugin will not use the same meta.filter cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/global_rules/3',
+                ngx.HTTP_PUT,
+                {
+                    plugins = {
+                        ["proxy-rewrite"] = {
+                            _meta = {
+                                filter = {
+                                    {"arg_version", "==", "v5"}
+                                }
+                            },
+                            uri = "/echo",
+                            headers = {
+                                ["X-Api-Version"] = "v5"
+                            }
+                        }
+                    }
+                }
+            )
+            if code >= 300 then
+                ngx.print(body)
+            else
+                ngx.say(body)
+            end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: hit global_rules which has the same plugin with different meta.filter
+--- pipelined_requests eval
+["GET /hello1?version=v4", "GET /hello1?version=v5"]
+--- response_headers eval
+["x-api-version: v4", "x-api-version: v5"]
+
+
+
+=== TEST 21: use _meta.filter in response-rewrite plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "response-rewrite": {
+                                "_meta": {
+                                    "filter": [
+                                        ["upstream_status", "~=", 200]
+                                    ]
+                                },
+                                "headers": {
+                                    "set": {
+                                        "test-header": "error"
+                                    }
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 22: upstream_status = 502, enable response-rewrite plugin
+--- request
+GET /specific_status
+--- more_headers
+x-test-upstream-status: 502
+--- response_headers
+test-header: error
+--- error_code: 502
+
+
+
+=== TEST 23: upstream_status = 200, disable response-rewrite plugin
+--- request
+GET /hello
+--- response_headers
+!test-header
+
+
+
+=== TEST 24: use _meta.filter in response-rewrite plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "headers": {
+                                    "foo-age": "$arg_age"
+                                }
+                            },
+                            "response-rewrite": {
+                                "_meta": {
+                                    "filter": [
+                                        ["http_foo_age", "==", "18"]
+                                    ]
+                                },
+                               "status_code": 403
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 25: proxy-rewrite plugin will set $http_foo_age, response-rewrite plugin return 403
+--- request
+GET /hello?age=18
+--- error_code: 403
+
+
+
+=== TEST 26: response-rewrite plugin disable, return 200
+--- request
+GET /hello
+
+
+
+=== TEST 27: use response var in meta.filter
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "_meta": {
+                                    "filter": [
+                                        ["upstream_status", "==", "200"]
+                                    ]
+                                },
+                                "uri": "/echo",
+                                "headers": {
+                                    "x-version": "v1"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 28: hit route: disable proxy-rewrite plugin
+--- request
+GET /hello
+--- response_headers
+!x-version
+
+
+
+=== TEST 29: use APISIX's built-in variables in  meta.filter
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                {
+                    plugins = {
+                        ["proxy-rewrite"] = {
+                            _meta = {
+                                filter = {
+                                    {"post_arg_key", "==", "abc"}
+                                }
+                            },
+                            uri = "/echo",
+                            headers = {
+                                ["X-Api-Version"] = "ga"
+                            }
+                        }
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:1980"] = 1
+                        }
+                    },
+                    uri = "/hello"
+                }
+            )
+            if code >= 300 then
+                ngx.print(body)
+            else
+                ngx.say(body)
+            end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 30: hit route: proxy-rewrite enable with post_arg_xx in meta.filter
+--- request
+POST /hello
+key=abc
+--- more_headers
+Content-Type: application/x-www-form-urlencoded
+--- response_headers
+x-api-version: ga

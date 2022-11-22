@@ -41,8 +41,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -65,8 +63,6 @@ GET /t
 --- response_body
 property "after_body" validation failed: wrong type: expected string, got number
 done
---- no_error_log
-[error]
 
 
 
@@ -109,8 +105,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -122,8 +116,6 @@ before the body modification hello upstream after the body modification.
 --- response_headers
 Location: https://www.iresty.com
 Authorization: userpass
---- no_error_log
-[error]
 --- wait: 0.2
 
 
@@ -164,8 +156,6 @@ Authorization: userpass
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -177,8 +167,6 @@ before the body modification hello world
 --- response_headers
 Location: https://www.iresty.com
 --- wait: 0.2
---- no_error_log
-[error]
 --- wait: 0.2
 
 
@@ -211,15 +199,13 @@ Location: https://www.iresty.com
             end
 
             local resp_data = core.json.decode(body)
-            ngx.say(encode_with_keys_sorted(resp_data.node.value.plugins))
+            ngx.say(encode_with_keys_sorted(resp_data.value.plugins))
         }
     }
 --- request
 GET /t
 --- response_body
 {"echo":{"before_body":"before the body modification ","headers":{"Location":"https://www.iresty.com"}}}
---- no_error_log
-[error]
 
 
 
@@ -256,8 +242,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -266,8 +250,6 @@ passed
 GET /hello_chunked
 --- response_body chomp
 hello upstream
---- no_error_log
-[error]
 
 
 
@@ -305,8 +287,6 @@ hello upstream
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -316,5 +296,3 @@ GET /hello_chunked
 --- response_body chomp
 before the body modification hello world
  after the body modification.
---- no_error_log
-[error]

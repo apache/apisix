@@ -23,17 +23,6 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
-});
-
-Test::Nginx::Socket::set_http_config_filter(sub {
-    my $config = shift;
-    my $snippet = `./t/bin/gen_snippet.lua conf_server`;
-    $config .= $snippet;
-    return $config;
 });
 
 run_tests();
@@ -78,11 +67,13 @@ __DATA__
     }
 --- response_body
 prev_index updated
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
         config_provider: etcd
+    admin:
+        admin_key: ~
     etcd:
         prefix: "/apisix"
         host:
@@ -102,7 +93,7 @@ deployment:
             ngx.say(res.body.node.value)
         }
     }
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -146,7 +137,7 @@ foo
             ngx.say(res.body.node.value)
         }
     }
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -162,13 +153,16 @@ foo
 --- error_log
 localhost is resolved to: 127.0.0.3
 localhost is resolved to: 127.0.0.2
---- no_error_log
-[error]
 
 
 
 === TEST 4: update balancer if the DNS result changed
 --- extra_init_by_lua
+    local etcd = require("apisix.core.etcd")
+    etcd.switch_proxy = function ()
+        return etcd.new()
+    end
+
     local resolver = require("apisix.core.resolver")
     local old_f = resolver.parse_domain
     package.loaded.counter = 0
@@ -209,7 +203,7 @@ localhost is resolved to: 127.0.0.2
             end
         }
     }
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -238,7 +232,7 @@ x.com is resolved to: 127.0.0.2
             ngx.say(res.body.node.value)
         }
     }
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -283,7 +277,7 @@ server {
     }
 --- response_body
 foo
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -327,7 +321,7 @@ server {
     }
 --- response_body
 foo
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -367,7 +361,7 @@ server {
     }
 --- response_body
 foo
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -405,7 +399,7 @@ server {
     }
 --- response_body
 foo
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -436,7 +430,7 @@ Receive Host: localhost
             ngx.say(timeout)
         }
     }
---- extra_yaml_config
+--- yaml_config
 deployment:
     role: traditional
     role_traditional:
@@ -447,3 +441,25 @@ deployment:
             - http://127.0.0.1:2379
 --- response_body
 30
+
+
+
+=== TEST 11: ipv6
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/apisix/test", "foo"))
+            local res = assert(etcd.get("/apisix/test"))
+            ngx.say(res.body.node.value)
+        }
+    }
+--- yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    etcd:
+        prefix: "/apisix"
+        host:
+            - http://[::1]:2379

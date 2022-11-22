@@ -32,6 +32,7 @@ return {
         ["/global_rules"] = true,
         ["/protos"] = true,
         ["/plugin_configs"] = true,
+        ["/consumer_groups"] = true,
     },
     STREAM_ETCD_DIRECTORY = {
         ["/upstreams"] = true,

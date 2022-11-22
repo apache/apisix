@@ -75,10 +75,6 @@ _EOC_
 
     $block->set_value("http_config", $http_config);
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }

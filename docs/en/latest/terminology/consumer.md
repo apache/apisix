@@ -60,7 +60,7 @@ The example below shows how you can enable a Plugin for a specific Consumer.
 
 ```shell
 # Create a Consumer, specify the authentication plugin key-auth, and enable the specific plugin limit-count
-$ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -77,7 +77,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335
 }'
 
 # Create a Router, set routing rules and enable plugin configuration
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "key-auth": {}
@@ -109,7 +109,7 @@ We can use the [consumer-restriction](../plugins/consumer-restriction.md) Plugin
 
 ```shell
 # Add Jack to the blacklist
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "key-auth": {},

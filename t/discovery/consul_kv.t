@@ -81,9 +81,10 @@ _EOC_
 our $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
-  config_center: yaml
-  enable_admin: false
-
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   consul_kv:
     servers:
@@ -194,9 +195,10 @@ routes:
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
-  enable_admin: false
-
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   consul_kv:
     servers:
@@ -216,6 +218,7 @@ routes:
 GET /hello
 --- response_body_like eval
 qr/server [1-2]/
+--- ignore_error_log
 
 
 
@@ -242,6 +245,7 @@ routes:
     "missing consul_kv services\n",
     "missing consul_kv services\n"
 ]
+--- ignore_error_log
 
 
 
@@ -250,9 +254,10 @@ skip some keys, return default nodes, get response: missing consul_kv services
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
-  enable_admin: false
-
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   consul_kv:
     servers:
@@ -281,6 +286,7 @@ routes:
 GET /hello
 --- response_body eval
 "missing consul_kv services\n"
+--- ignore_error_log
 
 
 
@@ -357,6 +363,7 @@ location /sleep {
     qr/server [1-2]\n/,
     qr/server [1-2]\n/
 ]
+--- ignore_error_log
 
 
 
@@ -437,6 +444,7 @@ GET /thc
 --- response_body
 [{"healthy_nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1},{"host":"127.0.0.2","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"upstreams"}]
 {"healthy_nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1},{"host":"127.0.0.2","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"upstreams"}
+--- ignore_error_log
 
 
 
@@ -460,9 +468,10 @@ location /v1/kv {
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
-  enable_admin: false
-
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   consul_kv:
     servers:
@@ -509,6 +518,7 @@ location /sleep {
     qr/ok\n/,
     qr/server 1\n/
 ]
+--- ignore_error_log
 
 
 
@@ -516,9 +526,10 @@ location /sleep {
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
-  enable_admin: false
-
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   consul_kv:
     servers:

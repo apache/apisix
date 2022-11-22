@@ -27,15 +27,13 @@ add_block_preprocessor(sub {
     my $yaml_config = $block->yaml_config // <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
-    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
-
-    if (!$block->no_error_log && !$block->error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests();

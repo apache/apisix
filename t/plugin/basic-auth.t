@@ -42,8 +42,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -66,8 +64,6 @@ GET /t
 --- response_body
 property "username" validation failed: wrong type: expected string, got number
 done
---- no_error_log
-[error]
 
 
 
@@ -98,8 +94,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -134,8 +128,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -145,8 +137,6 @@ GET /hello
 --- error_code: 401
 --- response_body
 {"message":"Missing authorization in request"}
---- no_error_log
-[error]
 
 
 
@@ -162,8 +152,6 @@ Authorization: Bad_header YmFyOmJhcgo=
 qr/Invalid authorization header format/
 --- grep_error_log_out
 Invalid authorization header format
---- no_error_log
-[error]
 
 
 
@@ -179,8 +167,6 @@ Authorization: Basic aca_a
 qr/Failed to decode authentication header: aca_a/
 --- grep_error_log_out
 Failed to decode authentication header: aca_a
---- no_error_log
-[error]
 
 
 
@@ -196,8 +182,6 @@ Authorization: Basic YmFy
 qr/Split authorization err: invalid decoded data: bar/
 --- grep_error_log_out
 Split authorization err: invalid decoded data: bar
---- no_error_log
-[error]
 
 
 
@@ -209,8 +193,6 @@ Authorization: Basic YmFyOmJhcgo=
 --- error_code: 401
 --- response_body
 {"message":"Invalid user authorization"}
---- no_error_log
-[error]
 
 
 
@@ -222,8 +204,6 @@ Authorization: Basic Zm9vOmZvbwo=
 --- error_code: 401
 --- response_body
 {"message":"Invalid user authorization"}
---- no_error_log
-[error]
 
 
 
@@ -234,8 +214,6 @@ GET /hello
 Authorization: Basic Zm9vOmJhcg==
 --- response_body
 hello world
---- no_error_log
-[error]
 --- error_log
 find consumer foo
 
@@ -267,8 +245,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid plugins configuration: failed to check the configuration of plugin basic-auth err: property \"password\" is required"}
---- no_error_log
-[error]
 
 
 
@@ -297,8 +273,6 @@ GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin basic-auth err: property \\"(username|password)\\" is required"\}/
---- no_error_log
-[error]
 
 
 
@@ -326,8 +300,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid plugins configuration: invalid plugin conf \"blah\" for plugin [basic-auth]"}
---- no_error_log
-[error]
 
 
 
@@ -348,8 +320,6 @@ GET /t
     }
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -370,8 +340,6 @@ GET /t
     }
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -392,8 +360,6 @@ GET /t
     }
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -430,8 +396,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -442,8 +406,6 @@ GET /echo
 Authorization: Basic Zm9vOmJhcg==
 --- response_headers
 !Authorization
---- no_error_log
-[error]
 
 
 
@@ -480,8 +442,6 @@ Authorization: Basic Zm9vOmJhcg==
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -492,5 +452,3 @@ GET /echo
 Authorization: Basic Zm9vOmJhcg==
 --- response_headers
 Authorization: Basic Zm9vOmJhcg==
---- no_error_log
-[error]

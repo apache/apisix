@@ -41,6 +41,7 @@ The response returned by the mirror request is ignored.
 |--------------|--------|----------|---------|--------------|---------------------------------------------------------------------------------------------------------------------------|
 | host         | string | True     |         |              | Address of the mirror service. It needs to contain the scheme but without the path. For example, `http://127.0.0.1:9797`. |
 | path         | string | False    |         |              | Path of the mirror request. If unspecified, current path will be used.                                                    |
+| path_concat_mode | string | False   |   replace     | ["replace", "prefix"]       | If the path of a mirror request is specified, set the concatenation mode of request paths. The `replace` mode will directly use `path` as the path of the mirror request. The `prefix` mode will use the `path` + `source request URI` as the path to the mirror request.  |
 | sample_ratio | number | False    | 1       | [0.00001, 1] | Ratio of the requests that will be mirrored.                                                                              |
 
 You can customize the proxy timeouts for the mirrored sub-requests by configuring the `plugin_attr` key in your configuration file (`conf/config.yaml`). This can be used for mirroring traffic to a slow backend.
@@ -65,7 +66,7 @@ plugin_attr:
 You can enable the Plugin on a specific Route as shown below:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
   -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -133,7 +134,7 @@ hello world
 To disable the `proxy-mirror` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
   -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",

@@ -25,11 +25,13 @@ no_shuffle();
 our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
-    enable_admin: false
     router:
         http: 'radixtree_host_uri'
     admin_key: null
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 _EOC_
 
 run_tests();
@@ -65,9 +67,7 @@ Host: test.com
 --- response_body eval
 qr/1980/
 --- error_log
-use config_center: yaml
---- no_error_log
-[error]
+use config_provider: yaml
 
 
 
@@ -100,9 +100,7 @@ Host: test.com
 --- response_body eval
 qr/1981/
 --- error_log
-use config_center: yaml
---- no_error_log
-[error]
+use config_provider: yaml
 
 
 
@@ -134,9 +132,7 @@ Host: test.com
 --- response_body eval
 qr/1980/
 --- error_log
-use config_center: yaml
---- no_error_log
-[error]
+use config_provider: yaml
 
 
 
@@ -168,6 +164,4 @@ Host: test.com
 --- response_body eval
 qr/1981/
 --- error_log
-use config_center: yaml
---- no_error_log
-[error]
+use config_provider: yaml

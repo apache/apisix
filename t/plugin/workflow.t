@@ -26,10 +26,6 @@ add_block_preprocessor(sub {
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests();
@@ -687,3 +683,63 @@ passed
 "GET /hello", "GET /hello1", "GET /hello", "GET /hello1"]
 --- error_code eval
 [200, 200, 200, 200, 200, 200, 503, 503]
+
+
+
+=== TEST 19: multiple conditions in one case
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "workflow": {
+                                "rules": [
+                                    {
+                                        "case": [
+                                            "OR",
+                                            ["arg_foo", "==", "bar"],
+                                            ["uri", "==", "/hello"]
+                                        ],
+                                        "actions": [
+                                            [
+                                                "return",
+                                                {
+                                                    "code": 403
+                                                }
+                                            ]
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: trigger workflow
+--- request
+GET /hello
+--- error_code: 403
+--- response_body
+{"error_msg":"rejected by workflow"}

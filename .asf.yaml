@@ -17,7 +17,7 @@
 
 github:
     description: The Cloud-Native API Gateway
-    homepage: https://apisix.apache.org/
+    homepage: https://apisix.apache.org/blog/
     labels:
       - api-gateway
       - cloud-native
@@ -51,6 +51,14 @@ github:
       master:
         required_pull_request_reviews:
           dismiss_stale_reviews: true
+          require_code_owner_reviews: true
+          required_approving_review_count: 2
+      release/3.0:
+        required_pull_request_reviews:
+          require_code_owner_reviews: true
+          required_approving_review_count: 2
+      release/2.99:
+        required_pull_request_reviews:
           require_code_owner_reviews: true
           required_approving_review_count: 2
       release/2.15:

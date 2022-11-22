@@ -24,9 +24,13 @@ __DATA__
 
 === TEST 1: minus timeout to watch repeatedly
 --- extra_yaml_config
-etcd:
-  host:
-    - "http://127.0.0.1:2379"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
 --- config
     location /t {
         content_by_lua_block {
@@ -68,8 +72,6 @@ etcd:
 GET /t
 --- response_body
 prev_index updated
---- no_error_log
-[error]
 --- error_log
 cancel watch connection success
 
@@ -116,8 +118,6 @@ cancel watch connection success
 GET /t
 --- response_body
 prev_index updated
---- no_error_log
-[error]
 --- error_log
 waitdir key
 
@@ -156,8 +156,6 @@ waitdir key
 GET /t
 --- response_body
 prev_index not update
---- no_error_log
-[error]
 
 
 

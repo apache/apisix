@@ -30,11 +30,15 @@ if [ -z "logs/error.log" ]; then
 fi
 
 echo '
-etcd:
-  host:
-    - "http://127.0.0.1:23790"
-    - "http://127.0.0.1:23791"
-    - "http://127.0.0.1:23792"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:23790"
+      - "http://127.0.0.1:23791"
+      - "http://127.0.0.1:23792"
   health_check_timeout: '"$HEALTH_CHECK_RETRY_TIMEOUT"'
   timeout: 2
 ' > conf/config.yaml
@@ -45,7 +49,7 @@ docker-compose -f ./t/cli/docker-compose-etcd-cluster.yaml up -d
 make init && make run
 
 docker stop ${ETCD_NAME_0}
-code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ ! $code -eq 200 ]; then
     echo "failed: apisix got effect when one etcd node out of a cluster disconnected"
     exit 1
@@ -53,7 +57,7 @@ fi
 docker start ${ETCD_NAME_0}
 
 docker stop ${ETCD_NAME_1}
-code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ ! $code -eq 200 ]; then
     echo "failed: apisix got effect when one etcd node out of a cluster disconnected"
     exit 1
@@ -71,7 +75,7 @@ docker stop ${ETCD_NAME_0} && docker stop ${ETCD_NAME_1} && docker stop ${ETCD_N
 
 sleep_till=$(date +%s -d "$DATE + $HEALTH_CHECK_RETRY_TIMEOUT second")
 
-code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ $code -eq 200 ]; then
     echo "failed: apisix not got effect when all etcd nodes disconnected"
     exit 1
@@ -86,7 +90,7 @@ if [ "$sleep_seconds" -gt 0 ]; then
     sleep $sleep_seconds
 fi
 
-code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ ! $code -eq 200 ]; then
     echo "failed: apisix could not recover when etcd node recover"
     docker ps

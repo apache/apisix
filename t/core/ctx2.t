@@ -372,3 +372,65 @@ Content-Type: application/x-www-form-urlencoded
     }
 --- response_body
 find ctx.var.a6_labels_zone: Singapore
+
+
+
+=== TEST 17: register custom variable with no cacheable
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "plugins": {
+                            "serverless-pre-function": {
+                                "phase": "rewrite",
+                                "functions" : ["return function(conf, ctx) ngx.say('find ctx.var.a6_count: ', ctx.var.a6_count) end"]
+                            },
+                            "serverless-post-function": {
+                                "phase": "rewrite",
+                                "functions" : ["return function(conf, ctx) ngx.say('find ctx.var.a6_count: ', ctx.var.a6_count) end"]
+                            }
+                        },
+                        "uri": "/hello"
+                }]=]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 18: hit
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local core = require "apisix.core"
+            core.ctx.register_var("a6_count", function(ctx)
+                if not ctx.a6_count then
+                    ctx.a6_count = 0
+                end
+                ctx.a6_count = ctx.a6_count + 1
+                return ctx.a6_count
+            end, {no_cacheable = true})
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            local res = assert(httpc:request_uri(uri))
+            ngx.print(res.body)
+        }
+    }
+--- response_body
+find ctx.var.a6_count: 1
+find ctx.var.a6_count: 2

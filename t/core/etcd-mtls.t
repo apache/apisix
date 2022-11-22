@@ -24,7 +24,6 @@ if ($out !~ m/function:/) {
     plan('no_plan');
 }
 
-
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -39,14 +38,18 @@ __DATA__
 
 === TEST 1: run etcd in init phase
 --- yaml_config
-etcd:
-  host:
-    - "https://127.0.0.1:22379"
-  prefix: "/apisix"
-  tls:
-    cert: t/certs/mtls_client.crt
-    key: t/certs/mtls_client.key
-    verify: false
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "https://127.0.0.1:22379"
+    prefix: "/apisix"
+    tls:
+      cert: t/certs/mtls_client.crt
+      key: t/certs/mtls_client.key
+      verify: false
 --- init_by_lua_block
     local apisix = require("apisix")
     apisix.http_init()
@@ -90,14 +93,18 @@ init_by_lua:26: 404
 
 === TEST 2: run etcd in init phase (stream)
 --- yaml_config
-etcd:
-  host:
-    - "https://127.0.0.1:22379"
-  prefix: "/apisix"
-  tls:
-    cert: t/certs/mtls_client.crt
-    key: t/certs/mtls_client.key
-    verify: false
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "https://127.0.0.1:22379"
+    prefix: "/apisix"
+    tls:
+      cert: t/certs/mtls_client.crt
+      key: t/certs/mtls_client.key
+      verify: false
 --- stream_init_by_lua_block
     apisix = require("apisix")
     apisix.stream_init()
@@ -140,14 +147,18 @@ init_by_lua:26: 404
 
 === TEST 3: sync
 --- extra_yaml_config
-etcd:
-  host:
-    - "https://127.0.0.1:22379"
-  prefix: "/apisix"
-  tls:
-    cert: t/certs/mtls_client.crt
-    key: t/certs/mtls_client.key
-    verify: false
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "https://127.0.0.1:22379"
+    prefix: "/apisix"
+    tls:
+      cert: t/certs/mtls_client.crt
+      key: t/certs/mtls_client.key
+      verify: false
 --- config
     location /t {
         content_by_lua_block {
@@ -187,8 +198,6 @@ etcd:
 GET /t
 --- response_body
 prev_index updated
---- no_error_log
-[error]
 --- error_log
 waitdir key
 
@@ -196,14 +205,18 @@ waitdir key
 
 === TEST 4: sync (stream)
 --- extra_yaml_config
-etcd:
-  host:
-    - "https://127.0.0.1:22379"
-  prefix: "/apisix"
-  tls:
-    cert: t/certs/mtls_client.crt
-    key: t/certs/mtls_client.key
-    verify: false
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "https://127.0.0.1:22379"
+    prefix: "/apisix"
+    tls:
+      cert: t/certs/mtls_client.crt
+      key: t/certs/mtls_client.key
+      verify: false
 --- stream_server_config
     content_by_lua_block {
         local core = require("apisix.core")
@@ -233,8 +246,6 @@ etcd:
 --- stream_enable
 --- stream_response
 prev_index updated
---- no_error_log
-[error]
 --- error_log
 waitdir key
 
@@ -245,13 +256,17 @@ waitdir key
 apisix:
   ssl:
     ssl_trusted_certificate: t/certs/mtls_ca.crt
-etcd:
-  host:
-    - "https://127.0.0.1:22379"
-  prefix: "/apisix"
-  tls:
-    cert: t/certs/mtls_client.crt
-    key: t/certs/mtls_client.key
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "https://127.0.0.1:22379"
+    prefix: "/apisix"
+    tls:
+      cert: t/certs/mtls_client.crt
+      key: t/certs/mtls_client.key
 --- init_by_lua_block
     local apisix = require("apisix")
     apisix.http_init()

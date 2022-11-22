@@ -56,8 +56,6 @@ GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/property \\"remote_addrs\\" validation failed:/
---- no_error_log
-[error]
 
 
 
@@ -91,8 +89,6 @@ GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/property \\"remote_addrs\\" validation failed:/
---- no_error_log
-[error]
 
 
 
@@ -127,8 +123,6 @@ qr/property \\"remote_addrs\\" validation failed:/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -162,8 +156,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to validate the 'vars' expression: invalid operator '='"}
---- no_error_log
-[error]
 
 
 
@@ -194,20 +186,18 @@ GET /t
             end
 
             res = json.decode(res)
-            res.node.key = nil
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
-            assert(res.node.value.id ~= nil)
-            res.node.value.id = nil
+            res.key = nil
+            res.value.create_time = nil
+            res.value.update_time = nil
+            assert(res.value.id ~= nil)
+            res.value.id = nil
             ngx.say(json.encode(res))
         }
     }
 --- request
 GET /t
 --- response_body
-{"node":{"value":{"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/not_unwanted_data_post"}}}
---- no_error_log
-[error]
+{"value":{"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/not_unwanted_data_post"}}
 
 
 
@@ -239,17 +229,15 @@ GET /t
             end
 
             res = json.decode(res)
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
+            res.value.create_time = nil
+            res.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
 --- request
 GET /t
 --- response_body
-{"node":{"key":"/apisix/routes/1","value":{"id":1,"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index.html"}}}
---- no_error_log
-[error]
+{"key":"/apisix/routes/1","value":{"id":1,"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index.html"}}
 
 
 
@@ -280,17 +268,15 @@ GET /t
             end
 
             res = json.decode(res)
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
+            res.value.create_time = nil
+            res.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
 --- request
 GET /t
 --- response_body
-{"node":{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index"}}}
---- no_error_log
-[error]
+{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index"}}
 
 
 
@@ -311,22 +297,21 @@ GET /t
             end
 
             res = json.decode(res)
-            local value = res.node.value
-            assert(value.create_time ~= nil)
-            value.create_time = nil
-            assert(value.update_time ~= nil)
-            value.update_time = nil
-            assert(res.count ~= nil)
-            res.count = nil
+            assert(res.createdIndex ~= nil)
+            res.createdIndex = nil
+            assert(res.modifiedIndex ~= nil)
+            res.modifiedIndex = nil
+            assert(res.value.create_time ~= nil)
+            res.value.create_time = nil
+            assert(res.value.update_time ~= nil)
+            res.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
 --- request
 GET /t
 --- response_body
-{"node":{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index"}}}
---- no_error_log
-[error]
+{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index"}}
 
 
 
@@ -353,9 +338,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"deleted":"1","key":"/apisix/routes/1","node":{}}
---- no_error_log
-[error]
+{"deleted":"1","key":"/apisix/routes/1"}
 
 
 
@@ -388,8 +371,6 @@ GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/property \\"remote_addrs\\" validation failed:/
---- no_error_log
-[error]
 
 
 
@@ -421,8 +402,6 @@ GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/property \\"uris\\" validation failed:/
---- no_error_log
-[error]
 
 
 
@@ -455,8 +434,6 @@ GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/property \\"hosts\\" validation failed:/
---- no_error_log
-[error]
 
 
 
@@ -489,8 +466,6 @@ GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/value should match only one schema/
---- no_error_log
-[error]
 
 
 
@@ -523,8 +498,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"only one of remote_addr or remote_addrs is allowed"}
---- no_error_log
-[error]
 
 
 
@@ -550,24 +523,22 @@ GET /t
                     "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/index.html",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
+                    "value": {
+                        "methods": [
+                            "GET"
+                        ],
+                        "uri": "/index.html",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
                             },
-                            "labels": {
-                                "您好": "世界"
-                            }
+                            "type": "roundrobin"
                         },
-                        "key": "/apisix/routes/1"
-                    }
+                        "labels": {
+                            "您好": "世界"
+                        }
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
                 )
 
@@ -579,8 +550,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -615,8 +584,6 @@ GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/invalid configuration: property \\"labels\\" validation failed/
---- no_error_log
-[error]
 
 
 
@@ -649,8 +616,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to fetch plugin config info by plugin config id [not_found], response code: 404"}
---- no_error_log
-[error]
 
 
 
@@ -686,5 +651,3 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]

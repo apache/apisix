@@ -40,14 +40,12 @@ location /t {
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "sni": "www.test.com"
-                    },
-                    "key": "/apisix/ssls/1"
-                }
+                "value": {
+                    "sni": "www.test.com"
+                },
+                "key": "/apisix/ssls/1"
             }]]
-            )
+        )
 
         ngx.status = code
         ngx.say(body)
@@ -57,8 +55,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -78,7 +74,7 @@ passed
                         },
                         "uri": "/hello"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -90,8 +86,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -226,14 +220,12 @@ location /t {
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "sni": "*.test.com"
-                    },
-                    "key": "/apisix/ssls/1"
-                }
+                "value": {
+                    "sni": "*.test.com"
+                },
+                "key": "/apisix/ssls/1"
             }]]
-            )
+        )
 
         ngx.status = code
         ngx.say(body)
@@ -243,8 +235,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -339,14 +329,12 @@ location /t {
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "sni": "test.com"
-                    },
-                    "key": "/apisix/ssls/1"
-                }
+                "value": {
+                    "sni": "test.com"
+                },
+                "key": "/apisix/ssls/1"
             }]]
-            )
+        )
 
         ngx.status = code
         ngx.say(body)
@@ -356,8 +344,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -452,14 +438,12 @@ location /t {
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "sni": "*.test2.com"
-                    },
-                    "key": "/apisix/ssls/1"
-                }
+                "value": {
+                    "sni": "*.test2.com"
+                },
+                "key": "/apisix/ssls/1"
             }]]
-            )
+        )
 
         ngx.status = code
         ngx.say(body)
@@ -469,8 +453,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -509,9 +491,9 @@ location /t {
 }
 --- request
 GET /t
---- response_body
+--- response_body_like
 connected: 1
-failed to do SSL handshake: 18: self signed certificate
+failed to do SSL handshake: 18: self[- ]signed certificate
 --- error_log
 server name: "www.test2.com"
 --- no_error_log
@@ -579,14 +561,12 @@ location /t {
             ngx.HTTP_PATCH,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "status": 0
-                    },
-                    "key": "/apisix/ssls/1"
-                }
+                "value": {
+                    "status": 0
+                },
+                "key": "/apisix/ssls/1"
             }]]
-            )
+        )
 
         ngx.status = code
         ngx.say(body)
@@ -596,8 +576,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -659,14 +637,12 @@ location /t {
             ngx.HTTP_PATCH,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "status": 1
-                    },
-                    "key": "/apisix/ssls/1"
-                }
+                "value": {
+                    "status": 1
+                },
+                "key": "/apisix/ssls/1"
             }]]
-            )
+        )
 
         ngx.status = code
         ngx.say(body)
@@ -676,8 +652,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -716,9 +690,9 @@ location /t {
 }
 --- request
 GET /t
---- response_body
+--- response_body_like
 connected: 1
-failed to do SSL handshake: 18: self signed certificate
+failed to do SSL handshake: 18: self[- ]signed certificate
 --- error_log
 server name: "www.test2.com"
 --- no_error_log
@@ -742,14 +716,12 @@ location /t {
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
-                "node": {
-                    "value": {
-                        "snis": ["test2.com", "*.test2.com"]
-                    },
-                    "key": "/apisix/ssls/1"
-                }
+                "value": {
+                    "snis": ["test2.com", "*.test2.com"]
+                },
+                "key": "/apisix/ssls/1"
             }]]
-            )
+        )
 
         ngx.status = code
         ngx.say(body)
@@ -759,8 +731,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -799,9 +769,9 @@ location /t {
 }
 --- request
 GET /t
---- response_body
+--- response_body_like
 connected: 1
-failed to do SSL handshake: 18: self signed certificate
+failed to do SSL handshake: 18: self[- ]signed certificate
 --- error_log
 server name: "test2.com"
 --- no_error_log
@@ -881,3 +851,5 @@ GET /t
 --- response_body
 {"error_msg":"failed to decrypt previous encrypted key"}
 --- error_code: 400
+--- error_log
+decrypt ssl key failed

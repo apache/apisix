@@ -27,6 +27,13 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     my $user_yaml_config = <<_EOC_;
+deployment:
+    admin:
+        admin_key:
+            - name: admin
+              role: admin
+              key: edd1c9f034335f136f87ad84b625c8f1
+
 apisix:
   node_listen: 1984
 _EOC_
@@ -63,8 +70,6 @@ __DATA__
 --- request
 GET /t
 --- error_code: 401
---- no_error_log
-[error]
 
 
 
@@ -95,8 +100,6 @@ GET /t
 --- request
 GET /t
 --- error_code: 401
---- no_error_log
-[error]
 
 
 
@@ -130,8 +133,6 @@ GET /t
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -139,8 +140,6 @@ done
 --- request
 GET /apisix/admin/plugins/list
 --- error_code: 401
---- no_error_log
-[error]
 
 
 
@@ -148,8 +147,6 @@ GET /apisix/admin/plugins/list
 --- request
 PUT /apisix/admin/plugins/reload
 --- error_code: 401
---- no_error_log
-[error]
 
 
 
@@ -157,8 +154,6 @@ PUT /apisix/admin/plugins/reload
 --- request
 PUT /apisix/admin/plugins/reload?api_key=edd1c9f034335f136f87ad84b625c8f1
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
@@ -168,8 +163,6 @@ PUT /apisix/admin/plugins/reload
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
@@ -177,8 +170,6 @@ X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- request
 PUT /apisix/admin/plugins/reload?api_key=4054f7cf07e344346cd3f287985e76a2
 --- error_code: 401
---- no_error_log
-[error]
 
 
 
@@ -186,5 +177,3 @@ PUT /apisix/admin/plugins/reload?api_key=4054f7cf07e344346cd3f287985e76a2
 --- request
 GET /apisix/admin/routes??api_key=4054f7cf07e344346cd3f287985e76a2
 --- error_code: 401
---- no_error_log
-[error]

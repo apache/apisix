@@ -25,17 +25,6 @@ log_level("info");
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if (!$block->yaml_config) {
-        my $yaml_config = <<_EOC_;
-apisix:
-    node_listen: 1984
-    config_center: yaml
-    enable_admin: false
-_EOC_
-
-        $block->set_value("yaml_config", $yaml_config);
-    }
-
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -46,6 +35,13 @@ run_tests;
 __DATA__
 
 === TEST 1: upstreams
+--- yaml_config
+apisix:
+    node_listen: 1984
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 --- apisix_yaml
 routes:
   -
@@ -109,6 +105,13 @@ unhealthy TCP increment (2/2) for '(127.0.0.2:1988)'
 
 
 === TEST 2: routes
+--- yaml_config
+apisix:
+    node_listen: 1984
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 --- apisix_yaml
 routes:
   -
@@ -172,6 +175,13 @@ unhealthy TCP increment (2/2) for '127.0.0.1(127.0.0.1:1988)'
 
 
 === TEST 3: services
+--- yaml_config
+apisix:
+    node_listen: 1984
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 --- apisix_yaml
 routes:
   - id: 1
@@ -273,6 +283,13 @@ GET /v1/healthcheck/route/1
 
 
 === TEST 7: default health status
+--- yaml_config
+apisix:
+    node_listen: 1984
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 --- apisix_yaml
 routes:
   -
@@ -325,8 +342,6 @@ upstreams:
 qr/unhealthy TCP increment \(.+\) for '[^']+'/
 --- grep_error_log_out
 unhealthy TCP increment (1/2) for '(127.0.0.1:1988)'
---- no_error_log
-[error]
 --- response_body
 {}
 [{"host":"127.0.0.1","port":1988,"priority":0,"weight":1},{"host":"127.0.0.2","port":1980,"priority":0,"weight":1}]

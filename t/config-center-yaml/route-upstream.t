@@ -24,8 +24,10 @@ no_shuffle();
 our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
-    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 _EOC_
 
 run_tests();
@@ -51,8 +53,6 @@ upstreams:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -102,8 +102,6 @@ upstreams:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -133,8 +131,6 @@ upstreams:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -156,8 +152,6 @@ upstreams:
 --- request
 GET /get
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
@@ -210,5 +204,3 @@ GET /hello
 test: one
 --- error_log
 proxy request to 127.0.0.1:1980
---- no_error_log
-[error]

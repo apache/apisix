@@ -95,6 +95,22 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 	}, nil
 }
 
+// GetErrResp implements helloworld.GreeterServer
+func (s *server) GetErrResp(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
+	st := status.New(codes.Unavailable, "Out of service")
+	st, err := st.WithDetails(&pb.ErrorDetail{
+		Code:    1,
+		Message: "The server is out of service",
+		Type:    "service",
+	})
+
+	if err != nil {
+		panic(fmt.Sprintf("Unexpected error attaching metadata: %v", err))
+	}
+
+	return nil, st.Err()
+}
+
 func (s *server) SayHelloAfterDelay(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
 
 	select {

@@ -25,11 +25,13 @@ no_shuffle();
 our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
-    enable_admin: false
     router:
         http: 'radixtree_host_uri'
     admin_key: null
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 _EOC_
 
 run_tests();
@@ -62,9 +64,7 @@ Host: test.com
 --- response_body eval
 qr/1981/
 --- error_log
-use config_center: yaml
---- no_error_log
-[error]
+use config_provider: yaml
 
 
 
@@ -94,9 +94,7 @@ Host: www.test.com
 --- response_body eval
 qr/1981/
 --- error_log
-use config_center: yaml
---- no_error_log
-[error]
+use config_provider: yaml
 
 
 
@@ -126,9 +124,7 @@ Host: www.test.com
 --- response_body eval
 qr/1981/
 --- error_log
-use config_center: yaml
---- no_error_log
-[error]
+use config_provider: yaml
 
 
 
@@ -159,9 +155,7 @@ Host: www.test.com
 --- response_body eval
 qr/1980/
 --- error_log
-use config_center: yaml
---- no_error_log
-[error]
+use config_provider: yaml
 
 
 
@@ -192,9 +186,7 @@ Host: www.test.com
 --- response_body eval
 qr/1981/
 --- error_log
-use config_center: yaml
---- no_error_log
-[error]
+use config_provider: yaml
 
 
 
@@ -233,8 +225,6 @@ apisix:
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -247,8 +237,6 @@ apisix:
 GET /file:listReputationHistories
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -260,8 +248,6 @@ apisix:
 --- request
 GET /file:xx
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
@@ -301,8 +287,6 @@ apisix:
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -317,8 +301,6 @@ GET /do:listReputationHistories
 Host: t.com
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -332,8 +314,6 @@ GET /do:xx
 --- more_headers
 Host: t.com
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
@@ -353,8 +333,6 @@ routes:
 GET /server_port
 --- more_headers
 Host: tEst.com
---- no_error_log
-[error]
 
 
 
@@ -374,8 +352,6 @@ routes:
 GET /server_port
 --- more_headers
 Host: test.com
---- no_error_log
-[error]
 
 
 
@@ -410,5 +386,3 @@ Host: www.foo.com
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]

@@ -14,7 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-use t::APISIX 'no_plan';
+use t::APISIX;
+
+my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
+my $version = eval { `$nginx_binary -V 2>&1` };
+
+# We put the error page into apisix-base. It is fine since this installation is the default.
+if ($version !~ m/\/apisix-nginx-module/) {
+    plan(skip_all => "apisix-nginx-module not installed");
+} else {
+    plan('no_plan');
+}
 
 log_level('debug');
 repeat_each(1);
@@ -58,8 +68,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -145,8 +153,6 @@ X-Test-Status: 500
 GET /t
 --- response_body
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -178,26 +184,10 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 10: client abort
---- request
-GET /mysleep?seconds=3
---- abort
---- timeout: 0.5
---- ignore_response
---- grep_error_log eval
-qr/(stash|fetch) ngx ctx/
---- grep_error_log_out
-stash ngx ctx
-fetch ngx ctx
-
-
-
-=== TEST 11: check if the phases after proxy are run when 500 happens before proxy
+=== TEST 10: check if the phases after proxy are run when 500 happens before proxy
 --- config
     location /t {
         content_by_lua_block {
@@ -234,12 +224,10 @@ fetch ngx ctx
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 12: hit
+=== TEST 11: hit
 --- request
 GET /hello
 --- more_headers

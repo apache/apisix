@@ -29,7 +29,6 @@ add_block_preprocessor(sub {
     my $user_yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    admin_key: null
 _EOC_
 
     $block->set_value("yaml_config", $user_yaml_config);
@@ -65,5 +64,3 @@ __DATA__
 --- request
 GET /t
 --- error_code: 400
---- no_error_log
-[error]

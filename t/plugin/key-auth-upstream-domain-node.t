@@ -53,8 +53,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -79,8 +77,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -122,8 +118,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -156,8 +150,6 @@ GET /t
 return: 404
 return: 503
 return: 503
---- no_error_log
-[error]
 
 
 
@@ -187,8 +179,6 @@ return: 503
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -224,8 +214,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -257,5 +245,3 @@ GET /t
 return: 404
 return: 503
 return: 503
---- no_error_log
-[error]

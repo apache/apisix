@@ -23,9 +23,9 @@ title: Admin API
 
 The Admin API lets users control their deployed Apache APISIX instance. The [architecture design](./architecture-design/apisix.md) gives an idea about how everything fits together.
 
-By default, the Admin API listens to port `9080` (`9443` for HTTPS) when APISIX is launched. This can be changed by modifying your configuration file ([conf/config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml)).
+By default, the Admin API listens to port `9180` when APISIX is launched. This can be changed by modifying your configuration file ([conf/config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml)).
 
-**Note**: Mentions of `X-API-KEY` in this document refers to `apisix.admin_key.key`—the access token for Admin API—in your configuration file.
+**Note**: Mentions of `X-API-KEY` in this document refers to `deployment.admin.admin_key.key`—the access token for Admin API—in your configuration file.
 
 ## V3
 
@@ -36,17 +36,45 @@ The Admin API has made some breaking changes in V3 version, as well as supportin
 1. Remove `action` field in response body;
 2. Adjust the response body structure when fetching the list of resources, the new response body structure like:
 
+Return single resource:
+
 ```json
 {
-    "count":2,
-    "list":[
-        {
-            ...
-        },
-        {
-            ...
-        }
-    ]
+  "modifiedIndex": 2685183,
+  "value": {
+    "id": "1",
+    ...
+  },
+  "key": "/apisix/routes/1",
+  "createdIndex": 2684956
+}
+```
+
+Return multiple resources:
+
+```json
+{
+  "list": [
+    {
+      "modifiedIndex": 2685183,
+      "value": {
+        "id": "1",
+        ...
+      },
+      "key": "/apisix/routes/1",
+      "createdIndex": 2684956
+    },
+    {
+      "modifiedIndex": 2685163,
+      "value": {
+        "id": "2",
+        ...
+      },
+      "key": "/apisix/routes/2",
+      "createdIndex": 2685163
+    }
+  ],
+  "total": 2
 }
 ```
 
@@ -62,10 +90,13 @@ Paging query is supported when getting the resource list, paging parameters incl
 The example is as follows:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes?page=1&page_size=10 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET -i -d '
+$ curl "http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10" \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET
+```
+
+```json
 {
-  "count": 1,
+  "total": 1,
   "list": [
     {
       ...
@@ -77,6 +108,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes?page=1&page_size=10 \
 Resources that support paging queries:
 
 - Consumer
+- Consumer Group
 - Global Rules
 - Plugin Config
 - Proto
@@ -101,10 +133,13 @@ When multiple filter parameters are enabled, use the intersection of the query r
 The following example will return a list of routes, and all routes in the list satisfy: the `name` of the route contains the string "test", the `uri` contains the string "foo", and there is no restriction on the `label` of the route, since the label of the query is the empty string.
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes?name=test&uri=foo&label= \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET -i -d '
+$ curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET
+```
+
+```json
 {
-  "count": 1,
+  "total": 1,
   "list": [
     {
       ...
@@ -197,7 +232,7 @@ Example API usage:
 
 ```shell
 # Create a route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/index.html",
     "hosts": ["foo.com", "*.bar.com"],
@@ -217,7 +252,7 @@ Date: Sat, 31 Aug 2019 01:17:15 GMT
 ...
 
 # Create a route expires after 60 seconds, then it's deleted automatically
-$ curl http://127.0.0.1:9080/apisix/admin/routes/2?ttl=60 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl 'http://127.0.0.1:9180/apisix/admin/routes/2?ttl=60' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/aa/index.html",
     "upstream": {
@@ -234,7 +269,7 @@ Date: Sat, 31 Aug 2019 01:17:15 GMT
 
 
 # Add an upstream node to the Route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -253,7 +288,7 @@ After successful execution, upstream nodes will be updated to:
 
 
 # Update the weight of an upstream node to the Route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -272,7 +307,7 @@ After successful execution, upstream nodes will be updated to:
 
 
 # Delete an upstream node for the Route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -290,7 +325,7 @@ After successful execution, upstream nodes will be updated to:
 
 
 # Replace methods of the Route  --  array
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '{
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '{
     "methods": ["GET", "POST"]
 }'
 HTTP/1.1 200 OK
@@ -301,7 +336,7 @@ After successful execution, methods will not retain the original data, and the e
 
 
 # Replace upstream nodes of the Route -- sub path
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1/upstream/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1/upstream/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "127.0.0.1:1982": 1
 }'
@@ -315,7 +350,7 @@ After successful execution, nodes will not retain the original data, and the ent
 
 
 # Replace methods of the Route -- sub path
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1/methods -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d'["POST", "DELETE", " PATCH"]'
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1/methods -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d'["POST", "DELETE", " PATCH"]'
 HTTP/1.1 200 OK
 ...
 
@@ -324,7 +359,7 @@ After successful execution, methods will not retain the original data, and the e
 
 
 # disable route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "status": 0
 }'
@@ -338,7 +373,7 @@ After successful execution, status nodes will be updated to:
 
 
 # enable route
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "status": 1
 }'
@@ -412,7 +447,7 @@ Example configuration:
 Example API usage:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "plugins": {
         "limit-count": {
@@ -436,7 +471,7 @@ HTTP/1.1 201 Created
 
 
 # Add an upstream node to the Service
-$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -455,7 +490,7 @@ After successful execution, upstream nodes will be updated to:
 
 
 # Update the weight of an upstream node to the Service
-$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -474,7 +509,7 @@ After successful execution, upstream nodes will be updated to:
 
 
 # Delete an upstream node for the Service
-$ curl http://127.0.0.1:9080/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "upstream": {
         "nodes": {
@@ -492,7 +527,7 @@ After successful execution, upstream nodes will be updated to:
 
 
 # Replace upstream nodes of the Service
-$ curl http://127.0.0.1:9080/apisix/admin/services/201/upstream/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/services/201/upstream/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "127.0.0.1:1982": 1
 }'
@@ -532,6 +567,7 @@ Consumers are users of services and can only be used in conjunction with a user 
 | Parameter   | Required | Type        | Description                                                                                                        | Example                                          |
 | ----------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
 | username    | True     | Name        | Name of the Consumer.                                                                                              |                                                  |
+| group_id    | False    | Name        | Group of the Consumer.                                                                                              |                                                  |
 | plugins     | False    | Plugin      | Plugins that are executed during the request/response cycle. See [Plugin](terminology/plugin.md) for more. |                                                  |
 | desc        | False    | Auxiliary   | Description of usage scenarios.                                                                                    | customer xxxx                                    |
 | labels      | False    | Match Rules | Attributes of the Consumer specified as key-value pairs.                                                           | {"version":"v2","build":"16","env":"production"} |
@@ -553,7 +589,7 @@ When bound to a Route or Service, the Authentication Plugin infers the Consumer 
 Example API usage:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "username": "jack",
     "plugins": {
@@ -608,28 +644,28 @@ An Upstream configuration can be directly bound to a Route or a Service, but the
 In addition to the equalization algorithm selections, Upstream also supports passive health check and retry for the upstream. See the table below for more details:
 
 | Name                        | Optional                                    | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Example                                                                                                                                    |
-| --------------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| type                        | required                                    | Load balancing algorithm to be used.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |                                                                                                                                            |
-| nodes                       | required, can't be used with `service_name` | IP addresses (with optional ports) of the Upstream nodes represented as a hash table or an array. In the hash table, the key is the IP address and the value is the weight of the node for the load balancing algorithm. For hash table case, if the key is IPv6 address with port, then the IPv6 address must be quoted with square brackets. In the array, each item is a hash table with keys `host`, `weight`, and the optional `port` and `priority`. Empty nodes are treated as placeholders and clients trying to access this Upstream will receive a 502 response.                                                                                                                                                                                                                                                                             | `192.168.1.100:80`, `[::1]:80`                                                                                                                         |
+| --------------------------- | ------------------------------------------- |----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------| ------------------------------------------------------------------------------------------------------------------------------------------ |
+| type                        | optional                                    | Load balancing algorithm to be used, and the default value is `roundrobin`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |                                                                                                                                            |
+| nodes                       | required, can't be used with `service_name` | IP addresses (with optional ports) of the Upstream nodes represented as a hash table or an array. In the hash table, the key is the IP address and the value is the weight of the node for the load balancing algorithm. For hash table case, if the key is IPv6 address with port, then the IPv6 address must be quoted with square brackets. In the array, each item is a hash table with keys `host`, `weight`, and the optional `port` and `priority`. Empty nodes are treated as placeholders and clients trying to access this Upstream will receive a 502 response.                                                                                                                                                       | `192.168.1.100:80`, `[::1]:80`                                                                                                                         |
 | service_name                | required, can't be used with `nodes`        | Service name used for [service discovery](discovery.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `a-bootiful-client`                                                                                                                        |
 | discovery_type              | required, if `service_name` is used         | The type of service [discovery](discovery.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `eureka`                                                                                                                                   |
 | hash_on                     | optional                                    | Only valid if the `type` is `chash`. Supports Nginx variables (`vars`), custom headers (`header`), `cookie` and `consumer`. Defaults to `vars`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
-| key                         | optional                                    | Only valid if the `type` is `chash`. Finds the corresponding node `id` according to `hash_on` and `key` values. When `hash_on` is set to `vars`, `key` is a required parameter and it supports [Nginx variables](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is a required parameter, and `header name` can be customized. When `hash_on` is set to `cookie`, `key` is also a required parameter, and `cookie name` can be customized. When `hash_on` is set to `consumer`, `key` need not be set and the `key` used by the hash algorithm would be the authenticated `consumer_name`. If the specified `hash_on` and `key` fail to fetch the values, it will default to `remote_address`. | `uri`, `server_name`, `server_addr`, `request_uri`, `remote_port`, `remote_addr`, `query_string`, `host`, `hostname`, `arg_***`, `arg_***` |
-| checks                      | optional                                    | Configures the parameters for the [health check](health-check.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |                                                                                                                                            |
+| key                         | optional                                    | Only valid if the `type` is `chash`. Finds the corresponding node `id` according to `hash_on` and `key` values. When `hash_on` is set to `vars`, `key` is a required parameter and it supports [Nginx variables](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is a required parameter, and `header name` can be customized. When `hash_on` is set to `cookie`, `key` is also a required parameter, and `cookie name` can be customized. When `hash_on` is set to `consumer`, `key` need not be set and the `key` used by the hash algorithm would be the authenticated `consumer_name`. If the specified `hash_on` and `key` fail to fetch the values, it will default to `remote_addr`. | `uri`, `server_name`, `server_addr`, `request_uri`, `remote_port`, `remote_addr`, `query_string`, `host`, `hostname`, `arg_***`, `arg_***` |
+| checks                      | optional                                    | Configures the parameters for the [health check](./tutorials/health-check.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |                                                                                                                                            |
 | retries                     | optional                                    | Sets the number of retries while passing the request to Upstream using the underlying Nginx mechanism. Set according to the number of available backend nodes by default. Setting this to `0` disables retry.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |                                                                                                                                            |
 | retry_timeout               | optional                                    | Timeout to continue with retries. Setting this to `0` disables the retry timeout.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |                                                                                                                                            |
-| timeout                     | optional                                    | Sets the timeout (in seconds) for connecting to, and sending and receiving messages to and from the Upstream.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |                                                                                                                                            |
+| timeout                     | optional                                    | Sets the timeout (in seconds) for connecting to, and sending and receiving messages to and from the Upstream.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |                                                                                                                                            |
 | name                        | optional                                    | Identifier for the Upstream.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |                                                                                                                                            |
 | desc                        | optional                                    | Description of usage scenarios.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
 | pass_host                   | optional                                    | Configures the `host` when the request is forwarded to the upstream. Can be one of `pass`, `node` or `rewrite`. Defaults to `pass` if not specified. `pass`- transparently passes the client's host to the Upstream. `node`- uses the host configured in the node of the Upstream. `rewrite`- Uses the value configured in `upstream_host`.                                                                                                                                                                                                                                                                                                                                                                                      |                                                                                                                                            |
 | upstream_host               | optional                                    | Specifies the host of the Upstream request. This is only valid if the `pass_host` is set to `rewrite`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |                                                                                                                                            |
 | scheme                      | optional                                    | The scheme used when communicating with the Upstream. For an L7 proxy, this value can be one of 'http', 'https', 'grpc', 'grpcs'. For an L4 proxy, this value could be one of 'tcp', 'udp', 'tls'. Defaults to 'http'.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |                                                                                                                                            |
 | labels                      | optional                                    | Attributes of the Upstream specified as key-value pairs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | {"version":"v2","build":"16","env":"production"}                                                                                           |
-| create_time                 | optional                                    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | 1602883670                                                                                                                                 |
-| update_time                 | optional                                    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | 1602883670                                                                                                                                 |
+| create_time                 | optional                                    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 1602883670                                                                                                                                 |
+| update_time                 | optional                                    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 1602883670                                                                                                                                 |
 | tls.client_cert             | optional, can't be used with `tls.client_cert_id`       | Sets the client certificate while connecting to a TLS Upstream.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
 | tls.client_key              | optional, can't be used with `tls.client_cert_id`       | Sets the client private key while connecting to a TLS Upstream.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
-| tls.client_cert_id          | optional, can't be used with `tls.client_cert` and `tls.client_key`       | Set the referenced [SSL](#ssl) id.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
+| tls.client_cert_id          | optional, can't be used with `tls.client_cert` and `tls.client_key`       | Set the referenced [SSL](#ssl) id.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |                                                                                                                                            |
 | keepalive_pool.size         | optional                                    | Sets `keepalive` directive dynamically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |                                                                                                                                            |
 | keepalive_pool.idle_timeout | optional                                    | Sets `keepalive_timeout` directive dynamically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
 | keepalive_pool.requests     | optional                                    | Sets `keepalive_requests` directive dynamically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |                                                                                                                                            |
@@ -690,9 +726,8 @@ Example 1: Create an Upstream and modify the data in `nodes`
 
 ```shell
 # Create upstream
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
-    "type":"roundrobin",
     "nodes":{
         "127.0.0.1:1980": 1
     }
@@ -702,7 +737,7 @@ HTTP/1.1 201 Created
 
 
 # Add a node to the Upstream
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "nodes": {
         "127.0.0.1:1981": 1
@@ -719,7 +754,7 @@ After successful execution, nodes will be updated to:
 
 
 # Update the weight of a node to the Upstream
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "nodes": {
         "127.0.0.1:1981": 10
@@ -736,7 +771,7 @@ After successful execution, nodes will be updated to:
 
 
 # Delete a node for the Upstream
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "nodes": {
         "127.0.0.1:1980": null
@@ -752,7 +787,7 @@ After successful execution, nodes will be updated to:
 
 
 # Replace the nodes of the Upstream
-$ curl http://127.0.0.1:9080/apisix/admin/upstreams/100/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
 {
     "127.0.0.1:1982": 1
 }'
@@ -771,11 +806,10 @@ Example 2: Proxy client request to `https` Upstream service
 1. Create a route and configure the upstream scheme as `https`.
 
 ```shell
-$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
     "upstream": {
-        "type": "roundrobin",
         "scheme": "https",
         "nodes": {
             "httpbin.org:443": 1
@@ -919,6 +953,35 @@ Sets Plugins which run globally. i.e these Plugins will be run before any Route/
 | create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670 |
 | update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670 |
 
+## Consumer group
+
+**API**: /apisix/admin/consumer_groups/{id}
+
+Group of Plugins which can be reused across Consumers.
+
+### Request Methods
+
+| Method | Request URI                              | Request Body | Description                                                                                                                           |
+| ------ | ---------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | /apisix/admin/consumer_groups             | NULL         | Fetches a list of all Consumer groups.                                                                                                 |
+| GET    | /apisix/admin/consumer_groups/{id}        | NULL         | Fetches specified Consumer group by id.                                                                                                |
+| PUT    | /apisix/admin/consumer_groups/{id}        | {...}        | Creates a new Consumer group with the specified id.                                                                                    |
+| DELETE | /apisix/admin/consumer_groups/{id}        | NULL         | Removes the Consumer group with the specified id.                                                                                      |
+| PATCH  | /apisix/admin/consumer_groups/{id}        | {...}        | Updates the selected attributes of the specified, existing Consumer group. To delete an attribute, set value of attribute set to null. |
+| PATCH  | /apisix/admin/consumer_groups/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                         |
+
+### Request Body Parameters
+
+| Parameter   | Required | Description                                                                                                        | Example                                          |
+| ----------- | -------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| plugins     | True     | Plugins that are executed during the request/response cycle. See [Plugin](terminology/plugin.md) for more. |                                                  |
+| desc        | False    | Description of usage scenarios.                                                                                    | customer xxxx                                    |
+| labels      | False    | Attributes of the Consumer group specified as key-value pairs.                                                      | {"version":"v2","build":"16","env":"production"} |
+| create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
+| update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
+
+[Back to TOC](#table-of-contents)
+
 ## Plugin config
 
 **API**: /apisix/admin/plugin_configs/{id}
@@ -967,7 +1030,7 @@ A JSON object defined according to the `metadata_schema` of the Plugin ({plugin_
 Example Configuration:
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/example-plugin  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/example-plugin  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
     "skey": "val",
     "ikey": 1
@@ -997,10 +1060,10 @@ The Plugin ({plugin_name}) of the data structure.
 Example API usage:
 
 ```shell
-$ curl "http://127.0.0.1:9080/apisix/admin/plugins/list" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+$ curl "http://127.0.0.1:9180/apisix/admin/plugins/list" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ["zipkin","request-id",...]
 
-$ curl "http://127.0.0.1:9080/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+$ curl "http://127.0.0.1:9180/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 {"$comment":"this is a mark for our injected plugin schema","properties":{"header":{"default":"apikey","type":"string"},"hide_credentials":{"default":false,"type":"boolean"},"_meta":{"properties":{"filter":{"type":"array","description":"filter determines whether the plugin needs to be executed at runtime"},"disable":{"type":"boolean"},"error_response":{"oneOf":[{"type":"string"},{"type":"object"}]},"priority":{"type":"integer","description":"priority of plugins by customized order"}},"type":"object"},"query":{"default":"apikey","type":"string"}},"type":"object"}
 ```
 

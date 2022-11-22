@@ -32,10 +32,6 @@ no_shuffle();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
-
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests();
@@ -167,7 +163,7 @@ decrypt ssl key failed
             end
 
             res = json.decode(res)
-            ngx.say(res.node.value.upstream.tls.client_key == ssl_key)
+            ngx.say(res.value.upstream.tls.client_key == ssl_key)
 
             -- upstream
             local data = {
@@ -203,7 +199,7 @@ decrypt ssl key failed
             end
 
             res = json.decode(res)
-            ngx.say(res.node.value.tls.client_key == ssl_key)
+            ngx.say(res.value.tls.client_key == ssl_key)
 
             local data = {
                 upstream = {
@@ -240,7 +236,7 @@ decrypt ssl key failed
             end
 
             res = json.decode(res)
-            ngx.say(res.node.value.upstream.tls.client_key == ssl_key)
+            ngx.say(res.value.upstream.tls.client_key == ssl_key)
         }
     }
 --- request
@@ -341,7 +337,6 @@ GET /t
 --- yaml_config
 apisix:
     node_listen: 1984
-    admin_key: null
     ssl:
         key_encrypt_salt: null
 --- config
@@ -387,7 +382,7 @@ apisix:
             end
 
             res = json.decode(res)
-            ngx.say(res.node.value.upstream.tls.client_key == ssl_key)
+            ngx.say(res.value.upstream.tls.client_key == ssl_key)
 
             -- upstream
             local data = {
@@ -423,7 +418,7 @@ apisix:
             end
 
             res = json.decode(res)
-            ngx.say(res.node.value.tls.client_key == ssl_key)
+            ngx.say(res.value.tls.client_key == ssl_key)
 
             local data = {
                 upstream = {
@@ -460,7 +455,7 @@ apisix:
             end
 
             res = json.decode(res)
-            ngx.say(res.node.value.upstream.tls.client_key == ssl_key)
+            ngx.say(res.value.upstream.tls.client_key == ssl_key)
         }
     }
 --- request

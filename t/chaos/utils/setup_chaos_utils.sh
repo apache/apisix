@@ -34,19 +34,23 @@ modify_config() {
     DNS_IP=$(kubectl get svc -n kube-system -l k8s-app=kube-dns -o 'jsonpath={..spec.clusterIP}')
     echo "dns_resolver:
   - ${DNS_IP}
-etcd:
-  host:
-  - \"http://etcd.default.svc.cluster.local:2379\"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - \"http://etcd.default.svc.cluster.local:2379\"
 plugin_attr:
   prometheus:
     enable_export_server: false
   " > ./conf/config.yaml
-    sed -i -e 's/apisix:latest/apisix:alpine-local/g' t/chaos/kubernetes/deployment.yaml
 }
 
 port_forward() {
     apisix_pod_name=$(kubectl get pod -l app=apisix-gw -o 'jsonpath={.items[0].metadata.name}')
     nohup kubectl port-forward svc/apisix-gw-lb 9080:9080 >/dev/null 2>&1 &
+    nohup kubectl port-forward svc/apisix-gw-lb 9180:9180 >/dev/null 2>&1 &
     nohup kubectl port-forward $apisix_pod_name 9091:9091 >/dev/null 2>&1 &
     ps aux | grep '[p]ort-forward'
 }

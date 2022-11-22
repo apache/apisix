@@ -24,12 +24,16 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
+    }
+
+    if (!defined $block->extra_yaml_config) {
+        my $extra_yaml_config = <<_EOC_;
+plugins:
+    - error-log-logger
+_EOC_
+        $block->set_value("extra_yaml_config", $extra_yaml_config);
     }
 
     my $http_config = $block->http_config // <<_EOC_;
@@ -88,12 +92,6 @@ done
 
 
 === TEST 2: test unreachable server
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -128,12 +126,6 @@ clickhouse headers: x-clickhouse-database:default
 
 
 === TEST 3: put plugin metadata and log an error level message
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -169,12 +161,6 @@ clickhouse headers: x-clickhouse-database:default
 
 
 === TEST 4: log a warn level message
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -194,12 +180,6 @@ clickhouse headers: x-clickhouse-database:default
 
 
 === TEST 5: log some messages
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -219,12 +199,6 @@ clickhouse headers: x-clickhouse-database:default
 
 
 === TEST 6: log an info level message
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -240,12 +214,6 @@ this is an info message for test6
 
 
 === TEST 7: delete metadata for the plugin, recover to the default
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /t {
         content_by_lua_block {

@@ -30,7 +30,14 @@ local schema = {
                     case = {
                         type = "array",
                         items = {
-                            type = "array",
+                            anyOf = {
+                                {
+                                    type = "array",
+                                },
+                                {
+                                    type = "string",
+                                },
+                            }
                         },
                         minItems = 1,
                     },

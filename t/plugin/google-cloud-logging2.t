@@ -24,10 +24,6 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -58,24 +54,8 @@ __DATA__
                 }
             }
 
-            local expected = {
-                node = {
-                    value = {
-                        plugins = {
-                            ["google-cloud-logging"] = {
-                                max_retry_count = 0,
-                                retry_delay = 1,
-                                buffer_duration = 60,
-                                batch_max_size = 1000,
-                                inactive_timeout = 5,
-                            }
-                        }
-                    }
-                }
-            }
-
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config, expected)
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
 
             if code >= 300 then
                 ngx.status = code

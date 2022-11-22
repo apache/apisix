@@ -53,6 +53,7 @@ local lrucache = core.lrucache.new({
     type = 'plugin', count = 128, ttl = 24 * 60 * 60,
 })
 
+local asterisk = string.byte("*", 1)
 
 local attr_schema = {
     type = "object",
@@ -169,6 +170,13 @@ local schema = {
                 type = "string",
                 minLength = 1,
             }
+        },
+        additional_header_prefix_attributes = {
+            type = "array",
+            items = {
+                type = "string",
+                minLength = 1,
+            }
         }
     }
 }
@@ -273,6 +281,27 @@ local function create_tracer_obj(conf)
 end
 
 
+local function inject_attributes(attributes, wanted_attributes, source, with_prefix)
+    for _, key in ipairs(wanted_attributes) do
+        local is_key_a_match = #key >= 2 and key:byte(-1) == asterisk and with_prefix
+
+        if is_key_a_match then
+            local prefix = key:sub(0, -2)
+            for possible_key, value in pairs(source) do
+                if core.string.has_prefix(possible_key, prefix) then
+                    core.table.insert(attributes, attr.string(possible_key, value))
+                end
+            end
+        else
+            local val = source[key]
+            if val then
+                core.table.insert(attributes, attr.string(key, val))
+            end
+        end
+    end
+end
+
+
 function _M.rewrite(conf, api_ctx)
     local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil, create_tracer_obj, conf)
     if not tracer then
@@ -286,17 +315,22 @@ function _M.rewrite(conf, api_ctx)
         attr.string("service", api_ctx.service_name),
         attr.string("route", api_ctx.route_name),
     }
+
     if conf.additional_attributes then
-        for _, key in ipairs(conf.additional_attributes) do
-            local val = api_ctx.var[key]
-            if val then
-                core.table.insert(attributes, attr.string(key, val))
-            end
-        end
+        inject_attributes(attributes, conf.additional_attributes, api_ctx.var, false)
+    end
+
+    if conf.additional_header_prefix_attributes then
+        inject_attributes(
+            attributes,
+            conf.additional_header_prefix_attributes,
+            core.request.headers(api_ctx),
+            true
+        )
     end
 
     local ctx = tracer:start(upstream_context, api_ctx.var.request_uri, {
-        kind = span_kind.client,
+        kind = span_kind.server,
         attributes = attributes,
     })
     ctx:attach()

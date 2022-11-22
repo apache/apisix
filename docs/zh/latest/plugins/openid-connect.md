@@ -58,6 +58,8 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 | set_id_token_header                  | boolean | 否     | true                  | [true, false] | 是否将 ID 令牌设置到请求头参数 `X-ID-Token`。                                                       |
 | set_userinfo_header                  | boolean | 否     | true                  | [true, false] | 是否将用户信息对象设置到请求头参数 `X-Userinfo`。                                                    |
 | set_refresh_token_header             | boolean | 否     | false                 |               | 当设置为 `true` 并且刷新令牌可用时，则会将该属性设置在`X-Refresh-Token`请求头中。                      |
+| session                              | object  | 否     |                       |               | 当设置 bearer_only 为 false 时，openid-connect 插件将使用 Authorization Code 在 IDP 上进行认证，因此你必须设置 session 相关设置。 |
+| session.secret                       | string  | 是     | 自动生成               | 16 个以上字符  | 用于 session 加密和 HMAC 计算的密钥。 |
 
 ## 使用场景
 
@@ -71,7 +73,7 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 
 1. 应用之间认证授权：将 `bearer_only` 设置为 `true`，并配置 `introspection_endpoint` 或 `public_key` 属性。该场景下，请求头（Header）中没有令牌或无效令牌的请求将被拒绝。
 
-2. 浏览器中认证授权：将 `bearer_only` 设置为 `false`。认证成功后，该插件可获得并管理 Cookie 中的令牌，后续请求将使用该令牌。
+2. 浏览器中认证授权：将 `bearer_only` 设置为 `false`。认证成功后，该插件可获得并管理 Cookie 中的令牌，后续请求将使用该令牌。在这种模式中，用户会话将作为 Cookie 存储在浏览器中，这些数据是加密的，因此你必须通过 `session.secret` 设置一个密钥用于加密。
 
 ### 令牌内省
 
@@ -84,7 +86,7 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 以下示例是在路由上启用插件。该路由将通过内省请求头中提供的令牌来保护上游：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/get",
@@ -128,7 +130,7 @@ curl -i -X GET http://127.0.0.1:9080/get -H "Authorization: Bearer {JWT_TOKEN}"
 以下示例展示了如何将公钥添加到路由中：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/get",
@@ -163,7 +165,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 以下示例是将此操作模式添加到 Route：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/get",

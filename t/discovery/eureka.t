@@ -24,8 +24,10 @@ no_shuffle();
 our $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
-  config_center: yaml
-  enable_admin: false
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   eureka:
     host:
@@ -60,13 +62,11 @@ GET /eureka/apps/APISIX-EUREKA
 --- response_body_like
 .*<name>APISIX-EUREKA</name>.*
 --- error_log
-use config_center: yaml
+use config_provider: yaml
 default_weight:80.
 fetch_interval:10.
 eureka uri:http://127.0.0.1:8761/eureka/.
 connect_timeout:1500, send_timeout:1500, read_timeout:1500.
---- no_error_log
-[error]
 
 
 
@@ -110,10 +110,8 @@ GET /eureka-test/eureka/apps/APISIX-EUREKA
 --- response_body_like
 .*<name>APISIX-EUREKA</name>.*
 --- error_log
-use config_center: yaml
+use config_provider: yaml
 default_weight:80.
 fetch_interval:10.
 eureka uri:http://127.0.0.1:8761/eureka/.
 connect_timeout:1500, send_timeout:1500, read_timeout:1500.
---- no_error_log
-[error]

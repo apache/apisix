@@ -42,6 +42,7 @@ description: 本文介绍了 Apache APISIX proxy-mirror 插件的相关操作，
 | ---- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------- |
 | host | string | 是   |        |        | 指定镜像服务的地址，地址中需要包含 `schema`（`http` 或 `https`），但不能包含 `path` 部分。例如 `http://127.0.0.1:9797`。 |
 | path | string | 否   |        |        | 指定镜像请求的路径。如果不指定，则默认会使用当前路径。 |
+| path_concat_mode | string | 否   |   replace     | ["replace", "prefix"]       | 当指定镜像请求的路径时，设置请求路径的拼接模式。`replace` 模式将会直接使用 `path` 作为镜像请求的路径。`prefix` 模式将会使用 `path` + `来源请求 URI` 作为镜像请求的路径。  |
 | sample_ratio | number | 否    | 1       |  [0.00001, 1]     | 镜像请求的采样率。当设置为 `1` 时为全采样。 |
 
 ## 启用插件
@@ -49,7 +50,7 @@ description: 本文介绍了 Apache APISIX proxy-mirror 插件的相关操作，
 以下示例展示了如何在指定路由上启用 `proxy-mirror` 插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
   -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -119,7 +120,7 @@ hello world
 当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
   -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",

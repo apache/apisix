@@ -27,7 +27,6 @@ apisix:
     node_listen: 1984
     router:
         http: 'radixtree_host_uri'
-    admin_key: null
 _EOC_
 
 run_tests();
@@ -64,8 +63,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -76,8 +73,6 @@ GET /not_found
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -88,8 +83,6 @@ GET /hello
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -102,8 +95,6 @@ Host: not_found.com
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -115,8 +106,6 @@ GET /hello
 Host: foo.com
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -160,8 +149,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -172,8 +159,6 @@ GET /hello
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -185,8 +170,6 @@ GET /server_port
 Host: anydomain.com
 --- response_body_like eval
 qr/1981/
---- no_error_log
-[error]
 
 
 
@@ -219,8 +202,6 @@ qr/1981/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -231,8 +212,6 @@ GET /hello2
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -244,8 +223,6 @@ GET /hello
 Host: anydomain.com
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -269,8 +246,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -304,8 +279,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 

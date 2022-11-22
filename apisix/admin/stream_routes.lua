@@ -17,12 +17,12 @@
 local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
 local stream_route_checker = require("apisix.stream.router.ip_port").stream_route_checker
-local v3_adapter = require("apisix.admin.v3_adapter")
 local tostring = tostring
 
 
 local _M = {
     version = 0.1,
+    need_v3_filter = true,
 }
 
 
@@ -115,7 +115,6 @@ function _M.get(id)
     end
 
     utils.fix_count(res.body, id)
-    v3_adapter.filter(res.body)
     return res.status, res.body
 end
 

@@ -68,7 +68,7 @@ APISIX 支持 [Syslog](https://documentation.solarwinds.com/en/success_center/lo
 Syslog 协议允许你发送符合 RFC5424 的 syslog 事件并进行细粒度控制。但是在以快速传输速度发送大量日志时，使用 HTTP/S 批量端点会更好。你可以通过以下方式更新元数据以更新使用的协议：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/loggly \
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/loggly \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
    "protocol": "http"
@@ -84,7 +84,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/loggly \
 **完整配置**
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins":{
@@ -116,7 +116,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 **最小化配置**
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins":{
@@ -151,7 +151,7 @@ curl -i http://127.0.0.1:9080/index.html
 当你需要禁用该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
