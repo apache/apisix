@@ -395,10 +395,11 @@ passed
 === TEST 11: hit route and report sys logger
 --- extra_init_by_lua
     local syslog = require("apisix.plugins.syslog.init")
-    local core = require("apisix.core")
+    local json = require("apisix.core.json")
+    local log = require("apisix.core.log")
     local old_f = syslog.push_entry
     syslog.push_entry = function(conf, ctx, entry)
-        core.log.info("syslog-log-format => " ..  core.json.encode(entry))
+        log.info("syslog-log-format => " ..  json.encode(entry))
         return old_f(conf, ctx, entry)
     end
 --- request
