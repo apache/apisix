@@ -56,8 +56,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -66,8 +64,6 @@ passed
 GET /hello?a1=a1&a2=a2
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -77,5 +73,3 @@ GET /hello?a1=xxxx&a2=xxxx
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]

@@ -67,8 +67,6 @@ default_weight:80.
 fetch_interval:10.
 eureka uri:http://127.0.0.1:8761/eureka/.
 connect_timeout:1500, send_timeout:1500, read_timeout:1500.
---- no_error_log
-[error]
 
 
 
@@ -117,5 +115,3 @@ default_weight:80.
 fetch_interval:10.
 eureka uri:http://127.0.0.1:8761/eureka/.
 connect_timeout:1500, send_timeout:1500, read_timeout:1500.
---- no_error_log
-[error]

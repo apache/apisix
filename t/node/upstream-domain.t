@@ -53,8 +53,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -81,8 +79,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -92,8 +88,6 @@ GET /not_found
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -102,8 +96,6 @@ GET /not_found
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 --- error_log eval
 qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
 
@@ -135,8 +127,6 @@ qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -187,8 +177,6 @@ failed to parse domain: httpbin.orgx
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -213,8 +201,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -245,8 +231,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -275,8 +259,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -311,8 +293,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -323,8 +303,6 @@ GET /hello
 hello world
 --- error_log eval
 qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
---- no_error_log
-[error]
 
 
 
@@ -370,8 +348,6 @@ qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -393,8 +369,6 @@ location /t {
 GET /t
 --- response_body
 1980, 1981, 1981
---- no_error_log
-[error]
 
 
 
@@ -429,8 +403,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -441,5 +413,3 @@ GET /hello
 hello world
 --- error_log eval
 qr/dns resolver domain: foo.com. to \d+.\d+.\d+.\d+/
---- no_error_log
-[error]

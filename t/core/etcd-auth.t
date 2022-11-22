@@ -68,8 +68,6 @@ __DATA__
 GET /t
 --- response_body
 test_value
---- no_error_log
-[error]
 
 
 
@@ -97,5 +95,3 @@ deployment:
     password: abc123
 --- request
 GET /t
---- no_error_log
-[error]

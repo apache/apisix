@@ -23,10 +23,6 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -330,8 +326,8 @@ all brokers failed in fetch topic metadata
             test_pubsub:close_ws()
         }
     }
---- error_log
-self signed certificate
+--- error_log eval
+qr/self[- ]signed certificate/
 
 
 

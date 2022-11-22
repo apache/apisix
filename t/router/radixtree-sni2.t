@@ -63,8 +63,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -183,8 +181,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -278,6 +274,8 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to handle cert-key pair[1]: failed to decrypt previous encrypted key"}
+--- error_log
+decrypt ssl key failed
 
 
 
@@ -388,8 +386,6 @@ location /t {
 }
 --- request
 GET /t
---- no_error_log
-[error]
 --- response_body
 ssl handshake: true
 
@@ -419,8 +415,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -453,8 +447,6 @@ location /t {
 }
 --- request
 GET /t
---- no_error_log
-[error]
 --- response_body
 ssl handshake: true
 
@@ -484,8 +476,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -518,8 +508,6 @@ location /t {
 }
 --- request
 GET /t
---- no_error_log
-[error]
 --- response_body
 ssl handshake: true
 
@@ -567,8 +555,6 @@ location /t {
     end
 --- request
 GET /t
---- no_error_log
-[error]
 --- response_body
 ssl handshake: true
 --- grep_error_log eval

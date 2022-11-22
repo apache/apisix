@@ -28,10 +28,6 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    if (!$block->no_error_log && !$block->error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     my $http_config = $block->http_config // <<_EOC_;
     server {
         listen 12001;

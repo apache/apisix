@@ -73,8 +73,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -109,8 +107,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -151,8 +147,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -210,8 +204,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -268,8 +260,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -288,8 +278,6 @@ passed
 GET /t
 --- response_body
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -308,8 +296,6 @@ GET /t
 GET /t
 --- response_body
 [delete] code: 404
---- no_error_log
-[error]
 
 
 
@@ -332,8 +318,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"plugins\" is required"}
---- no_error_log
-[error]
 
 
 
@@ -365,8 +349,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -388,8 +370,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -426,8 +406,6 @@ passed
 {"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -464,8 +442,6 @@ GET /t
 {"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -501,8 +477,6 @@ GET /t
 {"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -530,5 +504,3 @@ GET /t
 {"deleted":"1","key":"/apisix/global_rules/1"}
 --- request
 GET /t
---- no_error_log
-[error]

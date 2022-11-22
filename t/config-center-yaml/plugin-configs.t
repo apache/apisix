@@ -38,10 +38,6 @@ _EOC_
     if (!$block->request) {
         $block->set_value("request", "GET /hello");
     }
-
-    if (!$block->error_log && !$block->no_error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests();
@@ -120,8 +116,6 @@ world
 in: out
 --- error_log eval
 qr/conf_version: \d+#1,/
---- no_error_log
-[error]
 
 
 
