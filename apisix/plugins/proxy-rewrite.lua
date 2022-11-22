@@ -74,20 +74,11 @@ local schema = {
         },
         headers = {
             description = "new headers for request",
-            anyOf = {
+            oneOf = {
                 {
                     type = "object",
                     minProperties = 1,
-                    patternProperties = {
-                        ["^[^:]+$"] = {
-                            oneOf = {
-                                { type = "string" },
-                                { type = "number" }
-                            }
-                        }
-                    },
-                },
-                {
+                    additionalProperties = false,
                     properties = {
                         add = {
                             type = "object",
@@ -122,6 +113,18 @@ local schema = {
                                 pattern = "^[^:]+$"
                             }
                         },
+                    },
+                },
+                {
+                    type = "object",
+                    minProperties = 1,
+                    patternProperties = {
+                        ["^[^:]+$"] = {
+                            oneOf = {
+                                { type = "string" },
+                                { type = "number" }
+                            }
+                        }
                     },
                 }
             },
