@@ -191,7 +191,6 @@ plugin_attr:
 --- config
     location /t {
         content_by_lua_block {
-            ngx.log(ngx.ERR, "start xxxxxx")
             ngx.sleep(3.5)
             local has_split_access_file = false
             local has_split_error_file = false
