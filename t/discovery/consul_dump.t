@@ -48,19 +48,22 @@ __DATA__
 
 === TEST 1: prepare nodes
 --- config
-location /v1/catalog/services {
+location /v1/agent {
     proxy_pass http://127.0.0.1:8500;
 }
 --- request eval
 [
-    "DELETE /v1/kv/upstreams/?recurse=true",
-    "PUT /v1/kv/upstreams/webpages/127.0.0.1:30511\n" . "{\"weight\": 1, \"max_fails\": 1, \"fail_timeout\": 1}",
+    "PUT /v1/agent/service/deregister/service_a1",
+    "PUT /v1/agent/service/deregister/service_b1",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_b1\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":8002,\"Meta\":{\"service_a_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
 ]
 --- response_body eval
 [
-    'true',
-    'true',
-    'true',
+    '',
+    '',
+    '',
+    '',
 ]
 
 
@@ -94,8 +97,7 @@ discovery:
 --- request
 GET /t
 --- response_body
-{"http://127.0.0.1:8500/v1/catalog/services/":[{"host":"127.0.0.1","port":30511,"weight":1}]}
-
+{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1}],"service_b":[{"host":"127.0.0.1","port":8002,"weight":1}]}
 
 
 === TEST 3: prepare dump file for next test
@@ -120,7 +122,7 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8500/v1/catalog/services/
+      service_name: service_a
       discovery_type: consul
       type: roundrobin
 #END
@@ -133,16 +135,18 @@ server 1
 
 === TEST 4: clean registered nodes
 --- config
-location /v1/kv {
+location /v1/agent {
     proxy_pass http://127.0.0.1:8500;
 }
 --- request eval
 [
-    "DELETE /v1/kv/upstreams/?recurse=true",
+    "PUT /v1/agent/service/deregister/service_a1",
+    "PUT /v1/agent/service/deregister/service_b1",
 ]
 --- response_body eval
 [
-    'true'
+    '',
+    ''
 ]
 
 
@@ -170,7 +174,7 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8500/v1/kv/upstreams/webpages/
+      service_name: service_a
       discovery_type: consul
       type: roundrobin
 #END
@@ -221,7 +225,7 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8500/v1/kv/upstreams/webpages/
+      service_name: service_a
       discovery_type: consul
       type: roundrobin
 #END
@@ -242,7 +246,7 @@ failed to set upstream
             local util = require("apisix.cli.util")
             local json = require("toolkit.json")
 
-            local applications = json.decode('{"http://127.0.0.1:8500/v1/kv/upstreams/webpages/":[{"host":"127.0.0.1","port":30511,"weight":1}]}')
+            local applications = json.decode('{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1}]}')
             local entity = {
                 services = applications,
                 last_update = ngx.time(),
@@ -287,7 +291,7 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8500/v1/kv/upstreams/webpages/
+      service_name: service_a
       discovery_type: consul
       type: roundrobin
 #END
@@ -325,7 +329,7 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8500/v1/catalog/services/
+      service_name: service_a
       discovery_type: consul
       type: roundrobin
 #END
