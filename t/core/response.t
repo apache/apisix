@@ -38,8 +38,6 @@ GET /t
 --- error_code: 201
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -56,8 +54,6 @@ GET /t
 --- error_code: 201
 --- response_body
 {"a":"a"}
---- no_error_log
-[error]
 
 
 
@@ -77,8 +73,6 @@ done
 --- response_headers
 aaa: bbb
 ccc: ddd
---- no_error_log
-[error]
 
 
 
@@ -98,8 +92,6 @@ done
 --- response_headers
 aaa: bbb
 ccc: ddd
---- no_error_log
-[error]
 
 
 
@@ -118,8 +110,6 @@ GET /t
 done
 --- response_headers
 aaa: bbb, bbb
---- no_error_log
-[error]
 
 
 
@@ -140,8 +130,6 @@ done
 --- response_headers
 aaa: bbb, bbb
 ccc: ddd
---- no_error_log
-[error]
 
 
 
@@ -161,8 +149,6 @@ GET /t
 done
 --- response_headers
 aaa:
---- no_error_log
-[error]
 
 
 
@@ -213,5 +199,3 @@ aaa:
 GET /t
 --- response_body
 hello world
---- no_error_log
-[error]

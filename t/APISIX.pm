@@ -771,12 +771,6 @@ _EOC_
             if (\$http_x_forwarded_for != "") {
                 set \$var_x_forwarded_for "\${http_x_forwarded_for}, \${realip_remote_addr}";
             }
-            if (\$http_x_forwarded_host != "") {
-                set \$var_x_forwarded_host \$http_x_forwarded_host;
-            }
-            if (\$http_x_forwarded_port != "") {
-                set \$var_x_forwarded_port \$http_x_forwarded_port;
-            }
 
             proxy_set_header   X-Forwarded-For      \$var_x_forwarded_for;
             proxy_set_header   X-Forwarded-Proto    \$var_x_forwarded_proto;
@@ -880,6 +874,12 @@ $user_apisix_yaml
 _EOC_
 
     $block->set_value("user_files", $user_files);
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)
+        && (!defined $block->grep_error_log)
+        && (!defined $block->ignore_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
 
     $block;
 });

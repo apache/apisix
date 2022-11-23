@@ -96,6 +96,8 @@ routes:
 --- more_headers
 apikey: user-key
 --- error_code: 502
+--- error_log
+Connection refused
 
 
 
@@ -147,6 +149,8 @@ routes:
 --- more_headers
 apikey: user-key
 --- error_code: 502
+--- error_log
+Connection refused
 
 
 

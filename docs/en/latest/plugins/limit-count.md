@@ -28,7 +28,7 @@ description: This document contains information about the Apache APISIX limit-co
 
 ## Description
 
-The `limit-count` Plugin limits the number of requests to your service by a given count per time.
+The `limit-count` Plugin limits the number of requests to your service by a given count per time. The plugin is using Fixed Window algorithm.
 
 ## Attributes
 

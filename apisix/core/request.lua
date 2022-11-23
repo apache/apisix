@@ -22,6 +22,11 @@
 local lfs = require("lfs")
 local log = require("apisix.core.log")
 local io = require("apisix.core.io")
+local req_add_header
+if ngx.config.subsystem == "http" then
+    local ngx_req = require "ngx.req"
+    req_add_header = ngx_req.add_header
+end
 local is_apisix_or, a6_request = pcall(require, "resty.apisix.request")
 local ngx = ngx
 local get_headers = ngx.req.get_headers
@@ -138,6 +143,15 @@ function _M.set_header(ctx, header_name, header_value)
     end
 end
 
+function _M.add_header(header_name, header_value)
+    local err
+    header_name, err = _validate_header_name(header_name)
+    if err then
+        error(err)
+    end
+
+    req_add_header(header_name, header_value)
+end
 
 -- return the remote address of client which directly connecting to APISIX.
 -- so if there is a load balancer between downstream client and APISIX,

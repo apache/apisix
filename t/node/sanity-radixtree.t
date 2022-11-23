@@ -55,8 +55,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -66,8 +64,6 @@ GET /not_found
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -76,8 +72,6 @@ GET /not_found
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -109,8 +103,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -119,8 +111,6 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -129,8 +119,6 @@ hello world
 GET /hello1
 --- response_body
 hello1 world
---- no_error_log
-[error]
 
 
 
@@ -140,8 +128,6 @@ GET /hello2
 --- error_code: 404
 --- response_body eval
 qr/404 Not Found/
---- no_error_log
-[error]
 
 
 
@@ -151,5 +137,3 @@ GET /hel
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]

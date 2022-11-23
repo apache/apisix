@@ -72,8 +72,6 @@ deployment:
 GET /t
 --- response_body
 prev_index updated
---- no_error_log
-[error]
 --- error_log
 cancel watch connection success
 
@@ -120,8 +118,6 @@ cancel watch connection success
 GET /t
 --- response_body
 prev_index updated
---- no_error_log
-[error]
 --- error_log
 waitdir key
 
@@ -160,8 +156,6 @@ waitdir key
 GET /t
 --- response_body
 prev_index not update
---- no_error_log
-[error]
 
 
 

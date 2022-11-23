@@ -34,10 +34,6 @@ deployment:
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
-
-    if (!$block->no_error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests;

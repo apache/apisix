@@ -119,8 +119,6 @@ loaded plugin and sort by priority: -3000 name: ext-plugin-post-req
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -132,8 +130,6 @@ GET /hello
 hello world
 --- response_headers
 Apisix-Plugins: no plugin
---- no_error_log
-[error]
 
 
 
@@ -181,8 +177,6 @@ Apisix-Plugins: no plugin
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -213,8 +207,6 @@ passed
 GET /t
 --- response_body
 {"limit-conn":true,"limit-count":true}
---- no_error_log
-[error]
 
 
 
@@ -245,8 +237,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -279,8 +269,6 @@ GET /t
 {"limit-conn":true,"limit-count":true,"response-rewrite":true}
 --- error_log
 Apisix-Plugins: response-rewrite
---- no_error_log
-[error]
 
 
 
@@ -303,8 +291,6 @@ Apisix-Plugins: response-rewrite
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -348,8 +334,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -361,5 +345,3 @@ passed
 hello world
 --- error_log
 mqtt client id: foo while prereading client data
---- no_error_log
-[error]

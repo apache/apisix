@@ -56,8 +56,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -67,8 +65,6 @@ GET /not_found
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -78,8 +74,6 @@ GET /hello
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -91,8 +85,6 @@ Host: not_found.com
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -103,8 +95,6 @@ GET /hello
 Host: foo.com
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -115,8 +105,6 @@ GET /hello
 Host: FOO.com
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -150,8 +138,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -162,8 +148,6 @@ GET /hello
 Host: foo.com
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -174,5 +158,3 @@ GET /hello
 Host: FOO.com
 --- response_body
 hello world
---- no_error_log
-[error]

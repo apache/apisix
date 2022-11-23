@@ -64,5 +64,3 @@ __DATA__
 --- request
 GET /t
 --- error_code: 400
---- no_error_log
-[error]

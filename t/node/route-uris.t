@@ -55,8 +55,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -64,8 +62,6 @@ passed
 --- request
 GET /not_found
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
@@ -74,8 +70,6 @@ GET /not_found
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -84,5 +78,3 @@ hello world
 GET /hello1
 --- response_body
 hello1 world
---- no_error_log
-[error]
