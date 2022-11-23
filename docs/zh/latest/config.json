@@ -2,41 +2,90 @@
   "version": "3.0.0",
   "sidebar": [
     {
-      "type": "doc",
-      "id": "getting-started"
-    },
-    {
-      "type": "doc",
-      "id": "installation-guide"
-    },
-    {
-      "type": "doc",
-      "id": "architecture-design/apisix"
-    },
-    {
       "type": "category",
-      "label": "Tutorials",
+      "label": "Introduction",
       "items": [
-        "tutorials/expose-api",
-        "tutorials/protect-api",
-        "tutorials/observe-your-api",
-        "tutorials/health-check"
+        "architecture-design/apisix",
+        {
+          "type": "category",
+          "label": "Terminology",
+          "items": [
+            "terminology/api-gateway",
+            "terminology/consumer",
+            "terminology/consumer-group",
+            "terminology/global-rule",
+            "terminology/plugin",
+            "terminology/plugin-config",
+            "terminology/route",
+            "terminology/router",
+            "terminology/script",
+            "terminology/service",
+            "terminology/upstream"
+          ]
+        },
+        {
+          "type": "link",
+          "label": "CHANGELOG",
+          "href": "https://github.com/apache/apisix/blob/master/CHANGELOG.md"
+        },
+        {
+          "type": "link",
+          "label": "Contribution Guide",
+          "href": "https://apisix.apache.org/docs/general/submit-issue/"
+        },
+        "benchmark"
       ]
     },
     {
       "type": "category",
-      "label": "Terminology",
+      "label": "Basic Tutorial",
       "items": [
-        "terminology/api-gateway",
-        "terminology/consumer",
-        "terminology/global-rule",
-        "terminology/plugin",
-        "terminology/plugin-config",
-        "terminology/route",
-        "terminology/router",
-        "terminology/script",
-        "terminology/service",
-        "terminology/upstream"
+        "getting-started",
+        "tutorials/expose-api",
+        "tutorials/protect-api",
+        "tutorials/observe-your-api",
+        "tutorials/cache-api-responses",
+        "tutorials/health-check",
+        "tutorials/load-balancing"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Production Tutorial",
+      "items": [
+        "deployment-modes",
+        "installation-guide",
+        {
+          "type": "category",
+          "label": "Detailed configuration",
+          "items": [
+            "customize-nginx-configuration",
+            "router-radixtree",
+            "profile"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Discovery",
+          "items": [
+            "discovery",
+            "discovery/dns",
+            "discovery/consul_kv",
+            "discovery/nacos",
+            "discovery/eureka",
+            "discovery/kubernetes",
+            "discovery/control-plane-service-discovery"
+          ]
+        },        
+        {
+          "type": "category",
+          "id": "certificate",
+          "items": [
+            "certificate",
+            "mtls"
+          ]
+        },
+        "stream-proxy"
       ]
     },
     {
@@ -53,8 +102,8 @@
             "plugins/gzip",
             "plugins/real-ip",
             "plugins/server-info",
-            "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-pre-req",
+            "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-post-resp"
           ]
         },
@@ -74,13 +123,14 @@
           "type": "category",
           "label": "Authentication",
           "items": [
-            "plugins/authz-keycloak",
-            "plugins/authz-casdoor",
-            "plugins/wolf-rbac",
             "plugins/key-auth",
             "plugins/jwt-auth",
             "plugins/basic-auth",
+            "plugins/authz-keycloak",
+            "plugins/authz-casdoor",
+            "plugins/wolf-rbac",
             "plugins/openid-connect",
+            "plugins/cas-auth",
             "plugins/hmac-auth",
             "plugins/authz-casbin",
             "plugins/ldap-auth",
@@ -183,7 +233,8 @@
           "label": "Other protocols",
           "items": [
             "plugins/dubbo-proxy",
-            "plugins/mqtt-proxy"
+            "plugins/mqtt-proxy",
+            "plugins/kafka-proxy"
           ]
         }
       ]
@@ -204,6 +255,46 @@
     },
     {
       "type": "category",
+      "label": "Reference",
+      "items": [
+      "install-dependencies",
+      "stand-alone",
+      "batch-processor",
+        {
+          "type": "category",
+          "label": "Variable",
+          "items": [
+            "apisix-variable",
+            {
+              "type":"link",
+              "label": "NGINX Variable",
+              "href": "http://nginx.org/en/docs/varindex.html"
+            }          
+          ]
+        },
+        {
+          "type": "category",
+          "label": "PubSub",
+          "items": [
+            "pubsub",
+            "pubsub/kafka"
+          ]
+        },        
+        {
+          "type": "category",
+          "label": "RPC",
+          "items": [
+            "xrpc/redis",
+            "xrpc",
+            "grpc-proxy"
+          ]
+        },
+        "debug-function",
+        "aws"      
+      ]
+    },
+    {
+      "type": "category",
       "label": "Development",
       "items": [
         {
@@ -216,7 +307,20 @@
         },
         {
           "type": "doc",
-          "id": "CODE_STYLE"
+          "id": "wasm"
+        },
+        {
+          "type": "link",
+          "label": "CODE_STYLE",
+          "href": "https://github.com/apache/apisix/blob/master/CODE_STYLE.md"
+        },
+        {
+          "type": "category",
+          "label": "internal",
+          "items": [
+            "internal/plugin-runner",
+            "internal/testing-framework"
+          ]
         },
         {
           "type": "doc",
@@ -231,80 +335,6 @@
     {
       "type": "doc",
       "id": "FAQ"
-    },
-    {
-      "type": "category",
-      "label": "Others",
-      "items": [
-        {
-          "type": "category",
-          "label": "Discovery",
-          "items": [
-            "discovery",
-            "discovery/dns",
-            "discovery/nacos",
-            "discovery/eureka",
-            "discovery/control-plane-service-discovery",
-            "discovery/kubernetes"
-          ]
-        },
-        {
-          "type": "doc",
-          "id": "router-radixtree"
-        },
-        {
-          "type": "doc",
-          "id": "stand-alone"
-        },
-        {
-          "type": "doc",
-          "id": "stream-proxy"
-        },
-        {
-          "type": "doc",
-          "id": "grpc-proxy"
-        },
-        {
-          "type": "doc",
-          "id": "customize-nginx-configuration"
-        },
-        {
-          "type": "doc",
-          "id": "certificate"
-        },
-        {
-          "type": "doc",
-          "id": "apisix-variable"
-        },
-        {
-          "type": "doc",
-          "id": "batch-processor"
-        },
-        {
-          "type": "doc",
-          "id": "benchmark"
-        },
-        {
-          "type": "doc",
-          "id": "install-dependencies"
-        },
-        {
-          "type": "doc",
-          "id": "mtls"
-        },
-        {
-          "type": "doc",
-          "id": "debug-function"
-        },
-        {
-          "type": "doc",
-          "id": "profile"
-        }
-      ]
-    },
-    {
-      "type": "doc",
-      "id": "CHANGELOG"
     }
   ]
 }
