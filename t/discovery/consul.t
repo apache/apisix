@@ -90,9 +90,8 @@ discovery:
     servers:
       - "http://127.0.0.1:8500"
       - "http://127.0.0.1:8600"
-    prefix: "upstreams"
-    skip_keys:
-      - "upstreams/unused_api/"
+    skip_services:
+      - "service_a"
     timeout:
       connect: 1000
       read: 1000
@@ -114,15 +113,15 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: prepare consul kv register nodes
+=== TEST 1: prepare consul catalog register nodes
 --- config
 location /consul1 {
-    rewrite  ^/consul1/(.*) /v1/kv/$1 break;
+    rewrite  ^/consul1/(.*) /v1/catalog/services/$1 break;
     proxy_pass http://127.0.0.1:8500;
 }
 
 location /consul2 {
-    rewrite  ^/consul2/(.*) /v1/kv/$1 break;
+    rewrite  ^/consul2/(.*) /v1/catalog/services/$1 break;
     proxy_pass http://127.0.0.1:8600;
 }
 --- pipelined_requests eval
@@ -146,7 +145,7 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8500/v1/kv/upstreams/webpages/
+      service_name: http://127.0.0.1:8500/v1/catalog/services/
       discovery_type: consul
       type: roundrobin
 #END
@@ -172,7 +171,7 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8600/v1/kv/upstreams/webpages/
+      service_name: http://127.0.0.1:8600/v1/catalog/services/
       discovery_type: consul
       type: roundrobin
 #END
@@ -210,7 +209,7 @@ routes:
   -
     uri: /hello
     upstream:
-      service_name: http://127.0.0.1:8500/v1/kv/upstreams/webpages/
+      service_name: http://127.0.0.1:8500/v1/catalog/services/
       discovery_type: consul
       type: roundrobin
 #END
@@ -231,7 +230,7 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8600/v1/kv/upstreams/deleted_keys/
+      service_name: http://127.0.0.1:8600/v1/catalog/services/dele_keys/
       discovery_type: consul
       type: roundrobin
 #END
@@ -263,8 +262,8 @@ discovery:
     servers:
       - "http://127.0.0.1:8600"
     prefix: "upstreams"
-    skip_keys:
-      - "upstreams/webpages/"
+    skip_services:
+      - "service_a"
     default_service:
       host: "127.0.0.1"
       port: 20999
@@ -278,7 +277,7 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8600/v1/kv/upstreams/webpages/
+      service_name: http://127.0.0.1:8600/v1/catalog/services/
       discovery_type: consul
       type: roundrobin
 #END
@@ -297,12 +296,12 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8500/v1/kv/upstreams/webpages/
+      service_name: http://127.0.0.1:8500/v1/catalog/services/
       discovery_type: consul
       type: roundrobin
 #END
 --- config
-location /v1/kv {
+location /v1/catalog/services {
     proxy_pass http://127.0.0.1:8500;
 }
 location /sleep {
@@ -369,7 +368,7 @@ location /sleep {
 
 === TEST 8: prepare healthy and unhealthy nodes
 --- config
-location /v1/kv {
+location /v1/catalog/services {
     proxy_pass http://127.0.0.1:8500;
 }
 --- request eval
@@ -397,7 +396,7 @@ routes:
     upstream_id: 1
 upstreams:
     -
-      service_name: http://127.0.0.1:8500/v1/kv/upstreams/webpages/
+      service_name: http://127.0.0.1:8500/v1/catalog/services/
       discovery_type: consul
       type: roundrobin
       id: 1
@@ -545,7 +544,7 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8501/v1/kv/upstreams/webpages/
+      service_name: http://127.0.0.1:8501/v1/catalog/services/
       discovery_type: consul
       type: roundrobin
 #END

@@ -48,7 +48,7 @@ __DATA__
 
 === TEST 1: prepare nodes
 --- config
-location /v1/kv {
+location /v1/catalog/services {
     proxy_pass http://127.0.0.1:8500;
 }
 --- request eval
@@ -94,7 +94,7 @@ discovery:
 --- request
 GET /t
 --- response_body
-{"http://127.0.0.1:8500/v1/kv/upstreams/webpages/":[{"host":"127.0.0.1","port":30511,"weight":1}]}
+{"http://127.0.0.1:8500/v1/catalog/services/":[{"host":"127.0.0.1","port":30511,"weight":1}]}
 
 
 
@@ -120,7 +120,7 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8500/v1/kv/upstreams/webpages/
+      service_name: http://127.0.0.1:8500/v1/catalog/services/
       discovery_type: consul
       type: roundrobin
 #END
@@ -325,7 +325,7 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8500/v1/kv/upstreams/webpages/
+      service_name: http://127.0.0.1:8500/v1/catalog/services/
       discovery_type: consul
       type: roundrobin
 #END
