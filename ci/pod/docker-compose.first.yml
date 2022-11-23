@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
     ports:
       - "8500:8500"
-    command: [ "consul", "agent", "-server", "-bootstrap-expect=1", "-client", "0.0.0.0", "-log-level", "info", "-data-dir=/consul/data" ]
+    command: [ "consul", "agent", "-server", "-bootstrap-expect=1", "-client", "0.0.0.0", "-log-level", "info", "-data-dir=/consul/data", "-enable-script-checks" ]
     networks:
       consul_net:
 
@@ -42,7 +42,7 @@ services:
     restart: unless-stopped
     ports:
       - "8600:8500"
-    command: [ "consul", "agent", "-server", "-bootstrap-expect=1", "-client", "0.0.0.0", "-log-level", "info", "-data-dir=/consul/data" ]
+    command: [ "consul", "agent", "-server", "-bootstrap-expect=1", "-client", "0.0.0.0", "-log-level", "info", "-data-dir=/consul/data", "-enable-script-checks" ]
     networks:
       consul_net:
 
