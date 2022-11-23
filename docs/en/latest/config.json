@@ -45,8 +45,7 @@
         "tutorials/protect-api",
         "tutorials/observe-your-api",
         "tutorials/cache-api-responses",
-        "tutorials/health-check",
-        "tutorials/load-balancing"
+        "tutorials/health-check"
       ]
     },
     {
