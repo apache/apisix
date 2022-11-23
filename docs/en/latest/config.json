@@ -78,7 +78,7 @@
         },
         {
           "type": "category",
-          "id": "certificate",
+          "label": "certificate",
           "items": [
             "certificate",
             "mtls"
