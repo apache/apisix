@@ -227,7 +227,8 @@
           "label": "Other protocols",
           "items": [
             "plugins/dubbo-proxy",
-            "plugins/mqtt-proxy"          ]
+            "plugins/mqtt-proxy"          
+          ]
         }
       ]
     },
@@ -287,8 +288,7 @@
         },
         {
           "type": "link",
-          "label": "CODE_STYLE",
-          "href": "https://github.com/apache/apisix/blob/master/CODE_STYLE.md"
+          "id":"CODE_STYLE"
         },
         {
           "type": "doc",
