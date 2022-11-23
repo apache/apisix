@@ -75,7 +75,7 @@
             "discovery/kubernetes",
             "discovery/control-plane-service-discovery"
           ]
-        },        
+        },
         {
           "type": "category",
           "id": "certificate",
@@ -84,7 +84,8 @@
             "mtls"
           ]
         },
-        "stream-proxy"
+        "stream-proxy",
+        "upgrade-guide-from-2.15.x-to-3.0.0"
       ]
     },
     {
@@ -278,7 +279,7 @@
             "pubsub",
             "pubsub/kafka"
           ]
-        },        
+        },
         {
           "type": "category",
           "label": "RPC",
@@ -289,7 +290,7 @@
           ]
         },
         "debug-function",
-        "aws"      
+        "aws"
       ]
     },
     {

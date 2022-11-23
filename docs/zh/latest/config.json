@@ -75,7 +75,7 @@
             "discovery/kubernetes",
             "discovery/control-plane-service-discovery"
           ]
-        },        
+        },
         {
           "type": "category",
           "id": "certificate",
@@ -268,7 +268,7 @@
               "type":"link",
               "label": "NGINX Variable",
               "href": "http://nginx.org/en/docs/varindex.html"
-            }          
+            }
           ]
         },
         {
@@ -278,7 +278,7 @@
             "pubsub",
             "pubsub/kafka"
           ]
-        },        
+        },
         {
           "type": "category",
           "label": "RPC",
@@ -289,7 +289,7 @@
           ]
         },
         "debug-function",
-        "aws"      
+        "aws"
       ]
     },
     {
