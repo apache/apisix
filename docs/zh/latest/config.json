@@ -80,7 +80,8 @@
             "mtls"
           ]
         },
-        "stream-proxy"
+        "stream-proxy",
+        "upgrade-guide-from-2.15.x-to-3.0.0"
       ]
     },
     {
@@ -227,7 +228,7 @@
           "label": "Other protocols",
           "items": [
             "plugins/dubbo-proxy",
-            "plugins/mqtt-proxy"          
+            "plugins/mqtt-proxy"
           ]
         }
       ]
