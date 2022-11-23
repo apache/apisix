@@ -290,7 +290,8 @@
           ]
         },
         "debug-function",
-        "aws"
+        "aws",
+        "support-fips-in-apisix"
       ]
     },
     {
