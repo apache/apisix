@@ -23,7 +23,6 @@ local new_tab = require ("table.new")
 
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
-local ipairs   = ipairs
 local ngx      = ngx
 local ngx_time = ngx.time
 local sub_str  = string.sub
@@ -33,10 +32,6 @@ local ngx_re_gmatch = ngx.re.gmatch
 local plugin_name = "jwt-auth"
 local pcall = pcall
 
-
-local lrucache = core.lrucache.new({
-    type = "plugin",
-})
 
 local schema = {
     type = "object",
@@ -137,22 +132,7 @@ local _M = {
 }
 
 
-local create_consume_cache
-do
-    local consumer_names = {}
-
-    function create_consume_cache(consumers)
-        core.table.clear(consumer_names)
-
-        for _, consumer in ipairs(consumers.nodes) do
-            core.log.info("consumer node: ", core.json.delay_encode(consumer))
-            consumer_names[consumer.auth_conf.key] = consumer
-        end
-
-        return consumer_names
-    end
-
-end -- do
+local consumer_names = {}
 
 
 function _M.check_schema(conf, schema_type)
@@ -435,8 +415,8 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "Missing related consumer"}
     end
 
-    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
-        create_consume_cache, consumer_conf)
+    local consumers = consumer_mod.consumers_kv(plugin_name,
+                consumer_conf, "key", consumer_names)
 
     local consumer = consumers[user_key]
     if not consumer then
@@ -482,8 +462,8 @@ local function gen_token()
         return core.response.exit(404)
     end
 
-    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
-        create_consume_cache, consumer_conf)
+    local consumers = consumer_mod.consumers_kv(plugin_name,
+                consumer_conf, "key", consumer_names)
 
     core.log.info("consumers: ", core.json.delay_encode(consumers))
     local consumer = consumers[key]

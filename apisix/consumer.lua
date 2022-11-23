@@ -28,6 +28,9 @@ local _M = {
     version = 0.3,
 }
 
+local lrucache = core.lrucache.new({
+    ttl = 300, count = 512
+})
 
 local function plugin_consumer()
     local plugins = {}
@@ -91,6 +94,26 @@ function _M.consumers()
     end
 
     return consumers.values, consumers.conf_version
+end
+
+
+local function create_consume_cache(consumers_conf, key_attr, consumer_names)
+    core.table.clear(consumer_names)
+
+    for _, consumer in ipairs(consumers_conf.nodes) do
+        core.log.info("consumer node: ", core.json.delay_encode(consumer))
+        consumer_names[consumer.auth_conf[key_attr]] = consumer
+    end
+
+    return consumer_names
+end
+
+
+function _M.consumers_kv(plugin_name, consumer_conf, key_attr, consumer_names)
+    local consumers = lrucache("consumers_key#".. plugin_name, consumer_conf.conf_version,
+        create_consume_cache, consumer_conf, key_attr, consumer_names)
+
+    return consumers
 end
 
 
