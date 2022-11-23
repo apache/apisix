@@ -12,7 +12,6 @@
           "items": [
             "terminology/api-gateway",
             "terminology/consumer",
-            "terminology/consumer-group",
             "terminology/global-rule",
             "terminology/plugin",
             "terminology/plugin-config",
@@ -44,7 +43,6 @@
         "tutorials/expose-api",
         "tutorials/protect-api",
         "tutorials/observe-your-api",
-        "tutorials/cache-api-responses",
         "tutorials/health-check"
       ]
     },
@@ -52,7 +50,6 @@
       "type": "category",
       "label": "Production Tutorial",
       "items": [
-        "deployment-modes",
         "installation-guide",
         {
           "type": "category",
@@ -69,7 +66,6 @@
           "items": [
             "discovery",
             "discovery/dns",
-            "discovery/consul_kv",
             "discovery/nacos",
             "discovery/eureka",
             "discovery/kubernetes",
@@ -273,24 +269,12 @@
         },
         {
           "type": "category",
-          "label": "PubSub",
-          "items": [
-            "pubsub",
-            "pubsub/kafka"
-          ]
-        },
-        {
-          "type": "category",
           "label": "RPC",
           "items": [
-            "xrpc/redis",
-            "xrpc",
             "grpc-proxy"
           ]
         },
-        "debug-function",
-        "aws"
-      ]
+        "debug-function"      ]
     },
     {
       "type": "category",
@@ -305,21 +289,9 @@
           "id": "external-plugin"
         },
         {
-          "type": "doc",
-          "id": "wasm"
-        },
-        {
           "type": "link",
           "label": "CODE_STYLE",
           "href": "https://github.com/apache/apisix/blob/master/CODE_STYLE.md"
-        },
-        {
-          "type": "category",
-          "label": "internal",
-          "items": [
-            "internal/plugin-runner",
-            "internal/testing-framework"
-          ]
         },
         {
           "type": "doc",
