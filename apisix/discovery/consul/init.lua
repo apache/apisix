@@ -222,8 +222,10 @@ function _M.connect(premature, consul_server, retry_delay)
             or ((watch_result ~= nil and watch_result.status ~= 200)
             and watch_result.status)
     if watch_error_info then
-        log.error("connect consul: ", consul_server.consul_server_url, " by sub url: ", consul_server.consul_sub_url,
-                ", got watch result: ", json_delay_encode(watch_result, true), ", with error: ", watch_error_info)
+        log.error("connect consul: ", consul_server.consul_server_url,
+                " by sub url: ", consul_server.consul_sub_url,
+                ", got watch result: ", json_delay_encode(watch_result, true),
+                 ", with error: ", watch_error_info)
 
         if not retry_delay then
             retry_delay = 1
@@ -249,7 +251,8 @@ function _M.connect(premature, consul_server, retry_delay)
         -- fetch all services info
         local result, err = consul_client:get(consul_server.consul_sub_url)
 
-        local error_info = (err ~= nil and err) or ((result ~= nil and result.status ~= 200) and result.status)
+        local error_info = (err ~= nil and err) or
+         ((result ~= nil and result.status ~= 200) and result.status)
 
         if error_info then
             log.error("connect consul: ", consul_server.consul_server_url,
