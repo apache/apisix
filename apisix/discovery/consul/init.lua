@@ -278,7 +278,7 @@ function _M.connect(premature, consul_server, retry_delay)
             consul_server.default_args.index = watch_result.headers['X-Consul-Index']
         end
         -- decode body, decode json, update service, error handling
-        if result.body and next(result.body) then
+        if result.body then
             log.notice("server_name: ", consul_server.consul_server_url,
                     ", header: ", core.json.encode(result.headers, true),
                     ", body: ", core.json.encode(result.body, true))
