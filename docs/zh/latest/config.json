@@ -24,8 +24,7 @@
         },
         {
           "type": "link",
-          "label": "CHANGELOG",
-          "href": "https://github.com/apache/apisix/blob/master/CHANGELOG.md"
+          "id": "CHANGELOG"
         },
         {
           "type": "link",
