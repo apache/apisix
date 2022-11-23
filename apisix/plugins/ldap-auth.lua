@@ -44,7 +44,6 @@ local consumer_schema = {
 
 local plugin_name = "ldap-auth"
 
-local consumer_names = {}
 
 local _M = {
     version = 0.1,
@@ -143,8 +142,7 @@ function _M.rewrite(conf, ctx)
         return 401, { message = "Missing related consumer" }
     end
 
-    local consumers = consumer_mod.consumers_kv(plugin_name,
-        consumer_conf, "user_dn", consumer_names)
+    local consumers = consumer_mod.consumers_kv(plugin_name, consumer_conf, "user_dn")
     local consumer = consumers[userdn]
     if not consumer then
         return 401, {message = "Invalid user authorization"}

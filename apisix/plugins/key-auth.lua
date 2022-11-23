@@ -18,7 +18,6 @@ local core     = require("apisix.core")
 local consumer_mod = require("apisix.consumer")
 local plugin_name = "key-auth"
 
-local consumer_names = {}
 
 local schema = {
     type = "object",
@@ -85,8 +84,7 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "Missing related consumer"}
     end
 
-    local consumers = consumer_mod.consumers_kv(plugin_name,
-                consumer_conf, "key", consumer_names)
+    local consumers = consumer_mod.consumers_kv(plugin_name, consumer_conf, "key")
     local consumer = consumers[key]
     if not consumer then
         return 401, {message = "Invalid API key in request"}

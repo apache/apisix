@@ -46,7 +46,6 @@ local consumer_schema = {
 
 local plugin_name = "basic-auth"
 
-local consumer_names = {}
 
 local _M = {
     version = 0.1,
@@ -143,8 +142,7 @@ function _M.rewrite(conf, ctx)
         return 401, { message = "Missing related consumer" }
     end
 
-    local consumers = consumer.consumers_kv(plugin_name,
-                consumer_conf, "username", consumer_names)
+    local consumers = consumer.consumers_kv(plugin_name, consumer_conf, "username")
 
     -- 3. check user exists
     local cur_consumer = consumers[username]

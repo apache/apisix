@@ -114,7 +114,6 @@ local hmac_funcs = {
     end,
 }
 
-local consumer_names = {}
 
 local function array_to_map(arr)
     local map = core.table.new(0, #arr)
@@ -158,8 +157,7 @@ local function get_consumer(access_key)
         return nil, "Missing related consumer"
     end
 
-    local consumers = consumer.consumers_kv(plugin_name,
-                consumer_conf, "access_key", consumer_names)
+    local consumers = consumer.consumers_kv(plugin_name, consumer_conf, "access_key")
     local consumer = consumers[access_key]
     if not consumer then
         return nil, "Invalid access key"

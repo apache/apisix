@@ -32,7 +32,6 @@ local req_get_body_data = ngx.req.get_body_data
 
 local plugin_name = "wolf-rbac"
 
-local consumer_names = {}
 
 local schema = {
     type = "object",
@@ -264,8 +263,7 @@ function _M.rewrite(conf, ctx)
         return 401, fail_response("Missing related consumer")
     end
 
-    local consumers = consumer.consumers_kv(plugin_name,
-                consumer_conf, "appid", consumer_names)
+    local consumers = consumer.consumers_kv(plugin_name, consumer_conf, "appid")
 
     core.log.info("------ consumers: ", core.json.delay_encode(consumers))
     local consumer = consumers[appid]
@@ -332,8 +330,7 @@ local function get_consumer(appid)
         core.response.exit(500)
     end
 
-    local consumers = consumer.consumers_kv(plugin_name,
-                consumer_conf, "appid", consumer_names)
+    local consumers = consumer.consumers_kv(plugin_name, consumer_conf, "appid")
 
     core.log.info("------ consumers: ", core.json.delay_encode(consumers))
     local consumer = consumers[appid]
