@@ -23,8 +23,6 @@ local find = string.find
 local sub = string.sub
 local str = ffi.string
 
-local _global = _G
-
 local json = require("apisix.core.json")
 local log  = require("apisix.core.log")
 
@@ -32,10 +30,7 @@ local _M = {}
 
 local ENV_PREFIX = "$ENV://"
 
-if not _global._apisix_env_vars then
-    _global._apisix_env_vars = {}
-end
-local apisix_env_vars = _global._apisix_env_vars
+local apisix_env_vars = {}
 
 ffi.cdef [[
   extern char **environ;
