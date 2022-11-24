@@ -213,7 +213,7 @@ function _M.connect(premature, consul_server, retry_delay)
             and watch_result.status)
     if watch_error_info then
         log.error("connect consul: ", consul_server.consul_server_url,
-                " by sub url: ", consul_server.consul_sub_url,
+                " by sub url: ", consul_server.consul_watch_sub_url,
                 ", got watch result: ", json_delay_encode(watch_result, true),
                  ", with error: ", watch_error_info)
 
