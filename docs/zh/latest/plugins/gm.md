@@ -30,6 +30,10 @@ description: 本文介绍了关于 Apache APISIX gm 插件的基本信息及使�
 
 `gm` 插件能启用国密相关的功能。目前支持通过该插件动态配置国密双证书。
 
+:::note 相关介绍
+国密就是国产化的密码算法。在我们日常开发过程中会接触到各种各样的密码算法，如 RSA、SHA256 等等。为了达到更高的安全等级，许多大公司和国家会制定自己的密码算法。国密就是这样一组由中国国家密码管理局制定的密码算法。在国际形势越发复杂多变的今天，密码算法的国产化替代，在一些领域已经成为了一股势不可挡的潮流。
+:::
+
 ## 启用插件
 
 **该插件要求 Apache APISIX 运行在编译了 Tongsuo 的 APISIX-Base 上。**
@@ -159,7 +163,7 @@ print(resp.text)
 ./create_gm_ssl.py t/certs/server_enc.crt  t/certs/server_enc.key t/certs/server_sign.crt t/certs/server_sign.key
 ```
 
-输出结果：
+输出结果如下所示：
 
 ```
 200
@@ -184,4 +188,4 @@ New, NTLSv1.1, Cipher is ECDHE-SM2-SM4-CBC-SM3
 
 ## 禁用插件
 
-将 `gm` 插件从 `./conf/config.yaml` 移除，然后重启 APISIX 或者通过插件热加载的接口触发插件的卸载。
+如果不再使用此插件，可将 `gm` 插件从 `./conf/config.yaml` 配置文件中移除，然后重启 APISIX 或者通过插件热加载的接口触发插件的卸载。
