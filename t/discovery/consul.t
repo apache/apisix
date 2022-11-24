@@ -81,6 +81,10 @@ _EOC_
 our $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
+  enable_control: true
+  control:
+    ip: 127.0.0.1
+    port: 9090
 deployment:
   role: data_plane
   role_data_plane:
@@ -91,7 +95,7 @@ discovery:
       - "http://127.0.0.1:8500"
       - "http://127.0.0.1:8600"
     skip_services:
-      - "service_a"
+      - "service_c"
     timeout:
       connect: 1000
       read: 1000
@@ -116,7 +120,7 @@ __DATA__
 === TEST 1: prepare consul catalog register nodes
 --- config
 location /consul1 {
-    rewrite  ^/consul1/(.*) /v1/catalog/services/$1 break;
+    rewrite  ^/consul1/(.*) /v1/agent/service/$1 break;
     proxy_pass http://127.0.0.1:8500;
 }
 
@@ -126,16 +130,15 @@ location /consul2 {
 }
 --- pipelined_requests eval
 [
-    "DELETE /consul1/upstreams/webpages/?recurse=true",
-    "DELETE /consul2/upstreams/webpages/?recurse=true",
-    "PUT /consul1/upstreams/webpages/127.0.0.1:30511\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
-    "PUT /consul1/upstreams/webpages/127.0.0.1:30512\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
-    "PUT /consul2/upstreams/webpages/127.0.0.1:30513\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
-    "PUT /consul2/upstreams/webpages/127.0.0.1:30514\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
+    "PUT /consul1/deregister/service_a1",
+    "PUT /consul1/deregister/service_b1",
+    "PUT /consul1/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /consul1/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30512,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /consul1/register\n" . "{\"ID\":\"service_b1\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30513,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /consul1/register\n" . "{\"ID\":\"service_b1\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30514,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
 ]
 --- response_body eval
-["true", "true", "true", "true", "true", "true"]
-
+["", "", "", "", "", "", "", ""]
 
 
 === TEST 2: test consul server 1
@@ -145,7 +148,7 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8500/v1/catalog/services/
+      service_name: service_a
       discovery_type: consul
       type: roundrobin
 #END
@@ -171,7 +174,7 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8600/v1/catalog/services/
+      service_name: service_b
       discovery_type: consul
       type: roundrobin
 #END
@@ -209,7 +212,7 @@ routes:
   -
     uri: /hello
     upstream:
-      service_name: http://127.0.0.1:8500/v1/catalog/services/
+      service_name: service_a
       discovery_type: consul
       type: roundrobin
 #END
@@ -221,8 +224,7 @@ qr/server [1-2]/
 
 
 
-=== TEST 5: test invalid service name
-sometimes the consul key maybe deleted by mistake
+=== TEST 5: test invalid service name sometimes the consul key maybe deleted by mistake
 
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
@@ -230,7 +232,7 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8600/v1/catalog/services/dele_keys/
+      service_name: service_c
       discovery_type: consul
       type: roundrobin
 #END
@@ -249,7 +251,7 @@ routes:
 
 
 === TEST 6: test skip keys
-skip some keys, return default nodes, get response: missing consul services
+skip some services, return default nodes, get response: missing consul services
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -277,7 +279,7 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8600/v1/catalog/services/
+      service_name: service_a
       discovery_type: consul
       type: roundrobin
 #END
@@ -296,12 +298,12 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8500/v1/catalog/services/
+      service_name: service_a
       discovery_type: consul
       type: roundrobin
 #END
 --- config
-location /v1/catalog/services {
+location /v1/agent {
     proxy_pass http://127.0.0.1:8500;
 }
 location /sleep {
@@ -315,10 +317,9 @@ location /sleep {
 --- timeout: 6
 --- request eval
 [
-    "DELETE /v1/kv/upstreams/webpages/127.0.0.1:30511",
-    "DELETE /v1/kv/upstreams/webpages/127.0.0.1:30512",
-    "PUT /v1/kv/upstreams/webpages/127.0.0.1:30513\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
-    "PUT /v1/kv/upstreams/webpages/127.0.0.1:30514\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
+    "PUT /v1/agent/service/deregister/service_a1",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30513,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30514,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
     "GET /sleep",
 
     "GET /hello?random1",
@@ -326,10 +327,9 @@ location /sleep {
     "GET /hello?random3",
     "GET /hello?random4",
 
-    "DELETE /v1/kv/upstreams/webpages/127.0.0.1:30513",
-    "DELETE /v1/kv/upstreams/webpages/127.0.0.1:30514",
-    "PUT /v1/kv/upstreams/webpages/127.0.0.1:30511\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
-    "PUT /v1/kv/upstreams/webpages/127.0.0.1:30512\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
+    "PUT /v1/agent/service/deregister/service_a1",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30512,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
     "GET /sleep?sec=5",
 
     "GET /hello?random1",
@@ -340,10 +340,9 @@ location /sleep {
 ]
 --- response_body_like eval
 [
-    qr/true/,
-    qr/true/,
-    qr/true/,
-    qr/true/,
+    qr//,
+    qr//,
+    qr//,
     qr/ok\n/,
 
     qr/server [3-4]\n/,
@@ -351,10 +350,9 @@ location /sleep {
     qr/server [3-4]\n/,
     qr/server [3-4]\n/,
 
-    qr/true/,
-    qr/true/,
-    qr/true/,
-    qr/true/,
+    qr//,
+    qr//,
+    qr//,
     qr/ok\n/,
 
     qr/server [1-2]\n/,
@@ -368,97 +366,39 @@ location /sleep {
 
 === TEST 8: prepare healthy and unhealthy nodes
 --- config
-location /v1/catalog/services {
+location /v1/agent {
     proxy_pass http://127.0.0.1:8500;
 }
 --- request eval
 [
-    "DELETE /v1/kv/upstreams/webpages/?recurse=true",
-    "PUT /v1/kv/upstreams/webpages/127.0.0.1:30511\n" . "{\"weight\": 1, \"max_fails\": 1, \"fail_timeout\": 1}",
-    "PUT /v1/kv/upstreams/webpages/127.0.0.2:1988\n" . "{\"weight\": 1, \"max_fails\": 1, \"fail_timeout\": 1}",
+    "PUT /v1/agent/service/deregister/service_a1",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.2\",\"Port\":1988,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
 ]
 --- response_body eval
 [
-    'true',
-    'true',
-    'true',
+    '',
+    '',
+    '',
 ]
 
 
 
-=== TEST 9: test health checker
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uris:
-        - /hello
-    upstream_id: 1
-upstreams:
-    -
-      service_name: http://127.0.0.1:8500/v1/catalog/services/
-      discovery_type: consul
-      type: roundrobin
-      id: 1
-      checks:
-        active:
-            http_path: "/hello"
-            healthy:
-                interval: 1
-                successes: 1
-            unhealthy:
-                interval: 1
-                http_failures: 1
-#END
---- config
-    location /thc {
-        content_by_lua_block {
-            local json = require("toolkit.json")
-            local t = require("lib.test_admin")
-            local http = require "resty.http"
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local httpc = http.new()
-            httpc:request_uri(uri, {method = "GET"})
-            ngx.sleep(3)
-
-            local code, body, res = t.test('/v1/healthcheck',
-                ngx.HTTP_GET)
-            res = json.decode(res)
-            table.sort(res[1].nodes, function(a, b)
-                return a.host < b.host
-            end)
-            ngx.say(json.encode(res))
-
-            local code, body, res = t.test('/v1/healthcheck/upstreams/1',
-                ngx.HTTP_GET)
-            res = json.decode(res)
-            table.sort(res.nodes, function(a, b)
-                return a.host < b.host
-            end)
-            ngx.say(json.encode(res))
-        }
-    }
---- request
-GET /thc
---- response_body
-[{"healthy_nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1},{"host":"127.0.0.2","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"upstreams"}]
-{"healthy_nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1},{"host":"127.0.0.2","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"upstreams"}
---- ignore_error_log
 
 
 
 === TEST 10: clean nodes
 --- config
-location /v1/kv {
+location /v1/agent {
     proxy_pass http://127.0.0.1:8500;
 }
 --- request eval
 [
-    "DELETE /v1/kv/upstreams/webpages/?recurse=true"
+    "PUT /v1/agent/service/deregister/service_a1",
 ]
 --- response_body eval
 [
-    'true'
+    ''
 ]
 
 
@@ -486,12 +426,12 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8500/v1/kv/upstreams/webpages/
+      service_name: service_a
       discovery_type: consul
       type: roundrobin
 #END
 --- config
-location /v1/kv {
+location /v1/agent {
     proxy_pass http://127.0.0.1:8500;
 }
 location /sleep {
@@ -506,14 +446,14 @@ location /sleep {
 --- request eval
 [
     "GET /hello",
-    "PUT /v1/kv/upstreams/webpages/127.0.0.1:30511\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
     "GET /sleep?sec=5",
     "GET /hello",
 ]
 --- response_body_like eval
 [
     qr/missing consul services\n/,
-    qr/true/,
+    qr//,
     qr/ok\n/,
     qr/server 1\n/
 ]
@@ -544,7 +484,7 @@ routes:
   -
     uri: /*
     upstream:
-      service_name: http://127.0.0.1:8501/v1/catalog/services/
+      service_name: service_a
       discovery_type: consul
       type: roundrobin
 #END

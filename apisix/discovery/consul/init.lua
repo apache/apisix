@@ -313,12 +313,9 @@ local function format_consul_params(consul_conf)
     local args
 
     if consul_conf.keepalive == false then
-        args = {
-            recurse = true,
-        }
+        args = {}
     elseif consul_conf.keepalive then
         args = {
-            recurse = true,
             wait = consul_conf.timeout.wait, --blocked wait!=0; unblocked by wait=0
             index = 0,
         }
@@ -405,7 +402,7 @@ function _M.init_worker()
             return
         end
 
-        if server.keepalive == true then
+        if server.keepalive == false then
             ngx_timer_every(server.fetch_interval, _M.connect, server)
         end
     end
