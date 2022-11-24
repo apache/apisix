@@ -23,6 +23,8 @@ local find = string.find
 local sub = string.sub
 local str = ffi.string
 
+local _global = _G
+
 local json = require("apisix.core.json")
 local log  = require("apisix.core.log")
 
@@ -30,10 +32,10 @@ local _M = {}
 
 local ENV_PREFIX = "$ENV://"
 
--- luacheck: globals _apisix_env_vars
-if not _apisix_env_vars then
-    _apisix_env_vars = {}
+if not _global._apisix_env_vars then
+    _global._apisix_env_vars = {}
 end
+local apisix_env_vars = _global._apisix_env_vars
 
 ffi.cdef [[
   extern char **environ;
@@ -52,7 +54,7 @@ function _M.init()
     local var = str(e[i])
     local p = find(var, "=")
     if p then
-        _apisix_env_vars[sub(var, 1, p - 1)] = sub(var, p + 1)
+        apisix_env_vars[sub(var, 1, p - 1)] = sub(var, p + 1)
     end
 
     i = i + 1
@@ -84,7 +86,7 @@ function _M.get(ref)
     end
 
     local key, sub_key = parse_ref(ref)
-    local main_value = _apisix_env_vars[key] or os.getenv(key)
+    local main_value = apisix_env_vars[key] or os.getenv(key)
     if main_value and sub_key ~= "" then
         local vt = json.decode(main_value)
         if not vt then
