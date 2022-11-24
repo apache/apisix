@@ -69,12 +69,15 @@ local function parse_ref(ref)
     local path = sub(ref, 8)
     local idx = find(path, "/")
     if not idx then
-        return path, ""
+        return {key = path, sub_key = ""}
     end
     local key = sub(path, 1, idx - 1)
     local sub_key = sub(path, idx + 1)
 
-    return key, sub_key
+    return {
+      key = key,
+      sub_key = sub_key
+    }
 end
 
 
@@ -83,15 +86,15 @@ function _M.get(ref)
         return nil
     end
 
-    local key, sub_key = parse_ref(ref)
-    local main_value = apisix_env_vars[key] or os.getenv(key)
-    if main_value and sub_key ~= "" then
+    local opts = parse_ref(ref)
+    local main_value = apisix_env_vars[opts.key] or os.getenv(opts.key)
+    if main_value and opts.sub_key ~= "" then
         local vt, err = json.decode(main_value)
         if not vt then
           log.warn("decode failed, err: ", err, " value: ", main_value)
           return nil
         end
-        return vt[sub_key]
+        return vt[opts.sub_key]
     end
 
     return main_value
