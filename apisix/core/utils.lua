@@ -37,6 +37,7 @@ local sub_str        = string.sub
 local str_byte       = string.byte
 local tonumber       = tonumber
 local tostring       = tostring
+local pairs          = pairs
 local re_gsub        = ngx.re.gsub
 local type           = type
 local io_popen       = io.popen
