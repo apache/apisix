@@ -692,6 +692,23 @@ _M.service = {
 }
 
 
+_M.vault = {
+    type = "object",
+    properties = {
+        uri = {
+            type = "string",
+        },
+        prefix = {
+            type = "string",
+        },
+        token = {
+            type = "string",
+        },
+    },
+    required = {"uri", "prefix", "token"},
+}
+
+
 _M.consumer = {
     type = "object",
     properties = {
