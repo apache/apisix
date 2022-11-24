@@ -25,6 +25,8 @@ local rfind_char     = core_str.rfind_char
 local table          = require("apisix.core.table")
 local log            = require("apisix.core.log")
 local string         = require("apisix.core.string")
+local env            = require("apisix.core.env")
+local lrucache       = require("apisix.core.lrucache")
 local dns_client     = require("apisix.core.dns.client")
 local ngx_re         = require("ngx.re")
 local ipmatcher      = require("resty.ipmatcher")
@@ -327,6 +329,59 @@ do
 end
 -- Resolve ngx.var in the given string
 _M.resolve_var = resolve_var
+
+
+local secrets_lrucache = lrucache.new({
+    ttl = 300, count = 512
+})
+
+local retrieve_secrets_ref
+do
+    local retrieve_ref
+    function retrieve_ref(refs)
+        for k, v in pairs(refs) do
+            local typ = type(v)
+            if typ == "string" then
+                refs[k] = env.get(v) or v
+            elseif typ == "table" then
+                retrieve_ref(v)
+            end
+        end
+        return refs
+    end
+
+    local function retrieve(refs)
+        log.info(string.format("retrieve secrets refs: %p", refs))
+
+        local new_refs = table.clone(refs)
+        return retrieve_ref(new_refs)
+    end
+
+    function retrieve_secrets_ref(refs, cache, key, version)
+        if not refs or type(refs) ~= "table" then
+            return nil
+        end
+        if not cache then
+            return retrieve(refs)
+        end
+        return secrets_lrucache(key, version, retrieve, refs)
+    end
+end
+-- Retrieve all secrets ref in the given table
+---
+-- Retrieve all secrets ref in the given table,
+-- and then replace them with the values from the environment variables.
+--
+-- @function core.utils.retrieve_secrets_ref
+-- @tparam table refs The table to be retrieved.
+-- @tparam boolean cache Whether to use lrucache to cache results.
+-- @tparam string key The cache key for lrucache.
+-- @tparam string version The cache version for lrucache.
+-- @treturn table The table after the reference is replaced.
+-- @usage
+-- local new_refs = core.utils.retrieve_secrets_ref(refs) -- "no cache"
+-- local new_refs = core.utils.retrieve_secrets_ref(refs, true, key, ver) -- "cache"
+_M.retrieve_secrets_ref = retrieve_secrets_ref
 
 
 return _M
