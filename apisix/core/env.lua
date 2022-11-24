@@ -14,18 +14,19 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local ffi = require "ffi"
+local ffi         = require "ffi"
 
-local json   = require("apisix.core.json")
-local log    = require("apisix.core.log")
-local string = require("apisix.core.string")
+local json        = require("apisix.core.json")
+local log         = require("apisix.core.log")
+local string      = require("apisix.core.string")
 
-local os = os
-local type = type
-local upper = string.upper
-local find = string.find
-local sub = string.sub
-local str = ffi.string
+local os          = os
+local type        = type
+local upper       = string.upper
+local find        = string.find
+local sub         = string.sub
+local str         = ffi.string
+local C           = ffi.C
 
 local _M = {}
 
@@ -35,6 +36,7 @@ local apisix_env_vars = {}
 
 ffi.cdef [[
   extern char **environ;
+  int memcmp(const void *s1, const void *s2, size_t n);
 ]]
 
 
@@ -59,9 +61,10 @@ end
 
 
 local function is_env_ref(ref)
-    -- Avoid the error caused by has_prefix to cause a crash,
-    -- so judge the type of ref.
-    return type(ref) == "string" and string.has_prefix(upper(ref), ENV_PREFIX)
+    -- We will not use string.has_prefix,
+    -- to avoid the error caused by has_prefix to cause a crash.
+    return type(ref) == "string" and #ref > 7 and
+        0 == C.memcmp(upper(ref), ENV_PREFIX, 7)
 end
 
 
