@@ -59,7 +59,9 @@ end
 
 
 local function is_env_ref(ref)
-    return type(ref) == "string" and sub(upper(ref), 1, 7) == ENV_PREFIX
+    -- Avoid the error caused by has_prefix to cause a crash,
+    -- so judge the type of ref.
+    return type(ref) == "string" and string.has_prefix(upper(ref), ENV_PREFIX)
 end
 
 
