@@ -116,7 +116,7 @@ discovery:
       - "http://127.0.0.1:8500"
     dump:
       path: "/tmp/consul.dump"
-      load_on_init: true
+      load_on_init: false
 #END
 --- apisix_yaml
 routes:
