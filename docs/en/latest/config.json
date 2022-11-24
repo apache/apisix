@@ -216,6 +216,10 @@
         },
         {
           "type": "doc",
+          "id": "support-fips-in-apisix"
+        },
+        {
+          "type": "doc",
           "id": "external-plugin"
         },
         {
@@ -348,6 +352,10 @@
       "type": "link",
       "label": "CHANGELOG",
       "href": "https://github.com/apache/apisix/blob/master/CHANGELOG.md"
+    },
+    {
+      "type": "doc",
+      "id": "upgrade-guide-from-2.15.x-to-3.0.0"
     }
   ]
 }

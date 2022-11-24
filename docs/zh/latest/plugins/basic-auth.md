@@ -46,7 +46,7 @@ Route 端：
 
 | 名称             | 类型     | 必选项 | 默认值  | 描述                                                            |
 | ---------------- | ------- | ------ | ------ | --------------------------------------------------------------- |
-| hide_credentials | boolean | 否     | false  | 该参数设置为 `true` 时，则会将 Authorization 请求头传递给 Upstream。|
+| hide_credentials | boolean | 否     | false  | 该参数设置为 `true` 时，则不会将 Authorization 请求头传递给 Upstream。|
 
 ## 启用插件
 

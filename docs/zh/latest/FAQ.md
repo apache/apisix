@@ -1,5 +1,11 @@
 ---
 title: 常见问题
+keywords:
+  - APISIX
+  - API 网关
+  - 常见问题
+  - FAQ
+description: 本文列举了使用 Apache APISIX 时常见问题解决方法。
 ---
 
 <!--
@@ -283,6 +289,18 @@ nginx_config:
    ```
 
 2. 重启或者重新加载 APISIX。
+
+## 启用 SSL 证书后，为什么无法通过 HTTPS + IP 访问对应的路由？
+
+如果直接使用 HTTPS + IP 地址访问服务器，服务器将会使用 IP 地址与绑定的 SNI 进行比对，由于 SSL 证书是和域名进行绑定的，无法在 SNI 中找到对应的资源，因此证书就会校验失败，进而导致用户无法通过 HTTPS + IP 访问网关。
+
+此时你可以通过在配置文件中设置 `fallback_sni` 参数，并配置域名，实现该功能。当用户使用 HTTPS + IP 访问网关时，SNI 为空时，则 fallback 到默认 SNI，从而实现 HTTPS + IP 访问网关。
+
+```yaml title="./conf/config.yaml"
+apisix
+  ssl：
+    fallback_sni: "${your sni}"
+```
 
 ## APISIX 如何利用 etcd 如何实现毫秒级别的配置同步？
 

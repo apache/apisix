@@ -52,8 +52,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -76,8 +74,6 @@ GET /t
 qr/property "(conn|default_conn_delay)" is required
 done
 /
---- no_error_log
-[error]
 
 
 
@@ -118,8 +114,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -128,8 +122,6 @@ passed
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 200, 200, 200]
---- no_error_log
-[error]
 
 
 
@@ -169,8 +161,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -179,8 +169,6 @@ passed
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 503, 503, 503]
---- no_error_log
-[error]
 
 
 
@@ -221,8 +209,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin limit-req err: property \"rate\" validation failed: expected -1 to be greater than 0"}
---- no_error_log
-[error]
 
 
 
@@ -256,8 +242,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -266,8 +250,6 @@ passed
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
 [200, 200, 200, 200]
---- no_error_log
-[error]
 
 
 
@@ -308,8 +290,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -349,8 +329,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -387,8 +365,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -424,8 +400,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -436,8 +410,6 @@ passed
 apikey: auth-jack
 --- error_code eval
 [200, 200, 200]
---- no_error_log
-[error]
 
 
 
@@ -472,8 +444,6 @@ apikey: auth-jack
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -484,8 +454,6 @@ passed
 apikey: auth-jack
 --- error_code eval
 [403, 403, 403, 403]
---- no_error_log
-[error]
 
 
 
@@ -525,8 +493,6 @@ apikey: auth-jack
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -555,8 +521,6 @@ The value of the configured key is empty, use client IP instead
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -575,8 +539,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -597,5 +559,3 @@ passed
 GET /t
 --- response_body eval
 qr/property \"rate\" validation failed: expected 0 to be greater than 0/
---- no_error_log
-[error]

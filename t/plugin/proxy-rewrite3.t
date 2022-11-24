@@ -284,3 +284,174 @@ GET /print_uri_detailed HTTP/1.1
 --- response_body
 ngx.var.uri: /print_uri_detailed
 ngx.var.request_uri: /print_uri_detailed
+
+
+
+=== TEST 12: set route(rewrite X-Forwarded-Host)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "headers": {
+                                    "X-Forwarded-Host": "test.com"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: rewrite X-Forwarded-Host
+--- request
+GET /echo HTTP/1.1
+--- more_headers
+X-Forwarded-Host: apisix.ai
+--- response_headers
+X-Forwarded-Host: test.com
+
+
+
+=== TEST 14: set route header test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "headers": {
+                                    "add":{"test": "123"},
+                                    "set":{"test2": "2233"},
+                                    "remove":["hello"]
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: add exist header in muti-header
+--- request
+GET /echo HTTP/1.1
+--- more_headers
+test: sssss
+test: bbb
+--- response_headers
+test: sssss, bbb, 123
+
+
+
+=== TEST 16: add header to exist header
+--- request
+GET /echo HTTP/1.1
+--- more_headers
+test: sssss
+--- response_headers
+test: sssss, 123
+
+
+
+=== TEST 17: remove header
+--- request
+GET /echo HTTP/1.1
+--- more_headers
+hello: word
+--- response_headers
+hello:
+
+
+
+=== TEST 18: set header success
+--- request
+GET /echo HTTP/1.1
+--- response_headers
+test2: 2233
+
+
+
+=== TEST 19: header priority test
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "headers": {
+                                    "add":{"test": "test_in_add"},
+                                    "set":{"test": "test_in_set"}
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: set and test priority test
+--- request
+GET /echo HTTP/1.1
+--- response_headers
+test: test_in_set

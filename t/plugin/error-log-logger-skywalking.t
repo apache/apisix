@@ -63,8 +63,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -198,5 +196,3 @@ qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an info message for test.*\"
 GET /tg
 --- response_body
 passed
---- no_error_log
-[error]

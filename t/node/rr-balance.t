@@ -55,8 +55,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -97,8 +95,6 @@ passed
 GET /t
 --- response_body
 [{"count":6,"port":"1981"},{"count":6,"port":"1980"}]
---- no_error_log
-[error]
 
 
 
@@ -132,8 +128,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -174,8 +168,6 @@ passed
 GET /t
 --- response_body
 [{"count":4,"port":"1982"},{"count":4,"port":"1981"},{"count":4,"port":"1980"}]
---- no_error_log
-[error]
 
 
 
@@ -209,8 +201,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -251,8 +241,6 @@ passed
 GET /t
 --- response_body
 [{"count":2,"port":"1982"},{"count":4,"port":"1981"},{"count":6,"port":"1980"}]
---- no_error_log
-[error]
 
 
 
@@ -286,8 +274,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -328,5 +314,3 @@ passed
 GET /t
 --- response_body
 [{"count":3,"port":"1982"},{"count":9,"port":"1980"}]
---- no_error_log
-[error]

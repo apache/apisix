@@ -177,7 +177,7 @@ end
 
 function _M.filter(body)
     if not enable_v3() then
-        return
+        return body
     end
 
     local args = request.get_uri_args()

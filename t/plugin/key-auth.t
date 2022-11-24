@@ -41,8 +41,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -65,8 +63,6 @@ GET /t
 --- response_body
 property "key" validation failed: wrong type: expected string, got number
 done
---- no_error_log
-[error]
 
 
 
@@ -97,8 +93,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -133,8 +127,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -145,8 +137,6 @@ GET /hello
 apikey: auth-one
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -158,8 +148,6 @@ apikey: 123
 --- error_code: 401
 --- response_body
 {"message":"Invalid API key in request"}
---- no_error_log
-[error]
 
 
 
@@ -169,8 +157,6 @@ GET /hello
 --- error_code: 401
 --- response_body
 {"message":"Missing API key found in request"}
---- no_error_log
-[error]
 
 
 
@@ -204,8 +190,6 @@ GET /add_more_consumer
 apikey: auth-13
 --- response_body eval
 ["passed\n", "hello world\n"]
---- no_error_log
-[error]
 
 
 
@@ -234,8 +218,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid plugins configuration: failed to check the configuration of plugin key-auth err: property \"key\" is required"}
---- no_error_log
-[error]
 
 
 
@@ -272,8 +254,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -284,8 +264,6 @@ GET /hello
 Authorization: auth-one
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -322,8 +300,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -332,8 +308,6 @@ passed
 GET /hello?auth=auth-one
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -370,8 +344,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -382,8 +354,6 @@ GET /echo
 apikey: auth-one
 --- response_headers
 apikey: auth-one
---- no_error_log
-[error]
 
 
 
@@ -420,8 +390,6 @@ apikey: auth-one
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -432,8 +400,6 @@ GET /echo
 apikey: auth-one
 --- response_headers
 !apikey
---- no_error_log
-[error]
 
 
 
@@ -446,8 +412,6 @@ test: auth-two
 --- response_headers
 !apikey
 test: auth-two
---- no_error_log
-[error]
 
 
 
@@ -460,8 +424,6 @@ apikey: auth-one
 !apikey
 --- response_args
 apikey: auth-one
---- no_error_log
-[error]
 
 
 
@@ -499,8 +461,6 @@ apikey: auth-one
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -509,8 +469,6 @@ passed
 GET /echo?auth=auth-one
 --- response_args
 !auth
---- no_error_log
-[error]
 
 
 
@@ -520,8 +478,6 @@ GET /echo?auth=auth-one&test=auth-two
 --- response_args
 !auth
 test: auth-two
---- no_error_log
-[error]
 
 
 
@@ -534,8 +490,6 @@ auth: auth-one
 auth: auth-one
 --- response_args
 !auth
---- no_error_log
-[error]
 
 
 
@@ -573,8 +527,6 @@ auth: auth-one
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -583,5 +535,3 @@ passed
 GET /hello?auth=auth-one
 --- response_args
 auth: auth-one
---- no_error_log
-[error]

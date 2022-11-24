@@ -121,3 +121,20 @@ deployment:
         enable_admin_cors: false
 --- response_headers
 Access-Control-Allow-Origin:
+
+
+
+=== TEST 8: Compatibility for admin API (v2)
+--- yaml_config
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: ~
+    admin_api_version: default
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+--- response_headers
+X-API-VERSION: v2
+--- response_body_like: "\\/apisix\\/routes"
