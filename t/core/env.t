@@ -21,7 +21,7 @@ BEGIN {
 
 use t::APISIX 'no_plan';
 
-repeat_each(2);
+repeat_each(1);
 no_long_string();
 no_root_location();
 
