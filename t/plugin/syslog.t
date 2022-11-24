@@ -336,7 +336,8 @@ sending a batch logs to 127.0.0.1:5045
                  [[{
                     "log_format": {
                         "host": "$host",
-                        "client_ip": "$remote_addr"
+                        "client_ip": "$remote_addr",
+                        "upstream": "$upstream_addr"
                     }
                 }]]
                 )
@@ -410,4 +411,4 @@ hello world
 --- no_error_log
 [error]
 --- error_log eval
-qr/syslog-log-format.*\{.*"host":"localhost"/
+qr/syslog-log-format.*\{.*"upstream":"127.0.0.1:\d+"/
