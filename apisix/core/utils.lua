@@ -354,7 +354,7 @@ do
     local function retrieve(refs)
         log.info(string.format("retrieve secrets refs: %p", refs))
 
-        local new_refs = table.clone(refs)
+        local new_refs = table.deepcopy(refs)
         return retrieve_ref(new_refs)
     end
 

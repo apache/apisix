@@ -16,15 +16,16 @@
 --
 local ffi = require "ffi"
 
+local json   = require("apisix.core.json")
+local log    = require("apisix.core.log")
+local string = require("apisix.core.string")
+
 local os = os
 local type = type
 local upper = string.upper
 local find = string.find
 local sub = string.sub
 local str = ffi.string
-
-local json = require("apisix.core.json")
-local log  = require("apisix.core.log")
 
 local _M = {}
 
@@ -83,9 +84,10 @@ function _M.get(ref)
     local key, sub_key = parse_ref(ref)
     local main_value = apisix_env_vars[key] or os.getenv(key)
     if main_value and sub_key ~= "" then
-        local vt = json.decode(main_value)
+        local vt, err = json.decode(main_value)
         if not vt then
-            return nil
+          log.warn("decode failed, err: ", err, " value: ", main_value)
+          return nil
         end
         return vt[sub_key]
     end
