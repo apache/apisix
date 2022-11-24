@@ -15,7 +15,6 @@
 -- limitations under the License.
 --
 local require = require
-local filter = require("apisix.router").filter
 local core = require("apisix.core")
 local route = require("apisix.utils.router")
 local plugin = require("apisix.plugin")
@@ -354,7 +353,7 @@ function _M.init_worker()
 
     if local_conf.apisix.stream_proxy then
         local router_stream = require("apisix.stream.router.ip_port")
-        router_stream.stream_init_worker(filter)
+        router_stream.stream_init_worker()
     end
 
     router = route.new(uri_route)
