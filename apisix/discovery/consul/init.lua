@@ -86,16 +86,6 @@ local function parse_instance(node)
     if service_name and skip_service_map[service_name] then
         return false
     end
-
-    -- if host is empty, get host and port from TaggedAddresses.wan
-    if not host then
-        local tagged_addresses = node.TaggedAddresses
-        if tagged_addresses then
-            host = tagged_addresses.wan.address
-            port = tagged_addresses.wan.port
-        end
-    end
-
     return true, host, tonumber(port), "", service_name
 end
 

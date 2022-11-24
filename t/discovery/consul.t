@@ -141,6 +141,7 @@ location /consul2 {
 ["", "", "", "", "", "", "", ""]
 
 
+
 === TEST 2: test consul server 1
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
@@ -384,10 +385,7 @@ location /v1/agent {
 
 
 
-
-
-
-=== TEST 10: clean nodes
+=== TEST 9: clean nodes
 --- config
 location /v1/agent {
     proxy_pass http://127.0.0.1:8500;
@@ -403,7 +401,7 @@ location /v1/agent {
 
 
 
-=== TEST 11: test consul short connect type
+=== TEST 10: test consul short connect type
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -461,7 +459,7 @@ location /sleep {
 
 
 
-=== TEST 12: retry when Consul can't be reached (long connect type)
+=== TEST 11: retry when Consul can't be reached (long connect type)
 --- yaml_config
 apisix:
   node_listen: 1984
