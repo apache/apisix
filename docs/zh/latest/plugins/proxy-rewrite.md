@@ -39,7 +39,16 @@ description: 本文介绍了关于 Apache APISIX `proxy-rewrite` 插件的基本
 | method    | string        | 否    |         | ["GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS","MKCOL", "COPY", "MOVE", "PROPFIND", "PROPFIND","LOCK", "UNLOCK", "PATCH", "TRACE"] | 将路由的请求方法代理为该请求方法。 |
 | regex_uri | array[string] | 否    |         |                                                                                                                                        | 转发到上游的新 `uri` 地址。使用正则表达式匹配来自客户端的 `uri`，如果匹配成功，则使用模板替换转发到上游的 `uri`，如果没有匹配成功，则将客户端请求的 `uri` 转发至上游。当同时配置 `uri` 和 `regex_uri` 属性时，优先使用 `uri`。例如：["^/iresty/(.*)/(.*)/(.*)","/$1-$2-$3"] 第一个元素代表匹配来自客户端请求的 `uri` 正则表达式，第二个元素代表匹配成功后转发到上游的 `uri` 模板。但是目前 APISIX 仅支持一个 `regex_uri`，所以 `regex_uri` 数组的长度是 `2`。 |
 | host      | string        | 否    |         |                   | 转发到上游的新 `host` 地址，例如：`iresty.com`。|
-| headers   | object        | 否    |         |                   | 转发到上游的新 `headers`，可以设置多个。如果 header 存在将进行重写，如果不存在则会添加到 header 中。如果你想要删除某个 header，请把对应的值设置为空字符串即可。支持使用 NGINX 的变量，例如 `client_addr` 和`$remote_addr`。|
+| headers   | object        | 否    |         |                   |   |
+| headers.add     | object   | 否     |        |                 | 添加新的请求头，如果头已经存在，会追加到末尾。格式为 `{"name: value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。                                                                                              |
+| headers.set     | object  | 否     |        |                 | 改写请求头，如果请求头不存在，则会添加这个请求头。格式为 `{"name": "value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。                                                                                                |
+| headers.remove  | array   | 否     |        |                 | 移除响应头。格式为 `["name", ...]`。
+
+## Header 优先级
+
+Header 头的相关配置，遵循如下优先级进行执行：
+
+`add` > `remove` > `set`
 
 ## 启用插件
 
@@ -56,9 +65,17 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  \
             "uri": "/test/home.html",
             "host": "iresty.com",
             "headers": {
-                "X-Api-Version": "v1",
-                "X-Api-Engine": "apisix",
-                "X-Api-useless": ""
+                "set": {
+                    "X-Api-Version": "v1",
+                    "X-Api-Engine": "apisix",
+                    "X-Api-useless": ""
+                },
+                "add": {
+                    "X-Request-ID": "112233"
+                },
+                "remove":[
+                    "X-test"
+                ]
             }
         }
     },
