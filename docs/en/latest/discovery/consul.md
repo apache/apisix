@@ -36,8 +36,8 @@ discovery:
   consul:
     servers:
       - "http://127.0.0.1:8500"
-      - "http://127.0.0.1:8600"
-    skip_services:                    # if you need to skip special keys
+      - "http://127.0.0.1:8600"   # `http://127.0.0.1:8500` and `http://127.0.0.1:8600` are different clusters
+    skip_services:                # if you need to skip special keys
       - "service_a"
     timeout:
       connect: 1000               # default 2000 ms
@@ -46,7 +46,7 @@ discovery:
     weight: 1                     # default 1
     fetch_interval: 5             # default 3 sec, only take effect for keepalive: false way
     keepalive: true               # default true, use the long pull way to query consul servers
-    default_service:               # you can define default service when missing hit
+    default_service:              # you can define default service when missing hit
       host: "127.0.0.1"
       port: 20999
       metadata:
@@ -55,7 +55,7 @@ discovery:
         max_fails: 1              # default 1
     dump:                         # if you need, when registered nodes updated can dump into file
        path: "logs/consul.dump"
-       expire: 2592000      # unit sec, here is 30 day
+       expire: 2592000            # unit sec, here is 30 day
 ```
 
 And you can config it in short by default value:

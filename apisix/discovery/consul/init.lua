@@ -51,7 +51,7 @@ local function discovery_consul_callback(data, event, source, pid)
     all_services = data
     log.notice("update local variable all_services, event is: ", event,
             "source: ", source, "server pid:", pid,
-            ", all services: ", core.json.encode(all_services, true))
+            ", all services: ", json_delay_encode(all_services, true))
 end
 
 
