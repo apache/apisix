@@ -58,14 +58,14 @@ end
 function _M.put(id, conf, sub_path)
     local uri_segs = core.utils.split_uri(sub_path)
     if #uri_segs ~= 1 then
-        return 400, "no kms id in uri"
+        return 400, {error_msg = "no kms id in uri"}
     end
     local typ = id
     id = uri_segs[1]
 
     local ok, err = check_conf(id, conf, true, typ)
     if not ok then
-        return 400, err
+        return 400, {error_msg = err}
     end
 
     local key = "/kms/" .. typ .. "/" .. id
@@ -115,7 +115,7 @@ end
 function _M.delete(id, conf, sub_path)
     local uri_segs = core.utils.split_uri(sub_path)
     if #uri_segs ~= 1 then
-        return 400, "no kms id in uri"
+        return 400, {error_msg = "no kms id in uri"}
     end
     local typ = id
     id = uri_segs[1]
@@ -139,7 +139,7 @@ end
 function _M.patch(id, conf, sub_path)
     local uri_segs = core.utils.split_uri(sub_path)
     if #uri_segs < 2 then
-        return 400, "no kms id and/or sub path in uri"
+        return 400, {error_msg = "no kms id and/or sub path in uri"}
     end
     local typ = id
     id = uri_segs[1]
@@ -191,12 +191,12 @@ function _M.patch(id, conf, sub_path)
 
     local ok, err = check_conf(id, node_value, true, typ)
     if not ok then
-        return 400, err
+        return 400, {error_msg = err}
     end
 
     local res, err = core.etcd.atomic_set(key, node_value, nil, modified_index)
     if not res then
-        core.log.error("failed to set new consumer group[", key, "]: ", err)
+        core.log.error("failed to set new kms[", key, "]: ", err)
         return 503, {error_msg = err}
     end
 
