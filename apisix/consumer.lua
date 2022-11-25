@@ -102,7 +102,9 @@ local function create_consume_cache(consumers_conf, key_attr)
 
     for _, consumer in ipairs(consumers_conf.nodes) do
         core.log.info("consumer node: ", core.json.delay_encode(consumer))
-        consumer_names[consumer.auth_conf[key_attr]] = consumer
+        local new_consumer = core.table.clone(consumer)
+        new_consumer.auth_conf = core.utils.retrieve_secrets_ref(new_consumer.auth_conf)
+        consumer_names[new_consumer.auth_conf[key_attr]] = new_consumer
     end
 
     return consumer_names
@@ -110,7 +112,7 @@ end
 
 
 function _M.consumers_kv(plugin_name, consumer_conf, key_attr)
-    local consumers = lrucache("consumers_key#".. plugin_name, consumer_conf.conf_version,
+    local consumers = lrucache("consumers_key#" .. plugin_name, consumer_conf.conf_version,
         create_consume_cache, consumer_conf, key_attr)
 
     return consumers
