@@ -53,8 +53,6 @@ upstreams:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -104,8 +102,6 @@ upstreams:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -135,8 +131,6 @@ upstreams:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -158,8 +152,6 @@ upstreams:
 --- request
 GET /get
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
@@ -212,5 +204,3 @@ GET /hello
 test: one
 --- error_log
 proxy request to 127.0.0.1:1980
---- no_error_log
-[error]

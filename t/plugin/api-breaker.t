@@ -52,8 +52,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -78,8 +76,6 @@ done
 GET /t
 --- response_body
 {"break_response_code":502,"healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
---- no_error_log
-[error]
 
 
 
@@ -105,8 +101,6 @@ GET /t
 GET /t
 --- response_body
 {"break_response_code":502,"healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
---- no_error_log
-[error]
 
 
 
@@ -132,8 +126,6 @@ GET /t
 GET /t
 --- response_body
 {"break_response_code":502,"healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
---- no_error_log
-[error]
 
 
 
@@ -179,8 +171,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin api-breaker err: property \"break_response_code\" validation failed: expected 199 to be at least 200"}
---- no_error_log
-[error]
 
 
 
@@ -217,8 +207,6 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- no_error_log
-[error]
 
 
 
@@ -263,8 +251,6 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- no_error_log
-[error]
 
 
 
@@ -310,8 +296,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin api-breaker err: property \"healthy\" validation failed: property \"http_statuses\" validation failed: expected unique items but items 1 and 2 are equal"}
---- no_error_log
-[error]
 
 
 
@@ -356,8 +340,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -370,8 +352,6 @@ passed
 ]
 --- error_code eval
 [200, 500, 503, 500, 599, 599]
---- no_error_log
-[error]
 
 
 
@@ -391,8 +371,6 @@ passed
     200, 200, 200,
     500, 500
 ]
---- no_error_log
-[error]
 
 
 
@@ -488,8 +466,6 @@ breaker_time: 2
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -497,8 +473,6 @@ passed
 --- request
 GET /api_breaker?code=500
 --- error_code: 500
---- no_error_log
-[error]
 
 
 
@@ -515,8 +489,6 @@ GET /api_breaker?code=500
 ["Content-Type: text/plain", "Content-Type: text/html", "Content-Type: text/html", "Content-Type: text/html", "Content-Type: text/html", "Content-Type: application/json+v1"]
 --- response_body_like eval
 [".*", ".*", ".*", ".*", ".*", "{\"message\":\"breaker opened.\"}"]
---- no_error_log
-[error]
 
 
 
@@ -547,8 +519,6 @@ GET /api_breaker?code=500
     200, 200, 200,
     200, 200, 200, 200,200
 ]
---- no_error_log
-[error]
 
 
 
@@ -573,8 +543,6 @@ location /mysleep {
     200, 200, 200,
     500,502,502,502
 ]
---- no_error_log
-[error]
 
 
 
@@ -619,8 +587,6 @@ location /mysleep {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -686,5 +652,3 @@ phase_func(): breaker_time: 10
 GET /t
 --- response_body eval
 qr/failed to check the configuration of plugin api-breaker err: property \"break_response_headers\" validation failed: failed to validate item 1: property \"(key|value)\" is required/
---- no_error_log
-[error]

@@ -63,8 +63,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -74,8 +72,6 @@ GET /hello
 --- response_body
 hello world
 --- wait: 0.5
---- no_error_log
-[error]
 --- error_log eval
 qr/request log: .*"upstream":"127.0.0.1:1982"/
 
@@ -120,8 +116,6 @@ qr/request log: .*"upstream":"127.0.0.1:1982"/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -153,8 +147,6 @@ location /t {
 --- request
 GET /t
 --- timeout: 10
---- no_error_log
-[error]
 --- grep_error_log eval
 qr/request log:/
 --- grep_error_log_out
@@ -180,8 +172,6 @@ location /t {
 --- request
 GET /t
 --- timeout: 10
---- no_error_log
-[error]
 --- grep_error_log eval
 qr/"upstream":"127.0.0.1:1982"/
 --- grep_error_log_out
@@ -211,8 +201,6 @@ location /t {
 --- request
 GET /t
 --- timeout: 10
---- no_error_log
-[error]
 --- grep_error_log eval
 qr/"upstream":"127.0.0.1:1982"/
 --- grep_error_log_out
@@ -256,8 +244,6 @@ qr/"upstream":"127.0.0.1:1982"/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -278,8 +264,6 @@ location /t {
 --- request
 GET /t
 --- timeout: 10
---- no_error_log
-[error]
 
 
 
@@ -302,5 +286,3 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]

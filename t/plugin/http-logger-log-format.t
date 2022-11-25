@@ -50,8 +50,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -94,8 +92,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -105,8 +101,6 @@ GET /hello
 --- response_body
 hello world
 --- wait: 0.5
---- no_error_log
-[error]
 --- error_log eval
 qr/request log: \{.*route_id":"1".*\}/
 
@@ -151,8 +145,6 @@ qr/request log: \{.*route_id":"1".*\}/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -173,8 +165,6 @@ location /t {
 --- request
 GET /t
 --- error_code: 200
---- no_error_log
-[error]
 --- grep_error_log eval
 qr/"\@timestamp":"20/
 --- grep_error_log_out
@@ -222,8 +212,6 @@ qr/"\@timestamp":"20/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -233,8 +221,6 @@ GET /hello
 --- response_body
 hello world
 --- wait: 0.5
---- no_error_log
-[error]
 --- error_log eval
 qr/request log: \{"\@timestamp":.*,"client_ip":"127.0.0.1","host":"localhost","route_id":"1"\}/
 
@@ -279,8 +265,6 @@ qr/request log: \{"\@timestamp":.*,"client_ip":"127.0.0.1","host":"localhost","r
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -301,8 +285,6 @@ location /t {
 --- request
 GET /t
 --- error_code: 200
---- no_error_log
-[error]
 --- error_log eval
 qr/request log: \[\{"\@timestamp":".*","client_ip":"127.0.0.1","host":"127.0.0.1","route_id":"1"\},\{"\@timestamp":".*","client_ip":"127.0.0.1","host":"127.0.0.1","route_id":"1"\}\]/
 
@@ -328,8 +310,6 @@ qr/request log: \[\{"\@timestamp":".*","client_ip":"127.0.0.1","host":"127.0.0.1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -351,8 +331,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -407,8 +385,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -448,8 +424,6 @@ qr/\Q{"apisix_latency":\E[^,]+\Q,"client_ip":"127.0.0.1","consumer":{"username":
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -507,8 +481,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -528,7 +500,5 @@ GET /hello
 --- response_body
 hello world
 --- wait: 0.5
---- no_error_log
-[error]
 --- error_log eval
 qr/request log: \{"client_ip":"127.0.0.1","host":"localhost","labels":\{"k":"v"\},"route_id":"1"\}/

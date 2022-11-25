@@ -68,8 +68,6 @@ so that we can delete it later)
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -101,8 +99,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -119,8 +115,6 @@ passed
 GET /t
 --- response_body
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -138,8 +132,6 @@ GET /t
 GET /t
 --- response_body
 [delete] code: 404
---- no_error_log
-[error]
 
 
 
@@ -191,8 +183,6 @@ GET /t
 --- response_body
 [push] code: 200 message: passed
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -217,8 +207,6 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- no_error_log
-[error]
 
 
 
@@ -247,8 +235,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"wrong upstream id"}
---- no_error_log
-[error]
 
 
 
@@ -285,8 +271,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -315,8 +299,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -345,8 +327,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -376,8 +356,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -415,8 +393,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -444,8 +420,6 @@ passed
 GET /t
 --- response_body chomp
 passed
---- no_error_log
-[error]
 
 
 
@@ -474,8 +448,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -504,8 +476,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -533,8 +503,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"missing key"}
---- no_error_log
-[error]
 
 
 
@@ -562,8 +530,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"wrong upstream id, do not need it"}
---- no_error_log
-[error]
 
 
 
@@ -592,8 +558,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"wrong upstream id, do not need it"}
---- no_error_log
-[error]
 
 
 
@@ -631,8 +595,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/{"error_msg":"invalid configuration: property \\\"tls\\\" validation failed: failed to validate dependent schema for \\\"client_cert|client_key\\\": value wasn't supposed to match schema"}/
---- no_error_log
-[error]
 
 
 
@@ -666,8 +628,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to fetch ssl info by ssl id [9999999], response code: 404"}
---- no_error_log
-[error]
 
 
 
@@ -725,8 +685,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to fetch ssl info by ssl id [1], wrong ssl type"}
---- no_error_log
-[error]
 
 
 
@@ -764,5 +722,3 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]

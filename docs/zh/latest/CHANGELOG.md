@@ -25,6 +25,7 @@ title: CHANGELOG
 
 - [3.0.0](#300)
 - [3.0.0-beta](#300-beta)
+- [2.15.1](#2151)
 - [2.15.0](#2150)
 - [2.14.1](#2141)
 - [2.14.0](#2140)
@@ -136,7 +137,7 @@ title: CHANGELOG
 - 移除 `apisix.port_admin`： [#7716](https://github.com/apache/apisix/pull/7716)
 - 移除 `etcd.health_check_retry`： [#7676](https://github.com/apache/apisix/pull/7676)
 - 移除 `nginx_config.http.lua_shared_dicts`： [#7677](https://github.com/apache/apisix/pull/7677)
-- 移除 `nginx_config.http.real_ip_header`: [#7696](https://github.com/apache/apisix/pull/7696)
+- 移除 `apisix.real_ip_header`: [#7696](https://github.com/apache/apisix/pull/7696)
 
 在动态配置中，我们做了以下调整：
 
@@ -247,6 +248,10 @@ title: CHANGELOG
 - 当代理到上游之前发生 500 错误时，代理到上游之后运行的插件不应被跳过 [#7703](https://github.com/apache/apisix/pull/7703)
 - 当 consumer 上绑定了多个插件且该插件定义了 rewrite 方法时，避免抛出异常 [#7531](https://github.com/apache/apisix/pull/7531)
 - 升级 lua-resty-etcd 到 1.8.3。该版本修复了若干问题。 [#7565](https://github.com/apache/apisix/pull/7565)
+
+## 2.15.1
+
+**这是一个 LTS 维护版本，您可以在 `release/2.15` 分支中看到 CHANGELOG。**
 
 ## 2.15.0
 

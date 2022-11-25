@@ -266,7 +266,7 @@ print(base64.b64encode(hash.digest()))
 | --------- | -------------------------------------------- |
 | SIGNATURE | 8XV1GB7Tq23OJcoz6wjqTs4ZLxr9DiLoY4PxzScWGYg= |
 
-你也可以参考 [Generating HMAC signatures](../examples/plugins-hmac-auth-generate-signature.md) 了解如何为不同的编程语言生成签名。
+你也可以参考 [Generating HMAC signatures](../../../en/latest/examples/plugins-hmac-auth-generate-signature.md) 了解如何使用不同的编程语言生成签名。
 
 签名生成后，你可以通过以下示例使用生成的签名发起请求：
 
@@ -335,14 +335,14 @@ Accept-Ranges: bytes
 :::note 注意
 
 1. ACCESS_KEY、SIGNATURE、ALGORITHM、DATE、SIGNED_HEADERS 分别代表对应的变量。
-2. SIGNED_HEADERS 为客户端指定的加入加密计算的 headers。若存在多个 headers 需以 “;” 分割，例如：`x-custom-header-a;x-custom-header-b`。
+2. SIGNED_HEADERS 为客户端指定的加入加密计算的 headers。若存在多个 headers 需以 `;` 分割，例如：`x-custom-header-a;x-custom-header-b`。
 3. SIGNATURE 需要使用 base64 进行加密：`base64_encode(SIGNATURE)`。
 
 :::
 
 ### 自定义 header 名称
 
-除了配置签名外，你还可以在配置文件（`conf/config.yaml`）中的`plugin_attr` 配置项下，添加 `hmac-auth` 插件的属性来自定义参数 header 名称。如下所示：
+除了配置签名外，你还可以在配置文件（`conf/config.yaml`）中的 `plugin_attr` 配置项下，添加 `hmac-auth` 插件的属性来自定义参数 header 名称。如下所示：
 
 ```yaml title="conf/config.yaml"
 plugin_attr:
@@ -380,7 +380,7 @@ Accept-Ranges: bytes
 
 ## 禁用插件
 
-当你需要禁用 `hmac-auth` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \

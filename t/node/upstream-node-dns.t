@@ -53,8 +53,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -77,8 +75,6 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -150,8 +146,6 @@ proxy request to 127.0.0.1:1980
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -174,8 +168,6 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -249,8 +241,6 @@ proxy request to 127.0.0.[12]:1980
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -277,8 +267,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -348,8 +336,6 @@ proxy request to 127.0.0.1:1980
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -464,8 +450,6 @@ proxy request to 127.0.0.1:1980
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -536,8 +520,6 @@ proxy request to 127.0.0.(1:1980|5:1981)
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
