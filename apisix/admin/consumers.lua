@@ -18,12 +18,29 @@ local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
 local utils   = require("apisix.admin.utils")
 local plugin  = require("apisix.plugin")
+local apisix_ssl = require("apisix.ssl")
 local pairs   = pairs
 
 local _M = {
     version = 0.1,
     need_v3_filter = true,
 }
+
+
+local function encrypt_items(name, conf)
+    local schema = plugin.get(name)
+    local consumer_schema = schema.consumer_schema
+    if not consumer_schema then
+        return
+    end
+
+    for key, props in pairs(consumer_schema.properties) do
+        if props.type == "string" and props.encrypted then
+            local encrypted = apisix_ssl.aes_encrypt_pkey(conf[key], "global_data_encrypt")
+            conf[key] = encrypted
+        end
+    end
+end
 
 
 local function check_conf(username, conf)
@@ -55,6 +72,8 @@ local function check_conf(username, conf)
             if plugin_obj.type == 'auth' then
                 count_auth_plugin = count_auth_plugin + 1
             end
+
+            encrypt_items(name, conf)
         end
 
         if count_auth_plugin == 0 then

@@ -123,6 +123,10 @@ apisix:
   #  ip: 127.0.0.1
   #  port: 9090
   disable_sync_configuration_during_start: false  # safe exit. Remove this once the feature is stable
+  data_encryption:
+    enable: false
+    keyring:
+      - edd1c9f0985e76a2
 
 nginx_config:                     # config for render the template to generate nginx.conf
   #user: root                     # specifies the execution user of the worker process.

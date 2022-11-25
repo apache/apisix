@@ -17,6 +17,7 @@
 local core           = require("apisix.core")
 local plugin         = require("apisix.plugin")
 local plugin_checker = require("apisix.plugin").plugin_checker
+local apisix_ssl     = require("apisix.ssl")
 local error          = error
 local ipairs         = ipairs
 local pairs          = pairs
@@ -31,6 +32,23 @@ local _M = {
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
+
+
+local function decrypt_items(name, conf)
+    local schema = plugin.get(name)
+    local consumer_schema = schema.consumer_schema
+    if not consumer_schema then
+        return
+    end
+
+    for key, props in pairs(consumer_schema.properties) do
+        if props.type == "string" and props.encrypted then
+            local encrypted = apisix_ssl.aes_decrypt_pkey(conf[key], "global_data_encrypt")
+            conf[key] = encrypted
+        end
+    end
+end
+
 
 local function plugin_consumer()
     local plugins = {}
@@ -60,6 +78,7 @@ local function plugin_consumer()
                 new_consumer.consumer_name = new_consumer.id
                 new_consumer.auth_conf = config
                 new_consumer.modifiedIndex = consumer.modifiedIndex
+                decrypt_items(name, new_consumer.auth_conf)
                 core.log.info("consumer:", core.json.delay_encode(new_consumer))
                 core.table.insert(plugins[name].nodes, new_consumer)
             end
