@@ -177,7 +177,7 @@ passed
 
 
 
-=== TEST 5: delete consumer-group
+=== TEST 5: DELETE
 --- config
     location /t {
         content_by_lua_block {

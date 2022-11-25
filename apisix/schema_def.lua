@@ -692,12 +692,10 @@ _M.service = {
 }
 
 
-_M.vault = {
+_M.kms_vault = {
     type = "object",
     properties = {
-        uri = {
-            type = "string",
-        },
+        uri = uri_def,
         prefix = {
             type = "string",
         },
