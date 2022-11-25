@@ -252,9 +252,7 @@ local function set_upstream_host(api_ctx, picked_server)
 end
 
 
-local function set_upstream_headers(api_ctx, picked_server)
-    set_upstream_host(api_ctx, picked_server)
-
+local function set_upstream_headers(api_ctx)
     local proto = api_ctx.var.http_x_forwarded_proto
     if proto then
         api_ctx.var.var_x_forwarded_proto = proto
@@ -459,7 +457,7 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
 
     api_ctx.picked_server = server
 
-    set_upstream_headers(api_ctx, server)
+    set_upstream_host(api_ctx, server)
 
     -- run the before_proxy method in access phase first to avoid always reinit request
     common_phase("before_proxy")
@@ -623,6 +621,9 @@ function _M.http_access_phase()
         end
         plugin.run_plugin("access", plugins, api_ctx)
     end
+
+    -- move to here because the ai plugin will replace the handle_upstream function
+    set_upstream_headers(api_ctx)
 
     _M.handle_upstream(api_ctx, route, enable_websocket)
 end
