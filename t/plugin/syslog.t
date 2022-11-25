@@ -326,6 +326,7 @@ sending a batch logs to 127.0.0.1:5044
 sending a batch logs to 127.0.0.1:5045
 
 
+
 === TEST 9: add log format
 --- config
     location /t {
