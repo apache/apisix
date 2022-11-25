@@ -458,6 +458,54 @@ test: test_in_set
 
 
 
+=== TEST 21: set route (test if X-Forwarded-Port can be set before proxy)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "headers": {
+                                    "X-Forwarded-Port": "9882"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/echo"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 22: test if X-Forwarded-Port can be set before proxy
+--- request
+GET /echo HTTP/1.1
+--- more_headers
+X-Forwarded-Port: 9881
+--- response_headers
+X-Forwarded-Port: 9882
+
+
+
 === TEST 23: set route (test if X-Forwarded-For can be set before proxy)
 --- config
     location /t {
