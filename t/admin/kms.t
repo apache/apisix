@@ -47,13 +47,13 @@ __DATA__
             local code, body = t('/apisix/admin/kms/vault/test1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/get",
+                    "uri": "http://127.0.0.1:12800/get",
                     "prefix" : "apisix",
                     "token" : "apisix"
                 }]],
                 [[{
                     "value": {
-                        "uri": "/get",
+                        "uri": "http://127.0.0.1:12800/get",
                         "prefix" : "apisix",
                         "token" : "apisix"
                     },
@@ -86,7 +86,7 @@ passed
                 nil,
                 [[{
                     "value": {
-                        "uri": "/get",
+                        "uri": "http://127.0.0.1:12800/get",
                         "prefix" : "apisix",
                         "token" : "apisix"
                     },
@@ -117,7 +117,7 @@ passed
                         {
                             "key": "/apisix/kms/vault/test1",
                             "value": {
-                                "uri": "/get",
+                                "uri": "http://127.0.0.1:12800/get",
                                 "prefix" : "apisix",
                                 "token" : "apisix"
                             }
@@ -153,7 +153,7 @@ passed
                 [["unknown"]],
                 [[{
                     "value": {
-                        "uri": "/get",
+                        "uri": "http://127.0.0.1:12800/get",
                         "prefix" : "apisix",
                         "token" : "unknown"
                     },
