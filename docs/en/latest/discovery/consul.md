@@ -89,10 +89,12 @@ The `dump` has three optional values now:
     - support absolute path, eg: `/tmp/consul.dump`
     - make sure the dump file's parent path exist
     - make sure the `apisix` has the dump file's read-write access permission,eg: add below config in `conf/config.yaml`
+
 ```yaml
 nginx_config:                     # config for render the template to generate nginx.conf
   user: root                     # specifies the execution user of the worker process.
 ```
+
 - `load_on_init`, default value is `true`
     - if `true`, just try to load the data from the dump file before loading data from  consul when starting, does not care the dump file exists or not
     - if `false`, ignore loading data from the dump file
@@ -108,36 +110,36 @@ Now, register nodes into consul:
 ```shell
 curl -X PUT 'http://127.0.0.1:8500/v1/agent/service/register' \
 -d '{
-	"ID": "service_a1",
-	"Name": "service_a",
-	"Tags": ["primary", "v1"],
-	"Address": "127.0.0.1",
-	"Port": 8000,
-	"Meta": {
-		"service_a_version": "4.0"
-	},
-	"EnableTagOverride": false,
-	"Weights": {
-		"Passing": 10,
-		"Warning": 1
-	}
+  "ID": "service_a1",
+  "Name": "service_a",
+  "Tags": ["primary", "v1"],
+  "Address": "127.0.0.1",
+  "Port": 8000,
+  "Meta": {
+    "service_a_version": "4.0"
+  },
+  "EnableTagOverride": false,
+  "Weights": {
+    "Passing": 10,
+    "Warning": 1
+  }
 }'
 
 curl -X PUT 'http://127.0.0.1:8500/v1/agent/service/register' \
 -d '{
-	"ID": "service_a1",
-	"Name": "service_a",
-	"Tags": ["primary", "v1"],
-	"Address": "127.0.0.1",
-	"Port": 8002,
-	"Meta": {
-		"service_a_version": "4.0"
-	},
-	"EnableTagOverride": false,
-	"Weights": {
-		"Passing": 10,
-		"Warning": 1
-	}
+  "ID": "service_a1",
+  "Name": "service_a",
+  "Tags": ["primary", "v1"],
+  "Address": "127.0.0.1",
+  "Port": 8002,
+  "Meta": {
+    "service_a_version": "4.0"
+  },
+  "EnableTagOverride": false,
+  "Weights": {
+    "Passing": 10,
+    "Warning": 1
+  }
 }'
 ```
 
