@@ -14,6 +14,14 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local core = require("apisix.core")
+local string_format = string.format
+local debug = debug
+local ipairs = ipairs
+local pcall = pcall
+local table_insert = table.insert
+local jit = jit
+
 local _M = {}
 
 local hooks = {}
@@ -22,9 +30,9 @@ function _M.getname(n)
     if n.what == "C" then
         return n.name
     end
-    local lc = string.format("%s:%d", n.short_src, n.currentline)
+    local lc = string_format("%s:%d", n.short_src, n.currentline)
     if n.what ~= "main" and n.namewhat ~= "" then
-        return string.format("%s (%s)", lc, n.name)
+        return string_format("%s (%s)", lc, n.name)
     else
         return lc
     end
@@ -46,7 +54,7 @@ local function hook(evt, arg)
             while true do
                 local name, value = debug.getupvalue(finfo.func, i)
                 if name == nil then break end
-                if string.sub(name, 1, 1) ~= "(" then
+                if name:sub(1, 1) ~= "(" then
                     info.uv[name] = value
                 end
                 i = i + 1
@@ -57,7 +65,7 @@ local function hook(evt, arg)
             while true do
                 local name, value = debug.getlocal(level, i)
                 if not name then break end
-                if string.sub(name, 1, 1) ~= "(" then
+                if name:sub(1, 1) ~= "(" then
                     info.vals[name] = value
                 end
                 i = i + 1
@@ -65,16 +73,16 @@ local function hook(evt, arg)
 
             local r1, r2_or_err = pcall(filter_func, info)
             if not r1 then
-                ngx.log(ngx.ERR, r2_or_err)
+                core.log.error("inspect: pcall filter_func:", r2_or_err)
             end
 
             -- if filter_func returns false, keep the hook
             if r1 and r2_or_err == false then
-                table.insert(hooks2, hook)
+                table_insert(hooks2, hook)
             end
         else
             -- key not match, keep the hook
-            table.insert(hooks2, hook)
+            table_insert(hooks2, hook)
         end
     end
 
@@ -93,7 +101,7 @@ function _M.set_hook(file, line, func, filter_func)
     end
 
     local key = file .. "#" .. line
-    table.insert(hooks, {key = key, filter_func = filter_func})
+    table_insert(hooks, {key = key, filter_func = filter_func})
 
     if jit then
         jit.flush(func)
@@ -112,7 +120,7 @@ function _M.unset_hook(file, line)
     local key = file .. "#" .. line
     for i, hook in ipairs(hooks) do
         if hook.key ~= key then
-            table.insert(hooks2, hook)
+            table_insert(hooks2, hook)
         end
     end
 
