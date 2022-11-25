@@ -20,7 +20,6 @@ local lfs = require("lfs")
 local cjson = require("cjson")
 local io = io
 local table_insert = table.insert
-local loadfile = loadfile
 local pcall = pcall
 local ipairs = ipairs
 local os = os
