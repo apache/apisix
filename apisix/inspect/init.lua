@@ -23,6 +23,8 @@ local table_insert = table.insert
 local loadfile = loadfile
 local pcall = pcall
 local ipairs = ipairs
+local os = os
+local ngx = ngx
 
 local _M = {}
 
