@@ -80,7 +80,7 @@ local function extra_labels(name, ctx)
         for _, kv in ipairs(labels) do
             local val, v = next(kv)
             if ctx then
-                if v:find("$",1, true) == 1 then
+                if v:byte(1) == string.byte("$") then
                     val = ctx.var[v:sub(2)]
                     if val == nil then
                         val = ""
