@@ -24,6 +24,7 @@ local pcall = pcall
 local ipairs = ipairs
 local os = os
 local ngx = ngx
+local loadstring = loadstring
 
 local _M = {}
 
@@ -39,14 +40,33 @@ local REPORT_INTERVAL = 30 -- secs
 
 local function is_file_exists(file)
    local f = io.open(file, "r")
-   if f then io.close(f) return true else return false end
+   if f then
+       io.close(f)
+       return true
+   else
+       return false
+   end
+end
+
+local function run_lua_file(file)
+    local f, err = io.open(file, "rb")
+	if not f then
+		return false, err
+	end
+    local code = f:read("*all")
+    f:close()
+    local func, err = loadstring(code)
+	if not func then
+		return false, err
+	end
+	func()
+	return true
 end
 
 local function setup_hooks(file)
     if is_file_exists(file) then
         dbg.unset_all()
-        local chunk = loadfile(file)
-        local _, err = pcall(chunk)
+        local _, err = pcall(run_lua_file, file)
         local hooks = {}
         for _, hook in ipairs(dbg.hooks()) do
             table_insert(hooks, hook.key)

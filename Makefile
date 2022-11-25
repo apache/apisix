@@ -294,6 +294,9 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/http
 	$(ENV_INSTALL) apisix/http/*.lua $(ENV_INST_LUADIR)/apisix/http/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/inspect
+	$(ENV_INSTALL) apisix/inspect/*.lua $(ENV_INST_LUADIR)/apisix/inspect/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/http/router
 	$(ENV_INSTALL) apisix/http/router/*.lua $(ENV_INST_LUADIR)/apisix/http/router/
 

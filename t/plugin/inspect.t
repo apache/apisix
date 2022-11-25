@@ -72,7 +72,7 @@ plugin_attr:
             file:write([[
             local dbg = require "apisix.inspect.dbg"
 
-            dbg.set_hook("t/lib/test_inspect.lua", 5, nil, function(info)
+            dbg.set_hook("t/lib/test_inspect.lua", 21, nil, function(info)
                 ngx.log(ngx.WARN, "var1=", info.vals.var1)
                 return true
             end)
