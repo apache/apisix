@@ -409,6 +409,7 @@ local function trace_plugins_info_for_debug(ctx, plugins)
     end
 end
 
+
 local function meta_filter(ctx, plugin_name, plugin_conf)
     local filter = plugin_conf._meta and plugin_conf._meta.filter
     if not filter then
@@ -444,6 +445,7 @@ local function meta_filter(ctx, plugin_name, plugin_conf)
     ctx[match_cache_key] = ok
     return ok
 end
+
 
 function _M.filter(ctx, conf, plugins, route_conf, phase)
     local user_plugin_conf = conf.value.plugins
