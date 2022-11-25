@@ -50,17 +50,17 @@ end
 
 local function run_lua_file(file)
     local f, err = io.open(file, "rb")
-	if not f then
-		return false, err
-	end
+    if not f then
+        return false, err
+    end
     local code = f:read("*all")
     f:close()
     local func, err = loadstring(code)
-	if not func then
-		return false, err
-	end
-	func()
-	return true
+    if not func then
+        return false, err
+    end
+    func()
+    return true
 end
 
 local function setup_hooks(file)
