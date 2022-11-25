@@ -391,7 +391,7 @@ $env://secret
 apisix
 jack
 --- error_log_like
-qr/retrieve secrets refs:/
+qr/retrieve secrets refs/
 
 
 
@@ -421,9 +421,9 @@ GET /t
 apisix
 apisix
 --- grep_error_log eval
-qr/retrieve secrets refs:/
+qr/retrieve secrets refs/
 --- grep_error_log_out
-retrieve secrets refs:
+retrieve secrets refs
 
 
 

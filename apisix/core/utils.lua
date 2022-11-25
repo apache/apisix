@@ -35,7 +35,6 @@ local base           = require("resty.core.base")
 local open           = io.open
 local sub_str        = string.sub
 local str_byte       = string.byte
-local str_format     = string.format
 local tonumber       = tonumber
 local tostring       = tostring
 local pairs          = pairs
@@ -353,7 +352,7 @@ do
     end
 
     local function retrieve(refs)
-        log.info(str_format("retrieve secrets refs: %p", refs))
+        log.info("retrieve secrets refs")
 
         local new_refs = table.deepcopy(refs)
         return retrieve_ref(new_refs)

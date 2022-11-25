@@ -26,7 +26,6 @@ local upper       = string.upper
 local find        = string.find
 local sub         = string.sub
 local str         = ffi.string
-local C           = ffi.C
 
 local _M = {}
 
@@ -36,7 +35,6 @@ local apisix_env_vars = {}
 
 ffi.cdef [[
   extern char **environ;
-  int memcmp(const void *s1, const void *s2, size_t n);
 ]]
 
 
@@ -61,15 +59,13 @@ end
 
 
 local function is_env_ref(ref)
-    -- We will not use string.has_prefix,
-    -- to avoid the error caused by has_prefix to cause a crash.
-    return type(ref) == "string" and #ref > 7 and
-        0 == C.memcmp(upper(ref), ENV_PREFIX, 7)
+    -- Avoid the error caused by has_prefix to cause a crash.
+    return type(ref) == "string" and string.has_prefix(upper(ref), ENV_PREFIX)
 end
 
 
 local function parse_ref(ref)
-    local path = sub(ref, 8)
+    local path = sub(ref, #ENV_PREFIX + 1)
     local idx = find(path, "/")
     if not idx then
         return {key = path, sub_key = ""}

@@ -97,7 +97,7 @@ nil
 
 
 
-=== TEST 5: worong format: wrong prefix
+=== TEST 5: wrong format: wrong prefix
 --- config
     location /t {
         content_by_lua_block {
