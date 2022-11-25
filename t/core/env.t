@@ -77,7 +77,7 @@ nil
 
 
 
-=== TEST 4: worong format: worong type
+=== TEST 4: wrong format: wrong type
 --- config
     location /t {
         content_by_lua_block {
