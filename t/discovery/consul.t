@@ -132,10 +132,12 @@ location /consul2 {
 [
     "PUT /consul1/deregister/service_a1",
     "PUT /consul1/deregister/service_b1",
+    "PUT /consul1/deregister/service_a2",
+    "PUT /consul1/deregister/service_b2",
     "PUT /consul1/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
-    "PUT /consul1/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30512,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /consul1/register\n" . "{\"ID\":\"service_a2\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30512,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
     "PUT /consul1/register\n" . "{\"ID\":\"service_b1\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30513,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
-    "PUT /consul1/register\n" . "{\"ID\":\"service_b1\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30514,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /consul1/register\n" . "{\"ID\":\"service_b2\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30514,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
 ]
 --- response_body eval
 ["", "", "", "", "", "", "", ""]
@@ -319,8 +321,9 @@ location /sleep {
 --- request eval
 [
     "PUT /v1/agent/service/deregister/service_a1",
+    "PUT /v1/agent/service/deregister/service_a2",
     "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30513,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
-    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30514,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a2\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30514,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
     "GET /sleep",
 
     "GET /hello?random1",
@@ -329,8 +332,9 @@ location /sleep {
     "GET /hello?random4",
 
     "PUT /v1/agent/service/deregister/service_a1",
+    "PUT /v1/agent/service/deregister/service_a2",
     "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
-    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30512,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a2\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30512,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
     "GET /sleep?sec=5",
 
     "GET /hello?random1",
@@ -344,6 +348,7 @@ location /sleep {
     qr//,
     qr//,
     qr//,
+    qr//,
     qr/ok\n/,
 
     qr/server [3-4]\n/,
@@ -351,6 +356,7 @@ location /sleep {
     qr/server [3-4]\n/,
     qr/server [3-4]\n/,
 
+    qr//,
     qr//,
     qr//,
     qr//,
@@ -373,11 +379,13 @@ location /v1/agent {
 --- request eval
 [
     "PUT /v1/agent/service/deregister/service_a1",
+    "PUT /v1/agent/service/deregister/service_a2",
     "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
-    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.2\",\"Port\":1988,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a2\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.2\",\"Port\":1988,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
 ]
 --- response_body eval
 [
+    '',
     '',
     '',
     '',
@@ -393,10 +401,12 @@ location /v1/agent {
 --- request eval
 [
     "PUT /v1/agent/service/deregister/service_a1",
+    "PUT /v1/agent/service/deregister/service_a2",
 ]
 --- response_body eval
 [
-    ''
+    '',
+    '',
 ]
 
 
@@ -505,3 +515,66 @@ qr/retry connecting consul after \d seconds/
 --- grep_error_log_out
 retry connecting consul after 1 seconds
 retry connecting consul after 4 seconds
+
+
+
+=== TEST 12: test health checker
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uris:
+        - /hello
+    upstream_id: 1
+upstreams:
+    -
+      service_name: service_b
+      discovery_type: consul
+      type: roundrobin
+      id: 1
+      checks:
+        active:
+            http_path: "/hello"
+            healthy:
+                interval: 1
+                successes: 1
+            unhealthy:
+                interval: 1
+                http_failures: 1
+#END
+--- config
+    location /thc {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            httpc:request_uri(uri, {method = "GET"})
+            ngx.sleep(3)
+
+            local code, body, res = t.test('/v1/healthcheck',
+                ngx.HTTP_GET)
+            res = json.decode(res)
+            local nodes = res[1].nodes
+            table.sort(nodes, function(a, b)
+                return a.port < b.port
+            end)
+            ngx.say(json.encode(nodes))
+
+            local code, body, res = t.test('/v1/healthcheck/upstreams/1',
+                ngx.HTTP_GET)
+            res = json.decode(res)
+            nodes = res.nodes
+            table.sort(nodes, function(a, b)
+                return a.port < b.port
+            end)
+            ngx.say(json.encode(nodes))
+        }
+    }
+--- request
+GET /thc
+--- response_body
+[{"host":"127.0.0.1","port":30513,"priority":0,"weight":1},{"host":"127.0.0.1","port":30514,"priority":0,"weight":1}]
+[{"host":"127.0.0.1","port":30513,"priority":0,"weight":1},{"host":"127.0.0.1","port":30514,"priority":0,"weight":1}]
+--- ignore_error_log
