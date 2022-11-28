@@ -55,13 +55,22 @@ local function check_conf(id, conf, need_id, typ)
 end
 
 
-function _M.put(id, conf, sub_path)
+local function split_typ_and_id(id, sub_path)
     local uri_segs = core.utils.split_uri(sub_path)
-    if #uri_segs ~= 1 then
+    local typ = id
+    local id = nil
+    if #uri_segs > 0 then
+        id = uri_segs[1]
+    end
+    return typ, id
+end
+
+
+function _M.put(id, conf, sub_path)
+    local typ, id = split_typ_and_id(id, sub_path)
+    if not id then
         return 400, {error_msg = "no kms id in uri"}
     end
-    local typ = id
-    id = uri_segs[1]
 
     local ok, err = check_conf(typ .. "/" .. id, conf, true, typ)
     if not ok then
@@ -86,12 +95,7 @@ end
 
 
 function _M.get(id, conf, sub_path)
-    local uri_segs = core.utils.split_uri(sub_path)
-    local typ = id
-    id = nil
-    if #uri_segs > 0 then
-        id = uri_segs[1]
-    end
+    local typ, id = split_typ_and_id(id, sub_path)
 
     local key = "/kms/"
     if id then
@@ -111,12 +115,10 @@ end
 
 
 function _M.delete(id, conf, sub_path)
-    local uri_segs = core.utils.split_uri(sub_path)
-    if #uri_segs ~= 1 then
+    local typ, id = split_typ_and_id(id, sub_path)
+    if not id then
         return 400, {error_msg = "no kms id in uri"}
     end
-    local typ = id
-    id = uri_segs[1]
 
     if not id then
         return 400, {error_msg = "missing kms id"}
