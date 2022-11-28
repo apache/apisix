@@ -39,9 +39,7 @@ local schema = {
             items = {
                 type = "array"
             }
-        },
-        concat_method = {type = "string", default = "json",
-                         enum = {"json", "new_line"}},
+        }
     },
     required = {"path"}
 }
