@@ -32,8 +32,8 @@ jobs:
         test_dir:
           - t/plugin/[a-k]*
           - t/plugin/[l-z]*
-          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/deployment t/discovery t/error_page t/misc
-          - t/node t/pubsub t/router t/script t/stream-node t/utils t/wasm t/xds-library t/xrpc t/kms
+          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/deployment t/discovery t/error_page t/kms t/misc
+          - t/node t/pubsub t/router t/script t/stream-node t/utils t/wasm t/xds-library t/xrpc
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 90

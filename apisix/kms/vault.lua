@@ -20,14 +20,11 @@
 
 local core = require("apisix.core")
 local http = require("resty.http")
-local json = require("cjson")
 
 local norm_path = require("pl.path").normpath
-local string = require("apisix.core.string")
 
-local find = string.find
-local sub = string.sub
-local reverse = string.reverse
+local sub        = core.string.sub
+local rfind_char = core.string.rfind_char
 
 local _M = {}
 
@@ -59,11 +56,11 @@ end
 local function get(conf, key)
     core.log.info("fetching data from vault for key: ", key)
 
-    local idx = find(reverse(key), "/")
+    local idx = rfind_char(key, '/')
     if not idx then
         return nil, "error key format, key: " .. key
     end
-    idx = #key - idx + 1
+
     local main_key = sub(key, 1, idx - 1)
     if main_key == "" then
         return nil, "can't find main key, key: " .. key
@@ -80,7 +77,7 @@ local function get(conf, key)
         return nil, "failed to retrtive data from vault kv engine: " .. err
     end
 
-    local ret = json.decode(res)
+    local ret = core.json.decode(res)
     if not ret or not ret.data then
         return nil, "failed to decode result, res: " .. res
     end
