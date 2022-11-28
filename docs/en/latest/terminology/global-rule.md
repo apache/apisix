@@ -1,5 +1,10 @@
 ---
-title: Global Rule
+title: Global Rules
+keywords:
+  - API gateway
+  - Apache APISIX
+  - Global Rules
+description: This article describes how to use global rules.
 ---
 
 <!--
@@ -24,6 +29,8 @@ title: Global Rule
 ## Description
 
 A [Plugin](./plugin.md) configuration can be bound directly to a [Route](./route.md), a [Service](./service.md) or a [Consumer](./consumer.md). But what if we want a Plugin to work on all requests? This is where we register a global Plugin with Global Rule.
+
+Compared with the plugin configuration in Route, Service, Plugin Config, and Consumer, the plugin in the Global Rules is always executed first.
 
 ## Example
 
