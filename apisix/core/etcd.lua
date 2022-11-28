@@ -19,6 +19,7 @@
 --
 -- @module core.etcd
 
+local require           = require
 local fetch_local_conf  = require("apisix.core.config_local").local_conf
 local array_mt          = require("apisix.core.json").array_mt
 local v3_adapter        = require("apisix.admin.v3_adapter")
@@ -27,6 +28,7 @@ local clone_tab         = require("table.clone")
 local health_check      = require("resty.etcd.health_check")
 local pl_path           = require("pl.path")
 local ipairs            = ipairs
+local pcall             = pcall
 local setmetatable      = setmetatable
 local string            = string
 local tonumber          = tonumber
@@ -70,6 +72,18 @@ local function _new(etcd_conf)
         end
     end
 
+    if etcd_conf.use_grpc then
+        -- TODO: let lua-resty-etcd support more use cases
+        if etcd.user or ngx_get_phase() == "init" or ngx_get_phase() == "init_worker" then
+            etcd_conf.use_grpc = false
+        else
+            local ok = pcall(require, "resty.grpc")
+            if not ok then
+                etcd_conf.use_grpc = false
+            end
+        end
+    end
+
     local etcd_cli, err = etcd.new(etcd_conf)
     if not etcd_cli then
         return nil, nil, err
@@ -79,13 +93,41 @@ local function _new(etcd_conf)
 end
 
 
-local function new()
+---
+-- Create an etcd client which will connect to etcd without being proxyed by conf server.
+-- This method is used in init_worker phase when the conf server is not ready.
+--
+-- @function core.etcd.new_without_proxy
+-- @treturn table|nil the etcd client, or nil if failed.
+-- @treturn string|nil the configured prefix of etcd keys, or nil if failed.
+-- @treturn nil|string the error message.
+local function new_without_proxy()
     local local_conf, err = fetch_local_conf()
     if not local_conf then
         return nil, nil, err
     end
 
     local etcd_conf = clone_tab(local_conf.etcd)
+    return _new(etcd_conf)
+end
+_M.new_without_proxy = new_without_proxy
+
+
+local function new(use_http)
+    local local_conf, err = fetch_local_conf()
+    if not local_conf then
+        return nil, nil, err
+    end
+
+    local etcd_conf = clone_tab(local_conf.etcd)
+    if use_http then
+        etcd_conf.use_grpc = false
+    end
+    if etcd_conf.use_grpc then
+        -- TODO: add grpc proxy support later
+        return new_without_proxy()
+    end
+
     local proxy_by_conf_server = false
 
     if local_conf.deployment then
@@ -151,32 +193,13 @@ end
 _M.new = new
 
 
----
--- Create an etcd client which will connect to etcd without being proxyed by conf server.
--- This method is used in init_worker phase when the conf server is not ready.
---
--- @function core.etcd.new_without_proxy
--- @treturn table|nil the etcd client, or nil if failed.
--- @treturn string|nil the configured prefix of etcd keys, or nil if failed.
--- @treturn nil|string the error message.
-local function new_without_proxy()
-    local local_conf, err = fetch_local_conf()
-    if not local_conf then
-        return nil, nil, err
-    end
-
-    local etcd_conf = clone_tab(local_conf.etcd)
-    return _new(etcd_conf)
-end
-_M.new_without_proxy = new_without_proxy
-
-
-local function switch_proxy()
+-- TODO: add grpc proxy support later, then we can remove "use_http" scaffold
+local function switch_proxy(use_http)
     if ngx_get_phase() == "init" or ngx_get_phase() == "init_worker" then
         return new_without_proxy()
     end
 
-    local etcd_cli, prefix, err = new()
+    local etcd_cli, prefix, err = new(use_http)
     if not etcd_cli or err then
         return etcd_cli, prefix, err
     end
