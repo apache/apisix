@@ -81,12 +81,6 @@ end
 
 
 function _M.decrypt_conf(decrypt_func, body, schema_type)
-    local local_conf = core.config.local_conf()
-    local enable = core.table.try_read_attr(local_conf, "apisix", "data_encryption", "enable")
-    if not enable then
-        return
-    end
-
     -- list
     if body.list and #body.list > 0 then
         for _, route in ipairs(body.list) do

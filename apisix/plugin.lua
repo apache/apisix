@@ -850,12 +850,7 @@ check_plugin_metadata = function(item)
 end
 
 
-local function decrypt_conf(name, conf, schema_type)
-    local enable = core.table.try_read_attr(local_conf, "apisix", "data_encryption", "enable")
-    if not enable then
-        return conf
-    end
-
+local function check_enable_and_get_plugin_schema(name, schema_type)
     local plugin_schema = local_plugins_hash and local_plugins_hash[name]
     local schema
     if schema_type == core.schema.TYPE_CONSUMER then
@@ -864,6 +859,17 @@ local function decrypt_conf(name, conf, schema_type)
         schema = plugin_schema.schema
     end
 
+    return schema
+end
+
+
+local function decrypt_conf(name, conf, schema_type)
+    local enable = core.table.try_read_attr(local_conf, "apisix", "data_encryption", "enable")
+    if not enable then
+        return conf
+    end
+
+    local schema = check_enable_and_get_plugin_schema(name, schema_type)
     if not schema then
         return
     end
@@ -889,14 +895,7 @@ local function encrypt_conf(name, conf, schema_type)
         return conf
     end
 
-    local plugin_schema = local_plugins_hash and local_plugins_hash[name]
-    local schema
-    if schema_type == core.schema.TYPE_CONSUMER then
-        schema = plugin_schema.consumer_schema
-    else
-        schema = plugin_schema.schema
-    end
-
+    local schema = check_enable_and_get_plugin_schema(name, schema_type)
     if not schema then
         return
     end
