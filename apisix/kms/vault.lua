@@ -45,7 +45,7 @@ local function make_request_to_vault(conf, method, key, data)
         headers = {
             ["X-Vault-Token"] = conf.token
         },
-        body = core.json.encode(data or  {}, true)
+        body = core.json.encode(data or {}, true)
     })
 
     if not res then
@@ -81,11 +81,11 @@ local function get(conf, key)
     end
 
     local ret = json.decode(res)
-    if not ret then
+    if not ret or not ret.data then
         return nil, "failed to decode result, res: " .. res
     end
 
-    return ret[sub_key]
+    return ret.data[sub_key]
 end
 
 _M.get = get
