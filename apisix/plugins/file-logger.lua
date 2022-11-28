@@ -31,6 +31,17 @@ local schema = {
         path = {
             type = "string"
         },
+        include_req_body = {type = "boolean", default = false},
+        include_resp_body = {type = "boolean", default = false},
+        include_resp_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
+        concat_method = {type = "string", default = "json",
+                         enum = {"json", "new_line"}},
     },
     required = {"path"}
 }
@@ -130,6 +141,9 @@ local function write_file_data(conf, log_message)
     end
 end
 
+function _M.body_filter(conf, ctx)
+    log_util.collect_body(conf, ctx)
+end
 
 function _M.log(conf, ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
