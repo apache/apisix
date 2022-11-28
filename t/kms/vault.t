@@ -121,7 +121,7 @@ can't find sub key, key: apisix/
 --- request
 GET /t
 --- response_body
-failed to retrtive data from vault kv engine: timeout
+failed to retrtive data from vault kv engine: connection refused
 --- timeout: 6
 
 
@@ -140,7 +140,7 @@ Success! Data written to: kv/apisix/apisix-key/jack
         content_by_lua_block {
             local vault = require("apisix.kms.vault")
             local conf = {
-                prefix = "/kv/apisix",
+                prefix = "kv/apisix",
                 token = "root",
                 uri = "http://127.0.0.1:8200"
             }
@@ -149,7 +149,7 @@ Success! Data written to: kv/apisix/apisix-key/jack
                 return ngx.say(err)
             end
 
-            ngx.say(value)
+            ngx.say("value")
         }
     }
 --- request
