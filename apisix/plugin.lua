@@ -20,6 +20,7 @@ local config_util   = require("apisix.core.config_util")
 local enable_debug  = require("apisix.debug").enable_debug
 local wasm          = require("apisix.wasm")
 local expr          = require("resty.expr.v1")
+local apisix_ssl    = require("apisix.ssl")
 local ngx           = ngx
 local crc32         = ngx.crc32_short
 local ngx_exit      = ngx.exit
@@ -849,6 +850,66 @@ check_plugin_metadata = function(item)
 end
 
 
+local function decrypt_conf(name, conf, schema_type)
+    local enable = core.table.try_read_attr(local_conf, "apisix", "data_encryption", "enable")
+    if not enable then
+        return conf
+    end
+
+    local plugin_schema = local_plugins_hash and local_plugins_hash[name]
+    local schema
+    if schema_type == core.schema.TYPE_CONSUMER then
+        schema = plugin_schema.consumer_schema
+    else
+        schema = plugin_schema.schema
+    end
+
+    if not schema then
+        return
+    end
+
+    for key, props in pairs(schema.properties) do
+        if props.type == "string" and props.encrypted and conf[key] then
+            local encrypted, err = apisix_ssl.aes_decrypt_pkey(conf[key], "data_encrypt")
+            if not encrypted then
+                core.log.warn("failed to decrypt the conf of plugin [", name,
+                               "] key [", key, "], err: ", err)
+            else
+                conf[key] = encrypted
+            end
+        end
+    end
+end
+_M.decrypt_conf = decrypt_conf
+
+
+local function encrypt_conf(name, conf, schema_type)
+    local enable = core.table.try_read_attr(local_conf, "apisix", "data_encryption", "enable")
+    if not enable then
+        return conf
+    end
+
+    local plugin_schema = local_plugins_hash and local_plugins_hash[name]
+    local schema
+    if schema_type == core.schema.TYPE_CONSUMER then
+        schema = plugin_schema.consumer_schema
+    else
+        schema = plugin_schema.schema
+    end
+
+    if not schema then
+        return
+    end
+
+    for key, props in pairs(schema.properties) do
+        if props.type == "string" and props.encrypted and conf[key] then
+            local encrypted = apisix_ssl.aes_encrypt_pkey(conf[key], "data_encrypt")
+            conf[key] = encrypted
+        end
+    end
+end
+_M.encrypt_conf = encrypt_conf
+
 
 local function check_schema(plugins_conf, schema_type, skip_disabled_plugin)
     for name, plugin_conf in pairs(plugins_conf) do
@@ -901,7 +962,15 @@ _M.stream_check_schema = stream_check_schema
 
 function _M.plugin_checker(item, schema_type)
     if item.plugins then
-        return check_schema(item.plugins, schema_type, true)
+        local ok, err = check_schema(item.plugins, schema_type, true)
+
+        if ok then
+            -- decrypt conf
+            for name, conf in pairs(item.plugins) do
+                decrypt_conf(name, conf, schema_type)
+            end
+        end
+        return ok, err
     end
 
     return true

@@ -118,7 +118,7 @@ function _M.aes_encrypt_pkey(origin, field)
             return encrypt(aes_128_cbc_with_iv_ssl, origin)
         end
     else
-        if field == "global_data_encrypt" then
+        if field == "data_encrypt" then
             local aes_128_cbc_with_iv_tbl_gde = get_aes_128_cbc_with_iv_gde(local_conf)
             local aes_128_cbc_with_iv_gde = aes_128_cbc_with_iv_tbl_gde[1]
             if aes_128_cbc_with_iv_gde ~= nil then
@@ -141,7 +141,7 @@ local function aes_decrypt_pkey(origin, field)
         end
         aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv_ssl(local_conf)
     else
-        if field == "global_data_encrypt" then
+        if field == "data_encrypt" then
             aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv_gde(local_conf)
         end
     end
@@ -163,9 +163,7 @@ local function aes_decrypt_pkey(origin, field)
         end
     end
 
-    core.log.error("decrypt ssl key failed")
-
-    return nil
+    return nil, "decrypt ssl key failed"
 end
 _M.aes_decrypt_pkey = aes_decrypt_pkey
 
@@ -181,8 +179,10 @@ local function validate(cert, key)
         return true
     end
 
-    key = aes_decrypt_pkey(key)
+    local err
+    key, err = aes_decrypt_pkey(key)
     if not key then
+        core.log.error(err)
         return nil, "failed to decrypt previous encrypted key"
     end
 
@@ -218,7 +218,11 @@ end
 local function parse_pem_priv_key(sni, pkey)
     core.log.debug("parsing priv key for sni: ", sni)
 
-    local parsed, err = ngx_ssl.parse_pem_priv_key(aes_decrypt_pkey(pkey))
+    local key, err = aes_decrypt_pkey(pkey)
+    if not key then
+        core.log.error(err)
+    end
+    local parsed, err = ngx_ssl.parse_pem_priv_key(key)
     return parsed, err
 end
 
