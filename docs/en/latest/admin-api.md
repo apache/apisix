@@ -1174,7 +1174,7 @@ $ curl -i http://127.0.0.1:9180/apisix/admin/kms/vault/test2 -H 'X-API-KEY: edd1
 HTTP/1.1 200 OK
 ...
 
-{"key":"\/apisix\/kms\/vault\/test2","value":{"id":"test2","token":"apisix","create_time":1669616211,"prefix":"apisix","uri":"http:\/\/xxx\/get","update_time":1669616237}}
+{"key":"\/apisix\/kms\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
 ```
 
 ### Response Parameters

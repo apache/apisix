@@ -63,7 +63,7 @@ function _M.put(id, conf, sub_path)
     local typ = id
     id = uri_segs[1]
 
-    local ok, err = check_conf(id, conf, true, typ)
+    local ok, err = check_conf(typ .. "/" .. id, conf, true, typ)
     if not ok then
         return 400, {error_msg = err}
     end
@@ -187,7 +187,7 @@ function _M.patch(id, conf, sub_path)
 
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 
-    local ok, err = check_conf(id, node_value, true, typ)
+    local ok, err = check_conf(typ .. "/" .. id, node_value, true, typ)
     if not ok then
         return 400, {error_msg = err}
     end
