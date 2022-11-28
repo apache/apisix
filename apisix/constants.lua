@@ -33,7 +33,6 @@ return {
         ["/protos"] = true,
         ["/plugin_configs"] = true,
         ["/consumer_groups"] = true,
-        ["/kms"] = true,
         ["/kms/vault"] = true,
     },
     STREAM_ETCD_DIRECTORY = {
