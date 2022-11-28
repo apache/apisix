@@ -104,7 +104,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/kms/vault',
+            local code, body = t('/apisix/admin/kms',
                 ngx.HTTP_GET,
                 nil,
                 [[{

@@ -88,16 +88,14 @@ end
 function _M.get(id, conf, sub_path)
     local uri_segs = core.utils.split_uri(sub_path)
     local typ = id
-    if typ == nil then
-        return 404, '{"error_msg":"not found"}\n'
-    end
     id = nil
     if #uri_segs > 0 then
         id = uri_segs[1]
     end
 
-    local key = "/kms/" .. typ
+    local key = "/kms/"
     if id then
+        key = key .. typ
         key = key .. "/" .. id
     end
 

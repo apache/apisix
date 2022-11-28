@@ -1123,22 +1123,24 @@ To learn more about filtering in stream proxies, check [this](./stream-proxy.md#
 
 ## kms
 
-**API**: /apisix/admin/kms/<type>/{id}
+**API**: /apisix/admin/kms/{secretmanager}/{id}
 
-kms means `Secrets Management`, which could be any type supported, e.g. `vault`.
+kms means `Secrets Management`, which could use any secret manager supported, e.g. `vault`.
 
 ### Request Methods
 
 | Method | Request URI                        | Request Body | Description                                       |
 | ------ | ---------------------------------- | ------------ | ------------------------------------------------- |
-| GET    | /apisix/admin/kms/<type>            | NULL         | Fetches a list of all kms.                  |
-| GET    | /apisix/admin/kms/<type>/{id} | NULL         | Fetches specified kms by id.           |
-| PUT    | /apisix/admin/kms/<type>            | {...}        | Create new kms configuration.                              |
-| DELETE | /apisix/admin/kms/<type>/{id} | NULL         | Removes the kms with the specified id. |
+| GET    | /apisix/admin/kms            | NULL         | Fetches a list of all kms.                  |
+| GET    | /apisix/admin/kms/{secretmanager}/{id} | NULL         | Fetches specified kms by id.           |
+| PUT    | /apisix/admin/kms/{secretmanager}            | {...}        | Create new kms configuration.                              |
+| DELETE | /apisix/admin/kms/{secretmanager}/{id} | NULL         | Removes the kms with the specified id. |
+| PATCH  | /apisix/admin/kms/{secretmanager}/{id}        | {...}        | Updates the selected attributes of the specified, existing kms. To delete an attribute, set value of attribute set to null. |
+| PATCH  | /apisix/admin/kms/{secretmanager}/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                 |
 
 ### Request Body Parameters
 
-For `<type>` is `vault`:
+When `{secretmanager}` is `vault`:
 
 | Parameter   | Required | Type        | Description                                                                                                        | Example                                          |
 | ----------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
