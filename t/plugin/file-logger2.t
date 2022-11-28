@@ -221,7 +221,7 @@ passed
 
 
 
-=== TEST 6: verify file-logger resp with expression of unconcern 
+=== TEST 6: verify file-logger resp with expression of unconcern
 --- config
     location /t {
         content_by_lua_block {
@@ -242,7 +242,7 @@ passed
             local new_msg = core.json.decode(msg)
             ngx.status = code
 
-            if new_msg.response.body == nil 
+            if new_msg.response.body == nil
             then
                 ngx.status = code
                 ngx.say('skip unconcern body')
