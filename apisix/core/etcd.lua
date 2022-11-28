@@ -208,8 +208,14 @@ _M.kvs_to_node = kvs_to_node
 local function kvs_to_nodes(res)
     res.body.node.dir = true
     res.body.node.nodes = setmetatable({}, array_mt)
-    for i=2, #res.body.kvs do
-        res.body.node.nodes[i-1] = kvs_to_node(res.body.kvs[i])
+    if res.body.kvs[1].value then
+        for i=1, #res.body.kvs do
+            res.body.node.nodes[i] = kvs_to_node(res.body.kvs[i])
+        end
+    else
+        for i=2, #res.body.kvs do
+            res.body.node.nodes[i-1] = kvs_to_node(res.body.kvs[i])
+        end
     end
     return res
 end
@@ -268,8 +274,8 @@ function _M.get_format(res, real_key, is_dir, formatter)
             if string.byte(res.body.node.key, -1) == 47 then
                 res.body.node.key = string.sub(res.body.node.key, 1, #res.body.node.key-1)
             end
-            res = kvs_to_nodes(res)
         end
+        res = kvs_to_nodes(res)
     end
 
     res.body.kvs = nil
