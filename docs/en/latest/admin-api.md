@@ -1148,9 +1148,6 @@ When `{secretmanager}` is `vault`:
 | prefix    | True    | string        | key prefix
 | token     | True    | string      | vault token. |                                                  |
 | desc        | False    | Auxiliary   | Description of usage scenarios.                                                                                    | kms xxxx                                    |
-| labels      | False    | Match Rules | Attributes of the kms specified as key-value pairs.                                                           | {"version":"v2","build":"16","env":"production"} |
-| create_time | False    | Auxiliary   | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
-| update_time | False    | Auxiliary   | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
 
 Example Configuration:
 

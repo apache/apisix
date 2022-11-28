@@ -74,7 +74,7 @@ function _M.put(id, conf, sub_path)
 
     local ok, err = check_conf(typ .. "/" .. id, conf, true, typ)
     if not ok then
-        return 400, {error_msg = err}
+        return 400, err
     end
 
     local key = "/kms/" .. typ .. "/" .. id
@@ -118,10 +118,6 @@ function _M.delete(id, conf, sub_path)
     local typ, id = split_typ_and_id(id, sub_path)
     if not id then
         return 400, {error_msg = "no kms id in uri"}
-    end
-
-    if not id then
-        return 400, {error_msg = "missing kms id"}
     end
 
     local key = "/kms/" .. typ .. "/" .. id
