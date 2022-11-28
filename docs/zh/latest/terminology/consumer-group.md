@@ -1,10 +1,10 @@
 ---
-title: Consumer Group
+title: Consumer Groups
 keywords:
-  - API gateway
+  - API 网关
   - Apache APISIX
-  - Consumer Group
-description: Consumer Group in Apache APISIX.
+  - Consumer Groups
+description: 本文介绍了 Apache APISIX Consumer Group 对象的概念及使用方法。
 ---
 
 <!--
@@ -26,16 +26,13 @@ description: Consumer Group in Apache APISIX.
 #
 -->
 
-## Description
+## 描述
 
-Consumer Groups are used to extract commonly used [Plugin](./plugin.md) configurations and can be bound directly to a [Consumer](./consumer.md).
+通过 Consumer Groups，你可以在同一个消费者组中启用任意数量的[插件](./plugin.md)，并在一个或者多个[消费者](./consumer.md)中引用该消费者组。
 
-With consumer groups, you can define any number of plugins, e.g. rate limiting and apply them to a set of consumers,
-instead of managing each consumer individually.
+## 配置示例
 
-## Example
-
-The example below illustrates how to create a Consumer Group and bind it to a Consumer:
+以下示例展示了如何创建消费者组并将其绑定到消费者中。
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumer_groups/company_a \
@@ -66,18 +63,22 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 }'
 ```
 
-When APISIX can't find the Consumer Group with the `group_id`, the Admin API is terminated with a status code of `400`.
+当 APISIX 无法找到 `group_id` 中定义的消费者组时，创建或者更新消费者的请求将会终止，并返回错误码 `404`。
+
+如果消费者已经配置了 `plugins` 字段，那么消费者组中配置的插件将与之合并。
 
 :::tip
 
-1. When the same plugin is configured in [consumer](./consumer.md), [routing](./route.md), [plugin config](./plugin-config.md) and [service](./service.md), only one configuration is in effect, and the consumer has the highest priority. Please refer to [Plugin](./plugin.md).
-2. If a Consumer already has the `plugins` field configured, the plugins in the Consumer Group will effectively be merged into it. The same plugin in the Consumer Group will not override the one configured directly in the Consumer.
+此处需要注意两点：
+
+1. 当在同一个插件分别配置在[消费者](./consumer.md)、[路由](./route.md)、[插件配置](./plugin-config.md)和[服务](./service.md)中时，只有一份配置是生效的，并且消费者的优先级最高。更多信息，请参考 [Plugin](./plugin.md)。
+2. 如果消费者和消费者组配置了相同的插件，则消费者中的插件配置优先级更高。对于第一点，因为消费者组需要配置在消费者中，因此你只需关心消费者中插件的优先级。
 
 :::
 
-For example, if we configure a Consumer Group as shown below:
+如下示例，假如你配置了一个消费者组：
 
-```json
+```json title=“Consumer Group”
 {
     "id": "bar",
     "plugins": {
@@ -88,9 +89,9 @@ For example, if we configure a Consumer Group as shown below:
 }
 ```
 
-To a Consumer as shown below.
+并配置了消费者：
 
-```json
+```json title=“Consumer”
 {
     "username": "foo",
     "group_id": "bar",
@@ -106,4 +107,4 @@ To a Consumer as shown below.
 }
 ```
 
-Then the `body` in `response-rewrite` keeps `world`.
+那么 `response-rewrite` 中的 `body` 将保留 `world`。
