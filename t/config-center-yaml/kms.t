@@ -140,6 +140,7 @@ kms:
     prefix: kv/apisix
     token: root
     uri: http://127.0.0.1:8200
+#END
 --- config
     location /t {
         content_by_lua_block {
@@ -162,6 +163,7 @@ kms:
     prefix: kv/apisix
     token: root
     uri: http://127.0.0.1:8200
+#END
 --- config
     location /t {
         content_by_lua_block {
@@ -288,6 +290,7 @@ kms:
     prefix: kv/prefix
     token: root
     uri: 127.0.0.1:8200
+#END
 --- config
     location /t {
         content_by_lua_block {
@@ -312,6 +315,7 @@ kms:
     prefix: kv/apisix
     token: root
     uri: http://127.0.0.1:8200
+#END
 --- config
     location /t {
         content_by_lua_block {
