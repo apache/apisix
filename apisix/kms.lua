@@ -83,7 +83,8 @@ end
        return nil
     end
 
-    local kms_services = lrucache("kms_kv", kms_values.conf_version, create_kms_kvs, kms_values.values)
+    local kms_services = lrucache("kms_kv", kms_values.conf_version,
+            create_kms_kvs, kms_values.values)
     return kms_services[service] and kms_services[service][confid] or nil
 end
 
