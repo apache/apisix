@@ -38,7 +38,8 @@
         "terminology/router",
         "terminology/script",
         "terminology/service",
-        "terminology/upstream"
+        "terminology/upstream",
+        "terminology/kms"
       ]
     },
     {
