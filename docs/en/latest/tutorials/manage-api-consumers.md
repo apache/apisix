@@ -69,7 +69,7 @@ Up to now, I assume that the sample project is up and running. To use consumer o
 - Create a new Route, and set a routing rule (If necessary).
 - Enable key-auth plugin configuration for the created route.
 
-The above steps can be achieved by running simple two [curl commands](https://en.wikipedia.org/wiki/CURL) against APISIX [Admin API](https://apisix.apache.org/docs/apisix/admin-api/).  
+The above steps can be achieved by running simple two [curl commands](https://en.wikipedia.org/wiki/CURL) against APISIX [Admin API](https://apisix.apache.org/docs/apisix/admin-api/).
 
 The first `cmd` creates a **new Consumer** with API Key based authentication enabled where the API consumer can only make 2 requests against the Product API within 60 seconds.
 
