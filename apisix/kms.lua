@@ -19,10 +19,13 @@ local require   = require
 local core      = require("apisix.core")
 local string    = require("apisix.core.string")
 
-local find  = string.find
-local sub   = string.sub
-local upper = string.upper
-local type = type
+local find      = string.find
+local sub       = string.sub
+local upper     = string.upper
+local type      = type
+local pcall     = pcall
+local ipairs    = ipairs
+local error     = error
 
 local _M = {
     version = 0.1,
