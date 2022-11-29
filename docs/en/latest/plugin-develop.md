@@ -304,8 +304,7 @@ password = { type = "string", encrypted = true },
 Parameters can be stored encrypted by specifying `encrypted = true` in the `schema`. APISIX will provide the following functionality.
 
 - When adding and updating resources via the `Admin API`, APISIX automatically encrypts parameters with `encrypted = true` and stores them in etcd
-- When fetching resources via the `Admin API`, APISIX automatically decrypts the `encrypted = true` parameter and returns it
-- APISIX automatically decrypts the `encrypted = true` parameter when it is used
+- When fetching resources via the `Admin API` and when running the plugin, APISIX automatically decrypts the `encrypted = true` parameter
 
 How to enable this feature?
 

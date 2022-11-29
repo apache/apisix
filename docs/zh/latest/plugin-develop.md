@@ -284,8 +284,7 @@ password = { type = "string", encrypted = true },
 通过在 `schema` 中指定 `encrypted = true`，可以将参数加密存储。APISIX 将提供以下功能：
 
 - 通过 `Admin API` 来新增和更新资源时，对于 `encrypted = true` 的参数，APISIX 会自动加密存储在 etcd 中
-- 通过 `Admin API` 来获取资源时，对于 `encrypted = true` 的参数，APISIX 会自动解密返回
-- APISIX 在使用 `encrypted = true` 的参数时，会自动解密
+- 通过 `Admin API` 来获取资源时，以及在运行插件时，对于 `encrypted = true` 的参数，APISIX 会自动解密
 
 如何开启该功能？
 

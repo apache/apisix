@@ -123,10 +123,11 @@ function _M.get(consumer_name)
     utils.fix_count(res.body, consumer_name)
 
     -- decrypt the conf
-    if res.body then
-        utils.decrypt_conf(plugin.decrypt_conf, res.body, core.schema.TYPE_CONSUMER)
+    if plugin.enable_data_encryption then
+        if res.body then
+            utils.decrypt_params(plugin.decrypt_conf, res.body, core.schema.TYPE_CONSUMER)
+        end
     end
-
 
     return res.status, res.body
 end

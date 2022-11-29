@@ -211,8 +211,10 @@ function _M.get(id)
     utils.fix_count(res.body, id)
 
     -- decrypt the conf
-    if res.body then
-        utils.decrypt_conf(plugin.decrypt_conf, res.body)
+    if plugin.enable_data_encryption then
+        if res.body then
+            utils.decrypt_params(plugin.decrypt_conf, res.body)
+        end
     end
 
     return res.status, res.body

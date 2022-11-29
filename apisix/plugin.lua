@@ -863,9 +863,19 @@ local function check_enable_and_get_plugin_schema(name, schema_type)
 end
 
 
+local enable_data_encryption
+local function enable_gde()
+    if enable_data_encryption == nil then
+        enable_data_encryption = core.table.try_read_attr(local_conf, "apisix", "data_encryption", "enable")
+        _M.enable_data_encryption = enable_data_encryption
+    end
+
+    return enable_data_encryption
+end
+
+
 local function decrypt_conf(name, conf, schema_type)
-    local enable = core.table.try_read_attr(local_conf, "apisix", "data_encryption", "enable")
-    if not enable then
+    if not enable_gde() then
         return conf
     end
 
@@ -890,8 +900,7 @@ _M.decrypt_conf = decrypt_conf
 
 
 local function encrypt_conf(name, conf, schema_type)
-    local enable = core.table.try_read_attr(local_conf, "apisix", "data_encryption", "enable")
-    if not enable then
+    if not enable_gde() then
         return conf
     end
 
@@ -963,7 +972,7 @@ function _M.plugin_checker(item, schema_type)
     if item.plugins then
         local ok, err = check_schema(item.plugins, schema_type, true)
 
-        if ok then
+        if ok and enable_gde() then
             -- decrypt conf
             for name, conf in pairs(item.plugins) do
                 decrypt_conf(name, conf, schema_type)

@@ -324,7 +324,7 @@ clickhouse headers: x-clickhouse-database:default
 
 
 
-=== TEST 9: POST and get lis
+=== TEST 9: POST and get list
 --- yaml_config
 apisix:
     data_encryption:
