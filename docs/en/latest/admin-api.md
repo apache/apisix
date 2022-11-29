@@ -1147,7 +1147,6 @@ When `{secretmanager}` is `vault`:
 | uri    | True     | URI        | URI of the vault server.                                                                                              |                                                  |
 | prefix    | True    | string        | key prefix
 | token     | True    | string      | vault token. |                                                  |
-| desc        | False    | Auxiliary   | Description of usage scenarios.                                                                                    | kms xxxx                                    |
 
 Example Configuration:
 

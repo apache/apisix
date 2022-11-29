@@ -161,11 +161,7 @@ passed
             ngx.say(body)
 
             local res = assert(etcd.get('/kms/vault/test1'))
-            local create_time = res.body.node.value.create_time
-            assert(prev_create_time == create_time, "create_time mismatched")
-            local update_time = res.body.node.value.update_time
-            assert(update_time ~= nil, "update_time is nil")
-            assert(prev_update_time ~= update_time, "update_time should be changed")
+            assert(res.body.node.value.token == "unknown")
         }
     }
 --- response_body
