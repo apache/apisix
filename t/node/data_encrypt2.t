@@ -66,7 +66,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: data encription work well with plugins that not the auth plugins
+=== TEST 1: data encryption work well with plugins that not the auth plugins
 --- yaml_config
 apisix:
     data_encryption:
@@ -296,7 +296,7 @@ def456
 
 
 
-=== TEST 5: data encription work well with services
+=== TEST 5: data encryption work well with services
 --- yaml_config
 apisix:
     data_encryption:
@@ -393,7 +393,7 @@ clickhouse headers: x-clickhouse-database:default
 
 
 
-=== TEST 7: data encription work well with plugin_configs
+=== TEST 7: data encryption work well with plugin_configs
 --- yaml_config
 apisix:
     data_encryption:
@@ -491,7 +491,7 @@ clickhouse headers: x-clickhouse-database:default
 
 
 
-=== TEST 9: data encription work well with global rule
+=== TEST 9: data encryption work well with global rule
 --- yaml_config
 apisix:
     data_encryption:
@@ -595,7 +595,7 @@ passed
 
 
 
-=== TEST 10: data encription work well with consumer groups
+=== TEST 10: data encryption work well with consumer groups
 --- yaml_config
 apisix:
     data_encryption:
