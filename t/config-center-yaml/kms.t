@@ -65,7 +65,7 @@ property "uri" validation failed: failed to match pattern "^[^\\/]+:\\/\\/([\\da
 
 
 
-=== TEST 2: validate kms: service not exits 
+=== TEST 2: validate kms: service not exits
 --- apisix_yaml
 kms:
   - id: apisix-key
