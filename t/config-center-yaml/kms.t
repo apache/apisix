@@ -57,7 +57,7 @@ kms:
   - id: vault/apisix-key
     prefix: kv/apisix
     token: root
-    uri: 127.0.0.1:8200
+    uri: http://127.0.0.1:8200
 #END
 --- config
     location /t {
