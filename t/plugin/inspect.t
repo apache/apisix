@@ -92,6 +92,10 @@ _EOC_
     if (!$block->no_error_log) {
         $block->set_value("no_error_log", "[error]");
     }
+
+    if (!$block->timeout) {
+        $block->set_value("timeout", "10");
+    }
 });
 
 run_tests;
@@ -123,7 +127,6 @@ __DATA__
             os.remove("/tmp/apisix_inspect_hooks.lua")
         }
     }
---- timeout: 5
 --- error_log
 var1=hello
 
@@ -154,7 +157,6 @@ var1=hello
             os.remove("/tmp/apisix_inspect_hooks.lua")
         }
     }
---- timeout: 5
 --- error_log
 var1=hello
 
@@ -190,7 +192,6 @@ var1=hello
             os.remove("/tmp/apisix_inspect_hooks.lua")
         }
     }
---- timeout: 5
 --- error_log
 var1=hello
 var1=hello
@@ -228,7 +229,6 @@ var1=hello
             -- used for next test case
         }
     }
---- timeout: 5
 --- error_log
 var1=hello
 var2=world
@@ -283,7 +283,6 @@ var1=hello
             os.remove("/tmp/test_real_tmp_file.lua")
         }
     }
---- timeout: 5
 --- error_log
 var1=hello
 
@@ -318,7 +317,6 @@ var1=hello
             os.remove("/tmp/test_real_tmp_file.lua")
         }
     }
---- timeout: 8
 --- no_error_log
 var1=hello
 
@@ -353,7 +351,6 @@ var1=hello
             os.remove("/tmp/apisix_inspect_hooks.lua")
         }
     }
---- timeout: 5
 --- error_log
 count=2
 
@@ -385,7 +382,6 @@ count=2
             os.remove("/tmp/apisix_inspect_hooks.lua")
         }
     }
---- timeout: 5
 --- error_log
 upvar1=2
 upvar2=nil
@@ -418,7 +414,6 @@ upvar2=nil
             os.remove("/tmp/apisix_inspect_hooks.lua")
         }
     }
---- timeout: 5
 --- error_log
 upvar1=2
 upvar2=yes
