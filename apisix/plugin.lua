@@ -850,19 +850,6 @@ check_plugin_metadata = function(item)
 end
 
 
-local function check_enable_and_get_plugin_schema(name, schema_type)
-    local plugin_schema = local_plugins_hash and local_plugins_hash[name]
-    local schema
-    if schema_type == core.schema.TYPE_CONSUMER then
-        schema = plugin_schema.consumer_schema
-    else
-        schema = plugin_schema.schema
-    end
-
-    return schema
-end
-
-
 local enable_data_encryption
 local function enable_gde()
     if enable_data_encryption == nil then
@@ -875,12 +862,25 @@ local function enable_gde()
 end
 
 
-local function decrypt_conf(name, conf, schema_type)
+local function get_plugin_schema(name, schema_type)
     if not enable_gde() then
-        return conf
+        return false
     end
 
-    local schema = check_enable_and_get_plugin_schema(name, schema_type)
+    local plugin_schema = local_plugins_hash and local_plugins_hash[name]
+    local schema
+    if schema_type == core.schema.TYPE_CONSUMER then
+        schema = plugin_schema.consumer_schema
+    else
+        schema = plugin_schema.schema
+    end
+
+    return schema
+end
+
+
+local function decrypt_conf(name, conf, schema_type)
+    local schema = get_plugin_schema(name, schema_type)
     if not schema then
         return
     end
@@ -901,11 +901,7 @@ _M.decrypt_conf = decrypt_conf
 
 
 local function encrypt_conf(name, conf, schema_type)
-    if not enable_gde() then
-        return conf
-    end
-
-    local schema = check_enable_and_get_plugin_schema(name, schema_type)
+    local schema = get_plugin_schema(name, schema_type)
     if not schema then
         return
     end
