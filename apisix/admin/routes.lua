@@ -204,7 +204,6 @@ function _M.get(id)
     end
 
     utils.fix_count(res.body, id)
-
     return res.status, res.body
 end
 
