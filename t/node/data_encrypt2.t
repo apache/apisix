@@ -612,14 +612,11 @@ apisix:
                 ngx.HTTP_PUT,
                 [[{
                     "plugins": {
-                        "clickhouse-logger": {
-                            "user": "default",
-                            "password": "abc123",
-                            "database": "default",
-                            "logtable": "t",
-                            "endpoint_addr": "http://127.0.0.1:10420/clickhouse-logger/test",
-                            "batch_max_size":1,
-                            "inactive_timeout":1
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
                         }
                     }
                 }]]
@@ -676,20 +673,59 @@ vU/ZHVJw7b0XscDJ1Fhtig==
 
 
 
-=== TEST 11: verify
+=== TEST 11: verify data encryption
 --- yaml_config
 apisix:
     data_encryption:
         enable: true
         keyring:
             - edd1c9f0985e76a2
---- request
-GET /opentracing
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require "t.toolkit.json"
+            local t = require("lib.test_admin").test
+            local code, err = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "key-auth": {}
+                    }
+                }]]
+            )
+            if code > 300 then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.sleep(0.1)
+
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local ress = {}
+            for i = 1, 3 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = {
+                        ["apikey"] = "auth-two"
+                    }
+                })
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(ress, res.status)
+            end
+            ngx.say(json.encode(ress))
+        }
+    }
 --- response_body
-opentracing
---- error_log
-clickhouse body: INSERT INTO t FORMAT JSONEachRow
-clickhouse headers: x-clickhouse-key:abc123
-clickhouse headers: x-clickhouse-user:default
-clickhouse headers: x-clickhouse-database:default
---- wait: 5
+[200,200,503]
