@@ -32,7 +32,13 @@ Secrets refer to any sensitive information required during the running process o
 
 KMS allows users to store Secrets through some secrets management services (Vault, etc.) in APISIX, and read them according to the key when using them to ensure that **Secrets do not exist in plain text throughout the platform**.
 
-APISIX currently supports storing keys in environment variables.
+Its working principle is shown in the figure:
+![kms](../../../assets/images/kms.png)
+
+APISIX currently supports storing keys in the following ways:
+
+- [Environment Variables](#use-environment-variables-to-manage-secrets)
+- [HashiCorp Vault](#use-vault-to-manage-secrets)
 
 You use KMS functions by specifying format variables in the consumer configuration of the following plugins, such as `key-auth`.
 
@@ -42,9 +48,9 @@ If a configuration item is: `key: "$ENV://ABC"`, when the actual value correspon
 
 :::
 
-## Use environment variables to manage keys
+## Use environment variables to manage secrets
 
-Using environment variables to manage keys means that you can save key information in environment variables, and refer to environment variables through variables in a specific format when configuring plugins. APISIX supports referencing system environment variables and environment variables configured through the Nginx `env` directive.
+Using environment variables to manage secrets means that you can save key information in environment variables, and refer to environment variables through variables in a specific format when configuring plugins. APISIX supports referencing system environment variables and environment variables configured through the Nginx `env` directive.
 
 ### Usage
 
@@ -107,3 +113,65 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 ```
 
 Through the above steps, the `key` configuration in the `key-auth` plugin can be saved in the environment variable instead of being displayed in plain text when configuring the plugin.
+
+## Use Vault to manage secrets
+
+Using Vault to manage secrets means that you can store secrets information in the Vault service and refer to it through variables in a specific format when configuring plugins. APISIX currently supports [Vault KV engine version V1](https://developer.hashicorp.com/vault/docs/secrets/kv/kv-v1).
+
+### Usage
+
+```
+$KMS://$secretmanager/$id/$secret_id/$key
+```
+
+- secretmanager: secrets management service, could be the vault, aws, etc.
+- id: KMS resource id, which needs to be consistent with the one specified when adding the KMS resource
+- secret_id: the secret id in the secrets management service
+- key: the key corresponding to the secret in the secrets management service
+
+### Example: use in key-auth plugin
+
+Step 1: Create the corresponding key in the Vault, you can use the following command:
+
+```
+vault kv put apisix/jack auth-key=value
+```
+
+Step 2: Add KMS resources through the Admin API, configure the vault address and other connection information:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/kms/vault/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "https://127.0.0.1:8200"，
+    "prefix": "apisix",
+    "token": "root"
+}'
+```
+
+If you use APISIX Standalone mode, you can add the following configuration in apisix.yaml:
+
+```yaml
+kms:
+  - id: vault/1
+    prefix: apisix
+    token: root
+    uri: 127.0.0.1:8200
+```
+
+Step 3: Reference the KMS resource in the `key-auth` plugin and fill in the key information:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/consumers \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "username": "jack",
+    "plugins": {
+        "key-auth": {
+            "key": "$KMS://vault/1/jack/auth-key"
+        }
+    }
+}'
+```
+
+Through the above two steps, when the user request hits the `key-auth` plugin, the real value of the key in the Vault will be obtained through the KMS component.

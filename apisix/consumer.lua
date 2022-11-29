@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core           = require("apisix.core")
+local kms            = require("apisix.kms")
 local plugin         = require("apisix.plugin")
 local plugin_checker = require("apisix.plugin").plugin_checker
 local error          = error
@@ -97,13 +98,19 @@ function _M.consumers()
 end
 
 
+local function retrieve_secrets_callback(key)
+    return core.env.get(key) or kms.get(key)
+end
+
+
 local function create_consume_cache(consumers_conf, key_attr)
     local consumer_names = {}
 
     for _, consumer in ipairs(consumers_conf.nodes) do
         core.log.info("consumer node: ", core.json.delay_encode(consumer))
         local new_consumer = core.table.clone(consumer)
-        new_consumer.auth_conf = core.utils.retrieve_secrets_ref(new_consumer.auth_conf)
+        new_consumer.auth_conf =
+                core.utils.retrieve_secrets_ref(new_consumer.auth_conf, retrieve_secrets_callback)
         consumer_names[new_consumer.auth_conf[key_attr]] = new_consumer
     end
 

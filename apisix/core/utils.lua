@@ -25,7 +25,6 @@ local rfind_char     = core_str.rfind_char
 local table          = require("apisix.core.table")
 local log            = require("apisix.core.log")
 local string         = require("apisix.core.string")
-local env            = require("apisix.core.env")
 local lrucache       = require("apisix.core.lrucache")
 local dns_client     = require("apisix.core.dns.client")
 local ngx_re         = require("ngx.re")
@@ -339,42 +338,43 @@ local secrets_lrucache = lrucache.new({
 local retrieve_secrets_ref
 do
     local retrieve_ref
-    function retrieve_ref(refs)
+    function retrieve_ref(refs, callback)
         for k, v in pairs(refs) do
             local typ = type(v)
             if typ == "string" then
-                refs[k] = env.get(v) or v
+                refs[k] = callback(v) or v
             elseif typ == "table" then
-                retrieve_ref(v)
+                retrieve_ref(v, callback)
             end
         end
         return refs
     end
 
-    local function retrieve(refs)
+    local function retrieve(refs, callback)
         log.info("retrieve secrets refs")
 
         local new_refs = table.deepcopy(refs)
-        return retrieve_ref(new_refs)
+        return retrieve_ref(new_refs, callback)
     end
 
-    function retrieve_secrets_ref(refs, cache, key, version)
+    function retrieve_secrets_ref(refs, callback, cache, key, version)
         if not refs or type(refs) ~= "table" then
             return nil
         end
         if not cache then
-            return retrieve(refs)
+            return retrieve(refs, callback)
         end
-        return secrets_lrucache(key, version, retrieve, refs)
+        return secrets_lrucache(key, version, retrieve, refs, callback)
     end
 end
 -- Retrieve all secrets ref in the given table
 ---
 -- Retrieve all secrets ref in the given table,
--- and then replace them with the values from the environment variables.
+-- and then replace them with the values from the environment variables or kms.
 --
 -- @function core.utils.retrieve_secrets_ref
 -- @tparam table refs The table to be retrieved.
+-- @tparam function callback The replacement function to use when iterating over values.
 -- @tparam boolean cache Whether to use lrucache to cache results.
 -- @tparam string key The cache key for lrucache.
 -- @tparam string version The cache version for lrucache.

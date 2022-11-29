@@ -377,7 +377,7 @@ require("apisix.core.env").init()
                 key = "jack",
                 secret = "$env://secret"
             }
-            local new_refs = core.utils.retrieve_secrets_ref(refs)
+            local new_refs = core.utils.retrieve_secrets_ref(refs, core.env.get)
             assert(new_refs ~= refs)
             ngx.say(refs.secret)
             ngx.say(new_refs.secret)
@@ -408,8 +408,8 @@ require("apisix.core.env").init()
                 key = "jack",
                 secret = "$env://secret"
             }
-            local refs_1 = core.utils.retrieve_secrets_ref(refs, true, "key", 1)
-            local refs_2 = core.utils.retrieve_secrets_ref(refs, true, "key", 1)
+            local refs_1 = core.utils.retrieve_secrets_ref(refs, core.env.get, true, "key", 1)
+            local refs_2 = core.utils.retrieve_secrets_ref(refs, core.env.get, true, "key", 1)
             assert(refs_1 == refs_2)
             ngx.say(refs_1.secret)
             ngx.say(refs_2.secret)
@@ -443,7 +443,7 @@ require("apisix.core.env").init()
                     passsword = "$env://secret"
                 }
             }
-            local new_refs = core.utils.retrieve_secrets_ref(refs)
+            local new_refs = core.utils.retrieve_secrets_ref(refs, core.env.get)
             ngx.say(new_refs.user.passsword)
         }
     }
@@ -464,7 +464,7 @@ require("apisix.core.env").init()
         content_by_lua_block {
             local core = require("apisix.core")
             local refs = "wrong"
-            local new_refs = core.utils.retrieve_secrets_ref(refs)
+            local new_refs = core.utils.retrieve_secrets_ref(refs, core.env.get)
             ngx.say(new_refs)
         }
     }
