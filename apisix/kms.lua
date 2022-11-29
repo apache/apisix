@@ -33,8 +33,6 @@ local KMS_PREFIX = "$KMS://"
 local kmss
 
 local function check_kms(conf)
-    --core.log.warn("check path: ", path, " :", require("inspect")(conf))
-
     local idx = find(conf.id or "", "/")
     if not idx then
         return false, "no kms id"
@@ -84,9 +82,8 @@ end
     if not kms_values then
        return nil
     end
-    --core.log.warn("check path: ", confid, " :", require("inspect")(kms_kv))
+
     local kms_services = lrucache("kms_kv", kms_values.conf_version, create_kms_kvs, kms_values.values)
-    --core.log.warn("hhget: ", require("inspect")(kms_services))
     return kms_services[service] and kms_services[service][confid] or nil
 end
 
