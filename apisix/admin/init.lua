@@ -189,15 +189,11 @@ local function run()
     local code, data = resource[method](seg_id, req_body, seg_sub_path,
                                         uri_args)
     if code then
-        if method == "get" then
-            if plugin.enable_data_encryption then
-                if data then
-                    if seg_res == "consumers" then
-                        utils.decrypt_params(plugin.decrypt_conf, data, core.schema.TYPE_CONSUMER)
-                    else
-                        utils.decrypt_params(plugin.decrypt_conf, data)
-                    end
-                end
+        if method == "get" and plugin.enable_data_encryption then
+            if seg_res == "consumers" then
+                utils.decrypt_params(plugin.decrypt_conf, data, core.schema.TYPE_CONSUMER)
+            else
+                utils.decrypt_params(plugin.decrypt_conf, data)
             end
         end
 
