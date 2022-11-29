@@ -221,6 +221,7 @@ local function parse_pem_priv_key(sni, pkey)
     local key, err = aes_decrypt_pkey(pkey)
     if not key then
         core.log.error(err)
+        return nil, err
     end
     local parsed, err = ngx_ssl.parse_pem_priv_key(key)
     return parsed, err

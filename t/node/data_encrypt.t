@@ -28,10 +28,6 @@ add_block_preprocessor(sub {
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    if (!$block->no_error_log) {
-        $block->set_value("no_error_log", "[error]\n[alert]");
-    }
 });
 
 run_tests;
@@ -124,8 +120,6 @@ bar
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
@@ -227,8 +221,6 @@ done
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 

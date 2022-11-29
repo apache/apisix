@@ -295,7 +295,7 @@ end
 
 ### encrypted storage fields
 
-Specify the parameters to be stored encrypted(Requires APISIX version > 3.0.1)
+Specify the parameters to be stored encrypted. (Requires APISIX version >= 3.1.0)
 
 Some plugins require parameters to be stored encrypted, such as the `password` parameter of the `basic-auth` plugin. This plugin needs to specify in the `schema` which parameters need to be stored encrypted.
 

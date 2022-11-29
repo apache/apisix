@@ -862,9 +862,9 @@ local function enable_gde()
 end
 
 
-local function get_plugin_schema(name, schema_type)
+local function get_plugin_schema_for_gde(name, schema_type)
     if not enable_gde() then
-        return false
+        return nil
     end
 
     local plugin_schema = local_plugins_hash and local_plugins_hash[name]
@@ -880,7 +880,7 @@ end
 
 
 local function decrypt_conf(name, conf, schema_type)
-    local schema = get_plugin_schema(name, schema_type)
+    local schema = get_plugin_schema_for_gde(name, schema_type)
     if not schema then
         return
     end
@@ -901,7 +901,7 @@ _M.decrypt_conf = decrypt_conf
 
 
 local function encrypt_conf(name, conf, schema_type)
-    local schema = get_plugin_schema(name, schema_type)
+    local schema = get_plugin_schema_for_gde(name, schema_type)
     if not schema then
         return
     end
