@@ -592,3 +592,104 @@ GET /t
 test
 9QKrmTT3TkWGvjlIoe5XXw==
 passed
+
+
+
+=== TEST 10: data encription work well with consumer groups
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local code, body = t('/apisix/admin/consumer_groups/company_a',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "clickhouse-logger": {
+                            "user": "default",
+                            "password": "abc123",
+                            "database": "default",
+                            "logtable": "t",
+                            "endpoint_addr": "http://127.0.0.1:10420/clickhouse-logger/test",
+                            "batch_max_size":1,
+                            "inactive_timeout":1
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(0.1)
+
+            local code, body = t('/apisix/admin/consumers/foobar',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foobar",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "auth-two"
+                        }
+                    },
+                    "group_id": "company_a"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, key is decrypted
+            local code, message, res = t('/apisix/admin/consumers/foobar',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say(res.value.plugins["key-auth"].key)
+
+            -- get plugin conf from etcd, key is encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/consumers/foobar'))
+            ngx.say(res.body.node.value.plugins["key-auth"].key)
+        }
+    }
+--- response_body
+auth-two
+vU/ZHVJw7b0XscDJ1Fhtig==
+
+
+
+=== TEST 11: verify
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- error_log
+clickhouse body: INSERT INTO t FORMAT JSONEachRow
+clickhouse headers: x-clickhouse-key:abc123
+clickhouse headers: x-clickhouse-user:default
+clickhouse headers: x-clickhouse-database:default
+--- wait: 5
