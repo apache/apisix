@@ -24,6 +24,9 @@ add_block_preprocessor(sub {
 
     if (! $block->request) {
         $block->set_value("request", "GET /t");
+        if (!$block->response_body) {
+            $block->set_value("response_body", "passed\n");
+        }
     }
 
     if (! $block->no_error_log && ! $block->error_log) {
@@ -66,8 +69,6 @@ __DATA__
             ngx.say(body)
         }
     }
---- response_body
-passed
 
 
 
@@ -141,8 +142,6 @@ contain with target
             ngx.say(body)
         }
     }
---- response_body
-passed
 
 
 
@@ -216,8 +215,6 @@ contain target body hits with expr
             ngx.say(body)
         }
     }
---- response_body
-passed
 
 
 
