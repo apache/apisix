@@ -24,7 +24,7 @@ local _M = {}
 function _M.run1()
     local var1 = "hello"
     local var2 = "world"
-    return var1
+    return var1 .. var2
 end
 
 local upvar1 = 2

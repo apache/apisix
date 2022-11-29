@@ -359,7 +359,7 @@ count=2
 
 
 
-=== TEST 9: check upvalue of run2(), only upvalue used in function code are visable
+=== TEST 9: check upvalue of run2(), only upvalue used in function code are visible
 --- config
     location /t {
         content_by_lua_block {
@@ -392,7 +392,7 @@ upvar2=nil
 
 
 
-=== TEST 10: check upvalue of run3(), now both upvar1 and upvar2 are visable
+=== TEST 10: check upvalue of run3(), now both upvar1 and upvar2 are visible
 --- config
     location /t {
         content_by_lua_block {
