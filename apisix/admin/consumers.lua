@@ -55,8 +55,6 @@ local function check_conf(username, conf)
             if plugin_obj.type == 'auth' then
                 count_auth_plugin = count_auth_plugin + 1
             end
-
-            plugin.encrypt_conf(name, conf, core.schema.TYPE_CONSUMER)
         end
 
         if count_auth_plugin == 0 then
@@ -121,13 +119,6 @@ function _M.get(consumer_name)
     end
 
     utils.fix_count(res.body, consumer_name)
-
-    -- decrypt the conf
-    if plugin.enable_data_encryption then
-        if res.body then
-            utils.decrypt_params(plugin.decrypt_conf, res.body, core.schema.TYPE_CONSUMER)
-        end
-    end
 
     return res.status, res.body
 end

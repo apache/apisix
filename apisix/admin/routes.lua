@@ -19,8 +19,6 @@ local core = require("apisix.core")
 local apisix_upstream = require("apisix.upstream")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local utils = require("apisix.admin.utils")
-local plugin = require("apisix.plugin")
-local pairs = pairs
 local tostring = tostring
 local type = type
 local loadstring = loadstring
@@ -133,9 +131,6 @@ local function check_conf(id, conf, need_id)
         if not ok then
             return nil, {error_msg = err}
         end
-        for name, conf in pairs(conf.plugins) do
-            plugin.encrypt_conf(name, conf)
-        end
     end
 
     if conf.vars then
@@ -209,13 +204,6 @@ function _M.get(id)
     end
 
     utils.fix_count(res.body, id)
-
-    -- decrypt the conf
-    if plugin.enable_data_encryption then
-        if res.body then
-            utils.decrypt_params(plugin.decrypt_conf, res.body)
-        end
-    end
 
     return res.status, res.body
 end

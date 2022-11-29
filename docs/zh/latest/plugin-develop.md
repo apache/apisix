@@ -273,6 +273,8 @@ function _M.check_schema(conf, schema_type)
 end
 ```
 
+### 加密存储字段
+
 指定参数需要被加密存储（需要 APISIX 版本大于 3.0.1）
 
 有些插件需要将参数加密存储，比如 `basic-auth` 插件的 `password` 参数。这个插件需要在 `schema` 中指定哪些参数需要被加密存储。

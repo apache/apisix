@@ -19,6 +19,7 @@ local core = require("apisix.core")
 local route = require("apisix.utils.router")
 local plugin = require("apisix.plugin")
 local v3_adapter = require("apisix.admin.v3_adapter")
+local utils = require("apisix.admin.utils")
 local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_time = ngx.time
@@ -188,6 +189,18 @@ local function run()
     local code, data = resource[method](seg_id, req_body, seg_sub_path,
                                         uri_args)
     if code then
+        if method == "get" then
+            if plugin.enable_data_encryption then
+                if data then
+                    if seg_res == "consumers" then
+                        utils.decrypt_params(plugin.decrypt_conf, data, core.schema.TYPE_CONSUMER)
+                    else
+                        utils.decrypt_params(plugin.decrypt_conf, data)
+                    end
+                end
+            end
+        end
+
         if v3_adapter.enable_v3() then
             core.response.set_header("X-API-VERSION", "v3")
         else
