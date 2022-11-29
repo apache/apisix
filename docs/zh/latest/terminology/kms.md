@@ -25,18 +25,16 @@ title: KMS
 
 Secrets 是指 APISIX 运行过程中所需的任何敏感信息，它可能是核心配置的一部分（如 etcd 的密码），也可能是插件中的一些敏感信息。APISIX 中常见的 Secrets 类型包括：
 
-- 一些组件（etcd、Redis、kafka 等）的用户名、密码
+- 一些组件（etcd、Redis、Kafka 等）的用户名、密码
 - 证书的私钥
 - API 密钥
 - 敏感的插件配置字段，通常用于身份验证、hash、签名或加密
 
-KMS 允许用户在 APISIX 中通过一些密钥管理服务（vault 等）来存储 Secrets，在使用的时候根据 key 进行读取，确保 Secrets 在整个平台中不以明文的形式存在。
+KMS 允许用户在 APISIX 中通过一些密钥管理服务（Vault 等）来存储 Secrets，在使用的时候根据 key 进行读取，确保 Secrets 在整个平台中不以明文的形式存在。
 
-APISIX 目前支持将密钥存储在环境变量中
+APISIX 目前支持将密钥存储在环境变量中。
 
-你可以在以下插件的 consumer 配置中通过指定格式的变量来使用 KMS 功能：
-
-- key-auth
+你可以在以下插件的 consumer 配置中通过指定格式的变量来使用 KMS 功能，比如 `key-auth` 插件。
 
 ::: note
 
@@ -55,7 +53,7 @@ $ENV://$env_name/$sub_key
 ```
 
 - env_name: 环境变量名称
-- sub_key: 当环境变量的值是 json 字符串时， 获取某个属性的值
+- sub_key: 当环境变量的值是 JSON 字符串时，获取某个属性的值
 
 如果环境变量的值是字符串类型，如：
 
@@ -93,9 +91,9 @@ $ENV://JACK/openid-key
 export JACK_AUTH_KEY=abc
 ```
 
-第二步：在 key-auth 插件中引用环境变量
+第二步：在 `key-auth` 插件中引用环境变量
 
-```
+```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -108,4 +106,4 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 }'
 ```
 
-通过以上步骤，可以将 key-auth 插件中的 key 配置保存在环境变量中，而不是在配置插件时明文显示。
+通过以上步骤，可以将 `key-auth` 插件中的 key 配置保存在环境变量中，而不是在配置插件时明文显示。

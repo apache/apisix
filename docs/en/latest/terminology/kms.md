@@ -30,13 +30,11 @@ Secrets refer to any sensitive information required during the running process o
 - API key
 - Sensitive plugin configuration fields, typically used for authentication, hashing, signing, or encryption
 
-KMS allows users to store Secrets through some secrets management services (vault, etc.) in APISIX, and read them according to the key when using them, so as to ensure that **Secrets do not exist in plain text throughout the platform**.
+KMS allows users to store Secrets through some secrets management services (Vault, etc.) in APISIX, and read them according to the key when using them to ensure that **Secrets do not exist in plain text throughout the platform**.
 
 APISIX currently supports storing keys in environment variables.
 
-You use KMS functions by specifying format variables in the consumer configuration of the following plugins:
-
-- key-auth
+You use KMS functions by specifying format variables in the consumer configuration of the following plugins, such as `key-auth`.
 
 ::: note
 
@@ -93,7 +91,7 @@ Step 1: Create environment variables before the APISIX instance starts
 export JACK_AUTH_KEY=abc
 ```
 
-Step 2: Reference the environment variable in the key-auth plugin
+Step 2: Reference the environment variable in the `key-auth` plugin
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/consumers \
