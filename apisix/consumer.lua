@@ -32,7 +32,6 @@ local lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
 
-
 local function plugin_consumer()
     local plugins = {}
 
