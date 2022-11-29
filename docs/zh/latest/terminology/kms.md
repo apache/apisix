@@ -23,14 +23,14 @@ title: KMS
 
 ## 描述
 
-Secrets 是指 APISIX 运行过程中所需的任何敏感信息，它可能是核心配置的一部分（如 etcd 的密码），也可能是插件中的一些敏感信息。 APISIX 中常见的 Secrets 类型包括：
+Secrets 是指 APISIX 运行过程中所需的任何敏感信息，它可能是核心配置的一部分（如 etcd 的密码），也可能是插件中的一些敏感信息。APISIX 中常见的 Secrets 类型包括：
 
 - 一些组件（etcd、Redis、kafka 等）的用户名、密码
 - 证书的私钥
 - API 密钥
 - 敏感的插件配置字段，通常用于身份验证、hash、签名或加密
 
-KMS 允许用户在 APISIX 中通过一些密钥管理服务（vault 等） 来存储 Secrets，在使用的时候根据 key 进行读取，确保 Secrets 在整个平台中不以明文的形式存在。
+KMS 允许用户在 APISIX 中通过一些密钥管理服务（vault 等）来存储 Secrets，在使用的时候根据 key 进行读取，确保 Secrets 在整个平台中不以明文的形式存在。
 
 APISIX 目前支持将密钥存储在环境变量中
 
@@ -40,7 +40,7 @@ APISIX 目前支持将密钥存储在环境变量中
 
 ::: note
 
-如果某个配置项为: `key: "$ENV://ABC"`，当 KMS 中没有检索到 $ENV://ABC 对应的真实值，那么 key 的值将是 "$ENV://ABC" 而不是 `nil`。
+如果某个配置项为：`key: "$ENV://ABC"`，当 KMS 中没有检索到 $ENV://ABC 对应的真实值，那么 key 的值将是 "$ENV://ABC" 而不是 `nil`。
 
 :::
 
