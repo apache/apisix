@@ -45,7 +45,7 @@ __DATA__
 kms:
   - id: vault/apisix-key
     prefix: kv/prefix
-    token: hvs.GD4458NcXuKqOdEUaaAiuKiR
+    token: root
     uri: 127.0.0.1:8200
 #END
 --- config

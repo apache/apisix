@@ -82,7 +82,7 @@ end
  local function kms_kv(service, confid)
     local kms_values
     kms_values = core.config.fetch_created_obj("/kms")
-    if not kms_values then
+    if not kms_values or not kms_values.values then
        return nil
     end
 
