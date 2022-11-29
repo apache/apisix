@@ -579,6 +579,8 @@ auth: authone
 
 
 === TEST 28: put kms vault config
+--- request
+GET /t
 --- config
     location /t {
         content_by_lua_block {
