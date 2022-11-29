@@ -4,17 +4,6 @@ on:
   schedule:
     # UTC 7:30 every Friday
     - cron: "30 7 * * 5"
-# FIXME: remove this once the PR is going to be merged
-  push:
-    branches: [master, 'release/**']
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
-  pull_request:
-    branches: [master, 'release/**']
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
 
 permissions:
   contents: read
