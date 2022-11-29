@@ -54,8 +54,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -93,8 +91,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -132,8 +128,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -167,8 +161,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -207,8 +199,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -219,8 +209,6 @@ GET /hello HTTP/1.1
 uri: /plugin_proxy_rewrite
 host: apisix.iresty.com
 scheme: http
---- no_error_log
-[error]
 
 
 
@@ -260,8 +248,6 @@ scheme: http
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -272,8 +258,6 @@ GET /hello HTTP/1.1
 uri: /plugin_proxy_rewrite
 host: test.com
 scheme: https
---- no_error_log
-[error]
 
 
 
@@ -313,8 +297,6 @@ scheme: https
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -328,8 +310,6 @@ uri: /uri/plugin_proxy_rewrite
 host: localhost
 x-api-version: v2
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 
 
 
@@ -369,8 +349,6 @@ x-real-ip: 127.0.0.1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -382,8 +360,6 @@ uri: /uri/plugin_proxy_rewrite
 host: localhost
 x-api-engine: apisix
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 
 
 
@@ -423,8 +399,6 @@ x-real-ip: 127.0.0.1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -438,8 +412,6 @@ uri: /uri/plugin_proxy_rewrite
 host: localhost
 x-api-test: hello
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 
 
 
@@ -476,8 +448,6 @@ x-real-ip: 127.0.0.1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -488,8 +458,6 @@ GET /hello?q=apisix&a=iresty HTTP/1.1
 uri: /plugin_proxy_rewrite_args
 a: iresty
 q: apisix
---- no_error_log
-[error]
 
 
 
@@ -526,8 +494,6 @@ q: apisix
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -536,8 +502,6 @@ passed
 GET /hello HTTP/1.1
 --- response_body
 uri: /plugin_proxy_rewrite_args
---- no_error_log
-[error]
 
 
 
@@ -578,8 +542,6 @@ uri: /plugin_proxy_rewrite_args
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -594,8 +556,6 @@ uri: /uri/plugin_proxy_rewrite
 host: localhost
 x-api-engine: APISIX
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 
 
 
@@ -632,8 +592,6 @@ x-real-ip: 127.0.0.1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -644,8 +602,6 @@ GET /test/plugin/proxy/rewrite HTTP/1.1
 uri: /plugin_proxy_rewrite
 host: localhost
 scheme: http
---- no_error_log
-[error]
 
 
 
@@ -653,8 +609,6 @@ scheme: http
 --- request
 GET /test/not/found HTTP/1.1
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
@@ -692,8 +646,6 @@ GET /test/not/found HTTP/1.1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -702,8 +654,6 @@ passed
 GET /test/hello HTTP/1.1
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -740,8 +690,6 @@ hello world
 --- request
 GET /t
 --- error_code: 400
---- no_error_log
-[error]
 
 
 
@@ -780,8 +728,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/invalid regex_uri/
---- no_error_log
-[error]
 
 
 
@@ -857,8 +803,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to match pattern/
---- no_error_log
-[error]
 
 
 
@@ -882,8 +826,6 @@ qr/failed to match pattern/
 GET /t
 --- response_body
 property "uri" validation failed: failed to match pattern "^\\/.*" with "home"
---- no_error_log
-[error]
 
 
 
@@ -924,8 +866,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/invalid field character/
---- no_error_log
-[error]
 --- error_log
 header field: X-Api:Version
 
@@ -968,8 +908,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/invalid value character/
---- no_error_log
-[error]
 
 
 
@@ -1006,8 +944,6 @@ qr/invalid value character/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1021,8 +957,6 @@ a: iresty|
 a: iresty
 q: apisix)
 /
---- no_error_log
-[error]
 
 
 
@@ -1067,8 +1001,6 @@ q: apisix)
 GET /t
 --- response_body
 {"proxy-rewrite":{"headers":{"X-Api":"v2"},"uri":"/uri/plugin_proxy_rewrite","use_real_request_uri_unsafe":false}}
---- no_error_log
-[error]
 
 
 
@@ -1110,8 +1042,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1128,8 +1058,6 @@ name: Bill
 x-api: 127.0.0.1
 x-key: X-APISIX
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 
 
 
@@ -1172,8 +1100,6 @@ x-real-ip: 127.0.0.1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1185,8 +1111,6 @@ uri: /uri
 host: localhost
 version: nginx_var_does_not_exist
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 
 
 
@@ -1223,8 +1147,6 @@ x-real-ip: 127.0.0.1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1233,8 +1155,6 @@ passed
 GET /test?new_uri=hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -1257,8 +1177,6 @@ hello world
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -1297,8 +1215,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1309,5 +1225,3 @@ GET /hello
 uri: /uri
 host: test.com:6443
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]

@@ -21,7 +21,6 @@ local json     = require("apisix.core.json")
 local sleep    = core.sleep
 local ngx_re = require("ngx.re")
 local http     = require("resty.http")
-local ipairs   = ipairs
 local ngx      = ngx
 local rawget   = rawget
 local rawset   = rawset
@@ -33,10 +32,6 @@ local req_get_body_data = ngx.req.get_body_data
 
 local plugin_name = "wolf-rbac"
 
-
-local lrucache = core.lrucache.new({
-    type = "plugin",
-})
 
 local schema = {
     type = "object",
@@ -64,23 +59,6 @@ local _M = {
     schema = schema,
 }
 
-
-local create_consume_cache
-do
-    local consumer_names = {}
-
-    function create_consume_cache(consumers)
-        core.table.clear(consumer_names)
-
-        for _, consumer in ipairs(consumers.nodes) do
-            core.log.info("consumer node: ", core.json.delay_encode(consumer))
-            consumer_names[consumer.auth_conf.appid] = consumer
-        end
-
-        return consumer_names
-    end
-
-end -- do
 
 local token_version = 'V1'
 local function create_rbac_token(appid, wolf_token)
@@ -285,8 +263,7 @@ function _M.rewrite(conf, ctx)
         return 401, fail_response("Missing related consumer")
     end
 
-    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
-        create_consume_cache, consumer_conf)
+    local consumers = consumer.consumers_kv(plugin_name, consumer_conf, "appid")
 
     core.log.info("------ consumers: ", core.json.delay_encode(consumers))
     local consumer = consumers[appid]
@@ -353,8 +330,7 @@ local function get_consumer(appid)
         core.response.exit(500)
     end
 
-    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
-        create_consume_cache, consumer_conf)
+    local consumers = consumer.consumers_kv(plugin_name, consumer_conf, "appid")
 
     core.log.info("------ consumers: ", core.json.delay_encode(consumers))
     local consumer = consumers[appid]

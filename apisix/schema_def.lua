@@ -437,6 +437,7 @@ local upstream_schema = {
         type = {
             description = "algorithms of load balancing",
             type = "string",
+            default = "roundrobin",
         },
         checks = health_checker,
         hash_on = {
@@ -498,8 +499,8 @@ local upstream_schema = {
         id = id_schema,
     },
     oneOf = {
-        {required = {"type", "nodes"}},
-        {required = {"type", "service_name", "discovery_type"}},
+        {required = {"nodes"}},
+        {required = {"service_name", "discovery_type"}},
     }
 }
 

@@ -23,10 +23,6 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
 });
 
 run_tests();
@@ -157,8 +153,6 @@ foo
 --- error_log
 localhost is resolved to: 127.0.0.3
 localhost is resolved to: 127.0.0.2
---- no_error_log
-[error]
 
 
 
@@ -447,3 +441,25 @@ deployment:
             - http://127.0.0.1:2379
 --- response_body
 30
+
+
+
+=== TEST 11: ipv6
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/apisix/test", "foo"))
+            local res = assert(etcd.get("/apisix/test"))
+            ngx.say(res.body.node.value)
+        }
+    }
+--- yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    etcd:
+        prefix: "/apisix"
+        host:
+            - http://[::1]:2379

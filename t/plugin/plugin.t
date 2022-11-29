@@ -737,3 +737,55 @@ passed
 GET /hello
 --- response_headers
 !x-version
+
+
+
+=== TEST 29: use APISIX's built-in variables in  meta.filter
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                {
+                    plugins = {
+                        ["proxy-rewrite"] = {
+                            _meta = {
+                                filter = {
+                                    {"post_arg_key", "==", "abc"}
+                                }
+                            },
+                            uri = "/echo",
+                            headers = {
+                                ["X-Api-Version"] = "ga"
+                            }
+                        }
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:1980"] = 1
+                        }
+                    },
+                    uri = "/hello"
+                }
+            )
+            if code >= 300 then
+                ngx.print(body)
+            else
+                ngx.say(body)
+            end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 30: hit route: proxy-rewrite enable with post_arg_xx in meta.filter
+--- request
+POST /hello
+key=abc
+--- more_headers
+Content-Type: application/x-www-form-urlencoded
+--- response_headers
+x-api-version: ga

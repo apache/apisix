@@ -114,7 +114,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" \
 在创建完成路由后，你可以通过以下命令测试路由是否正常：
 
 ```
-curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin.org"
+curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: example.com"
 ```
 
 该请求将被 APISIX 转发到 `http://httpbin.org:80/anything/foo?arg=10`。

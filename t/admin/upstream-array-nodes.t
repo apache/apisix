@@ -64,8 +64,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -99,8 +97,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -117,8 +113,6 @@ passed
 GET /t
 --- response_body
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -136,8 +130,6 @@ GET /t
 GET /t
 --- response_body
 [delete] code: 404
---- no_error_log
-[error]
 
 
 
@@ -186,8 +178,6 @@ GET /t
 --- response_body
 [push] code: 200 message: passed
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -218,8 +208,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -251,8 +239,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -293,8 +279,6 @@ no valid upstream node
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -325,8 +309,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -357,8 +339,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -389,8 +369,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -421,8 +399,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -456,5 +432,3 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
