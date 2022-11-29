@@ -14,11 +14,27 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+--
+-- Don't edit existing code, because the hooks are identified by line number.
+-- Instead, append new code to this file.
+--
 local _M = {}
 
 function _M.run1()
     local var1 = "hello"
+    local var2 = "world"
     return var1
+end
+
+local upvar1 = 2
+local upvar2 = "yes"
+function _M.run2()
+    return upvar1
+end
+
+function _M.run3()
+    return upvar1 .. upvar2
 end
 
 return _M
