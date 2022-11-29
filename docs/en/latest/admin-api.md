@@ -117,6 +117,7 @@ Resources that support paging queries:
 - SSL
 - Stream Route
 - Upstream
+- kms
 
 ### Support filtering query
 
@@ -1117,5 +1118,63 @@ Route used in the [Stream Proxy](./stream-proxy.md).
 | protocol.conf | False    | Configuration | Protocol-specific configuration.                             |                    |
 
 To learn more about filtering in stream proxies, check [this](./stream-proxy.md#more-route-match-options) document.
+
+[Back to TOC](#table-of-contents)
+
+## kms
+
+**API**: /apisix/admin/kms/{secretmanager}/{id}
+
+kms means `Secrets Management`, which could use any secret manager supported, e.g. `vault`.
+
+### Request Methods
+
+| Method | Request URI                        | Request Body | Description                                       |
+| ------ | ---------------------------------- | ------------ | ------------------------------------------------- |
+| GET    | /apisix/admin/kms            | NULL         | Fetches a list of all kms.                  |
+| GET    | /apisix/admin/kms/{secretmanager}/{id} | NULL         | Fetches specified kms by id.           |
+| PUT    | /apisix/admin/kms/{secretmanager}            | {...}        | Create new kms configuration.                              |
+| DELETE | /apisix/admin/kms/{secretmanager}/{id} | NULL         | Removes the kms with the specified id. |
+| PATCH  | /apisix/admin/kms/{secretmanager}/{id}        | {...}        | Updates the selected attributes of the specified, existing kms. To delete an attribute, set value of attribute set to null. |
+| PATCH  | /apisix/admin/kms/{secretmanager}/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                 |
+
+### Request Body Parameters
+
+When `{secretmanager}` is `vault`:
+
+| Parameter   | Required | Type        | Description                                                                                                        | Example                                          |
+| ----------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| uri    | True     | URI        | URI of the vault server.                                                                                              |                                                  |
+| prefix    | True    | string        | key prefix
+| token     | True    | string      | vault token. |                                                  |
+
+Example Configuration:
+
+```shell
+{
+    "uri": "https://localhost/vault",
+    "prefix": "/apisix/kv",
+    "token": "343effad"
+}
+```
+
+Example API usage:
+
+```shell
+$ curl -i http://127.0.0.1:9180/apisix/admin/kms/vault/test2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "http://xxx/get",
+    "prefix" : "apisix",
+    "token" : "apisix"
+}'
+HTTP/1.1 200 OK
+...
+
+{"key":"\/apisix\/kms\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
+```
+
+### Response Parameters
+
+Currently, the response is returned from etcd.
 
 [Back to TOC](#table-of-contents)

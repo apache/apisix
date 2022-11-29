@@ -692,6 +692,21 @@ _M.service = {
 }
 
 
+_M.kms_vault = {
+    type = "object",
+    properties = {
+        uri = _M.uri_def,
+        prefix = {
+            type = "string",
+        },
+        token = {
+            type = "string",
+        },
+    },
+    required = {"uri", "prefix", "token"},
+}
+
+
 _M.consumer = {
     type = "object",
     properties = {
