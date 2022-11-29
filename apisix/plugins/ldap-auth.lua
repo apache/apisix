@@ -17,13 +17,8 @@
 local core = require("apisix.core")
 local ngx = ngx
 local ngx_re = require("ngx.re")
-local ipairs = ipairs
 local consumer_mod = require("apisix.consumer")
 local ldap = require("resty.ldap")
-
-local lrucache = core.lrucache.new({
-    ttl = 300, count = 512
-})
 
 local schema = {
     type = "object",
@@ -49,6 +44,7 @@ local consumer_schema = {
 
 local plugin_name = "ldap-auth"
 
+
 local _M = {
     version = 0.1,
     priority = 2540,
@@ -68,23 +64,6 @@ function _M.check_schema(conf, schema_type)
 
     return ok, err
 end
-
-local create_consumer_cache
-do
-    local consumer_names = {}
-
-    function create_consumer_cache(consumers)
-        core.table.clear(consumer_names)
-
-        for _, consumer in ipairs(consumers.nodes) do
-            core.log.info("consumer node: ", core.json.delay_encode(consumer))
-            consumer_names[consumer.auth_conf.user_dn] = consumer
-        end
-
-        return consumer_names
-    end
-
-end -- do
 
 local function extract_auth_header(authorization)
     local obj = { username = "", password = "" }
@@ -162,8 +141,8 @@ function _M.rewrite(conf, ctx)
     if not consumer_conf then
         return 401, { message = "Missing related consumer" }
     end
-    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
-        create_consumer_cache, consumer_conf)
+
+    local consumers = consumer_mod.consumers_kv(plugin_name, consumer_conf, "user_dn")
     local consumer = consumers[userdn]
     if not consumer then
         return 401, {message = "Invalid user authorization"}

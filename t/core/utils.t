@@ -69,8 +69,6 @@ qr/random seed \d+(\.\d+)?(e\+\d+)?\ntwice: false/
     }
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -93,8 +91,6 @@ GET /t
 GET /t
 --- response_body eval
 qr/"address":.+,"name":"github.com"/
---- no_error_log
-[error]
 
 
 
@@ -118,8 +114,6 @@ GET /t
 resolvers: ["8.8.8.8","114.114.114.114"]
 --- error_log eval
 qr/"address":.+,"name":"github.com"/
---- no_error_log
-[error]
 
 
 
@@ -200,8 +194,6 @@ received: Connection: close
 received: Server: APISIX
 received: \nreceived: hello world
 close: 1 nil}
---- no_error_log
-[error]
 
 
 
@@ -270,8 +262,6 @@ res:JohnDavid
 GET /t
 --- response_body
 ip_info: {"address":"127.0.0.1","class":1,"name":"test.com","ttl":315360000,"type":1}
---- no_error_log
-[error]
 
 
 
@@ -297,8 +287,6 @@ apisix:
 GET /t
 --- response_body_like
 .+"name":"apisix\.apache\.org".+
---- no_error_log
-[error]
 
 
 
@@ -373,3 +361,114 @@ apisix:
 GET /t
 --- error_log
 failed to parse domain: ipv6.local
+
+
+
+=== TEST 12: retrieve_secrets_ref: no cache
+--- main_config
+env secret=apisix;
+--- extra_init_by_lua
+require("apisix.core.env").init()
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local refs = {
+                key = "jack",
+                secret = "$env://secret"
+            }
+            local new_refs = core.utils.retrieve_secrets_ref(refs)
+            assert(new_refs ~= refs)
+            ngx.say(refs.secret)
+            ngx.say(new_refs.secret)
+            ngx.say(new_refs.key)
+        }
+    }
+--- request
+GET /t
+--- response_body
+$env://secret
+apisix
+jack
+--- error_log_like
+qr/retrieve secrets refs/
+
+
+
+=== TEST 13: retrieve_secrets_ref: cache
+--- main_config
+env secret=apisix;
+--- extra_init_by_lua
+require("apisix.core.env").init()
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local refs = {
+                key = "jack",
+                secret = "$env://secret"
+            }
+            local refs_1 = core.utils.retrieve_secrets_ref(refs, true, "key", 1)
+            local refs_2 = core.utils.retrieve_secrets_ref(refs, true, "key", 1)
+            assert(refs_1 == refs_2)
+            ngx.say(refs_1.secret)
+            ngx.say(refs_2.secret)
+        }
+    }
+--- request
+GET /t
+--- response_body
+apisix
+apisix
+--- grep_error_log eval
+qr/retrieve secrets refs/
+--- grep_error_log_out
+retrieve secrets refs
+
+
+
+=== TEST 14: retrieve_secrets_ref: table nesting
+--- main_config
+env secret=apisix;
+--- extra_init_by_lua
+require("apisix.core.env").init()
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local refs = {
+                key = "jack",
+                user = {
+                    username = "apisix",
+                    passsword = "$env://secret"
+                }
+            }
+            local new_refs = core.utils.retrieve_secrets_ref(refs)
+            ngx.say(new_refs.user.passsword)
+        }
+    }
+--- request
+GET /t
+--- response_body
+apisix
+
+
+
+=== TEST 15: retrieve_secrets_ref: wrong refs type
+--- main_config
+env secret=apisix;
+--- extra_init_by_lua
+require("apisix.core.env").init()
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local refs = "wrong"
+            local new_refs = core.utils.retrieve_secrets_ref(refs)
+            ngx.say(new_refs)
+        }
+    }
+--- request
+GET /t
+--- response_body
+nil

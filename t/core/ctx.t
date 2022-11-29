@@ -41,8 +41,6 @@ GET /t
 --- response_body
 remote_addr: 127.0.0.1
 server_port: 1984
---- no_error_log
-[error]
 
 
 
@@ -61,8 +59,6 @@ server_port: 1984
 GET /t
 --- response_body
 http_host: localhost
---- no_error_log
-[error]
 
 
 
@@ -115,8 +111,6 @@ cookie_d: nil
 cookie with dash and uppercase: 2
 cookie with []: 3
 cookie with .: 4
---- no_error_log
-[error]
 
 
 
@@ -197,8 +191,6 @@ invalid argument, expect string value
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -209,8 +201,6 @@ GET /hello
 hello world
 --- error_log
 route_id: 1
---- no_error_log
-[error]
 
 
 
@@ -236,8 +226,6 @@ route_id: 1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -274,8 +262,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -286,8 +272,6 @@ GET /hello
 hello world
 --- error_log
 service_id: empty route_id
---- no_error_log
-[error]
 
 
 
@@ -325,8 +309,6 @@ service_id: empty route_id
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -337,8 +319,6 @@ GET /hello
 hello world
 --- error_log
 service_id: 1
---- no_error_log
-[error]
 
 
 
@@ -369,8 +349,6 @@ service_id: 1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -410,8 +388,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -424,8 +400,6 @@ apikey: auth-jack
 hello world
 --- error_log
 consumer_name: consumer_jack
---- no_error_log
-[error]
 
 
 
@@ -464,8 +438,6 @@ consumer_name: consumer_jack
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -476,8 +448,6 @@ GET /hello
 hello world
 --- error_log
 consumer_name: consumer_name is nil
---- no_error_log
-[error]
 
 
 
@@ -517,8 +487,6 @@ consumer_name: consumer_name is nil
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -531,8 +499,6 @@ apikey: auth-jack
 hello world
 --- error_log
 consumer_name: consumer_jack
---- no_error_log
-[error]
 
 
 
@@ -571,8 +537,6 @@ consumer_name: consumer_jack
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -583,8 +547,6 @@ GET /hello
 hello world
 --- error_log
 consumer_name: consumer_name is nil
---- no_error_log
-[error]
 
 
 
@@ -611,8 +573,6 @@ consumer_name: consumer_name is nil
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -654,8 +614,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -688,8 +646,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -741,8 +697,6 @@ qr/request log: \{"route_id":"1","service_id":"1","service_name":"ctx_var-suppor
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -778,8 +732,6 @@ qr/request log: \{"route_id":"1"\}/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -822,8 +774,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -875,8 +825,6 @@ qr/request log: \{"route_id":"1","route_name":"ctx_var-support-route_name"\}/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -957,8 +905,6 @@ qr/request log: \{"route_id":"1"\}/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 

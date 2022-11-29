@@ -63,8 +63,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -107,8 +105,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -159,8 +155,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -188,8 +182,6 @@ passed
     }
 --- request
 GET /t
---- no_error_log
-[error]
 --- response_body
 [200,503]
 
@@ -219,8 +211,6 @@ GET /t
     }
 --- request
 GET /t
---- no_error_log
-[error]
 --- response_body
 [200,200]
 
@@ -250,8 +240,6 @@ GET /t
     }
 --- request
 GET /t
---- no_error_log
-[error]
 --- response_body
 [200,503]
 --- error_log
@@ -296,8 +284,6 @@ The value of the configured key is empty, use client IP instead
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -325,8 +311,6 @@ passed
     }
 --- request
 GET /t
---- no_error_log
-[error]
 --- response_body
 [200,503]
 --- error_log

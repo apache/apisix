@@ -94,6 +94,10 @@ GET /t
 --- ret_code: 200
 --- response_body_like eval
 qr/"nodes":\{"127.0.0.1:1980":1\}/
+--- grep_error_log eval
+qr/\[error\].*/
+--- grep_error_log_out eval
+qr{invalid item data of \[/apisix/services/1\], val: mexxxxxxxxxxxxxxx, it should be an object}
 
 
 
@@ -109,5 +113,3 @@ qr/"nodes":\{"127.0.0.1:1980":1\}/
 GET /t
 --- response_body
 done
---- no_error_log
-[error]

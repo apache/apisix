@@ -375,3 +375,54 @@ do body filter
 run before_proxy phase balancer_ip : 127.0.0.1
 --- no_error_log
 enable sample upstream
+
+
+
+=== TEST 6: upstream with keepalive_pool, disable sample upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "keepalive_pool": {
+                            "size": 1,
+                            "idle_timeout": 8,
+                            "requests": 2
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.5)
+
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri)
+            assert(res.status == 200)
+            if not res then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say(res.body)
+        }
+    }
+--- response_body
+do body filter
+--- error_log
+proxy request to 127.0.0.1:1980
+--- no_error_log
+enable sample upstream

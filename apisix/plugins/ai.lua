@@ -171,8 +171,8 @@ local function routes_analyze(routes)
                     route_flags["host"] = true
                 elseif key == "vars" then
                     route_flags["vars"] = true
-                elseif key == "filter_fun"then
-                    route_flags["filter_fun"] = true
+                elseif key == "filter_func"then
+                    route_flags["filter_func"] = true
                 elseif key == "remote_addr" or key == "remote_addrs" then
                     route_flags["remote_addr"] = true
                 elseif key == "service" then
@@ -212,8 +212,8 @@ local function routes_analyze(routes)
                                 route_up_flags["timeout"] = true
                             elseif k == "tls" then
                                 route_up_flags["tls"] = true
-                            elseif k == "keepalive" then
-                                route_up_flags["keepalive"] = true
+                            elseif k == "keepalive_pool" then
+                                route_up_flags["keepalive_pool"] = true
                             elseif k == "service_name" then
                                 route_up_flags["service_name"] = true
                             end
@@ -229,7 +229,7 @@ local function routes_analyze(routes)
     local global_rules_flag = router.global_rules and router.global_rules.values
                               and #router.global_rules.values ~= 0
 
-    if route_flags["vars"] or route_flags["filter_fun"]
+    if route_flags["vars"] or route_flags["filter_func"]
          or route_flags["remote_addr"]
          or route_flags["service_id"]
          or route_flags["plugin_config_id"]
@@ -266,7 +266,7 @@ local function routes_analyze(routes)
          or route_up_flags["retries"]
          or route_up_flags["timeout"]
          or route_up_flags["tls"]
-         or route_up_flags["keepalive"]
+         or route_up_flags["keepalive_pool"]
          or route_up_flags["service_name"]
          or route_up_flags["more_nodes"]
          or global_rules_flag then

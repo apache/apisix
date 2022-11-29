@@ -119,39 +119,16 @@ use ai plane to match route
                 return
             end
 
-            local http = require "resty.http"
-            local uri1 = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello?k=a"
-            local uri2 = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello?k=v"
-            local threads = {}
-            for i = 1, 2 do
-                local th = assert(ngx.thread.spawn(function(i)
-                    local httpc = http.new()
-                    local res, err
-                    if i == 1 then
-                        -- arg_k = a, match route
-                        res, err = httpc:request_uri(uri1)
-                        assert(res.status == 200)
-                    else
-                        -- arg_k = v, not match route
-                        res, err = httpc:request_uri(uri2)
-                        assert(res.status == 404)
-                    end
-                    if not res then
-                        ngx.log(ngx.ERR, err)
-                        return
-                    end
-                end, i))
-                table.insert(threads, th)
-            end
-            for i, th in ipairs(threads) do
-                ngx.thread.wait(th)
-            end
+            local code = t('/hello??k=a', ngx.HTTP_GET)
+            ngx.say(code)
 
-            ngx.say("done")
+            local code = t('/hello??k=v', ngx.HTTP_GET)
+            ngx.say(code)
         }
     }
 --- response_body
-done
+200
+404
 --- no_error_log
 use ai plane to match route
 
