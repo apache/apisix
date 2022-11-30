@@ -105,6 +105,7 @@ function _M.set_hook(file, line, func, filter_func)
 
     if jit then
         jit.flush(func)
+        jit.off()
     end
 
     debug.sethook(hook, "l")
@@ -128,6 +129,9 @@ function _M.unset_hook(file, line)
         hooks = hooks2
         if #hooks == 0 then
             debug.sethook()
+            if jit then
+                jit.on()
+            end
         end
     end
 end
@@ -136,6 +140,9 @@ function _M.unset_all()
     if #hooks > 0 then
         hooks = {}
         debug.sethook()
+        if jit then
+            jit.on()
+        end
     end
 end
 
