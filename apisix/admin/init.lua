@@ -26,6 +26,7 @@ local ngx_time = ngx.time
 local ngx_timer_at = ngx.timer.at
 local ngx_worker_id = ngx.worker.id
 local tonumber = tonumber
+local tostring = tostring
 local str_lower = string.lower
 local reload_event = "/apisix/admin/plugins/reload"
 local ipairs = ipairs
@@ -112,6 +113,16 @@ local function strip_etcd_resp(data)
         if data.node then
             data.node.createdIndex = nil
             data.node.modifiedIndex = nil
+        end
+
+        data.count = nil
+        data.more = nil
+        data.prev_kvs = nil
+
+        if data.deleted then
+            -- We used to treat the type incorrectly. But for compatibility we follow
+            -- the existing type.
+            data.deleted = tostring(data.deleted)
         end
     end
 
