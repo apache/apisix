@@ -567,7 +567,5 @@ apisix:
             ngx.say(json.encode(pwds))
         }
     }
---- request
-GET /t
 --- response_body
 ["bar","test"]

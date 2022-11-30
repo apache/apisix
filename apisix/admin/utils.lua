@@ -82,7 +82,7 @@ end
 
 function _M.decrypt_params(decrypt_func, body, schema_type)
     -- list
-    if body.list and #body.list > 0 then
+    if body.list then
         for _, route in ipairs(body.list) do
             if route.value and route.value.plugins then
                 for name, conf in pairs(route.value.plugins) do
