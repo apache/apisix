@@ -98,19 +98,13 @@ function _M.consumers()
 end
 
 
-local function retrieve_secrets_callback(key)
-    return core.env.get(key) or kms.get(key)
-end
-
-
 local function create_consume_cache(consumers_conf, key_attr)
     local consumer_names = {}
 
     for _, consumer in ipairs(consumers_conf.nodes) do
         core.log.info("consumer node: ", core.json.delay_encode(consumer))
         local new_consumer = core.table.clone(consumer)
-        new_consumer.auth_conf =
-                core.utils.retrieve_secrets_ref(new_consumer.auth_conf, retrieve_secrets_callback)
+        new_consumer.auth_conf = kms.fetch_secrets(new_consumer.auth_conf)
         consumer_names[new_consumer.auth_conf[key_attr]] = new_consumer
     end
 
