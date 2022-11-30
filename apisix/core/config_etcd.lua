@@ -574,7 +574,7 @@ local function _automatic_fetch(premature, self)
                 if err ~= self.last_err then
                     self.last_err = err
                     self.last_err_time = ngx_time()
-                else
+                elseif self.last_err then
                     if ngx_time() - self.last_err_time >= 30 then
                         self.last_err = nil
                     end
@@ -602,6 +602,12 @@ local function _automatic_fetch(premature, self)
     if not exiting() and self.running then
         ngx_timer_at(0, _automatic_fetch, self)
     end
+end
+
+-- for test
+_M.test_automatic_fetch = _automatic_fetch
+function _M.inject_sync_data(f)
+    sync_data = f
 end
 
 
