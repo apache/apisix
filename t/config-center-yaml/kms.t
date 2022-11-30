@@ -123,6 +123,13 @@ uri: http://127.0.0.1:8200
 
 
 === TEST 4: store secret into vault
+--- apisix_yaml
+kms:
+  - id: vault/apisix-key
+    prefix: kv/apisix
+    token: root
+    uri: http://127.0.0.1:8200
+#END
 --- exec
 VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/apisix-key/bar key=value
 --- response_body
