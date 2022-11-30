@@ -34,6 +34,7 @@ deployment:
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
+});
 
 run_tests();
 
