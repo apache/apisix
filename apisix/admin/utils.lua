@@ -17,6 +17,8 @@
 local core    = require("apisix.core")
 local ngx_time = ngx.time
 local tonumber = tonumber
+local ipairs = ipairs
+local pairs = pairs
 
 
 local _M = {}
@@ -77,5 +79,29 @@ function _M.fix_count(body, id)
     end
 end
 
+
+function _M.decrypt_params(decrypt_func, body, schema_type)
+    -- list
+    if body.list then
+        for _, route in ipairs(body.list) do
+            if route.value and route.value.plugins then
+                for name, conf in pairs(route.value.plugins) do
+                    decrypt_func(name, conf, schema_type)
+                end
+            end
+        end
+        return
+    end
+
+    -- node
+    local plugins = body.node and body.node.value
+                    and body.node.value.plugins
+
+    if plugins then
+        for name, conf in pairs(plugins) do
+            decrypt_func(name, conf, schema_type)
+        end
+    end
+end
 
 return _M

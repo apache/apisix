@@ -47,6 +47,8 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 clickhouse-lo
 
 该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
+注意：`password` 的 schema 中还定义了 `encrypted = true`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
+
 ## 配置插件元数据
 
 `clickhouse-logger` 也支持自定义日志格式，与 [http-logger](./http-logger.md) 插件类似。

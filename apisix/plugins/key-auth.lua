@@ -40,7 +40,7 @@ local schema = {
 local consumer_schema = {
     type = "object",
     properties = {
-        key = {type = "string"},
+        key = { type = "string", encrypted = true },
     },
     required = {"key"},
 }
