@@ -114,7 +114,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-Apache APISIX will handle the first two requests as usual, but a third request in the same period will return a `403 HTTP` code.
+Apache APISIX will handle the first two requests as usual, but a third request in the same period will return a `403` HTTP code.
 
 ``` shell
 curl http://127.0.0.1:9080/api/products -H 'apikey: auth-one' -i
