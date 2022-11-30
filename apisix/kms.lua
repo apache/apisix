@@ -63,7 +63,7 @@ local function create_kms_kvs(values)
         local idx = find(path, "/")
         if not idx then
             core.log.error("no kms id")
-            return
+            return nil
         end
 
         local service = sub(path, 1, idx - 1)
@@ -102,17 +102,12 @@ end
 
 
 function _M.init_worker()
-    local err
     local cfg = {
         automatic = true,
         checker = check_kms,
     }
 
-    kmss, err = core.config.new("/kms", cfg)
-    if not kmss then
-        error("failed to create etcd instance for fetching kmss: " .. err)
-        return
-    end
+    kmss = core.config.new("/kms", cfg)
 end
 
 
