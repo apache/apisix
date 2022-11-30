@@ -123,7 +123,7 @@ local function update_all_services(server_name_prefix, data)
     end
     consul_services[server_name_prefix] = up_services
 
-    log.info("update all services: ", core.json.encode(all_services))
+    log.info("update all services: ", json_delay_encode(all_services, true))
 end
 
 
@@ -233,7 +233,7 @@ function _M.connect(premature, consul_server, retry_delay)
             ", watch_result status: ", watch_result.status,
             ", watch_result.headers.index: ", watch_result.headers['X-Consul-Index'],
             ", consul_server.index: ", consul_server.index,
-            ", consul_server: ", json_delay_encode(consul_server))
+            ", consul_server: ", json_delay_encode(consul_server, true))
 
     -- if current index different last index then update service
     if consul_server.index ~= watch_result.headers['X-Consul-Index'] then
@@ -270,8 +270,8 @@ function _M.connect(premature, consul_server, retry_delay)
         -- decode body, decode json, update service, error handling
         if result.body then
             log.notice("server_name: ", consul_server.consul_server_url,
-                    ", header: ", core.json.encode(result.headers, true),
-                    ", body: ", core.json.encode(result.body, true))
+                    ", header: ", json_delay_encode(result.headers, true),
+                    ", body: ", json_delay_encode(result.body, true))
             update_all_services(consul_server.consul_server_url, result.body)
             --update events
             local ok, err = events.post(events_list._source, events_list.updating, all_services)
@@ -362,7 +362,7 @@ function _M.init_worker()
         return
     end
 
-    log.notice("consul_conf: ", core.json.encode(consul_conf))
+    log.notice("consul_conf: ", json_delay_encode(consul_conf, true))
     default_weight = consul_conf.weight
     -- set default service, used when the server node cannot be found
     if consul_conf.default_service then
@@ -381,7 +381,7 @@ function _M.init_worker()
         error(err)
         return
     end
-    log.info("consul_server_list: ", core.json.encode(consul_servers_list))
+    log.info("consul_server_list: ", json_delay_encode(consul_servers_list, true))
 
     consul_services = core.table.new(0, 1)
     -- success or failure
