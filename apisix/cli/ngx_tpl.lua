@@ -80,7 +80,7 @@ http {
     }
 
     server {
-        listen {* prometheus_server_addr *};
+        listen {* prometheus_server_addr *} enable_process=privileged_agent;
 
         access_log off;
 
@@ -469,7 +469,7 @@ http {
 
     {% if enabled_plugins["prometheus"] and prometheus_server_addr then %}
     server {
-        listen {* prometheus_server_addr *};
+        listen {* prometheus_server_addr *} enable_process=privileged_agent;
 
         access_log off;
 

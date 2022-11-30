@@ -870,6 +870,12 @@ function _M.stream_init(args)
 
     core.resolver.init_resolver(args)
 
+    local process = require("ngx.process")
+    local ok, err = process.enable_privileged_agent()
+    if not ok then
+        core.log.error("failed to enable privileged_agent: ", err)
+    end
+
     if core.config.init then
         local ok, err = core.config.init()
         if not ok then

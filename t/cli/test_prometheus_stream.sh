@@ -21,6 +21,8 @@
 
 exit_if_not_customed_nginx
 
+rm logs/error.log || true
+
 echo "
 apisix:
     enable_admin: true
@@ -29,6 +31,8 @@ apisix:
             - addr: 9100
 stream_plugins:
     - prometheus
+nginx_config:
+  error_log_level: info
 " > conf/config.yaml
 
 make run
@@ -63,6 +67,15 @@ make stop
 
 echo "passed: prometheus works when both http & stream are enabled"
 
+if ! grep -E " process type: privileged agent" logs/error.log; then
+    echo "failed: prometheus run in privileged can't work when both http & stream are enabled"
+    exit 1
+fi
+
+echo "passed: prometheus run in privileged works when both http & stream are enabled"
+
+rm logs/error.log || true
+
 echo "
 apisix:
     enable_admin: false
@@ -71,6 +84,8 @@ apisix:
             - addr: 9100
 stream_plugins:
     - prometheus
+nginx_config:
+  error_log_level: info
 " > conf/config.yaml
 
 make run
@@ -91,3 +106,10 @@ if ! echo "$out" | grep "apisix_node_info{hostname=" > /dev/null; then
 fi
 
 echo "passed: prometheus works when only stream is enabled"
+
+if ! grep -E " process type: privileged agent" logs/error.log; then
+    echo "failed: prometheus run in privileged can't work when only stream is enabled"
+    exit 1
+fi
+
+echo "passed: prometheus run in privileged works when only stream is enabled"
