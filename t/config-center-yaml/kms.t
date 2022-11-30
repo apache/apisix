@@ -35,18 +35,6 @@ _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
 
-    my $kms = <<_EOC_;
-kms:
-  - id: vault/apisix-key
-    prefix: kv/apisix
-    token: root
-    uri: 127.0.0.1:8200
-#END
-_EOC_
-
-    $block->set_value("apisix_yaml", $block->apisix_yaml . $kms);
-});
-
 run_tests();
 
 __DATA__
@@ -57,7 +45,7 @@ kms:
   - id: vault/apisix-key
     prefix: kv/apisix
     token: root
-    uri: http://127.0.0.1:8200
+    uri: 127.0.0.1:8200
 #END
 --- config
     location /t {
@@ -79,10 +67,9 @@ property "uri" validation failed: failed to match pattern "^[^\\/]+:\\/\\/([\\da
 === TEST 2: validate kms: service not exits
 --- apisix_yaml
 kms:
-  - id: apisix-key
-    service: hhh
+  - id: hhh/apisix-key
     prefix: kv/apisix
-    token: hvs.GD4458NcXuKqOdEUaaAiuKiR
+    token: root
     uri: 127.0.0.1:8200
 #END
 --- config
@@ -103,6 +90,13 @@ kms service not exits
 
 
 === TEST 3: normal
+--- apisix_yaml
+kms:
+  - id: vault/apisix-key
+    prefix: kv/apisix
+    token: root
+    uri: http://127.0.0.1:8200
+#END
 --- config
     location /t {
         content_by_lua_block {
@@ -114,7 +108,6 @@ kms service not exits
             ngx.say("prefix: ", values[1].value.prefix)
             ngx.say("token: ", values[1].value.token)
             ngx.say("uri: ", values[1].value.uri)
-            ngx.say("service: ", values[1].value.service)
         }
     }
 --- request
@@ -125,7 +118,6 @@ id: vault/apisix-key
 prefix: kv/apisix
 token: root
 uri: http://127.0.0.1:8200
-service: nil
 
 
 
@@ -138,6 +130,13 @@ Success! Data written to: kv/apisix/apisix-key/bar
 
 
 === TEST 5: kms.get: start with $kms://
+--- apisix_yaml
+kms:
+  - id: vault/apisix-key
+    prefix: kv/apisix
+    token: root
+    uri: http://127.0.0.1:8200
+#END
 --- config
     location /t {
         content_by_lua_block {
@@ -154,6 +153,13 @@ value
 
 
 === TEST 6: kms.get: start with $KMS://
+--- apisix_yaml
+kms:
+  - id: vault/apisix-key
+    prefix: kv/apisix
+    token: root
+    uri: http://127.0.0.1:8200
+#END
 --- config
     location /t {
         content_by_lua_block {
@@ -170,6 +176,13 @@ value
 
 
 === TEST 7: kms.get, wrong ref format: wrong type
+--- apisix_yaml
+kms:
+  - id: vault/apisix-key
+    prefix: kv/apisix
+    token: root
+    uri: http://127.0.0.1:8200
+#END
 --- config
     location /t {
         content_by_lua_block {
@@ -186,6 +199,13 @@ nil
 
 
 === TEST 8: kms.get, wrong ref format: wrong prefix
+--- apisix_yaml
+kms:
+  - id: vault/apisix-key
+    prefix: kv/apisix
+    token: root
+    uri: http://127.0.0.1:8200
+#END
 --- config
     location /t {
         content_by_lua_block {
@@ -202,6 +222,13 @@ nil
 
 
 === TEST 9: kms.get, error format: no kms service
+--- apisix_yaml
+kms:
+  - id: vault/apisix-key
+    prefix: kv/apisix
+    token: root
+    uri: http://127.0.0.1:8200
+#END
 --- config
     location /t {
         content_by_lua_block {
@@ -220,6 +247,13 @@ error format: no kms service
 
 
 === TEST 10: kms.get, error format: no kms conf id
+--- apisix_yaml
+kms:
+  - id: vault/apisix-key
+    prefix: kv/apisix
+    token: root
+    uri: http://127.0.0.1:8200
+#END
 --- config
     location /t {
         content_by_lua_block {
@@ -238,6 +272,13 @@ error format: no kms conf id
 
 
 === TEST 11: kms.get, error format: no kms key id
+--- apisix_yaml
+kms:
+  - id: vault/apisix-key
+    prefix: kv/apisix
+    token: root
+    uri: http://127.0.0.1:8200
+#END
 --- config
     location /t {
         content_by_lua_block {
@@ -256,6 +297,13 @@ error format: no kms key id
 
 
 === TEST 12: kms.get, no config
+--- apisix_yaml
+kms:
+  - id: vault/apisix-key
+    prefix: kv/apisix
+    token: root
+    uri: http://127.0.0.1:8200
+#END
 --- config
     location /t {
         content_by_lua_block {
@@ -274,6 +322,13 @@ no config
 
 
 === TEST 13: kms.get, no kms service
+--- apisix_yaml
+kms:
+  - id: vault/apisix-key
+    prefix: kv/apisix
+    token: root
+    uri: http://127.0.0.1:8200
+#END
 --- config
     location /t {
         content_by_lua_block {
@@ -291,7 +346,14 @@ no config
 
 
 
-=== TEST 14: kms.get, no sub key
+=== TEST 14: kms.get, no sub key value
+--- apisix_yaml
+kms:
+  - id: vault/apisix-key
+    prefix: kv/apisix
+    token: root
+    uri: http://127.0.0.1:8200
+#END
 --- config
     location /t {
         content_by_lua_block {
