@@ -32,18 +32,7 @@ add_block_preprocessor(sub {
     my $http_config = $block->http_config // <<_EOC_;
     server {
         listen 10420;
-        location /clickhouse-logger/test {
-            content_by_lua_block {
-                ngx.req.read_body()
-                local data = ngx.req.get_body_data()
-                local headers = ngx.req.get_headers()
-                ngx.log(ngx.WARN, "clickhouse body: ", data)
-                for k, v in pairs(headers) do
-                    ngx.log(ngx.WARN, "clickhouse headers: " .. k .. ":" .. v)
-                end
-                ngx.say("ok")
-            }
-        }
+
         location /clickhouse-logger/test1 {
             content_by_lua_block {
                 ngx.req.read_body()
@@ -78,7 +67,7 @@ __DATA__
                                                  password = "a",
                                                  database = "default",
                                                  logtable = "t",
-                                                 endpoint_addr = "http://127.0.0.1:10420/clickhouse-logger/test",
+                                                 endpoint_addr = "http://127.0.0.1:1980/clickhouse_logger_server",
                                                  max_retry_count = 1,
                                                  name = "clickhouse logger",
                                                  ssl_verify = false
@@ -105,7 +94,7 @@ passed
                                                  password = "a",
                                                  database = "default",
                                                  logtable = "t",
-                                                 endpoint_addr = "http://127.0.0.1:10420/clickhouse-logger/test"
+                                                 endpoint_addr = "http://127.0.0.1:1980/clickhouse_logger_server"
                                                  })
 
             if not ok then
@@ -157,7 +146,7 @@ value should match only one schema, but matches none
                                 "password": "a",
                                 "database": "default",
                                 "logtable": "t",
-                                "endpoint_addr": "http://127.0.0.1:10420/clickhouse-logger/test",
+                                "endpoint_addr": "http://127.0.0.1:1980/clickhouse_logger_server",
                                 "batch_max_size":1,
                                 "inactive_timeout":1
                             }
@@ -197,7 +186,7 @@ passed
                                 "password": "a",
                                 "database": "default",
                                 "logtable": "t",
-                                "endpoint_addrs": ["http://127.0.0.1:10420/clickhouse-logger/test",
+                                "endpoint_addrs": ["http://127.0.0.1:1980/clickhouse_logger_server",
                                                   "http://127.0.0.1:10420/clickhouse-logger/test1"],
                                 "batch_max_size":1,
                                 "inactive_timeout":1
