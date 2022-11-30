@@ -43,7 +43,7 @@ __DATA__
 === TEST 1: validate kms/vault: wrong schema
 --- apisix_yaml
 kms:
-  - id: vault/apisix-key
+  - id: vault/1
     prefix: kv/apisix
     token: root
     uri: 127.0.0.1:8200
@@ -68,7 +68,7 @@ property "uri" validation failed: failed to match pattern "^[^\\/]+:\\/\\/([\\da
 === TEST 2: validate kms: service not exits
 --- apisix_yaml
 kms:
-  - id: hhh/apisix-key
+  - id: hhh/1
     prefix: kv/apisix
     token: root
     uri: 127.0.0.1:8200
@@ -90,10 +90,10 @@ kms service not exits
 
 
 
-=== TEST 3: normal
+=== TEST 3: load config normal
 --- apisix_yaml
 kms:
-  - id: vault/apisix-key
+  - id: vault/1
     prefix: kv/apisix
     token: root
     uri: http://127.0.0.1:8200
@@ -115,7 +115,7 @@ kms:
 GET /t
 --- response_body
 len: 1
-id: vault/apisix-key
+id: vault/1
 prefix: kv/apisix
 token: root
 uri: http://127.0.0.1:8200
@@ -125,22 +125,22 @@ uri: http://127.0.0.1:8200
 === TEST 4: store secret into vault
 --- apisix_yaml
 kms:
-  - id: vault/apisix-key
+  - id: vault/1
     prefix: kv/apisix
     token: root
     uri: http://127.0.0.1:8200
 #END
 --- exec
-VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/apisix-key/bar key=value
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/apisix-key key=value
 --- response_body
-Success! Data written to: kv/apisix/apisix-key/bar
+Success! Data written to: kv/apisix/apisix-key
 
 
 
 === TEST 5: kms.get: start with $kms://
 --- apisix_yaml
 kms:
-  - id: vault/apisix-key
+  - id: vault/1
     prefix: kv/apisix
     token: root
     uri: http://127.0.0.1:8200
@@ -149,7 +149,7 @@ kms:
     location /t {
         content_by_lua_block {
             local kms = require("apisix.kms")
-            local value = kms.get("$kms://vault/apisix-key/bar/key")
+            local value = kms.get("$kms://vault/1/apisix-key/key")
             ngx.say(value)
         }
     }
@@ -163,7 +163,7 @@ value
 === TEST 6: kms.get: start with $KMS://
 --- apisix_yaml
 kms:
-  - id: vault/apisix-key
+  - id: vault/1
     prefix: kv/apisix
     token: root
     uri: http://127.0.0.1:8200
@@ -172,7 +172,7 @@ kms:
     location /t {
         content_by_lua_block {
             local kms = require("apisix.kms")
-            local value = kms.get("$KMS://vault/apisix-key/bar/key")
+            local value = kms.get("$KMS://vault/1/apisix-key/key")
             ngx.say(value)
         }
     }
@@ -186,7 +186,7 @@ value
 === TEST 7: kms.get, wrong ref format: wrong type
 --- apisix_yaml
 kms:
-  - id: vault/apisix-key
+  - id: vault/1
     prefix: kv/apisix
     token: root
     uri: http://127.0.0.1:8200
@@ -209,7 +209,7 @@ nil
 === TEST 8: kms.get, wrong ref format: wrong prefix
 --- apisix_yaml
 kms:
-  - id: vault/apisix-key
+  - id: vault/1
     prefix: kv/apisix
     token: root
     uri: http://127.0.0.1:8200
@@ -232,7 +232,7 @@ nil
 === TEST 9: kms.get, error format: no kms service
 --- apisix_yaml
 kms:
-  - id: vault/apisix-key
+  - id: vault/1
     prefix: kv/apisix
     token: root
     uri: http://127.0.0.1:8200
@@ -257,7 +257,7 @@ error format: no kms service
 === TEST 10: kms.get, error format: no kms conf id
 --- apisix_yaml
 kms:
-  - id: vault/apisix-key
+  - id: vault/1
     prefix: kv/apisix
     token: root
     uri: http://127.0.0.1:8200
@@ -282,7 +282,7 @@ error format: no kms conf id
 === TEST 11: kms.get, error format: no kms key id
 --- apisix_yaml
 kms:
-  - id: vault/apisix-key
+  - id: vault/1
     prefix: kv/apisix
     token: root
     uri: http://127.0.0.1:8200
@@ -291,7 +291,7 @@ kms:
     location /t {
         content_by_lua_block {
             local kms = require("apisix.kms")
-            local value = kms.get("$kms://vault/1/")
+            local value = kms.get("$kms://vault/2/")
             ngx.say(value)
         }
     }
@@ -307,7 +307,7 @@ error format: no kms key id
 === TEST 12: kms.get, no config
 --- apisix_yaml
 kms:
-  - id: vault/apisix-key
+  - id: vault/1
     prefix: kv/apisix
     token: root
     uri: http://127.0.0.1:8200
@@ -316,7 +316,7 @@ kms:
     location /t {
         content_by_lua_block {
             local kms = require("apisix.kms")
-            local value = kms.get("$kms://vault/1/bar")
+            local value = kms.get("$kms://vault/2/bar")
             ngx.say(value)
         }
     }
@@ -357,7 +357,7 @@ no config
 === TEST 14: kms.get, no sub key value
 --- apisix_yaml
 kms:
-  - id: vault/apisix-key
+  - id: vault/1
     prefix: kv/apisix
     token: root
     uri: http://127.0.0.1:8200
@@ -366,7 +366,7 @@ kms:
     location /t {
         content_by_lua_block {
             local kms = require("apisix.kms")
-            local value = kms.get("$kms://vault/apisix-key/bar/test")
+            local value = kms.get("$kms://vault/1/apisix-key/bar")
             ngx.say(value)
         }
     }
