@@ -263,8 +263,8 @@
           "items": [
             "discovery",
             "discovery/dns",
-            "discovery/consul_kv",
             "discovery/consul",
+            "discovery/consul_kv",
             "discovery/nacos",
             "discovery/eureka",
             "discovery/control-plane-service-discovery",
