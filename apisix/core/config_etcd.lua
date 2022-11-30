@@ -506,8 +506,8 @@ do
             return etcd_cli
         end
 
-        local err
-        etcd_cli, err = etcd_apisix.switch_proxy()
+        local _, err
+        etcd_cli, _, err = etcd_apisix.switch_proxy(true)
         return etcd_cli, err
     end
 end
@@ -699,7 +699,7 @@ function _M.new(key, opts)
     else
         local etcd_cli, err = get_etcd()
         if not etcd_cli then
-            return nil, "failed to start a etcd instance: " .. err
+            return nil, "failed to start an etcd instance: " .. err
         end
         obj.etcd_cli = etcd_cli
     end
