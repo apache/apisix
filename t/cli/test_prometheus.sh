@@ -64,11 +64,7 @@ make stop
 
 echo "passed: should listen at configured prometheus address"
 
-rm logs/error.log || true
-
 echo '
-nginx_config:
-  error_log_level: info
 plugin_attr:
   prometheus:
     enable_export_server: false
@@ -111,14 +107,6 @@ fi
 make stop
 
 echo "passed: should listen at previous prometheus address"
-
-# if get metrics from public API, then collect metrics would run in worker process
-if ! grep -E "process type: worker" logs/error.log; then
-    echo "failed: prometheus should work in worker process when get metrics from public API"
-    exit 1
-fi
-
-echo "prometheus should work in worker process when get metrics from public API successfully"
 
 echo '
 plugin_attr:
@@ -187,27 +175,3 @@ fi
 make stop
 
 echo "passed: should use custom metric prefix"
-
-# collect metrics run in privileged agent
-rm logs/error.log || true
-
-echo '
-nginx_config:
-  error_log_level: info
-' > conf/config.yaml
-
-make init
-make run
-
-sleep 0.5
-
-curl -s -o /dev/null http://127.0.0.1:9091/apisix/prometheus/metrics
-
-sleep 0.1
-
-if ! grep -E "process type: privileged agent" logs/error.log; then
-    echo "failed: prometheus works well in privileged agent"
-    exit 1
-fi
-
-echo "prometheus works well in privileged agent successfully"
