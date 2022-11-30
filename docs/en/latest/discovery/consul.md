@@ -37,7 +37,7 @@ discovery:
     servers:
       - "http://127.0.0.1:8500"
       - "http://127.0.0.1:8600"   # `http://127.0.0.1:8500` and `http://127.0.0.1:8600` are different clusters
-    skip_services:                # if you need to skip special keys
+    skip_services:                # if you need to skip special services
       - "service_a"
     timeout:
       connect: 1000               # default 2000 ms

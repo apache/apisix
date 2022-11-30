@@ -141,7 +141,7 @@ local function read_dump_services()
         return
     end
 
-    local entity, err  = core.json.decode(data)
+    local entity, err = core.json.decode(data)
     if not entity then
         log.error("decoded dump data got error: ", err, ", file content: ", data)
         return
@@ -192,6 +192,16 @@ local function show_dump_file()
     return 200, data
 end
 
+local function get_retry_delay(retry_delay)
+    if not retry_delay then
+        retry_delay = 1
+    else
+        retry_delay = retry_delay * 4
+    end
+
+    return retry_delay
+end
+
 
 function _M.connect(premature, consul_server, retry_delay)
     if premature then
@@ -217,12 +227,7 @@ function _M.connect(premature, consul_server, retry_delay)
                 ", got watch result: ", json_delay_encode(watch_result, true),
                  ", with error: ", watch_error_info)
 
-        if not retry_delay then
-            retry_delay = 1
-        else
-            retry_delay = retry_delay * 4
-        end
-
+        retry_delay = get_retry_delay(retry_delay)
         log.warn("retry connecting consul after ", retry_delay, " seconds")
         core_sleep(retry_delay)
 
@@ -250,12 +255,7 @@ function _M.connect(premature, consul_server, retry_delay)
                     ", got result: ", json_delay_encode(result, true),
                     ", with error: ", error_info)
 
-            if not retry_delay then
-                retry_delay = 1
-            else
-                retry_delay = retry_delay * 4
-            end
-
+            retry_delay = get_retry_delay(retry_delay)
             log.warn("retry connecting consul after ", retry_delay, " seconds")
             core_sleep(retry_delay)
 
@@ -335,7 +335,7 @@ local function format_consul_params(consul_conf)
         })
     end
 
-    return consul_server_list
+    return consul_server_list, nil
 end
 
 

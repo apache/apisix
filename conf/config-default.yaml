@@ -313,7 +313,7 @@ nginx_config:                     # config for render the template to generate n
 #    servers:
 #      - "http://127.0.0.1:8500"
 #      - "http://127.0.0.1:8600"
-#    skip_services:                    # if you need to skip special keys
+#    skip_services:                    # if you need to skip special services
 #      - "service_a"
 #    timeout:
 #      connect: 2000               # default 2000 ms
