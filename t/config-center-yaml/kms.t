@@ -35,7 +35,8 @@ _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
 
-    my $routes = <<_EOC_;
+    if (!$block->apisix_yaml) {
+        my $routes = <<_EOC_;
 routes:
   -
     uri: /hello
@@ -46,7 +47,9 @@ routes:
 #END
 _EOC_
 
-    $block->set_value("apisix_yaml", $block->apisix_yaml . $routes);
+        $block->set_value("apisix_yaml", $routes);
+    }
+
 });
 
 run_tests();
@@ -136,13 +139,6 @@ uri: http://127.0.0.1:8200
 
 
 === TEST 4: store secret into vault
---- apisix_yaml
-kms:
-  - id: vault/1
-    prefix: kv/apisix
-    token: root
-    uri: http://127.0.0.1:8200
-#END
 --- exec
 VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/apisix-key key=value
 --- response_body
@@ -197,13 +193,6 @@ value
 
 
 === TEST 7: kms.fetch_by_uri, wrong ref format: wrong type
---- apisix_yaml
-kms:
-  - id: vault/1
-    prefix: kv/apisix
-    token: root
-    uri: http://127.0.0.1:8200
-#END
 --- config
     location /t {
         content_by_lua_block {
@@ -220,13 +209,6 @@ error kms_uri type: number
 
 
 === TEST 8: kms.fetch_by_uri, wrong ref format: wrong prefix
---- apisix_yaml
-kms:
-  - id: vault/1
-    prefix: kv/apisix
-    token: root
-    uri: http://127.0.0.1:8200
-#END
 --- config
     location /t {
         content_by_lua_block {
@@ -243,13 +225,6 @@ error kms_uri prefix: kms://
 
 
 === TEST 9: kms.fetch_by_uri, error format: no kms service
---- apisix_yaml
-kms:
-  - id: vault/1
-    prefix: kv/apisix
-    token: root
-    uri: http://127.0.0.1:8200
-#END
 --- config
     location /t {
         content_by_lua_block {
@@ -266,13 +241,6 @@ error format: no kms service
 
 
 === TEST 10: kms.fetch_by_uri, error format: no kms conf id
---- apisix_yaml
-kms:
-  - id: vault/1
-    prefix: kv/apisix
-    token: root
-    uri: http://127.0.0.1:8200
-#END
 --- config
     location /t {
         content_by_lua_block {
@@ -289,13 +257,6 @@ error format: no kms conf id
 
 
 === TEST 11: kms.fetch_by_uri, error format: no kms key id
---- apisix_yaml
-kms:
-  - id: vault/1
-    prefix: kv/apisix
-    token: root
-    uri: http://127.0.0.1:8200
-#END
 --- config
     location /t {
         content_by_lua_block {
@@ -312,13 +273,6 @@ error format: no kms key id
 
 
 === TEST 12: kms.fetch_by_uri, no config
---- apisix_yaml
-kms:
-  - id: vault/1
-    prefix: kv/apisix
-    token: root
-    uri: http://127.0.0.1:8200
-#END
 --- config
     location /t {
         content_by_lua_block {
