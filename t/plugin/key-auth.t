@@ -535,3 +535,43 @@ passed
 GET /hello?auth=auth-one
 --- response_args
 auth: auth-one
+
+
+
+=== TEST 26: change consumer with secrets ref
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "$env://test_auth"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 27: verify auth request args should not hidden
+--- main_config
+env test_auth=authone;
+--- request
+GET /hello?auth=authone
+--- response_args
+auth: authone

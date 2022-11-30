@@ -26,17 +26,20 @@ description: Consumer Group in Apache APISIX.
 #
 -->
 
+## Description
+
 Consumer Groups are used to extract commonly used [Plugin](./plugin.md) configurations and can be bound directly to a [Consumer](./consumer.md).
 
 With consumer groups, you can define any number of plugins, e.g. rate limiting and apply them to a set of consumers,
 instead of managing each consumer individually.
 
-While configuring the same plugin for the same route, only one copy of the configuration is valid.
+## Example
 
 The example below illustrates how to create a Consumer Group and bind it to a Consumer:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumer_groups/company_a -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumer_groups/company_a \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "limit-count": {
@@ -50,7 +53,8 @@ curl http://127.0.0.1:9180/apisix/admin/consumer_groups/company_a -H 'X-API-KEY:
 ```
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -64,7 +68,12 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 
 When APISIX can't find the Consumer Group with the `group_id`, the Admin API is terminated with a status code of `400`.
 
-If a Consumer already has the `plugins` field configured, the plugins in the Consumer Group will effectively be merged into it. The same plugin in the Consumer Group will not override the one configured directly in the Consumer.
+:::tip
+
+1. When the same plugin is configured in [consumer](./consumer.md), [routing](./route.md), [plugin config](./plugin-config.md) and [service](./service.md), only one configuration is in effect, and the consumer has the highest priority. Please refer to [Plugin](./plugin.md).
+2. If a Consumer already has the `plugins` field configured, the plugins in the Consumer Group will effectively be merged into it. The same plugin in the Consumer Group will not override the one configured directly in the Consumer.
+
+:::
 
 For example, if we configure a Consumer Group as shown below:
 

@@ -19,7 +19,8 @@
             "terminology/router",
             "terminology/script",
             "terminology/service",
-            "terminology/upstream"
+            "terminology/upstream",
+            "terminology/kms"
           ]
         },
         {
@@ -143,7 +144,8 @@
             "plugins/referer-restriction",
             "plugins/consumer-restriction",
             "plugins/csrf",
-            "plugins/public-api"
+            "plugins/public-api",
+            "plugins/gm"
           ]
         },
         {

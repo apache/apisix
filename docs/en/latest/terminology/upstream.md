@@ -1,5 +1,11 @@
 ---
 title: Upstream
+keywords:
+  - Apache APISIX
+  - API Gateway
+  - APISIX Upstream
+  - Upstream
+description: This article describes the role of the Apache APISIX Upstream object and how to use the Upstream.
 ---
 
 <!--
@@ -35,12 +41,13 @@ An Upstream configuration can be directly bound to a Route or a Service, but the
 
 ## Configuration
 
-In addition to the equalization algorithm selections, Upstream also supports passive health check and retry for the upstream. You can learn more about this [here](../admin-api.md#upstream).
+In addition to the equalization algorithm selections, Upstream also supports passive health check and retry for the upstream. You can learn more about this [Admin API Upstream](../admin-api.md#upstream).
 
-To create an Upstream object, you can use the Admin API as shown below:
+To create an Upstream object, you can use the Admin API as shown below.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/upstreams/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "type": "chash",
     "key": "remote_addr",
@@ -51,20 +58,22 @@ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-After creating an Upstream object, it can be referenced by a specific Route or Service as shown below:
+After creating an Upstream object, it can be referenced by a specific Route or Service as shown below.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "upstream_id": 1
 }'
 ```
 
-For convenience, you can directly bind the upstream address to a Route or Service:
+For convenience, you can directly bind the upstream address to a Route or Service.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -86,10 +95,11 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Example
 
-The example below shows how you can configure a health check:
+The example below shows how you can configure a health check.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -124,16 +134,17 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-You can learn more about health checks [here](../tutorials/health-check.md).
+You can learn more about health checks [health-check](../tutorials/health-check.md).
 
 The examples below show configurations that use different `hash_on` types.
 
-#### Consumer
+### Consumer
 
-Creating a Consumer object:
+Creating a Consumer object.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -144,10 +155,11 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-Creating a Route object and enabling the `key-auth` authentication Plugin:
+Creating a Route object and enabling the `key-auth` authentication Plugin.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "key-auth": {}
@@ -170,12 +182,13 @@ To test the request, the `consumer_name` passed for authentication will be used 
 curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
 ```
 
-#### Cookie
+### Cookie
 
-Creating a Route and an upstream object:
+Creating a Route and an upstream object.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hash_on_cookie",
     "upstream": {
@@ -190,18 +203,20 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-The client can then send a request with a cookie:
+The client can then send a request with a cookie.
 
 ```shell
- curl http://127.0.0.1:9080/hash_on_cookie -H "Cookie: sid=3c183a30cffcda1408daf1c61d47b274"
+ curl http://127.0.0.1:9080/hash_on_cookie \
+ -H "Cookie: sid=3c183a30cffcda1408daf1c61d47b274"
 ```
 
-#### Header
+### Header
 
-Creating a Route and an upstream object:
+Creating a Route and an upstream object.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hash_on_header",
     "upstream": {
@@ -216,8 +231,10 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-The client can now send requests with a header. The example below shows using the header `Content-Type`:
+The client can now send requests with a header. The example below shows using the header `Content-Type`.
 
 ```shell
- curl http://127.0.0.1:9080/hash_on_header -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -H "Content-Type: application/json"
+ curl http://127.0.0.1:9080/hash_on_header \
+ -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
+ -H "Content-Type: application/json"
 ```
