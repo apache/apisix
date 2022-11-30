@@ -47,6 +47,8 @@ The `clickhouse-logger` Plugin is used to push logs to [ClickHouse](https://clic
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
+NOTE: The schema for `password` also defines `encrypted = true`, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 ## Metadata
 
 You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
