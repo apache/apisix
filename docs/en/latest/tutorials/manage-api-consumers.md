@@ -56,7 +56,7 @@ Consumers can be associated with various scopes: per Plugin, all APIs, or an ind
 4. Define rate limiting on the number of data clients can consume.
 5. Analyze data usage for an individual and a subset of consumers.
 
-## Apache APISIX Consumer example.
+## Apache APISIX Consumer example
 
 Let's look at some examples of configuring the rate-limiting policy for a single consumer and a group of consumers with the help of [key-auth](https://apisix.apache.org/docs/apisix/plugins/key-auth/) authentication key (API Key) and [limit-count](https://apisix.apache.org/docs/apisix/plugins/limit-count/) plugins. For the demo case,  we can leverage [the sample project](https://github.com/Boburmirzo/apisix-api-consumers-management) built on [ASP.NET Core WEB API](https://learn.microsoft.com/en-us/aspnet/core/?view=aspnetcore-7.0) with a single `GET` endpoint (retrieves all products list). You can find in [README file](https://github.com/Boburmirzo/apisix-api-consumers-management#readme) all instructions on how to run the sample app.
 
