@@ -35,7 +35,6 @@ run_tests;
 __DATA__
 
 === TEST 1: PUT
---- ONLY
 --- config
     location /t {
         content_by_lua_block {
