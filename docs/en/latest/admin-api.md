@@ -1356,7 +1356,7 @@ kms means `Secrets Management`, which could use any secret manager supported, e.
 
 ### kms API
 
-kms resource request address:: /apisix/admin/kms/{secretmanager}/{id}
+kms resource request address: /apisix/admin/kms/{secretmanager}/{id}
 
 ### Request Methods
 
