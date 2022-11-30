@@ -6,8 +6,6 @@ keywords:
   - Rate Limit
   - Consumer
   - Consumer Group
-  - Subscription
-  - Consumer Management
 description: This tutorial explains how to manage your single or multiple API consumers with Apache APISIX.
 ---
 
@@ -50,7 +48,7 @@ By publishing APIs through **Apache APISIX API Gateway**, you can easily secure 
 
 Consumers can be associated with various scopes: per Plugin, all APIs, or an individual API. There are many use cases for consumer objects in the API Gateway that you get with the combination of its plugins:
 
-1. Enable different authentication methods for different consumers.
+1. Enable different authentication methods for different consumers. It can be useful when consumers are trying to access the API by using various authentication mechanisms such as [API key](https://apisix.apache.org/docs/apisix/plugins/key-auth/), [Basic](https://apisix.apache.org/docs/apisix/plugins/basic-auth/), or [JWT](https://apisix.apache.org/docs/apisix/plugins/jwt-auth/)-based auth.
 2. Restrict access to API resources for specific consumers.
 3. Route requests to the corresponding backend service based on the consumer.
 4. Define rate limiting on the number of data clients can consume.
