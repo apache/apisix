@@ -158,9 +158,9 @@ local function fetch_by_uri(kms_uri)
         return nil, "no kms conf, kms_uri: " .. kms_uri
     end
 
-    local sm = require("apisix.kms." .. opts.service)
-    if not sm then
-        return nil, "no kms service: ", opts.service
+    local ok, sm = pcall(require, "apisix.kms." .. opts.service)
+    if not ok then
+        return nil, "no kms service: " .. opts.service
     end
 
     local value, err = sm.get(conf, opts.key)

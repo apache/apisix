@@ -20,7 +20,6 @@
 
 local core       = require("apisix.core")
 local http       = require("resty.http")
-local schema_def = require("apisix.schema_def")
 
 local norm_path = require("pl.path").normpath
 
@@ -31,7 +30,7 @@ local rfind_char = core.string.rfind_char
 local schema = {
     type = "object",
     properties = {
-        uri = schema_def.uri_def,
+        uri = core.schema.uri_def,
         prefix = {
             type = "string",
         },
