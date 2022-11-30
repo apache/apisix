@@ -38,7 +38,7 @@ do_install() {
     # sudo apt-get install tree -y
     # tree deps
 
-    git clone https://github.com/openresty/test-nginx.git test-nginx
+    git clone --depth 1 https://github.com/openresty/test-nginx.git test-nginx
     make utils
 
     mkdir -p build-cache
