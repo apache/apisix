@@ -18,15 +18,33 @@
 --- Vault Tools.
 --  Vault is an identity-based secrets and encryption management system.
 
-local core = require("apisix.core")
-local http = require("resty.http")
+local core       = require("apisix.core")
+local http       = require("resty.http")
+local schema_def = require("apisix.schema_def")
 
 local norm_path = require("pl.path").normpath
 
 local sub        = core.string.sub
 local rfind_char = core.string.rfind_char
 
-local _M = {}
+
+local schema = {
+    type = "object",
+    properties = {
+        uri = schema_def.uri_def,
+        prefix = {
+            type = "string",
+        },
+        token = {
+            type = "string",
+        },
+    },
+    required = {"uri", "prefix", "token"},
+}
+
+local _M = {
+    schema = schema
+}
 
 
 local function make_request_to_vault(conf, method, key, data)

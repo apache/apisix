@@ -22,14 +22,13 @@ local string    = require("apisix.core.string")
 local find      = string.find
 local sub       = string.sub
 local upper     = string.upper
+local byte      = string.byte
 local type      = type
 local pcall     = pcall
 local ipairs    = ipairs
 local error     = error
 
-local _M = {
-    version = 0.1,
-}
+local _M = {}
 
 
 local KMS_PREFIX = "$KMS://"
@@ -42,16 +41,16 @@ local function check_kms(conf)
     end
     local service = sub(conf.id, 1, idx - 1)
 
-    local ok = pcall(require, "apisix.kms." .. service)
+    local ok, kms_service = pcall(require, "apisix.kms." .. service)
     if not ok then
         return false, "kms service not exits, service: " .. service
     end
 
-    return core.schema.check(core.schema["kms_" .. service], conf)
+    return core.schema.check(kms_service.schema, conf)
 end
 
 
-local lrucache = core.lrucache.new({
+local kms_lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
 
@@ -86,9 +85,9 @@ end
        return nil
     end
 
-    local kms_services = lrucache("kms_kv", kms_values.conf_version,
+    local kms_services = kms_lrucache("kms_kv", kms_values.conf_version,
             create_kms_kvs, kms_values.values)
-    return kms_services[service] and kms_services[service][confid] or nil
+    return kms_services[service] and kms_services[service][confid]
 end
 
 
@@ -116,14 +115,16 @@ function _M.init_worker()
 end
 
 
-local function is_kms_uri(kms_uri)
-    -- Avoid the error caused by has_prefix to cause a crash.
-    return type(kms_uri) == "string" and
-        string.has_prefix(upper(kms_uri), KMS_PREFIX)
-end
-
-
 local function parse_kms_uri(kms_uri)
+    -- Avoid the error caused by has_prefix to cause a crash.
+    if type(kms_uri) ~= "string" then
+        return nil, "error kms_uri type: " .. type(kms_uri)
+    end
+
+    if not string.has_prefix(upper(kms_uri), KMS_PREFIX) then
+        return nil, "error kms_uri prefix: " .. kms_uri
+    end
+
     local path = sub(kms_uri, #KMS_PREFIX + 1)
     local idx1 = find(path, "/")
     if not idx1 then
@@ -147,36 +148,97 @@ local function parse_kms_uri(kms_uri)
         confid = confid,
         key = key
     }
-    return opts, nil
+    return opts
 end
 
 
-function _M.get(kms_uri)
-    if not is_kms_uri(kms_uri) then
-        return nil
-    end
+local function fetch_by_uri(kms_uri)
     local opts, err = parse_kms_uri(kms_uri)
     if not opts then
-        core.log.warn(err)
-        return nil
+        return nil, err
     end
+
     local conf = kms_kv(opts.service, opts.confid)
     if not conf then
-        core.log.error("no config")
-        return nil
+        return nil, "no kms conf, kms_uri: " .. kms_uri
     end
+
     local sm = require("apisix.kms." .. opts.service)
     if not sm then
-        core.log.error("no kms service: ", opts.service)
-        return nil
+        return nil, "no kms service: ", opts.service
     end
+
     local value, err = sm.get(conf, opts.key)
     if err then
-        core.log.error(err)
-        return nil
+        return nil, err
     end
+
     return value
 end
 
+-- for test
+_M.fetch_by_uri = fetch_by_uri
+
+
+local function fetch(uri)
+    -- do a quick filter to improve retrieval speed
+    if byte(uri, 1, 1) ~= byte('$') then
+        return nil
+    end
+
+    local val, err
+    if string.has_prefix(upper(uri), core.env.PREFIX) then
+        val, err = core.env.fetch_by_uri(uri)
+    elseif string.has_prefix(upper(uri), KMS_PREFIX) then
+        val, err = fetch_by_uri(uri)
+    end
+
+    if err then
+        core.log.error("failed to fetch kms value: ", err)
+        return
+    end
+
+    return val
+end
+
+
+local secrets_lrucache = core.lrucache.new({
+    ttl = 300, count = 512
+})
+
+local fetch_secrets
+do
+    local retrieve_refs
+    function retrieve_refs(refs)
+        for k, v in pairs(refs) do
+            local typ = type(v)
+            if typ == "string" then
+                refs[k] = fetch(v) or v
+            elseif typ == "table" then
+                retrieve_refs(v)
+            end
+        end
+        return refs
+    end
+
+    local function retrieve(refs)
+        core.log.info("retrieve secrets refs")
+
+        local new_refs = core.table.deepcopy(refs)
+        return retrieve_refs(new_refs)
+    end
+
+    function fetch_secrets(refs, cache, key, version)
+        if not refs or type(refs) ~= "table" then
+            return nil
+        end
+        if not cache then
+            return retrieve(refs)
+        end
+        return secrets_lrucache(key, version, retrieve, refs)
+    end
+end
+
+_M.fetch_secrets = fetch_secrets
 
 return _M

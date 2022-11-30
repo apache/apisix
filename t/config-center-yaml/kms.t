@@ -34,6 +34,19 @@ deployment:
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
+
+    my $routes = <<_EOC_;
+routes:
+  -
+    uri: /hello
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+_EOC_
+
+    $block->set_value("apisix_yaml", $block->apisix_yaml . $routes);
 });
 
 run_tests();
@@ -137,7 +150,7 @@ Success! Data written to: kv/apisix/apisix-key
 
 
 
-=== TEST 5: kms.get: start with $kms://
+=== TEST 5: kms.fetch_by_uri: start with $kms://
 --- apisix_yaml
 kms:
   - id: vault/1
@@ -149,7 +162,7 @@ kms:
     location /t {
         content_by_lua_block {
             local kms = require("apisix.kms")
-            local value = kms.get("$kms://vault/1/apisix-key/key")
+            local value = kms.fetch_by_uri("$kms://vault/1/apisix-key/key")
             ngx.say(value)
         }
     }
@@ -160,7 +173,7 @@ value
 
 
 
-=== TEST 6: kms.get: start with $KMS://
+=== TEST 6: kms.fetch_by_uri: start with $KMS://
 --- apisix_yaml
 kms:
   - id: vault/1
@@ -172,7 +185,7 @@ kms:
     location /t {
         content_by_lua_block {
             local kms = require("apisix.kms")
-            local value = kms.get("$KMS://vault/1/apisix-key/key")
+            local value = kms.fetch_by_uri("$KMS://vault/1/apisix-key/key")
             ngx.say(value)
         }
     }
@@ -183,7 +196,7 @@ value
 
 
 
-=== TEST 7: kms.get, wrong ref format: wrong type
+=== TEST 7: kms.fetch_by_uri, wrong ref format: wrong type
 --- apisix_yaml
 kms:
   - id: vault/1
@@ -195,18 +208,18 @@ kms:
     location /t {
         content_by_lua_block {
             local kms = require("apisix.kms")
-            local value = kms.get(1)
-            ngx.say(value)
+            local _, err = kms.fetch_by_uri(1)
+            ngx.say(err)
         }
     }
 --- request
 GET /t
 --- response_body
-nil
+error kms_uri type: number
 
 
 
-=== TEST 8: kms.get, wrong ref format: wrong prefix
+=== TEST 8: kms.fetch_by_uri, wrong ref format: wrong prefix
 --- apisix_yaml
 kms:
   - id: vault/1
@@ -218,18 +231,18 @@ kms:
     location /t {
         content_by_lua_block {
             local kms = require("apisix.kms")
-            local value = kms.get("kms://")
-            ngx.say(value)
+            local _, err = kms.fetch_by_uri("kms://")
+            ngx.say(err)
         }
     }
 --- request
 GET /t
 --- response_body
-nil
+error kms_uri prefix: kms://
 
 
 
-=== TEST 9: kms.get, error format: no kms service
+=== TEST 9: kms.fetch_by_uri, error format: no kms service
 --- apisix_yaml
 kms:
   - id: vault/1
@@ -241,20 +254,18 @@ kms:
     location /t {
         content_by_lua_block {
             local kms = require("apisix.kms")
-            local value = kms.get("$kms://")
-            ngx.say(value)
+            local _, err = kms.fetch_by_uri("$kms://")
+            ngx.say(err)
         }
     }
 --- request
 GET /t
 --- response_body
-nil
---- error_log
 error format: no kms service
 
 
 
-=== TEST 10: kms.get, error format: no kms conf id
+=== TEST 10: kms.fetch_by_uri, error format: no kms conf id
 --- apisix_yaml
 kms:
   - id: vault/1
@@ -266,20 +277,18 @@ kms:
     location /t {
         content_by_lua_block {
             local kms = require("apisix.kms")
-            local value = kms.get("$kms://vault/")
-            ngx.say(value)
+            local _, err = kms.fetch_by_uri("$kms://vault/")
+            ngx.say(err)
         }
     }
 --- request
 GET /t
 --- response_body
-nil
---- error_log
 error format: no kms conf id
 
 
 
-=== TEST 11: kms.get, error format: no kms key id
+=== TEST 11: kms.fetch_by_uri, error format: no kms key id
 --- apisix_yaml
 kms:
   - id: vault/1
@@ -291,20 +300,18 @@ kms:
     location /t {
         content_by_lua_block {
             local kms = require("apisix.kms")
-            local value = kms.get("$kms://vault/2/")
-            ngx.say(value)
+            local _, err = kms.fetch_by_uri("$kms://vault/2/")
+            ngx.say(err)
         }
     }
 --- request
 GET /t
 --- response_body
-nil
---- error_log
 error format: no kms key id
 
 
 
-=== TEST 12: kms.get, no config
+=== TEST 12: kms.fetch_by_uri, no config
 --- apisix_yaml
 kms:
   - id: vault/1
@@ -316,45 +323,18 @@ kms:
     location /t {
         content_by_lua_block {
             local kms = require("apisix.kms")
-            local value = kms.get("$kms://vault/2/bar")
-            ngx.say(value)
+            local _, err = kms.fetch_by_uri("$kms://vault/2/bar")
+            ngx.say(err)
         }
     }
 --- request
 GET /t
 --- response_body
-nil
---- error_log
-no config
+no kms conf, kms_uri: $kms://vault/2/bar
 
 
 
-=== TEST 13: kms.get, no kms service
---- apisix_yaml
-kms:
-  - id: vault/apisix-key
-    prefix: kv/apisix
-    token: root
-    uri: http://127.0.0.1:8200
-#END
---- config
-    location /t {
-        content_by_lua_block {
-            local kms = require("apisix.kms")
-            local value = kms.get("$kms://dummy/1/bar")
-            ngx.say(value)
-        }
-    }
---- request
-GET /t
---- response_body
-nil
---- error_log
-no config
-
-
-
-=== TEST 14: kms.get, no sub key value
+=== TEST 13: kms.fetch_by_uri, no sub key value
 --- apisix_yaml
 kms:
   - id: vault/1
@@ -366,8 +346,111 @@ kms:
     location /t {
         content_by_lua_block {
             local kms = require("apisix.kms")
-            local value = kms.get("$kms://vault/1/apisix-key/bar")
+            local value = kms.fetch_by_uri("$kms://vault/1/apisix-key/bar")
             ngx.say(value)
+        }
+    }
+--- request
+GET /t
+--- response_body
+nil
+
+
+
+=== TEST 14: fetch_secrets env: no cache
+--- main_config
+env secret=apisix;
+--- config
+    location /t {
+        content_by_lua_block {
+            local kms = require("apisix.kms")
+            local refs = {
+                key = "jack",
+                secret = "$env://secret"
+            }
+            local new_refs = kms.fetch_secrets(refs)
+            assert(new_refs ~= refs)
+            ngx.say(refs.secret)
+            ngx.say(new_refs.secret)
+            ngx.say(new_refs.key)
+        }
+    }
+--- request
+GET /t
+--- response_body
+$env://secret
+apisix
+jack
+--- error_log_like
+qr/retrieve secrets refs/
+
+
+
+=== TEST 15: fetch_secrets env: cache
+--- main_config
+env secret=apisix;
+--- config
+    location /t {
+        content_by_lua_block {
+            local kms = require("apisix.kms")
+            local refs = {
+                key = "jack",
+                secret = "$env://secret"
+            }
+            local refs_1 = kms.fetch_secrets(refs, true, "key", 1)
+            local refs_2 = kms.fetch_secrets(refs, true, "key", 1)
+            assert(refs_1 == refs_2)
+            ngx.say(refs_1.secret)
+            ngx.say(refs_2.secret)
+        }
+    }
+--- request
+GET /t
+--- response_body
+apisix
+apisix
+--- grep_error_log eval
+qr/retrieve secrets refs/
+--- grep_error_log_out
+retrieve secrets refs
+
+
+
+=== TEST 16: fetch_secrets env: table nesting
+--- main_config
+env secret=apisix;
+--- config
+    location /t {
+        content_by_lua_block {
+            local kms = require("apisix.kms")
+            local refs = {
+                key = "jack",
+                user = {
+                    username = "apisix",
+                    passsword = "$env://secret"
+                }
+            }
+            local new_refs = kms.fetch_secrets(refs)
+            ngx.say(new_refs.user.passsword)
+        }
+    }
+--- request
+GET /t
+--- response_body
+apisix
+
+
+
+=== TEST 17: fetch_secrets: wrong refs type
+--- main_config
+env secret=apisix;
+--- config
+    location /t {
+        content_by_lua_block {
+            local kms = require("apisix.kms")
+            local refs = "wrong"
+            local new_refs = kms.fetch_secrets(refs)
+            ngx.say(new_refs)
         }
     }
 --- request

@@ -34,7 +34,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local env = require("apisix.core.env")
-            local value = env.get("$env://TEST_ENV_VAR")
+            local value = env.fetch_by_uri("$env://TEST_ENV_VAR")
             ngx.say(value)
         }
     }
@@ -50,7 +50,7 @@ test-value
     location /t {
         content_by_lua_block {
             local env = require("apisix.core.env")
-            local value = env.get("$ENV://TEST_ENV_VAR")
+            local value = env.fetch_by_uri("$ENV://TEST_ENV_VAR")
             ngx.say(value)
         }
     }
@@ -66,7 +66,7 @@ test-value
     location /t {
         content_by_lua_block {
             local env = require("apisix.core.env")
-            local value = env.get("$ENV://test_env_var")
+            local value = env.fetch_by_uri("$ENV://test_env_var")
             ngx.say(value)
         }
     }
@@ -82,18 +82,18 @@ nil
     location /t {
         content_by_lua_block {
             local env = require("apisix.core.env")
-            local value = env.get(1)
-            ngx.say(value)
+            local _, err = env.fetch_by_uri(1)
+            ngx.say(err)
 
-            local value = env.get(true)
-            ngx.say(value)
+            local _, err = env.fetch_by_uri(true)
+            ngx.say(err)
         }
     }
 --- request
 GET /t
 --- response_body
-nil
-nil
+error env_uri type: number
+error env_uri type: boolean
 
 
 
@@ -102,14 +102,14 @@ nil
     location /t {
         content_by_lua_block {
             local env = require("apisix.core.env")
-            local value = env.get("env://")
-            ngx.say(value)
+            local _, err = env.fetch_by_uri("env://")
+            ngx.say(err)
         }
     }
 --- request
 GET /t
 --- response_body
-nil
+error env_uri prefix: env://
 
 
 
@@ -118,9 +118,9 @@ nil
     location /t {
         content_by_lua_block {
             local env = require("apisix.core.env")
-            local value = env.get("$ENV://TEST_ENV_SUB_VAR/main")
+            local value = env.fetch_by_uri("$ENV://TEST_ENV_SUB_VAR/main")
             ngx.say(value)
-            local value = env.get("$ENV://TEST_ENV_SUB_VAR/sub")
+            local value = env.fetch_by_uri("$ENV://TEST_ENV_SUB_VAR/sub")
             ngx.say(value)
         }
     }
@@ -137,14 +137,14 @@ sub_value
     location /t {
         content_by_lua_block {
             local env = require("apisix.core.env")
-            local value = env.get("$ENV://TEST_ENV_VAR/main")
-            ngx.say(value)
+            local _, err = env.fetch_by_uri("$ENV://TEST_ENV_VAR/main")
+            ngx.say(err)
         }
     }
 --- request
 GET /t
 --- response_body
-nil
+decode failed, err: Expected value but found invalid token at character 1, value: test-value
 
 
 
@@ -153,7 +153,7 @@ nil
     location /t {
         content_by_lua_block {
             local env = require("apisix.core.env")
-            local value = env.get("$ENV://TEST_ENV_VAR/no")
+            local value = env.fetch_by_uri("$ENV://TEST_ENV_VAR/no")
             ngx.say(value)
         }
     }
@@ -171,7 +171,7 @@ env ngx_env=apisix-nice;
     location /t {
         content_by_lua_block {
             local env = require("apisix.core.env")
-            local value = env.get("$ENV://ngx_env")
+            local value = env.fetch_by_uri("$ENV://ngx_env")
             ngx.say(value)
         }
     }
