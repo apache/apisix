@@ -116,7 +116,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 
 ## 使用 Vault 管理密钥
 
-使用 Vault 来管理密钥意味着你可以将密钥信息保存在 Vault 服务中，在配置插件时通过特定格式的变量来引用。APISIX 目前支持对接 [Vault KV 引擎的 V1 版本](https://developer.hashicorp.com/vault/docs/secrets/kv/kv-v1).
+使用 Vault 来管理密钥意味着你可以将密钥信息保存在 Vault 服务中，在配置插件时通过特定格式的变量来引用。APISIX 目前支持对接 [Vault KV 引擎的 V1 版本](https://developer.hashicorp.com/vault/docs/secrets/kv/kv-v1)。
 
 ### 引用方式
 
@@ -124,20 +124,20 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 $KMS://$secretmanager/$id/$secret_id/$key
 ```
 
-- secretmanager: 密钥管理服务，可以是 vault、aws 等
-- id：KMS 资源 id， 需要和添加 KMS 资源时指定的保持一致
-- secret_id: 密钥管理服务中的密钥 id
+- secretmanager: 密钥管理服务，可以是 Vault、AWS 等
+- id：KMS 资源 ID， 需要与添加 KMS 资源时指定的 ID 保持一致
+- secret_id: 密钥管理服务中的密钥 ID
 - key： 密钥管理服务中密钥对应的 key
 
 ### 示例：在 key-auth 插件中使用
 
 第一步：在 Vault 中创建对应的密钥，可以使用如下命令：
 
-```bash
+```shell
 vault kv put apisix/jack auth-key=value
 ```
 
-第二步：通过 Admin API 添加 KMS 资源，配置 vault 的地址等连接信息：
+第二步：通过 Admin API 添加 KMS 资源，配置 Vault 的地址等连接信息：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/kms/vault/1 \
@@ -149,7 +149,7 @@ curl http://127.0.0.1:9180/apisix/admin/kms/vault/1 \
 }'
 ```
 
-如果使用 APISIX Standalone 版本，则可以在 apisix.yaml 中添加如下配置：
+如果使用 APISIX Standalone 版本，则可以在 `apisix.yaml`  文件中添加如下配置：
 
 ```yaml
 kms:

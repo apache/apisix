@@ -124,20 +124,20 @@ Using Vault to manage secrets means that you can store secrets information in th
 $KMS://$secretmanager/$id/$secret_id/$key
 ```
 
-- secretmanager: secrets management service, could be the vault, aws, etc.
-- id: KMS resource id, which needs to be consistent with the one specified when adding the KMS resource
-- secret_id: the secret id in the secrets management service
+- secretmanager: secrets management service, could be the Vault, AWS, etc.
+- id: KMS resource ID, which needs to be consistent with the one specified when adding the KMS resource
+- secret_id: the secret ID in the secrets management service
 - key: the key corresponding to the secret in the secrets management service
 
 ### Example: use in key-auth plugin
 
 Step 1: Create the corresponding key in the Vault, you can use the following command:
 
-```
+```shell
 vault kv put apisix/jack auth-key=value
 ```
 
-Step 2: Add KMS resources through the Admin API, configure the vault address and other connection information:
+Step 2: Add KMS resources through the Admin API, configure the Vault address and other connection information:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/kms/vault/1 \
@@ -149,7 +149,7 @@ curl http://127.0.0.1:9180/apisix/admin/kms/vault/1 \
 }'
 ```
 
-If you use APISIX Standalone mode, you can add the following configuration in apisix.yaml:
+If you use APISIX Standalone mode, you can add the following configuration in `apisix.yaml` configuration file:
 
 ```yaml
 kms:
