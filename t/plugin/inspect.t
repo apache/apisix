@@ -98,6 +98,10 @@ _EOC_
     }
 });
 
+add_cleanup_handler(sub {
+    unlink("/tmp/apisix_inspect_hooks.lua");
+});
+
 run_tests;
 
 __DATA__
@@ -120,7 +124,7 @@ __DATA__
             end)
             ]])
 
-            ngx.sleep(2)
+            ngx.sleep(1.5)
 
             do_request()
 
@@ -150,7 +154,7 @@ var1=hello
             end)
             ]])
 
-            ngx.sleep(2)
+            ngx.sleep(1.5)
 
             do_request()
 
@@ -182,7 +186,7 @@ var1=hello
             end)
             ]])
 
-            ngx.sleep(2)
+            ngx.sleep(1.5)
 
             -- request 3 times, but hook triggered 2 times
             for _ = 1,3 do
@@ -221,7 +225,7 @@ var1=hello
             end)
             ]])
 
-            ngx.sleep(2)
+            ngx.sleep(1.5)
 
             do_request()
 
@@ -275,7 +279,7 @@ var1=hello
 
             os.execute("ln -sf /tmp/test_real_tmp_file.lua /tmp/apisix_inspect_hooks.lua")
 
-            ngx.sleep(2)
+            ngx.sleep(1.5)
 
             do_request()
 
@@ -308,9 +312,9 @@ var1=hello
 
             os.execute("ln -sf /tmp/test_real_tmp_file.lua /tmp/apisix_inspect_hooks.lua")
 
-            ngx.sleep(2)
+            ngx.sleep(1.5)
             os.remove("/tmp/apisix_inspect_hooks.lua")
-            ngx.sleep(2)
+            ngx.sleep(1.5)
 
             do_request()
 
@@ -344,7 +348,7 @@ var1=hello
             end)
             ]])
 
-            ngx.sleep(2)
+            ngx.sleep(1.5)
 
             do_request()
 
@@ -375,7 +379,7 @@ count=2
             end)
             ]])
 
-            ngx.sleep(2)
+            ngx.sleep(1.5)
 
             do_request()
 
@@ -407,7 +411,7 @@ upvar2=nil
             end)
             ]])
 
-            ngx.sleep(2)
+            ngx.sleep(1.5)
 
             do_request()
 
@@ -417,3 +421,79 @@ upvar2=nil
 --- error_log
 upvar1=2
 upvar2=yes
+
+
+
+=== TEST 11: flush specific JIT cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local test = require("lib.test_inspect")
+
+            local t1 = test.hot1()
+            local t8 = test.hot2()
+
+            write_hooks([[
+            local test = require("lib.test_inspect")
+            local dbg = require "apisix.inspect.dbg"
+            dbg.set_hook("t/lib/test_inspect.lua", 47, test.hot1, function(info)
+                return false
+            end)
+            ]])
+
+            ngx.sleep(1.5)
+
+            local t2 = test.hot1()
+            local t9 = test.hot2()
+
+            assert(t2-t1 > t1, "hot1 consumes at least double times than before")
+            assert(t9-t8 < t8*0.8, "hot2 not affected")
+
+            os.remove("/tmp/apisix_inspect_hooks.lua")
+
+            ngx.sleep(1.5)
+
+            local t3 = test.hot1()
+            local t4 = test.hot2()
+            assert(t3-t1 < t1*0.8, "hot1 jit recover")
+            assert(t4-t8 < t4*0.8, "hot2 jit recover")
+        }
+    }
+
+
+
+=== TEST 12: flush the whole JIT cache
+--- config
+    location /t {
+        content_by_lua_block {
+            local test = require("lib.test_inspect")
+
+            local t1 = test.hot1()
+            local t8 = test.hot2()
+
+            write_hooks([[
+            local test = require("lib.test_inspect")
+            local dbg = require "apisix.inspect.dbg"
+            dbg.set_hook("t/lib/test_inspect.lua", 47, nil, function(info)
+                return false
+            end)
+            ]])
+
+            ngx.sleep(1.5)
+
+            local t2 = test.hot1()
+            local t9 = test.hot2()
+
+            assert(t2-t1 > t1, "hot1 consumes at least double times than before")
+            assert(t9-t8 > t8, "hot2 consumes at least double times than before")
+
+            os.remove("/tmp/apisix_inspect_hooks.lua")
+
+            ngx.sleep(1.5)
+
+            local t3 = test.hot1()
+            local t4 = test.hot2()
+            assert(t3-t1 < t1*0.8, "hot1 jit recover")
+            assert(t4-t8 < t4*0.8, "hot2 jit recover")
+        }
+    }

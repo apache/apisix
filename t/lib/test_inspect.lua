@@ -37,4 +37,26 @@ function _M.run3()
     return upvar1 .. upvar2
 end
 
+local str = string.rep("a", 8192) .. "llzz"
+
+local sk = require("socket")
+
+function _M.hot1()
+    local t1 = sk.gettime()
+    for i=1,100000 do
+        string.find(str, "ll", 1, true)
+    end
+    local t2 = sk.gettime()
+    return t2 - t1
+end
+
+function _M.hot2()
+    local t1 = sk.gettime()
+    for i=1,100000 do
+        string.find(str, "ll", 1, true)
+    end
+    local t2 = sk.gettime()
+    return t2 - t1
+end
+
 return _M
