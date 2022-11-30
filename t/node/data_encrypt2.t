@@ -28,38 +28,6 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    my $http_config = $block->http_config // <<_EOC_;
-    server {
-        listen 10420;
-        location /clickhouse-logger/test {
-            content_by_lua_block {
-                ngx.req.read_body()
-                local data = ngx.req.get_body_data()
-                local headers = ngx.req.get_headers()
-                ngx.log(ngx.WARN, "clickhouse body: ", data)
-                for k, v in pairs(headers) do
-                    ngx.log(ngx.WARN, "clickhouse headers: " .. k .. ":" .. v)
-                end
-                ngx.say("ok")
-            }
-        }
-        location /clickhouse-logger/test1 {
-            content_by_lua_block {
-                ngx.req.read_body()
-                local data = ngx.req.get_body_data()
-                local headers = ngx.req.get_headers()
-                ngx.log(ngx.WARN, "clickhouse body: ", data)
-                for k, v in pairs(headers) do
-                    ngx.log(ngx.WARN, "clickhouse headers: " .. k .. ":" .. v)
-                end
-                ngx.say("ok")
-            }
-        }
-    }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -87,7 +55,7 @@ apisix:
                                 "password": "abc123",
                                 "database": "default",
                                 "logtable": "t",
-                                "endpoint_addr": "http://127.0.0.1:10420/clickhouse-logger/test",
+                                "endpoint_addr": "http://127.0.0.1:1980/clickhouse_logger_server",
                                 "batch_max_size":1,
                                 "inactive_timeout":1
                             }
@@ -170,7 +138,7 @@ apisix:
                                 "password": "abc123",
                                 "database": "default",
                                 "logtable": "t",
-                                "endpoint_addr": "http://127.0.0.1:10420/clickhouse-logger/test",
+                                "endpoint_addr": "http://127.0.0.1:1980/clickhouse_logger_server",
                                 "batch_max_size":1,
                                 "inactive_timeout":1
                             }
@@ -238,7 +206,7 @@ apisix:
                                 "password": "abc123",
                                 "database": "default",
                                 "logtable": "t",
-                                "endpoint_addr": "http://127.0.0.1:10420/clickhouse-logger/test",
+                                "endpoint_addr": "http://127.0.0.1:1980/clickhouse_logger_server",
                                 "batch_max_size":1,
                                 "inactive_timeout":1
                             }
@@ -263,7 +231,7 @@ apisix:
                             "password": "def456",
                             "database": "default",
                             "logtable": "t",
-                            "endpoint_addr": "http://127.0.0.1:10420/clickhouse-logger/test",
+                            "endpoint_addr": "http://127.0.0.1:1980/clickhouse_logger_server",
                             "batch_max_size":1,
                             "inactive_timeout":1
                         }
@@ -317,7 +285,7 @@ apisix:
                             "password": "abc123",
                             "database": "default",
                             "logtable": "t",
-                            "endpoint_addr": "http://127.0.0.1:10420/clickhouse-logger/test",
+                            "endpoint_addr": "http://127.0.0.1:1980/clickhouse_logger_server",
                             "batch_max_size":1,
                             "inactive_timeout":1
                         }
@@ -414,7 +382,7 @@ apisix:
                             "password": "abc123",
                             "database": "default",
                             "logtable": "t",
-                            "endpoint_addr": "http://127.0.0.1:10420/clickhouse-logger/test",
+                            "endpoint_addr": "http://127.0.0.1:1980/clickhouse_logger_server",
                             "batch_max_size":1,
                             "inactive_timeout":1
                         }
