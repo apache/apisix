@@ -58,14 +58,14 @@ function _M.init()
 end
 
 
-local function is_env_ref(ref)
+local function is_env_uri(env_uri)
     -- Avoid the error caused by has_prefix to cause a crash.
-    return type(ref) == "string" and string.has_prefix(upper(ref), ENV_PREFIX)
+    return type(env_uri) == "string" and string.has_prefix(upper(env_uri), ENV_PREFIX)
 end
 
 
-local function parse_ref(ref)
-    local path = sub(ref, #ENV_PREFIX + 1)
+local function parse_env_uri(env_uri)
+    local path = sub(env_uri, #ENV_PREFIX + 1)
     local idx = find(path, "/")
     if not idx then
         return {key = path, sub_key = ""}
@@ -80,12 +80,12 @@ local function parse_ref(ref)
 end
 
 
-function _M.get(ref)
-    if not is_env_ref(ref) then
+function _M.get(env_uri)
+    if not is_env_uri(env_uri) then
         return nil
     end
 
-    local opts = parse_ref(ref)
+    local opts = parse_env_uri(env_uri)
     local main_value = apisix_env_vars[opts.key] or os.getenv(opts.key)
     if main_value and opts.sub_key ~= "" then
         local vt, err = json.decode(main_value)
