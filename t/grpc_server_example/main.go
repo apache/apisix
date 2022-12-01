@@ -54,9 +54,10 @@ var (
 	grpcAddr      = ":50051"
 	grpcsAddr     = ":50052"
 	grpcsMtlsAddr string
+	grpcHTTPAddr  string
 
-	crtFilePath = "../t/cert/apisix.crt"
-	keyFilePath = "../t/cert/apisix.key"
+	crtFilePath = "../certs/apisix.crt"
+	keyFilePath = "../certs/apisix.key"
 	caFilePath  string
 )
 
@@ -64,6 +65,7 @@ func init() {
 	flag.StringVar(&grpcAddr, "grpc-address", grpcAddr, "address for grpc")
 	flag.StringVar(&grpcsAddr, "grpcs-address", grpcsAddr, "address for grpcs")
 	flag.StringVar(&grpcsMtlsAddr, "grpcs-mtls-address", grpcsMtlsAddr, "address for grpcs in mTLS")
+	flag.StringVar(&grpcHTTPAddr, "grpc-http-address", grpcHTTPAddr, "addresses for http and grpc services at the same time")
 	flag.StringVar(&crtFilePath, "crt", crtFilePath, "path to certificate")
 	flag.StringVar(&keyFilePath, "key", keyFilePath, "path to key")
 	flag.StringVar(&caFilePath, "ca", caFilePath, "path to ca")
@@ -250,8 +252,8 @@ func main() {
 		pb.RegisterGreeterServer(s, &server{})
 		pb.RegisterTestImportServer(s, &server{})
 
-		if err := http.Serve(lis, gRPCAndHTTPFunc(s)); err != nil {
-			log.Fatalf("failed to serve grpc: %v", err)
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
 		}
 	}()
 
@@ -272,6 +274,24 @@ func main() {
 			log.Fatalf("failed to serve: %v", err)
 		}
 	}()
+
+	if grpcHTTPAddr != "" {
+		go func() {
+			lis, err := net.Listen("tcp", grpcAddr)
+			if err != nil {
+				log.Fatalf("failed to listen: %v", err)
+			}
+			s := grpc.NewServer()
+
+			reflection.Register(s)
+			pb.RegisterGreeterServer(s, &server{})
+			pb.RegisterTestImportServer(s, &server{})
+
+			if err := http.Serve(lis, gRPCAndHTTPFunc(s)); err != nil {
+				log.Fatalf("failed to serve grpc: %v", err)
+			}
+		}()
+	}
 
 	if grpcsMtlsAddr != "" {
 		go func() {
