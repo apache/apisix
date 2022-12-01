@@ -379,7 +379,6 @@ function _M.init_worker()
     local consul_servers_list, err = format_consul_params(consul_conf)
     if err then
         error(err)
-        return
     end
     log.info("consul_server_list: ", json_delay_encode(consul_servers_list, true))
 
@@ -389,7 +388,6 @@ function _M.init_worker()
         local ok, err = ngx_timer_at(0, _M.connect, server)
         if not ok then
             error("create consul got error: " .. err)
-            return
         end
 
         if server.keepalive == false then

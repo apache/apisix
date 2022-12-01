@@ -397,3 +397,66 @@ GET /v1/discovery/consul/show_dump_file
 --- error_code: 503
 --- error_log
 connect consul
+
+
+
+=== TEST 14: prepare nodes with different consul clusters
+--- config
+location /consul1 {
+    rewrite  ^/consul1/(.*) /v1/agent/service/$1 break;
+    proxy_pass http://127.0.0.1:8500;
+}
+
+location /consul2 {
+    rewrite  ^/consul2/(.*) /v1/agent/service/$1 break;
+    proxy_pass http://127.0.0.1:8600;
+}
+--- pipelined_requests eval
+[
+    "PUT /consul1/deregister/service_a1",
+    "PUT /consul1/deregister/service_b1",
+    "PUT /consul1/deregister/service_a2",
+    "PUT /consul1/deregister/service_b2",
+    "PUT /consul2/deregister/service_a1",
+    "PUT /consul2/deregister/service_b1",
+    "PUT /consul2/deregister/service_a2",
+    "PUT /consul2/deregister/service_b2",
+    "PUT /consul1/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /consul2/register\n" . "{\"ID\":\"service_b1\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30517,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+]
+--- response_body eval
+["", "", "", "", "", "", "", "", "", ""]
+
+
+
+=== TEST 15: show dump services with different consul clusters
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_control: true
+discovery:
+  consul:
+    servers:
+      - "http://127.0.0.1:8500"
+      - "http://127.0.0.1:8600"
+    dump:
+      path: "consul.dump"
+      load_on_init: false
+--- config
+    location /bonjour {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            ngx.sleep(2)
+
+            local code, body, res = t.test('/v1/discovery/consul/show_dump_file',
+                ngx.HTTP_GET)
+            local entity = json.decode(res)
+            ngx.say(json.encode(entity.services))
+        }
+    }
+--- timeout: 3
+--- request
+GET /bonjour
+--- response_body
+{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1}],"service_b":[{"host":"127.0.0.1","port":30517,"weight":1}]}

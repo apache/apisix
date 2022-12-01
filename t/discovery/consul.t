@@ -125,7 +125,7 @@ location /consul1 {
 }
 
 location /consul2 {
-    rewrite  ^/consul2/(.*) /v1/catalog/services/$1 break;
+    rewrite  ^/consul2/(.*) /v1/agent/service/$1 break;
     proxy_pass http://127.0.0.1:8600;
 }
 --- pipelined_requests eval
@@ -134,13 +134,17 @@ location /consul2 {
     "PUT /consul1/deregister/service_b1",
     "PUT /consul1/deregister/service_a2",
     "PUT /consul1/deregister/service_b2",
+    "PUT /consul2/deregister/service_a1",
+    "PUT /consul2/deregister/service_b1",
+    "PUT /consul2/deregister/service_a2",
+    "PUT /consul2/deregister/service_b2",
     "PUT /consul1/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
     "PUT /consul1/register\n" . "{\"ID\":\"service_a2\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30512,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
     "PUT /consul1/register\n" . "{\"ID\":\"service_b1\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30513,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
     "PUT /consul1/register\n" . "{\"ID\":\"service_b2\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30514,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
 ]
 --- response_body eval
-["", "", "", "", "", "", "", ""]
+["", "", "", "", "", "", "", "", "", "", "", ""]
 
 
 
@@ -371,29 +375,7 @@ location /sleep {
 
 
 
-=== TEST 8: prepare healthy and unhealthy nodes
---- config
-location /v1/agent {
-    proxy_pass http://127.0.0.1:8500;
-}
---- request eval
-[
-    "PUT /v1/agent/service/deregister/service_a1",
-    "PUT /v1/agent/service/deregister/service_a2",
-    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
-    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a2\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.2\",\"Port\":1988,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
-]
---- response_body eval
-[
-    '',
-    '',
-    '',
-    '',
-]
-
-
-
-=== TEST 9: clean nodes
+=== TEST 8: clean nodes
 --- config
 location /v1/agent {
     proxy_pass http://127.0.0.1:8500;
@@ -411,7 +393,7 @@ location /v1/agent {
 
 
 
-=== TEST 10: test consul short connect type
+=== TEST 9: test consul short connect type
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -469,7 +451,7 @@ location /sleep {
 
 
 
-=== TEST 11: retry when Consul can't be reached (long connect type)
+=== TEST 10: retry when Consul can't be reached (long connect type)
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -515,6 +497,25 @@ qr/retry connecting consul after \d seconds/
 --- grep_error_log_out
 retry connecting consul after 1 seconds
 retry connecting consul after 4 seconds
+
+
+
+=== TEST 11: prepare healthy and unhealthy nodes
+--- config
+location /v1/agent {
+    proxy_pass http://127.0.0.1:8500;
+}
+--- request eval
+[
+    "PUT /v1/agent/service/deregister/service_a1",
+    "PUT /v1/agent/service/deregister/service_a2",
+    "PUT /v1/agent/service/deregister/service_b1",
+    "PUT /v1/agent/service/deregister/service_b2",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_b1\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30513,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_b2\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30514,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+]
+--- response_body eval
+['', '', '', '', '', '']
 
 
 

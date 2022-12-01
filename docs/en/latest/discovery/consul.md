@@ -34,7 +34,7 @@ First of all, we need to add following configuration in `conf/config.yaml` :
 ```yaml
 discovery:
   consul:
-    servers:
+    servers:                      # make sure service name is unique in these consul servers
       - "http://127.0.0.1:8500"
       - "http://127.0.0.1:8600"   # `http://127.0.0.1:8500` and `http://127.0.0.1:8600` are different clusters
     skip_services:                # if you need to skip special services
