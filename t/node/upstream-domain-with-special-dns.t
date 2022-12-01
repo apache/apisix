@@ -48,10 +48,6 @@ routes:
 _EOC_
 
     $block->set_value("apisix_yaml", $block->apisix_yaml . $routes);
-
-    if (!$block->error_log && !$block->no_error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests();

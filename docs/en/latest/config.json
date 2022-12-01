@@ -38,7 +38,8 @@
         "terminology/router",
         "terminology/script",
         "terminology/service",
-        "terminology/upstream"
+        "terminology/upstream",
+        "terminology/kms"
       ]
     },
     {
@@ -102,7 +103,8 @@
             "plugins/referer-restriction",
             "plugins/consumer-restriction",
             "plugins/csrf",
-            "plugins/public-api"
+            "plugins/public-api",
+            "plugins/gm"
           ]
         },
         {
@@ -213,6 +215,10 @@
         {
           "type": "doc",
           "id": "building-apisix"
+        },
+        {
+          "type": "doc",
+          "id": "support-fips-in-apisix"
         },
         {
           "type": "doc",
@@ -348,6 +354,10 @@
       "type": "link",
       "label": "CHANGELOG",
       "href": "https://github.com/apache/apisix/blob/master/CHANGELOG.md"
+    },
+    {
+      "type": "doc",
+      "id": "upgrade-guide-from-2.15.x-to-3.0.0"
     }
   ]
 }

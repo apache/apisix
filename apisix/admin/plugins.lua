@@ -23,12 +23,20 @@ local table_sort = table.sort
 local table_insert = table.insert
 local get_uri_args = ngx.req.get_uri_args
 local plugin_get_all = require("apisix.plugin").get_all
+local encrypt_conf = require("apisix.plugin").encrypt_conf
+local pairs = pairs
 
 local _M = {}
 
 
 function _M.check_schema(plugins_conf, schema_type)
-    return check_schema(plugins_conf, schema_type, false)
+    local ok, err = check_schema(plugins_conf, schema_type, false)
+    if ok then
+        for name, conf in pairs(plugins_conf) do
+            encrypt_conf(name, conf, schema_type)
+        end
+    end
+    return ok, err
 end
 
 

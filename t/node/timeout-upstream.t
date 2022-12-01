@@ -60,8 +60,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -115,8 +113,6 @@ timed out) while reading response header from upstream
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -180,8 +176,6 @@ GET /t
 --- response_body
 passed
 passed
---- no_error_log
-[error]
 
 
 

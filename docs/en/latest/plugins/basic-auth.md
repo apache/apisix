@@ -42,11 +42,13 @@ For Consumer:
 | username | string | True     | Unique username for a Consumer. If multiple Consumers use the same `username`, a request matching exception is raised. |
 | password | string | True     | Password of the user.                                                                                                  |
 
+NOTE: The schema for `password` also defines `encrypted = true`, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 For Route:
 
 | Name             | Type    | Required | Default | Description                                                            |
 |------------------|---------|----------|---------|------------------------------------------------------------------------|
-| hide_credentials | boolean | False    | false   | Set to true to pass the authorization request headers to the Upstream. |
+| hide_credentials | boolean | False    | false   | Set to true will not pass the authorization request headers to the Upstream. |
 
 ## Enabling the Plugin
 

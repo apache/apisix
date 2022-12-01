@@ -54,8 +54,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -68,5 +66,3 @@ Host: foo.com:1984
 uri: /uri
 host: foo.com:1984
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]

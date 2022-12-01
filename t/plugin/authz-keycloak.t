@@ -44,8 +44,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -69,8 +67,6 @@ done
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -96,8 +92,6 @@ done
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -122,8 +116,6 @@ done
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -166,8 +158,6 @@ done
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -189,8 +179,6 @@ GET /t
 --- response_body
 allOf 1 failed: object matches none of the required: ["discovery"] or ["token_endpoint"]
 done
---- no_error_log
-[error]
 
 
 
@@ -212,8 +200,6 @@ GET /t
 --- response_body
 property "client_id" is required
 done
---- no_error_log
-[error]
 
 
 
@@ -239,8 +225,6 @@ GET /t
 --- response_body
 allOf 2 failed: object matches none of the required
 done
---- no_error_log
-[error]
 
 
 
@@ -281,8 +265,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -314,7 +296,7 @@ GET /t
 --- response_body
 false
 --- error_log
-Error while sending authz request to https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token: 18: self signed certificate
+Error while sending authz request to https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token: 18
 --- error_code: 503
 
 
@@ -357,8 +339,6 @@ Error while sending authz request to https://127.0.0.1:8443/auth/realms/Universi
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -429,8 +409,6 @@ Request denied: HTTP 401 Unauthorized. Body: {"error":"HTTP 401 Unauthorized"}
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -497,8 +475,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -598,8 +574,6 @@ Location: http://127.0.0.1/test
 GET /t
 --- response_body
 true
---- no_error_log
-[error]
 
 
 
@@ -671,5 +645,3 @@ GET /t
 --- response_body
 {"message":"username is missing."}
 {"message":"password is missing."}
---- no_error_log
-[error]

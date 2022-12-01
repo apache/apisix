@@ -297,8 +297,6 @@ GET /t
 --- wait: 2
 --- response_body
 passed
---- no_error_log
-[error]
 --- error_log
 filter(): call require("apisix.plugin").filter() args:{
 filter(): call require("apisix.plugin").filter() return:{

@@ -837,6 +837,17 @@ deployment:
 _EOC_
 
     if ($yaml_config !~ m/deployment:/) {
+        # TODO: remove this temporary option once we have using gRPC by default
+        if ($ENV{TEST_CI_USE_GRPC}) {
+            $default_deployment .= <<_EOC_;
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: /apisix
+    use_grpc: true
+_EOC_
+        }
+
         $yaml_config = $default_deployment . $yaml_config;
     }
 
@@ -874,6 +885,12 @@ $user_apisix_yaml
 _EOC_
 
     $block->set_value("user_files", $user_files);
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)
+        && (!defined $block->grep_error_log)
+        && (!defined $block->ignore_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
 
     $block;
 });

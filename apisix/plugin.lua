@@ -20,6 +20,7 @@ local config_util   = require("apisix.core.config_util")
 local enable_debug  = require("apisix.debug").enable_debug
 local wasm          = require("apisix.wasm")
 local expr          = require("resty.expr.v1")
+local apisix_ssl    = require("apisix.ssl")
 local ngx           = ngx
 local crc32         = ngx.crc32_short
 local ngx_exit      = ngx.exit
@@ -409,6 +410,7 @@ local function trace_plugins_info_for_debug(ctx, plugins)
     end
 end
 
+
 local function meta_filter(ctx, plugin_name, plugin_conf)
     local filter = plugin_conf._meta and plugin_conf._meta.filter
     if not filter then
@@ -444,6 +446,7 @@ local function meta_filter(ctx, plugin_name, plugin_conf)
     ctx[match_cache_key] = ok
     return ok
 end
+
 
 function _M.filter(ctx, conf, plugins, route_conf, phase)
     local user_plugin_conf = conf.value.plugins
@@ -847,6 +850,71 @@ check_plugin_metadata = function(item)
 end
 
 
+local enable_data_encryption
+local function enable_gde()
+    if enable_data_encryption == nil then
+        enable_data_encryption =
+            core.table.try_read_attr(local_conf, "apisix", "data_encryption", "enable")
+        _M.enable_data_encryption = enable_data_encryption
+    end
+
+    return enable_data_encryption
+end
+
+
+local function get_plugin_schema_for_gde(name, schema_type)
+    if not enable_gde() then
+        return nil
+    end
+
+    local plugin_schema = local_plugins_hash and local_plugins_hash[name]
+    local schema
+    if schema_type == core.schema.TYPE_CONSUMER then
+        schema = plugin_schema.consumer_schema
+    else
+        schema = plugin_schema.schema
+    end
+
+    return schema
+end
+
+
+local function decrypt_conf(name, conf, schema_type)
+    local schema = get_plugin_schema_for_gde(name, schema_type)
+    if not schema then
+        return
+    end
+
+    for key, props in pairs(schema.properties) do
+        if props.type == "string" and props.encrypted and conf[key] then
+            local encrypted, err = apisix_ssl.aes_decrypt_pkey(conf[key], "data_encrypt")
+            if not encrypted then
+                core.log.warn("failed to decrypt the conf of plugin [", name,
+                               "] key [", key, "], err: ", err)
+            else
+                conf[key] = encrypted
+            end
+        end
+    end
+end
+_M.decrypt_conf = decrypt_conf
+
+
+local function encrypt_conf(name, conf, schema_type)
+    local schema = get_plugin_schema_for_gde(name, schema_type)
+    if not schema then
+        return
+    end
+
+    for key, props in pairs(schema.properties) do
+        if props.type == "string" and props.encrypted and conf[key] then
+            local encrypted = apisix_ssl.aes_encrypt_pkey(conf[key], "data_encrypt")
+            conf[key] = encrypted
+        end
+    end
+end
+_M.encrypt_conf = encrypt_conf
+
 
 local function check_schema(plugins_conf, schema_type, skip_disabled_plugin)
     for name, plugin_conf in pairs(plugins_conf) do
@@ -899,7 +967,15 @@ _M.stream_check_schema = stream_check_schema
 
 function _M.plugin_checker(item, schema_type)
     if item.plugins then
-        return check_schema(item.plugins, schema_type, true)
+        local ok, err = check_schema(item.plugins, schema_type, true)
+
+        if ok and enable_gde() then
+            -- decrypt conf
+            for name, conf in pairs(item.plugins) do
+                decrypt_conf(name, conf, schema_type)
+            end
+        end
+        return ok, err
     end
 
     return true

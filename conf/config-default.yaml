@@ -123,6 +123,13 @@ apisix:
   #  ip: 127.0.0.1
   #  port: 9090
   disable_sync_configuration_during_start: false  # safe exit. Remove this once the feature is stable
+  data_encryption:                # add `encrypted = true` in plugin schema to enable encryption
+    enable: false                 # if not set, the default value is `false`.
+    keyring:
+      - qeddd145sfvddff3          # If not set, will save origin value into etcd.
+                                  # If set this, the keyring should be an array whose elements are string, and the size is also 16, and it will encrypt fields with AES-128-CBC
+                                  # !!! So do not change it after encryption, it can't decrypt the fields have be saved if you change !!
+                                  # Only use the first key to encrypt, and decrypt in the order of the array.
 
 nginx_config:                     # config for render the template to generate nginx.conf
   #user: root                     # specifies the execution user of the worker process.
@@ -464,6 +471,7 @@ plugins:                          # plugin list (sorted by priority)
   #- log-rotate                    # priority: 100
   # <- recommend to use priority (0, 100) for your custom plugins
   - example-plugin                 # priority: 0
+  #- gm                            # priority: -43
   - aws-lambda                     # priority: -1899
   - azure-functions                # priority: -1900
   - openwhisk                      # priority: -1901

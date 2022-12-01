@@ -56,8 +56,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -92,8 +90,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -105,8 +101,6 @@ apikey: 123
 --- error_code: 401
 --- response_body
 {"message":"Invalid API key in request"}
---- no_error_log
-[error]
 
 
 
@@ -117,8 +111,6 @@ GET /hello
 apikey: auth-one
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -129,8 +121,6 @@ hello world
 apikey: auth-one
 --- error_code eval
 [200, 200, 503, 503]
---- no_error_log
-[error]
 
 
 
@@ -163,8 +153,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"require one auth plugin"}
---- no_error_log
-[error]
 
 
 
@@ -230,8 +218,6 @@ GET /t
 --- response_body
 {"200":2,"503":3}
 {"200":4,"503":1}
---- no_error_log
-[error]
 
 
 
@@ -269,8 +255,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -328,8 +312,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -342,8 +324,6 @@ apikey: consumer-plugin-John_Doe
 hello world
 --- error_log
 find consumer John_Doe
---- no_error_log
-[error]
 
 
 
@@ -403,7 +383,5 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 --- error_log
 find consumer John_Doe
