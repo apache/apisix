@@ -14,10 +14,14 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
+
 local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
+
 local type = type
 local tostring = tostring
+local pcall = pcall
 
 
 local _M = {
@@ -46,7 +50,12 @@ local function check_conf(id, conf, need_id, typ)
     conf.id = id
 
     core.log.info("conf: ", core.json.delay_encode(conf))
-    local ok, err = core.schema.check(core.schema["kms_" .. typ], conf)
+    local ok, kms_service = pcall(require, "apisix.kms." .. typ)
+    if not ok then
+        return false, {error_msg = "invalid kms service: " .. typ}
+    end
+
+    local ok, err = core.schema.check(kms_service.schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end
