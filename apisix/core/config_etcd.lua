@@ -506,8 +506,8 @@ do
             return etcd_cli
         end
 
-        local err
-        etcd_cli, err = etcd_apisix.switch_proxy()
+        local _, err
+        etcd_cli, _, err = etcd_apisix.switch_proxy(true)
         return etcd_cli, err
     end
 end
@@ -574,7 +574,7 @@ local function _automatic_fetch(premature, self)
                 if err ~= self.last_err then
                     self.last_err = err
                     self.last_err_time = ngx_time()
-                else
+                elseif self.last_err then
                     if ngx_time() - self.last_err_time >= 30 then
                         self.last_err = nil
                     end
@@ -602,6 +602,12 @@ local function _automatic_fetch(premature, self)
     if not exiting() and self.running then
         ngx_timer_at(0, _automatic_fetch, self)
     end
+end
+
+-- for test
+_M.test_automatic_fetch = _automatic_fetch
+function _M.inject_sync_data(f)
+    sync_data = f
 end
 
 
@@ -693,7 +699,7 @@ function _M.new(key, opts)
     else
         local etcd_cli, err = get_etcd()
         if not etcd_cli then
-            return nil, "failed to start a etcd instance: " .. err
+            return nil, "failed to start an etcd instance: " .. err
         end
         obj.etcd_cli = etcd_cli
     end
