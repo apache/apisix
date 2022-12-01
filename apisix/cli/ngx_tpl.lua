@@ -75,6 +75,17 @@ http {
                       .. [=[{*lua_cpath*};";
 
     {% if enabled_stream_plugins["prometheus"] then %}
+
+    init_by_lua_block {
+        require "resty.core"
+        apisix = require("apisix")
+        local process = require("ngx.process")
+        local ok, err = process.enable_privileged_agent()
+        if not ok then
+            ngx.log(ngx.ERR, "failed to enable privileged_agent: ", err)
+        end
+    }
+
     init_worker_by_lua_block {
         require("apisix.plugins.prometheus.exporter").http_init(true)
     }
