@@ -59,9 +59,11 @@ The breakpoint could be at any position within the function. The function could 
 The breakpoint is specified by `file` (full qualified or short file name) and the `line` number.
 
 The `func` specified the scope (which function or global) of jit cache to flush:
+
 * If the breakpoint is related to a module function or
 global function, you should set it that function reference, then only the jit cache of that function would
 be flushed, and it would not affect other caches to avoid slowing down other parts of the program.
+
 * If the breakpointis related to local function or anonymous function,
 then you have to set it to `nil` (because no way to get function reference), which would flush the whole jit cache of lua vm.
 
