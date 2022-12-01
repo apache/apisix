@@ -4,7 +4,7 @@ keywords:
   - mTLS
   - API 网关
   - APISIX
-description: 本文介绍了如何配置客户端到 Apache APISIX 的 mTLS。
+description: 本文介绍了如何配置客户端和 Apache APISIX 之间的 mTLS。
 ---
 
 <!--
