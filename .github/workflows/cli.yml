@@ -2,15 +2,15 @@ name: CLI Test
 
 on:
   push:
-  #   branches: [master, 'release/**']
-  #   paths-ignore:
-  #     - 'docs/**'
-  #     - '**/*.md'
-  # pull_request:
-  #   branches: [master, 'release/**']
-  #   paths-ignore:
-  #     - 'docs/**'
-  #     - '**/*.md'
+    branches: [master, 'release/**']
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  pull_request:
+    branches: [master, 'release/**']
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
@@ -61,9 +61,6 @@ jobs:
         run: |
             sudo --preserve-env=OPENRESTY_VERSION \
             ./ci/${{ matrix.job_name }}_runner.sh do_install
-
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
 
       - name: Linux Script
         run: sudo ./ci/${{ matrix.job_name }}_runner.sh script
