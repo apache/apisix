@@ -89,7 +89,7 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/ssls/1' \
 }'
 ```
 
-- `sni`：指定证书的域名（CN），当客户端尝试通过 TLS 与 APISIX 握手时，APISIX会将 ClientHello 中的 SNI 数据与该字段进行匹配，找到对应的服务器证书进行握手。
+- `sni`：指定证书的域名（CN），当客户端尝试通过 TLS 与 APISIX 握手时，APISIX 会将 ClientHello 中的 SNI 数据与该字段进行匹配，找到对应的服务器证书进行握手。
 - `cert`：服务器证书的公钥。
 - `key`：服务器证书的私钥。
 - `client.ca`：客户端证书的公钥。为了演示方便，这里使用了同一个 `CA`。
@@ -122,7 +122,7 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
 }'
 ```
 
-APISIX 会根据 SNI 和上一步创建的 SSL 资源自动处理 TLS 握手，所以我们不需要在路由中指定主机名(如果你需要，你可以设置它)。
+APISIX 会根据 SNI 和上一步创建的 SSL 资源自动处理 TLS 握手，所以我们不需要在路由中指定主机名（如果你需要，你可以设置它）。
 
 另外，上面 `curl` 命令中，我们启用了 `proxy-rewrite` 插件，它将动态的更新请求头的信息，示例中变量值的来源是 `NGINX` 变量，你可以在这里找到它们：http://nginx.org/en/docs/http/ngx_http_ssl_module.html#variables。
 
