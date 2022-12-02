@@ -277,7 +277,7 @@ func main() {
 
 	if grpcHTTPAddr != "" {
 		go func() {
-			lis, err := net.Listen("tcp", grpcAddr)
+			lis, err := net.Listen("tcp", grpcHTTPAddr)
 			if err != nil {
 				log.Fatalf("failed to listen: %v", err)
 			}
