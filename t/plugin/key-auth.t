@@ -535,3 +535,123 @@ passed
 GET /hello?auth=auth-one
 --- response_args
 auth: auth-one
+
+
+
+=== TEST 26: change consumer with secrets ref: env
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "$env://test_auth"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 27: verify auth request
+--- main_config
+env test_auth=authone;
+--- request
+GET /hello?auth=authone
+--- response_args
+auth: authone
+
+
+
+=== TEST 28: put kms vault config
+--- request
+GET /t
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local code, body = t('/apisix/admin/kms/vault/test1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://127.0.0.1:8200",
+                    "prefix" : "kv/apisix",
+                    "token" : "root"
+                }]],
+                [[{
+                    "value": {
+                        "uri": "http://127.0.0.1:8200",
+                        "prefix" : "kv/apisix",
+                        "token" : "root"
+                    },
+                    "key": "/apisix/kms/vault/test1"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 29: change consumer with secrets ref: vault
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "$kms://vault/test1/jack/auth-key"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 30: store secret into vault
+--- exec
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/jack auth-key=authtwo
+--- response_body
+Success! Data written to: kv/apisix/jack
+
+
+
+=== TEST 31: verify auth request
+--- request
+GET /hello?auth=authtwo
+--- response_args
+auth: authtwo
