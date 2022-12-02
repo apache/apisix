@@ -97,7 +97,7 @@ apisix:
 
 ### 如何配置
 
-我们提供了一个演示教程，详细的讲解了如何配置客户端和 APISIX 之间的 mTLS。[点击阅读](./tutorials//client-to-apisix-mtls.md)。
+我们提供了一个演示教程，详细的讲解了如何配置客户端和 APISIX 之间的 mTLS。[点击阅读](./tutorials/client-to-apisix-mtls.md)。
 
 在配置 `ssl` 资源时，同时需要配置 `client.ca` 和 `client.depth` 参数，分别代表为客户端证书签名的 CA 列表，和证书链的最大深度。可参考：[SSL API 文档](./admin-api.md#ssl)。
 

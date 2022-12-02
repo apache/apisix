@@ -71,7 +71,7 @@ openssl pkcs12 -export -clcerts -in client.cer -inkey client.key -out client.p12
 
 :::note 注意
 
-证书中的换行符需要替换为 `\n`
+证书中的换行需要替换为其转义字符 `\n`
 
 :::
 
@@ -130,67 +130,67 @@ APISIX 会根据 SNI 和上一步创建的 SSL 资源自动处理 TLS 握手，�
 
 由于我们使用域名 `test.com` 作为测试域名，在开始验证之前，我们必须先将测试域名添加到你的 DNS 或者本地的 `hosts` 文件中。
 
-以 Ubuntu 为例：
-
-1. 修改 /etc/hosts 文件
-
-```shell
-# 127.0.0.1 localhost
-127.0.0.1 test.com
-```
-
-2. 重启网络模块
+1. 如果我们不使用 `hosts`，只是想测试一下结果，那么你可以使用下面的命令直接进行测试：
 
 ```
-sudo /etc/init.d/networking restart
+curl --resolve "test.com:9443:127.0.0.1" https://test.com:9443/anything -k --cert ./client.cer --key ./client.key
 ```
 
-3. 验证测试域名是否生效
+2. 如果你需要修改 `hosts`，请阅读下面示例（以 Ubuntu 为例）：
 
-```
-ping test.com
+- 修改 /etc/hosts 文件
 
-PING test.com (127.0.0.1) 56(84) bytes of data.
-64 bytes from localhost.localdomain (127.0.0.1): icmp_seq=1 ttl=64 time=0.028 ms
-64 bytes from localhost.localdomain (127.0.0.1): icmp_seq=2 ttl=64 time=0.037 ms
-64 bytes from localhost.localdomain (127.0.0.1): icmp_seq=3 ttl=64 time=0.036 ms
-64 bytes from localhost.localdomain (127.0.0.1): icmp_seq=4 ttl=64 time=0.031 ms
-^C
---- test.com ping statistics ---
-4 packets transmitted, 4 received, 0% packet loss, time 3080ms
-rtt min/avg/max/mdev = 0.028/0.033/0.037/0.003 ms
-```
+  ```shell
+  # 127.0.0.1 localhost
+  127.0.0.1 test.com
+  ```
 
-4. 测试
+- 验证测试域名是否生效
 
-```shell
-curl https://test.com:9443/anything -k --cert ./client.cer --key ./client.key
-```
+  ```
+  ping test.com
 
-然后你将收到下面的响应体：
+  PING test.com (127.0.0.1) 56(84) bytes of data.
+  64 bytes from localhost.localdomain (127.0.0.1): icmp_seq=1 ttl=64 time=0.028 ms
+  64 bytes from localhost.localdomain (127.0.0.1): icmp_seq=2 ttl=64 time=0.037 ms
+  64 bytes from localhost.localdomain (127.0.0.1): icmp_seq=3 ttl=64 time=0.036 ms
+  64 bytes from localhost.localdomain (127.0.0.1): icmp_seq=4 ttl=64 time=0.031 ms
+  ^C
+  --- test.com ping statistics ---
+  4 packets transmitted, 4 received, 0% packet loss, time 3080ms
+  rtt min/avg/max/mdev = 0.028/0.033/0.037/0.003 ms
+  ```
 
-```shell
-{
-  "args": {},
-  "data": "",
-  "files": {},
-  "form": {},
-  "headers": {
-    "Accept": "*/*",
-    "Host": "test.com",
-    "User-Agent": "curl/7.81.0",
-    "X-Amzn-Trace-Id": "Root=1-63256343-17e870ca1d8f72dc40b2c5a9",
-    "X-Forwarded-Host": "test.com",
-    "X-Ssl-Client-Fingerprint": "c1626ce3bca723f187d04e3757f1d000ca62d651",
-    "X-Ssl-Client-S-Dn": "CN=CLIENT",
-    "X-Ssl-Client-Serial": "5141CC6F5E2B4BA31746D7DBFE9BA81F069CF970"
-  },
-  "json": null,
-  "method": "GET",
-  "origin": "127.0.0.1",
-  "url": "http://test.com/anything"
-}
-```
+- 测试
+
+  ```shell
+  curl https://test.com:9443/anything -k --cert ./client.cer --key ./client.key
+  ```
+
+  然后你将收到下面的响应体：
+
+  ```shell
+  {
+    "args": {},
+    "data": "",
+    "files": {},
+    "form": {},
+    "headers": {
+      "Accept": "*/*",
+      "Host": "test.com",
+      "User-Agent": "curl/7.81.0",
+      "X-Amzn-Trace-Id": "Root=1-63256343-17e870ca1d8f72dc40b2c5a9",
+      "X-Forwarded-Host": "test.com",
+      "X-Ssl-Client-Fingerprint": "c1626ce3bca723f187d04e3757f1d000ca62d651",
+      "X-Ssl-Client-S-Dn": "CN=CLIENT",
+      "X-Ssl-Client-Serial": "5141CC6F5E2B4BA31746D7DBFE9BA81F069CF970"
+    },
+    "json": null,
+    "method": "GET",
+    "origin": "127.0.0.1",
+    "url": "http://test.com/anything"
+  }
+  ```
 
 由于我们在示例中配置了 `proxy-rewrite` 插件，我们可以看到响应体中包含上游收到的请求体，包含了正确数据。
 
