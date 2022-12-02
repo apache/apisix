@@ -26,7 +26,7 @@ description: 本文介绍了如何配置客户端和 Apache APISIX 之间的 mTL
 #
 -->
 
-TLS 双向认证一般简称为 mTLS，是目前主流的 TLS 协议。如果在你的网络环境中，要求只有受信任的客户端才可以访问服务端，那么 mTLS 是目前最合适的一种方案。本文主要介绍了如何配置 Apache APISIX 和客户端之间的 mTLS。
+TLS 双向认证一般简称为 mTLS，是一种身份验证的类型。如果在你的网络环境中，要求只有受信任的客户端才可以访问服务端，那么可以启用 mTLS 来验证消费者，保证服务端 API 的安全。本文主要介绍了如何配置 Apache APISIX 和客户端之间的 mTLS。
 
 ## 配置
 
@@ -81,10 +81,10 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/ssls/1' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "sni": "test.com",
-    "cert": "<content of server.cer>",
-    "key": "<content of server.key>",
+    "cert": "<服务器证书公钥>",
+    "key": "<服务器证书私钥>",
     "client": {
-        "ca": "<content of ca.cer>"
+        "ca": "<客户端证书公钥>"
     }
 }'
 ```

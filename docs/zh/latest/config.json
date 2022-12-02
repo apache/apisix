@@ -21,7 +21,7 @@
         "tutorials/protect-api",
         "tutorials/observe-your-api",
         "tutorials/health-check",
-        "tutorials/route-mtls"
+        "tutorials/client-to-apisix-mtls"
       ]
     },
     {
