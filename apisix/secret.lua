@@ -116,7 +116,7 @@ local function parse_secret_uri(secret_uri)
         return nil, "error secret_uri type: " .. type(secret_uri)
     end
 
-    if not string.has_prefix(upper(secret_uri), PREFIX) then
+    if not string.has_prefix(secret_uri, PREFIX) then
         return nil, "error secret_uri prefix: " .. secret_uri
     end
 
@@ -184,7 +184,7 @@ local function fetch(uri)
     local val, err
     if string.has_prefix(upper(uri), core.env.PREFIX) then
         val, err = core.env.fetch_by_uri(uri)
-    elseif string.has_prefix(upper(uri), PREFIX) then
+    elseif string.has_prefix(uri, PREFIX) then
         val, err = fetch_by_uri(uri)
     end
 
