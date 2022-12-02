@@ -38,7 +38,7 @@
         "terminology/script",
         "terminology/service",
         "terminology/upstream",
-        "terminology/kms"
+        "terminology/secret"
       ]
     },
     {

@@ -345,8 +345,8 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/pubsub
 	$(ENV_INSTALL) apisix/pubsub/*.lua $(ENV_INST_LUADIR)/apisix/pubsub/
 
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/kms
-	$(ENV_INSTALL) apisix/kms/*.lua $(ENV_INST_LUADIR)/apisix/kms/
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/secret
+	$(ENV_INSTALL) apisix/secret/*.lua $(ENV_INST_LUADIR)/apisix/secret/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/zipkin
 	$(ENV_INSTALL) apisix/plugins/zipkin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/zipkin/

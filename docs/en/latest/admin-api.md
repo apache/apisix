@@ -117,7 +117,7 @@ Resources that support paging queries:
 - SSL
 - Stream Route
 - Upstream
-- kms
+- Secret
 
 ### Support filtering query
 
@@ -1121,22 +1121,22 @@ To learn more about filtering in stream proxies, check [this](./stream-proxy.md#
 
 [Back to TOC](#table-of-contents)
 
-## kms
+## Secret
 
-**API**: /apisix/admin/kms/{secretmanager}/{id}
+**API**: /apisix/admin/secrets/{secretmanager}/{id}
 
-kms means `Secrets Management`, which could use any secret manager supported, e.g. `vault`.
+With the Secret resource, you can use any secrets management service already supported in APISIX, e.g. `vault`.
 
 ### Request Methods
 
 | Method | Request URI                        | Request Body | Description                                       |
 | ------ | ---------------------------------- | ------------ | ------------------------------------------------- |
-| GET    | /apisix/admin/kms            | NULL         | Fetches a list of all kms.                  |
-| GET    | /apisix/admin/kms/{secretmanager}/{id} | NULL         | Fetches specified kms by id.           |
-| PUT    | /apisix/admin/kms/{secretmanager}            | {...}        | Create new kms configuration.                              |
-| DELETE | /apisix/admin/kms/{secretmanager}/{id} | NULL         | Removes the kms with the specified id. |
-| PATCH  | /apisix/admin/kms/{secretmanager}/{id}        | {...}        | Updates the selected attributes of the specified, existing kms. To delete an attribute, set value of attribute set to null. |
-| PATCH  | /apisix/admin/kms/{secretmanager}/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                 |
+| GET    | /apisix/admin/secrets            | NULL         | Fetches a list of all secrets.                  |
+| GET    | /apisix/admin/secrets/{manager}/{id} | NULL         | Fetches specified secrets by id.           |
+| PUT    | /apisix/admin/secrets/{manager}            | {...}        | Create new secrets configuration.                              |
+| DELETE | /apisix/admin/secrets/{manager}/{id} | NULL         | Removes the secrets with the specified id. |
+| PATCH  | /apisix/admin/secrets/{manager}/{id}        | {...}        | Updates the selected attributes of the specified, existing secrets. To delete an attribute, set value of attribute set to null. |
+| PATCH  | /apisix/admin/secrets/{manager}/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                 |
 
 ### Request Body Parameters
 
@@ -1161,7 +1161,7 @@ Example Configuration:
 Example API usage:
 
 ```shell
-$ curl -i http://127.0.0.1:9180/apisix/admin/kms/vault/test2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl -i http://127.0.0.1:9180/apisix/admin/secrets/vault/test2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "http://xxx/get",
     "prefix" : "apisix",
@@ -1170,7 +1170,7 @@ $ curl -i http://127.0.0.1:9180/apisix/admin/kms/vault/test2 -H 'X-API-KEY: edd1
 HTTP/1.1 200 OK
 ...
 
-{"key":"\/apisix\/kms\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
+{"key":"\/apisix\/secrets\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
 ```
 
 ### Response Parameters
