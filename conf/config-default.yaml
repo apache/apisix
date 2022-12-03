@@ -75,7 +75,7 @@ apisix:
   # Turn this option on if you want to be compatible with servlet when matching URI path.
   normalize_uri_like_servlet: false
   router:
-    http: radixtree_uri         # radixtree_uri: match route by uri(base on radixtree)
+    http: radixtree_host_uri      # radixtree_uri: match route by uri(base on radixtree)
                                   # radixtree_host_uri: match route by host + uri(base on radixtree)
                                   # radixtree_uri_with_parameter: like radixtree_uri but match uri with parameters,
                                   #   see https://github.com/api7/lua-resty-radixtree/#parameters-in-path for
