@@ -44,7 +44,8 @@ A Router can have the following configurations:
     - `match priority`: First try an absolute match, if it didn't match, try prefix matching.
     - `Any filter attribute`: This allows you to specify any Nginx built-in variable as a filter, such as URL request parameters, request headers, and cookies.
   - `radixtree_uri_with_parameter`: Like `radixtree_uri` but also supports parameter match.
-  - `radixtree_host_uri`: Matches both host and URI of the request. Use `host + uri` as the primary index (based on the `radixtree` engine).
+  - `radixtree_host_uri`: Matches both host and URI of the request. Use `host + uri` as the primary index (based on the `radixtree` engine). It may lag in performance as compared to redixtree_uri.
+For better performance or stress test, you can change the HTTP router back to the radixtree_uri.
 
 - `apisix.router.ssl`: SSL loads the matching route.
   - `radixtree_sni`: (Default) Use `SNI` (Server Name Indication) as the primary index (based on the radixtree engine).
