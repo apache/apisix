@@ -411,16 +411,7 @@ local function shared_dict_status()
 end
 
 
--- for test
-local function log_process_type()
-    local process_type = require("ngx.process").type()
-    return process_type
-end
-
-
 local function collect(ctx, stream_only)
-    core.log.info("process type: ", core.log.delay_exec(log_process_type))
-
     if not prometheus or not metrics then
         core.log.error("prometheus: plugin is not initialized, please make sure ",
                      " 'prometheus_metrics' shared dict is present in nginx template")

@@ -23,16 +23,20 @@ git checkout conf/config.yaml
 
 exit_if_not_customed_nginx
 
-# collect metrics run in privileged agent
+# prometheus run in privileged works when only http is enabled
+sleep 0.5
 rm logs/error.log || true
 
 echo '
+apisix:
+    extra_lua_path: "\$prefix/example/?.lua"
+    lua_module_hook: "apisix.plugins.prometheus.exporter"
 nginx_config:
-  error_log_level: info
+    error_log_level: info
 ' > conf/config.yaml
 
-make init
 make run
+sleep 0.1
 
 curl -s -o /dev/null http://127.0.0.1:9091/apisix/prometheus/metrics
 
@@ -41,4 +45,70 @@ if ! grep -E "process type: privileged agent" logs/error.log; then
     exit 1
 fi
 
+make stop
+
 echo "prometheus works well in privileged agent successfully"
+
+
+# prometheus run in privileged works when both http & stream are enabled
+sleep 0.5
+rm logs/error.log || true
+
+echo "
+apisix:
+    extra_lua_path: "\$prefix/example/?.lua"
+    lua_module_hook: "apisix.plugins.prometheus.exporter"
+    enable_admin: true
+    stream_proxy:
+        tcp:
+            - addr: 9100
+stream_plugins:
+    - prometheus
+nginx_config:
+    error_log_level: info
+" > conf/config.yaml
+
+make run
+sleep 0.1
+
+curl -s -o /dev/null http://127.0.0.1:9091/apisix/prometheus/metrics
+
+if ! grep -E " process type: privileged agent" logs/error.log; then
+    echo "failed: prometheus run in privileged can't work when both http & stream are enabled"
+    exit 1
+fi
+
+echo "passed: prometheus run in privileged works when both http & stream are enabled"
+
+make stop
+
+
+# prometheus run in privileged works when only stream is enabled
+sleep 0.5
+rm logs/error.log || true
+
+echo "
+apisix:
+    extra_lua_path: "\$prefix/example/?.lua"
+    lua_module_hook: "apisix.plugins.prometheus.exporter"
+    enable_admin: false
+    stream_proxy:
+        tcp:
+            - addr: 9100
+stream_plugins:
+    - prometheus
+nginx_config:
+    error_log_level: info
+" > conf/config.yaml
+
+make run
+sleep 0.1
+
+curl -s -o /dev/null http://127.0.0.1:9091/apisix/prometheus/metrics
+
+if ! grep -E " process type: privileged agent" logs/error.log; then
+    echo "failed: prometheus run in privileged can't work when only stream is enabled"
+    exit 1
+fi
+
+echo "passed: prometheus run in privileged works when only stream is enabled"
