@@ -41,13 +41,13 @@ sleep 0.1
 curl -s -o /dev/null http://127.0.0.1:9091/apisix/prometheus/metrics
 
 if ! grep -E "process type: privileged agent" logs/error.log; then
-    echo "failed: prometheus works well in privileged agent"
+    echo "failed: prometheus run in privileged can't work when only http is enabled"
     exit 1
 fi
 
 make stop
 
-echo "prometheus works well in privileged agent successfully"
+echo "prometheus run in privileged agent successfully when only http is enabled"
 
 
 # prometheus run in privileged works when both http & stream are enabled
@@ -78,7 +78,7 @@ if ! grep -E " process type: privileged agent" logs/error.log; then
     exit 1
 fi
 
-echo "passed: prometheus run in privileged works when both http & stream are enabled"
+echo "passed: prometheus run in privileged agent successfully when both http & stream are enabled"
 
 make stop
 
@@ -111,4 +111,4 @@ if ! grep -E " process type: privileged agent" logs/error.log; then
     exit 1
 fi
 
-echo "passed: prometheus run in privileged works when only stream is enabled"
+echo "passed: prometheus run in privileged agent successfully when only stream is enabled"
