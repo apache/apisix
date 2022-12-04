@@ -30,7 +30,7 @@ rm logs/error.log || true
 echo '
 apisix:
     extra_lua_path: "\$prefix/example/?.lua"
-    lua_module_hook: "apisix.plugins.prometheus.exporter"
+    lua_module_hook: apisix.plugins.prometheus.exporter
 nginx_config:
     error_log_level: info
 ' > conf/config.yaml
@@ -57,7 +57,7 @@ rm logs/error.log || true
 echo "
 apisix:
     extra_lua_path: "\$prefix/example/?.lua"
-    lua_module_hook: "apisix.plugins.prometheus.exporter"
+    lua_module_hook: apisix.plugins.prometheus.exporter
     enable_admin: true
     stream_proxy:
         tcp:
@@ -90,7 +90,7 @@ rm logs/error.log || true
 echo "
 apisix:
     extra_lua_path: "\$prefix/example/?.lua"
-    lua_module_hook: "apisix.plugins.prometheus.exporter"
+    lua_module_hook: apisix.plugins.prometheus.exporter
     enable_admin: false
     stream_proxy:
         tcp:
