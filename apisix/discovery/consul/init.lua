@@ -31,6 +31,7 @@ local ngx_timer_at       = ngx.timer.at
 local ngx_timer_every    = ngx.timer.every
 local log                = core.log
 local json_delay_encode  = core.json.delay_encode
+local ngx_worker_id      = ngx.worker.id
 
 local all_services = core.table.new(0, 5)
 local default_service
@@ -73,7 +74,7 @@ function _M.nodes(service_name)
         return default_service and {default_service}
     end
 
-    log.info("process id: ", ngx.worker.id(), ", all_services[", service_name, "] = ",
+    log.info("process id: ", ngx_worker_id(), ", all_services[", service_name, "] = ",
             json_delay_encode(resp_list, true))
 
     return resp_list
@@ -86,22 +87,21 @@ local function parse_instance(node)
     if service_name and skip_service_map[service_name] then
         return false
     end
+    -- "" means metadata of the service
     return true, host, tonumber(port), "", service_name
 end
 
 
 local function update_all_services(server_name_prefix, data)
-    local sn
     local up_services = core.table.new(0, #data)
     local weight = default_weight
     for _, node in pairs(data) do
         local succ, ip, port, metadata, server_name = parse_instance(node)
         if succ then
-            sn = server_name
-            local nodes = up_services[sn]
+            local nodes = up_services[server_name]
             if not nodes then
                 nodes = core.table.new(1, 0)
-                up_services[sn] = nodes
+                up_services[server_name] = nodes
             end
             core.table.insert(nodes, {
                 host = ip,
@@ -357,7 +357,7 @@ function _M.init_worker()
             "updating"
     )
 
-    if 0 ~= ngx.worker.id() then
+    if 0 ~= ngx_worker_id() then
         events.register(discovery_consul_callback, events_list._source, events_list.updating)
         return
     end

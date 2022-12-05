@@ -143,8 +143,8 @@ location /consul2 {
     "PUT /consul1/register\n" . "{\"ID\":\"service_b1\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30513,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
     "PUT /consul1/register\n" . "{\"ID\":\"service_b2\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30514,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
 ]
---- response_body eval
-["", "", "", "", "", "", "", "", "", "", "", ""]
+--- error_code eval
+[200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200]
 
 
 
@@ -385,11 +385,8 @@ location /v1/agent {
     "PUT /v1/agent/service/deregister/service_a1",
     "PUT /v1/agent/service/deregister/service_a2",
 ]
---- response_body eval
-[
-    '',
-    '',
-]
+--- error_code eval
+[200, 200]
 
 
 
@@ -514,8 +511,8 @@ location /v1/agent {
     "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_b1\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30513,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
     "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_b2\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30514,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
 ]
---- response_body eval
-['', '', '', '', '', '']
+--- error_code eval
+[200, 200, 200, 200, 200, 200]
 
 
 
