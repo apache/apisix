@@ -17,14 +17,9 @@
 local core = require("apisix.core")
 local ngx = ngx
 local ngx_re = require("ngx.re")
-local ipairs = ipairs
 local consumer = require("apisix.consumer")
-
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
-})
-local consumers_lrucache = core.lrucache.new({
-    type = "plugin",
 })
 
 local schema = {
@@ -43,12 +38,13 @@ local consumer_schema = {
     title = "work with consumer object",
     properties = {
         username = { type = "string" },
-        password = { type = "string" },
+        password = { type = "string", encrypted = true },
     },
     required = {"username", "password"},
 }
 
 local plugin_name = "basic-auth"
+
 
 local _M = {
     version = 0.1,
@@ -122,22 +118,6 @@ local function extract_auth_header(authorization)
 
 end
 
-local create_consume_cache
-do
-    local consumer_names = {}
-
-    function create_consume_cache(consumers)
-        core.table.clear(consumer_names)
-
-        for _, cur_consumer in ipairs(consumers.nodes) do
-            core.log.info("consumer node: ",
-                          core.json.delay_encode(cur_consumer))
-            consumer_names[cur_consumer.auth_conf.username] = cur_consumer
-        end
-
-        return consumer_names
-    end
-end
 
 function _M.rewrite(conf, ctx)
     core.log.info("plugin access phase, conf: ", core.json.delay_encode(conf))
@@ -161,9 +141,7 @@ function _M.rewrite(conf, ctx)
         return 401, { message = "Missing related consumer" }
     end
 
-    local consumers = consumers_lrucache("consumers_key",
-        consumer_conf.conf_version,
-        create_consume_cache, consumer_conf)
+    local consumers = consumer.consumers_kv(plugin_name, consumer_conf, "username")
 
     -- 3. check user exists
     local cur_consumer = consumers[username]

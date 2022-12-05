@@ -259,8 +259,6 @@ qr/\[Server\] receive data:.*this is an info message for test./
 GET /tg
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -359,8 +357,6 @@ qr/\[Server\] receive data:.*this is an error message for test./
 GET /tg
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -449,5 +445,3 @@ qr/\[Server\] receive data:.*this is an info message for test./
 GET /tg
 --- response_body
 passed
---- no_error_log
-[error]

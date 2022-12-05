@@ -137,7 +137,7 @@ title: CHANGELOG
 - 移除 `apisix.port_admin`： [#7716](https://github.com/apache/apisix/pull/7716)
 - 移除 `etcd.health_check_retry`： [#7676](https://github.com/apache/apisix/pull/7676)
 - 移除 `nginx_config.http.lua_shared_dicts`： [#7677](https://github.com/apache/apisix/pull/7677)
-- 移除 `nginx_config.http.real_ip_header`: [#7696](https://github.com/apache/apisix/pull/7696)
+- 移除 `apisix.real_ip_header`: [#7696](https://github.com/apache/apisix/pull/7696)
 
 在动态配置中，我们做了以下调整：
 

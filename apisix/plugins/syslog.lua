@@ -19,10 +19,11 @@ local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local syslog = require("apisix.plugins.syslog.init")
+local plugin = require("apisix.plugin")
 local plugin_name = "syslog"
 local ngx = ngx
 
-local batch_processor_manager = bp_manager_mod.new("http sys logger")
+local batch_processor_manager = bp_manager_mod.new("sys logger")
 local schema = {
     type = "object",
     properties = {
@@ -42,27 +43,44 @@ local schema = {
 
 local schema = batch_processor_manager:wrap_schema(schema)
 
+local metadata_schema = {
+    type = "object",
+    properties = {
+        log_format = log_util.metadata_schema_log_format,
+    },
+}
+
 local _M = {
     version = 0.1,
     priority = 401,
     name = plugin_name,
     schema = schema,
+    metadata_schema = metadata_schema,
     flush_syslog = syslog.flush_syslog,
 }
 
 
-function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-    if not ok then
-        return false, err
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
     end
-
-    return true
+    return core.schema.check(schema, conf)
 end
 
 
 function _M.log(conf, ctx)
-    local entry = log_util.get_full_log(ngx, conf)
+    local metadata = plugin.plugin_metadata(plugin_name)
+    core.log.info("metadata: ", core.json.delay_encode(metadata))
+
+    local entry
+
+    if metadata and metadata.value.log_format
+        and core.table.nkeys(metadata.value.log_format) > 0
+    then
+        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
+    else
+        entry = log_util.get_full_log(ngx, conf)
+    end
     syslog.push_entry(conf, ctx, entry)
 end
 

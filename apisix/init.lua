@@ -37,6 +37,7 @@ local admin_init      = require("apisix.admin.init")
 local get_var         = require("resty.ngxvar").fetch
 local router          = require("apisix.router")
 local apisix_upstream = require("apisix.upstream")
+local apisix_kms      = require("apisix.kms")
 local set_upstream    = apisix_upstream.set_by_route
 local apisix_ssl      = require("apisix.ssl")
 local upstream_util   = require("apisix.utils.upstream")
@@ -82,6 +83,7 @@ local _M = {version = 0.4}
 function _M.http_init(args)
     core.resolver.init_resolver(args)
     core.id.init()
+    core.env.init()
 
     local process = require("ngx.process")
     local ok, err = process.enable_privileged_agent()
@@ -149,6 +151,7 @@ function _M.http_init_worker()
     plugin_config.init_worker()
     require("apisix.consumer").init_worker()
     consumer_group.init_worker()
+    apisix_kms.init_worker()
 
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()

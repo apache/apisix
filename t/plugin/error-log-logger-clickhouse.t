@@ -24,10 +24,6 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -39,26 +35,6 @@ plugins:
 _EOC_
         $block->set_value("extra_yaml_config", $extra_yaml_config);
     }
-
-    my $http_config = $block->http_config // <<_EOC_;
-    server {
-        listen 10420;
-        location /error-logger-clickhouse/test {
-            content_by_lua_block {
-                ngx.req.read_body()
-                local data = ngx.req.get_body_data()
-                local headers = ngx.req.get_headers()
-                ngx.log(ngx.WARN, "clickhouse error log body: ", data)
-                for k, v in pairs(headers) do
-                    ngx.log(ngx.WARN, "clickhouse headers: " .. k .. ":" .. v)
-                end
-                ngx.say("ok")
-            }
-        }
-    }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -78,7 +54,7 @@ __DATA__
                         password = "a",
                         database = "default",
                         logtable = "t",
-                        endpoint_addr = "http://127.0.0.1:10420/error-logger-clickhouse/test"
+                        endpoint_addr = "http://127.0.0.1:1980/clickhouse_logger_server"
                     }
                 },
                 core.schema.TYPE_METADATA
@@ -109,7 +85,7 @@ done
                                 "password": "a",
                                 "database": "default",
                                 "logtable": "t",
-                                "endpoint_addr": "http://127.0.0.1:10420/error-logger-clickhouse/test"
+                                "endpoint_addr": "http://127.0.0.1:1980/clickhouse_logger_server"
                     },
                     "inactive_timeout": 1
                 }]]
@@ -121,7 +97,7 @@ done
 --- response_body
 --- error_log
 this is a warning message for test2
-clickhouse error log body: INSERT INTO t FORMAT JSONEachRow
+clickhouse body: INSERT INTO t FORMAT JSONEachRow
 clickhouse headers: x-clickhouse-key:a
 clickhouse headers: x-clickhouse-user:default
 clickhouse headers: x-clickhouse-database:default
@@ -143,7 +119,7 @@ clickhouse headers: x-clickhouse-database:default
                         "password": "a",
                         "database": "default",
                         "logtable": "t",
-                        "endpoint_addr": "http://127.0.0.1:10420/error-logger-clickhouse/test"
+                        "endpoint_addr": "http://127.0.0.1:1980/clickhouse_logger_server"
                     },
                     "batch_max_size": 15,
                     "inactive_timeout": 1
@@ -156,7 +132,7 @@ clickhouse headers: x-clickhouse-database:default
 --- response_body
 --- error_log
 this is a warning message for test3
-clickhouse error log body: INSERT INTO t FORMAT JSONEachRow
+clickhouse body: INSERT INTO t FORMAT JSONEachRow
 clickhouse headers: x-clickhouse-key:a
 clickhouse headers: x-clickhouse-user:default
 clickhouse headers: x-clickhouse-database:default
@@ -175,7 +151,7 @@ clickhouse headers: x-clickhouse-database:default
 --- response_body
 --- error_log
 this is a warning message for test4
-clickhouse error log body: INSERT INTO t FORMAT JSONEachRow
+clickhouse body: INSERT INTO t FORMAT JSONEachRow
 clickhouse headers: x-clickhouse-key:a
 clickhouse headers: x-clickhouse-user:default
 clickhouse headers: x-clickhouse-database:default
@@ -194,7 +170,7 @@ clickhouse headers: x-clickhouse-database:default
 --- response_body
 --- error_log
 this is a warning message for test5
-clickhouse error log body: INSERT INTO t FORMAT JSONEachRow
+clickhouse body: INSERT INTO t FORMAT JSONEachRow
 clickhouse headers: x-clickhouse-key:a
 clickhouse headers: x-clickhouse-user:default
 clickhouse headers: x-clickhouse-database:default

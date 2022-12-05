@@ -32,10 +32,6 @@ no_shuffle();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
-
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests();
@@ -113,5 +109,5 @@ client certificate was not present
 curl --cert t/certs/apisix.crt --key t/certs/apisix.key -k https://localhost:1994/hello
 --- response_body eval
 qr/400 Bad Request/
---- error_log
-client certificate verification is not passed: FAILED:self signed certificate
+--- error_log eval
+qr/client certificate verification is not passed: FAILED:self[- ]signed certificate/

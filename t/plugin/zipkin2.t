@@ -205,8 +205,6 @@ new span context: trace id: 80f198ee56343ba864fe8b2a57d3eff7, span id: e457b5a2e
     }
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -260,5 +258,3 @@ qr/zipkin start_child_span apisix.response_span time: nil/
 ["GET /t", "GET /opentracing", "GET /opentracing", "GET /opentracing"]
 --- error_code eval
 [200, 200, 200, 403]
---- no_error_log
-[error]

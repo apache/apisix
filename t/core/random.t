@@ -71,5 +71,3 @@ random[1] == random[2]: false
 random[2] == random[3]: false
 random[3] == random[4]: false
 random[4] == random[5]: false
---- no_error_log
-[error]

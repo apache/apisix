@@ -216,7 +216,7 @@ end
 Note: the project has provided the public method "__core.schema.check__", which can be used directly to complete JSON
 verification.
 
-In addition, if the plugin needs to use some metadata, we can define the plugin `metadata_schema`, and then we can dynamically manage these metadata through the `admin api`. Example:
+In addition, if the plugin needs to use some metadata, we can define the plugin `metadata_schema`, and then we can dynamically manage these metadata through the `Admin API`. Example:
 
 ```lua
 local metadata_schema = {
@@ -292,6 +292,38 @@ function _M.check_schema(conf, schema_type)
     return core.schema.check(schema, conf)
 end
 ```
+
+### encrypted storage fields
+
+Specify the parameters to be stored encrypted. (Requires APISIX version >= 3.1.0)
+
+Some plugins require parameters to be stored encrypted, such as the `password` parameter of the `basic-auth` plugin. This plugin needs to specify in the `schema` which parameters need to be stored encrypted.
+
+```lua
+password = { type = "string", encrypted = true },
+```
+
+Parameters can be stored encrypted by specifying `encrypted = true` in the `schema`. APISIX will provide the following functionality.
+
+- When adding and updating resources via the `Admin API`, APISIX automatically encrypts parameters with `encrypted = true` and stores them in etcd
+- When fetching resources via the `Admin API` and when running the plugin, APISIX automatically decrypts the `encrypted = true` parameter
+
+How to enable this feature?
+
+Enable `data_encryption` in `config.yaml`.
+
+```yaml
+apisix:
+    data_encryption:
+    enable: true
+    keyring:
+        - edd1c9f0985e76a2
+        - qeddd145sfvddff4
+```
+
+APISIX will try to decrypt the data with keys in the order of the keys in the keyring (only for parameters declared `encrypted = true`). If the decryption fails, the next key will be tried until the decryption succeeds.
+
+If none of the keys in `keyring` can decrypt the data, the original data is used.
 
 ## choose phase to run
 

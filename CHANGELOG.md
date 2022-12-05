@@ -139,7 +139,7 @@ In the static configuration, we removed several fields as follows:
 - Removed `apisix.port_admin`: [#7716](https://github.com/apache/apisix/pull/7716)
 - Removed `etcd.health_check_retry`: [#7676](https://github.com/apache/apisix/pull/7676)
 - Removed `nginx_config.http.lua_shared_dicts`: [#7677](https://github.com/apache/apisix/pull/7677)
-- Removed `nginx_config.http.real_ip_header`: [#7696](https://github.com/apache/apisix/pull/7696)
+- Removed `apisix.real_ip_header`: [#7696](https://github.com/apache/apisix/pull/7696)
 
 In the dynamic configuration, we made the following adjustments:
 

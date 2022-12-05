@@ -1,5 +1,10 @@
 ---
 title: Router
+keywords:
+  - API Gateway
+  - Apache APISIX
+  - Router
+description: This article describes how to choose a router for Apache APISIX.
 ---
 
 <!--
