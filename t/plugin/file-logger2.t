@@ -28,10 +28,6 @@ add_block_preprocessor(sub {
             $block->set_value("response_body", "passed\n");
         }
     }
-
-    if (! $block->no_error_log && ! $block->error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 
@@ -40,6 +36,7 @@ run_tests;
 __DATA__
 
 === TEST 1: add plugin with 'include_resp_body' setting
+--- FIRST
 --- config
     location /t {
         content_by_lua_block {
@@ -146,6 +143,7 @@ contain with target
 
 
 === TEST 4: verify file-logger resp with expression of concern
+--- END
 --- config
     location /t {
         content_by_lua_block {
@@ -171,74 +169,11 @@ contain with target
                 ngx.status = code
                 ngx.say('contain target body hits with expr')
             end
-        }
-    }
---- response_body
-contain target body hits with expr
 
-
-
-=== TEST 5: verify file-logger resp with expression of unconcern
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "file-logger": {
-                                "path": "file-with-resp-unconcern.log",
-                                "include_resp_body": true,
-                                "include_resp_body_expr": [
-                                    [
-                                      "arg_name",
-                                      "==",
-                                      "Bob"
-                                    ]
-                                ]
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1982": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
-
-
-
-=== TEST 6: verify file-logger resp with expression of unconcern
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local t = require("lib.test_admin").test
-            local code = t("/hello?name=Jack", ngx.HTTP_GET)
-            local fd, err = io.open("file-with-resp-unconcern.log", 'r')
-            local msg
-
-            if not fd then
-                core.log.error("failed to open file: file-with-resp-unconcern.log, error info: ", err)
-                return
-            end
-
-            -- note only for first line
-            msg = fd:read()
-
+            --- a new request is logged
+            t("/hello?name=pix", ngx.HTTP_GET)
+            msg = fd:read("*l")
             local new_msg = core.json.decode(msg)
-            ngx.status = code
-
             if new_msg.response.body == nil
             then
                 ngx.status = code
@@ -247,4 +182,5 @@ contain target body hits with expr
         }
     }
 --- response_body
+contain target body hits with expr
 skip unconcern body
