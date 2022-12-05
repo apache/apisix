@@ -39,11 +39,11 @@ TLS 双向认证一般简称为 mTLS，是一种身份验证的类型。如果�
 3. 在 APISIX 中创建并配置路由；
 4. 测试验证。
 
-为了使测试结果更加清晰，下面的演示中会向上游传递一些有关客户端证书的信息，其中包括：`serial`，`fingerprint` 和 `common name`。
+为了使测试结果更加清晰，本文提到的示例会向上游传递一些有关客户端证书的信息，其中包括：`serial`，`fingerprint` 和 `common name`。
 
 ### 生成证书
 
-我们需要生成三个测试证书，分别是根证书、服务器证书、客户端证书。只需要通过下面命令，它就可以通过 `OpenSSL` 生成我们需要的测试证书。
+我们需要生成三个测试证书，分别是根证书、服务器证书、客户端证书。只需通过以下命令，就可以通过 `OpenSSL` 生成我们需要的测试证书。
 
 ```shell
 # 根证书
@@ -124,7 +124,7 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
 
 APISIX 会根据 SNI 和上一步创建的 SSL 资源自动处理 TLS 握手，所以我们不需要在路由中指定主机名（如果你需要，你可以设置它）。
 
-另外，上面 `curl` 命令中，我们启用了 `proxy-rewrite` 插件，它将动态的更新请求头的信息，示例中变量值的来源是 `NGINX` 变量，你可以在这里找到它们：http://nginx.org/en/docs/http/ngx_http_ssl_module.html#variables。
+另外，上面 `curl` 命令中，我们启用了 `proxy-rewrite` 插件，它将动态地更新请求头的信息，示例中变量值的来源是 `NGINX` 变量，你可以在这里找到它们：http://nginx.org/en/docs/http/ngx_http_ssl_module.html#variables。
 
 ### 测试验证
 
