@@ -97,6 +97,8 @@ apisix:
 
 ### 如何配置
 
+我们提供了一个[演示教程](./tutorials/client-to-apisix-mtls.md)，详细地讲解了如何配置客户端和 APISIX 之间的 mTLS。
+
 在配置 `ssl` 资源时，同时需要配置 `client.ca` 和 `client.depth` 参数，分别代表为客户端证书签名的 CA 列表，和证书链的最大深度。可参考：[SSL API 文档](./admin-api.md#ssl)。
 
 下面是一个可用于生成带双向认证配置的 SSL 资源的 Python 脚本示例。如果需要，可修改 API 地址、API Key 和 SSL 资源的 ID。

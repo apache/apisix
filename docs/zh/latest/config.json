@@ -20,7 +20,8 @@
         "tutorials/expose-api",
         "tutorials/protect-api",
         "tutorials/observe-your-api",
-        "tutorials/health-check"
+        "tutorials/health-check",
+        "tutorials/client-to-apisix-mtls"
       ]
     },
     {
