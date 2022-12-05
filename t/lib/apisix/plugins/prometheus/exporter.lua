@@ -14,12 +14,17 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local apisix = require("apisix")
+
 local core = require("apisix.core")
 local _M = {}
 
 
 function _M.http_init()
+    return true
+end
+
+
+function _M.stream_init()
     return true
 end
 

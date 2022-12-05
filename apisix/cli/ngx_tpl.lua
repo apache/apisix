@@ -78,7 +78,6 @@ http {
 
     init_by_lua_block {
         require "resty.core"
-        apisix = require("apisix")
         local process = require("ngx.process")
         local ok, err = process.enable_privileged_agent()
         if not ok then
