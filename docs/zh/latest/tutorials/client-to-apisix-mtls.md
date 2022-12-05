@@ -1,10 +1,10 @@
 ---
-title: 配置路由的 mTLS
+title: 配置客户端与 APISIX 之间的双向认证（mTLS）
 keywords:
   - mTLS
   - API 网关
   - APISIX
-description: 本文介绍了如何配置客户端和 Apache APISIX 之间的 mTLS。
+description: 本文介绍了如何在客户端和 Apache APISIX 之间配置双向认证（mTLS）。
 ---
 
 <!--
@@ -26,13 +26,11 @@ description: 本文介绍了如何配置客户端和 Apache APISIX 之间的 mTL
 #
 -->
 
-TLS 双向认证一般简称为 mTLS，是一种身份验证的类型。如果在你的网络环境中，要求只有受信任的客户端才可以访问服务端，那么可以启用 mTLS 来验证消费者，保证服务端 API 的安全。本文主要介绍了如何配置 Apache APISIX 和客户端之间的 mTLS。
+mTLS 是一种双向身份认证的方式。如果在你的网络环境中，要求只有受信任的客户端才可以访问服务端，那么可以启用 mTLS 来验证客户端的身份，保证服务端 API 的安全。本文主要介绍了如何配置客户端与 Apache APISIX 之间的双向认证（mTLS）。
 
 ## 配置
 
-下面我们演示一个配置它的完整示例。
-
-主要包含以下过程：
+本示例包含以下过程：
 
 1. 生成证书；
 2. 在 APISIX 中配置证书；
@@ -53,6 +51,7 @@ openssl x509 -req -days 36500 -sha256 -extensions v3_ca -signkey ca.key -in ca.c
 
 # 服务器证书
 openssl genrsa -out server.key 2048
+# 注意：CN 值中的 `test.com` 为我们要测试的域名/主机名。
 openssl req -new -sha256 -key server.key -out server.csr -subj "/CN=test.com"
 openssl x509 -req -days 36500 -sha256 -extensions v3_req  -CA  ca.cer -CAkey ca.key  -CAserial ca.srl  -CAcreateserial -in server.csr -out server.cer
 
@@ -89,7 +88,7 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/ssls/1' \
 }'
 ```
 
-- `sni`：指定证书的域名（CN），当客户端尝试通过 TLS 与 APISIX 握手时，APISIX 会将 ClientHello 中的 SNI 数据与该字段进行匹配，找到对应的服务器证书进行握手。
+- `sni`：指定证书的域名（CN），当客户端尝试通过 TLS 与 APISIX 握手时，APISIX 会将 `ClientHello` 中的 SNI 数据与该字段进行匹配，找到对应的服务器证书进行握手。
 - `cert`：服务器证书的公钥。
 - `key`：服务器证书的私钥。
 - `client.ca`：客户端证书的公钥。为了演示方便，这里使用了同一个 `CA`。
@@ -122,7 +121,7 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
 }'
 ```
 
-APISIX 会根据 SNI 和上一步创建的 SSL 资源自动处理 TLS 握手，所以我们不需要在路由中指定主机名（如果你需要，你可以设置它）。
+APISIX 会根据 SNI 和上一步创建的 SSL 资源自动处理 TLS 握手，所以我们不需要在路由中指定主机名（但也可以显式地指定主机名）。
 
 另外，上面 `curl` 命令中，我们启用了 `proxy-rewrite` 插件，它将动态地更新请求头的信息，示例中变量值的来源是 `NGINX` 变量，你可以在这里找到它们：http://nginx.org/en/docs/http/ngx_http_ssl_module.html#variables。
 
@@ -147,7 +146,7 @@ curl --resolve "test.com:9443:127.0.0.1" https://test.com:9443/anything -k --cer
 
 - 验证测试域名是否生效
 
-  ```
+  ```shell
   ping test.com
 
   PING test.com (127.0.0.1) 56(84) bytes of data.
