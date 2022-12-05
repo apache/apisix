@@ -36,7 +36,6 @@ run_tests;
 __DATA__
 
 === TEST 1: add plugin with 'include_resp_body' setting
---- FIRST
 --- config
     location /t {
         content_by_lua_block {
@@ -143,7 +142,6 @@ contain with target
 
 
 === TEST 4: verify file-logger resp with expression of concern
---- END
 --- config
     location /t {
         content_by_lua_block {
