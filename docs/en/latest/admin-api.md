@@ -153,7 +153,7 @@ Resources that support paging queries:
 - SSL
 - Stream Route
 - Upstream
-- kms
+- Secret
 
 ### Support filtering query
 
@@ -1362,12 +1362,12 @@ kms resource request address: /apisix/admin/kms/{secretmanager}/{id}
 
 | Method | Request URI                        | Request Body | Description                                       |
 | ------ | ---------------------------------- | ------------ | ------------------------------------------------- |
-| GET    | /apisix/admin/kms            | NULL         | Fetches a list of all kms.                  |
-| GET    | /apisix/admin/kms/{secretmanager}/{id} | NULL         | Fetches specified kms by id.           |
-| PUT    | /apisix/admin/kms/{secretmanager}            | {...}        | Create new kms configuration.                              |
-| DELETE | /apisix/admin/kms/{secretmanager}/{id} | NULL         | Removes the kms with the specified id. |
-| PATCH  | /apisix/admin/kms/{secretmanager}/{id}        | {...}        | Updates the selected attributes of the specified, existing kms. To delete an attribute, set value of attribute set to null. |
-| PATCH  | /apisix/admin/kms/{secretmanager}/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                 |
+| GET    | /apisix/admin/secrets            | NULL         | Fetches a list of all secrets.                  |
+| GET    | /apisix/admin/secrets/{manager}/{id} | NULL         | Fetches specified secrets by id.           |
+| PUT    | /apisix/admin/secrets/{manager}            | {...}        | Create new secrets configuration.                              |
+| DELETE | /apisix/admin/secrets/{manager}/{id} | NULL         | Removes the secrets with the specified id. |
+| PATCH  | /apisix/admin/secrets/{manager}/{id}        | {...}        | Updates the selected attributes of the specified, existing secrets. To delete an attribute, set value of attribute set to null. |
+| PATCH  | /apisix/admin/secrets/{manager}/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                 |
 
 ### Request Body Parameters
 
@@ -1405,7 +1405,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/kms/vault/test2 \
 HTTP/1.1 200 OK
 ...
 
-{"key":"\/apisix\/kms\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
+{"key":"\/apisix\/secrets\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
 ```
 
 ### Response Parameters

@@ -31,115 +31,115 @@ local ipairs    = ipairs
 local _M = {}
 
 
-local KMS_PREFIX = "$KMS://"
-local kmss
+local PREFIX = "$secret://"
+local secrets
 
-local function check_kms(conf)
+local function check_secret(conf)
     local idx = find(conf.id or "", "/")
     if not idx then
-        return false, "no kms id"
+        return false, "no secret id"
     end
-    local service = sub(conf.id, 1, idx - 1)
+    local manager = sub(conf.id, 1, idx - 1)
 
-    local ok, kms_service = pcall(require, "apisix.kms." .. service)
+    local ok, secret_manager = pcall(require, "apisix.secret." .. manager)
     if not ok then
-        return false, "kms service not exits, service: " .. service
+        return false, "secret manager not exits, manager: " .. manager
     end
 
-    return core.schema.check(kms_service.schema, conf)
+    return core.schema.check(secret_manager.schema, conf)
 end
 
 
-local kms_lrucache = core.lrucache.new({
+local secret_kv_lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
 
-local function create_kms_kvs(values)
-    local kms_services = {}
+local function create_secret_kvs(values)
+    local secret_managers = {}
 
     for _, v in ipairs(values) do
         local path = v.value.id
         local idx = find(path, "/")
         if not idx then
-            core.log.error("no kms id")
+            core.log.error("no secret id")
             return nil
         end
 
-        local service = sub(path, 1, idx - 1)
+        local manager = sub(path, 1, idx - 1)
         local id = sub(path, idx + 1)
 
-        if not kms_services[service] then
-            kms_services[service] = {}
+        if not secret_managers[manager] then
+            secret_managers[manager] = {}
         end
-        kms_services[service][id] = v.value
+        secret_managers[manager][id] = v.value
     end
 
-    return kms_services
+    return secret_managers
 end
 
 
- local function kms_kv(service, confid)
-    local kms_values
-    kms_values = core.config.fetch_created_obj("/kms")
-    if not kms_values or not kms_values.values then
+ local function secret_kv(manager, confid)
+    local secret_values
+    secret_values = core.config.fetch_created_obj("/secrets")
+    if not secret_values or not secret_values.values then
        return nil
     end
 
-    local kms_services = kms_lrucache("kms_kv", kms_values.conf_version,
-            create_kms_kvs, kms_values.values)
-    return kms_services[service] and kms_services[service][confid]
+    local secret_managers = secret_kv_lrucache("secret_kv", secret_values.conf_version,
+                create_secret_kvs, secret_values.values)
+    return secret_managers[manager] and secret_managers[manager][confid]
 end
 
 
-function _M.kmss()
-    if not kmss then
+function _M.secrets()
+    if not secrets then
         return nil, nil
     end
 
-    return kmss.values, kmss.conf_version
+    return secrets.values, secrets.conf_version
 end
 
 
 function _M.init_worker()
     local cfg = {
         automatic = true,
-        checker = check_kms,
+        checker = check_secret,
     }
 
-    kmss = core.config.new("/kms", cfg)
+    secrets = core.config.new("/secrets", cfg)
 end
 
 
-local function parse_kms_uri(kms_uri)
+local function parse_secret_uri(secret_uri)
     -- Avoid the error caused by has_prefix to cause a crash.
-    if type(kms_uri) ~= "string" then
-        return nil, "error kms_uri type: " .. type(kms_uri)
+    if type(secret_uri) ~= "string" then
+        return nil, "error secret_uri type: " .. type(secret_uri)
     end
 
-    if not string.has_prefix(upper(kms_uri), KMS_PREFIX) then
-        return nil, "error kms_uri prefix: " .. kms_uri
+    if not string.has_prefix(secret_uri, PREFIX) then
+        return nil, "error secret_uri prefix: " .. secret_uri
     end
 
-    local path = sub(kms_uri, #KMS_PREFIX + 1)
+    local path = sub(secret_uri, #PREFIX + 1)
     local idx1 = find(path, "/")
     if not idx1 then
-        return nil, "error format: no kms service"
+        return nil, "error format: no secret manager"
     end
-    local service = sub(path, 1, idx1 - 1)
+    local manager = sub(path, 1, idx1 - 1)
 
     local idx2 = find(path, "/", idx1 + 1)
     if not idx2 then
-        return nil, "error format: no kms conf id"
+        return nil, "error format: no secret conf id"
     end
     local confid = sub(path, idx1 + 1, idx2 - 1)
 
     local key = sub(path, idx2 + 1)
     if key == "" then
-        return nil, "error format: no kms key id"
+        return nil, "error format: no secret key id"
     end
 
     local opts = {
-        service = service,
+        manager = manager,
         confid = confid,
         key = key
     }
@@ -147,20 +147,20 @@ local function parse_kms_uri(kms_uri)
 end
 
 
-local function fetch_by_uri(kms_uri)
-    local opts, err = parse_kms_uri(kms_uri)
+local function fetch_by_uri(secret_uri)
+    local opts, err = parse_secret_uri(secret_uri)
     if not opts then
         return nil, err
     end
 
-    local conf = kms_kv(opts.service, opts.confid)
+    local conf = secret_kv(opts.manager, opts.confid)
     if not conf then
-        return nil, "no kms conf, kms_uri: " .. kms_uri
+        return nil, "no secret conf, secret_uri: " .. secret_uri
     end
 
-    local ok, sm = pcall(require, "apisix.kms." .. opts.service)
+    local ok, sm = pcall(require, "apisix.secret." .. opts.manager)
     if not ok then
-        return nil, "no kms service: " .. opts.service
+        return nil, "no secret manager: " .. opts.manager
     end
 
     local value, err = sm.get(conf, opts.key)
@@ -184,12 +184,12 @@ local function fetch(uri)
     local val, err
     if string.has_prefix(upper(uri), core.env.PREFIX) then
         val, err = core.env.fetch_by_uri(uri)
-    elseif string.has_prefix(upper(uri), KMS_PREFIX) then
+    elseif string.has_prefix(uri, PREFIX) then
         val, err = fetch_by_uri(uri)
     end
 
     if err then
-        core.log.error("failed to fetch kms value: ", err)
+        core.log.error("failed to fetch secret value: ", err)
         return
     end
 
