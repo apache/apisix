@@ -130,9 +130,10 @@ Connect `ws://127.0.0.1:9080/raw` without `key`, APISIX returns `401 Unauthorize
 
 #### Connect with Key
 
-Connect `ws://127.0.0.1:9080/raw` with `key`, it's successfully.
+1. Add one header `apikey` with value `this_is_the_key`;
+2. Connect `ws://127.0.0.1:9080/raw` with `key`, it's successfully.
 
-![Connect with key](https://static.apiseven.com/2022/12/06/638ef76b72191.png)
+![Connect with key](https://static.apiseven.com/2022/12/06/638efac7c42b6.png)
 
 ### Note
 
