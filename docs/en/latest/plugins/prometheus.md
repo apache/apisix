@@ -102,6 +102,15 @@ plugin_attr:
 
 You can then expose it by using the [public-api](public-api.md) Plugin.
 
+:::info IMPORTANT
+
+If the Prometheus plugin collects too many metrics, it will take CPU resources to calculate the metric data when getting the metrics via URI, which may affect APISIX to process normal requests. To solve this problem, APISIX exposes the URI and calculates the metrics in the [privileged agent](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent).
+If the URI is exposed using the public-api plugin, then APISIX will calculate the metric data in a normal worker process, which may still affect APISIX processing of normal requests.
+
+This feature requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-the-apisix-base-environment).
+
+:::
+
 ## Enabling the Plugin
 
 The `prometheus` Plugin can be enabled with an empty table.

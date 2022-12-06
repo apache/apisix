@@ -21,6 +21,8 @@
 
 git checkout conf/config.yaml
 
+sleep 1
+
 make run
 
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/prometheus/metrics)
