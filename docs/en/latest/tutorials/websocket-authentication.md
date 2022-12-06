@@ -141,3 +141,4 @@ Other authentication methods are similar to this one.
 ## Reference
 
 1. [Wikipedia - WebSocket](https://en.wikipedia.org/wiki/WebSocket)
+
