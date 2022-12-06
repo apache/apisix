@@ -26,7 +26,7 @@ description: This article describes how to configure mutual authentication (mTLS
 #
 -->
 
-mTLS is a way of two-way authentication. Suppose in your network environment, only trusted clients are required to access the server. In that case, you can enable mTLS to verify the identity of the client and ensure the security of the server API. This article mainly introduces how to configure mutual authentication (mTLS) between the client and Apache APISIX.
+mTLS is a method for mutual authentication. Suppose in your network environment, only trusted clients are required to access the server. In that case, you can enable mTLS to verify the client's identity and ensure the server API's security. This article mainly introduces how to configure mutual authentication (mTLS) between the client and Apache APISIX.
 
 ## Configuration
 
@@ -66,11 +66,11 @@ openssl pkcs12 -export -clcerts -in client.cer -inkey client.key -out client.p12
 
 ### Configure the certificate in APISIX
 
-Use curl to request APISIX Admin API to set up SSL for specific SNI.
+Use the `curl` command to request APISIX Admin API to set up SSL for specific SNI.
 
 :::note
 
-Note that the newline character in the certificate needs to be replaced with its escape character `\n`
+Note that the newline character in the certificate needs to be replaced with its escape character `\n`.
 
 :::
 
@@ -195,6 +195,6 @@ Since we configured the [proxy-rewrite](../plugins/proxy-rewrite.md) plugin in t
 
 ## Conclusion
 
-If you don't want to use curl or test on windows, you can read this gist for more details. [APISIX mTLS for client to APISIX](https://gist.github.com/bzp2010/6ce0bf7c15c191029ed54724547195b4)
+If you don't want to use curl or test on windows, you can read this gist for more details. [APISIX mTLS for client to APISIX](https://gist.github.com/bzp2010/6ce0bf7c15c191029ed54724547195b4).
 
 For more information about the mTLS feature of Apache APISIX, you can read [Mutual TLS Authentication](../mtls.md).
