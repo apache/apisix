@@ -62,7 +62,7 @@ Sec-WebSocket-Protocol: chat
 
 ## WebSocket Authentication
 
-Apache APISIX supports several ways to do authentication, for example: `basic-auth`, `key-auth`, `jwt-auth`, and so on.
+Apache APISIX supports several ways to do authentication, for example: [basic-auth](https://apisix.apache.org/docs/apisix/plugins/basic-auth/), [key-auth](https://apisix.apache.org/docs/apisix/plugins/key-auth/), [jwt-auth](https://apisix.apache.org/docs/apisix/plugins/jwt-auth/), and so on.
 
 When establishing one connection from Client to Server, in the **handshake** phase, APISIX first checks its authentication information, then chooses to proxy this request or deny it directly.
 
@@ -71,7 +71,7 @@ When establishing one connection from Client to Server, in the **handshake** pha
 1. One WebSocket server as the Upstream server. In this article, let's use [Postman's Public Echo Service](https://blog.postman.com/introducing-postman-websocket-echo-service/): `wss://ws.postman-echo.com/raw`.
 2. APISIX 3.0 Installed.
 
-:::note
+:::tip
 
 APISIX 3.0 and APISIX 2.x are using different Admin API endpoint. Please check [APISIX 3.0 Deployment Modes](https://apisix.apache.org/docs/apisix/deployment-modes/).
 
