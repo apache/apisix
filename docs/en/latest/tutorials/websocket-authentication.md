@@ -27,9 +27,9 @@ description: This article guides you on how to configure authentication for WebS
 #
 -->
 
-Apache APISIX supports [WebSocket](https://en.wikipedia.org/wiki/WebSocket) traffic, but the WebSocket protocal doesn't handle authentication. This artical guides you on how to configure authentication for WebSocket connections.
+Apache APISIX supports [WebSocket](https://en.wikipedia.org/wiki/WebSocket) traffic, but the WebSocket protocol doesn't handle authentication. This article guides you on how to configure authentication for WebSocket connections.
 
-## WebSocket Protocal
+## WebSocket Protocol
 
 To establish a WebSocket connection, the client sends a WebSocket **handshake** request, for which the server returns a WebSocket handshake response, see below:
 
@@ -84,7 +84,7 @@ APISIX 3.0 and APISIX 2.x are using different Admin API endpoint. Please check [
 :::tip
 In this article, when using Apache APISIX 3.0:
 
-1. The Upstream server is using `wss` protocal, so we should set `scheme` as `https` in the `upstream` block.
+1. The Upstream server is using `wss` protocol, so we should set `scheme` as `https` in the `upstream` block.
 2. Set `enable_websocket` as `true`.
 :::
 
@@ -141,4 +141,3 @@ Other authentication methods are similar to this one.
 ## Reference
 
 1. [Wikipedia - WebSocket](https://en.wikipedia.org/wiki/WebSocket)
-
