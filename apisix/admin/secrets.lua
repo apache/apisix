@@ -50,12 +50,12 @@ local function check_conf(id, conf, need_id, typ)
     conf.id = id
 
     core.log.info("conf: ", core.json.delay_encode(conf))
-    local ok, kms_service = pcall(require, "apisix.kms." .. typ)
+    local ok, secret_manager = pcall(require, "apisix.secret." .. typ)
     if not ok then
-        return false, {error_msg = "invalid kms service: " .. typ}
+        return false, {error_msg = "invalid secret manager: " .. typ}
     end
 
-    local ok, err = core.schema.check(kms_service.schema, conf)
+    local ok, err = core.schema.check(secret_manager.schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end
@@ -78,7 +78,7 @@ end
 function _M.put(id, conf, sub_path)
     local typ, id = split_typ_and_id(id, sub_path)
     if not id then
-        return 400, {error_msg = "no kms id in uri"}
+        return 400, {error_msg = "no secret id in uri"}
     end
 
     local ok, err = check_conf(typ .. "/" .. id, conf, true, typ)
@@ -86,16 +86,16 @@ function _M.put(id, conf, sub_path)
         return 400, err
     end
 
-    local key = "/kms/" .. typ .. "/" .. id
+    local key = "/secrets/" .. typ .. "/" .. id
 
-    local ok, err = utils.inject_conf_with_prev_conf("kms", key, conf)
+    local ok, err = utils.inject_conf_with_prev_conf("secrets", key, conf)
     if not ok then
         return 503, {error_msg = err}
     end
 
     local res, err = core.etcd.set(key, conf)
     if not res then
-        core.log.error("failed to put kms [", key, "]: ", err)
+        core.log.error("failed to put secret [", key, "]: ", err)
         return 503, {error_msg = err}
     end
 
@@ -106,7 +106,7 @@ end
 function _M.get(id, conf, sub_path)
     local typ, id = split_typ_and_id(id, sub_path)
 
-    local key = "/kms/"
+    local key = "/secrets/"
     if id then
         key = key .. typ
         key = key .. "/" .. id
@@ -114,7 +114,7 @@ function _M.get(id, conf, sub_path)
 
     local res, err = core.etcd.get(key, not id)
     if not res then
-        core.log.error("failed to get kms [", key, "]: ", err)
+        core.log.error("failed to get secret [", key, "]: ", err)
         return 503, {error_msg = err}
     end
 
@@ -126,14 +126,14 @@ end
 function _M.delete(id, conf, sub_path)
     local typ, id = split_typ_and_id(id, sub_path)
     if not id then
-        return 400, {error_msg = "no kms id in uri"}
+        return 400, {error_msg = "no secret id in uri"}
     end
 
-    local key = "/kms/" .. typ .. "/" .. id
+    local key = "/secrets/" .. typ .. "/" .. id
 
     local res, err = core.etcd.delete(key)
     if not res then
-        core.log.error("failed to delete kms [", key, "]: ", err)
+        core.log.error("failed to delete secret [", key, "]: ", err)
         return 503, {error_msg = err}
     end
 
@@ -144,14 +144,14 @@ end
 function _M.patch(id, conf, sub_path)
     local uri_segs = core.utils.split_uri(sub_path)
     if #uri_segs < 2 then
-        return 400, {error_msg = "no kms id and/or sub path in uri"}
+        return 400, {error_msg = "no secret id and/or sub path in uri"}
     end
     local typ = id
     id = uri_segs[1]
     sub_path = core.table.concat(uri_segs, "/", 2)
 
     if not id then
-        return 400, {error_msg = "missing kms id"}
+        return 400, {error_msg = "missing secret id"}
     end
 
     if not conf then
@@ -164,10 +164,10 @@ function _M.patch(id, conf, sub_path)
         end
     end
 
-    local key = "/kms/" .. typ .. "/" .. id
+    local key = "/secrets/" .. typ .. "/" .. id
     local res_old, err = core.etcd.get(key)
     if not res_old then
-        core.log.error("failed to get kms [", key, "]: ", err)
+        core.log.error("failed to get secret [", key, "]: ", err)
         return 503, {error_msg = err}
     end
 
@@ -201,7 +201,7 @@ function _M.patch(id, conf, sub_path)
 
     local res, err = core.etcd.atomic_set(key, node_value, nil, modified_index)
     if not res then
-        core.log.error("failed to set new kms[", key, "]: ", err)
+        core.log.error("failed to set new secret[", key, "]: ", err)
         return 503, {error_msg = err}
     end
 
