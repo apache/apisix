@@ -97,6 +97,8 @@ Using mTLS is a way to verify clients cryptographically. It is useful and import
 
 ### How to configure
 
+We provide a [tutorial](./tutorials/client-to-apisix-mtls.md) that explains in detail how to configure mTLS between the client and APISIX.
+
 When configuring `ssl`, use parameter `client.ca` and `client.depth` to configure the root CA that signing client certificates and the max length of certificate chain. Please refer to [Admin API](./admin-api.md#ssl) for details.
 
 Here is an example Python script to create SSL with mTLS (id is `1`, changes admin API url if needed):
