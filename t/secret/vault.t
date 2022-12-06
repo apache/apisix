@@ -29,7 +29,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local vault = require("apisix.kms.vault")
+            local vault = require("apisix.secret.vault")
             local conf = {
                 prefix = "/kv/prefix",
                 token = "root",
@@ -54,7 +54,7 @@ error key format, key: apisix
 --- config
     location /t {
         content_by_lua_block {
-            local vault = require("apisix.kms.vault")
+            local vault = require("apisix.secret.vault")
             local conf = {
                 prefix = "/kv/prefix",
                 token = "root",
@@ -79,7 +79,7 @@ can't find main key, key: /apisix
 --- config
     location /t {
         content_by_lua_block {
-            local vault = require("apisix.kms.vault")
+            local vault = require("apisix.secret.vault")
             local conf = {
                 prefix = "/kv/prefix",
                 token = "root",
@@ -104,7 +104,7 @@ can't find sub key, key: apisix/
 --- config
     location /t {
         content_by_lua_block {
-            local vault = require("apisix.kms.vault")
+            local vault = require("apisix.secret.vault")
             local conf = {
                 prefix = "/kv/prefix",
                 token = "root",
@@ -138,7 +138,7 @@ Success! Data written to: kv/apisix/apisix-key/jack
 --- config
     location /t {
         content_by_lua_block {
-            local vault = require("apisix.kms.vault")
+            local vault = require("apisix.secret.vault")
             local conf = {
                 prefix = "kv/apisix",
                 token = "root",

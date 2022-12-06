@@ -578,7 +578,7 @@ auth: authone
 
 
 
-=== TEST 28: put kms vault config
+=== TEST 28: put secret vault config
 --- request
 GET /t
 --- config
@@ -586,7 +586,7 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local etcd = require("apisix.core.etcd")
-            local code, body = t('/apisix/admin/kms/vault/test1',
+            local code, body = t('/apisix/admin/secrets/vault/test1',
                 ngx.HTTP_PUT,
                 [[{
                     "uri": "http://127.0.0.1:8200",
@@ -599,7 +599,7 @@ GET /t
                         "prefix" : "kv/apisix",
                         "token" : "root"
                     },
-                    "key": "/apisix/kms/vault/test1"
+                    "key": "/apisix/secrets/vault/test1"
                 }]]
                 )
 
@@ -623,7 +623,7 @@ passed
                     "username": "jack",
                     "plugins": {
                         "key-auth": {
-                            "key": "$kms://vault/test1/jack/auth-key"
+                            "key": "$secret://vault/test1/jack/auth-key"
                         }
                     }
                 }]]
