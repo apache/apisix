@@ -22,7 +22,8 @@
         "tutorials/observe-your-api",
         "tutorials/manage-api-consumers",
         "tutorials/cache-api-responses",
-        "tutorials/health-check"
+        "tutorials/health-check",
+        "tutorials/websocket-authentication"
       ]
     },
     {
