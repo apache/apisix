@@ -16,6 +16,8 @@
 #
 use t::APISIX 'no_plan';
 
+worker_connections(256);
+
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -159,7 +161,7 @@ localhost is resolved to: 127.0.0.2
 === TEST 4: update balancer if the DNS result changed
 --- extra_init_by_lua
     local etcd = require("apisix.core.etcd")
-    etcd.switch_proxy = function ()
+    etcd.get_etcd_syncer = function ()
         return etcd.new()
     end
 

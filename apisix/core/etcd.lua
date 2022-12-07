@@ -74,7 +74,7 @@ local function _new(etcd_conf)
 
     if etcd_conf.use_grpc then
         -- TODO: let lua-resty-etcd support more use cases
-        if etcd.user or ngx_get_phase() == "init" or ngx_get_phase() == "init_worker" then
+        if etcd.user or ngx_get_phase() == "init" then
             etcd_conf.use_grpc = false
         else
             local ok = pcall(require, "resty.grpc")
@@ -108,24 +108,29 @@ local function new_without_proxy()
     end
 
     local etcd_conf = clone_tab(local_conf.etcd)
+
+    if local_conf.apisix.ssl and local_conf.apisix.ssl.ssl_trusted_certificate then
+        etcd_conf.trusted_ca = local_conf.apisix.ssl.ssl_trusted_certificate
+    end
+
     return _new(etcd_conf)
 end
 _M.new_without_proxy = new_without_proxy
 
 
-local function new(use_http)
+local function new()
     local local_conf, err = fetch_local_conf()
     if not local_conf then
         return nil, nil, err
     end
 
     local etcd_conf = clone_tab(local_conf.etcd)
-    if use_http then
-        etcd_conf.use_grpc = false
-    end
     if etcd_conf.use_grpc then
-        -- TODO: add grpc proxy support later
         return new_without_proxy()
+    end
+
+    if local_conf.apisix.ssl and local_conf.apisix.ssl.ssl_trusted_certificate then
+        etcd_conf.trusted_ca = local_conf.apisix.ssl.ssl_trusted_certificate
     end
 
     local proxy_by_conf_server = false
@@ -173,6 +178,10 @@ local function new(use_http)
                 etcd_conf.tls.key = cert_key
             end
         end
+
+        if local_conf.deployment.certs and local_conf.deployment.certs.trusted_ca_cert then
+            etcd_conf.trusted_ca = local_conf.deployment.certs.trusted_ca_cert
+        end
     end
 
     -- if an unhealthy etcd node is selected in a single admin read/write etcd operation,
@@ -193,13 +202,8 @@ end
 _M.new = new
 
 
--- TODO: add grpc proxy support later, then we can remove "use_http" scaffold
-local function switch_proxy(use_http)
-    if ngx_get_phase() == "init" or ngx_get_phase() == "init_worker" then
-        return new_without_proxy()
-    end
-
-    local etcd_cli, prefix, err = new(use_http)
+local function switch_proxy()
+    local etcd_cli, prefix, err = new()
     if not etcd_cli or err then
         return etcd_cli, prefix, err
     end
@@ -215,7 +219,7 @@ local function switch_proxy(use_http)
 
     return etcd_cli, prefix, err
 end
-_M.switch_proxy = switch_proxy
+_M.get_etcd_syncer = switch_proxy
 
 -- convert ETCD v3 entry to v2 one
 local function kvs_to_node(kvs)
@@ -329,8 +333,61 @@ function _M.watch_format(v3res)
 end
 
 
+local get_etcd_cli
+do
+    local prefix
+    local etcd_cli_init_phase
+    local etcd_cli
+    local tmp_etcd_cli
+
+    function get_etcd_cli()
+        local err
+        if ngx_get_phase() == "init" or ngx_get_phase() == "init_worker" then
+            if etcd_cli_init_phase == nil then
+                tmp_etcd_cli, prefix, err = new_without_proxy()
+                if not tmp_etcd_cli then
+                    return nil, nil, err
+                end
+
+                if tmp_etcd_cli.use_grpc then
+                    etcd_cli_init_phase = tmp_etcd_cli
+                end
+
+                return tmp_etcd_cli, prefix
+            end
+
+            return etcd_cli_init_phase, prefix
+        end
+
+        if etcd_cli_init_phase ~= nil then
+            -- we can't share the etcd instance created in init* phase
+            -- they have different configuration
+            etcd_cli_init_phase:close()
+            etcd_cli_init_phase = nil
+        end
+
+        if etcd_cli == nil then
+            tmp_etcd_cli, prefix, err = switch_proxy()
+            if not tmp_etcd_cli then
+                return nil, nil, err
+            end
+
+            if tmp_etcd_cli.use_grpc then
+                etcd_cli = tmp_etcd_cli
+            end
+
+            return tmp_etcd_cli, prefix
+        end
+
+        return etcd_cli, prefix
+    end
+end
+-- export it so we can mock the etcd cli in test
+_M.get_etcd_cli = get_etcd_cli
+
+
 function _M.get(key, is_dir)
-    local etcd_cli, prefix, err = switch_proxy()
+    local etcd_cli, prefix, err = get_etcd_cli()
     if not etcd_cli then
         return nil, err
     end
@@ -349,7 +406,7 @@ end
 
 
 local function set(key, value, ttl)
-    local etcd_cli, prefix, err = switch_proxy()
+    local etcd_cli, prefix, err = get_etcd_cli()
     if not etcd_cli then
         return nil, err
     end
@@ -361,7 +418,12 @@ local function set(key, value, ttl)
         if not data then
             return nil, grant_err
         end
+
         res, err = etcd_cli:set(prefix .. key, value, {prev_kv = true, lease = data.body.ID})
+        if not res then
+            return nil, err
+        end
+
         res.body.lease_id = data.body.ID
     else
         res, err = etcd_cli:set(prefix .. key, value, {prev_kv = true})
@@ -393,7 +455,7 @@ _M.set = set
 
 
 function _M.atomic_set(key, value, ttl, mod_revision)
-    local etcd_cli, prefix, err = switch_proxy()
+    local etcd_cli, prefix, err = get_etcd_cli()
     if not etcd_cli then
         return nil, err
     end
@@ -452,7 +514,7 @@ end
 
 
 function _M.push(key, value, ttl)
-    local etcd_cli, _, err = switch_proxy()
+    local etcd_cli, _, err = get_etcd_cli()
     if not etcd_cli then
         return nil, err
     end
@@ -484,7 +546,7 @@ end
 
 
 function _M.delete(key)
-    local etcd_cli, prefix, err = switch_proxy()
+    local etcd_cli, prefix, err = get_etcd_cli()
     if not etcd_cli then
         return nil, err
     end
@@ -522,7 +584,7 @@ end
 -- --   etcdserver = "3.5.0"
 -- -- }
 function _M.server_version()
-    local etcd_cli, _, err = switch_proxy()
+    local etcd_cli, _, err = get_etcd_cli()
     if not etcd_cli then
         return nil, err
     end
@@ -532,7 +594,7 @@ end
 
 
 function _M.keepalive(id)
-    local etcd_cli, _, err = switch_proxy()
+    local etcd_cli, _, err = get_etcd_cli()
     if not etcd_cli then
         return nil, err
     end
