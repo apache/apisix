@@ -259,15 +259,10 @@ Please modify "admin_key" in conf/config.yaml .
         util.die("openresty version must >=", need_ver, " current ", or_ver, "\n")
     end
 
-    local or_info = util.execute_cmd("openresty -V 2>&1")
-    if or_info and not or_info:find("http_stub_status_module", 1, true) then
+    local or_info = env.openresty_info
+    if not or_info:find("http_stub_status_module", 1, true) then
         util.die("'http_stub_status_module' module is missing in ",
                  "your openresty, please check it out.\n")
-    end
-
-    local use_apisix_openresty = true
-    if or_info and not or_info:find("apisix-nginx-module", 1, true) then
-        use_apisix_openresty = false
     end
 
     local enable_http = true
@@ -543,7 +538,7 @@ Please modify "admin_key" in conf/config.yaml .
         os_name = util.trim(util.execute_cmd("uname")),
         apisix_lua_home = env.apisix_home,
         deployment_role = env.deployment_role,
-        use_apisix_openresty = use_apisix_openresty,
+        use_apisix_base = env.use_apisix_base,
         error_log = {level = "warn"},
         enable_http = enable_http,
         enabled_discoveries = enabled_discoveries,

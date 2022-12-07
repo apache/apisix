@@ -18,6 +18,7 @@ use t::APISIX 'no_plan';
 
 workers(4);
 log_level('info');
+worker_connections(256);
 repeat_each(1);
 no_long_string();
 no_root_location();

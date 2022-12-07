@@ -32,6 +32,30 @@ no_root_location();
 no_shuffle();
 worker_connections(256);
 
+# the healthcheck stop test requires exiting worker to keep watching etcd for a while,
+# which is not the case when using gRPC.
+my $yaml_config = <<_EOC_;
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    prefix: "/apisix"
+    host:
+      - "http://127.0.0.1:2379"
+    use_grpc: false
+  admin:
+    admin_key: null
+_EOC_
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->yaml_config) {
+        $block->set_value("yaml_config", $yaml_config);
+    }
+});
+
 run_tests();
 
 __DATA__
@@ -141,6 +165,15 @@ create new checker: table: 0x
         content_by_lua_block {
             local t = require("lib.test_admin").test
 
+            -- release the clean handler of previous test
+            local code, _, body = t('/apisix/admin/routes/1', "DELETE")
+
+            if code > 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
             local code, _, body = t('/apisix/admin/upstreams/stopchecker',
                 "PUT",
                 [[{"type":"roundrobin","nodes":{"127.0.0.1:1980":1,"127.0.0.1:1981":1},"checks":{"active":{"http_path":"/status","healthy":{"interval":1,"successes":1},"unhealthy":{"interval":1,"http_failures":2}}}}]]
@@ -152,7 +185,6 @@ create new checker: table: 0x
                 return
             end
 
-            -- release the clean handler of previous test
             local code, _, body = t('/apisix/admin/routes/1',
                 "PUT",
                 [[{"uri":"/server_port","upstream_id":"stopchecker"}]]
