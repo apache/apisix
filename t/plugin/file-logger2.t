@@ -92,7 +92,7 @@ __DATA__
             local new_msg = core.json.decode(msg)
             ngx.status = code
 
-            if new_msg.response ~=nil and new_msg.response.body == "hello world\n"
+            if new_msg.response ~= nil and new_msg.response.body == "hello world\n"
             then
                 ngx.status = code
                 ngx.say('contain with target')
@@ -165,7 +165,7 @@ contain with target
             local new_msg = core.json.decode(msg)
             ngx.status = code
 
-            if new_msg.response ~=nil and new_msg.response.body == "hello world\n"
+            if new_msg.response ~= nil and new_msg.response.body == "hello world\n"
             then
                 ngx.status = code
                 ngx.say('contain target body hits with expr')

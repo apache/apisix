@@ -31,7 +31,6 @@ local schema = {
         path = {
             type = "string"
         },
-        include_req_body = {type = "boolean", default = false},
         include_resp_body = {type = "boolean", default = false},
         include_resp_body_expr = {
             type = "array",
