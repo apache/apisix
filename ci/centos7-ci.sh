@@ -55,7 +55,7 @@ install_dependencies() {
 
     CGO_ENABLED=0 go build
     ./grpc_server_example \
-        -grpc-address :50051 -grpcs-address :50052 -grpcs-mtls-address :50053 \
+        -grpc-address :50051 -grpcs-address :50052 -grpcs-mtls-address :50053 -grpc-http-address :50054 \
         -crt ../certs/apisix.crt -key ../certs/apisix.key -ca ../certs/mtls_ca.crt \
         > grpc_server_example.log 2>&1 || (cat grpc_server_example.log && exit 1)&
 
