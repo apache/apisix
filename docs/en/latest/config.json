@@ -267,6 +267,7 @@
           "items": [
             "discovery",
             "discovery/dns",
+            "discovery/consul",
             "discovery/consul_kv",
             "discovery/nacos",
             "discovery/eureka",
