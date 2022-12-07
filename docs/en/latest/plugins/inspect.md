@@ -81,8 +81,8 @@ The `info` is a hash table which contains below keys:
 
 | Name               | Type    | Required | Default | Description                                                                                    |
 |--------------------|---------|----------|---------|------------------------------------------------------------------------------------------------|
-| delay           | integer | False     | 3 | Time in seconds specifying how often to rotate the check the hooks file.                                       |
-| hooks_file           | string | False     | "/var/run/apisix_inspect_hooks.lua"  | lua file to define hooks. |
+| delay           | integer | False     | 3 | Time in seconds specifying how often to check the hooks file.                                       |
+| hooks_file           | string | False     | "/var/run/apisix_inspect_hooks.lua"  | lua file to define hooks, which could be a link file. |
 
 ## Enabling the Plugin
 
@@ -97,10 +97,6 @@ plugin_attr:
     delay: 3
     hooks_file: "/var/run/apisix_inspect_hooks.lua"
 ```
-
-## Configuration description
-
-TODO.
 
 ## Example usage
 
@@ -128,7 +124,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/test_limit_req -H 'X-API-KEY: edd
 }'
 
 # create a hooks file to set a test breakpoint
-# Note that the breakpint is associated with the line number,
+# Note that the breakpoint is associated with the line number,
 # so if the lua code changes, you need to adjust the line number in the hooks file
 cat <<EOF >/tmp/hooks.lua
 local dbg = require "resty.inspect.dbg"
@@ -167,9 +163,9 @@ stack traceback:
 
 ## Disable plugin
 
-To remove the `log-rotate` Plugin, you can remove it from your configuration file (`conf/config.yaml`):
+To remove the `inspect` Plugin, you can remove it from your configuration file (`conf/config.yaml`):
 
 ```yaml title="conf/config.yaml"
 plugins:
-    # - log-rotate
+    # - inspect
 ```
