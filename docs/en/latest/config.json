@@ -23,6 +23,7 @@
         "tutorials/manage-api-consumers",
         "tutorials/cache-api-responses",
         "tutorials/health-check",
+        "tutorials/client-to-apisix-mtls",
         "tutorials/websocket-authentication"
       ]
     },
@@ -41,7 +42,7 @@
         "terminology/script",
         "terminology/service",
         "terminology/upstream",
-        "terminology/kms"
+        "terminology/secret"
       ]
     },
     {

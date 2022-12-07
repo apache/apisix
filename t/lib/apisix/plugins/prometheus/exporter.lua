@@ -14,32 +14,26 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-return {
-    RPC_ERROR = 0,
-    RPC_PREPARE_CONF = 1,
-    RPC_HTTP_REQ_CALL = 2,
-    RPC_EXTRA_INFO = 3,
-    RPC_HTTP_RESP_CALL = 4,
-    HTTP_ETCD_DIRECTORY = {
-        ["/upstreams"] = true,
-        ["/plugins"] = true,
-        ["/ssls"] = true,
-        ["/stream_routes"] = true,
-        ["/plugin_metadata"] = true,
-        ["/routes"] = true,
-        ["/services"] = true,
-        ["/consumers"] = true,
-        ["/global_rules"] = true,
-        ["/protos"] = true,
-        ["/plugin_configs"] = true,
-        ["/consumer_groups"] = true,
-        ["/secrets"] = true,
-    },
-    STREAM_ETCD_DIRECTORY = {
-        ["/upstreams"] = true,
-        ["/plugins"] = true,
-        ["/ssls"] = true,
-        ["/stream_routes"] = true,
-        ["/plugin_metadata"] = true,
-    },
-}
+
+local core = require("apisix.core")
+local _M = {}
+
+
+function _M.http_init()
+    return true
+end
+
+
+function _M.stream_init()
+    return true
+end
+
+
+function _M.export_metrics()
+    local process_type = require("ngx.process").type()
+    core.log.info("process type: ", process_type)
+    return core.response.exit(200)
+end
+
+
+return _M

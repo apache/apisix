@@ -1,5 +1,5 @@
 ---
-title: KMS
+title: Secret
 ---
 
 <!--
@@ -23,28 +23,28 @@ title: KMS
 
 ## 描述
 
-Secrets 是指 APISIX 运行过程中所需的任何敏感信息，它可能是核心配置的一部分（如 etcd 的密码），也可能是插件中的一些敏感信息。APISIX 中常见的 Secrets 类型包括：
+密钥是指 APISIX 运行过程中所需的任何敏感信息，它可能是核心配置的一部分（如 etcd 的密码），也可能是插件中的一些敏感信息。APISIX 中常见的密钥类型包括：
 
 - 一些组件（etcd、Redis、Kafka 等）的用户名、密码
 - 证书的私钥
 - API 密钥
 - 敏感的插件配置字段，通常用于身份验证、hash、签名或加密
 
-KMS 允许用户在 APISIX 中通过一些密钥管理服务（Vault 等）来存储 Secrets，在使用的时候根据 key 进行读取，确保 Secrets 在整个平台中不以明文的形式存在。
+APISIX Secret 允许用户在 APISIX 中通过一些密钥管理服务（Vault 等）来存储密钥，在使用的时候根据 key 进行读取，确保密钥在整个平台中不以明文的形式存在。
 
 其工作原理如图所示：
-![kms](../../../assets/images/kms.png)
+![secret](../../../assets/images/secret.png)
 
 APISIX 目前支持通过以下方式存储密钥：
 
 - [环境变量](#使用环境变量管理密钥)
 - [HashiCorp Vault](#使用-vault-管理密钥)
 
-你可以在以下插件的 consumer 配置中通过指定格式的变量来使用 KMS 功能，比如 `key-auth` 插件。
+你可以在以下插件的 consumer 配置中通过指定格式的变量来使用 APISIX Secret 功能，比如 `key-auth` 插件。
 
 ::: note
 
-如果某个配置项为：`key: "$ENV://ABC"`，当 KMS 中没有检索到 $ENV://ABC 对应的真实值，那么 key 的值将是 "$ENV://ABC" 而不是 `nil`。
+如果某个配置项为：`key: "$ENV://ABC"`，当 APISIX Secret 中没有检索到 $ENV://ABC 对应的真实值，那么 key 的值将是 "$ENV://ABC" 而不是 `nil`。
 
 :::
 
@@ -121,12 +121,12 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 ### 引用方式
 
 ```
-$KMS://$secretmanager/$id/$secret_id/$key
+$secret://$manager/$id/$secret_name/$key
 ```
 
-- secretmanager: 密钥管理服务，可以是 Vault、AWS 等
-- id：KMS 资源 ID， 需要与添加 KMS 资源时指定的 ID 保持一致
-- secret_id: 密钥管理服务中的密钥 ID
+- manager: 密钥管理服务，可以是 Vault、AWS 等
+- APISIX Secret 资源 ID， 需要与添加 APISIX Secret 资源时指定的 ID 保持一致
+- secret_name: 密钥管理服务中的密钥名称
 - key： 密钥管理服务中密钥对应的 key
 
 ### 示例：在 key-auth 插件中使用
@@ -137,10 +137,10 @@ $KMS://$secretmanager/$id/$secret_id/$key
 vault kv put apisix/jack auth-key=value
 ```
 
-第二步：通过 Admin API 添加 KMS 资源，配置 Vault 的地址等连接信息：
+第二步：通过 Admin API 添加 Secret 资源，配置 Vault 的地址等连接信息：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/kms/vault/1 \
+curl http://127.0.0.1:9180/apisix/admin/secrets/vault/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "https://127.0.0.1:8200"，
@@ -152,14 +152,14 @@ curl http://127.0.0.1:9180/apisix/admin/kms/vault/1 \
 如果使用 APISIX Standalone 版本，则可以在 `apisix.yaml`  文件中添加如下配置：
 
 ```yaml
-kms:
+secrets:
   - id: vault/1
     prefix: apisix
     token: root
     uri: 127.0.0.1:8200
 ```
 
-第三步：在 `key-auth` 插件中引用 KMS 资源，填充秘钥信息：
+第三步：在 `key-auth` 插件中引用 APISIX Secret 资源，填充秘钥信息：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers \
@@ -168,10 +168,10 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
     "username": "jack",
     "plugins": {
         "key-auth": {
-            "key": "$KMS://vault/1/jack/auth-key"
+            "key": "$secret://vault/1/jack/auth-key"
         }
     }
 }'
 ```
 
-通过上面两步操作，当用户请求命中 `key-auth` 插件时，会通过 KMS 组件获取到 key 在 Vault 中的真实值。
+通过上面两步操作，当用户请求命中 `key-auth` 插件时，会通过 APISIX Secret 组件获取到 key 在 Vault 中的真实值。

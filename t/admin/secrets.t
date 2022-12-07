@@ -40,7 +40,7 @@ __DATA__
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local etcd = require("apisix.core.etcd")
-            local code, body = t('/apisix/admin/kms/vault/test1',
+            local code, body = t('/apisix/admin/secrets/vault/test1',
                 ngx.HTTP_PUT,
                 [[{
                     "uri": "http://127.0.0.1:12800/get",
@@ -53,14 +53,14 @@ __DATA__
                         "prefix" : "apisix",
                         "token" : "apisix"
                     },
-                    "key": "/apisix/kms/vault/test1"
+                    "key": "/apisix/secrets/vault/test1"
                 }]]
                 )
 
             ngx.status = code
             ngx.say(body)
 
-            local res = assert(etcd.get('/kms/vault/test1'))
+            local res = assert(etcd.get('/secrets/vault/test1'))
             local create_time = res.body.node.value.create_time
             assert(create_time ~= nil, "create_time is nil")
             local update_time = res.body.node.value.update_time
@@ -77,7 +77,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/kms/vault/test1',
+            local code, body = t('/apisix/admin/secrets/vault/test1',
                 ngx.HTTP_GET,
                 nil,
                 [[{
@@ -86,7 +86,7 @@ passed
                         "prefix" : "apisix",
                         "token" : "apisix"
                     },
-                    "key": "/apisix/kms/vault/test1"
+                    "key": "/apisix/secrets/vault/test1"
                 }]]
                 )
 
@@ -104,14 +104,14 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/kms',
+            local code, body = t('/apisix/admin/secrets',
                 ngx.HTTP_GET,
                 nil,
                 [[{
                     "total": 1,
                     "list": [
                         {
-                            "key": "/apisix/kms/vault/test1",
+                            "key": "/apisix/secrets/vault/test1",
                             "value": {
                                 "uri": "http://127.0.0.1:12800/get",
                                 "prefix" : "apisix",
@@ -137,14 +137,14 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local etcd = require("apisix.core.etcd")
-            local res = assert(etcd.get('/kms/vault/test1'))
+            local res = assert(etcd.get('/secrets/vault/test1'))
             local prev_create_time = res.body.node.value.create_time
             assert(prev_create_time ~= nil, "create_time is nil")
             local prev_update_time = res.body.node.value.update_time
             assert(prev_update_time ~= nil, "update_time is nil")
             ngx.sleep(1)
 
-            local code, body = t('/apisix/admin/kms/vault/test1/token',
+            local code, body = t('/apisix/admin/secrets/vault/test1/token',
                 ngx.HTTP_PATCH,
                 [["unknown"]],
                 [[{
@@ -153,14 +153,14 @@ passed
                         "prefix" : "apisix",
                         "token" : "unknown"
                     },
-                    "key": "/apisix/kms/vault/test1"
+                    "key": "/apisix/secrets/vault/test1"
                 }]]
                 )
 
             ngx.status = code
             ngx.say(body)
 
-            local res = assert(etcd.get('/kms/vault/test1'))
+            local res = assert(etcd.get('/secrets/vault/test1'))
             assert(res.body.node.value.token == "unknown")
         }
     }
@@ -174,7 +174,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/kms/vault/test1',
+            local code, body = t('/apisix/admin/secrets/vault/test1',
                  ngx.HTTP_DELETE
             )
             ngx.say(body)
@@ -191,7 +191,7 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local etcd = require("apisix.core.etcd")
-            local code, body = t('/apisix/admin/kms/vault/test1',
+            local code, body = t('/apisix/admin/secrets/vault/test1',
                 ngx.HTTP_PUT,
                 [[{
                     "uri": "/get",
@@ -204,7 +204,7 @@ passed
                         "prefix" : "apisix",
                         "token" : "apisix"
                     },
-                    "key": "/apisix/kms/vault/test1"
+                    "key": "/apisix/secrets/vault/test1"
                 }]]
                 )
 
