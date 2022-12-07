@@ -102,6 +102,9 @@ curl --location --request PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
             "ws.postman-echo.com:443": 1
         },
         "scheme": "https"
+    },
+    "plugins": {
+        "key-auth": {}
     }
 }'
 ```
