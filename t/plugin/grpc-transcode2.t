@@ -565,8 +565,9 @@ qr/request log: \{.*body":\"\{\\"result\\":3}/
     local pb = require("pb")
     local old_f = pb.option
     pb.option = function(o)
-        if o ~= "int64_as_string" then
-            -- filter out options set by other components
+        if o ~= "int64_as_string" and o ~= "int64_as_number" then
+            -- filter out options set by other components.
+            -- we can still test some options like enum_as_name
             ngx.log(ngx.WARN, "set protobuf option: ", o)
         end
         return old_f(o)
@@ -675,7 +676,6 @@ set protobuf option: enum_as_name
 set protobuf option: auto_default_values
 set protobuf option: disable_hooks
 set protobuf option: enum_as_name
-set protobuf option: int64_as_number
 set protobuf option: enum_as_name
 
 
@@ -685,8 +685,9 @@ set protobuf option: enum_as_name
     local pb = require("pb")
     local old_f = pb.option
     pb.option = function(o)
-        if o ~= "int64_as_string" then
+        if o ~= "int64_as_string" and o ~= "int64_as_number" then
             -- filter out options set by other components
+            -- we can still test some options like enum_as_name
             ngx.log(ngx.WARN, "set protobuf option: ", o)
         end
         return old_f(o)
@@ -793,4 +794,3 @@ qr/set protobuf option: \w+/
 set protobuf option: auto_default_values
 set protobuf option: disable_hooks
 set protobuf option: enum_as_name
-set protobuf option: int64_as_number

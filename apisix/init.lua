@@ -894,14 +894,18 @@ function _M.stream_init_worker()
     -- for testing only
     core.log.info("random stream test in [1, 10000]: ", math.random(1, 10000))
 
+    if core.config.init_worker then
+        local ok, err = core.config.init_worker()
+        if not ok then
+            core.log.error("failed to init worker process of ", core.config.type,
+                           " config center, err: ", err)
+        end
+    end
+
     plugin.init_worker()
     xrpc.init_worker()
     router.stream_init_worker()
     apisix_upstream.init_worker()
-
-    if core.config == require("apisix.core.config_yaml") then
-        core.config.init_worker()
-    end
 
     load_balancer = require("apisix.balancer")
 
