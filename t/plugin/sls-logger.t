@@ -243,7 +243,22 @@ hello world
 
 
 
-=== TEST 10: data encryption for access_key_secret
+=== TEST 10: delete exist routes
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- delete exist consumers
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: data encryption for access_key_secret
 --- yaml_config
 apisix:
     data_encryption:
