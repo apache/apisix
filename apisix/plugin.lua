@@ -658,7 +658,7 @@ function _M.merge_consumer_route(route_conf, consumer_conf, api_ctx)
 
     local flag = route_conf.value.id .. "#" .. route_conf.modifiedIndex
                  .. "#" .. consumer_conf.id .. "#" .. consumer_conf.modifiedIndex
-    local new_conf = merged_route(flag, nil,
+    local new_conf = merged_route(flag, api_ctx.conf_version,
                         merge_consumer_route, route_conf, consumer_conf)
 
     api_ctx.conf_type = api_ctx.conf_type .. "&consumer"
