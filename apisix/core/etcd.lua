@@ -73,8 +73,7 @@ local function _new(etcd_conf)
     end
 
     if etcd_conf.use_grpc then
-        -- TODO: let lua-resty-etcd support more use cases
-        if etcd.user or ngx_get_phase() == "init" then
+        if ngx_get_phase() == "init" then
             etcd_conf.use_grpc = false
         else
             local ok = pcall(require, "resty.grpc")

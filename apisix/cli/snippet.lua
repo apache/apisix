@@ -104,10 +104,6 @@ server {
 
 local function is_grpc_used(env, etcd)
     local is_grpc_available = env.use_apisix_base
-    if etcd.user then
-        -- TODO: support user/password
-        is_grpc_available = false
-    end
     return is_grpc_available and etcd.use_grpc
 end
 
