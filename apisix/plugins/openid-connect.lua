@@ -124,6 +124,7 @@ local schema = {
             default = false
         }
     },
+    encrypt_fields = {"client_secret"},
     required = {"client_id", "client_secret", "discovery"}
 }
 
