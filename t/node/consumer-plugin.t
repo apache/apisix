@@ -385,3 +385,117 @@ GET /t
 passed
 --- error_log
 find consumer John_Doe
+
+
+
+=== TEST 12: the plugins bound on the service should use the latest configuration
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username":"jack",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "auth-jack"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {
+                            "header": "Authorization"
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/hello1"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": [
+                        "GET"
+                    ],
+                    "uri": "/hello",
+                    "service_id": "1",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            local headers = {
+                ["Authorization"] = "auth-jack"
+            }
+            local res, err = httpc:request_uri(uri, {headers = headers})
+            assert(res.status == 200)
+            if not res then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.print(res.body)
+
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "key-auth": {
+                            "header": "Authorization"
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/server_port"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            local res, err = httpc:request_uri(uri, {headers = headers})
+            assert(res.status == 200)
+            if not res then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.say(res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+hello1 world
+1980
