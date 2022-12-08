@@ -17,7 +17,7 @@
 local core = require("apisix.core")
 local dbg = require("apisix.inspect.dbg")
 local lfs = require("lfs")
-local cjson = require("cjson")
+local pl_path = require("pl.path")
 local io = io
 local table_insert = table.insert
 local pcall = pcall
@@ -38,16 +38,6 @@ local last_report_time = 0
 
 local REPORT_INTERVAL = 30 -- secs
 
-local function is_file_exists(file)
-   local f = io.open(file, "r")
-   if f then
-       io.close(f)
-       return true
-   else
-       return false
-   end
-end
-
 local function run_lua_file(file)
     local f, err = io.open(file, "rb")
     if not f then
@@ -55,6 +45,9 @@ local function run_lua_file(file)
     end
     local code = f:read("*all")
     f:close()
+    if code == nil then
+        return false, "cannot read hooks file"
+    end
     local func, err = loadstring(code)
     if not func then
         return false, err
@@ -64,14 +57,14 @@ local function run_lua_file(file)
 end
 
 local function setup_hooks(file)
-    if is_file_exists(file) then
+    if pl_path.exists(file) then
         dbg.unset_all()
         local _, err = pcall(run_lua_file, file)
         local hooks = {}
         for _, hook in ipairs(dbg.hooks()) do
             table_insert(hooks, hook.key)
         end
-        core.log.info("set hooks: err=", err, ", hooks=", cjson.encode(hooks))
+        core.log.info("set hooks: err=", err, ", hooks=", core.json.encode(hooks))
     end
 end
 
@@ -99,7 +92,7 @@ local function reload_hooks(premature, delay, file)
             for _, hook in ipairs(dbg.hooks()) do
                 table_insert(hooks, hook.key)
             end
-            core.log.info("alive hooks: ", cjson.encode(hooks))
+            core.log.info("alive hooks: ", core.json.encode(hooks))
             last_report_time = ts
         end
     end
