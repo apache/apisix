@@ -50,7 +50,7 @@ function _M.init()
         delay = attr.delay
         hooks_file = attr.hooks_file
     end
-    ngx.log(ngx.INFO, "delay=", delay, ", hooks_file=", hooks_file)
+    core.log.info("delay=", delay, ", hooks_file=", hooks_file)
     return inspect.init(delay, hooks_file)
 end
 
