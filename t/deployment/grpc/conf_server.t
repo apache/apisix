@@ -214,7 +214,6 @@ Receive SNI: x.com
 
 
 === TEST 5: ipv6
---- ONLY
 --- config
     location /t {
         content_by_lua_block {

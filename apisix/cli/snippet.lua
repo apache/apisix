@@ -36,7 +36,11 @@ lua_ssl_trusted_certificate {* trusted_ca_cert *};
 
 server {
     {% if control_plane then %}
+    {% if directive_prefix == "grpc" then %}
+    listen {* control_plane.listen *} ssl http2;
+    {% else %}
     listen {* control_plane.listen *} ssl;
+    {% end %}
     ssl_certificate {* control_plane.cert *};
     ssl_certificate_key {* control_plane.cert_key *};
 
@@ -46,7 +50,11 @@ server {
     {% end %}
 
     {% else %}
+    {% if directive_prefix == "grpc" then %}
+    listen unix:{* home *}/conf/config_listen.sock http2;
+    {% else %}
     listen unix:{* home *}/conf/config_listen.sock;
+    {% end %}
     {% end %}
 
     access_log off;
