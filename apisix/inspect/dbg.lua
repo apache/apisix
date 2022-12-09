@@ -74,10 +74,8 @@ local function hook(evt, arg)
             local r1, r2_or_err = pcall(filter_func, info)
             if not r1 then
                 core.log.error("inspect: pcall filter_func:", r2_or_err)
-            end
-
-            -- if filter_func returns false, keep the hook
-            if r1 and r2_or_err == false then
+            elseif r2_or_err == false then
+                -- if filter_func returns false, keep the hook
                 table_insert(hooks2, hook)
             end
         else
