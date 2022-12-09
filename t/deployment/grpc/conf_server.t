@@ -163,3 +163,74 @@ deployment:
             verify: false
 --- error_log
 Receive SNI: localhost
+
+
+
+=== TEST 4: check configured SNI
+--- http_config
+server {
+    listen 12345 http2 ssl;
+    ssl_certificate             cert/apisix.crt;
+    ssl_certificate_key         cert/apisix.key;
+
+    ssl_certificate_by_lua_block {
+        local ngx_ssl = require "ngx.ssl"
+        ngx.log(ngx.WARN, "Receive SNI: ", ngx_ssl.server_name())
+    }
+
+    location / {
+        grpc_pass grpc://127.0.0.1:2379;
+    }
+}
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/apisix/test", "foo"))
+            local res = assert(etcd.get("/apisix/test"))
+            ngx.say(res.body.node.value)
+        }
+    }
+--- response_body
+foo
+--- yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    etcd:
+        use_grpc: true
+        prefix: "/apisix"
+        host:
+            - https://127.0.0.1:12379
+            - https://127.0.0.1:12345
+        timeout: 1
+        tls:
+            verify: false
+            sni: "x.com"
+--- error_log
+Receive SNI: x.com
+
+
+
+=== TEST 5: ipv6
+--- ONLY
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/apisix/test", "foo"))
+            local res = assert(etcd.get("/apisix/test"))
+            ngx.say(res.body.node.value)
+        }
+    }
+--- yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    etcd:
+        use_grpc: true
+        prefix: "/apisix"
+        host:
+            - http://[::1]:2379
