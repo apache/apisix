@@ -17,7 +17,6 @@
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local inspect = require("apisix.inspect")
-local ngx = ngx
 
 
 local plugin_name = "inspect"
