@@ -85,8 +85,8 @@ script() {
         sleep 1
     done
 
-    #git clone https://github.com/spacewander/lua-resty-etcd.git -b f1 --depth 1
-    git clone https://github.com/api7/lua-resty-etcd.git --depth 1
+    git clone https://github.com/spacewander/lua-resty-etcd.git -b f2 --depth 1
+    #git clone https://github.com/api7/lua-resty-etcd.git --depth 1
     cp lua-resty-etcd/lib/resty/etcd/*.lua deps/share/lua/5.1/resty/etcd/
     # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
     FLUSH_ETCD=1 prove --timer -Itest-nginx/lib -I./ -r $TEST_FILE_SUB_DIR | tee /tmp/test.result
