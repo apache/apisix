@@ -48,6 +48,8 @@ description: API 网关 Apache APISIX file-logger 插件可用于将日志数据
 | 名称             | 类型     | 必选项 | 描述                                             |
 | ---------------- | ------- | ------ | ------------------------------------------------ |
 | path             | string  | 是     | 自定义输出文件路径。例如：`logs/file.log`。        |
+| include_resp_body      | boolean | 否     | 当设置为 `true` 时，生成的文件包含响应体。                                                                                               |
+| include_resp_body_expr | array   | 否     | 当 `include_resp_body` 属性设置为 `true` 时，使用该属性并基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 进行过滤。 如果存在，则仅在表达式计算结果为 `true` 时记录响应。       |
 
 ## 插件元数据设置
 
