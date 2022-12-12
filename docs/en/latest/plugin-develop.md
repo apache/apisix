@@ -309,7 +309,7 @@ If it is a nested parameter, such as the `clickhouse.password` parameter of the 
 encrypt_fields = {"clickhouse.password"}
 ```
 
-Currently not supporte yet:
+Currently not supported yet:
 
 1. more than two levels of nesting
 2. fields in arrays
