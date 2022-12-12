@@ -164,7 +164,7 @@ if grep -E 'dns client error: 101 empty record received while prereading client 
     exit 1
 fi
 
-if ! grep -E 'dns resolver domain: sd.test.local to 127.0.0.2 while prereading client data' logs/error.log; then
+if ! grep -E 'dns resolver domain: sd.test.local to 127.0.0.(1|2) while prereading client data' logs/error.log; then
     echo "failed: resolve upstream host in preread phase should works fine"
     exit 1
 fi
