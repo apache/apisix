@@ -61,6 +61,8 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 | session                              | object  | 否     |                       |               | 当设置 bearer_only 为 false 时，openid-connect 插件将使用 Authorization Code 在 IDP 上进行认证，因此你必须设置 session 相关设置。 |
 | session.secret                       | string  | 是     | 自动生成               | 16 个以上字符  | 用于 session 加密和 HMAC 计算的密钥。 |
 
+NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 ## 使用场景
 
 :::tip

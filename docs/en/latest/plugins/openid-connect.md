@@ -61,6 +61,8 @@ description: OpenID Connect allows the client to obtain user information from th
 | session                              | object  | False    |                       |              | When bearer_only is set to false, openid-connect will use Authorization Code flow to authenticate on the IDP, so you need to set the session-related configuration. |
 | session.secret                       | string  | True     | Automatic generation  | 16 or more characters | The key used for session encrypt and HMAC operation. |
 
+注意：schema 中还定义了 `encrypt_fields = {"client_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
+
 ## Scenarios
 
 :::tip
