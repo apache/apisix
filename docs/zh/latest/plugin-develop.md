@@ -283,11 +283,13 @@ end
 encrypt_fields = {"password"}
 ```
 
-如果是嵌套的参数，比如 `error-log-logger` 插件的 `password` 参数，需要用 `.` 来分隔：
+如果是嵌套的参数，比如 `error-log-logger` 插件的 `clickhouse.password` 参数，需要用 `.` 来分隔：
 
 ```lua
 encrypt_fields = {"clickhouse.password"}
 ```
+
+目前只支持两层嵌套。
 
 通过在 `schema` 中指定 `encrypt_fields = {"password"}`，可以将参数加密存储。APISIX 将提供以下功能：
 

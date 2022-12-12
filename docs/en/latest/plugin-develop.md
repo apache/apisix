@@ -303,11 +303,13 @@ Some plugins require parameters to be stored encrypted, such as the `password` p
 encrypt_fields = {"password"}
 ```
 
-If it is a nested parameter, such as the `password` parameter of the `error-log-logger` plugin, it needs to be separated by `.`:
+If it is a nested parameter, such as the `clickhouse.password` parameter of the `error-log-logger` plugin, it needs to be separated by `.`:
 
 ```lua
 encrypt_fields = {"clickhouse.password"}
 ```
+
+Currently only two levels of nesting are supported.
 
 Parameters can be stored encrypted by specifying `encrypt_fields = {"password"}` in the `schema`. APISIX will provide the following functionality.
 
