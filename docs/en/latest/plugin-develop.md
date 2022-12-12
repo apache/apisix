@@ -309,7 +309,10 @@ If it is a nested parameter, such as the `clickhouse.password` parameter of the 
 encrypt_fields = {"clickhouse.password"}
 ```
 
-Currently only two levels of nesting are supported.
+Currently not supporte yet:
+
+1. more than two levels of nesting
+2. fields in arrays
 
 Parameters can be stored encrypted by specifying `encrypt_fields = {"password"}` in the `schema`. APISIX will provide the following functionality.
 

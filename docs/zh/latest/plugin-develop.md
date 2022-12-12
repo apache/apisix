@@ -289,7 +289,10 @@ encrypt_fields = {"password"}
 encrypt_fields = {"clickhouse.password"}
 ```
 
-目前只支持两层嵌套。
+目前还不支持：
+
+1. 两层以上的嵌套
+2. 数组中的字段
 
 通过在 `schema` 中指定 `encrypt_fields = {"password"}`，可以将参数加密存储。APISIX 将提供以下功能：
 

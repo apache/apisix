@@ -887,7 +887,7 @@ local function decrypt_conf(name, conf, schema_type)
         return
     end
 
-    if schema.encrypt_fields and core.table.nkeys(schema.encrypt_fields) > 0 then
+    if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
             if conf[key] then
                 local decrypted, err = apisix_ssl.aes_decrypt_pkey(conf[key], "data_encrypt")
@@ -930,7 +930,7 @@ local function encrypt_conf(name, conf, schema_type)
         return
     end
 
-    if schema.encrypt_fields and core.table.nkeys(schema.encrypt_fields) > 0 then
+    if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
             if conf[key] then
                 local encrypted, err = apisix_ssl.aes_encrypt_pkey(conf[key], "data_encrypt")
