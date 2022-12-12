@@ -300,6 +300,9 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/include/apisix/model
 	$(ENV_INSTALL) apisix/include/apisix/model/*.proto $(ENV_INST_LUADIR)/apisix/include/apisix/model/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/inspect
+	$(ENV_INSTALL) apisix/inspect/*.lua $(ENV_INST_LUADIR)/apisix/inspect/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins
 	$(ENV_INSTALL) apisix/plugins/*.lua $(ENV_INST_LUADIR)/apisix/plugins/
 
@@ -314,9 +317,6 @@ install: runtime
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ip-restriction
 	$(ENV_INSTALL) apisix/plugins/ip-restriction/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ip-restriction/
-
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/inspect
-	$(ENV_INSTALL) apisix/inspect/*.lua $(ENV_INST_LUADIR)/apisix/inspect/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-conn
 	$(ENV_INSTALL) apisix/plugins/limit-conn/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-conn/
