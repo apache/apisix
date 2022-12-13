@@ -233,3 +233,226 @@ deployment:
         prefix: "/apisix"
         host:
             - http://[::1]:2379
+
+
+
+=== TEST 6: resolve domain, result changed
+--- extra_init_by_lua
+    local resolver = require("apisix.core.resolver")
+    local old_f = resolver.parse_domain
+    local counter = 0
+    resolver.parse_domain = function (domain)
+        if domain == "localhost" then
+            counter = counter + 1
+            if counter % 2 == 0 then
+                return "127.0.0.2"
+            else
+                return "127.0.0.3"
+            end
+        else
+            return old_f(domain)
+        end
+    end
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/apisix/test", "foo"))
+            local res = assert(etcd.get("/apisix/test"))
+            ngx.say(res.body.node.value)
+        }
+    }
+--- yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    etcd:
+        use_grpc: true
+        prefix: "/apisix"
+        host:
+            # use localhost so the connection is OK in the situation that the DNS
+            # resolve is not done in APISIX
+            - http://localhost:2379
+--- response_body
+foo
+--- error_log
+localhost is resolved to: 127.0.0.3
+localhost is resolved to: 127.0.0.2
+
+
+
+=== TEST 7: update balancer if the DNS result changed
+--- extra_init_by_lua
+    local etcd = require("apisix.core.etcd")
+    etcd.get_etcd_syncer = function ()
+        return etcd.new()
+    end
+
+    local resolver = require("apisix.core.resolver")
+    local old_f = resolver.parse_domain
+    package.loaded.counter = 0
+    resolver.parse_domain = function (domain)
+        if domain == "x.com" then
+            local counter = package.loaded.counter
+            package.loaded.counter = counter + 1
+            if counter % 2 == 0 then
+                return "127.0.0.2"
+            else
+                return "127.0.0.3"
+            end
+        else
+            return old_f(domain)
+        end
+    end
+
+    local picker = require("apisix.balancer.least_conn")
+    package.loaded.n_picker = 0
+    local old_f = picker.new
+    picker.new = function (nodes, upstream)
+        package.loaded.n_picker = package.loaded.n_picker + 1
+        return old_f(nodes, upstream)
+    end
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/apisix/test", "foo"))
+            local res = assert(etcd.get("/apisix/test"))
+            ngx.say(res.body.node.value)
+            local counter = package.loaded.counter
+            local n_picker = package.loaded.n_picker
+            if counter == n_picker then
+                ngx.say("OK")
+            else
+                ngx.say(counter, " ", n_picker)
+            end
+        }
+    }
+--- yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    etcd:
+        use_grpc: true
+        timeout: 1
+        prefix: "/apisix"
+        host:
+            - http://127.0.0.1:2379
+            - http://x.com:2379
+--- response_body
+foo
+OK
+--- error_log
+x.com is resolved to: 127.0.0.3
+x.com is resolved to: 127.0.0.2
+
+
+
+=== TEST 8: retry
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/apisix/test", "foo"))
+            local res = assert(etcd.get("/apisix/test"))
+            ngx.say(res.body.node.value)
+        }
+    }
+--- yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    etcd:
+        use_grpc: true
+        timeout: 1
+        prefix: "/apisix"
+        host:
+            - http://127.0.0.1:1979
+            - http://[::1]:1979
+            - http://localhost:2379
+--- error_log
+connect() failed
+--- response_body
+foo
+
+
+
+=== TEST 9: check Host header
+--- http_config
+server {
+    listen 12345 http2;
+    location / {
+        access_by_lua_block {
+            ngx.log(ngx.WARN, "Receive Host: ", ngx.var.http_host)
+        }
+        grpc_pass grpc://127.0.0.1:2379;
+    }
+}
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/apisix/test", "foo"))
+            local res = assert(etcd.get("/apisix/test"))
+            ngx.say(res.body.node.value)
+        }
+    }
+--- response_body
+foo
+--- yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    etcd:
+        use_grpc: true
+        timeout: 1
+        prefix: "/apisix"
+        host:
+            - http://127.0.0.1:12345
+            - http://localhost:12345
+--- error_log
+Receive Host: localhost
+Receive Host: 127.0.0.1
+
+
+
+=== TEST 10: check Host header after retry
+--- http_config
+server {
+    listen 12345 http2;
+    location / {
+        access_by_lua_block {
+            ngx.log(ngx.WARN, "Receive Host: ", ngx.var.http_host)
+        }
+        grpc_pass grpc://127.0.0.1:2379;
+    }
+}
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/apisix/test", "foo"))
+            local res = assert(etcd.get("/apisix/test"))
+            ngx.say(res.body.node.value)
+        }
+    }
+--- response_body
+foo
+--- yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    etcd:
+        use_grpc: true
+        timeout: 1
+        prefix: "/apisix"
+        host:
+            - http://127.0.0.1:1979
+            - http://localhost:12345
+--- error_log
+Receive Host: localhost
