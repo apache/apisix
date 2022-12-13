@@ -38,7 +38,7 @@ function _M.getname(n)
     end
 end
 
-local function hook(evt, arg)
+local function hook(_, arg)
     local level = 2
     local finfo = debug.getinfo(level, "nSlf")
     local key = finfo.source .. "#" .. arg

@@ -25,6 +25,7 @@ local ipairs = ipairs
 local os = os
 local ngx = ngx
 local loadstring = loadstring
+local format = string.format
 
 local _M = {}
 
@@ -43,10 +44,10 @@ local function run_lua_file(file)
     if not f then
         return false, err
     end
-    local code = f:read("*all")
+    local code, err = f:read("*all")
     f:close()
     if code == nil then
-        return false, "cannot read hooks file"
+        return false, format("cannot read hooks file: %s", err)
     end
     local func, err = loadstring(code)
     if not func then
@@ -64,7 +65,7 @@ local function setup_hooks(file)
         for _, hook in ipairs(dbg.hooks()) do
             table_insert(hooks, hook.key)
         end
-        core.log.info("set hooks: err=", err, ", hooks=", core.json.encode(hooks))
+        core.log.info("set hooks: err: ", err, ", hooks: ", core.json.delay_encode(hooks))
     end
 end
 
