@@ -103,7 +103,7 @@ docker compose up -d
 You first need to [route](https://apisix.apache.org/docs/apisix/terminology/route/) your HTTP requests from the gateway to an [upstream](https://apisix.apache.org/docs/apisix/terminology/upstream/) (your API). With APISIX, you can create a route by sending an HTTP request to the gateway.
 
 ```shell
-curl http://apisix:9080/apisix/admin/routes/1 -H 'X-API-KEY: xyz' -X PUT -d '  
+curl http://apisix:9080/apisix/admin/routes/1 -H 'X-API-KEY: xyz' -X PUT -d '
 {
   "name": "Direct Route to Old API",
   "methods": ["GET"],
