@@ -57,8 +57,8 @@ http://org.apisix/hello?version=2
 You can also set the version number using custom headers in requests and responses. This leaves the URI of your resources unchanged.
 
 ```shell
-http://org.apisix/hello -H 'Version: 1' 
-http://org.apisix/hello -H 'Version: 2' 
+http://org.apisix/hello -H 'Version: 1'
+http://org.apisix/hello -H 'Version: 2'
 ```
 
 The primary goal of versioning is to provide users of an API with the most functionality possible while causing minimal inconvenience. Keeping this goal in mind, let’s have a look in this tutorial at how to _publish and manage multiple versions of your API_ with Apache APISIX.
@@ -105,13 +105,13 @@ You first need to [route](https://apisix.apache.org/docs/apisix/terminology/rout
 ```shell
 curl http://apisix:9080/apisix/admin/routes/1 -H 'X-API-KEY: xyz' -X PUT -d '  
 {
-  "name": "Direct Route to Old API",               
-  "methods": ["GET"],                              
-  "uris": ["/hello", "/hello/", "/hello/*"],       
-  "upstream": {                                    
-    "type": "roundrobin",                          
+  "name": "Direct Route to Old API",             
+  "methods": ["GET"],                         
+  "uris": ["/hello", "/hello/", "/hello/*"],    
+  "upstream": {                               
+    "type": "roundrobin",               
     "nodes": {
-      "oldapi:8081": 1                             
+      "oldapi:8081": 1                        
     }
   }
 }'
@@ -132,9 +132,9 @@ In the previous step, we created a route that wrapped an upstream inside its con
 Let's create the shared upstream by running below curl cmd:
 
 ```shell
-curl http://apisix:9080/apisix/admin/upstreams/1 -H 'X-API-KEY: xyz' -X PUT -d ' 
+curl http://apisix:9080/apisix/admin/upstreams/1 -H 'X-API-KEY: xyz' -X PUT -d '
 {
-  "name": "Old API",                                                                   
+  "name": "Old API",                                                             
   "type": "roundrobin",
   "nodes": {
     "oldapi:8081": 1
@@ -151,11 +151,11 @@ In the scope of this tutorial, we will use _URI path-based versioning_ because i
 Before introducing the new version, we also need to rewrite the query that comes to the API gateway before forwarding it to the upstream. Because both the old and new versions should point to the same upstream and the upstream exposes endpoint `/hello`, not `/v1/hello`. Let’s create a plugin configuration to rewrite the path:
 
 ```shell
-curl http://apisix:9080/apisix/admin/plugin_configs/1 -H 'X-API-KEY: xyz' -X PUT -d ' 
+curl http://apisix:9080/apisix/admin/plugin_configs/1 -H 'X-API-KEY: xyz' -X PUT -d '
 {
   "plugins": {
-    "proxy-rewrite": {                                        
-      "regex_uri": ["/v1/(.*)", "/$1"]                        
+    "proxy-rewrite": {                               
+      "regex_uri": ["/v1/(.*)", "/$1"]                      
     }
   }
 }'
@@ -166,7 +166,7 @@ We can now create the second versioned route that references the existing  upstr
 > Note that we can create routes for different API versions.
 
 ```shell
-curl http://apisix:9080/apisix/admin/routes/2 -H 'X-API-KEY: xyz' -X PUT -d '  
+curl http://apisix:9080/apisix/admin/routes/2 -H 'X-API-KEY: xyz' -X PUT -d ' 
 {
   "name": "Versioned Route to Old API",
   "methods": ["GET"],
