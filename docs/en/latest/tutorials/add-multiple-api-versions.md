@@ -76,7 +76,7 @@ For the demo case, we will leverage the sample repository [Evolve APIs](https://
 
 To execute and customize the example project per your need shown in this tutorial, here are the minimum requirements you need to install in your system:
 
-- [Docker Desktop](https://docs.docker.com/desktop/windows/install/) - you need [Docker desktop](https://www.docker.com/products/docker-desktop/) installed locally to complete this tutorial. It is available for [Windows](https://desktop.docker.com/win/edge/Docker%20Desktop%20Installer.exe) or [macOS](https://desktop.docker.com/mac/edge/Docker.dmg). Or install the [Docker ACI Integration CLI for Linux](https://docs.docker.com/engine/context/aci-integration/#install-the-docker-aci-integration-cli-on-linux).
+- [Docker Desktop](https://docs.docker.com/desktop/windows/install/) - you need [Docker desktop](https://www.docker.com/products/docker-desktop/) installed locally to complete this tutorial. It is available for [Windows](https://desktop.docker.com/win/edge/Docker%20Desktop%20Installer.exe) or [macOS](https://desktop.docker.com/mac/edge/Docker.dmg).
 
 Also, complete the following steps to run the sample project with Docker.
 
