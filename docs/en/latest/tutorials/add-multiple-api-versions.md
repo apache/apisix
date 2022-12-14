@@ -105,13 +105,13 @@ You first need to [route](https://apisix.apache.org/docs/apisix/terminology/rout
 ```shell
 curl http://apisix:9080/apisix/admin/routes/1 -H 'X-API-KEY: xyz' -X PUT -d '  
 {
-  "name": "Direct Route to Old API",             
+  "name": "Direct Route to Old API",            
   "methods": ["GET"],                         
-  "uris": ["/hello", "/hello/", "/hello/*"],    
-  "upstream": {                               
-    "type": "roundrobin",               
+  "uris": ["/hello", "/hello/", "/hello/*"],
+  "upstream": {                      
+    "type": "roundrobin",              
     "nodes": {
-      "oldapi:8081": 1                        
+      "oldapi:8081": 1             
     }
   }
 }'
@@ -134,7 +134,7 @@ Let's create the shared upstream by running below curl cmd:
 ```shell
 curl http://apisix:9080/apisix/admin/upstreams/1 -H 'X-API-KEY: xyz' -X PUT -d '
 {
-  "name": "Old API",                                                             
+  "name": "Old API",                                                            
   "type": "roundrobin",
   "nodes": {
     "oldapi:8081": 1
@@ -154,8 +154,8 @@ Before introducing the new version, we also need to rewrite the query that comes
 curl http://apisix:9080/apisix/admin/plugin_configs/1 -H 'X-API-KEY: xyz' -X PUT -d '
 {
   "plugins": {
-    "proxy-rewrite": {                               
-      "regex_uri": ["/v1/(.*)", "/$1"]                      
+    "proxy-rewrite": {                              
+      "regex_uri": ["/v1/(.*)", "/$1"]                    
     }
   }
 }'
@@ -166,7 +166,7 @@ We can now create the second versioned route that references the existing  upstr
 > Note that we can create routes for different API versions.
 
 ```shell
-curl http://apisix:9080/apisix/admin/routes/2 -H 'X-API-KEY: xyz' -X PUT -d ' 
+curl http://apisix:9080/apisix/admin/routes/2 -H 'X-API-KEY: xyz' -X PUT -d '
 {
   "name": "Versioned Route to Old API",
   "methods": ["GET"],
