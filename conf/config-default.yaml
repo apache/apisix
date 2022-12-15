@@ -557,7 +557,7 @@ plugin_attr:
 #  redirect:
 #    https_port: 8443   # the default port for use by HTTP redirects to HTTPS
   inspect:
-    delay: 3
+    delay: 3            # in seconds
     hooks_file: "/var/run/apisix_inspect_hooks.lua"
 
 deployment:

@@ -3,8 +3,8 @@ title: inspect
 keywords:
   - APISIX
   - Plugin
-  - inspect
-  - inspect
+  - Inspect
+  - Dynamic Lua Debugging
 description: This document contains information about the Apache APISIX inspect Plugin.
 ---
 
@@ -29,7 +29,7 @@ description: This document contains information about the Apache APISIX inspect 
 
 ## Description
 
-It's useful to set arbitrary breakpoint in any lua file to inspect the context information,
+It's useful to set arbitrary breakpoint in any Lua file to inspect the context information,
 e.g. print local variables if some condition satisfied.
 
 In this way, you don't need to modify the source code of your project, and just get diagnose information
@@ -40,13 +40,13 @@ The breakpoint could be at any position within the function. The function could 
 
 ## Features
 
-* set breakpoint at any position
-* dynamic breakpoint
-* Customized breakpoint handler
-* you could define one-shot breakpoint
-* work for jit compiled function
-* if function reference specified, then performance impact is only bound to that function (JIT compiled code will not trigger debug hook, so they would run fast even if hook is enabled)
-* if all breakpoints deleted, jit could recover
+* Set breakpoint at any position
+* Dynamic breakpoint
+* customized breakpoint handler
+* You could define one-shot breakpoint
+* Work for jit compiled function
+* If function reference specified, then performance impact is only bound to that function (JIT compiled code will not trigger debug hook, so they would run fast even if hook is enabled)
+* If all breakpoints deleted, jit could recover
 
 ## Operation Graph
 
@@ -65,7 +65,7 @@ global function, you should set it that function reference, then only the jit ca
 be flushed, and it would not affect other caches to avoid slowing down other parts of the program.
 
 * If the breakpointis related to local function or anonymous function,
-then you have to set it to `nil` (because no way to get function reference), which would flush the whole jit cache of lua vm.
+then you have to set it to `nil` (because no way to get function reference), which would flush the whole jit cache of Lua vm.
 
 You attach a `filter_func` function of the breakpoint, the function takes the `info` as argument and returns
 true of false to determine whether the breakpoint would be removed. You could setup one-shot breakpoint
@@ -82,7 +82,7 @@ The `info` is a hash table which contains below keys:
 | Name               | Type    | Required | Default | Description                                                                                    |
 |--------------------|---------|----------|---------|------------------------------------------------------------------------------------------------|
 | delay           | integer | False     | 3 | Time in seconds specifying how often to check the hooks file.                                       |
-| hooks_file           | string | False     | "/var/run/apisix_inspect_hooks.lua"  | lua file to define hooks, which could be a link file. |
+| hooks_file           | string | False     | "/var/run/apisix_inspect_hooks.lua"  | Lua file to define hooks, which could be a link file. |
 
 ## Enabling the Plugin
 
@@ -125,7 +125,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/test_limit_req -H 'X-API-KEY: edd
 
 # create a hooks file to set a test breakpoint
 # Note that the breakpoint is associated with the line number,
-# so if the lua code changes, you need to adjust the line number in the hooks file
+# so if the Lua code changes, you need to adjust the line number in the hooks file
 cat <<EOF >/tmp/hooks.lua
 local dbg = require "resty.inspect.dbg"
 
