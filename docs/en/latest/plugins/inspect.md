@@ -82,7 +82,7 @@ The `info` is a hash table which contains below keys:
 | Name               | Type    | Required | Default | Description                                                                                    |
 |--------------------|---------|----------|---------|------------------------------------------------------------------------------------------------|
 | delay           | integer | False     | 3 | Time in seconds specifying how often to check the hooks file.                                       |
-| hooks_file           | string | False     | "/var/run/apisix_inspect_hooks.lua"  | Lua file to define hooks, which could be a link file. |
+| hooks_file           | string | False     | "/usr/local/apisix/plugin_inspect_hooks.lua"  | Lua file to define hooks, which could be a link file. Ensure only administrator could write this file, otherwise it may be a security risk. |
 
 ## Enabling the Plugin
 
@@ -95,7 +95,7 @@ plugins:
 plugin_attr:
   inspect:
     delay: 3
-    hooks_file: "/var/run/apisix_inspect_hooks.lua"
+    hooks_file: "/usr/local/apisix/plugin_inspect_hooks.lua"
 ```
 
 ## Example usage
@@ -126,7 +126,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/test_limit_req -H 'X-API-KEY: edd
 # create a hooks file to set a test breakpoint
 # Note that the breakpoint is associated with the line number,
 # so if the Lua code changes, you need to adjust the line number in the hooks file
-cat <<EOF >/tmp/hooks.lua
+cat <<EOF >/usr/local/apisix/example_hooks.lua
 local dbg = require "resty.inspect.dbg"
 
 dbg.set_hook("limit-req.lua", 88, require("apisix.plugins.limit-req").access, function(info)
@@ -141,7 +141,7 @@ end)
 EOF
 
 # enable the hooks file
-ln -sf /tmp/hooks.lua /var/run/resty_inspect_hooks.lua
+ln -sf /usr/local/apisix/example_hooks.lua /usr/local/apisix/plugin_inspect_hooks.lua
 
 # check errors.log to confirm the test breakpoint is enabled
 2022/09/01 00:55:38 [info] 2754534#2754534: *3700 [lua] init.lua:29: setup_hooks(): set hooks: err=nil, hooks=["limit-req.lua#88"], context: ngx.timer
