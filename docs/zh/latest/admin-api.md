@@ -726,12 +726,12 @@ Consumer 资源请求地址：/apisix/admin/consumers/{username}
 
 ### 请求方法 {#consumer-request-methods}
 
-| 名称   | 请求 URI                      | 请求 body  | 描述         |
-| ------ | ---------------------------- | --------- | ------------ |
-| GET    | /apisix/admin/consumers      | 无        | 获取资源列表。 |
-| GET    | /apisix/admin/consumers/{id} | 无        | 获取资源。     |
-| PUT    | /apisix/admin/consumers      | {...}     | 创建资源。     |
-| DELETE | /apisix/admin/consumers/{id} | 无        | 删除资源。     |
+| 名称   | 请求 URI                           | 请求 body | 描述          |
+| ------ | ---------------------------------- | --------- | ------------- |
+| GET    | /apisix/admin/consumers            | 无        | 获取资源列表。|
+| GET    | /apisix/admin/consumers/{username} | 无        | 获取资源。    |
+| PUT    | /apisix/admin/consumers            | {...}     | 创建资源。    |
+| DELETE | /apisix/admin/consumers/{username} | 无        | 删除资源。    |
 
 ### body 请求参数 {#consumer-body-request-methods}
 
