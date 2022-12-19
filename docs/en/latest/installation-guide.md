@@ -216,7 +216,13 @@ brew services start etcd
 
 ### Configuring APISIX
 
-If you install APISIX via Docker, please exec into the apisix pod first:
+If you have done the Docker based installation, you need to exec into the `apisix` docker container to run the `apisix` command:
+
+```shell
+docker exec -it <name-of-container/container-id> sh
+```
+
+If you have installed via helm, you need to exec into the `apisix` kubernetes pod to run the `apisix` command:
 
 ```shell
 kubectl exec -it <name-of-apisix-pod> -n <namespace-running-apisix> -- sh
