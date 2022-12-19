@@ -51,6 +51,8 @@ It might take some time to receive the log data. It will be automatically sent a
 | include_resp_body      | boolean | False    | false             | [false, true]         | When set to `true` includes the response body in the log.                                                                                                                                                                 |
 | include_resp_body_expr | array   | False    |                   |                       | Filter for when the `include_resp_body` attribute is set to `true`. Response body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more. |
 
+NOTE: `encrypt_fields = {"secret_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
 :::info IMPORTANT

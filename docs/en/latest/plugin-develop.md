@@ -300,13 +300,24 @@ Specify the parameters to be stored encrypted. (Requires APISIX version >= 3.1.0
 Some plugins require parameters to be stored encrypted, such as the `password` parameter of the `basic-auth` plugin. This plugin needs to specify in the `schema` which parameters need to be stored encrypted.
 
 ```lua
-password = { type = "string", encrypted = true },
+encrypt_fields = {"password"}
 ```
 
-Parameters can be stored encrypted by specifying `encrypted = true` in the `schema`. APISIX will provide the following functionality.
+If it is a nested parameter, such as the `clickhouse.password` parameter of the `error-log-logger` plugin, it needs to be separated by `.`:
 
-- When adding and updating resources via the `Admin API`, APISIX automatically encrypts parameters with `encrypted = true` and stores them in etcd
-- When fetching resources via the `Admin API` and when running the plugin, APISIX automatically decrypts the `encrypted = true` parameter
+```lua
+encrypt_fields = {"clickhouse.password"}
+```
+
+Currently not supported yet:
+
+1. more than two levels of nesting
+2. fields in arrays
+
+Parameters can be stored encrypted by specifying `encrypt_fields = {"password"}` in the `schema`. APISIX will provide the following functionality.
+
+- When adding and updating resources via the `Admin API`, APISIX automatically encrypts the parameters declared in `encrypt_fields` and stores them in etcd
+- When fetching resources via the `Admin API` and when running the plugin, APISIX automatically decrypts the parameters declared in `encrypt_fields`
 
 How to enable this feature?
 
@@ -321,7 +332,7 @@ apisix:
         - qeddd145sfvddff4
 ```
 
-APISIX will try to decrypt the data with keys in the order of the keys in the keyring (only for parameters declared `encrypted = true`). If the decryption fails, the next key will be tried until the decryption succeeds.
+APISIX will try to decrypt the data with keys in the order of the keys in the keyring (only for parameters declared in `encrypt_fields`). If the decryption fails, the next key will be tried until the decryption succeeds.
 
 If none of the keys in `keyring` can decrypt the data, the original data is used.
 
