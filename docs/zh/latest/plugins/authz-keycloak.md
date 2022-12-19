@@ -66,6 +66,8 @@ description: 本文介绍了关于 Apache APISIX `authz-keycloak` 插件的基�
 | access_denied_redirect_uri                   | string        | 否    |                                               | [1, 2048]                                                          | 需要将用户重定向到的 URI，而不是返回类似 `"error_description":"not_authorized"` 这样的错误消息。                                                                                                                                        |
 | password_grant_token_generation_incoming_uri | string        | 否    |                                               | /api/token                                                         | 将此设置为使用密码授予类型生成令牌。该插件会将传入的请求 URI 与此值进行比较。                                                                                                                |
 
+注意：schema 中还定义了 `encrypt_fields = {"client_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
+
 除上述释义外，还有以下需要注意的点：
 
 - Discovery and endpoints

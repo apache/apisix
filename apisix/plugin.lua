@@ -21,6 +21,7 @@ local enable_debug  = require("apisix.debug").enable_debug
 local wasm          = require("apisix.wasm")
 local expr          = require("resty.expr.v1")
 local apisix_ssl    = require("apisix.ssl")
+local re_split      = require("ngx.re").split
 local ngx           = ngx
 local crc32         = ngx.crc32_short
 local ngx_exit      = ngx.exit
@@ -844,12 +845,6 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
 end
 
 
-check_plugin_metadata = function(item)
-    return check_single_plugin_schema(item.id, item,
-        core.schema.TYPE_METADATA, true)
-end
-
-
 local enable_data_encryption
 local function enable_gde()
     if enable_data_encryption == nil then
@@ -868,9 +863,15 @@ local function get_plugin_schema_for_gde(name, schema_type)
     end
 
     local plugin_schema = local_plugins_hash and local_plugins_hash[name]
+    if not plugin_schema then
+        return nil
+    end
+
     local schema
     if schema_type == core.schema.TYPE_CONSUMER then
         schema = plugin_schema.consumer_schema
+    elseif schema_type == core.schema.TYPE_METADATA then
+        schema = plugin_schema.metadata_schema
     else
         schema = plugin_schema.schema
     end
@@ -882,17 +883,39 @@ end
 local function decrypt_conf(name, conf, schema_type)
     local schema = get_plugin_schema_for_gde(name, schema_type)
     if not schema then
+        core.log.warn("failed to get schema for plugin: ", name)
         return
     end
 
-    for key, props in pairs(schema.properties) do
-        if props.type == "string" and props.encrypted and conf[key] then
-            local encrypted, err = apisix_ssl.aes_decrypt_pkey(conf[key], "data_encrypt")
-            if not encrypted then
-                core.log.warn("failed to decrypt the conf of plugin [", name,
-                               "] key [", key, "], err: ", err)
-            else
-                conf[key] = encrypted
+    if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
+        for _, key in ipairs(schema.encrypt_fields) do
+            if conf[key] then
+                local decrypted, err = apisix_ssl.aes_decrypt_pkey(conf[key], "data_encrypt")
+                if not decrypted then
+                    core.log.warn("failed to decrypt the conf of plugin [", name,
+                                  "] key [", key, "], err: ", err)
+                else
+                    conf[key] = decrypted
+                end
+            elseif core.string.find(key, ".") then
+                -- decrypt fields has indents
+                local res, err = re_split(key, "\\.", "jo")
+                if not res then
+                    core.log.warn("failed to split key [", key, "], err: ", err)
+                    return
+                end
+
+                -- we only support two levels
+                if conf[res[1]] and conf[res[1]][res[2]] then
+                    local decrypted, err = apisix_ssl.aes_decrypt_pkey(
+                                           conf[res[1]][res[2]], "data_encrypt")
+                    if not decrypted then
+                        core.log.warn("failed to decrypt the conf of plugin [", name,
+                                      "] key [", key, "], err: ", err)
+                    else
+                        conf[res[1]][res[2]] = decrypted
+                    end
+                end
             end
         end
     end
@@ -903,17 +926,55 @@ _M.decrypt_conf = decrypt_conf
 local function encrypt_conf(name, conf, schema_type)
     local schema = get_plugin_schema_for_gde(name, schema_type)
     if not schema then
+        core.log.warn("failed to get schema for plugin: ", name)
         return
     end
 
-    for key, props in pairs(schema.properties) do
-        if props.type == "string" and props.encrypted and conf[key] then
-            local encrypted = apisix_ssl.aes_encrypt_pkey(conf[key], "data_encrypt")
-            conf[key] = encrypted
+    if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
+        for _, key in ipairs(schema.encrypt_fields) do
+            if conf[key] then
+                local encrypted, err = apisix_ssl.aes_encrypt_pkey(conf[key], "data_encrypt")
+                if not encrypted then
+                    core.log.warn("failed to encrypt the conf of plugin [", name,
+                                  "] key [", key, "], err: ", err)
+                else
+                    conf[key] = encrypted
+                end
+            elseif core.string.find(key, ".") then
+                -- encrypt fields has indents
+                local res, err = re_split(key, "\\.", "jo")
+                if not res then
+                    core.log.warn("failed to split key [", key, "], err: ", err)
+                    return
+                end
+
+                -- we only support two levels
+                if conf[res[1]] and conf[res[1]][res[2]] then
+                    local encrypted, err = apisix_ssl.aes_encrypt_pkey(
+                                           conf[res[1]][res[2]], "data_encrypt")
+                    if not encrypted then
+                        core.log.warn("failed to encrypt the conf of plugin [", name,
+                                      "] key [", key, "], err: ", err)
+                    else
+                        conf[res[1]][res[2]] = encrypted
+                    end
+                end
+            end
         end
     end
 end
 _M.encrypt_conf = encrypt_conf
+
+
+check_plugin_metadata = function(item)
+    local ok, err = check_single_plugin_schema(item.id, item,
+                                               core.schema.TYPE_METADATA, true)
+    if ok and enable_gde() then
+        decrypt_conf(item.name, item, core.schema.TYPE_METADATA)
+    end
+
+    return ok, err
+end
 
 
 local function check_schema(plugins_conf, schema_type, skip_disabled_plugin)

@@ -92,6 +92,7 @@ local schema = {
         { required = { "auth_config" } },
         { required = { "auth_file" } },
     },
+    encrypt_fields = {"auth_config.private_key"},
 }
 
 
