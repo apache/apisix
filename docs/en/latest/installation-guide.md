@@ -216,6 +216,8 @@ brew services start etcd
 
 ### Configuring APISIX
 
+:::note
+
 If you have done the Docker based installation, you need to exec into the `apisix` docker container to run the `apisix` command:
 
 ```shell
@@ -227,6 +229,8 @@ If you have installed via helm, you need to exec into the `apisix` kubernetes po
 ```shell
 kubectl exec -it <name-of-apisix-pod> -n <namespace-running-apisix> -- sh
 ```
+
+:::
 
 You can configure your APISIX deployment in two ways:
 
