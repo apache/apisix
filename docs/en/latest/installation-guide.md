@@ -216,6 +216,11 @@ brew services start etcd
 
 ### Configuring APISIX
 
+First exec into the apisix pod:
+```shell
+kubectl exec -it <name-of-apisix-pod> -n <namespace-running-apisix> -- sh
+```
+
 You can configure your APISIX deployment in two ways:
 
 1. By directly changing your configuration file (`conf/config.yaml`).
