@@ -45,6 +45,8 @@ description: API 网关 Apache APISIX tencent-cloud-cls 插件可用于将日志
 | include_resp_body | boolean | 否     | false | [false, true]| 当设置为 `true` 时，日志中将包含响应体。                                                     |
 | global_tag        | object  | 否     |       |              | kv 形式的 JSON 数据，可以写入每一条日志，便于在 CLS 中检索。                                        |
 
+注意：schema 中还定义了 `encrypt_fields = {"secret_key"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
+
 该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
 ## 插件元数据

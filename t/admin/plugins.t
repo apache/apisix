@@ -339,7 +339,7 @@ qr/\[\{"name":"wolf-rbac","priority":2555\},\{"name":"ldap-auth","priority":2540
         }
     }
 --- response_body eval
-qr/\{"properties":\{"password":\{"encrypted":true,"type":"string"\},"username":\{"type":"string"\}\},"required":\["username","password"\],"title":"work with consumer object","type":"object"\}/
+qr/\{"encrypt_fields":\["password"\],"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\}\},"required":\["username","password"\],"title":"work with consumer object","type":"object"\}/
 
 
 

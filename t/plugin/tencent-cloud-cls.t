@@ -324,3 +324,88 @@ GET /opentracing
 --- response_body
 opentracing
 --- wait: 0.5
+
+
+
+=== TEST 11: delete exist routes
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- delete exist consumers
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 12: data encryption for secret_key
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "tencent-cloud-cls": {
+                            "cls_host": "127.0.0.1:10421",
+                            "cls_topic": "143b5d70-139b-4aec-b54e-bb97756916de",
+                            "secret_id": "secret_id",
+                            "secret_key": "secret_key",
+                            "batch_max_size": 1,
+                            "max_retry_count": 1,
+                            "retry_delay": 2,
+                            "buffer_duration": 2,
+                            "inactive_timeout": 2
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1982": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/opentracing"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, password is decrypted
+            local code, message, res = t('/apisix/admin/routes/1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say(res.value.plugins["tencent-cloud-cls"].secret_key)
+
+            -- get plugin conf from etcd, password is encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/routes/1'))
+            ngx.say(res.body.node.value.plugins["tencent-cloud-cls"].secret_key)
+        }
+    }
+--- response_body
+secret_key
+oshn8tcqE8cJArmEILVNPQ==

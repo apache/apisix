@@ -18,6 +18,7 @@ local pcall   = pcall
 local require = require
 local core    = require("apisix.core")
 local utils   = require("apisix.admin.utils")
+local encrypt_conf = require("apisix.plugin").encrypt_conf
 
 local injected_mark = "injected metadata_schema"
 local _M = {
@@ -72,6 +73,8 @@ local function check_conf(plugin_name, conf)
     else
         ok, err = plugin_object.check_schema(conf, core.schema.TYPE_METADATA)
     end
+
+    encrypt_conf(plugin_name, conf, core.schema.TYPE_METADATA)
 
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}

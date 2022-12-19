@@ -90,6 +90,7 @@ local consumer_schema = {
             default = MAX_REQ_BODY,
         },
     },
+    encrypt_fields = {"secret_key"},
     required = {"access_key", "secret_key"},
 }
 

@@ -204,6 +204,8 @@ local function run()
         if method == "get" and plugin.enable_data_encryption then
             if seg_res == "consumers" then
                 utils.decrypt_params(plugin.decrypt_conf, data, core.schema.TYPE_CONSUMER)
+            elseif seg_res == "plugin_metadata" then
+                utils.decrypt_params(plugin.decrypt_conf, data, core.schema.TYPE_METADATA)
             else
                 utils.decrypt_params(plugin.decrypt_conf, data)
             end

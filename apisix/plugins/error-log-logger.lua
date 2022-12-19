@@ -83,7 +83,8 @@ local metadata_schema = {
         {required = {"clickhouse"}},
         -- for compatible with old schema
         {required = {"host", "port"}}
-    }
+    },
+    encrypt_fields = {"clickhouse.password"},
 }
 
 
