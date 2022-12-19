@@ -70,9 +70,6 @@ script() {
     ulimit -n -S
     ulimit -n -H
 
-    git clone https://github.com/spacewander/lua-resty-etcd.git -b f2 --depth 1
-    #git clone https://github.com/api7/lua-resty-etcd.git --depth 1
-    cp lua-resty-etcd/lib/resty/etcd/*.lua /usr/local/share/lua/5.1/resty/etcd/
     for f in ./t/cli/test_*.sh; do
         PATH="$PATH" "$f"
     done
