@@ -40,9 +40,9 @@ __DATA__
 
 === TEST 1: mTLS for control plane
 --- exec
-curl --cert t/certs/mtls_client.crt --key t/certs/mtls_client.key -k https://localhost:12345/version
+grpcurl -import-path ./t/lib -proto etcd.proto -d '{}' -cert t/certs/mtls_client.crt -key t/certs/mtls_client.key -insecure localhost:12345 etcdserverpb.Maintenance.Status
 --- response_body eval
-qr/"etcdserver":/
+qr/"version":/
 --- yaml_config
 deployment:
     role: control_plane
