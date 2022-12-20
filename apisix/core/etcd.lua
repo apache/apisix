@@ -73,8 +73,7 @@ local function _new(etcd_conf)
     end
 
     if etcd_conf.use_grpc then
-        -- TODO: let lua-resty-etcd support more use cases
-        if etcd.user or ngx_get_phase() == "init" then
+        if ngx_get_phase() == "init" then
             etcd_conf.use_grpc = false
         else
             local ok = pcall(require, "resty.grpc")
@@ -125,9 +124,6 @@ local function new()
     end
 
     local etcd_conf = clone_tab(local_conf.etcd)
-    if etcd_conf.use_grpc then
-        return new_without_proxy()
-    end
 
     if local_conf.apisix.ssl and local_conf.apisix.ssl.ssl_trusted_certificate then
         etcd_conf.trusted_ca = local_conf.apisix.ssl.ssl_trusted_certificate
@@ -203,6 +199,10 @@ _M.new = new
 
 
 local function switch_proxy()
+    if ngx_get_phase() == "init" or ngx_get_phase() == "init_worker" then
+        return new_without_proxy()
+    end
+
     local etcd_cli, prefix, err = new()
     if not etcd_cli or err then
         return etcd_cli, prefix, err
