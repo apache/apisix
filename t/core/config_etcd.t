@@ -337,7 +337,6 @@ qr/healthy check use round robin
             config_etcd.test_automatic_fetch(false, {
                 running = true,
                 resync_delay = 1,
-                watching_streams = {},
             })
             ngx.say("passed")
         }

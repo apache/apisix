@@ -26,14 +26,12 @@ local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local etcd_apisix  = require("apisix.core.etcd")
 local core_str     = require("apisix.core.string")
-local core_tab     = require("apisix.core.table")
 local new_tab      = require("table.new")
 local check_schema = require("apisix.core.schema").check
 local exiting      = ngx.worker.exiting
 local insert_tab   = table.insert
 local type         = type
 local ipairs       = ipairs
-local pairs        = pairs
 local setmetatable = setmetatable
 local ngx_sleep    = require("apisix.core.utils").sleep
 local ngx_timer_at = ngx.timer.at
@@ -126,7 +124,7 @@ end
 
 
 local function grpc_waitdir(self, etcd_cli, key, modified_index, timeout)
-    local watching_stream = self.watching_streams[key]
+    local watching_stream = self.watching_stream
     if not watching_stream then
         local attr = {}
         attr.start_revision = modified_index
@@ -141,7 +139,7 @@ local function grpc_waitdir(self, etcd_cli, key, modified_index, timeout)
 
         log.info("create watch stream for key: ", key, ", modified_index: ", modified_index)
 
-        self.watching_streams[key] = st
+        self.watching_stream = st
         watching_stream = st
     end
 
@@ -155,11 +153,7 @@ local function flush_watching_streams(self)
         return
     end
 
-    for _, st in pairs(self.watching_streams) do
-        st:close()
-    end
-
-    core_tab.clear(self.watching_streams)
+    self.watching_stream = nil
 end
 
 
@@ -742,7 +736,7 @@ function _M.new(key, opts)
         conf_version = 0,
         values = nil,
         need_reload = true,
-        watching_streams = {},
+        watching_stream = nil,
         routes_hash = nil,
         prev_index = 0,
         last_err = nil,
