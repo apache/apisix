@@ -29,10 +29,12 @@ custom_clean_up() {
     clean_up
 
     # stop etcd docker container
-    docker-compose -f ./t/cli/docker-compose-etcd-cluster-for-grpc.yaml down
+    docker-compose -f ./t/cli/docker-compose-etcd-cluster.yaml down
 }
 
 trap custom_clean_up EXIT
+
+export ETCD_ENABLE_GRPC_GATEWAY=false
 
 # create 3 node etcd cluster in docker
 ETCD_NAME_0=etcd0
@@ -60,7 +62,7 @@ deployment:
     timeout: 2
 ' > conf/config.yaml
 
-docker-compose -f ./t/cli/docker-compose-etcd-cluster-for-grpc.yaml up -d
+docker-compose -f ./t/cli/docker-compose-etcd-cluster.yaml up -d
 
 # case 1: Check apisix not got effected when one etcd node disconnected
 make init && make run
