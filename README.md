@@ -224,6 +224,9 @@ A wide variety of companies and organizations use APISIX API Gateway for researc
 - VIVO
 - Sina Weibo
 - WPS
+- zoom
+- Horizon Robotics
+- Insigma
 
 ## Landscape
 
