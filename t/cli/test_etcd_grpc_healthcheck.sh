@@ -29,7 +29,7 @@ custom_clean_up() {
     clean_up
 
     # stop etcd docker container
-    docker-compose -f ./t/cli/docker-compose-etcd-cluster.yaml down
+    docker-compose -f ./t/cli/docker-compose-etcd-cluster-for-grpc.yaml down
 }
 
 trap custom_clean_up EXIT
@@ -60,7 +60,7 @@ deployment:
     timeout: 2
 ' > conf/config.yaml
 
-docker-compose -f ./t/cli/docker-compose-etcd-cluster.yaml up -d
+docker-compose -f ./t/cli/docker-compose-etcd-cluster-for-grpc.yaml up -d
 
 # case 1: Check apisix not got effected when one etcd node disconnected
 make init && make run
