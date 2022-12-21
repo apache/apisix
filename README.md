@@ -221,11 +221,14 @@ A wide variety of companies and organizations use APISIX API Gateway for researc
 - Swisscom
 - Tencent Game
 - Travelsky
-- VIVO
+- vivo
 - Sina Weibo
 - WPS
 - zoom
+- CVTE
 - Horizon Robotics
+- XPENG
+- Geely
 - Insigma
 
 ## Landscape
