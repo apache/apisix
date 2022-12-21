@@ -89,12 +89,17 @@ function _M.rewrite(conf, ctx)
 end
 
 
+function _M.before_proxy(conf, ctx)
+    local peer = ctx.balancer_ip .. ":" .. ctx.balancer_port
+    Span.setPeer(ngx.ctx.exitSpan, peer)
+    sw_tracer:inject(ngx.ctx.exitSpan, peer)
+end
+
+
 function _M.delayed_body_filter(conf, ctx)
     if ctx.skywalking_sample and ngx.arg[2] then
         Span.setComponentId(ngx.ctx.exitSpan, 6002)
         Span.setComponentId(ngx.ctx.entrySpan, 6002)
-        local peer = ctx.balancer_ip .. ":" .. ctx.balancer_port
-        Span.setPeer(ngx.ctx.exitSpan, peer)
         sw_tracer:finish()
         core.log.info("tracer finish")
     end
