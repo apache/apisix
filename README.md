@@ -210,9 +210,13 @@ A wide variety of companies and organizations use APISIX API Gateway for researc
 
 - Airwallex
 - Bilibili
+- CVTE
 - European eFactory Platform
 - European Copernicus Reference System
+- Geely
 - HONOR
+- Horizon Robotics
+- Insigma
 - iQIYI
 - NASA JPL
 - Nayuki
@@ -224,12 +228,8 @@ A wide variety of companies and organizations use APISIX API Gateway for researc
 - vivo
 - Sina Weibo
 - WPS
-- zoom
-- CVTE
-- Horizon Robotics
 - XPENG
-- Geely
-- Insigma
+- zoom
 
 ## Landscape
 
