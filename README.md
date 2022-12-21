@@ -216,7 +216,6 @@ A wide variety of companies and organizations use APISIX API Gateway for researc
 - Geely
 - HONOR
 - Horizon Robotics
-- Insigma
 - iQIYI
 - NASA JPL
 - Nayuki
@@ -229,7 +228,7 @@ A wide variety of companies and organizations use APISIX API Gateway for researc
 - Sina Weibo
 - WPS
 - XPENG
-- zoom
+- Zoom
 
 ## Landscape
 
