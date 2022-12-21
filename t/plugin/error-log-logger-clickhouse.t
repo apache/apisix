@@ -211,3 +211,85 @@ this is an info message for test6
     }
 --- response_body
 passed
+
+
+
+=== TEST 8: data encryption for clickhouse.password
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "clickhouse": {
+                        "user": "default",
+                        "password": "bar",
+                        "database": "default",
+                        "logtable": "t",
+                        "endpoint_addr": "http://127.0.0.1:1980/clickhouse_logger_server"
+                    },
+                    "batch_max_size": 15,
+                    "inactive_timeout": 1
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, password is decrypted
+            local code, message, res = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say(res.value["clickhouse"].password)
+
+            -- get plugin conf from etcd, password is encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/plugin_metadata/error-log-logger'))
+
+            ngx.say(res.body.node.value["clickhouse"].password)
+        }
+    }
+--- response_body
+bar
+77+NmbYqNfN+oLm0aX5akg==
+
+
+
+=== TEST 9: verify use the decrypted password to connect to clickhouse
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            core.log.warn("this is a warning message for test9")
+        }
+    }
+--- response_body
+--- error_log
+this is a warning message for test9
+clickhouse headers: x-clickhouse-key:bar
+--- wait: 5

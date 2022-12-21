@@ -44,6 +44,8 @@ title: sls-logger
 | include_req_body | 可选的 | 是否包含请求体。|
 |name| 可选的 | 批处理名字。|
 
+注意：schema 中还定义了 `encrypt_fields = {"access_key_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
+
 本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ## 插件元数据设置

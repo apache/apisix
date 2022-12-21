@@ -118,6 +118,7 @@ local consumer_schema = {
             }
         }
     },
+    encrypt_fields = {"secret", "private_key"},
     required = {"key"},
 }
 

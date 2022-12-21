@@ -280,13 +280,24 @@ end
 有些插件需要将参数加密存储，比如 `basic-auth` 插件的 `password` 参数。这个插件需要在 `schema` 中指定哪些参数需要被加密存储。
 
 ```lua
-password = { type = "string", encrypted = true },
+encrypt_fields = {"password"}
 ```
 
-通过在 `schema` 中指定 `encrypted = true`，可以将参数加密存储。APISIX 将提供以下功能：
+如果是嵌套的参数，比如 `error-log-logger` 插件的 `clickhouse.password` 参数，需要用 `.` 来分隔：
 
-- 通过 `Admin API` 来新增和更新资源时，对于 `encrypted = true` 的参数，APISIX 会自动加密存储在 etcd 中
-- 通过 `Admin API` 来获取资源时，以及在运行插件时，对于 `encrypted = true` 的参数，APISIX 会自动解密
+```lua
+encrypt_fields = {"clickhouse.password"}
+```
+
+目前还不支持：
+
+1. 两层以上的嵌套
+2. 数组中的字段
+
+通过在 `schema` 中指定 `encrypt_fields = {"password"}`，可以将参数加密存储。APISIX 将提供以下功能：
+
+- 通过 `Admin API` 来新增和更新资源时，对于 `encrypt_fields` 中声明的参数，APISIX 会自动加密存储在 etcd 中
+- 通过 `Admin API` 来获取资源时，以及在运行插件时，对于 `encrypt_fields` 中声明的参数，APISIX 会自动解密
 
 如何开启该功能？
 
@@ -301,7 +312,7 @@ apisix:
         - qeddd145sfvddff4
 ```
 
-`keyring` 是一个数组，可以指定多个 key，APISIX 会按照 keyring 中 key 的顺序，依次尝试用 key 来解密数据（只对声明 `encrypted = true` 的参数）。如果解密失败，会尝试下一个 key，直到解密成功。
+`keyring` 是一个数组，可以指定多个 key，APISIX 会按照 keyring 中 key 的顺序，依次尝试用 key 来解密数据（只对在 `encrypt_fields` 声明的参数）。如果解密失败，会尝试下一个 key，直到解密成功。
 
 如果 `keyring` 中的 key 都无法解密数据，则使用原始数据。
 

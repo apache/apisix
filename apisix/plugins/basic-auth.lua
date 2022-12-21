@@ -38,8 +38,9 @@ local consumer_schema = {
     title = "work with consumer object",
     properties = {
         username = { type = "string" },
-        password = { type = "string", encrypted = true },
+        password = { type = "string" },
     },
+    encrypt_fields = {"password"},
     required = {"username", "password"},
 }
 

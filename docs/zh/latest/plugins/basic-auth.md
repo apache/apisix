@@ -42,7 +42,7 @@ Consumer 端：
 | username | string | 是   | Consumer 的用户名并且该用户名是唯一，如果多个 Consumer 使用了相同的 `username`，将会出现请求匹配异常。|
 | password | string | 是   | 用户的密码。                                                                                      |
 
-注意：`password` 的 schema 中还定义了 `encrypted = true`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
+注意：schema 中还定义了 `encrypt_fields = {"password"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
 Route 端：
 

@@ -300,3 +300,145 @@ GET /get
 Cookie: hello=world; jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs; foo=bar
 --- response_body eval
 qr/hello=world; foo=bar/
+
+
+
+=== TEST 13: delete exist consumers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- delete exist consumers
+            local code, body = t('/apisix/admin/consumers/jack', ngx.HTTP_DELETE)
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: data encryption for secret
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key",
+                            "secret": "my-secret-key"
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, password is decrypted
+            local code, message, res = t('/apisix/admin/consumers/jack',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+            ngx.say(res.value.plugins["jwt-auth"].secret)
+
+            -- get plugin conf from etcd, password is encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/consumers/jack'))
+            ngx.say(res.body.node.value.plugins["jwt-auth"].secret)
+        }
+    }
+--- response_body
+my-secret-key
+IRWpPjbDq5BCgHyIllnOMA==
+
+
+
+=== TEST 15: data encryption for private_key
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            -- dletet exist consumers
+            t('/apisix/admin/consumers/jack', ngx.HTTP_DELETE)
+
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key-rs256",
+                            "algorithm": "RS256",
+                            "public_key": "-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr\n7noq/0ukiZqVQLSJPMOv0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQ==\n-----END PUBLIC KEY-----",
+                            "private_key": "-----BEGIN RSA PRIVATE KEY-----\nMIIBOgIBAAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr7noq/0ukiZqVQLSJPMOv\n0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQJAYPWh6YvjwWobVYC45Hz7\n+pqlt1DWeVQMlN407HSWKjdH548ady46xiQuZ5Cfx3YyCcnsfVWaQNbC+jFbY4YL\nwQIhANfASwz8+2sKg1xtvzyaChX5S5XaQTB+azFImBJumixZAiEAxt93Td6JH1RF\nIeQmD/K+DClZMqSrliUzUqJnCPCzy6kCIAekDsRh/UF4ONjAJkKuLedDUfL3rNFb\n2M4BBSm58wnZAiEAwYLMOg8h6kQ7iMDRcI9I8diCHM8yz0SfbfbsvzxIFxECICXs\nYvIufaZvBa8f+E/9CANlVhm5wKAyM8N8GJsiCyEG\n-----END RSA PRIVATE KEY-----"
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, password is decrypted
+            local code, message, res = t('/apisix/admin/consumers/jack',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say(res.value.plugins["jwt-auth"].private_key)
+
+            -- get plugin conf from etcd, password is encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/consumers/jack'))
+            ngx.say(res.body.node.value.plugins["jwt-auth"].private_key)
+        }
+    }
+--- response_body
+-----BEGIN RSA PRIVATE KEY-----
+MIIBOgIBAAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr7noq/0ukiZqVQLSJPMOv
+0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQJAYPWh6YvjwWobVYC45Hz7
++pqlt1DWeVQMlN407HSWKjdH548ady46xiQuZ5Cfx3YyCcnsfVWaQNbC+jFbY4YL
+wQIhANfASwz8+2sKg1xtvzyaChX5S5XaQTB+azFImBJumixZAiEAxt93Td6JH1RF
+IeQmD/K+DClZMqSrliUzUqJnCPCzy6kCIAekDsRh/UF4ONjAJkKuLedDUfL3rNFb
+2M4BBSm58wnZAiEAwYLMOg8h6kQ7iMDRcI9I8diCHM8yz0SfbfbsvzxIFxECICXs
+YvIufaZvBa8f+E/9CANlVhm5wKAyM8N8GJsiCyEG
+-----END RSA PRIVATE KEY-----
+HrMHUvE9Esvn7GnZ+vAynaIg/8wlB3r0zm0htmnwofYPZeBpLnpW3iN9UtQG4ZIBYRZih6EBuRK8W3Kychw/SgjIFuzVeTFowBCUfd1wZ4Q+frUOLZ0Xmkh8j3yHUprnh+d9PA8EHCEapdkWY3psJj6rTgrREzjDEVf/TV3EjjfgG16ih5/c3TChApLXwfEwfBp5APSf7kzMccCRbA4bXvMDsQSQAwVsRD8cjJkSdHTvuzfg1g8xoCy4I05DsMM8CybJAd+BDZnJxhrGIQaItu5/0XQJy+uy/niOpzYYN+NDX+8fl65VUxdUtqXF82ChRlmGP3+zKN7epufAsL/36pHOnS73Q7WBKRxyyA16BEBk0wK7rI+KemBfG5YFXjcBnPkxYssSudqhmlcr6e5Tl0LhVj/BIj94fVE3/EJ+NO3BJMrlhjorilrQKAsiCWujWSqAK7gtAp3YEO//yOygh/p8gh22NdIV0ykGAx4QNKINUgdgh+g8DdykNGLGStH8TPUs8GmzV7nxvw/0cbiocLps6uk0VjjVUqUAvOdwpbiRwv6effPUB6cxW3G6QllBbTP8I+eoFIRfYd6cFJPpX1AtISfNZw459WarwZmHrZGOQU4iKlyl2yLcKY634Fx5JykUY5YP+MYYDHbIcD2gxA==

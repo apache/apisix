@@ -48,6 +48,8 @@ description: 本文介绍了 API 网关 Apache APISIX 的 elasticsearch-logger �
 | ssl_verify    | boolean | 否       | true                 | 当设置为 `true` 时则启用 SSL 验证。更多信息请参考 [lua-nginx-module](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake)。 |
 | timeout       | integer | 否       | 10                   | 发送给 Elasticsearch 请求超时时间。                            |
 
+注意：schema 中还定义了 `encrypt_fields = {"auth.password"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
+
 本插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ## 启用插件

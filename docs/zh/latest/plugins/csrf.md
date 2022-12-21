@@ -43,6 +43,8 @@ description: CSRF 插件基于 Double Submit Cookie 的方式，帮助用户阻�
 | expires | number | 否 | `7200` | | CSRF Cookie 的过期时间，单位为秒。当设置为 `0` 时，会忽略 CSRF Cookie 过期时间检查。|
 | key | string | 是 |  |  | 加密 Token 的密钥。        |
 
+注意：schema 中还定义了 `encrypt_fields = {"key"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
+
 ## 启用插件
 
 以下示例展示了如何在指定路由上启用并配置 `csrf` 插件：

@@ -240,3 +240,86 @@ passed
 GET /hello
 --- response_body
 hello world
+
+
+
+=== TEST 10: delete exist routes
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- delete exist consumers
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: data encryption for access_key_secret
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "sls-logger": {
+                                "host": "100.100.99.135",
+                                "port": 10009,
+                                "project": "your_project",
+                                "logstore": "your_logstore",
+                                "access_key_id": "your_access_key_id",
+                                "access_key_secret": "your_access_key_secret",
+                                "timeout": 30000
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, password is decrypted
+            local code, message, res = t('/apisix/admin/routes/1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say(res.value.plugins["sls-logger"].access_key_secret)
+
+            -- get plugin conf from etcd, password is encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/routes/1'))
+            ngx.say(res.body.node.value.plugins["sls-logger"].access_key_secret)
+        }
+    }
+--- response_body
+your_access_key_secret
+1T6nR0fz4yhz/zTuRTvt7Xu3c9ASelDXG2//e/A5OiA=
