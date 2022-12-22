@@ -477,6 +477,11 @@ function _M.init(env, args)
         util.die("the etcd cluster needs at least 50% and above healthy nodes\n")
     end
 
+    if etcd_conf.use_grpc and not env.use_apisix_base then
+        io_stderr:write("'use_grpc: true' in the etcd configuration " ..
+                        "is not supported by vanilla OpenResty\n")
+    end
+
     local use_grpc = etcd_conf.use_grpc and env.use_apisix_base
     if use_grpc then
         local ok, err = util.execute_cmd("command -v etcdctl")
