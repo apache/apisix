@@ -84,7 +84,8 @@ __DATA__
 Expected comma or object end but found T_STRING
 
 
-=== TEST 2: set route, with redis_cluster_nodes and redis_cluster_name
+
+=== TEST 2: set route, with redis_cluster_nodes and redis_cluster_name with ssl and ssl_verify
 --- config
     location /t {
         content_by_lua_block {
@@ -129,6 +130,7 @@ Expected comma or object end but found T_STRING
 passed
 
 
+
 === TEST 3: up the limit
 --- request
 GET /hello
@@ -137,7 +139,8 @@ try to lock with key route#1#redis-cluster
 unlock with key route#1#redis-cluster
 
 
-=== TEST 4: set route, with redis_cluster_nodes and redis_cluster_name
+
+=== TEST 4: set route, with redis_cluster_nodes and redis_cluster_name with enable degradation switch
 --- config
     location /t {
         content_by_lua_block {
