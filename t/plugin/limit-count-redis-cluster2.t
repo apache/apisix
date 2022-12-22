@@ -38,7 +38,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: set route, missing redis_cluster_nodes
+=== TEST 1: set route, use error type for redis_cluster_ssl and redis_cluster_ssl_verify
 --- config
     location /t {
         content_by_lua_block {
@@ -53,6 +53,14 @@ __DATA__
                             "rejected_code": 503,
                             "key": "remote_addr",
                             "policy": "redis-cluster"
+                            "redis_timeout": 1001,
+                            "redis_cluster_nodes": [
+                                "127.0.0.1:7000",
+                                "127.0.0.1:7001"
+                            ],
+                            "redis_cluster_name": "redis-cluster-1",
+                            "redis_cluster_ssl": "true",
+                            "redis_cluster_ssl_verify": "false"
                         }
                     },
                     "upstream": {
@@ -72,9 +80,8 @@ __DATA__
         }
     }
 --- error_code: 400
---- response_body
-{"error_msg":"failed to check the configuration of plugin limit-count err: else clause did not match"}
-
+--- error_log
+Expected comma or object end but found T_STRING
 
 
 === TEST 2: set route, with redis_cluster_nodes and redis_cluster_name
@@ -146,6 +153,7 @@ unlock with key route#1#redis-cluster
                             "rejected_code": 503,
                             "key": "remote_addr",
                             "policy": "redis-cluster",
+                            "allow_degradation": true,
                             "redis_timeout": 1001,
                             "redis_cluster_nodes": [
                                 "127.0.0.1:7000",
