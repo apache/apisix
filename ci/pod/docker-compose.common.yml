@@ -108,7 +108,6 @@ services:
   redis-node-0:
     image: docker.io/bitnami/redis-cluster:7.0
     volumes:
-      - redis-cluster_data-0:/bitnami/redis/data
       - ./t/certs:/certs
     environment:
       - 'ALLOW_EMPTY_PASSWORD=yes'
@@ -124,7 +123,6 @@ services:
   redis-node-1:
     image: docker.io/bitnami/redis-cluster:7.0
     volumes:
-      - redis-cluster_data-1:/bitnami/redis/data
       - ./t/certs:/certs
     environment:
       - 'ALLOW_EMPTY_PASSWORD=yes'
