@@ -52,6 +52,8 @@ It might take some time to receive the log data. It will be automatically sent a
 | keepalive                        | integer | False    | 30                             | [1,...]                                                                                 | Time in seconds to keep the connection alive after sending data.                                             |
 | level                            | string  | False    | WARN                           | ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"] | Log level to filter the error logs. `ERR` is same as `ERROR`.                                                |
 
+NOTE: `encrypt_fields = {"clickhouse.password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
 ## Enabling the Plugin

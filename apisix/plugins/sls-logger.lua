@@ -42,6 +42,7 @@ local schema = {
         access_key_id = {type = "string"},
         access_key_secret = {type ="string"}
     },
+    encrypt_fields = {"access_key_secret"},
     required = {"host", "port", "project", "logstore", "access_key_id", "access_key_secret"}
 }
 

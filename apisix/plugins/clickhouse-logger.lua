@@ -36,7 +36,7 @@ local schema = {
         endpoint_addr = core.schema.uri_def,
         endpoint_addrs = {items = core.schema.uri_def, type = "array", minItems = 1},
         user = {type = "string", default = ""},
-        password = {type = "string", default = "", encrypted = true},
+        password = {type = "string", default = ""},
         database = {type = "string", default = ""},
         logtable = {type = "string", default = ""},
         timeout = {type = "integer", minimum = 1, default = 3},
@@ -47,6 +47,7 @@ local schema = {
         {required = {"endpoint_addr", "user", "password", "database", "logtable"}},
         {required = {"endpoint_addrs", "user", "password", "database", "logtable"}}
     },
+    encrypt_fields = {"password"},
 }
 
 

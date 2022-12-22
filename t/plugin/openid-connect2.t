@@ -78,3 +78,72 @@ __DATA__
             end
         }
     }
+
+
+
+=== TEST 2: data encryption for client_secret
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                                "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
+                                "redirect_uri": "https://iresty.com",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "scope": "apisix",
+                                "use_pkce": false
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, password is decrypted
+            local code, message, res = t('/apisix/admin/routes/1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say(res.value.plugins["openid-connect"].client_secret)
+
+            -- get plugin conf from etcd, password is encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/routes/1'))
+            ngx.say(res.body.node.value.plugins["openid-connect"].client_secret)
+        }
+    }
+--- response_body
+60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa
+xMlerg8pE2lPSDlQdPi+MsAwBnzqpyLRar3lUhP2Tdc2oXnWmit92p8cannhDYkBPc6P/Hlx0wSA0T2wle9QyHaW2oqw3bXDQSWWk8Vqq0o=

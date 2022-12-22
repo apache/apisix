@@ -84,6 +84,7 @@ jobs:
       - name: Linux launch common services
         run: |
           make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
+          sudo ./ci/init-common-test-service.sh
 
       - name: Start CI env (FIRST_TEST)
         if: steps.test_env.outputs.type == 'first'

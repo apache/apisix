@@ -30,7 +30,7 @@ description: This document contains information about the Apache APISIX skywalki
 
 The `skywalking-logger` Plugin can be used to push access log data to SkyWalking OAP server of HTTP.
 
-If there is an existing tracing context, it sets up the trace-log correlation automatically and relies on [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/latest/en/protocols/skywalking-cross-process-propagation-headers-protocol-v3/). This provides the ability to send access logs as JSON objects to the SkyWalking OAP server.
+If there is an existing tracing context, it sets up the trace-log correlation automatically and relies on [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/next/en/api/x-process-propagation-headers-v3/). This provides the ability to send access logs as JSON objects to the SkyWalking OAP server.
 
 ## Attributes
 

@@ -41,6 +41,8 @@ This Plugin considers the `GET`, `HEAD` and `OPTIONS` methods to be safe operati
 | expires | number | False    | `7200`              | Expiration time in seconds of the CSRF cookie. Set to `0` to skip checking expiration time. |
 | key     | string | True     |                     | Secret key used to encrypt the cookie.                                                      |
 
+NOTE: `encrypt_fields = {"key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 ## Enabling the Plugin
 
 The example below shows how you can enable the Plugin on a specific Route:

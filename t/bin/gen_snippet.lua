@@ -29,6 +29,7 @@ package.path  = pkg_path .. pkg_path_org
 local file = require("apisix.cli.file")
 local schema = require("apisix.cli.schema")
 local snippet = require("apisix.cli.snippet")
+local util = require("apisix.cli.util")
 local yaml_conf, err = file.read_yaml_conf("t/servroot")
 if not yaml_conf then
     error(err)
@@ -45,10 +46,23 @@ if not ok then
     error(err)
 end
 
+local or_info, err = util.execute_cmd("openresty -V 2>&1")
+if not or_info then
+    error("failed to exec cmd \'openresty -V 2>&1\', err: " .. err)
+end
+
+local use_apisix_base = true
+if not or_info:find("apisix-nginx-module", 1, true) then
+    use_apisix_base = false
+end
+
 local res, err
 if arg[1] == "conf_server" then
     res, err = snippet.generate_conf_server(
-        {apisix_home = "t/servroot/"},
+        {
+            apisix_home = "t/servroot/",
+            use_apisix_base = use_apisix_base,
+        },
         yaml_conf)
 end
 

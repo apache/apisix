@@ -67,6 +67,7 @@ local schema = {
             default = true
         }
     },
+    encrypt_fields = {"auth.password"},
     required = { "endpoint_addr", "field" },
 }
 
