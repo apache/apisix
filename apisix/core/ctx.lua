@@ -48,6 +48,13 @@ local GRAPHQL_REQ_METHOD_HTTP_GET    = "GET"
 local GRAPHQL_REQ_METHOD_HTTP_POST   = "POST"
 local GRAPHQL_REQ_MIME_JSON          = "application/json"
 
+local JSONRPC_DEFAULT_MAX_SIZE       = 1048576               -- 1MiB
+local JSONRPC_REQ_METHOD_KEY         = "method"
+local JSONRPC_REQ_PARAMS             = "params"
+local JSONRPC_REQ_METHOD_HTTP_POST   = "POST"
+local JSONRPC_REQ_MIME_JSON          = "application/json"
+
+
 
 local fetch_graphql_data = {
     [GRAPHQL_REQ_METHOD_HTTP_GET] = function(ctx, max_size)
@@ -166,6 +173,97 @@ local function get_parsed_graphql()
     return ctx._graphql
 end
 
+local fetch_jsonrpc_data = {
+    [JSONRPC_REQ_METHOD_HTTP_POST] = function(ctx, max_size)
+        local body, err = request.get_body(max_size, ctx)
+        if not body then
+            return nil, "failed to read jsonrpc data, " .. (err or "request body has zero size")
+        end
+
+        if request.header(ctx, "Content-Type") == JSONRPC_REQ_MIME_JSON then
+            local res
+            res, err = json.decode(body)
+            if not res then
+                return nil, "failed to read jsonrpc data, " .. err
+            end
+
+            if not res[JSONRPC_REQ_METHOD_KEY] then
+                return nil, "failed to read jsonrpc data method, json body[" ..
+                            JSONRPC_REQ_METHOD_KEY .. "] is nil"
+            end
+
+            body = res[JSONRPC_REQ_METHOD_KEY]
+        end
+
+        return body
+    end
+}
+
+local function parse_jsonrpc(ctx)
+    local local_conf, err = config_local.local_conf()
+    if not local_conf then
+        return nil, "failed to get local conf: " .. err
+    end
+
+    local max_size = JSONRPC_DEFAULT_MAX_SIZE
+    local size = core_tab.try_read_attr(local_conf, "jsonrpc", "max_size")
+    if size then
+        max_size = size
+    end
+
+    local method = request.get_method()
+    local func = fetch_jsonrpc_data[method]
+    if not func then
+        return nil, "jsonrpc not support `" .. method .. "` request"
+    end
+
+    local body
+    body, err = func(ctx, max_size)
+    if not body then
+        return nil, err
+    end
+
+    -- local ok, res = pcall(gq_parse, body)
+    -- if not ok then
+    --     return nil, "failed to parse graphql: " .. res .. " body: " .. body
+    -- end
+
+    -- if #res.definitions == 0 then
+    --     return nil, "empty graphql: " .. body
+    -- end
+
+    return body
+end
+
+local function get_parsed_jsonrpc()
+    local ctx = ngx.ctx.api_ctx
+    if ctx._jsonrpc then
+        return ctx._jsonrpc
+    end
+
+    local res, err = parse_jsonrpc(ctx)
+    if not res then
+        log.error(err)
+        ctx._jsonrpc = {}
+        return ctx._jsonrpc
+    end
+
+    -- if #res.definitions > 1 then
+    --     log.warn("Multiple operations are not supported.",
+    --                 "Only the first one is handled")
+    -- end
+
+    local method = res
+    -- local methods = res.methods
+
+    ctx._jsonrpc = {
+        method = res
+        -- methods = methods
+    }
+
+    return ctx._jsonrpc
+end
+
 
 do
     local var_methods = {
@@ -276,6 +374,11 @@ do
                 -- trim the "graphql_" prefix
                 key = sub_str(key, 9)
                 val = get_parsed_graphql()[key]
+
+            elseif core_str.has_prefix(key, "jsonrpc_") then
+                -- trim the "jsonrpc_" prefix
+                key = sub_str(key, 9)
+                val = get_parsed_jsonrpc()[key]
 
             else
                 local getter = apisix_var_names[key]
