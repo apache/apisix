@@ -90,9 +90,11 @@ end
 
 
 function _M.before_proxy(conf, ctx)
-    local peer = ctx.balancer_ip .. ":" .. ctx.balancer_port
-    Span.setPeer(ngx.ctx.exitSpan, peer)
-    sw_tracer:inject(ngx.ctx.exitSpan, peer)
+    if conf.sample_ratio == 1 or math.random() < conf.sample_ratio then
+        local peer = ctx.balancer_ip .. ":" .. ctx.balancer_port
+        Span.setPeer(ngx.ctx.exitSpan, peer)
+        sw_tracer:inject(ngx.ctx.exitSpan, peer)
+    end
 end
 
 
