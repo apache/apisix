@@ -85,7 +85,7 @@ Expected comma or object end but found T_STRING
 
 
 
-=== TEST 2: set route, with redis_cluster_nodes and redis_cluster_name with ssl and ssl_verify
+=== TEST 2: set route, with redis_cluster_nodes and redis_cluster_name redis_cluster_ssl and redis_cluster_ssl_verify
 --- config
     location /t {
         content_by_lua_block {
@@ -140,7 +140,15 @@ unlock with key route#1#redis-cluster
 
 
 
-=== TEST 4: set route, with redis_cluster_nodes and redis_cluster_name with enable degradation switch
+=== TEST 4: up the limit
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 503, 503]
+
+
+
+=== TEST 5: set route, redis_cluster_ssl_verify is true(will cause ssl handshake err), with enable degradation switch
 --- config
     location /t {
         content_by_lua_block {
@@ -187,7 +195,7 @@ passed
 
 
 
-=== TEST 5: enable degradation switch for TEST 4
+=== TEST 6: enable degradation switch for TEST 5
 --- request
 GET /hello
 --- response_body
