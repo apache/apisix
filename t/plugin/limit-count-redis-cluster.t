@@ -481,7 +481,7 @@ passed
 
 
 
-=== TEST 14: enable degradation switch for TEST 5
+=== TEST 14: enable degradation switch for TEST 13
 --- request
 GET /hello
 --- response_body
@@ -538,16 +538,7 @@ passed
 
 
 === TEST 16: up the limit
---- request
-GET /hello
---- error_log
-try to lock with key route#1#redis-cluster
-unlock with key route#1#redis-cluster
-
-
-
-=== TEST 17: up the limit
 --- pipelined_requests eval
-["GET /hello", "GET /hello", "GET /hello"]
+["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
-[200, 503, 503]
+[200, 200, 503, 503]
