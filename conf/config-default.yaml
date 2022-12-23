@@ -634,7 +634,8 @@ deployment:
       - "http://127.0.0.1:2379"     # multiple etcd address, if your etcd cluster enables TLS, please use https scheme,
                                     # e.g. https://127.0.0.1:2379.
     prefix: /apisix                 # configuration prefix in etcd
-    timeout: 30                     # 30 seconds
+    use_grpc: false                 # enable the experimental configuration sync via gRPC
+    timeout: 30                     # 30 seconds. Use a much higher timeout (like an hour) if the `use_grpc` is true.
     #resync_delay: 5                # when sync failed and a rest is needed, resync after the configured seconds plus 50% random jitter
     #health_check_timeout: 10       # etcd retry the unhealthy nodes after the configured seconds
     startup_retry: 2                # the number of retry to etcd during the startup, default to 2

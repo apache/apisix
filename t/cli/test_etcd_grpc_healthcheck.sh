@@ -34,6 +34,8 @@ custom_clean_up() {
 
 trap custom_clean_up EXIT
 
+export ETCD_ENABLE_GRPC_GATEWAY=false
+
 # create 3 node etcd cluster in docker
 ETCD_NAME_0=etcd0
 ETCD_NAME_1=etcd1
