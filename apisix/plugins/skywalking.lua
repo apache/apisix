@@ -90,7 +90,7 @@ end
 
 
 function _M.before_proxy(conf, ctx)
-    if conf.sample_ratio == 1 or math.random() < conf.sample_ratio then
+    if ctx.skywalking_sample then
         local peer = ctx.balancer_ip .. ":" .. ctx.balancer_port
         Span.setPeer(ngx.ctx.exitSpan, peer)
         sw_tracer:inject(ngx.ctx.exitSpan, peer)
