@@ -68,3 +68,37 @@ echo "passed: work well with etcd auth enabled"
 etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 auth disable
 etcdctl --endpoints=127.0.0.1:2379 role delete root
 etcdctl --endpoints=127.0.0.1:2379 user delete root
+
+# check connect to etcd with ipv6 address in cli
+git checkout conf/config.yaml
+
+echo '
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - http://[::1]:2379
+    prefix: /apisix
+    use_grpc: true
+    timeout: 30
+' > conf/config.yaml
+
+rm logs/error.log || true
+make run
+sleep 0.1
+
+if grep "update endpoint: http://\[::1\]:2379 to unhealthy" logs/error.log; then
+    echo "failed: connect to etcd via ipv6 address failed"
+    exit 1
+fi
+
+if grep "host or service not provided, or not known" logs/error.log; then
+    echo "failed: luasocket resolve ipv6 addresses failed"
+    exit 1
+fi
+
+make stop
+
+echo "passed: connect to etcd via ipv6 address successfully"
