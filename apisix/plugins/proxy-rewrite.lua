@@ -297,6 +297,8 @@ do
         else
             ctx.var.upstream_uri = upstream_uri
         end
+    else
+        ctx.var.upstream_uri = upstream_uri
     end
 
     if conf.headers then
