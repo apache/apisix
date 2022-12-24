@@ -1436,3 +1436,254 @@ passed
 GET /t
 --- response_body
 passed
+
+
+
+=== TEST 54: create consumer group(group1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumer_groups/group1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {}
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 55: create consumer group(group2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumer_groups/group2',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {}
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 56: consumer jack1 with consumer group(group1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack1",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "jack2019",
+                            "password": "123456"
+                        }
+                    },
+                    "group_id": "group1"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 57: consumer jack2 with consumer group(group2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack2",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "jack2020",
+                            "password": "123456"
+                        }
+                    },
+                    "group_id": "group2"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 58: set whitelist
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "basic-auth": {},
+                            "consumer-restriction": {
+                                "type": "consumer_group_id",
+                                 "whitelist": [
+                                     "group1"
+                                 ]
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 59: verify unauthorized
+--- request
+GET /hello
+--- error_code: 401
+--- response_body
+{"message":"Missing authorization in request"}
+
+
+
+=== TEST 60: verify jack1
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic amFjazIwMTk6MTIzNDU2
+--- response_body
+hello world
+
+
+
+=== TEST 61: verify jack2
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic amFjazIwMjA6MTIzNDU2
+--- error_code: 403
+--- response_body
+{"message":"The consumer_group_id is forbidden."}
+
+
+
+=== TEST 62: set blacklist
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "basic-auth": {},
+                            "consumer-restriction": {
+                                 "type": "consumer_group_id",
+                                 "blacklist": [
+                                     "group1"
+                                 ],
+                                 "rejected_msg": "request is forbidden"
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 63: verify unauthorized
+--- request
+GET /hello
+--- error_code: 401
+--- response_body
+{"message":"Missing authorization in request"}
+
+
+
+=== TEST 64: verify jack1
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic amFjazIwMTk6MTIzNDU2
+--- error_code: 403
+--- response_body
+{"message":"request is forbidden"}
+
+
+
+=== TEST 65: verify jack2
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic amFjazIwMjA6MTIzNDU2
+--- response_body
+hello world
