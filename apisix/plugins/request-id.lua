@@ -129,6 +129,7 @@ local function gen_data_machine(max_number)
                     if err4 then
                         snowflake_inited = nil
                         data_machine = nil
+                        timers.unregister_timer("plugin#request-id")
                         core.log.error("snowflake data_machine: " .. id .." lease failed.")
                     end
                     start_at = now
