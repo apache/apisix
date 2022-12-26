@@ -71,6 +71,5 @@ __DATA__
             end
         }
     }
---- timeout: 3
 --- error_log
 call config close
