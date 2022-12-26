@@ -1,0 +1,53 @@
+version: "3.8"
+
+services:
+  ## RedisCluster Enable TLS
+  redis-node-0:
+    image: docker.io/bitnami/redis-cluster:7.0
+    volumes:
+      - ./t/certs:/certs
+    environment:
+      - 'ALLOW_EMPTY_PASSWORD=yes'
+      - 'REDIS_NODES=redis-node-0 redis-node-1 redis-node-2'
+      - 'REDIS_TLS_ENABLED=yes'
+      - 'REDIS_TLS_CERT_FILE=/certs/mtls_server.crt'
+      - 'REDIS_TLS_KEY_FILE=/certs/mtls_server.key'
+      - 'REDIS_TLS_CA_FILE=/certs/mtls_ca.crt'
+      - 'REDIS_TLS_AUTH_CLIENTS=no'
+    ports:
+      - '7000:6379'
+
+  redis-node-1:
+    image: docker.io/bitnami/redis-cluster:7.0
+    volumes:
+      - ./t/certs:/certs
+    environment:
+      - 'ALLOW_EMPTY_PASSWORD=yes'
+      - 'REDIS_NODES=redis-node-0 redis-node-1 redis-node-2'
+      - 'REDIS_TLS_ENABLED=yes'
+      - 'REDIS_TLS_CERT_FILE=/certs/mtls_server.crt'
+      - 'REDIS_TLS_KEY_FILE=/certs/mtls_server.key'
+      - 'REDIS_TLS_CA_FILE=/certs/mtls_ca.crt'
+      - 'REDIS_TLS_AUTH_CLIENTS=no'
+    ports:
+      - '7001:6379'
+
+  redis-node-2:
+    image: docker.io/bitnami/redis-cluster:7.0
+    volumes:
+      - ./t/certs:/certs
+    depends_on:
+      - redis-node-0
+      - redis-node-1
+    environment:
+      - 'ALLOW_EMPTY_PASSWORD=yes'
+      - 'REDIS_CLUSTER_REPLICAS=0'
+      - 'REDIS_NODES=redis-node-0 redis-node-1 redis-node-2'
+      - 'REDIS_CLUSTER_CREATOR=yes'
+      - 'REDIS_TLS_ENABLED=yes'
+      - 'REDIS_TLS_CERT_FILE=/certs/mtls_server.crt'
+      - 'REDIS_TLS_KEY_FILE=/certs/mtls_server.key'
+      - 'REDIS_TLS_CA_FILE=/certs/mtls_ca.crt'
+      - 'REDIS_TLS_AUTH_CLIENTS=no'
+    ports:
+      - '7002:6379'

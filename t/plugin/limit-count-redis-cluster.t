@@ -401,7 +401,7 @@ connection refused
                             "time_window": 60,
                             "rejected_code": 503,
                             "key": "remote_addr",
-                            "policy": "redis-cluster"
+                            "policy": "redis-cluster",
                             "redis_timeout": 1001,
                             "redis_cluster_nodes": [
                                 "127.0.0.1:7000",
@@ -429,8 +429,8 @@ connection refused
         }
     }
 --- error_code: 400
---- error_log
-Expected comma or object end but found T_STRING
+--- response_body
+{"error_msg":"failed to check the configuration of plugin limit-count err: else clause did not match"}
 
 
 
