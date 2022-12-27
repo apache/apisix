@@ -55,6 +55,33 @@ fi
 
 echo "passed: nginx.conf file contains reuseport configuration"
 
+# check default listen_backlog
+
+grep -E "listen .* backlog=" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: nginx.conf file contains backlog configuration"
+    exit 1
+fi
+
+echo "passed: nginx.conf file default backlog configuration"
+
+# check sets listen_backlog
+echo "
+apisix:
+  listen_backlog: 1023
+
+" > conf/config.yaml
+
+make init
+
+count_http_backlog=`grep -Ec "listen .* backlog=" conf/nginx.conf`
+if [ $count_http_backlog -ne 4 ]; then
+    echo "failed: nginx.conf file missing backlog configuration"
+    exit 1
+fi
+
+echo "passed: change default http listen backlog"
+
 # check default ssl port
 echo "
 apisix:

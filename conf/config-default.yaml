@@ -28,6 +28,7 @@ apisix:
   #   - ip: 127.0.0.2               # Specific IP, If not set, the default value is `0.0.0.0`.
   #     port: 9082
   #     enable_http2: true
+  # listen_backlog: 511             # Sets nginx listen backlog.If not set, the default value is `511`. http://nginx.org/en/docs/http/ngx_http_core_module.html#listen
   enable_admin: true
   enable_dev_mode: false            # Sets nginx worker_processes to 1 if set to true
   enable_reuseport: true            # Enable nginx SO_REUSEPORT switch if set to true.
