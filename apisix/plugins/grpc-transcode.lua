@@ -110,6 +110,11 @@ function _M.init()
 end
 
 
+function _M.destroy()
+    proto.destroy()
+end
+
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
