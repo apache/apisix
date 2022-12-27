@@ -34,7 +34,7 @@ description: Consumer Restriction 插件允许用户根据 Route、Service 或 C
 
 | 名称     | 类型          | 必选项   | 默认值            | 有效值                    | 描述                          |
 | --------- | ------------- | ------ | -----------------| -------------------------|------------------------|
-| type      | string    | 否    | consumer_name    | ["consumer_name", "service_id", "route_id"] | 支持设置访问限制的对象类型。 |
+| type      | string    | 否    | consumer_name    | ["consumer_name", "consumer_group_id", "service_id", "route_id"] | 支持设置访问限制的对象类型。 |
 | whitelist | array[string] | 是    |                  |                        | 加入白名单的对象，优先级高于 `allowed_by_methods`。 |
 | blacklist | array[string] | 是    |                  |                        | 加入黑名单的对象，优先级高于 `whitelist`。 |
 | rejected_code | integer   | 否    | 403              | [200,...]          | 当请求被拒绝时，返回的 HTTP 状态码。    |
@@ -46,6 +46,7 @@ description: Consumer Restriction 插件允许用户根据 Route、Service 或 C
 不同的 `type` 属性值分别代表以下含义：
 
 - `consumer_name`：把 Consumer 的 `username` 列入白名单或黑名单来限制 Consumer 对 Route 或 Service 的访问。
+- `consumer_group_id`: 把 Consumer Group 的 `id` 列入白名单或黑名单来限制 Consumer 对 Route 或 Service 的访问。
 - `service_id`：把 Service 的 `id` 列入白名单或黑名单来限制 Consumer 对 Service 的访问，需要结合授权插件一起使用。
 - `route_id`：把 Route 的 `id` 列入白名单或黑名单来限制 Consumer 对 Route 的访问。
 
