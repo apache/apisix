@@ -270,5 +270,10 @@ function _M.init()
     end
 end
 
+function _M.destroy()
+    if protos then
+        protos:close()
+    end
+end
 
 return _M
