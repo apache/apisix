@@ -216,6 +216,15 @@ brew services start etcd
 
 ### Configuring APISIX
 
+You can configure your APISIX deployment in two ways:
+
+1. By directly changing your configuration file (`conf/config.yaml`).
+2. By using the `--config` or the `-c` flag to pass the path to your configuration file while starting APISIX.
+
+   ```shell
+   apisix start -c <path to config file>
+   ```
+
 :::note
 
 If you have done the Docker based installation, you need to exec into the `apisix` docker container to run the `apisix` command:
@@ -231,15 +240,6 @@ kubectl exec -it <name-of-apisix-pod> -n <namespace-running-apisix> -- sh
 ```
 
 :::
-
-You can configure your APISIX deployment in two ways:
-
-1. By directly changing your configuration file (`conf/config.yaml`).
-2. By using the `--config` or the `-c` flag to pass the path to your configuration file while starting APISIX.
-
-   ```shell
-   apisix start -c <path to config file>
-   ```
 
 APISIX will use the configurations added in this configuration file and will fall back to the default configuration if anything is not configured.
 
