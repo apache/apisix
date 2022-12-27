@@ -54,7 +54,7 @@ The breakpoint could be at any position within the function. The function could 
 
 ## API to define hook in hooks file
 
-### require("resty.inspect.dbg").set_hook(file, line, func, filter_func)
+### require("apisix.inspect.dbg").set_hook(file, line, func, filter_func)
 
 The breakpoint is specified by `file` (full qualified or short file name) and the `line` number.
 
@@ -127,7 +127,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/test_limit_req -H 'X-API-KEY: edd
 # Note that the breakpoint is associated with the line number,
 # so if the Lua code changes, you need to adjust the line number in the hooks file
 cat <<EOF >/usr/local/apisix/example_hooks.lua
-local dbg = require "resty.inspect.dbg"
+local dbg = require "apisix.inspect.dbg"
 
 dbg.set_hook("limit-req.lua", 88, require("apisix.plugins.limit-req").access, function(info)
     ngx.log(ngx.INFO, debug.traceback("foo traceback", 3))
