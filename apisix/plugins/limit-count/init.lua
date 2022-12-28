@@ -20,6 +20,7 @@ local apisix_plugin = require("apisix.plugin")
 local tab_insert = table.insert
 local ipairs = ipairs
 local pairs = pairs
+local ngx_time = ngx.time
 
 
 local plugin_name = "limit-count"
@@ -38,7 +39,9 @@ local lrucache = core.lrucache.new({
 local group_conf_lru = core.lrucache.new({
     type = 'plugin',
 })
-
+local resetlru = core.lrucache.new({
+    type = 'plugin',
+})
 
 local policy_to_additional_properties = {
     redis = {
@@ -91,8 +94,8 @@ local schema = {
         group = {type = "string"},
         key = {type = "string", default = "remote_addr"},
         key_type = {type = "string",
-            enum = {"var", "var_combination", "constant"},
-            default = "var",
+                    enum = {"var", "var_combination", "constant"},
+                    default = "var",
         },
         rejected_code = {
             type = "integer", minimum = 200, maximum = 599, default = 503
@@ -172,9 +175,9 @@ function _M.check_schema(conf)
         for _, field in ipairs(fields) do
             if not core.table.deep_eq(prev_conf[field], conf[field]) then
                 core.log.error("previous limit-conn group ", prev_conf.group,
-                            " conf: ", core.json.encode(prev_conf))
+                        " conf: ", core.json.encode(prev_conf))
                 core.log.error("current limit-conn group ", conf.group,
-                            " conf: ", core.json.encode(conf))
+                        " conf: ", core.json.encode(conf))
                 return false, "group conf mismatched"
             end
         end
@@ -189,17 +192,17 @@ local function create_limit_obj(conf)
 
     if not conf.policy or conf.policy == "local" then
         return limit_local_new("plugin-" .. plugin_name, conf.count,
-                               conf.time_window)
+                conf.time_window)
     end
 
     if conf.policy == "redis" then
         return limit_redis_new("plugin-" .. plugin_name,
-                               conf.count, conf.time_window, conf)
+                conf.count, conf.time_window, conf)
     end
 
     if conf.policy == "redis-cluster" then
         return limit_redis_cluster_new("plugin-" .. plugin_name, conf.count,
-                                       conf.time_window, conf)
+                conf.time_window, conf)
     end
 
     return nil
@@ -216,7 +219,7 @@ local function gen_limit_key(conf, ctx, key)
     -- because of the change elsewhere.
     -- A route which reuses a previous route's ID will inherits its counter.
     local new_key = ctx.conf_type .. ctx.conf_id .. ':' .. apisix_plugin.conf_version(conf)
-                    .. ':' .. key
+            .. ':' .. key
     if conf._vid then
         -- conf has _vid means it's from workflow plugin, add _vid to the key
         -- so that the counter is unique per action.
@@ -242,6 +245,15 @@ local function gen_limit_obj(conf, ctx)
     return core.lrucache.plugin_ctx(lrucache, ctx, extra_key, create_limit_obj, conf)
 end
 
+local function get_end_time(conf,key)
+    local create = function()
+        return {
+            endtime=0,
+        }
+    end
+
+    return resetlru(key,"",create,conf)
+end
 
 function _M.rate_limit(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
@@ -287,6 +299,21 @@ function _M.rate_limit(conf, ctx)
     if not delay then
         local err = remaining
         if err == "rejected" then
+
+            local end_time_obj = get_end_time(conf,key)
+            local end_time = end_time_obj.endtime
+            local reset = end_time - ngx_time()
+            if reset < 0 then
+                reset = 0
+            end
+
+            -- show count limit header when rejected
+            if conf.show_limit_quota_header then
+                core.response.set_header("X-RateLimit-Limit", conf.count,
+                        "X-RateLimit-Remaining", 0,
+                        "X-RateLimit-Reset", reset)
+            end
+
             if conf.rejected_msg then
                 return conf.rejected_code, { error_msg = conf.rejected_msg }
             end
@@ -300,9 +327,28 @@ function _M.rate_limit(conf, ctx)
         return 500, {error_msg = "failed to limit count"}
     end
 
+    local reset
+    if remaining == conf.count - 1 then
+        -- set an end time
+        local end_time = ngx_time() + conf.time_window
+        -- save to lrucache by key
+        reset = conf.time_window
+        local end_time_obj = get_end_time(conf,key)
+        end_time_obj.endtime = end_time
+    else
+        -- read from lrucache
+        local end_time_obj = get_end_time(conf,key)
+        local end_time = end_time_obj.endtime
+        reset = end_time - ngx_time()
+        if reset < 0 then
+            reset = 0
+        end
+    end
+
     if conf.show_limit_quota_header then
         core.response.set_header("X-RateLimit-Limit", conf.count,
-            "X-RateLimit-Remaining", remaining)
+                "X-RateLimit-Remaining", remaining,
+                "X-RateLimit-Reset", reset)
     end
 end
 

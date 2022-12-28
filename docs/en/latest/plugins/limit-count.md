@@ -254,7 +254,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ## Example usage
 
-The above configuration limits to 2 requests in 60 seconds. The first two requests will work and the response headers will contain the headers `X-RateLimit-Limit` and `X-RateLimit-Remaining`:
+The above configuration limits to 2 requests in 60 seconds. The first two requests will work and the response headers will contain the headers `X-RateLimit-Limit` and `X-RateLimit-Remaining` and `X-RateLimit-Reset`:
 
 ```shell
 curl -i http://127.0.0.1:9080/index.html
@@ -267,16 +267,20 @@ Content-Length: 13175
 Connection: keep-alive
 X-RateLimit-Limit: 2
 X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 58
 Server: APISIX web server
 ```
 
-When you visit for a third time in the 60 seconds, you will receive a response with 503 code:
+When you visit for a third time in the 60 seconds, you will receive a response with 503 code. Currently, in the case of rejection, the limit count headers is also returned:
 
 ```shell
 HTTP/1.1 503 Service Temporarily Unavailable
 Content-Type: text/html
 Content-Length: 194
 Connection: keep-alive
+X-RateLimit-Limit: 2
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 58
 Server: APISIX web server
 ```
 
@@ -287,6 +291,9 @@ HTTP/1.1 503 Service Temporarily Unavailable
 Content-Type: text/html
 Content-Length: 194
 Connection: keep-alive
+X-RateLimit-Limit: 2
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 58
 Server: APISIX web server
 
 {"error_msg":"Requests are too frequent, please try again later."}
