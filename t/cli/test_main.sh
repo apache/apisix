@@ -57,7 +57,7 @@ echo "passed: nginx.conf file contains reuseport configuration"
 
 # check default listen_backlog
 
-grep -E "listen .* backlog=" conf/nginx.conf > /dev/null
+! grep -E "listen .* backlog=" conf/nginx.conf > /dev/null
 if [ ! $? -eq 0 ]; then
     echo "failed: nginx.conf file contains backlog configuration"
     exit 1
