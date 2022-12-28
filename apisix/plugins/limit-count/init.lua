@@ -20,8 +20,8 @@ local apisix_plugin = require("apisix.plugin")
 local tab_insert = table.insert
 local ipairs = ipairs
 local pairs = pairs
+local dict = ngx.shared["plugin-limit-count-reset-header"]
 local ngx_time = ngx.time
-
 
 local plugin_name = "limit-count"
 local limit_redis_cluster_new
@@ -37,9 +37,6 @@ local lrucache = core.lrucache.new({
     type = 'plugin', serial_creating = true,
 })
 local group_conf_lru = core.lrucache.new({
-    type = 'plugin',
-})
-local reset_lru = core.lrucache.new({
     type = 'plugin',
 })
 
@@ -245,16 +242,6 @@ local function gen_limit_obj(conf, ctx)
     return core.lrucache.plugin_ctx(lrucache, ctx, extra_key, create_limit_obj, conf)
 end
 
-local function create_end_time()
-    return {
-        endtime=0,
-    }
-end
-
-local function get_end_time(conf,key)
-    return reset_lru(key, "", create_end_time, conf)
-end
-
 function _M.rate_limit(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
 
@@ -299,9 +286,7 @@ function _M.rate_limit(conf, ctx)
     if not delay then
         local err = remaining
         if err == "rejected" then
-
-            local end_time_obj = get_end_time(conf,key)
-            local end_time = end_time_obj.endtime
+            local end_time = (dict:get(key) or 0)
             local reset = end_time - ngx_time()
             if reset < 0 then
                 reset = 0
@@ -331,14 +316,12 @@ function _M.rate_limit(conf, ctx)
     if remaining == conf.count - 1 then
         -- set an end time
         local end_time = ngx_time() + conf.time_window
-        -- save to lrucache by key
+        -- save to dict by key
+        dict:set(key,end_time,conf.time_window)
         reset = conf.time_window
-        local end_time_obj = get_end_time(conf,key)
-        end_time_obj.endtime = end_time
     else
-        -- read from lrucache
-        local end_time_obj = get_end_time(conf,key)
-        local end_time = end_time_obj.endtime
+        -- read from dict
+        local end_time = (dict:get(key) or 0)
         reset = end_time - ngx_time()
         if reset < 0 then
             reset = 0
