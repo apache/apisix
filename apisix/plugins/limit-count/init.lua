@@ -94,8 +94,8 @@ local schema = {
         group = {type = "string"},
         key = {type = "string", default = "remote_addr"},
         key_type = {type = "string",
-                    enum = {"var", "var_combination", "constant"},
-                    default = "var",
+            enum = {"var", "var_combination", "constant"},
+            default = "var",
         },
         rejected_code = {
             type = "integer", minimum = 200, maximum = 599, default = 503
@@ -175,9 +175,9 @@ function _M.check_schema(conf)
         for _, field in ipairs(fields) do
             if not core.table.deep_eq(prev_conf[field], conf[field]) then
                 core.log.error("previous limit-conn group ", prev_conf.group,
-                        " conf: ", core.json.encode(prev_conf))
+                            " conf: ", core.json.encode(prev_conf))
                 core.log.error("current limit-conn group ", conf.group,
-                        " conf: ", core.json.encode(conf))
+                            " conf: ", core.json.encode(conf))
                 return false, "group conf mismatched"
             end
         end
@@ -192,17 +192,17 @@ local function create_limit_obj(conf)
 
     if not conf.policy or conf.policy == "local" then
         return limit_local_new("plugin-" .. plugin_name, conf.count,
-                conf.time_window)
+                               conf.time_window)
     end
 
     if conf.policy == "redis" then
         return limit_redis_new("plugin-" .. plugin_name,
-                conf.count, conf.time_window, conf)
+                               conf.count, conf.time_window, conf)
     end
 
     if conf.policy == "redis-cluster" then
         return limit_redis_cluster_new("plugin-" .. plugin_name, conf.count,
-                conf.time_window, conf)
+                                       conf.time_window, conf)
     end
 
     return nil
@@ -219,7 +219,7 @@ local function gen_limit_key(conf, ctx, key)
     -- because of the change elsewhere.
     -- A route which reuses a previous route's ID will inherits its counter.
     local new_key = ctx.conf_type .. ctx.conf_id .. ':' .. apisix_plugin.conf_version(conf)
-            .. ':' .. key
+                    .. ':' .. key
     if conf._vid then
         -- conf has _vid means it's from workflow plugin, add _vid to the key
         -- so that the counter is unique per action.
