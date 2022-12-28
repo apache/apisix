@@ -225,6 +225,22 @@ You can configure your APISIX deployment in two ways:
    apisix start -c <path to config file>
    ```
 
+:::note
+
+If you have done the Docker based installation, you need to exec into the `apisix` docker container to run the `apisix` command:
+
+```shell
+docker exec -it <name-of-container/container-id> sh
+```
+
+If you have installed via helm, you need to exec into the `apisix` kubernetes pod to run the `apisix` command:
+
+```shell
+kubectl exec -it <name-of-apisix-pod> -n <namespace-running-apisix> -- sh
+```
+
+:::
+
 APISIX will use the configurations added in this configuration file and will fall back to the default configuration if anything is not configured.
 
 For example, to configure the default listening port to be `8000` without changing other configurations, your configuration file could look like this:
