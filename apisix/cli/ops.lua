@@ -363,7 +363,8 @@ Please modify "admin_key" in conf/config.yaml .
 
     local ip_port_to_check = {}
 
-    local function listen_table_insert(listen_table, scheme, ip, port, enable_http2, enable_ipv6, backlog)
+    local function listen_table_insert(listen_table, scheme, ip, port, 
+					enable_http2, enable_ipv6, backlog)
         if type(ip) ~= "string" then
             util.die(scheme, " listen ip format error, must be string", "\n")
         end
