@@ -39,7 +39,7 @@ local lrucache = core.lrucache.new({
 local group_conf_lru = core.lrucache.new({
     type = 'plugin',
 })
-local resetlru = core.lrucache.new({
+local reset_lru = core.lrucache.new({
     type = 'plugin',
 })
 
@@ -245,14 +245,14 @@ local function gen_limit_obj(conf, ctx)
     return core.lrucache.plugin_ctx(lrucache, ctx, extra_key, create_limit_obj, conf)
 end
 
-local function get_end_time(conf,key)
-    local create = function()
-        return {
-            endtime=0,
-        }
-    end
+local function create_end_time()
+    return {
+        endtime=0,
+    }
+end
 
-    return resetlru(key,"",create,conf)
+local function get_end_time(conf,key)
+    return reset_lru(key, "", create_end_time, conf)
 end
 
 function _M.rate_limit(conf, ctx)

@@ -254,7 +254,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ## Example usage
 
-The above configuration limits to 2 requests in 60 seconds. The first two requests will work and the response headers will contain the headers `X-RateLimit-Limit` and `X-RateLimit-Remaining` and `X-RateLimit-Reset`:
+The above configuration limits to 2 requests in 60 seconds. The first two requests will work and the response headers will contain the headers `X-RateLimit-Limit` and `X-RateLimit-Remaining` and `X-RateLimit-Reset`, represents the total number of requests that are limited, the number of requests that can still be sent, and the number of seconds left for the counter to reset:
 
 ```shell
 curl -i http://127.0.0.1:9080/index.html
