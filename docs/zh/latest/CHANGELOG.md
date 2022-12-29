@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [3.1.0](#310)
 - [3.0.0](#300)
 - [3.0.0-beta](#300-beta)
 - [2.15.1](#2151)
@@ -63,6 +64,49 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.1.0
+
+### Core
+
+- :sunrise: 支持通过 gRPC 来同步 etcd 的配置：
+    - [#8485](https://github.com/apache/apisix/pull/8485)
+    - [#8450](https://github.com/apache/apisix/pull/8450)
+    - [#8411](https://github.com/apache/apisix/pull/8411)
+- :sunrise: 支持在插件中配置加密字段：
+    - [#8487](https://github.com/apache/apisix/pull/8487)
+    - [#8403](https://github.com/apache/apisix/pull/8403)
+- :sunrise: 支持使用 secret 资源将部分字段放到 Vault 或环境变量中：
+    - [#8448](https://github.com/apache/apisix/pull/8448)
+    - [#8421](https://github.com/apache/apisix/pull/8421)
+    - [#8412](https://github.com/apache/apisix/pull/8412)
+    - [#8394](https://github.com/apache/apisix/pull/8394)
+    - [#8390](https://github.com/apache/apisix/pull/8390)
+- :sunrise: 允许在 stream 子系统中以域名的形式配置上游：[#8500](https://github.com/apache/apisix/pull/8500)
+- :sunrise: 支持 Consul 服务发现：[#8380](https://github.com/apache/apisix/pull/8380)
+
+### Plugin
+
+- :sunrise: 优化 prometheus 采集的资源占用：[#8434](https://github.com/apache/apisix/pull/8434)
+- :sunrise: 增加便于调试的 inspect 插件： [#8400](https://github.com/apache/apisix/pull/8400)
+- :sunrise: jwt-auth 插件支持对上游隐蔽认证的参数：[#8206](https://github.com/apache/apisix/pull/8206)
+- :sunrise: proxy-rewrite 插件支持新增请求头的同时不覆盖现有同名请求头：[#8336](https://github.com/apache/apisix/pull/8336)
+- :sunrise: grpc-transcode 插件支持将 grpc-status-details-bin 响应头设置到响应体中：[#7639](https://github.com/apache/apisix/pull/7639)
+- :sunrise: proxy-mirror 插件支持设置前缀：[#8261](https://github.com/apache/apisix/pull/8261)
+
+### Bugfix
+
+- 修复某些情况下，配置在 service 对象下的插件无法及时生效的问题：[#8482](https://github.com/apache/apisix/pull/8482)
+- 修复因连接池复用，http 和 grpc 共用同一个上游节点时偶发 502 的问题：[#8364](https://github.com/apache/apisix/pull/8364)
+- file-logger 在写日志时，应避免缓冲区造成的日志截断：[#7884](https://github.com/apache/apisix/pull/7884)
+- log-rotate 插件的 max_kept 参数应对压缩文件生效：[#8366](https://github.com/apache/apisix/pull/8366)
+- 修复 openid-connect 插件中当 use_jwks 为 true 时没有设置 userinfo 的问题：[#8347](https://github.com/apache/apisix/pull/8347)
+- 修复无法在 proxy-rewrite 插件中修改 x-forwarded-host 的问题：[#8200](https://github.com/apache/apisix/pull/8200)
+- 修复某些情况下，禁用 v3 admin API 导致响应体丢失：[#8349](https://github.com/apache/apisix/pull/8349)
+- zipkin 插件中，即使存在 reject 的 sampling decision，也要传递 trace ID：[#8099](https://github.com/apache/apisix/pull/8099)
+- 修复插件配置中的 `_meta.filter` 无法使用上游响应后才赋值的变量和 APISIX 中自定义变量的问题：
+    - [#8162](https://github.com/apache/apisix/pull/8162)
+    - [#8256](https://github.com/apache/apisix/pull/8256)
 
 ## 3.0.0
 
