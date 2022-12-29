@@ -140,9 +140,9 @@ Once we've discussed your changes and you've got your code ready, make sure that
 
 ## Contributor gifts
 
-If you have contributed to Apache APISIX, no matter it is a code contribution to fix a bug or a feature request, or a documentation change, Congratulations! You are eligible to receive the very special Contributor T-shirt or other gifts(with electronic certificate)! It's always been the community effort that has made Apache APISIX be understood and used by more developers.
+If you have contributed to Apache APISIX, no matter it is a code contribution to fix a bug or a feature request, or a documentation change, Congratulations! You are eligible to receive the APISIX special gifts with electronic certificate! It's always been the community effort that has made Apache APISIX be understood and used by more developers.
 
-![Contributor gifts](https://static.apiseven.com/2022/12/29/63acf56e4ccee.png)
+![Contributor gifts](https://static.apiseven.com/2022/12/29/63acfb2f208e1.png)
 
 If you are a **contributor in China**, you can [click this link](https://wj.qq.com/s2/11438041/7b07/) to supplement relevant information; If you are a **contributor outside of China**, you can click this [Google form](https://forms.gle/DhPL96LnJwuaHjHU7) to supplement relevant information. After filling in the form, please wait patiently. The community will handle it as soon as possible after receiving the information.
 
