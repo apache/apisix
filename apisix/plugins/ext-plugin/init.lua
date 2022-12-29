@@ -76,7 +76,6 @@ local exclude_resp_header = {
     ["server"] = true,
     ["www-authenticate"] = true,
     ["content-encoding"] = true,
-    ["content-type"] = true,
     ["content-location"] = true,
     ["content-language"] = true,
 }
