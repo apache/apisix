@@ -30,8 +30,8 @@ jobs:
         test_dir:
           - t/plugin/[a-k]*
           - t/plugin/[l-z]*
-          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/deployment t/discovery t/error_page t/misc
-          - t/node t/pubsub t/router t/script t/secret t/stream-node t/utils t/wasm t/xds-library
+          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/deployment t/discovery t/error_page t/misc t/stream-node
+          - t/node t/pubsub t/router t/script t/secret t/utils t/wasm t/xds-library
 
     steps:
     - name: Check out code
@@ -61,9 +61,6 @@ jobs:
         test_dir="${{ matrix.test_dir }}"
         if [[ $test_dir =~ 't/plugin' ]]; then
           echo "type=plugin" >>$GITHUB_OUTPUT
-        fi
-        if [[ $test_dir =~ 't/stream-node/discovery' ]]; then
-          echo "type=first" >>$GITHUB_OUTPUT
         fi
         if [[ $test_dir =~ 't/admin ' ]]; then
           echo "type=first" >>$GITHUB_OUTPUT
