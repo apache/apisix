@@ -140,7 +140,7 @@ Once we've discussed your changes and you've got your code ready, make sure that
 
 ## Contributor gifts
 
-If you have contributed to Apache APISIX, no matter it is a code contribution to fix a bug or a feature request, or a documentation change, Congratulations! You are eligible to receive the APISIX special gifts with electronic certificate! It's always been the community effort that has made Apache APISIX be understood and used by more developers.
+If you have contributed to Apache APISIX, no matter it is a code contribution to fix a bug or a feature request, or a documentation change, Congratulations! You are eligible to receive the APISIX special gifts with a digital certificate! It's always been the community effort that has made Apache APISIX be understood and used by more developers.
 
 ![Contributor gifts](https://static.apiseven.com/2022/12/29/63acfb2f208e1.png)
 
