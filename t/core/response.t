@@ -199,3 +199,39 @@ aaa:
 GET /t
 --- response_body
 hello world
+
+
+
+=== TEST 9: exit with string then content-type is text/plain
+--- config
+    location = /t {
+        access_by_lua_block {
+            local core = require("apisix.core")
+            core.response.exit(201, "done\n")
+        }
+    }
+--- request
+GET /t
+--- error_code: 201
+--- response_body
+done
+--- response_headers
+Content-Type: text/plain
+
+
+
+=== TEST 10: exit with table then content-type is application/json
+--- config
+    location = /t {
+        access_by_lua_block {
+            local core = require("apisix.core")
+            core.response.exit(201, {a = "a"})
+        }
+    }
+--- request
+GET /t
+--- error_code: 201
+--- response_body
+{"a":"a"}
+--- response_headers
+Content-Type: application/json

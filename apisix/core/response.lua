@@ -19,6 +19,7 @@
 --
 -- @module core.response
 
+local decode_json = require("cjson.safe").decode
 local encode_json = require("cjson.safe").encode
 local ngx = ngx
 local arg = ngx.arg
@@ -41,6 +42,40 @@ local clear_tab = require("table.clear")
 local pairs = pairs
 
 local _M = {version = 0.1}
+
+local function set_header(append, ...)
+    if ngx.headers_sent then
+      error("headers have already been sent", 2)
+    end
+
+    local count = select('#', ...)
+    if count == 1 then
+        local headers = select(1, ...)
+        if type(headers) ~= "table" then
+            -- response.set_header(name, nil)
+            ngx_header[headers] = nil
+            return
+        end
+
+        for k, v in pairs(headers) do
+            if append then
+                ngx_add_header(k, v)
+            else
+                ngx_header[k] = v
+            end
+        end
+
+        return
+    end
+
+    for i = 1, count, 2 do
+        if append then
+            ngx_add_header(select(i, ...), select(i + 1, ...))
+        else
+            ngx_header[select(i, ...)] = select(i + 1, ...)
+        end
+    end
+end
 
 
 local resp_exit
@@ -80,7 +115,15 @@ function resp_exit(code, ...)
     end
 
     if idx > 0 then
-        ngx_print(concat_tab(t, "", 1, idx))
+        local response = concat_tab(t, "", 1, idx)
+        local _, err = decode_json(response)
+        if not err then
+            local accept_header = ngx.req.get_headers()["Accept"]
+            if not accept_header or accept_header == "application/json" or accept_header == "*/*" then
+                set_header(false, "Content-type", "application/json" )
+            end
+        end
+        ngx_print(response)
     end
 
     if code then
@@ -94,41 +137,6 @@ _M.exit = resp_exit
 
 function _M.say(...)
     resp_exit(nil, ...)
-end
-
-
-local function set_header(append, ...)
-    if ngx.headers_sent then
-      error("headers have already been sent", 2)
-    end
-
-    local count = select('#', ...)
-    if count == 1 then
-        local headers = select(1, ...)
-        if type(headers) ~= "table" then
-            -- response.set_header(name, nil)
-            ngx_header[headers] = nil
-            return
-        end
-
-        for k, v in pairs(headers) do
-            if append then
-                ngx_add_header(k, v)
-            else
-                ngx_header[k] = v
-            end
-        end
-
-        return
-    end
-
-    for i = 1, count, 2 do
-        if append then
-            ngx_add_header(select(i, ...), select(i + 1, ...))
-        else
-            ngx_header[select(i, ...)] = select(i + 1, ...)
-        end
-    end
 end
 
 
