@@ -74,7 +74,7 @@ apisix:
 
 make init
 
-count_http_backlog=`grep -Ec "listen .* backlog=" conf/nginx.conf`
+count_http_backlog=`grep -Ec "listen .* backlog=1023" conf/nginx.conf`
 if [ $count_http_backlog -ne 4 ]; then
     echo "failed: nginx.conf file missing backlog configuration"
     exit 1
