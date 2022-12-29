@@ -167,7 +167,7 @@ $ curl http://127.0.0.1:9080/hello
 {"error_msg":"404 Route Not Found"}
 ```
 
-The `host` rule matches, the request hits the corresponding upstream, and the `host` does not match, the request returns a 404 message.
+If the `host` rule matches, the request hits the corresponding upstream, and if the `host` does not match, the request returns a 404 message.
 
 #### 5. Parameter match
 
@@ -270,7 +270,7 @@ query getRepo {
 * The `graphql_name` is `getRepo`,
 * The `graphql_root_fields` is `["owner", "repo"]`
 
-We can filter such route out with:
+We can filter such route with:
 
 ```shell
 $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
