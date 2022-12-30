@@ -182,7 +182,7 @@ discovery:
 
 ## Upstream setting
 
-### routes
+### L7
 
 Here is an example of routing a request with a URL of "/user/*" to a service which named "user-service" and use eureka discovery client in the registry :
 
@@ -245,9 +245,9 @@ Suppose both A-SERVICE and B-SERVICE provide a `/test` API. The above configurat
 
 **Notice**：When configuring `upstream.service_name`,  `upstream.nodes` will no longer take effect, but will be replaced by 'nodes' obtained from the registry.
 
-### stream_routes
+### L4
 
-Eureka service discovery also supports use in `stream_routes`, the configuration method is similar to `routes`.
+Eureka service discovery also supports use in L4, the configuration method is similar to L7.
 
 ```shell
 $ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '

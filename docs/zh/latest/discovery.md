@@ -186,7 +186,7 @@ discovery:
 
 ## upstream 配置
 
-### routes
+### 七层
 
 APISIX 是通过 `upstream.discovery_type` 选择使用的服务发现，`upstream.service_name` 与注册中心的服务名进行关联。下面是将 URL 为 "/user/\*" 的请求路由到注册中心名为 "USER-SERVICE" 的服务上例子：
 
@@ -249,9 +249,9 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f
 
 **注意**：配置 `upstream.service_name` 后 `upstream.nodes` 将不再生效，而是使用从注册中心的数据来替换，即使注册中心的数据是空的。
 
-### stream_routes
+### 四层
 
-eureka 服务发现也支持在 `stream_routes` 中使用，配置方式与 `routes` 类似。
+eureka 服务发现也支持在四层中使用，配置方式与七层的类似。
 
 ```shell
 $ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
