@@ -258,13 +258,14 @@ $ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f
 {
     "remote_addr": "127.0.0.1",
     "upstream": {
+        "scheme": "tcp",
         "discovery_type": "eureka",
         "service_name": "APISIX-EUREKA",
         "type": "roundrobin"
     }
 }'
 HTTP/1.1 200 OK
-Date: Fri, 30 Dec 2022 03:06:50 GMT
+Date: Fri, 30 Dec 2022 03:52:19 GMT
 Content-Type: application/json
 Transfer-Encoding: chunked
 Connection: keep-alive
@@ -275,5 +276,5 @@ Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 3600
 X-API-VERSION: v3
 
-{"key":"\/apisix\/stream_routes\/1","value":{"update_time":1672369610,"id":"1","remote_addr":"127.0.0.1","create_time":1672106762,"upstream":{"discovery_type":"eureka","service_name":"APISIX-EUREKA","pass_host":"pass","scheme":"http","type":"roundrobin","hash_on":"vars"}}}
+{"key":"\/apisix\/stream_routes\/1","value":{"remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","type":"roundrobin","discovery_type":"eureka","scheme":"tcp","pass_host":"pass","service_name":"APISIX-EUREKA"},"id":"1","create_time":1672106762,"update_time":1672372339}}
 ```
