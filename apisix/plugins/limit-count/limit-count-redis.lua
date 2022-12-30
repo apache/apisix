@@ -97,13 +97,17 @@ function _M.read_reset(self, key)
 
     local ttl, err = red:ttl(key)
     if err then
-        core.log.err("key: ", key, " read_reset with error: ", err)
+        core.log.error("key: ", key, " read_reset with error: ", err)
         return 0
     end
 
     local ok, err = red:set_keepalive(10000, 100)
     if not ok then
-        core.log.err("key: ", key, " read_reset with error: ", err)
+        core.log.error("key: ", key, " read_reset with error: ", err)
+        return 0
+    end
+
+    if ttl < 0 then
         return 0
     end
 

@@ -25,8 +25,8 @@ local limit_redis_cluster_new
 local limit_redis_new
 local limit_local_new
 do
-    local redis_src = "apisix.plugins.limit-count.limit-count-local"
-    limit_local_new = require(redis_src).new
+    local local_src = "apisix.plugins.limit-count.limit-count-local"
+    limit_local_new = require(local_src).new
 
     local redis_src = "apisix.plugins.limit-count.limit-count-redis"
     limit_redis_new = require(redis_src).new
