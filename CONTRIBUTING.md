@@ -144,7 +144,7 @@ If you have contributed to Apache APISIX, no matter it is a code contribution to
 
 ![Contributor gifts](https://static.apiseven.com/2022/12/29/63acfb2f208e1.png)
 
-If you are a **contributor in China**, you can [click this link](https://wj.qq.com/s2/11438041/7b07/) to supplement relevant information; If you are a **contributor outside of China**, you can click this [Google form](https://forms.gle/DhPL96LnJwuaHjHU7) to supplement relevant information. After filling in the form, please wait patiently. The community will handle it as soon as possible after receiving the information.
+Contributors can request gifts by filling out this [Google form](https://forms.gle/DhPL96LnJwuaHjHU7) or [QQ Form](https://wj.qq.com/s2/11438041/7b07/). After filling in the form, please wait patiently. The community needs some time to review submissions.
 
 ## Do you have questions about the source code?
 

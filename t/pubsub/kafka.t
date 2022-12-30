@@ -14,18 +14,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+use Cwd qw(cwd);
 use t::APISIX 'no_plan';
 
 repeat_each(1);
 no_long_string();
 no_root_location();
 
+my $apisix_home = $ENV{APISIX_HOME} // cwd();
+
 add_block_preprocessor(sub {
     my ($block) = @_;
+
+    my $block_init = <<_EOC_;
+    `ln -sf $apisix_home/apisix $apisix_home/t/servroot/apisix`;
+_EOC_
+
+    $block->set_value("init", $block_init);
 
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
+});
+
+add_test_cleanup_handler(sub {
+    `rm -f $apisix_home/t/servroot/apisix`;
 });
 
 run_tests();
