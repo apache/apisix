@@ -27,8 +27,8 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     my $block_init = <<_EOC_;
-        `ln -sf $apisix_home/t $apisix_home/t/servroot/t`;
-    _EOC_
+    `ln -sf $apisix_home/t $apisix_home/t/servroot/t`;
+_EOC_
 
     $block->set_value("init", $block_init);
 
