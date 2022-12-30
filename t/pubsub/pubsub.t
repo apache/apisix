@@ -21,8 +21,7 @@ repeat_each(1);
 no_long_string();
 no_root_location();
 
-
-my $apisix_home = $ENV{TEST_NGINX_SERVROOT} // cwd();
+my $apisix_home = $ENV{APISIX_HOME} // cwd();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
