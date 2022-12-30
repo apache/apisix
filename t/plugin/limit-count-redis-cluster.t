@@ -500,3 +500,31 @@ Done
     }
 --- response_body
 passed
+
+
+
+=== TEST 15: test header X-RateLimit-Remaining exist when limit rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require "t.toolkit.json"
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local ress = {}
+            for i = 1, 3 do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri)
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                ngx.sleep(1)
+                table.insert(ress, res.headers["X-RateLimit-Remaining"])
+
+            end
+            ngx.say(json.encode(ress))
+        }
+    }
+--- response_body
+["1","0","0"]
