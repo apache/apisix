@@ -301,7 +301,7 @@ connect() failed
 --- grep_error_log eval
 qr/proxy request to \S+/
 --- grep_error_log_out
-proxy request to 127.0.0.1:80
+proxy request to 127.0.0.1:nil
 
 
 
@@ -344,7 +344,7 @@ upstreams:
       type: roundrobin
       id: 1
 --- error_log
-proxy request to 127.0.0.1:80
+proxy request to 127.0.0.1:nil
 
 
 
