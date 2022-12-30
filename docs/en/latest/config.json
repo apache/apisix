@@ -1,5 +1,5 @@
 {
-  "version": "3.0.0",
+  "version": "3.1.0",
   "sidebar": [
     {
       "type": "doc",
@@ -22,6 +22,7 @@
         "tutorials/observe-your-api",
         "tutorials/manage-api-consumers",
         "tutorials/cache-api-responses",
+        "tutorials/add-multiple-api-versions",
         "tutorials/health-check",
         "tutorials/client-to-apisix-mtls"
       ]
