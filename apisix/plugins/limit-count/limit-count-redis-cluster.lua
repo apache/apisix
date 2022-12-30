@@ -84,6 +84,21 @@ function _M.new(plugin_name, limit, window, conf)
     return setmetatable(self, mt)
 end
 
+function _M.set_endtime(self,key,time_window)
+    return time_window
+end
+
+function _M.read_reset(self, key)
+    local red = self.red_cli
+
+    local ttl, err = red:ttl(key)
+    if err then
+        core.log.err("key: ", key, " read_reset with error: ", err)
+        return 0
+    end
+
+    return ttl
+end
 
 function _M.incoming(self, key)
     local red = self.red_cli

@@ -14,19 +14,20 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local limit_local_new = require("resty.limit.count").new
 local core = require("apisix.core")
 local apisix_plugin = require("apisix.plugin")
 local tab_insert = table.insert
 local ipairs = ipairs
 local pairs = pairs
-local dict = ngx.shared["plugin-limit-count-reset-header"]
-local ngx_time = ngx.time
 
 local plugin_name = "limit-count"
 local limit_redis_cluster_new
 local limit_redis_new
+local limit_local_new
 do
+    local redis_src = "apisix.plugins.limit-count.limit-count-local"
+    limit_local_new = require(redis_src).new
+
     local redis_src = "apisix.plugins.limit-count.limit-count-redis"
     limit_redis_new = require(redis_src).new
 
@@ -286,11 +287,7 @@ function _M.rate_limit(conf, ctx)
     if not delay then
         local err = remaining
         if err == "rejected" then
-            local end_time = (dict:get(key) or 0)
-            local reset = end_time - ngx_time()
-            if reset < 0 then
-                reset = 0
-            end
+            local reset = lim:read_reset(key)
 
             -- show count limit header when rejected
             if conf.show_limit_quota_header then
@@ -314,18 +311,9 @@ function _M.rate_limit(conf, ctx)
 
     local reset
     if remaining == conf.count - 1 then
-        -- set an end time
-        local end_time = ngx_time() + conf.time_window
-        -- save to dict by key
-        dict:set(key,end_time,conf.time_window)
-        reset = conf.time_window
+        reset = lim:set_endtime(key, conf.time_window)
     else
-        -- read from dict
-        local end_time = (dict:get(key) or 0)
-        reset = end_time - ngx_time()
-        if reset < 0 then
-            reset = 0
-        end
+        reset = lim:read_reset(key)
     end
 
     if conf.show_limit_quota_header then

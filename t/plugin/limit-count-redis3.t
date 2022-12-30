@@ -26,6 +26,11 @@ BEGIN {
 
 use t::APISIX 'no_plan';
 
+repeat_each(1);
+no_long_string();
+no_shuffle();
+no_root_location();
+
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -54,7 +59,12 @@ __DATA__
                     "plugins": {
                         "limit-count": {
                             "count": 1,
-                            "time_window": 60
+                            "time_window": 60,
+                            "policy": "redis",
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "redis_database": 1,
+                            "redis_timeout": 1001
                         }
                     },
                     "upstream": {
@@ -123,7 +133,12 @@ Done
                     "plugins": {
                         "limit-count": {
                             "count": 2,
-                            "time_window": 60
+                            "time_window": 60,
+                            "policy": "redis",
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "redis_database": 1,
+                            "redis_timeout": 1001
                         }
                     },
                     "upstream": {

@@ -37,25 +37,9 @@ local script = core.string.compress_script([=[
     return redis.call('incrby', KEYS[1], -1)
 ]=])
 
-
-function _M.new(plugin_name, limit, window, conf)
-    assert(limit > 0 and window > 0)
-
-    local self = {
-        limit = limit,
-        window = window,
-        conf = conf,
-        plugin_name = plugin_name,
-    }
-    return setmetatable(self, mt)
-end
-
-
-function _M.incoming(self, key)
-    local conf = self.conf
+local function redis_cli(conf)
     local red = redis_new()
     local timeout = conf.redis_timeout or 1000    -- 1sec
-    core.log.info("ttl key: ", key, " timeout: ", timeout)
 
     red:set_timeouts(timeout, timeout, timeout)
 
@@ -84,6 +68,53 @@ function _M.incoming(self, key)
     elseif err then
         -- core.log.info(" err: ", err)
         return nil, err
+    end
+    return red, nil
+end
+
+function _M.new(plugin_name, limit, window, conf)
+    assert(limit > 0 and window > 0)
+
+    local self = {
+        limit = limit,
+        window = window,
+        conf = conf,
+        plugin_name = plugin_name,
+    }
+    return setmetatable(self, mt)
+end
+
+function _M.set_endtime(self,key,time_window)
+    return time_window
+end
+
+function _M.read_reset(self, key)
+    local conf = self.conf
+    local red, err = redis_cli(conf)
+    if err then
+        return red, err
+    end
+
+    local ttl, err = red:ttl(key)
+    if err then
+        core.log.err("key: ", key, " read_reset with error: ", err)
+        return 0
+    end
+
+    local ok, err = red:set_keepalive(10000, 100)
+    if not ok then
+        core.log.err("key: ", key, " read_reset with error: ", err)
+        return 0
+    end
+
+    return ttl
+end
+
+function _M.incoming(self, key)
+    local conf = self.conf
+    local red, err = redis_cli(conf)
+    if err then
+        return red, err
     end
 
     local limit = self.limit
