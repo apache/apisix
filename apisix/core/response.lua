@@ -118,10 +118,12 @@ function resp_exit(code, ...)
         local response = concat_tab(t, "", 1, idx)
         local _, err = decode_json(response)
         if not err then
+            local content_type = ngx_header["Content-type"]
             local accept_header = ngx.req.get_headers()["Accept"]
-            if not accept_header
-               or accept_header == "application/json"
-               or accept_header == "*/*" 
+            if not content_type
+               and (not accept_header
+                    or accept_header == "application/json"
+                    or accept_header == "*/*" )
             then
                 set_header(false, "Content-type", "application/json" )
             end
