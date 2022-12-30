@@ -20,12 +20,25 @@ repeat_each(1);
 no_long_string();
 no_root_location();
 
+
+my $apisix_home = $ENV{TEST_NGINX_SERVROOT} // cwd();
+
 add_block_preprocessor(sub {
     my ($block) = @_;
+
+    my $block_init = <<_EOC_;
+        `ln -sf $apisix_home/t $apisix_home/t/servroot/t`;
+    _EOC_
+
+    $block->set_value("init", $block_init);
 
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
+});
+
+add_test_cleanup_handler(sub {
+    `rm -f $apisix_home/t/servroot/t`;
 });
 
 run_tests();
