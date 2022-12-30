@@ -26,7 +26,7 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     my $block_init = <<_EOC_;
-    `ln -sf $apisix_home/t $apisix_home/t/servroot/t`;
+    `ln -sf $apisix_home/apisix $apisix_home/t/servroot/apisix`;
 _EOC_
 
     $block->set_value("init", $block_init);
@@ -37,7 +37,7 @@ _EOC_
 });
 
 add_test_cleanup_handler(sub {
-    `rm -f $apisix_home/t/servroot/t`;
+    `rm -f $apisix_home/t/servroot/apisix`;
 });
 
 run_tests();
