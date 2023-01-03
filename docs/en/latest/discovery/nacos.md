@@ -115,7 +115,6 @@ $ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f
 }'
 ```
 
-
 ### discovery_args
 
 | Name         | Type   | Requirement | Default | Valid | Description                                                  |
