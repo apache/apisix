@@ -164,6 +164,7 @@ nginx_config:                     # config for render the template to generate n
       etcd-cluster-health-check-stream: 10m
       lrucache-lock-stream: 10m
       plugin-limit-conn-stream: 10m
+      worker-events-stream: 10m
 
   # As user can add arbitrary configurations in the snippet,
   # it is user's responsibility to check the configurations

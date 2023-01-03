@@ -123,6 +123,9 @@ function _M.ssls()
 end
 
 function _M.http_routes()
+    if not _M.router_http then
+        return nil, nil
+    end
     return _M.router_http.routes()
 end
 
