@@ -79,6 +79,12 @@ local policy_to_additional_properties = {
             redis_cluster_name = {
                 type = "string",
             },
+            redis_cluster_ssl = {
+                type = "boolean", default = false,
+            },
+            redis_cluster_ssl_verify = {
+                type = "boolean", default = false,
+            },
         },
         required = {"redis_cluster_nodes", "redis_cluster_name"},
     },
