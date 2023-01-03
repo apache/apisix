@@ -554,7 +554,30 @@ ERR_TOKEN_INVALID
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
+             -- put secret vault config
+            local code, body = t('/apisix/admin/secrets/vault/test1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://127.0.0.1:8200",
+                    "prefix" : "kv/apisix",
+                    "token" : "root"
+                }]],
+                [[{
+                    "value": {
+                        "uri": "http://127.0.0.1:8200",
+                        "prefix" : "kv/apisix",
+                        "token" : "root"
+                    },
+                    "key": "/apisix/secrets/vault/test1"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
                     "username": "wolf_rbac_unit_test",
