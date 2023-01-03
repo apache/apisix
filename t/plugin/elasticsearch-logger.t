@@ -109,7 +109,7 @@ passed
 property "endpoint_addr" is required
 property "field" is required
 property "field" validation failed: property "index" is required
-property "endpoint_addr" validation failed: failed to match pattern "\[\^/\]\$" with "http://127.0.0.1:9200/"
+property "endpoint_addr" validation failed: object matches none of the required
 
 
 
@@ -515,3 +515,39 @@ apisix:
 --- response_body
 123456
 PTQvJEaPcNOXcOHeErC0XQ==
+
+
+
+=== TEST 13: add plugin on routes using multi elasticsearch-logger
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addr = {"http://127.0.0.1:9200", "http://127.0.0.1:9201"},
+                        field = {
+                            index = "services"
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed

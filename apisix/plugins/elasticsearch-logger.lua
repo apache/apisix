@@ -23,18 +23,35 @@ local plugin          = require("apisix.plugin")
 
 local ngx             = ngx
 local str_format      = core.string.format
+local math_random     = math.random
+local type            = type
 
 local plugin_name = "elasticsearch-logger"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
 
 
-local schema = {
-    type = "object",
-    properties = {
-        endpoint_addr = {
+local endpoint_schema = {
+    anyOf = {
+        {
+            -- deprecated, use "array" instead
             type = "string",
             pattern = "[^/]$",
         },
+        {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "string",
+                pattern = "[^/]$",
+            },
+        }
+    }
+}
+
+local schema = {
+    type = "object",
+    properties = {
+        endpoint_addr = endpoint_schema,
         field = {
             type = "object",
             properties = {
@@ -68,7 +85,7 @@ local schema = {
         }
     },
     encrypt_fields = {"auth.password"},
-    required = { "endpoint_addr", "field" },
+    required = {"endpoint_addr", "field"},
 }
 
 
@@ -127,7 +144,13 @@ local function send_to_elasticsearch(conf, entries)
         return false, str_format("create http error: %s", err)
     end
 
-    local uri = conf.endpoint_addr .. "/_bulk"
+    local selected_endpoint_addr
+    if type(conf.endpoint_addr) == "string" then
+        selected_endpoint_addr = conf.endpoint_addr
+    else
+        selected_endpoint_addr = conf.endpoint_addr[math_random(#conf.endpoint_addr)]
+    end
+    local uri = selected_endpoint_addr .. "/_bulk"
     local body = core.table.concat(entries, "")
     local headers = {["Content-Type"] = "application/x-ndjson"}
     if conf.auth then
