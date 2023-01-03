@@ -36,13 +36,6 @@ local script = core.string.compress_script([=[
     end
     return redis.call('incrby', KEYS[1], -1)
 ]=])
-local script2 = core.string.compress_script([=[
-    local t = redis.call('ttl', KEYS[1])
-    if t < 0 then
-        return 0
-    end
-    return t
-]=])
 
 
 local function new_redis_cluster(conf)
@@ -97,9 +90,12 @@ end
 
 function _M.read_reset(self, key)
     local red = self.red_cli
-
-    local ttl, err = red:eval(script2,1,key)
+    key = self.plugin_name .. tostring(key)
+    local ttl, err = red:ttl(key)
     if err then
+        return 0
+    end
+    if ttl < 0 then
         return 0
     end
 
