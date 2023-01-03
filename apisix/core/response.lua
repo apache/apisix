@@ -19,6 +19,7 @@
 --
 -- @module core.response
 
+local core_request = require("apisix.core.request")
 local decode_json = require("cjson.safe").decode
 local encode_json = require("cjson.safe").encode
 local ngx = ngx
@@ -117,7 +118,7 @@ function resp_exit(code, ...)
     if idx > 0 then
         local response = concat_tab(t, "", 1, idx)
         local content_type = ngx_header["Content-type"]
-        local accept_header = ngx.req.get_headers()["Accept"]
+        local accept_header = core_request.header(ctx, "Accept")
         if not content_type
             and (not accept_header
                 or accept_header == "application/json"
