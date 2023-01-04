@@ -256,6 +256,7 @@ end
 
 local function set_upstream_headers(api_ctx, picked_server)
     set_upstream_host(api_ctx, picked_server)
+
     local proto = api_ctx.var.http_x_forwarded_proto
     if proto then
         api_ctx.var.var_x_forwarded_proto = proto
