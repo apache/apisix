@@ -17,7 +17,6 @@
 local pcall   = pcall
 local require = require
 local core    = require("apisix.core")
-local utils   = require("apisix.admin.utils")
 local encrypt_conf = require("apisix.plugin").encrypt_conf
 
 local injected_mark = "injected metadata_schema"

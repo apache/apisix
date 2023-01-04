@@ -173,7 +173,8 @@ local function run()
 
     local method = str_lower(get_method())
     local resource_handler = resource_handlers:new(seg_res)
-    if not resource[method] and not (resource_handler.valid_methods[method] and resource_handler.handlers[method]) then
+    if not resource[method] and not (resource_handler.valid_methods[method]
+                                     and resource_handler.handlers[method]) then
         core.response.exit(404, {error_msg = "not found"})
     end
 
@@ -202,7 +203,7 @@ local function run()
         end
     end
 
-    local code, data = 200, ""
+    local code, data
     if resource_handler[method] then
         code, data = resource_handler[method](seg_id, req_body, seg_sub_path, uri_args)
     else

@@ -20,7 +20,7 @@ local utils = require("apisix.admin.utils")
 
 local _M = {
     name = "",
-    handlers = null,
+    handlers = {},
     version = 0.2,
     need_v3_filter = true,
     -- TODO: this will be removed after all methods of resources refactored
