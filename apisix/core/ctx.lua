@@ -207,7 +207,6 @@ local fetch_jsonrpc_data = {
                     elseif common_method ~= request[JSONRPC_REQ_METHOD_KEY] then
                         -- Different methods in batch request
                         common_method = "batch"
-                        break
                     end
                 end
                 -- Return the common method name or "batch" and the array of methods
