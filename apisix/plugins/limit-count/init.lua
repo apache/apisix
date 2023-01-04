@@ -283,12 +283,10 @@ function _M.rate_limit(conf, ctx)
     key = gen_limit_key(conf, ctx, key)
     core.log.info("limit key: ", key)
 
-    local delay, remaining = lim:incoming(key, true)
+    local delay, remaining, reset = lim:incoming(key, true, conf)
     if not delay then
         local err = remaining
         if err == "rejected" then
-            local reset = lim:read_reset(key)
-
             -- show count limit header when rejected
             if conf.show_limit_quota_header then
                 core.response.set_header("X-RateLimit-Limit", conf.count,
@@ -307,13 +305,6 @@ function _M.rate_limit(conf, ctx)
             return
         end
         return 500, {error_msg = "failed to limit count"}
-    end
-
-    local reset
-    if remaining == conf.count - 1 then
-        reset = lim:set_endtime(key, conf.time_window)
-    else
-        reset = lim:read_reset(key)
     end
 
     if conf.show_limit_quota_header then

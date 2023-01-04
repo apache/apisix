@@ -26,7 +26,7 @@ local mt = {
     __index = _M
 }
 
-function _M.set_endtime(self,key,time_window)
+local function set_endtime(self, key, time_window)
     -- set an end time
     local end_time = ngx_time() + time_window
     -- save to dict by key
@@ -36,7 +36,7 @@ function _M.set_endtime(self,key,time_window)
     return reset
 end
 
-function _M.read_reset(self, key)
+local function read_reset(self, key)
     -- read from dict
     local end_time = (self.dict:get(key) or 0)
     local reset = end_time - ngx_time()
@@ -57,8 +57,20 @@ function _M.new(plugin_name, limit, window, conf)
     return setmetatable(self, mt)
 end
 
-function _M.incoming(self, key, commit)
-    return self.limit_count:incoming(key, commit)
+function _M.incoming(self, key, commit, conf)
+    local delay, remaining =  self.limit_count:incoming(key, commit)
+    local reset = 0
+    if not delay then
+        return delay, remaining, reset
+    end
+
+    if remaining == conf.count - 1 then
+        reset = set_endtime(self, key, conf.time_window)
+    else
+        reset = read_reset(self, key)
+    end
+
+    return delay, remaining, reset
 end
 
 return _M

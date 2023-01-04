@@ -30,11 +30,12 @@ local mt = {
 
 
 local script = core.string.compress_script([=[
-    if redis.call('ttl', KEYS[1]) < 0 then
+    local ttl = redis.call('ttl', KEYS[1])
+    if ttl < 0 then
         redis.call('set', KEYS[1], ARGV[1] - 1, 'EX', ARGV[2])
-        return ARGV[1] - 1
+        return {ARGV[1] - 1, ARGV[2]}
     end
-    return redis.call('incrby', KEYS[1], -1)
+    return {redis.call('incrby', KEYS[1], -1), ttl}
 ]=])
 
 local function redis_cli(conf)
@@ -123,24 +124,26 @@ function _M.incoming(self, key)
 
     local limit = self.limit
     local window = self.window
-    local remaining
+    local res
     key = self.plugin_name .. tostring(key)
 
-    remaining, err = red:eval(script, 1, key, limit, window)
+    res, err = red:eval(script, 1, key, limit, window)
+    local remaining = res[1]
+    local ttl = res[2]
 
     if err then
-        return nil, err
+        return nil, err, ttl
     end
 
     local ok, err = red:set_keepalive(10000, 100)
     if not ok then
-        return nil, err
+        return nil, err, ttl
     end
 
     if remaining < 0 then
-        return nil, "rejected"
+        return nil, "rejected", ttl
     end
-    return 0, remaining
+    return 0, remaining, ttl
 end
 
 

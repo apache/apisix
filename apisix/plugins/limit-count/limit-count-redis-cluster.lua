@@ -30,11 +30,12 @@ local mt = {
 
 
 local script = core.string.compress_script([=[
-    if redis.call('ttl', KEYS[1]) < 0 then
+    local ttl = redis.call('ttl', KEYS[1])
+    if ttl < 0 then
         redis.call('set', KEYS[1], ARGV[1] - 1, 'EX', ARGV[2])
-        return ARGV[1] - 1
+        return {ARGV[1] - 1, ARGV[2]}
     end
-    return redis.call('incrby', KEYS[1], -1)
+    return {redis.call('incrby', KEYS[1], -1), ttl}
 ]=])
 
 
@@ -84,23 +85,6 @@ function _M.new(plugin_name, limit, window, conf)
     return setmetatable(self, mt)
 end
 
-function _M.set_endtime(self,key,time_window)
-    return time_window
-end
-
-function _M.read_reset(self, key)
-    local red = self.red_cli
-    key = self.plugin_name .. tostring(key)
-    local ttl, err = red:ttl(key)
-    if err then
-        return 0
-    end
-    if ttl < 0 then
-        return 0
-    end
-
-    return ttl
-end
 
 function _M.incoming(self, key)
     local red = self.red_cli
@@ -108,16 +92,18 @@ function _M.incoming(self, key)
     local window = self.window
     key = self.plugin_name .. tostring(key)
 
-    local remaining, err = red:eval(script, 1, key, limit, window)
+    local res, err = red:eval(script, 1, key, limit, window)
+    local remaining = res[1]
+    local ttl = res[2]
 
     if err then
-        return nil, err
+        return nil, err, ttl
     end
 
     if remaining < 0 then
-        return nil, "rejected"
+        return nil, "rejected", ttl
     end
-    return 0, remaining
+    return 0, remaining, ttl
 end
 
 

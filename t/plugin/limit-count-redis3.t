@@ -121,7 +121,7 @@ Done
 
 
 
-=== TEST 3: set route, counter will be shared
+=== TEST 3: set router
 --- config
     location /t {
         content_by_lua_block {
@@ -133,7 +133,7 @@ Done
                     "plugins": {
                         "limit-count": {
                             "count": 2,
-                            "time_window": 60,
+                            "time_window": 10,
                             "policy": "redis",
                             "redis_host": "127.0.0.1",
                             "redis_port": 6379,
