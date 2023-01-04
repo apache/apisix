@@ -58,7 +58,7 @@ function _M.new(plugin_name, limit, window, conf)
 end
 
 function _M.incoming(self, key, commit, conf)
-    local delay, remaining =  self.limit_count:incoming(key, commit)
+    local delay, remaining = self.limit_count:incoming(key, commit)
     local reset = 0
     if not delay then
         return delay, remaining, reset

@@ -807,7 +807,6 @@ nginx_config:
       internal-status: 20m
       plugin-limit-req: 20m
       plugin-limit-count: 20m
-      plugin-limit-count-reset-header: 20m
       prometheus-metrics: 20m
       plugin-limit-conn: 20m
       upstream-healthcheck: 20m
@@ -840,11 +839,6 @@ fi
 
 if ! grep "plugin-limit-count 20m;" conf/nginx.conf > /dev/null; then
     echo "failed: 'plugin-limit-count 20m;' not in nginx.conf"
-    exit 1
-fi
-
-if ! grep "plugin-limit-count-reset-header 20m;" conf/nginx.conf > /dev/null; then
-    echo "failed: 'plugin-limit-count-reset-header 20m;' not in nginx.conf"
     exit 1
 fi
 
