@@ -235,3 +235,25 @@ GET /t
 {"a":"a"}
 --- response_headers
 Content-Type: application/json
+
+
+
+=== TEST 11: exit with table but request don't accept application/json, so we got text/plain
+--- config
+    location = /t {
+        access_by_lua_block {
+            local core = require("apisix.core")
+            ngx.ctx.api_ctx = {}
+            local ctx = ngx.ctx.api_ctx
+            core.request.set_header(ctx, "Accept", "application/xml")
+            core.response.exit(201, {a = "a"})
+        }
+    }
+--- request
+GET /t
+--- error_code: 201
+--- response_body
+{"a":"a"}
+--- response_headers
+Content-Type: text/plain
+echo 
