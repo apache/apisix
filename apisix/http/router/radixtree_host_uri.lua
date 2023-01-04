@@ -150,6 +150,12 @@ function _M.match(api_ctx)
         cached_service_version = service_version
     end
 
+    return _M.matching(api_ctx)
+end
+
+
+function _M.matching(api_ctx)
+    core.log.info("route match mode: radixtree_host_uri")
 
     core.table.clear(match_opts)
     match_opts.method = api_ctx.var.request_method

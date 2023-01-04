@@ -42,24 +42,6 @@ _EOC_
     $block->set_value("http_config", $http_config);
 });
 
-our $yaml_config = <<_EOC_;
-apisix:
-  node_listen: 1984
-  enable_control: true
-deployment:
-  role: data_plane
-  role_data_plane:
-    config_provider: yaml
-discovery:
-  consul_kv:
-    servers:
-      - "http://127.0.0.1:8500"
-    dump:
-      path: "consul_kv.dump"
-      load_on_init: true
-_EOC_
-
-
 run_tests();
 
 __DATA__
@@ -84,7 +66,17 @@ location /v1/kv {
 
 
 === TEST 2: show dump services
---- yaml_config eval: $::yaml_config
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_control: true
+discovery:
+  consul_kv:
+    servers:
+      - "http://127.0.0.1:8500"
+    dump:
+      path: "consul_kv.dump"
+      load_on_init: true
 --- config
     location /t {
         content_by_lua_block {
@@ -186,6 +178,8 @@ routes:
 GET /hello
 --- response_body
 server 1
+--- error_log
+connect consul
 
 
 
@@ -234,6 +228,10 @@ routes:
 --- request
 GET /hello
 --- error_code: 503
+--- error_log
+connect consul
+fetch nodes failed
+failed to set upstream
 
 
 
@@ -297,6 +295,8 @@ routes:
 GET /hello
 --- response_body
 server 1
+--- error_log
+connect consul
 
 
 
@@ -358,10 +358,6 @@ success
 apisix:
   node_listen: 1984
   enable_control: true
-deployment:
-  role: data_plane
-  role_data_plane:
-    config_provider: yaml
 discovery:
   consul_kv:
     servers:
@@ -372,6 +368,8 @@ discovery:
 --- request
 GET /v1/discovery/consul_kv/show_dump_file
 --- error_code: 503
+--- error_log
+connect consul
 
 
 
@@ -380,10 +378,6 @@ GET /v1/discovery/consul_kv/show_dump_file
 apisix:
   node_listen: 1984
   enable_control: true
-deployment:
-  role: data_plane
-  role_data_plane:
-    config_provider: yaml
 discovery:
   consul_kv:
     servers:
@@ -392,3 +386,5 @@ discovery:
 --- request
 GET /v1/discovery/consul_kv/show_dump_file
 --- error_code: 503
+--- error_log
+connect consul

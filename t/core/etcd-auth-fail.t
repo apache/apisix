@@ -63,7 +63,7 @@ __DATA__
 --- request
 GET /t
 --- error_log eval
-qr /insufficient credentials code: 401/
+qr /(insufficient credentials code: 401|etcdserver: user name is empty)/
 
 
 

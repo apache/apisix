@@ -45,6 +45,13 @@ function _M.match(api_ctx)
         return true
     end
 
+    return _M.matching(api_ctx)
+end
+
+
+function _M.matching(api_ctx)
+    core.log.info("route match mode: radixtree_uri")
+
     return base_router.match_uri(uri_router, match_opts, api_ctx)
 end
 

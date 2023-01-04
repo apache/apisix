@@ -54,8 +54,6 @@ services:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -110,8 +108,6 @@ upstreams:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -145,8 +141,6 @@ upstreams:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -181,8 +175,6 @@ upstreams:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -217,8 +209,6 @@ upstreams:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -252,8 +242,6 @@ services:
 GET /hello
 --- response_body
 hello
---- no_error_log
-[error]
 
 
 

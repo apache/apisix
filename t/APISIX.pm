@@ -416,6 +416,7 @@ _EOC_
 _EOC_
 
     my $stream_extra_init_by_lua = $block->stream_extra_init_by_lua // "";
+    my $stream_extra_init_worker_by_lua = $block->stream_extra_init_worker_by_lua // "";
 
     $stream_config .= <<_EOC_;
     init_by_lua_block {
@@ -424,6 +425,7 @@ _EOC_
     }
     init_worker_by_lua_block {
         apisix.stream_init_worker()
+        $stream_extra_init_worker_by_lua
     }
 
     $extra_stream_config
@@ -771,12 +773,6 @@ _EOC_
             if (\$http_x_forwarded_for != "") {
                 set \$var_x_forwarded_for "\${http_x_forwarded_for}, \${realip_remote_addr}";
             }
-            if (\$http_x_forwarded_host != "") {
-                set \$var_x_forwarded_host \$http_x_forwarded_host;
-            }
-            if (\$http_x_forwarded_port != "") {
-                set \$var_x_forwarded_port \$http_x_forwarded_port;
-            }
 
             proxy_set_header   X-Forwarded-For      \$var_x_forwarded_for;
             proxy_set_header   X-Forwarded-Proto    \$var_x_forwarded_proto;
@@ -843,6 +839,17 @@ deployment:
 _EOC_
 
     if ($yaml_config !~ m/deployment:/) {
+        # TODO: remove this temporary option once we have using gRPC by default
+        if ($ENV{TEST_CI_USE_GRPC}) {
+            $default_deployment .= <<_EOC_;
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: /apisix
+    use_grpc: true
+_EOC_
+        }
+
         $yaml_config = $default_deployment . $yaml_config;
     }
 
@@ -880,6 +887,12 @@ $user_apisix_yaml
 _EOC_
 
     $block->set_value("user_files", $user_files);
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)
+        && (!defined $block->grep_error_log)
+        && (!defined $block->ignore_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
 
     $block;
 });

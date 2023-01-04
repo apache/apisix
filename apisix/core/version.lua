@@ -20,5 +20,5 @@
 -- @module core.version
 
 return {
-    VERSION = "2.99.0"
+    VERSION = "3.1.0"
 }

@@ -23,7 +23,10 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.1.0](#310)
+- [3.0.0](#300)
 - [3.0.0-beta](#300-beta)
+- [2.15.1](#2151)
 - [2.15.0](#2150)
 - [2.14.1](#2141)
 - [2.14.0](#2140)
@@ -61,6 +64,85 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.1.0
+
+### Core
+
+- :sunrise: Support for etcd configuration synchronization via gRPC:
+    - [#8485](https://github.com/apache/apisix/pull/8485)
+    - [#8450](https://github.com/apache/apisix/pull/8450)
+    - [#8411](https://github.com/apache/apisix/pull/8411)
+- :sunrise: Support for configuring encrypted fields in plugins:
+    - [#8487](https://github.com/apache/apisix/pull/8487)
+    - [#8403](https://github.com/apache/apisix/pull/8403)
+- :sunrise: Support for placing partial fields in Vault or environment variable using secret resources:
+    - [#8448](https://github.com/apache/apisix/pull/8448)
+    - [#8421](https://github.com/apache/apisix/pull/8421)
+    - [#8412](https://github.com/apache/apisix/pull/8412)
+    - [#8394](https://github.com/apache/apisix/pull/8394)
+    - [#8390](https://github.com/apache/apisix/pull/8390)
+- :sunrise: Allows upstream configuration in the stream subsystem as a domain name: [#8500](https://github.com/apache/apisix/pull/8500)
+- :sunrise: Support Consul service discovery: [#8380](https://github.com/apache/apisix/pull/8380)
+
+### Plugin
+
+- :sunrise: Optimize resource usage for prometheus collection: [#8434](https://github.com/apache/apisix/pull/8434)
+- :sunrise: Add inspect plugin for easy debugging: [#8400](https://github.com/apache/apisix/pull/8400)
+- :sunrise: jwt-auth plugin supports parameters to hide authentication token from upstream : [#8206](https://github.com/apache/apisix/pull/8206)
+- :sunrise: proxy-rewrite plugin supports adding new request headers without overwriting existing request headers with the same name: [#8336](https://github.com/apache/apisix/pull/8336)
+- :sunrise: grpc-transcode plugin supports setting the grpc-status-details-bin response header into the response body: [#7639](https://github.com/apache/apisix/pull/7639)
+- :sunrise: proxy-mirror plugin supports setting the prefix: [#8261](https://github.com/apache/apisix/pull/8261)
+
+### Bugfix
+
+- Fix the problem that the plug-in configured under service object cannot take effect in time under some circumstances: [#8482](https://github.com/apache/apisix/pull/8482)
+- Fix an occasional 502 problem when http and grpc share the same upstream connection due to connection pool reuse: [#8364](https://github.com/apache/apisix/pull/8364)
+- file-logger should avoid buffer-induced log truncation when writing logs: [#7884](https://github.com/apache/apisix/pull/7884)
+- max_kept parameter of log-rotate plugin should take effect on compressed files: [#8366](https://github.com/apache/apisix/pull/8366)
+- Fix userinfo not being set when use_jwks is true in the openid-connect plugin: [#8347](https://github.com/apache/apisix/pull/8347)
+- Fix an issue where x-forwarded-host cannot be changed in the proxy-rewrite plugin: [#8200](https://github.com/apache/apisix/pull/8200)
+- Fix a bug where disabling the v3 admin API resulted in missing response bodies under certain circumstances: [#8349](https://github.com/apache/apisix/pull/8349)
+- In zipkin plugin, pass trace ID even if there is a rejected sampling decision: [#8099](https://github.com/apache/apisix/pull/8099)
+- Fix `_meta.filter` in plugin configuration not working with variables assigned after upstream response and custom variables in APISIX.
+    - [#8162](https://github.com/apache/apisix/pull/8162)
+    - [#8256](https://github.com/apache/apisix/pull/8256)
+
+## 3.0.0
+
+### Change
+
+- `enable_cpu_affinity` is disabled by default to avoid this configuration affecting the behavior of APSISIX deployed in the container: [#8074](https://github.com/apache/apisix/pull/8074)
+
+### Core
+
+- :sunrise: Added Consumer Group entity to manage multiple consumers: [#7980](https://github.com/apache/apisix/pull/7980)
+- :sunrise: Supports configuring the order in which DNS resolves domain name types: [#7935](https://github.com/apache/apisix/pull/7935)
+- :sunrise: Support configuring multiple `key_encrypt_salt` for rotation: [#7925](https://github.com/apache/apisix/pull/7925)
+
+### Plugin
+
+- :sunrise: Added ai plugin to dynamically optimize the execution path of APISIX according to the scene:
+    - [#8102](https://github.com/apache/apisix/pull/8102)
+    - [#8113](https://github.com/apache/apisix/pull/8113)
+    - [#8120](https://github.com/apache/apisix/pull/8120)
+    - [#8128](https://github.com/apache/apisix/pull/8128)
+    - [#8130](https://github.com/apache/apisix/pull/8130)
+    - [#8149](https://github.com/apache/apisix/pull/8149)
+    - [#8157](https://github.com/apache/apisix/pull/8157)
+- :sunrise: Support `session_secret` in openid-connect plugin to resolve the inconsistency of `session_secret` among multiple workers: [#8068](https://github.com/apache/apisix/pull/8068)
+- :sunrise: Support sasl config in kafka-logger plugin: [#8050](https://github.com/apache/apisix/pull/8050)
+- :sunrise: Support set resolve domain in proxy-mirror plugin: [#7861](https://github.com/apache/apisix/pull/7861)
+- :sunrise: Support `brokers` property in kafka-logger plugin, which supports different broker to set the same host: [#7999](https://github.com/apache/apisix/pull/7999)
+- :sunrise: Support get response body in ext-plugin-post-resp: [#7947](https://github.com/apache/apisix/pull/7947)
+- :sunrise: Added cas-auth plugin to support CAS authentication: [#7932](https://github.com/apache/apisix/pull/7932)
+
+### Bugfix
+
+- Conditional expressions of workflow plugin should support operators: [#8121](https://github.com/apache/apisix/pull/8121)
+- Fix loading problem of batch processor plugin when prometheus plugin is disabled: [#8079](https://github.com/apache/apisix/pull/8079)
+- When APISIX starts, delete the old conf server sock file if it exists: [#8022](https://github.com/apache/apisix/pull/8022)
+- Disable core.grpc when gRPC-client-nginx-module module is not compiled: [#8007](https://github.com/apache/apisix/pull/8007)
 
 ## 3.0.0-beta
 
@@ -101,7 +183,7 @@ In the static configuration, we removed several fields as follows:
 - Removed `apisix.port_admin`: [#7716](https://github.com/apache/apisix/pull/7716)
 - Removed `etcd.health_check_retry`: [#7676](https://github.com/apache/apisix/pull/7676)
 - Removed `nginx_config.http.lua_shared_dicts`: [#7677](https://github.com/apache/apisix/pull/7677)
-- Removed `nginx_config.http.real_ip_header`: [#7696](https://github.com/apache/apisix/pull/7696)
+- Removed `apisix.real_ip_header`: [#7696](https://github.com/apache/apisix/pull/7696)
 
 In the dynamic configuration, we made the following adjustments:
 
@@ -212,6 +294,12 @@ Returns multiple configurations:
 - the phases after proxy didn't run when 500 error happens before proxy: [#7703](https://github.com/apache/apisix/pull/7703)
 - avoid error when multiple plugins associated with consumer and have rewrite phase: [#7531](https://github.com/apache/apisix/pull/7531)
 - upgrade lua-resty-etcd to 1.8.3 which fixes various issues: [#7565](https://github.com/apache/apisix/pull/7565)
+
+## 2.15.1
+
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.15` branch.**
+
+[https://github.com/apache/apisix/blob/release/2.15/CHANGELOG.md#2151](https://github.com/apache/apisix/blob/release/2.15/CHANGELOG.md#2151)
 
 ## 2.15.0
 
@@ -1222,7 +1310,7 @@ This release brings many new features such as health check and circuit breaker, 
 
 ### Core
 
-- :sunrise: **[Health Check and Circuit Breaker](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/health-check.md)**: Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability. [#249](https://github.com/apache/incubator-apisix/pull/249)
+- :sunrise: **[Health Check and Circuit Breaker](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/tutorials/health-check.md)**: Enable health check on the upstream node, and will automatically filter unhealthy nodes during load balancing to ensure system stability. [#249](https://github.com/apache/incubator-apisix/pull/249)
 - Anti-ReDoS(Regular expression Denial of Service). [#252](https://github.com/apache/incubator-apisix/pull/250)
 - supported debug mode. [#319](https://github.com/apache/incubator-apisix/pull/319)
 - allowed to use different router. [#364](https://github.com/apache/incubator-apisix/pull/364)

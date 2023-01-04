@@ -16,15 +16,13 @@
 #
 use t::APISIX 'no_plan';
 
+worker_connections(256);
+
 add_block_preprocessor(sub {
     my ($block) = @_;
 
     if (!$block->request) {
         $block->set_value("request", "GET /t");
-    }
-
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
     }
 
 });
@@ -157,15 +155,13 @@ foo
 --- error_log
 localhost is resolved to: 127.0.0.3
 localhost is resolved to: 127.0.0.2
---- no_error_log
-[error]
 
 
 
 === TEST 4: update balancer if the DNS result changed
 --- extra_init_by_lua
     local etcd = require("apisix.core.etcd")
-    etcd.switch_proxy = function ()
+    etcd.get_etcd_syncer = function ()
         return etcd.new()
     end
 
@@ -447,3 +443,25 @@ deployment:
             - http://127.0.0.1:2379
 --- response_body
 30
+
+
+
+=== TEST 11: ipv6
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            assert(etcd.set("/apisix/test", "foo"))
+            local res = assert(etcd.get("/apisix/test"))
+            ngx.say(res.body.node.value)
+        }
+    }
+--- yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    etcd:
+        prefix: "/apisix"
+        host:
+            - http://[::1]:2379

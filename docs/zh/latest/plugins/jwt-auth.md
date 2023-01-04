@@ -51,6 +51,8 @@ Consumer 端：
 | vault         | object  | 否    |         |                             | 是否使用 Vault 作为存储和检索密钥（HS256/HS512 的密钥或 RS256/ES256 的公钥和私钥）的方式。该插件默认使用 `kv/apisix/consumer/<consumer name>/jwt-auth` 路径进行密钥检索。 |
 | lifetime_grace_period | integer | 否    | 0  | [0,...]                  | 定义生成 JWT 的服务器和验证 JWT 的服务器之间的时钟偏移。该值应该是零（0）或一个正整数。 |
 
+注意：schema 中还定义了 `encrypt_fields = {"secret", "private_key"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
+
 :::info IMPORTANT
 
 如果你想要启用 Vault 集成，你需要在 [config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml) 配置文件中，更新你的 Vault 服务器配置、主机地址和访问令牌。
@@ -66,6 +68,7 @@ Route 端：
 | header | string | 否     | authorization | 设置我们从哪个 header 获取 token。                         |
 | query  | string | 否     | jwt           | 设置我们从哪个 query string 获取 token，优先级低于 header。  |
 | cookie | string | 否     | jwt           | 设置我们从哪个 cookie 获取 token，优先级低于 query。        |
+| hide_credentials | boolean | 否     | false  | 该参数设置为 `true` 时，则不会将含有认证信息的 header\query\cookie 传递给 Upstream。|
 
 ## 接口
 

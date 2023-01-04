@@ -89,7 +89,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
     - [Serverless](plugins/serverless.md)：在 APISIX 的每一个阶段，你都可以添加并调用自己编写的函数。
     - 动态负载均衡：动态支持有权重的 round-robin 负载平衡。
     - 支持一致性 hash 的负载均衡：动态支持一致性 hash 的负载均衡。
-    - [健康检查](health-check.md)：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
+    - [健康检查](./tutorials/health-check.md)：启用上游节点的健康检查，将在负载均衡期间自动过滤不健康的节点，以确保系统稳定性。
     - 熔断器：智能跟踪不健康上游服务。
     - [代理镜像](plugins/proxy-mirror.md)：提供镜像客户端请求的能力。
     - [流量拆分](plugins/traffic-split.md)：允许用户逐步控制各个上游之间的流量百分比。
@@ -154,7 +154,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 
 - **多语言支持**
 - Apache APISIX 是一个通过 `RPC` 和 `Wasm` 支持不同语言来进行插件开发的网关。
-  ![Multi Language Support into Apache APISIX](../../../docs/assets/images/apisix-multi-lang-support.png)
+  ![Multi Language Support into Apache APISIX](../../../docs/assets/images/external-plugin.png)
     - RPC 是当前采用的开发方式。开发者可以使用他们需要的语言来进行 RPC 服务的开发，该 RPC 通过本地通讯来跟 APISIX 进行数据交换。到目前为止，APISIX 已支持[Java](https://github.com/apache/apisix-java-plugin-runner), [Golang](https://github.com/apache/apisix-go-plugin-runner), [Python](https://github.com/apache/apisix-python-plugin-runner) 和 Node.js。
     - Wasm 或 WebAssembly 是实验性的开发方式。 APISIX 能加载运行使用[Proxy Wasm SDK](https://github.com/proxy-wasm/spec#sdks)编译的 Wasm 字节码。开发者仅需要使用该 SDK 编写代码，然后编译成 Wasm 字节码，即可运行在 APISIX 中的 Wasm 虚拟机中。
 

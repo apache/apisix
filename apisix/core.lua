@@ -55,4 +55,5 @@ return {
     pubsub      = require("apisix.core.pubsub"),
     math        = require("apisix.core.math"),
     event       = require("apisix.core.event"),
+    env         = require("apisix.core.env"),
 }

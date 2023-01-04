@@ -66,6 +66,8 @@ Refer to [Authorization Services Guide](https://www.keycloak.org/docs/latest/aut
 | access_denied_redirect_uri                   | string        | False    |                                               | [1, 2048]                                                          | URI to redirect the user to instead of returning an error message like `"error_description":"not_authorized"`.                                                                                                                                        |
 | password_grant_token_generation_incoming_uri | string        | False    |                                               | /api/token                                                         | Set this to generate token using the password grant type. The Plugin will compare incoming request URI to this value.                                                                                                                                 |
 
+NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 ### Discovery and endpoints
 
 It is recommended to use the `discovery` attribute as the `authz-keycloak` Plugin can discover the Keycloak API endpoints from it.

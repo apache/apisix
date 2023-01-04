@@ -37,6 +37,7 @@ local admin_init      = require("apisix.admin.init")
 local get_var         = require("resty.ngxvar").fetch
 local router          = require("apisix.router")
 local apisix_upstream = require("apisix.upstream")
+local apisix_secret   = require("apisix.secret")
 local set_upstream    = apisix_upstream.set_by_route
 local apisix_ssl      = require("apisix.ssl")
 local upstream_util   = require("apisix.utils.upstream")
@@ -82,6 +83,7 @@ local _M = {version = 0.4}
 function _M.http_init(args)
     core.resolver.init_resolver(args)
     core.id.init()
+    core.env.init()
 
     local process = require("ngx.process")
     local ok, err = process.enable_privileged_agent()
@@ -149,11 +151,10 @@ function _M.http_init_worker()
     plugin_config.init_worker()
     require("apisix.consumer").init_worker()
     consumer_group.init_worker()
+    apisix_secret.init_worker()
 
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()
-    -- TODO: need to revisit code layering and avoid similar hacking
-    require("apisix.plugins.ai").init_worker()
 
     local_conf = core.config.local_conf()
 
@@ -260,6 +261,16 @@ local function set_upstream_headers(api_ctx, picked_server)
     if proto then
         api_ctx.var.var_x_forwarded_proto = proto
     end
+
+    local x_forwarded_host = api_ctx.var.http_x_forwarded_host
+    if x_forwarded_host then
+        api_ctx.var.var_x_forwarded_host = x_forwarded_host
+    end
+
+    local port = api_ctx.var.http_x_forwarded_port
+    if port then
+        api_ctx.var.var_x_forwarded_port = port
+    end
 end
 
 
@@ -345,6 +356,115 @@ local function common_phase(phase_name)
     end
 
     return plugin.run_plugin(phase_name, nil, api_ctx)
+end
+
+
+
+function _M.handle_upstream(api_ctx, route, enable_websocket)
+    local up_id = route.value.upstream_id
+
+    -- used for the traffic-split plugin
+    if api_ctx.upstream_id then
+        up_id = api_ctx.upstream_id
+    end
+
+    if up_id then
+        local upstream = apisix_upstream.get_by_id(up_id)
+        if not upstream then
+            if is_http then
+                return core.response.exit(502)
+            end
+
+            return ngx_exit(1)
+        end
+
+        api_ctx.matched_upstream = upstream
+
+    else
+        if route.has_domain then
+            local err
+            route, err = parse_domain_in_route(route)
+            if err then
+                core.log.error("failed to get resolved route: ", err)
+                return core.response.exit(500)
+            end
+
+            api_ctx.conf_version = route.modifiedIndex
+            api_ctx.matched_route = route
+        end
+
+        local route_val = route.value
+
+        api_ctx.matched_upstream = (route.dns_value and
+                                    route.dns_value.upstream)
+                                   or route_val.upstream
+    end
+
+    if api_ctx.matched_upstream and api_ctx.matched_upstream.tls and
+        api_ctx.matched_upstream.tls.client_cert_id then
+
+        local cert_id = api_ctx.matched_upstream.tls.client_cert_id
+        local upstream_ssl = router.router_ssl.get_by_id(cert_id)
+        if not upstream_ssl or upstream_ssl.type ~= "client" then
+            local err  = upstream_ssl and
+                "ssl type should be 'client'" or
+                "ssl id [" .. cert_id .. "] not exits"
+            core.log.error("failed to get ssl cert: ", err)
+
+            if is_http then
+                return core.response.exit(502)
+            end
+
+            return ngx_exit(1)
+        end
+
+        core.log.info("matched ssl: ",
+                  core.json.delay_encode(upstream_ssl, true))
+        api_ctx.upstream_ssl = upstream_ssl
+    end
+
+    if enable_websocket then
+        api_ctx.var.upstream_upgrade    = api_ctx.var.http_upgrade
+        api_ctx.var.upstream_connection = api_ctx.var.http_connection
+        core.log.info("enabled websocket for route: ", route.value.id)
+    end
+
+    -- load balancer is not required by kafka upstream, so the upstream
+    -- node selection process is intercepted and left to kafka to
+    -- handle on its own
+    if api_ctx.matched_upstream and api_ctx.matched_upstream.scheme == "kafka" then
+        return pubsub_kafka.access(api_ctx)
+    end
+
+    local code, err = set_upstream(route, api_ctx)
+    if code then
+        core.log.error("failed to set upstream: ", err)
+        core.response.exit(code)
+    end
+
+    local server, err = load_balancer.pick_server(route, api_ctx)
+    if not server then
+        core.log.error("failed to pick server: ", err)
+        return core.response.exit(502)
+    end
+
+    api_ctx.picked_server = server
+
+    set_upstream_headers(api_ctx, server)
+
+    -- run the before_proxy method in access phase first to avoid always reinit request
+    common_phase("before_proxy")
+
+    local up_scheme = api_ctx.upstream_scheme
+    if up_scheme == "grpcs" or up_scheme == "grpc" then
+        stash_ngx_ctx()
+        return ngx.exec("@grpc_pass")
+    end
+
+    if api_ctx.dubbo_proxy_enabled then
+        stash_ngx_ctx()
+        return ngx.exec("@dubbo_pass")
+    end
 end
 
 
@@ -495,110 +615,7 @@ function _M.http_access_phase()
         plugin.run_plugin("access", plugins, api_ctx)
     end
 
-    local up_id = route.value.upstream_id
-
-    -- used for the traffic-split plugin
-    if api_ctx.upstream_id then
-        up_id = api_ctx.upstream_id
-    end
-
-    if up_id then
-        local upstream = apisix_upstream.get_by_id(up_id)
-        if not upstream then
-            if is_http then
-                return core.response.exit(502)
-            end
-
-            return ngx_exit(1)
-        end
-
-        api_ctx.matched_upstream = upstream
-
-    else
-        if route.has_domain then
-            local err
-            route, err = parse_domain_in_route(route)
-            if err then
-                core.log.error("failed to get resolved route: ", err)
-                return core.response.exit(500)
-            end
-
-            api_ctx.conf_version = route.modifiedIndex
-            api_ctx.matched_route = route
-        end
-
-        local route_val = route.value
-
-        api_ctx.matched_upstream = (route.dns_value and
-                                    route.dns_value.upstream)
-                                   or route_val.upstream
-    end
-
-    if api_ctx.matched_upstream and api_ctx.matched_upstream.tls and
-        api_ctx.matched_upstream.tls.client_cert_id then
-
-        local cert_id = api_ctx.matched_upstream.tls.client_cert_id
-        local upstream_ssl = router.router_ssl.get_by_id(cert_id)
-        if not upstream_ssl or upstream_ssl.type ~= "client" then
-            local err  = upstream_ssl and
-                "ssl type should be 'client'" or
-                "ssl id [" .. cert_id .. "] not exits"
-            core.log.error("failed to get ssl cert: ", err)
-
-            if is_http then
-                return core.response.exit(502)
-            end
-
-            return ngx_exit(1)
-        end
-
-        core.log.info("matched ssl: ",
-                  core.json.delay_encode(upstream_ssl, true))
-        api_ctx.upstream_ssl = upstream_ssl
-    end
-
-    if enable_websocket then
-        api_ctx.var.upstream_upgrade    = api_ctx.var.http_upgrade
-        api_ctx.var.upstream_connection = api_ctx.var.http_connection
-        core.log.info("enabled websocket for route: ", route.value.id)
-    end
-
-    -- load balancer is not required by kafka upstream, so the upstream
-    -- node selection process is intercepted and left to kafka to
-    -- handle on its own
-    if api_ctx.matched_upstream and api_ctx.matched_upstream.scheme == "kafka" then
-        return pubsub_kafka.access(api_ctx)
-    end
-
-    local code, err = set_upstream(route, api_ctx)
-    if code then
-        core.log.error("failed to set upstream: ", err)
-        core.response.exit(code)
-    end
-
-    local server, err = load_balancer.pick_server(route, api_ctx)
-    if not server then
-        core.log.error("failed to pick server: ", err)
-        return core.response.exit(502)
-    end
-
-    api_ctx.picked_server = server
-
-    set_upstream_headers(api_ctx, server)
-
-    -- run the before_proxy method in access phase first to avoid always reinit request
-    common_phase("before_proxy")
-
-    local up_scheme = api_ctx.upstream_scheme
-    if up_scheme == "grpcs" or up_scheme == "grpc" then
-        stash_ngx_ctx()
-        return ngx.exec("@grpc_pass")
-    end
-
-    if api_ctx.dubbo_proxy_enabled then
-        stash_ngx_ctx()
-        return ngx.exec("@dubbo_pass")
-    end
+    _M.handle_upstream(api_ctx, route, enable_websocket)
 end
 
 
@@ -877,13 +894,22 @@ function _M.stream_init_worker()
     -- for testing only
     core.log.info("random stream test in [1, 10000]: ", math.random(1, 10000))
 
+    if core.config.init_worker then
+        local ok, err = core.config.init_worker()
+        if not ok then
+            core.log.error("failed to init worker process of ", core.config.type,
+                           " config center, err: ", err)
+        end
+    end
+
     plugin.init_worker()
     xrpc.init_worker()
     router.stream_init_worker()
     apisix_upstream.init_worker()
 
-    if core.config == require("apisix.core.config_yaml") then
-        core.config.init_worker()
+    local discovery = require("apisix.discovery.init").discovery
+    if discovery and discovery.init_worker then
+        discovery.init_worker()
     end
 
     load_balancer = require("apisix.balancer")

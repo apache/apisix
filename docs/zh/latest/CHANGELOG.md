@@ -23,7 +23,10 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [3.1.0](#310)
+- [3.0.0](#300)
 - [3.0.0-beta](#300-beta)
+- [2.15.1](#2151)
 - [2.15.0](#2150)
 - [2.14.1](#2141)
 - [2.14.0](#2140)
@@ -62,6 +65,85 @@ title: CHANGELOG
 - [0.7.0](#070)
 - [0.6.0](#060)
 
+## 3.1.0
+
+### Core
+
+- :sunrise: 支持通过 gRPC 来同步 etcd 的配置：
+    - [#8485](https://github.com/apache/apisix/pull/8485)
+    - [#8450](https://github.com/apache/apisix/pull/8450)
+    - [#8411](https://github.com/apache/apisix/pull/8411)
+- :sunrise: 支持在插件中配置加密字段：
+    - [#8487](https://github.com/apache/apisix/pull/8487)
+    - [#8403](https://github.com/apache/apisix/pull/8403)
+- :sunrise: 支持使用 secret 资源将部分字段放到 Vault 或环境变量中：
+    - [#8448](https://github.com/apache/apisix/pull/8448)
+    - [#8421](https://github.com/apache/apisix/pull/8421)
+    - [#8412](https://github.com/apache/apisix/pull/8412)
+    - [#8394](https://github.com/apache/apisix/pull/8394)
+    - [#8390](https://github.com/apache/apisix/pull/8390)
+- :sunrise: 允许在 stream 子系统中以域名的形式配置上游：[#8500](https://github.com/apache/apisix/pull/8500)
+- :sunrise: 支持 Consul 服务发现：[#8380](https://github.com/apache/apisix/pull/8380)
+
+### Plugin
+
+- :sunrise: 优化 prometheus 采集的资源占用：[#8434](https://github.com/apache/apisix/pull/8434)
+- :sunrise: 增加便于调试的 inspect 插件： [#8400](https://github.com/apache/apisix/pull/8400)
+- :sunrise: jwt-auth 插件支持对上游隐蔽认证的参数：[#8206](https://github.com/apache/apisix/pull/8206)
+- :sunrise: proxy-rewrite 插件支持新增请求头的同时不覆盖现有同名请求头：[#8336](https://github.com/apache/apisix/pull/8336)
+- :sunrise: grpc-transcode 插件支持将 grpc-status-details-bin 响应头设置到响应体中：[#7639](https://github.com/apache/apisix/pull/7639)
+- :sunrise: proxy-mirror 插件支持设置前缀：[#8261](https://github.com/apache/apisix/pull/8261)
+
+### Bugfix
+
+- 修复某些情况下，配置在 service 对象下的插件无法及时生效的问题：[#8482](https://github.com/apache/apisix/pull/8482)
+- 修复因连接池复用，http 和 grpc 共用同一个上游节点时偶发 502 的问题：[#8364](https://github.com/apache/apisix/pull/8364)
+- file-logger 在写日志时，应避免缓冲区造成的日志截断：[#7884](https://github.com/apache/apisix/pull/7884)
+- log-rotate 插件的 max_kept 参数应对压缩文件生效：[#8366](https://github.com/apache/apisix/pull/8366)
+- 修复 openid-connect 插件中当 use_jwks 为 true 时没有设置 userinfo 的问题：[#8347](https://github.com/apache/apisix/pull/8347)
+- 修复无法在 proxy-rewrite 插件中修改 x-forwarded-host 的问题：[#8200](https://github.com/apache/apisix/pull/8200)
+- 修复某些情况下，禁用 v3 admin API 导致响应体丢失：[#8349](https://github.com/apache/apisix/pull/8349)
+- zipkin 插件中，即使存在 reject 的 sampling decision，也要传递 trace ID：[#8099](https://github.com/apache/apisix/pull/8099)
+- 修复插件配置中的 `_meta.filter` 无法使用上游响应后才赋值的变量和 APISIX 中自定义变量的问题：
+    - [#8162](https://github.com/apache/apisix/pull/8162)
+    - [#8256](https://github.com/apache/apisix/pull/8256)
+
+## 3.0.0
+
+### Change
+
+- 默认关闭 `enable_cpu_affinity`，避免在容器部署场景中该配置影响 APSISIX 的行为：[#8074](https://github.com/apache/apisix/pull/8074)
+
+### Core
+
+- :sunrise: 新增 Consumer Group 实体，用于管理多个 Consumer：[#7980](https://github.com/apache/apisix/pull/7980)
+- :sunrise: 支持配置 DNS 解析域名类型的顺序：[#7935](https://github.com/apache/apisix/pull/7935)
+- :sunrise: 支持配置多个 `key_encrypt_salt` 进行轮转：[#7925](https://github.com/apache/apisix/pull/7925)
+
+### Plugin
+
+- :sunrise: 新增 ai 插件，根据场景动态优化 APISIX 的执行路径：
+    - [#8102](https://github.com/apache/apisix/pull/8102)
+    - [#8113](https://github.com/apache/apisix/pull/8113)
+    - [#8120](https://github.com/apache/apisix/pull/8120)
+    - [#8128](https://github.com/apache/apisix/pull/8128)
+    - [#8130](https://github.com/apache/apisix/pull/8130)
+    - [#8149](https://github.com/apache/apisix/pull/8149)
+    - [#8157](https://github.com/apache/apisix/pull/8157)
+- :sunrise: openid-connect 插件支持设置 `session_secret`，解决多个 worker 间 `session_secret` 不一致的问题：[#8068](https://github.com/apache/apisix/pull/8068)
+- :sunrise: kafka-logger 插件支持设置 sasl 相关配置：[#8050](https://github.com/apache/apisix/pull/8050)
+- :sunrise: proxy-mirror 插件支持设置域名作为 host：[#7861](https://github.com/apache/apisix/pull/7861)
+- :sunrise: kafka-logger 插件新增 brokers 属性，支持不同 broker 设置相同 host：[#7999](https://github.com/apache/apisix/pull/7999)
+- :sunrise: ext-plugin-post-resp 插件支持获取上游响应体：[#7947](https://github.com/apache/apisix/pull/7947)
+- :sunrise: 新增 cas-auth 插件，支持 CAS 认证：[#7932](https://github.com/apache/apisix/pull/7932)
+
+### Bugfix
+
+- workflow 插件的条件表达式应该支持操作符：[#8121](https://github.com/apache/apisix/pull/8121)
+- 修复禁用 prometheus 插件时 batch processor 加载问题：[#8079](https://github.com/apache/apisix/pull/8079)
+- APISIX 启动时，如果存在旧的 conf server 的 sock 文件则删除：[#8022](https://github.com/apache/apisix/pull/8022)
+- 没有编译 gRPC-client-nginx-module 模块时禁用 core.grpc：[#8007](https://github.com/apache/apisix/pull/8007)
+
 ## 3.0.0-beta
 
 这里我们使用 `2.99.0` 作为源代码中的版本号，而不是代码名称
@@ -99,7 +181,7 @@ title: CHANGELOG
 - 移除 `apisix.port_admin`： [#7716](https://github.com/apache/apisix/pull/7716)
 - 移除 `etcd.health_check_retry`： [#7676](https://github.com/apache/apisix/pull/7676)
 - 移除 `nginx_config.http.lua_shared_dicts`： [#7677](https://github.com/apache/apisix/pull/7677)
-- 移除 `nginx_config.http.real_ip_header`: [#7696](https://github.com/apache/apisix/pull/7696)
+- 移除 `apisix.real_ip_header`: [#7696](https://github.com/apache/apisix/pull/7696)
 
 在动态配置中，我们做了以下调整：
 
@@ -210,6 +292,10 @@ title: CHANGELOG
 - 当代理到上游之前发生 500 错误时，代理到上游之后运行的插件不应被跳过 [#7703](https://github.com/apache/apisix/pull/7703)
 - 当 consumer 上绑定了多个插件且该插件定义了 rewrite 方法时，避免抛出异常 [#7531](https://github.com/apache/apisix/pull/7531)
 - 升级 lua-resty-etcd 到 1.8.3。该版本修复了若干问题。 [#7565](https://github.com/apache/apisix/pull/7565)
+
+## 2.15.1
+
+**这是一个 LTS 维护版本，您可以在 `release/2.15` 分支中看到 CHANGELOG。**
 
 ## 2.15.0
 
@@ -1202,7 +1288,7 @@ title: CHANGELOG
 
 ### Core
 
-- :sunrise: **[健康检查和服务熔断](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//health-check.md)**: 对上游节点开启健康检查，智能判断服务状态进行熔断和连接。[#249](https://github.com/apache/incubator-apisix/pull/249)
+- :sunrise: **[健康检查和服务熔断](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest/tutorials/health-check..md)**: 对上游节点开启健康检查，智能判断服务状态进行熔断和连接。[#249](https://github.com/apache/incubator-apisix/pull/249)
 - 阻止 ReDoS(Regular expression Denial of Service). [#252](https://github.com/apache/incubator-apisix/pull/250)
 - 支持 debug 模式。[#319](https://github.com/apache/incubator-apisix/pull/319)
 - 允许自定义路由。[#364](https://github.com/apache/incubator-apisix/pull/364)

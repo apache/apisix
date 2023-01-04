@@ -1,5 +1,10 @@
 ---
 title: FAQ
+keywords:
+  - APISIX
+  - API Gateway
+  - FAQ
+description: This article lists solutions to common problems when using Apache APISIX.
 ---
 
 <!--
@@ -58,7 +63,7 @@ It does the following dynamically:
 - Health checks
 - Traffic split
 
-## Does Apache APISIX have a user interface？
+## Does Apache APISIX have a user interface?
 
 Yes. Apache APISIX has an experimental feature called [Apache APISIX Dashboard](https://github.com/apache/apisix-dashboard), which is independent from Apache APISIX. To work with Apache APISIX through a user interface, you can deploy the Apache APISIX Dashboard.
 
@@ -280,6 +285,18 @@ To configure Apache APISIX to listen on multiple ports, you can:
    ```
 
 2. Reload or restart Apache APISIX.
+
+## After uploading the SSL certificate, why can't the corresponding route be accessed through HTTPS + IP?
+
+If you directly use HTTPS + IP address to access the server, the server will use the IP address to compare with the bound SNI. Since the SSL certificate is bound to the domain name, the corresponding resource cannot be found in the SNI, so that the certificate will be verified. The authentication fails, and the user cannot access the gateway via HTTPS + IP.
+
+You can implement this function by setting the `fallback_sni` parameter in the configuration file and configuring the domain name. When the user uses HTTPS + IP to access the gateway, when the SNI is empty, it will fall back to the default SNI to achieve HTTPS + IP access to the gateway.
+
+```yaml title="./conf/config.yaml"
+apisix
+  ssl：
+    fallback_sni: "${your sni}"
+```
 
 ## How does Apache APISIX achieve millisecond-level configuration synchronization?
 
@@ -635,7 +652,7 @@ In actual scenarios, if APISIX uses a certificate to connect to etcd through HTT
 1. Query or write data through APISIX Admin API.
 2. In the monitoring scenario, Prometheus crawls the APISIX data plane Metrics API timeout.
 
-These problems related to higher latency seriously affect the service stability of APISIX, and the reason why such problems occur is mainly because etcd provides two modes of operation: HTTP (HTTPS) and gRPC. And APISIX uses the HTTP (HTTPS) protocol to operate etcd.
+These problems related to higher latency seriously affect the service stability of APISIX, and the reason why such problems occur is mainly because etcd provides two modes of operation: HTTP (HTTPS) and gRPC. And APISIX uses the HTTP (HTTPS) protocol to operate etcd by default.
 In this scenario, etcd has a bug about HTTP/2: if etcd is operated over HTTPS (HTTP is not affected), the upper limit of HTTP/2 connections is the default `250` in Golang. Therefore, when the number of APISIX data plane nodes is large, once the number of connections between all APISIX nodes and etcd exceeds this upper limit, the response of APISIX API interface will be very slow.
 
 In Golang, the default upper limit of HTTP/2 connections is `250`, the code is as follows:
@@ -676,6 +693,16 @@ For more information, please refer to:
 - [bug: when apisix starts for a while, its communication with etcd starts to time out](https://github.com/apache/apisix/issues/7078)
 - [the prometheus metrics API is tool slow](https://github.com/apache/apisix/issues/7353)
 - [Support configuring `MaxConcurrentStreams` for http2](https://github.com/etcd-io/etcd/pull/14169)
+
+Another solution is to switch to an experimental gRPC-based configuration synchronization. This requires setting `use_grpc: true` in the configuration file `conf/config.yaml`:
+
+```yaml
+  etcd:
+    use_grpc: true
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: "/apisix"
+```
 
 ## Where can I find more answers?
 

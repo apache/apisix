@@ -71,6 +71,7 @@ local schema = {
             maxLength = 4096
         },
     },
+    encrypt_fields = {"client_secret"},
     required = {"client_id"},
     allOf = {
         -- Require discovery or token endpoint.

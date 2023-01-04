@@ -92,7 +92,7 @@ APISIX 中一些插件添加了自己的 control API。如果你对他们感兴�
 
 引入自 2.3 版本
 
-使用以下格式返回当前的 [health check](health-check.md) 状态
+使用以下格式返回当前的 [health check](./tutorials/health-check.md) 状态
 
 ```json
 [

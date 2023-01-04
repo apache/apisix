@@ -201,6 +201,14 @@ local luasocket_wrapper = {
             return self.sock:connect(path)
         end
 
+        if host:byte(1) == string.byte('[') then
+            -- ipv6, form as '[::1]', remove '[' and ']'
+            host = host:sub(2, -2)
+            self.sock = self.tcp6
+        else
+            self.sock = self.tcp4
+        end
+
         return self.sock:connect(host, port)
     end,
 
@@ -349,7 +357,9 @@ local mt = {
 
 local function luasocket_tcp()
     local sock = socket.tcp()
-    return setmetatable({sock = sock}, mt)
+    local tcp4 = socket.tcp4()
+    local tcp6 = socket.tcp6()
+    return setmetatable({sock = sock, tcp4 = tcp4, tcp6 = tcp6}, mt)
 end
 
 

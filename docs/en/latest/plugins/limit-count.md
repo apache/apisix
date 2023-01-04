@@ -28,7 +28,7 @@ description: This document contains information about the Apache APISIX limit-co
 
 ## Description
 
-The `limit-count` Plugin limits the number of requests to your service by a given count per time.
+The `limit-count` Plugin limits the number of requests to your service by a given count per time. The plugin is using Fixed Window algorithm.
 
 ## Attributes
 
@@ -51,6 +51,8 @@ The `limit-count` Plugin limits the number of requests to your service by a give
 | redis_timeout           | integer | False                                     | 1000          | [1,...]                                | Timeout in milliseconds for any command submitted to the Redis server. Used when the `policy` attribute is set to `redis` or `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                        |
 | redis_cluster_nodes     | array   | required when `policy` is `redis-cluster` |               |                                        | Addresses of Redis cluster nodes. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                        |
 | redis_cluster_name      | string  | required when `policy` is `redis-cluster` |               |                                        | Name of the Redis cluster service nodes. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                 |
+| redis_cluster_ssl      | boolean  |  False |     false         |                                        | If set to `true`, then uses SSL to connect to redis-cluster. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                 |
+| redis_cluster_ssl_verify      | boolean  | False |    false      |                                        | If set to `true`, then verifies the validity of the server SSL certificate. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## Enabling the Plugin
 
@@ -181,7 +183,13 @@ curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
 }'
 ```
 
-Now every request will share the same count limitation regardless of their remote address.
+The above configuration means that when the `group` attribute of the `limit-count` plugin is configured to `services_1#1640140620` for multiple routes, requests to those routes will share the same counter, even if the requests come from different IP addresses.
+
+:::note
+
+The configuration of `limit-count` in the same `group` must be consistent. If you want to change the configuration, you need to update the value of the corresponding `group` at the same time.
+
+:::
 
 For cluster-level traffic limiting, you can use a Redis server. The counter will be shared between different APISIX nodes to achieve traffic limiting.
 

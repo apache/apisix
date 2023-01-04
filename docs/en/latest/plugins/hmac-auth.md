@@ -47,6 +47,8 @@ This Plugin works with a [Consumer](../terminology/consumer.md) object and a con
 | validate_request_body | boolean       | False    | false         | [ true, false ]                             | When set to `true`, validates the request body.                                                                                                                                                           |
 | max_req_body          | integer       | False    | 512 * 1024    |                                             | Max size of the request body to allow.                                                                                                                                                                    |
 
+NOTE: `encrypt_fields = {"secret_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 ## Enabling the Plugin
 
 First we enable the Plugin on a Consumer object as shown below:
@@ -98,7 +100,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 The formula for calculating the signature is `signature = HMAC-SHAx-HEX(secret_key, signing_string)`.
 
-In order to generate the signature, two parameters, `secret_key` and `signing_string` are required. The `secret_key` is configured by a Consumer and the `signing_string` is calculated as `signing_string = HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n + signed_headers_string`. If any of the terms are missing, they are replaced by an empty string. The different terms in this calculation are explained below:
+In order to generate the signature, two parameters, `secret_key` and `signing_string` are required. The `secret_key` is configured by a Consumer and the `signing_string` is calculated as `signing_string = HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n + signed_headers_string`. The different terms in this calculation are explained below:
 
 - **HTTP Method** : HTTP request method in uppercase. For example, GET, PUT, POST etc.
 - **HTTP URI** : HTTP URI. Should start with "/" and "/" denotes an empty path.
@@ -106,7 +108,13 @@ In order to generate the signature, two parameters, `secret_key` and `signing_st
 - **canonical_query_string** : The result of encoding the query string in the URL (the string "key1 = value1 & key2 = value2" after the "?" in the URL).
 - **signed_headers_string** : Concatenation of the specified request headers.
 
-The algorithm for generating `canonical_query_string` is described below:
+:::tip
+
+If any of the terms are missing, they are replaced by an empty string.
+
+:::
+
+**The algorithm for generating `canonical_query_string` is described below:**
 
 1. Extract the query terms from the URL.
 2. Split the query terms into key-value pairs by using `&` as the separator.

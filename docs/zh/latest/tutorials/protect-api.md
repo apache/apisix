@@ -82,7 +82,6 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
         }
     },
   "upstream_id": "1"
-    }
 }'
 
 ```

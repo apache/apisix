@@ -42,6 +42,7 @@ function _M.schema()
     local schema = {
         main = {
             consumer = core.schema.consumer,
+            consumer_group = core.schema.consumer_group,
             global_rule = core.schema.global_rule,
             plugin_config = core.schema.plugin_config,
             plugins = core.schema.plugins,

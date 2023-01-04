@@ -169,7 +169,7 @@ plugins:
 ### How to enable SSL
 
 ```yml
-ssl:
+ssls:
     -
         cert: |
             -----BEGIN CERTIFICATE-----

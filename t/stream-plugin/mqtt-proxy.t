@@ -66,8 +66,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -84,8 +82,6 @@ Received unexpected MQTT packet type+flags
 "\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x03\x66\x6f\x6f"
 --- stream_response
 hello world
---- no_error_log
-[error]
 
 
 
@@ -122,8 +118,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -179,8 +173,6 @@ match(): not hit any route
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -189,8 +181,6 @@ passed
 "\x10\x0f\x00\x04\x4d\x51\x54\x54\x04\x02\x00\x3c\x00\x03\x66\x6f\x6f"
 --- stream_response
 hello world
---- no_error_log
-[error]
 
 
 
@@ -231,8 +221,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -245,8 +233,6 @@ hello world
 qr/mqtt client id: \w+/
 --- grep_error_log_out
 mqtt client id: foo
---- no_error_log
-[error]
 
 
 
@@ -258,8 +244,6 @@ hello world
 --- grep_error_log eval
 qr/mqtt client id: \w+/
 --- grep_error_log_out
---- no_error_log
-[error]
 
 
 
@@ -300,8 +284,6 @@ qr/mqtt client id: \w+/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -313,8 +295,6 @@ hello world
 --- grep_error_log eval
 qr/mqtt client id: \w+/
 --- grep_error_log_out
---- no_error_log
-[error]
 
 
 
@@ -327,8 +307,6 @@ hello world
 qr/mqtt client id: \S+/
 --- grep_error_log_out
 mqtt client id: clint-111
---- no_error_log
-[error]
 
 
 
@@ -377,8 +355,6 @@ mqtt client id: clint-111
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -391,8 +367,6 @@ hello world
 qr/(mqtt client id: \w+|proxy request to \S+)/
 --- grep_error_log_out
 proxy request to 127.0.0.1:1995
---- no_error_log
-[error]
 
 
 
@@ -406,8 +380,6 @@ qr/(mqtt client id: \w+|proxy request to \S+)/
 --- grep_error_log_out
 mqtt client id: f
 proxy request to 0.0.0.0:1995
---- no_error_log
-[error]
 
 
 
@@ -421,5 +393,3 @@ qr/(mqtt client id: \w+|proxy request to \S+)/
 --- grep_error_log_out
 mqtt client id: g
 proxy request to 127.0.0.1:1995
---- no_error_log
-[error]

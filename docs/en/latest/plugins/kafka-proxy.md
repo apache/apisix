@@ -38,6 +38,8 @@ The `kafka-proxy` plugin can be used to configure advanced parameters for the ka
 | sasl.username     | string  | required |         |               | SASL/PLAIN authentication username |
 | sasl.password     | string  | required |         |               | SASL/PLAIN authentication password |
 
+NOTE: `encrypt_fields = {"sasl.password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 :::note
 If SASL authentication is enabled, the `sasl.username` and `sasl.password` must be set.
 The current SASL authentication only supports PLAIN mode, which is the username password login method.

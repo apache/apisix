@@ -41,6 +41,8 @@ For Consumer:
 |------|--------|-------------|----------------------------|
 | key  | string | required    | Unique key for a Consumer. |
 
+NOTE: `encrypt_fields = {"key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 For Route:
 
 | Name   | Type   | Requirement | Default | Valid | Description                                                                                                                                                                                                                                                                   |
