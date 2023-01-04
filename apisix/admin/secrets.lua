@@ -103,26 +103,6 @@ function _M.put(id, conf, sub_path)
 end
 
 
-function _M.get(id, conf, sub_path)
-    local typ, id = split_typ_and_id(id, sub_path)
-
-    local key = "/secrets/"
-    if id then
-        key = key .. typ
-        key = key .. "/" .. id
-    end
-
-    local res, err = core.etcd.get(key, not id)
-    if not res then
-        core.log.error("failed to get secret [", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    utils.fix_count(res.body, id)
-    return res.status, res.body
-end
-
-
 function _M.delete(id, conf, sub_path)
     local typ, id = split_typ_and_id(id, sub_path)
     if not id then

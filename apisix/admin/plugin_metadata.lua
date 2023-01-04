@@ -102,23 +102,6 @@ function _M.put(plugin_name, conf)
 end
 
 
-function _M.get(key)
-    local path = "/plugin_metadata"
-    if key then
-        path = path .. "/" .. key
-    end
-
-    local res, err = core.etcd.get(path, not key)
-    if not res then
-        core.log.error("failed to get metadata[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    utils.fix_count(res.body, key)
-    return res.status, res.body
-end
-
-
 function _M.post(key, conf)
     return 405, {error_msg = "not supported `POST` method for metadata"}
 end

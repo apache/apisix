@@ -106,23 +106,6 @@ function _M.put(username, conf)
 end
 
 
-function _M.get(consumer_name)
-    local key = "/consumers"
-    if consumer_name then
-        key = key .. "/" .. consumer_name
-    end
-
-    local res, err = core.etcd.get(key, not consumer_name)
-    if not res then
-        core.log.error("failed to get consumer[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    utils.fix_count(res.body, consumer_name)
-    return res.status, res.body
-end
-
-
 function _M.post(consumer_name, conf)
     return 405, {error_msg = "not supported `POST` method for consumer"}
 end

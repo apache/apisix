@@ -61,6 +61,9 @@ local resources = {
 }
 
 
+local resource_handlers = require("apisix.admin.resource")
+
+
 local _M = {version = 0.4}
 local router
 
@@ -169,7 +172,8 @@ local function run()
     end
 
     local method = str_lower(get_method())
-    if not resource[method] then
+    local resource_handler = resource_handlers:new(seg_res)
+    if not resource[method] and not (resource_handler.valid_methods[method] and resource_handler.handlers[method]) then
         core.response.exit(404, {error_msg = "not found"})
     end
 
@@ -198,8 +202,13 @@ local function run()
         end
     end
 
-    local code, data = resource[method](seg_id, req_body, seg_sub_path,
-                                        uri_args)
+    local code, data = 200, ""
+    if resource_handler[method] then
+        code, data = resource_handler[method](seg_id, req_body, seg_sub_path, uri_args)
+    else
+        code, data = resource[method](seg_id, req_body, seg_sub_path, uri_args)
+    end
+
     if code then
         if method == "get" and plugin.enable_data_encryption then
             if seg_res == "consumers" then

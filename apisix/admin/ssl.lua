@@ -90,28 +90,6 @@ function _M.put(id, conf)
 end
 
 
-function _M.get(id)
-    local key = "/ssls"
-    if id then
-        key = key .. "/" .. id
-    end
-
-    local res, err = core.etcd.get(key, not id)
-    if not res then
-        core.log.error("failed to get ssl[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    -- not return private key for security
-    if res.body and res.body.node and res.body.node.value then
-        res.body.node.value.key = nil
-    end
-
-    utils.fix_count(res.body, id)
-    return res.status, res.body
-end
-
-
 function _M.post(id, conf)
     local id, err = check_conf(id, conf, false)
     if not id then

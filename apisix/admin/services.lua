@@ -134,23 +134,6 @@ function _M.put(id, conf)
 end
 
 
-function _M.get(id)
-    local key = "/services"
-    if id then
-        key = key .. "/" .. id
-    end
-
-    local res, err = core.etcd.get(key, not id)
-    if not res then
-        core.log.error("failed to get service[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    utils.fix_count(res.body, id)
-    return res.status, res.body
-end
-
-
 function _M.post(id, conf)
     local id, err = check_conf(id, conf, false)
     if not id then

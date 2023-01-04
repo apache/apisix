@@ -86,22 +86,6 @@ function _M.put(id, conf)
 end
 
 
-function _M.get(id)
-    local key = "/plugin_configs"
-    if id then
-        key = key .. "/" .. id
-    end
-    local res, err = core.etcd.get(key, not id)
-    if not res then
-        core.log.error("failed to get plugin config[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    utils.fix_count(res.body, id)
-    return res.status, res.body
-end
-
-
 function _M.delete(id)
     if not id then
         return 400, {error_msg = "missing plugin config id"}

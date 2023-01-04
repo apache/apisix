@@ -191,23 +191,6 @@ function _M.put(id, conf, sub_path, args)
 end
 
 
-function _M.get(id)
-    local key = "/routes"
-    if id then
-        key = key .. "/" .. id
-    end
-
-    local res, err = core.etcd.get(key, not id)
-    if not res then
-        core.log.error("failed to get route[", key, "] from etcd: ", err)
-        return 503, {error_msg = err}
-    end
-
-    utils.fix_count(res.body, id)
-    return res.status, res.body
-end
-
-
 function _M.post(id, conf, sub_path, args)
     local id, err = check_conf(id, conf, false)
     if not id then
