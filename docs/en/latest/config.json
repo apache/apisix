@@ -1,5 +1,5 @@
 {
-  "version": "3.0.0",
+  "version": "3.1.0",
   "sidebar": [
     {
       "type": "doc",
@@ -20,8 +20,11 @@
         "tutorials/expose-api",
         "tutorials/protect-api",
         "tutorials/observe-your-api",
+        "tutorials/manage-api-consumers",
         "tutorials/cache-api-responses",
-        "tutorials/health-check"
+        "tutorials/add-multiple-api-versions",
+        "tutorials/health-check",
+        "tutorials/client-to-apisix-mtls"
       ]
     },
     {
@@ -38,7 +41,8 @@
         "terminology/router",
         "terminology/script",
         "terminology/service",
-        "terminology/upstream"
+        "terminology/upstream",
+        "terminology/secret"
       ]
     },
     {
@@ -57,7 +61,8 @@
             "plugins/server-info",
             "plugins/ext-plugin-pre-req",
             "plugins/ext-plugin-post-req",
-            "plugins/ext-plugin-post-resp"
+            "plugins/ext-plugin-post-resp",
+            "plugins/inspect"
           ]
         },
         {
@@ -264,6 +269,7 @@
           "items": [
             "discovery",
             "discovery/dns",
+            "discovery/consul",
             "discovery/consul_kv",
             "discovery/nacos",
             "discovery/eureka",

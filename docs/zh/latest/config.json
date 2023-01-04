@@ -1,5 +1,5 @@
 {
-  "version": "3.0.0",
+  "version": "3.1.0",
   "sidebar": [
     {
       "type": "doc",
@@ -20,7 +20,8 @@
         "tutorials/expose-api",
         "tutorials/protect-api",
         "tutorials/observe-your-api",
-        "tutorials/health-check"
+        "tutorials/health-check",
+        "tutorials/client-to-apisix-mtls"
       ]
     },
     {
@@ -29,6 +30,7 @@
       "items": [
         "terminology/api-gateway",
         "terminology/consumer",
+        "terminology/consumer-group",
         "terminology/global-rule",
         "terminology/plugin",
         "terminology/plugin-config",
@@ -36,7 +38,8 @@
         "terminology/router",
         "terminology/script",
         "terminology/service",
-        "terminology/upstream"
+        "terminology/upstream",
+        "terminology/secret"
       ]
     },
     {

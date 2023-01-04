@@ -35,6 +35,7 @@ abt_branch=${abt_branch:="master"}
 COMPILE_OPENSSL3=${COMPILE_OPENSSL3-no}
 USE_OPENSSL3=${USE_OPENSSL3-no}
 OPENSSL3_PREFIX=${OPENSSL3_PREFIX-/home/runner}
+SSL_LIB_VERSION=${SSL_LIB_VERSION-openssl}
 
 if [ "$OPENRESTY_VERSION" == "source" ]; then
     if [ "$COMPILE_OPENSSL3" == "yes" ]; then
@@ -55,6 +56,15 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
         ldconfig
         export cc_opt="-I$OPENSSL3_PREFIX/openssl-3.0/include"
         export ld_opt="-L$OPENSSL3_PREFIX/openssl-3.0/lib64 -Wl,-rpath,$OPENSSL3_PREFIX/openssl-3.0/lib64"
+    fi
+
+    if [ "$SSL_LIB_VERSION" == "tongsuo" ]; then
+        export openssl_prefix=/usr/local/tongsuo
+        export zlib_prefix=$OPENRESTY_PREFIX/zlib
+        export pcre_prefix=$OPENRESTY_PREFIX/pcre
+
+        export cc_opt="-DNGX_LUA_ABORT_AT_PANIC -I${zlib_prefix}/include -I${pcre_prefix}/include -I${openssl_prefix}/include"
+        export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib64 -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib64"
     fi
 
     cd ..

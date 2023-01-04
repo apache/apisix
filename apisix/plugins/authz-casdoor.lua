@@ -32,6 +32,7 @@ local schema = {
         client_secret = {type = "string"},
         callback_url = {type = "string", pattern = "^[^%?]+[^/]$"}
     },
+    encrypt_fields = {"client_secret"},
     required = {
         "callback_url", "endpoint_addr", "client_id", "client_secret"
     }

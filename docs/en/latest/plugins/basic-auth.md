@@ -42,6 +42,8 @@ For Consumer:
 | username | string | True     | Unique username for a Consumer. If multiple Consumers use the same `username`, a request matching exception is raised. |
 | password | string | True     | Password of the user.                                                                                                  |
 
+NOTE: `encrypt_fields = {"password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 For Route:
 
 | Name             | Type    | Required | Default | Description                                                            |

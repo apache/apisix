@@ -33,6 +33,7 @@ return {
         ["/protos"] = true,
         ["/plugin_configs"] = true,
         ["/consumer_groups"] = true,
+        ["/secrets"] = true,
     },
     STREAM_ETCD_DIRECTORY = {
         ["/upstreams"] = true,

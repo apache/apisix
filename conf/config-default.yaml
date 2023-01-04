@@ -35,13 +35,13 @@ apisix:
   enable_ipv6: true
 
   #proxy_protocol:                  # Proxy Protocol configuration
-  #listen_http_port: 9181           # The port with proxy protocol for http, it differs from node_listen and admin_listen.
+  #  listen_http_port: 9181         # The port with proxy protocol for http, it differs from node_listen and admin_listen.
                                     # This port can only receive http request with proxy protocol, but node_listen & admin_listen
                                     # can only receive http request. If you enable proxy protocol, you must use this port to
                                     # receive http request with proxy protocol
-  #listen_https_port: 9182          # The port with proxy protocol for https
-  #enable_tcp_pp: true              # Enable the proxy protocol for tcp proxy, it works for stream_proxy.tcp option
-  #enable_tcp_pp_to_upstream: true  # Enables the proxy protocol to the upstream server
+  #  listen_https_port: 9182        # The port with proxy protocol for https
+  #  enable_tcp_pp: true            # Enable the proxy protocol for tcp proxy, it works for stream_proxy.tcp option
+  #  enable_tcp_pp_to_upstream: true # Enables the proxy protocol to the upstream server
   enable_server_tokens: true        # Whether the APISIX version number should be shown in Server header.
                                     # It's enabled by default.
 
@@ -123,6 +123,13 @@ apisix:
   #  ip: 127.0.0.1
   #  port: 9090
   disable_sync_configuration_during_start: false  # safe exit. Remove this once the feature is stable
+  data_encryption:                # add `encrypt_fields = { $field },` in plugin schema to enable encryption
+    enable: false                 # if not set, the default value is `false`.
+    keyring:
+      - qeddd145sfvddff3          # If not set, will save origin value into etcd.
+                                  # If set this, the keyring should be an array whose elements are string, and the size is also 16, and it will encrypt fields with AES-128-CBC
+                                  # !!! So do not change it after encryption, it can't decrypt the fields have be saved if you change !!
+                                  # Only use the first key to encrypt, and decrypt in the order of the array.
 
 nginx_config:                     # config for render the template to generate nginx.conf
   #user: root                     # specifies the execution user of the worker process.
@@ -309,6 +316,29 @@ nginx_config:                     # config for render the template to generate n
 #    dump:                         # if you need, when registered nodes updated can dump into file
 #       path: "logs/consul_kv.dump"
 #       expire: 2592000            # unit sec, here is 30 day
+#  consul:
+#    servers:
+#      - "http://127.0.0.1:8500"
+#      - "http://127.0.0.1:8600"
+#    skip_services:                    # if you need to skip special services
+#      - "service_a"
+#    timeout:
+#      connect: 2000               # default 2000 ms
+#      read: 2000                  # default 2000 ms
+#      wait: 60                    # default 60 sec
+#    weight: 1                     # default 1
+#    fetch_interval: 3             # default 3 sec, only take effect for keepalive: false way
+#    keepalive: true               # default true, use the long pull way to query consul servers
+#    default_service:               # you can define default server when missing hit
+#      host: "127.0.0.1"
+#      port: 20999
+#      metadata:
+#        fail_timeout: 1           # default 1 ms
+#        weight: 1                 # default 1
+#        max_fails: 1              # default 1
+#    dump:                         # if you need, when registered nodes updated can dump into file
+#       path: "logs/consul.dump"
+#       expire: 2592000            # unit sec, here is 30 day
 #  kubernetes:
 #    ### kubernetes service discovery both support single-cluster and multi-cluster mode
 #    ### applicable to the case where the service is distributed in a single or multiple kubernetes clusters.
@@ -461,6 +491,7 @@ plugins:                          # plugin list (sorted by priority)
   - file-logger                    # priority: 399
   - clickhouse-logger              # priority: 398
   - tencent-cloud-cls              # priority: 397
+  - inspect                        # priority: 200
   #- log-rotate                    # priority: 100
   # <- recommend to use priority (0, 100) for your custom plugins
   - example-plugin                 # priority: 0
@@ -556,6 +587,9 @@ plugin_attr:
       send: 60s
 #  redirect:
 #    https_port: 8443   # the default port for use by HTTP redirects to HTTPS
+  inspect:
+    delay: 3            # in seconds
+    hooks_file: "/usr/local/apisix/plugin_inspect_hooks.lua"
 
 deployment:
   role: traditional
@@ -600,7 +634,8 @@ deployment:
       - "http://127.0.0.1:2379"     # multiple etcd address, if your etcd cluster enables TLS, please use https scheme,
                                     # e.g. https://127.0.0.1:2379.
     prefix: /apisix                 # configuration prefix in etcd
-    timeout: 30                     # 30 seconds
+    use_grpc: false                 # enable the experimental configuration sync via gRPC
+    timeout: 30                     # 30 seconds. Use a much higher timeout (like an hour) if the `use_grpc` is true.
     #resync_delay: 5                # when sync failed and a rest is needed, resync after the configured seconds plus 50% random jitter
     #health_check_timeout: 10       # etcd retry the unhealthy nodes after the configured seconds
     startup_retry: 2                # the number of retry to etcd during the startup, default to 2

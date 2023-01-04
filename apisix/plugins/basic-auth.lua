@@ -18,7 +18,6 @@ local core = require("apisix.core")
 local ngx = ngx
 local ngx_re = require("ngx.re")
 local consumer = require("apisix.consumer")
-
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
@@ -41,6 +40,7 @@ local consumer_schema = {
         username = { type = "string" },
         password = { type = "string" },
     },
+    encrypt_fields = {"password"},
     required = {"username", "password"},
 }
 

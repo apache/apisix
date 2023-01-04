@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core           = require("apisix.core")
+local secret         = require("apisix.secret")
 local plugin         = require("apisix.plugin")
 local plugin_checker = require("apisix.plugin").plugin_checker
 local error          = error
@@ -103,7 +104,7 @@ local function create_consume_cache(consumers_conf, key_attr)
     for _, consumer in ipairs(consumers_conf.nodes) do
         core.log.info("consumer node: ", core.json.delay_encode(consumer))
         local new_consumer = core.table.clone(consumer)
-        new_consumer.auth_conf = core.utils.retrieve_secrets_ref(new_consumer.auth_conf)
+        new_consumer.auth_conf = secret.fetch_secrets(new_consumer.auth_conf)
         consumer_names[new_consumer.auth_conf[key_attr]] = new_consumer
     end
 

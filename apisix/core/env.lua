@@ -27,9 +27,12 @@ local find        = string.find
 local sub         = string.sub
 local str         = ffi.string
 
-local _M = {}
-
 local ENV_PREFIX = "$ENV://"
+
+local _M = {
+    PREFIX = ENV_PREFIX
+}
+
 
 local apisix_env_vars = {}
 
@@ -39,33 +42,36 @@ ffi.cdef [[
 
 
 function _M.init()
-  local e = ffi.C.environ
-  if not e then
-    log.warn("could not access environment variables")
-    return
-  end
-
-  local i = 0
-  while e[i] ~= nil do
-    local var = str(e[i])
-    local p = find(var, "=")
-    if p then
-        apisix_env_vars[sub(var, 1, p - 1)] = sub(var, p + 1)
+    local e = ffi.C.environ
+    if not e then
+        log.warn("could not access environment variables")
+        return
     end
 
-    i = i + 1
-  end
+    local i = 0
+    while e[i] ~= nil do
+        local var = str(e[i])
+        local p = find(var, "=")
+        if p then
+            apisix_env_vars[sub(var, 1, p - 1)] = sub(var, p + 1)
+        end
+
+        i = i + 1
+    end
 end
 
 
-local function is_env_ref(ref)
+local function parse_env_uri(env_uri)
     -- Avoid the error caused by has_prefix to cause a crash.
-    return type(ref) == "string" and string.has_prefix(upper(ref), ENV_PREFIX)
-end
+    if type(env_uri) ~= "string" then
+        return nil, "error env_uri type: " .. type(env_uri)
+    end
 
+    if not string.has_prefix(upper(env_uri), ENV_PREFIX) then
+        return nil, "error env_uri prefix: " .. env_uri
+    end
 
-local function parse_ref(ref)
-    local path = sub(ref, #ENV_PREFIX + 1)
+    local path = sub(env_uri, #ENV_PREFIX + 1)
     local idx = find(path, "/")
     if not idx then
         return {key = path, sub_key = ""}
@@ -80,18 +86,17 @@ local function parse_ref(ref)
 end
 
 
-function _M.get(ref)
-    if not is_env_ref(ref) then
-        return nil
+function _M.fetch_by_uri(env_uri)
+    local opts, err = parse_env_uri(env_uri)
+    if not opts then
+        return nil, err
     end
 
-    local opts = parse_ref(ref)
     local main_value = apisix_env_vars[opts.key] or os.getenv(opts.key)
     if main_value and opts.sub_key ~= "" then
         local vt, err = json.decode(main_value)
         if not vt then
-          log.warn("decode failed, err: ", err, " value: ", main_value)
-          return nil
+            return nil, "decode failed, err: " .. (err or "") .. ", value: " .. main_value
         end
         return vt[opts.sub_key]
     end

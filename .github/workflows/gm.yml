@@ -27,9 +27,8 @@ jobs:
         platform:
           - ubuntu-20.04
         os_name:
-          - linux_openresty
+          - linux_openresty_tongsuo
         test_dir:
-          # TODO: cover all tests by adding a CI cron job
           - t/gm
 
     runs-on: ${{ matrix.platform }}
@@ -40,7 +39,7 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.2.0
         with:
           submodules: recursive
 
@@ -63,48 +62,27 @@ jobs:
           # See https://github.com/Tongsuo-Project/Tongsuo/issues/318
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-tongsuo-ver
 
-      - name: Compile SSL lib
+      - name: Test SSL Env
+        id: test_ssl_env
         shell: bash
         if: steps.cache-tongsuo.outputs.cache-hit != 'true'
         run: |
-          git clone https://github.com/api7/tongsuo --depth 1
-          pushd tongsuo
-          # build binary
-          ./config enable-ntls -static
-          make -j2
-          mv apps/openssl apps/static-openssl
-          ./config shared enable-ntls -g --prefix=/usr/local/tongsuo
-          make -j2
-          popd
-
-      - name: Install SSL lib
-        run: |
-          pushd tongsuo
-          sudo make install_sw
-          sudo cp apps/static-openssl /usr/local/tongsuo/bin/openssl
-          export PATH=/usr/local/tongsuo/bin:$PATH
-          openssl version
-          popd
+          echo "compile_tongsuo=true" >>$GITHUB_OUTPUT
 
       - name: Linux launch common services
         run: |
           make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
 
       - name: Linux Before install
+        env:
+          COMPILE_TONGSUO: ${{ steps.test_ssl_env.outputs.compile_tongsuo }}
         run: |
-          sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
+          sudo --preserve-env=COMPILE_TONGSUO \
+          ./ci/${{ matrix.os_name }}_runner.sh before_install
 
       - name: Linux Do install
         run: |
-          export OR_PREFIX=/usr/local/openresty-debug
-          export openssl_prefix=/usr/local/tongsuo
-          export zlib_prefix=$OR_PREFIX/zlib
-          export pcre_prefix=$OR_PREFIX/pcre
-
-          export cc_opt="-DNGX_LUA_ABORT_AT_PANIC -I${zlib_prefix}/include -I${pcre_prefix}/include -I${openssl_prefix}/include"
-          export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib64 -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib64"
           sudo --preserve-env=OPENRESTY_VERSION \
-            --preserve-env=cc_opt,ld_opt \
             ./ci/${{ matrix.os_name }}_runner.sh do_install
 
       - name: Linux Script

@@ -51,6 +51,8 @@ description: API 网关 Apache APISIX error-log-logger 插件用于将 APISIX �
 | keepalive                        | integer | 否     | 30                             | [1,...]       | 复用连接时，连接保持的时间，以秒为单位。                                             |
 | level                            | string  | 否     | WARN                           |               | 进行错误日志筛选的级别，默认为 `WARN`，取值 ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"]，其中 `ERR` 与 `ERROR` 级别一致。 |
 
+注意：schema 中还定义了 `encrypt_fields = {"clickhouse.password"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
+
 本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
 ## 启用插件

@@ -52,6 +52,8 @@ description: 本文介绍了 Apache APISIX limit-count 插件的相关操作，�
 | redis_timeout       | integer | 否        | 1000          | [1,...]                                 | 当 `policy` 设置为 `redis` 或 `redis-cluster` 时，Redis 服务节点的超时时间（以毫秒为单位）。|
 | redis_cluster_nodes | array   | 否        |               |                                         | 当使用 `redis-cluster` 限速策略时，Redis 集群服务节点的地址列表（至少需要两个地址）。**当 `policy` 属性设置为 `redis-cluster` 时必选。**|
 | redis_cluster_name  | string  | 否        |               |                                         | 当使用 `redis-cluster` 限速策略时，Redis 集群服务节点的名称。**当 `policy` 设置为 `redis-cluster` 时必选。**|
+| redis_cluster_ssl  | boolean  | 否        |     false    |                                         | 当使用 `redis-cluster` 限速策略时， 如果设置为 true，则使用 SSL 连接到 `redis-cluster` |
+| redis_cluster_ssl_verify  | boolean  | 否        |     false        |                                         | 当使用 `redis-cluster` 限速策略时，如果设置为 true，则验证服务器 SSL 证书的有效性 |
 
 ## 启用插件
 

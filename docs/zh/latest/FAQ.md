@@ -652,7 +652,7 @@ etcd 作为 APISIX 的数据存储组件，它的稳定性关乎 APISIX 的稳�
 1. 通过接口操作 APISIX Admin API 进行数据的查询或写入，延迟较高。
 2. 在监控系统中，Prometheus 抓取 APISIX 数据面 Metrics 接口超时。
 
-这些延迟问题，严重影响了 APISIX 的服务稳定性，而之所以会出现这类问题，主要是因为 etcd 对外提供了 2 种操作方式：HTTP（HTTPS）、gRPC。而 APISIX 是基于 HTTP（HTTPS）协议来操作 etcd 的。
+这些延迟问题，严重影响了 APISIX 的服务稳定性，而之所以会出现这类问题，主要是因为 etcd 对外提供了 2 种操作方式：HTTP（HTTPS）、gRPC。而 APISIX 默认是基于 HTTP（HTTPS）协议来操作 etcd 的。
 
 在这个场景中，etcd 存在一个关于 HTTP/2 的 BUG：如果通过 HTTPS 操作 etcd（HTTP 不受影响），HTTP/2 的连接数上限为 Golang 默认的 `250` 个。
 
@@ -696,6 +696,16 @@ make GOOS=linux GOARCH=amd64
 - [bug: when apisix starts for a while, its communication with etcd starts to time out](https://github.com/apache/apisix/issues/7078)
 - [the prometheus metrics API is tool slow](https://github.com/apache/apisix/issues/7353)
 - [Support configuring `MaxConcurrentStreams` for http2](https://github.com/etcd-io/etcd/pull/14169)
+
+另外一种解决办法是改用实验性的基于 gRPC 的配置同步。需要在配置文件 `conf/config.yaml` 中设置 `use_grpc: true`：
+
+```yaml
+  etcd:
+    use_grpc: true
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: "/apisix"
+```
 
 ## 如果在使用 APISIX 过程中遇到问题，我可以在哪里寻求更多帮助？
 

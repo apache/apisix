@@ -51,6 +51,8 @@ For Consumer:
 | vault         | object  | False                                                 |         |                             | Set to true to use Vault for storing and retrieving secret (secret for HS256/HS512  or public_key and private_key for RS256/ES256). By default, the Vault path is `kv/apisix/consumer/<consumer_name>/jwt-auth`. |
 | lifetime_grace_period | integer | False                                         | 0       | [0,...]                     | Define the leeway in seconds to account for clock skew between the server that generated the jwt and the server validating it. Value should be zero (0) or a positive integer. |
 
+NOTE: `encrypt_fields = {"secret", "private_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 :::info IMPORTANT
 
 To enable Vault integration, you have to first update your configuration file (`conf/config.yaml`) with your Vault server configuration, host address and access token.

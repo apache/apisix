@@ -19,12 +19,14 @@ local core = require("apisix.core")
 local route = require("apisix.utils.router")
 local plugin = require("apisix.plugin")
 local v3_adapter = require("apisix.admin.v3_adapter")
+local utils = require("apisix.admin.utils")
 local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_time = ngx.time
 local ngx_timer_at = ngx.timer.at
 local ngx_worker_id = ngx.worker.id
 local tonumber = tonumber
+local tostring = tostring
 local str_lower = string.lower
 local reload_event = "/apisix/admin/plugins/reload"
 local ipairs = ipairs
@@ -55,6 +57,7 @@ local resources = {
     plugin_metadata = require("apisix.admin.plugin_metadata"),
     plugin_configs  = require("apisix.admin.plugin_config"),
     consumer_groups  = require("apisix.admin.consumer_group"),
+    secrets             = require("apisix.admin.secrets"),
 }
 
 
@@ -110,6 +113,16 @@ local function strip_etcd_resp(data)
         if data.node then
             data.node.createdIndex = nil
             data.node.modifiedIndex = nil
+        end
+
+        data.count = nil
+        data.more = nil
+        data.prev_kvs = nil
+
+        if data.deleted then
+            -- We used to treat the type incorrectly. But for compatibility we follow
+            -- the existing type.
+            data.deleted = tostring(data.deleted)
         end
     end
 
@@ -188,6 +201,16 @@ local function run()
     local code, data = resource[method](seg_id, req_body, seg_sub_path,
                                         uri_args)
     if code then
+        if method == "get" and plugin.enable_data_encryption then
+            if seg_res == "consumers" then
+                utils.decrypt_params(plugin.decrypt_conf, data, core.schema.TYPE_CONSUMER)
+            elseif seg_res == "plugin_metadata" then
+                utils.decrypt_params(plugin.decrypt_conf, data, core.schema.TYPE_METADATA)
+            else
+                utils.decrypt_params(plugin.decrypt_conf, data)
+            end
+        end
+
         if v3_adapter.enable_v3() then
             core.response.set_header("X-API-VERSION", "v3")
         else

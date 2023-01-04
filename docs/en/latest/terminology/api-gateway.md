@@ -1,5 +1,10 @@
 ---
 title: API Gateway
+keywords:
+  - APISIX
+  - API Gateway
+  - Gateway
+description: This article mainly introduces the role of the API gateway and why it is needed.
 ---
 
 <!--

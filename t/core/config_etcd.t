@@ -317,3 +317,33 @@ qr/healthy check use \S+ \w+/
 --- grep_error_log_out eval
 qr/healthy check use round robin
 (healthy check use ngx.shared dict){1,}/
+
+
+
+=== TEST 10: last_err can be nil when the reconnection is successful
+--- config
+    location /t {
+        content_by_lua_block {
+            local config_etcd = require("apisix.core.config_etcd")
+            local count = 0
+            config_etcd.inject_sync_data(function()
+                if count % 2 == 0 then
+                    count = count + 1
+                    return nil, "has no healthy etcd endpoint available"
+                else
+                    return true
+                end
+            end)
+            config_etcd.test_automatic_fetch(false, {
+                running = true,
+                resync_delay = 1,
+            })
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- error_log
+reconnected to etcd
+--- response_body
+passed

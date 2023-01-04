@@ -33,6 +33,7 @@ local schema = {
             required = {"username", "password"},
         },
     },
+    encrypt_fields = {"sasl.password"},
 }
 
 

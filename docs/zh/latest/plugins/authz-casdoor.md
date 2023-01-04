@@ -40,6 +40,8 @@ description: 本篇文档介绍了 Apache APISIX auth-casdoor 插件的相关信
 | client_secret | string | 是     | Casdoor 的客户端密钥。                 |
 | callback_url  | string | 是     | 用于接收 code 与 state 的回调地址。 |
 
+注意：schema 中还定义了 `encrypt_fields = {"client_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
+
 :::info IMPORTANT
 
 指定 `endpoint_addr` 和 `callback_url` 属性时不要以 “/” 来结尾。
