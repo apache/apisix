@@ -907,6 +907,11 @@ function _M.stream_init_worker()
     router.stream_init_worker()
     apisix_upstream.init_worker()
 
+    local discovery = require("apisix.discovery.init").discovery
+    if discovery and discovery.init_worker then
+        discovery.init_worker()
+    end
+
     load_balancer = require("apisix.balancer")
 
     local_conf = core.config.local_conf()
