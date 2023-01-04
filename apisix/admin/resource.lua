@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
+local setmetatable = setmetatable
 
 
 local _M = {
