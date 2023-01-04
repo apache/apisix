@@ -157,13 +157,11 @@ passed
                         ngx.say("incorrect length for id")
                         return
                     end
-                    for j = 1, #id do
-                        local start, en = string.find(id, '[a-zA-Z0-9]', j)
-                        if start ~= j or en ~= j then
-                            ngx.say("incorrect char set for id")
-                            ngx.say(id)
-                            return
-                        end
+                    local start, en = string.find(id, '[a-zA-Z0-9]*')
+                    if start ~= 1 or en ~= 16 then
+                        ngx.say("incorrect char set for id")
+                        ngx.say(id)
+                        return
                     end
                     if ids[id] == true then
                         ngx.say("ids not unique")
