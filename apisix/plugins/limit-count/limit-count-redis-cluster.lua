@@ -92,13 +92,15 @@ function _M.incoming(self, key)
     local window = self.window
     key = self.plugin_name .. tostring(key)
 
+    local ttl = 0
     local res, err = red:eval(script, 1, key, limit, window)
-    local remaining = res[1]
-    local ttl = res[2]
 
     if err then
         return nil, err, ttl
     end
+
+    local remaining = res[1]
+    ttl = res[2]
 
     if remaining < 0 then
         return nil, "rejected", ttl

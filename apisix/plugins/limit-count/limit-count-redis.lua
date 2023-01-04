@@ -85,36 +85,6 @@ function _M.new(plugin_name, limit, window, conf)
     return setmetatable(self, mt)
 end
 
-function _M.set_endtime(self,key,time_window)
-    return time_window
-end
-
-function _M.read_reset(self, key)
-    local conf = self.conf
-    local red, err = redis_cli(conf)
-    if err then
-        return red, err
-    end
-
-    local ttl, err = red:ttl(key)
-    if err then
-        core.log.error("key: ", key, " read_reset with error: ", err)
-        return 0
-    end
-
-    local ok, err = red:set_keepalive(10000, 100)
-    if not ok then
-        core.log.error("key: ", key, " read_reset with error: ", err)
-        return 0
-    end
-
-    if ttl < 0 then
-        return 0
-    end
-
-    return ttl
-end
-
 function _M.incoming(self, key)
     local conf = self.conf
     local red, err = redis_cli(conf)
@@ -127,13 +97,15 @@ function _M.incoming(self, key)
     local res
     key = self.plugin_name .. tostring(key)
 
+    local ttl = 0
     res, err = red:eval(script, 1, key, limit, window)
-    local remaining = res[1]
-    local ttl = res[2]
 
     if err then
         return nil, err, ttl
     end
+
+    local remaining = res[1]
+    ttl = res[2]
 
     local ok, err = red:set_keepalive(10000, 100)
     if not ok then
