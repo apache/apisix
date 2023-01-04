@@ -260,7 +260,7 @@ passed
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local res, err = httpc:request_uri(uri, {method = "GET"})
-            if ngx.status == 200 then
+            if res.status == 200 then
                 ngx.say(true)
             end
         }
