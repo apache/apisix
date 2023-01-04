@@ -256,4 +256,3 @@ GET /t
 {"a":"a"}
 --- response_headers
 Content-Type: text/plain
-echo 
