@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.1.0](#310)
 - [3.0.0](#300)
 - [3.0.0-beta](#300-beta)
 - [2.15.1](#2151)
@@ -63,6 +64,49 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.1.0
+
+### Core
+
+- :sunrise: Support for etcd configuration synchronization via gRPC:
+    - [#8485](https://github.com/apache/apisix/pull/8485)
+    - [#8450](https://github.com/apache/apisix/pull/8450)
+    - [#8411](https://github.com/apache/apisix/pull/8411)
+- :sunrise: Support for configuring encrypted fields in plugins:
+    - [#8487](https://github.com/apache/apisix/pull/8487)
+    - [#8403](https://github.com/apache/apisix/pull/8403)
+- :sunrise: Support for placing partial fields in Vault or environment variable using secret resources:
+    - [#8448](https://github.com/apache/apisix/pull/8448)
+    - [#8421](https://github.com/apache/apisix/pull/8421)
+    - [#8412](https://github.com/apache/apisix/pull/8412)
+    - [#8394](https://github.com/apache/apisix/pull/8394)
+    - [#8390](https://github.com/apache/apisix/pull/8390)
+- :sunrise: Allows upstream configuration in the stream subsystem as a domain name: [#8500](https://github.com/apache/apisix/pull/8500)
+- :sunrise: Support Consul service discovery: [#8380](https://github.com/apache/apisix/pull/8380)
+
+### Plugin
+
+- :sunrise: Optimize resource usage for prometheus collection: [#8434](https://github.com/apache/apisix/pull/8434)
+- :sunrise: Add inspect plugin for easy debugging: [#8400](https://github.com/apache/apisix/pull/8400)
+- :sunrise: jwt-auth plugin supports parameters to hide authentication token from upstream : [#8206](https://github.com/apache/apisix/pull/8206)
+- :sunrise: proxy-rewrite plugin supports adding new request headers without overwriting existing request headers with the same name: [#8336](https://github.com/apache/apisix/pull/8336)
+- :sunrise: grpc-transcode plugin supports setting the grpc-status-details-bin response header into the response body: [#7639](https://github.com/apache/apisix/pull/7639)
+- :sunrise: proxy-mirror plugin supports setting the prefix: [#8261](https://github.com/apache/apisix/pull/8261)
+
+### Bugfix
+
+- Fix the problem that the plug-in configured under service object cannot take effect in time under some circumstances: [#8482](https://github.com/apache/apisix/pull/8482)
+- Fix an occasional 502 problem when http and grpc share the same upstream connection due to connection pool reuse: [#8364](https://github.com/apache/apisix/pull/8364)
+- file-logger should avoid buffer-induced log truncation when writing logs: [#7884](https://github.com/apache/apisix/pull/7884)
+- max_kept parameter of log-rotate plugin should take effect on compressed files: [#8366](https://github.com/apache/apisix/pull/8366)
+- Fix userinfo not being set when use_jwks is true in the openid-connect plugin: [#8347](https://github.com/apache/apisix/pull/8347)
+- Fix an issue where x-forwarded-host cannot be changed in the proxy-rewrite plugin: [#8200](https://github.com/apache/apisix/pull/8200)
+- Fix a bug where disabling the v3 admin API resulted in missing response bodies under certain circumstances: [#8349](https://github.com/apache/apisix/pull/8349)
+- In zipkin plugin, pass trace ID even if there is a rejected sampling decision: [#8099](https://github.com/apache/apisix/pull/8099)
+- Fix `_meta.filter` in plugin configuration not working with variables assigned after upstream response and custom variables in APISIX.
+    - [#8162](https://github.com/apache/apisix/pull/8162)
+    - [#8256](https://github.com/apache/apisix/pull/8256)
 
 ## 3.0.0
 
