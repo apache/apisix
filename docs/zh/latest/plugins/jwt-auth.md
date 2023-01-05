@@ -42,9 +42,9 @@ Consumer 端：
 | 名称          | 类型     | 必选项 | 默认值  | 有效值                      | 描述                                                                                                          |
 | ------------- | ------- | ----- | ------- | --------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | key           | string  | 是    |         |                             | Consumer 的 `access_key` 必须是唯一的。如果不同 Consumer 使用了相同的 `access_key` ，将会出现请求匹配异常。 |
-| secret        | string  | 否    |         |                             | 加密秘钥。如果未指定，后台将会自动生成。                                                                  |
-| public_key    | string  | 否    |         |                             | RSA 或 ECDSA 公钥， `algorithm` 属性选择 `RS256` 或 `ES256` 算法时必选。                                                            |
-| private_key   | string  | 否    |         |                             | RSA 或 ECDSA 私钥， `algorithm` 属性选择 `RS256` 或 `ES256` 算法时必选。                                                            |
+| secret        | string  | 否    |         |                             | 加密秘钥。如果未指定，后台将会自动生。成。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。   |
+| public_key    | string  | 否    |         |                             | RSA 或 ECDSA 公钥， `algorithm` 属性选择 `RS256` 或 `ES256` 算法时必选。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。       |
+| private_key   | string  | 否    |         |                             | RSA 或 ECDSA 私钥， `algorithm` 属性选择 `RS256` 或 `ES256` 算法时必选。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。       |
 | algorithm     | string  | 否    | "HS256" | ["HS256", "HS512", "RS256", "ES256"] | 加密算法。                                                                                                      |
 | exp           | integer | 否    | 86400   | [1,...]                     | token 的超时时间。                                                                                              |
 | base64_secret | boolean | 否    | false   |                             | 当设置为 `true` 时，密钥为 base64 编码。                                                                                         |

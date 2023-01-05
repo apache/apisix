@@ -549,7 +549,7 @@ ERR_TOKEN_INVALID
 
 
 
-=== TEST 31: add consumer with username and plugins
+=== TEST 31: set hmac-auth conf: appid uses secret ref
 --- config
     location /t {
         content_by_lua_block {
@@ -561,14 +561,6 @@ ERR_TOKEN_INVALID
                     "uri": "http://127.0.0.1:8200",
                     "prefix" : "kv/apisix",
                     "token" : "root"
-                }]],
-                [[{
-                    "value": {
-                        "uri": "http://127.0.0.1:8200",
-                        "prefix" : "kv/apisix",
-                        "token" : "root"
-                    },
-                    "key": "/apisix/secrets/vault/test1"
                 }]]
                 )
 
