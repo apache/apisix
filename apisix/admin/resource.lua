@@ -53,7 +53,7 @@ function _M.get(id)
     local res, err = core.etcd.get(key, not id)
     if not res then
         core.log.error("failed to get " .. _M.kind .. "[", key, "] from etcd: ", err)
-        return 503, {error_msg = err}
+        return 503, {error_msg = err .. " key = " .. key}
     end
 
     utils.fix_count(res.body, id)
