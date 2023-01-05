@@ -17,11 +17,15 @@
 local expr = require("resty.expr.v1")
 local core = require("apisix.core")
 local apisix_upstream = require("apisix.upstream")
+local resource = require("apisix.admin.resource")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local utils = require("apisix.admin.utils")
 local tostring = tostring
 local type = type
 local loadstring = loadstring
+
+
+local handler = resource.new("routes", "route")
 
 
 local _M = {
@@ -192,19 +196,7 @@ end
 
 
 function _M.get(id)
-    local key = "/routes"
-    if id then
-        key = key .. "/" .. id
-    end
-
-    local res, err = core.etcd.get(key, not id)
-    if not res then
-        core.log.error("failed to get route[", key, "] from etcd: ", err)
-        return 503, {error_msg = err}
-    end
-
-    utils.fix_count(res.body, id)
-    return res.status, res.body
+    return handler.get(id)
 end
 
 
