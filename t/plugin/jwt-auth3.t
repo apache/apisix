@@ -536,23 +536,15 @@ jwt-header: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIs
 
 
 
-=== TEST 19: store rsa private key into vault from local filesystem
+=== TEST 19: store rsa key pairs and secret into vault from local filesystem
 --- exec
-VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/rsa1 private_key=@t/certs/private.pem
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/rsa1 secret=$3nsitiv3-c8d3 public_key=@t/certs/public.pem private_key=@t/certs/private.pem
 --- response_body
 Success! Data written to: kv/apisix/rsa1
 
 
 
-=== TEST 20: store rsa public key into vault from local filesystem
---- exec
-VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/rsa1 public_key=@t/certs/public.pem
---- response_body
-Success! Data written to: kv/apisix/rsa1
-
-
-
-=== TEST 21: create consumer for RS256 algorithm with private/public key fetched from vault and public key in consumer schema
+=== TEST 20: create consumer for RS256 algorithm with private/public key fetched from vault and public key in consumer schema
 --- config
     location /t {
         content_by_lua_block {
@@ -603,6 +595,7 @@ Success! Data written to: kv/apisix/rsa1
                         "jwt-auth": {
                             "key": "rsa1",
                             "algorithm": "RS256",
+                            "secret": "$secret://vault/test1/rsa1/secret",
                             "public_key": "$secret://vault/test1/rsa1/public_key",
                             "private_key": "$secret://vault/test1/rsa1/private_key"
                         }
@@ -621,7 +614,7 @@ passed
 
 
 
-=== TEST 22: sign a jwt with with rsa key pair and access /secure-endpoint
+=== TEST 21: sign a jwt with with rsa key pair and access /secure-endpoint
 --- config
     location /t {
         content_by_lua_block {
