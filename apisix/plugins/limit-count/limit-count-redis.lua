@@ -88,8 +88,8 @@ end
 function _M.incoming(self, key)
     local conf = self.conf
     local red, err = redis_cli(conf)
-    if err then
-        return red, err
+    if not red then
+        return red, err, 0
     end
 
     local limit = self.limit

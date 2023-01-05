@@ -290,8 +290,8 @@ function _M.rate_limit(conf, ctx)
             -- show count limit header when rejected
             if conf.show_limit_quota_header then
                 core.response.set_header("X-RateLimit-Limit", conf.count,
-                        "X-RateLimit-Remaining", 0,
-                        "X-RateLimit-Reset", reset)
+                    "X-RateLimit-Remaining", 0,
+                    "X-RateLimit-Reset", reset)
             end
 
             if conf.rejected_msg then
@@ -309,8 +309,8 @@ function _M.rate_limit(conf, ctx)
 
     if conf.show_limit_quota_header then
         core.response.set_header("X-RateLimit-Limit", conf.count,
-                "X-RateLimit-Remaining", remaining,
-                "X-RateLimit-Reset", reset)
+            "X-RateLimit-Remaining", remaining,
+            "X-RateLimit-Reset", reset)
     end
 end
 
