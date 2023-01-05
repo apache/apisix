@@ -168,7 +168,7 @@ end
 
 
 function _M.put(id, conf, sub_path, args)
-    return _M.res.kind(check_conf, id, conf, sub_path, args)
+    return _M.res.put(check_conf, id, conf, sub_path, args)
 end
 
 
