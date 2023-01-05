@@ -118,7 +118,7 @@ function resp_exit(code, ...)
     if idx > 0 then
         local response = concat_tab(t, "", 1, idx)
         local content_type = ngx_header["Content-type"]
-        local accept_header = core_request.header(ctx, "Accept")
+        local accept_header = core_request.header(nil, "Accept")
         if not content_type
             and (not accept_header
                 or accept_header == "application/json"
