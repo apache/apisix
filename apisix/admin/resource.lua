@@ -21,39 +21,26 @@ local type = type
 
 
 local _M = {
-    name = "",
-    kind = "",
     version = 0.2,
     need_v3_filter = true,
 }
 
 
 local mt = {
-    __index = _M,
-    __tostring = function(self)
-        return "resource name: " .. (_M.name)
-    end
+    __index = _M
 }
 
 
-function _M.new(name, kind)
-    return setmetatable({
-        name = name,
-        kind = kind
-    }, mt)
-end
-
-
-function _M.get(id)
-    local key = "/" .. _M.name
+local function get(self, id)
+    local key = "/" .. self.name
     if id then
         key = key .. "/" .. id
     end
 
     local res, err = core.etcd.get(key, not id)
     if not res then
-        core.log.error("failed to get " .. _M.kind .. "[", key, "] from etcd: ", err)
-        return 503, {error_msg = err .. " key = " .. key}
+        core.log.error("failed to get " .. self.kind .. "[", key, "] from etcd: ", err)
+        return 503, {error_msg = err}
     end
 
     utils.fix_count(res.body, id)
@@ -61,17 +48,17 @@ function _M.get(id)
 end
 
 
-function _M.post(check_conf, id, conf, sub_path, args)
+local function post(self, check_conf, id, conf, sub_path, args)
     local id, err = check_conf(id, conf, false)
     if not id then
         return 400, err
     end
 
-    local key = "/" .. _M.name
+    local key = "/" .. self.name
     utils.inject_timestamp(conf)
     local res, err = core.etcd.push(key, conf, args.ttl)
     if not res then
-        core.log.error("failed to post " .. _M.kind .. "[", key, "] to etcd: ", err)
+        core.log.error("failed to post " .. self.kind .. "[", key, "] to etcd: ", err)
         return 503, {error_msg = err}
     end
 
@@ -79,22 +66,22 @@ function _M.post(check_conf, id, conf, sub_path, args)
 end
 
 
-function _M.put(check_conf, id, conf, sub_path, args)
+local function put(self, check_conf, id, conf, sub_path, args)
     local id, err = check_conf(id, conf, true)
     if not id then
         return 400, err
     end
 
-    local key = "/" .. _M.name .. "/" .. id
+    local key = "/" .. self.name .. "/" .. id
 
-    local ok, err = utils.inject_conf_with_prev_conf(_M.kind, key, conf)
+    local ok, err = utils.inject_conf_with_prev_conf(self.kind, key, conf)
     if not ok then
         return 503, {error_msg = err}
     end
 
     local res, err = core.etcd.set(key, conf, args.ttl)
     if not res then
-        core.log.error("failed to put " .. _M.kind .. "[", key, "] to etcd: ", err)
+        core.log.error("failed to put " .. self.kind .. "[", key, "] to etcd: ", err)
         return 503, {error_msg = err}
     end
 
@@ -102,15 +89,15 @@ function _M.put(check_conf, id, conf, sub_path, args)
 end
 
 
-function _M.delete(id)
+local function delete(self, id)
     if not id then
-        return 400, {error_msg = "missing " .. _M.kind .. " id"}
+        return 400, {error_msg = "missing " .. self.kind .. " id"}
     end
 
-    local key = "/" .. _M.name .. "/" .. id
+    local key = "/" .. self.name .. "/" .. id
     local res, err = core.etcd.delete(key)
     if not res then
-        core.log.error("failed to delete " .. _M.kind .. "[", key, "] in etcd: ", err)
+        core.log.error("failed to delete " .. self.kind .. "[", key, "] in etcd: ", err)
         return 503, {error_msg = err}
     end
 
@@ -118,9 +105,9 @@ function _M.delete(id)
 end
 
 
-function _M.patch(check_conf, id, conf, sub_path, args)
+local function patch(self, check_conf, id, conf, sub_path, args)
     if not id then
-        return 400, {error_msg = "missing " .. _M.kind .. " id"}
+        return 400, {error_msg = "missing " .. self.kind .. " id"}
     end
 
     if conf == nil then
@@ -133,14 +120,14 @@ function _M.patch(check_conf, id, conf, sub_path, args)
         end
     end
 
-    local key = "/" .. _M.name
+    local key = "/" .. self.name
     if id then
         key = key .. "/" .. id
     end
 
     local res_old, err = core.etcd.get(key)
     if not res_old then
-        core.log.error("failed to get " .. _M.kind .. " [", key, "] in etcd: ", err)
+        core.log.error("failed to get " .. self.kind .. " [", key, "] in etcd: ", err)
         return 503, {error_msg = err}
     end
 
@@ -174,11 +161,40 @@ function _M.patch(check_conf, id, conf, sub_path, args)
 
     local res, err = core.etcd.atomic_set(key, node_value, args.ttl, modified_index)
     if not res then
-        core.log.error("failed to set new ".. _M.kind .."[", key, "] to etcd: ", err)
+        core.log.error("failed to set new ".. self.kind .."[", key, "] to etcd: ", err)
         return 503, {error_msg = err}
     end
 
     return res.status, res.body
+end
+
+
+function _M.new(name, kind)
+    local obj = setmetatable({
+        name = name,
+        kind = kind
+    }, mt)
+
+    function obj.get(id)
+       return get(obj, id)
+    end
+
+    function obj.post(check_conf, id, conf, sub_path, args)
+        return post(obj, check_conf, id, conf, sub_path, args)
+    end
+
+    function obj.put(check_conf, id, conf, sub_path, args)
+        return put(obj, check_conf, id, conf, sub_path, args)
+    end
+
+    function obj.delete(id)
+        return delete(obj, id)
+    end
+
+    function obj.patch(check_conf, id, conf, sub_path, args)
+        return patch(obj, check_conf, id, conf, sub_path, args)
+    end
+    return obj
 end
 
 
