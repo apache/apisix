@@ -24,8 +24,12 @@ local type = type
 local loadstring = loadstring
 
 
+local res = resource.new("routes", "route")
+
+
 local _M = {
-    res = resource.new("routes", "route")
+    version = res.version,
+    need_v3_filter = res.need_v3_filter,
 }
 
 
@@ -168,27 +172,27 @@ end
 
 
 function _M.put(id, conf, sub_path, args)
-    return _M.res.put(check_conf, id, conf, sub_path, args)
+    return res.put(check_conf, id, conf, sub_path, args)
 end
 
 
 function _M.get(id)
-    return _M.res.get(id)
+    return res.get(id)
 end
 
 
 function _M.post(id, conf, sub_path, args)
-    return _M.res.post(check_conf, id, conf, sub_path, args)
+    return res.post(check_conf, id, conf, sub_path, args)
 end
 
 
 function _M.delete(id)
-    return _M.res.delete(id)
+    return res.delete(id)
 end
 
 
 function _M.patch(id, conf, sub_path, args)
-    return _M.res.patch(check_conf, id, conf, sub_path, args)
+    return res.patch(check_conf, id, conf, sub_path, args)
 end
 
 
