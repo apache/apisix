@@ -30,7 +30,11 @@ local function set_endtime(self, key, time_window)
     -- set an end time
     local end_time = ngx_time() + time_window
     -- save to dict by key
-    self.dict:set(key, end_time, time_window)
+    local success, err = self.dict:set(key, end_time, time_window)
+
+    if not success then
+        core.log.error("dict set key ", key, " error: ", err)
+    end
 
     local reset = time_window
     return reset
