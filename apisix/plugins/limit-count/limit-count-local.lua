@@ -19,6 +19,7 @@ local ngx = ngx
 local ngx_time = ngx.time
 local assert = assert
 local setmetatable = setmetatable
+local core = require("apisix.core")
 
 local _M = {}
 
