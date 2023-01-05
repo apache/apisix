@@ -583,7 +583,7 @@ passed
 
 
 
-=== TEST 23: sign a jwt with with rsa key pair and access /secure-endpoint
+=== TEST 22: sign a jwt with with rsa key pair and access /secure-endpoint
 --- config
     location /t {
         content_by_lua_block {
