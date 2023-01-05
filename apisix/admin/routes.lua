@@ -19,7 +19,6 @@ local core = require("apisix.core")
 local apisix_upstream = require("apisix.upstream")
 local resource = require("apisix.admin.resource")
 local schema_plugin = require("apisix.admin.plugins").check_schema
-local utils = require("apisix.admin.utils")
 local tostring = tostring
 local type = type
 local loadstring = loadstring
@@ -173,7 +172,7 @@ end
 
 
 function _M.put(id, conf, sub_path, args)
-    return handler.put(id, conf, sub_path, args)
+    return handler.put(check_conf, id, conf, sub_path, args)
 end
 
 
@@ -183,7 +182,7 @@ end
 
 
 function _M.post(id, conf, sub_path, args)
-    return handler.post(id, conf, sub_path, args)
+    return handler.post(check_conf, id, conf, sub_path, args)
 end
 
 
@@ -193,7 +192,7 @@ end
 
 
 function _M.patch(id, conf, sub_path, args)
-    return handler.patch(id, conf, sub_path, args)
+    return handler.patch(check_conf, id, conf, sub_path, args)
 end
 
 
