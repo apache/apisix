@@ -566,7 +566,7 @@ Success! Data written to: kv/apisix/jack
                             "key": "rsa1",
                             "algorithm": "RS256",
                             "public_key": "$secret://vault/test1/jack/public_key",
-                            "private_key": "$secret://vault/test1/jack/private_key",
+                            "private_key": "$secret://vault/test1/jack/private_key"
                         }
                     }
                 }]]
