@@ -538,17 +538,17 @@ jwt-header: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIs
 
 === TEST 19: store rsa private key into vault from local filesystem
 --- exec
-VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/jack private_key=@t/certs/private.pem
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/rsa1 private_key=@t/certs/private.pem
 --- response_body
-Success! Data written to: kv/apisix/jack
+Success! Data written to: kv/apisix/rsa1
 
 
 
 === TEST 20: store rsa public key into vault from local filesystem
 --- exec
-VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/jack public_key=@t/certs/public.pem
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/rsa1 public_key=@t/certs/public.pem
 --- response_body
-Success! Data written to: kv/apisix/jack
+Success! Data written to: kv/apisix/rsa1
 
 
 
@@ -557,6 +557,44 @@ Success! Data written to: kv/apisix/jack
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            -- enable jwt auth plugin using admin api
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8777": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/secure-endpoint"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            -- create public API route (jwt-auth sign)
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "public-api": {}
+                        },
+                        "uri": "/apisix/plugin/jwt/sign"
+                 }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
@@ -565,8 +603,8 @@ Success! Data written to: kv/apisix/jack
                         "jwt-auth": {
                             "key": "rsa1",
                             "algorithm": "RS256",
-                            "public_key": "$secret://vault/test1/jack/public_key",
-                            "private_key": "$secret://vault/test1/jack/private_key"
+                            "public_key": "$secret://vault/test1/rsa1/public_key",
+                            "private_key": "$secret://vault/test1/rsa1/private_key"
                         }
                     }
                 }]]
