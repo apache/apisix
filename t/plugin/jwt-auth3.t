@@ -24,6 +24,21 @@ no_shuffle();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
+    my $http_config = $block->http_config // <<_EOC_;
+
+    server {
+        listen 8777;
+
+        location /secure-endpoint {
+            content_by_lua_block {
+                ngx.say("successfully invoked secure endpoint")
+            }
+        }
+    }
+_EOC_
+
+    $block->set_value("http_config", $http_config);
+
     if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
         $block->set_value("no_error_log", "[error]");
     }
