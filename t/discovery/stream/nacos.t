@@ -21,7 +21,7 @@ log_level('info');
 worker_connections(256);
 no_root_location();
 no_shuffle();
-workers(1);
+workers(4);
 
 our $yaml_config = <<_EOC_;
 apisix:
@@ -48,8 +48,7 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     if (!$block->stream_request) {
-        # GET /hello HTTP/1.1\r\nHost: 127.0.0.1:1985\r\nConnection: close\r\n\r\n
-        $block->set_value("stream_request", "\x47\x45\x54\x20\x2f\x68\x65\x6c\x6c\x6f\x20\x48\x54\x54\x50\x2f\x31\x2e\x31\x0d\x0a\x48\x6f\x73\x74\x3a\x20\x31\x32\x37\x2e\x30\x2e\x30\x2e\x31\x3a\x31\x39\x38\x35\x0d\x0a\x43\x6f\x6e\x6e\x65\x63\x74\x69\x6f\x6e\x3a\x20\x63\x6c\x6f\x73\x65\x0d\x0a\x0d\x0a");
+        $block->set_value("stream_request", "GET /hello HTTP/1.1\r\nHost: 127.0.0.1:1985\r\nConnection: close\r\n\r\n");
     }
 
 });
