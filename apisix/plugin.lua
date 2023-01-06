@@ -81,6 +81,10 @@ local function check_disable(plugin_conf)
         return nil
     end
 
+    if plugin_conf.disable then
+        return plugin_conf.disable
+    end
+
     if not plugin_conf._meta then
        return nil
     end
