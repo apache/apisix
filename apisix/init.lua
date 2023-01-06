@@ -372,7 +372,7 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
         local upstream = apisix_upstream.get_by_id(up_id)
         if not upstream then
             if is_http then
-                return core.response.exit(502)
+                return core.response.exit(core.ctx, 502)
             end
 
             return ngx_exit(1)
@@ -386,7 +386,7 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
             route, err = parse_domain_in_route(route)
             if err then
                 core.log.error("failed to get resolved route: ", err)
-                return core.response.exit(500)
+                return core.response.exit(core.ctx, 500)
             end
 
             api_ctx.conf_version = route.modifiedIndex
@@ -412,7 +412,7 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
             core.log.error("failed to get ssl cert: ", err)
 
             if is_http then
-                return core.response.exit(502)
+                return core.response.exit(core.ctx, 502)
             end
 
             return ngx_exit(1)
@@ -439,13 +439,13 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
     local code, err = set_upstream(route, api_ctx)
     if code then
         core.log.error("failed to set upstream: ", err)
-        core.response.exit(code)
+        core.response.exit(core.ctx, code)
     end
 
     local server, err = load_balancer.pick_server(route, api_ctx)
     if not server then
         core.log.error("failed to pick server: ", err)
-        return core.response.exit(502)
+        return core.response.exit(core.ctx, 502)
     end
 
     api_ctx.picked_server = server
@@ -476,7 +476,7 @@ function _M.http_access_phase()
     ngx_ctx.api_ctx = api_ctx
 
     if not verify_tls_client(api_ctx) then
-        return core.response.exit(400)
+        return core.response.exit(core.ctx, 400)
     end
 
     core.ctx.set_vars_meta(api_ctx)
@@ -496,7 +496,7 @@ function _M.http_access_phase()
             local new_uri, err = normalize_uri_like_servlet(uri)
             if not new_uri then
                 core.log.error("failed to normalize: ", err)
-                return core.response.exit(400)
+                return core.response.exit(core.ctx, 400)
             end
 
             api_ctx.var.uri = new_uri
@@ -520,7 +520,7 @@ function _M.http_access_phase()
         plugin.run_global_rules(api_ctx, router.global_rules, nil)
 
         core.log.info("not find any matched route")
-        return core.response.exit(404,
+        return core.response.exit(core.ctx, 404,
                     {error_msg = "404 Route Not Found"})
     end
 
@@ -534,7 +534,7 @@ function _M.http_access_phase()
         if not conf then
             core.log.error("failed to fetch plugin config by ",
                             "id: ", route.value.plugin_config_id)
-            return core.response.exit(503)
+            return core.response.exit(core.ctx, 503)
         end
 
         route = plugin_config.merge(route, conf)
@@ -545,7 +545,7 @@ function _M.http_access_phase()
         if not service then
             core.log.error("failed to fetch service configuration by ",
                            "id: ", route.value.service_id)
-            return core.response.exit(404)
+            return core.response.exit(core.ctx, 404)
         end
 
         route = plugin.merge_service_route(service, route)
@@ -589,7 +589,7 @@ function _M.http_access_phase()
                 if not group_conf then
                     core.log.error("failed to fetch consumer group config by ",
                         "id: ", api_ctx.consumer.group_id)
-                    return core.response.exit(503)
+                    return core.response.exit(core.ctx, 503)
                 end
             end
 
@@ -635,7 +635,7 @@ function _M.grpc_access_phase()
     local code, err = apisix_upstream.set_grpcs_upstream_param(api_ctx)
     if code then
         core.log.error("failed to set grpcs upstream param: ", err)
-        core.response.exit(code)
+        core.response.exit(core.ctx, code)
     end
 end
 
@@ -779,7 +779,7 @@ function _M.http_balancer_phase()
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
         core.log.error("invalid api_ctx")
-        return core.response.exit(500)
+        return core.response.exit(core.ctx, 500)
     end
 
     load_balancer.run(api_ctx.matched_route, api_ctx, common_phase)
@@ -944,7 +944,7 @@ function _M.stream_preread_phase()
         local upstream = apisix_upstream.get_by_id(up_id)
         if not upstream then
             if is_http then
-                return core.response.exit(502)
+                return core.response.exit(core.ctx, 502)
             end
 
             return ngx_exit(1)

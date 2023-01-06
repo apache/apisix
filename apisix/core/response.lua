@@ -84,7 +84,7 @@ do
     local t = {}
     local idx = 1
 
-function resp_exit(code, ...)
+function resp_exit(ctx, code, ...)
     clear_tab(t)
     idx = 0
 
@@ -118,7 +118,7 @@ function resp_exit(code, ...)
     if idx > 0 then
         local response = concat_tab(t, "", 1, idx)
         local content_type = ngx_header["Content-type"]
-        local accept_header = core_request.header(nil, "Accept")
+        local accept_header = core_request.header(ctx, "Accept")
         if not content_type
             and (not accept_header
                 or accept_header == "application/json"
@@ -142,7 +142,7 @@ _M.exit = resp_exit
 
 
 function _M.say(...)
-    resp_exit(nil, ...)
+    resp_exit(nil, nil, ...)
 end
 
 

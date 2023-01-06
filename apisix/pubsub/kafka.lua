@@ -56,7 +56,7 @@ function _M.access(api_ctx)
     local pubsub, err = core.pubsub.new()
     if not pubsub then
         core.log.error("failed to initialize pubsub module, err: ", err)
-        core.response.exit(400)
+        core.response.exit(core.ctx, 400)
         return
     end
 

@@ -327,7 +327,7 @@ end
 local function get_consumer(appid)
     local consumer_conf = consumer.plugin(plugin_name)
     if not consumer_conf then
-        core.response.exit(500)
+        core.response.exit(core.ctx, 500)
     end
 
     local consumers = consumer.consumers_kv(plugin_name, consumer_conf, "appid")
@@ -336,7 +336,7 @@ local function get_consumer(appid)
     local consumer = consumers[appid]
     if not consumer then
         core.log.info("request appid [", appid, "] not found")
-        core.response.exit(400,
+        core.response.exit(core.ctx, 400,
                 fail_response("appid not found")
             )
     end
@@ -357,7 +357,7 @@ local function request_to_wolf_server(method, uri, headers, body)
     local res, err = http_req(method, uri, core.json.encode(body), headers, timeout)
     if not res then
         core.log.error("request [", request_debug, "] failed! err: ", err)
-        return core.response.exit(500,
+        return core.response.exit(core.ctx, 500,
             fail_response("request to wolf-server failed!")
         )
     end
@@ -367,19 +367,19 @@ local function request_to_wolf_server(method, uri, headers, body)
     if res.status ~= 200 then
         core.log.error("request [", request_debug, "] failed! status: ",
                         res.status)
-        return core.response.exit(500,
+        return core.response.exit(core.ctx, 500,
         fail_response("request to wolf-server failed!")
         )
     end
     local body, err = json.decode(res.body)
     if not body then
         core.log.error("request [", request_debug, "] failed! err:", err)
-        return core.response.exit(500, fail_response("request to wolf-server failed!"))
+        return core.response.exit(core.ctx, 500, fail_response("request to wolf-server failed!"))
     end
     if not body.ok then
         core.log.error("request [", request_debug, "] failed! response body:",
                        core.json.delay_encode(body))
-        return core.response.exit(200, fail_response("request to wolf-server failed!"))
+        return core.response.exit(core.ctx, 200, fail_response("request to wolf-server failed!"))
     end
 
     core.log.info("request [", request_debug, "] success! response body:",
@@ -390,10 +390,10 @@ end
 local function wolf_rbac_login()
     local args = get_args()
     if not args then
-        return core.response.exit(400, fail_response("invalid request"))
+        return core.response.exit(core.ctx, 400, fail_response("invalid request"))
     end
     if not args.appid then
-        return core.response.exit(400, fail_response("appid is missing"))
+        return core.response.exit(core.ctx, 400, fail_response("appid is missing"))
     end
 
     local appid = args.appid
@@ -408,7 +408,7 @@ local function wolf_rbac_login()
     local wolf_token = body.data.token
 
     local rbac_token = create_rbac_token(appid, wolf_token)
-    core.response.exit(200, success_response(nil, {rbac_token = rbac_token, user_info = userInfo}))
+    core.response.exit(core.ctx, 200, success_response(nil, {rbac_token = rbac_token, user_info = userInfo}))
 end
 
 local function get_wolf_token(ctx)
@@ -421,14 +421,14 @@ local function get_wolf_token(ctx)
         local perm_item = {action = action, url = url, clientIP = client_ip}
         core.log.info("no permission to access ",
                       core.json.delay_encode(perm_item), ", need login!")
-        return core.response.exit(401, fail_response("Missing rbac token in request"))
+        return core.response.exit(core.ctx, 401, fail_response("Missing rbac token in request"))
     end
 
     local tokenInfo, err = parse_rbac_token(rbac_token)
     core.log.info("token info: ", core.json.delay_encode(tokenInfo),
                   ", err: ", err)
     if err then
-        return core.response.exit(401, fail_response('invalid rbac token: parse failed'))
+        return core.response.exit(core.ctx, 401, fail_response('invalid rbac token: parse failed'))
     end
     return tokenInfo
 end
@@ -447,7 +447,7 @@ local function wolf_rbac_change_pwd()
     local headers = new_headers()
     headers['x-rbac-token'] = wolf_token
     request_to_wolf_server('POST', uri, headers, args)
-    core.response.exit(200, success_response('success to change password', { }))
+    core.response.exit(core.ctx, 200, success_response('success to change password', { }))
 end
 
 local function wolf_rbac_user_info()
@@ -463,7 +463,7 @@ local function wolf_rbac_user_info()
     headers['x-rbac-token'] = wolf_token
     local body = request_to_wolf_server('GET', uri, headers, {})
     local userInfo = body.data.userInfo
-    core.response.exit(200, success_response(nil, {user_info = userInfo}))
+    core.response.exit(core.ctx, 200, success_response(nil, {user_info = userInfo}))
 end
 
 function _M.api()

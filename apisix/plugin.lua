@@ -1105,7 +1105,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
                             end
                         end
 
-                        core.response.exit(code, body)
+                        core.response.exit(core.ctx, code, body)
                     else
                         if code >= 400 then
                             core.log.warn(plugins[i].name, " exits with status code ", code)

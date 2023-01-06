@@ -75,7 +75,7 @@ function fetch_api_router()
                                     core.response.set_header("Content-Type", "application/json")
                                 end
 
-                                core.response.exit(code, body)
+                                core.response.exit(core.ctx, code, body)
                             end
                         end
                     })

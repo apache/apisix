@@ -39,7 +39,7 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    core.respond.exit(400)
+    core.respond.exit(ctx, 400)
 end
 
 

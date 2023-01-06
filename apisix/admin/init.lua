@@ -138,7 +138,7 @@ local function run()
     local ok, err = check_token(api_ctx)
     if not ok then
         core.log.warn("failed to check token: ", err)
-        core.response.exit(401, {error_msg = "failed to check token"})
+        core.response.exit(core.ctx, 401, {error_msg = "failed to check token"})
     end
 
     local uri_segs = core.utils.split_uri(ngx.var.uri)
@@ -165,25 +165,25 @@ local function run()
 
     local resource = resources[seg_res]
     if not resource then
-        core.response.exit(404, {error_msg = "not found"})
+        core.response.exit(core.ctx, 404, {error_msg = "not found"})
     end
 
     local method = str_lower(get_method())
     if not resource[method] then
-        core.response.exit(404, {error_msg = "not found"})
+        core.response.exit(core.ctx, 404, {error_msg = "not found"})
     end
 
     local req_body, err = core.request.get_body(MAX_REQ_BODY)
     if err then
         core.log.error("failed to read request body: ", err)
-        core.response.exit(400, {error_msg = "invalid request body: " .. err})
+        core.response.exit(core.ctx, 400, {error_msg = "invalid request body: " .. err})
     end
 
     if req_body then
         local data, err = core.json.decode(req_body)
         if err then
             core.log.error("invalid request body: ", req_body, " err: ", err)
-            core.response.exit(400, {error_msg = "invalid request body: " .. err,
+            core.response.exit(core.ctx, 400, {error_msg = "invalid request body: " .. err,
                                      req_body = req_body})
         end
 
@@ -222,7 +222,7 @@ local function run()
 
         data = strip_etcd_resp(data)
 
-        core.response.exit(code, data)
+        core.response.exit(core.ctx, code, data)
     end
 end
 
@@ -235,11 +235,11 @@ local function get_plugins_list()
     local ok, err = check_token(api_ctx)
     if not ok then
         core.log.warn("failed to check token: ", err)
-        core.response.exit(401, {error_msg = "failed to check token"})
+        core.response.exit(core.ctx, 401, {error_msg = "failed to check token"})
     end
 
     local plugins = resources.plugins.get_plugins_list()
-    core.response.exit(200, plugins)
+    core.response.exit(core.ctx, 200, plugins)
 end
 
 
@@ -251,15 +251,15 @@ local function post_reload_plugins()
     local ok, err = check_token(api_ctx)
     if not ok then
         core.log.warn("failed to check token: ", err)
-        core.response.exit(401, {error_msg = "failed to check token"})
+        core.response.exit(core.ctx, 401, {error_msg = "failed to check token"})
     end
 
     local success, err = events.post(reload_event, get_method(), ngx_time())
     if not success then
-        core.response.exit(503, err)
+        core.response.exit(core.ctx, 503, err)
     end
 
-    core.response.exit(200, "done")
+    core.response.exit(core.ctx, 200, "done")
 end
 
 

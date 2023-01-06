@@ -498,11 +498,11 @@ function _M.export_metrics(stream_only)
     if uri == api.uri and method == api.methods[1] then
         local code, body = api.handler(nil, stream_only)
         if code or body then
-            core.response.exit(code, body)
+            core.response.exit(core.ctx, code, body)
         end
     end
 
-    return core.response.exit(404)
+    return core.response.exit(core.ctx, 404)
 end
 
 

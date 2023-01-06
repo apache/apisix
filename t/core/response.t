@@ -30,7 +30,7 @@ __DATA__
     location = /t {
         access_by_lua_block {
             local core = require("apisix.core")
-            core.response.exit(201, "done\n")
+            core.response.exit(core.ctx, 201, "done\n")
         }
     }
 --- request
@@ -46,7 +46,7 @@ done
     location = /t {
         access_by_lua_block {
             local core = require("apisix.core")
-            core.response.exit(201, {a = "a"})
+            core.response.exit(core.ctx, 201, {a = "a"})
         }
     }
 --- request
@@ -63,7 +63,7 @@ GET /t
         access_by_lua_block {
             local core = require("apisix.core")
             core.response.set_header("aaa", "bbb", "ccc", "ddd")
-            core.response.exit(200, "done\n")
+            core.response.exit(core.ctx, 200, "done\n")
         }
     }
 --- request
@@ -82,7 +82,7 @@ ccc: ddd
         access_by_lua_block {
             local core = require("apisix.core")
             core.response.set_header({aaa = "bbb", ccc = "ddd"})
-            core.response.exit(200, "done\n")
+            core.response.exit(core.ctx, 200, "done\n")
         }
     }
 --- request
@@ -101,7 +101,7 @@ ccc: ddd
         access_by_lua_block {
             local core = require("apisix.core")
             core.response.add_header("aaa", "bbb", "aaa", "bbb")
-            core.response.exit(200, "done\n")
+            core.response.exit(core.ctx, 200, "done\n")
         }
     }
 --- request
@@ -120,7 +120,7 @@ aaa: bbb, bbb
             local core = require("apisix.core")
             core.response.set_header({aaa = "bbb"})
             core.response.add_header({aaa = "bbb", ccc = "ddd"})
-            core.response.exit(200, "done\n")
+            core.response.exit(core.ctx, 200, "done\n")
         }
     }
 --- request
@@ -140,7 +140,7 @@ ccc: ddd
             local core = require("apisix.core")
             core.response.set_header("aaa", "bbb")
             core.response.set_header("aaa", nil)
-            core.response.exit(200, "done\n")
+            core.response.exit(core.ctx, 200, "done\n")
         }
     }
 --- request
@@ -207,7 +207,7 @@ hello world
     location = /t {
         access_by_lua_block {
             local core = require("apisix.core")
-            core.response.exit(201, "done\n")
+            core.response.exit(core.ctx, 201, "done\n")
         }
     }
 --- request
@@ -225,7 +225,7 @@ Content-Type: text/plain
     location = /t {
         access_by_lua_block {
             local core = require("apisix.core")
-            core.response.exit(201, {a = "a"})
+            core.response.exit(core.ctx, 201, {a = "a"})
         }
     }
 --- request
@@ -246,7 +246,7 @@ Content-Type: application/json
             ngx.ctx.api_ctx = {}
             local ctx = ngx.ctx.api_ctx
             core.request.set_header(ctx, "Accept", "application/xml")
-            core.response.exit(201, {a = "a"})
+            core.response.exit(core.ctx, 201, {a = "a"})
         }
     }
 --- request

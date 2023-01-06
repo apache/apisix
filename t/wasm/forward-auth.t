@@ -75,21 +75,21 @@ __DATA__
                                     "return function(conf, ctx)
                                         local core = require(\"apisix.core\");
                                         if core.request.header(ctx, \"Authorization\") == \"111\" then
-                                            core.response.exit(200);
+                                            core.response.exit(core.ctx, 200);
                                         end
                                     end",
                                     "return function(conf, ctx)
                                         local core = require(\"apisix.core\");
                                         if core.request.header(ctx, \"Authorization\") == \"222\" then
                                             core.response.set_header(\"X-User-ID\", \"i-am-an-user\");
-                                            core.response.exit(200);
+                                            core.response.exit(core.ctx, 200);
                                         end
                                     end",]] .. [[
                                     "return function(conf, ctx)
                                         local core = require(\"apisix.core\");
                                         if core.request.header(ctx, \"Authorization\") == \"333\" then
                                             core.response.set_header(\"X-User-ID\", \"i-am-an-user\");
-                                            core.response.exit(401);
+                                            core.response.exit(core.ctx, 401);
                                         end
                                     end",
                                     "return function(conf, ctx)
@@ -105,7 +105,7 @@ __DATA__
                                             for _, k in ipairs(auth_headers) do
                                                 core.log.warn('get header ', string.lower(k), ': ', core.request.header(ctx, k))
                                             end
-                                            core.response.exit(403);
+                                            core.response.exit(core.ctx, 403);
                                         end
                                     end"
                                 ]
@@ -123,7 +123,7 @@ __DATA__
                                 "functions": [
                                     "return function (conf, ctx)
                                         local core = require(\"apisix.core\");
-                                        core.response.exit(200, core.request.headers(ctx));
+                                        core.response.exit(core.ctx, 200, core.request.headers(ctx));
                                     end"
                                 ]
                             }

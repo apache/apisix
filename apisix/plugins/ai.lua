@@ -121,7 +121,7 @@ local function ai_http_balancer_phase()
     local api_ctx = ngx.ctx.api_ctx
     if not api_ctx then
         core.log.error("invalid api_ctx")
-        return core.response.exit(500)
+        return core.response.exit(core.ctx, 500)
     end
 
     if is_apisix_or then

@@ -320,7 +320,7 @@ local function sign_jwt_with_HS(key, consumer, payload)
     local auth_secret, err = get_secret(consumer.auth_conf, consumer.username)
     if not auth_secret then
         core.log.error("failed to sign jwt, err: ", err)
-        core.response.exit(503, "failed to sign jwt")
+        core.response.exit(core.ctx, 503, "failed to sign jwt")
     end
     local ok, jwt_token = pcall(jwt.sign, _M,
         auth_secret,
@@ -334,7 +334,7 @@ local function sign_jwt_with_HS(key, consumer, payload)
     )
     if not ok then
         core.log.warn("failed to sign jwt, err: ", jwt_token.reason)
-        core.response.exit(500, "failed to sign jwt")
+        core.response.exit(core.ctx, 500, "failed to sign jwt")
     end
     return jwt_token
 end
@@ -346,7 +346,7 @@ local function sign_jwt_with_RS256_ES256(key, consumer, payload)
     )
     if not public_key then
         core.log.error("failed to sign jwt, err: ", err)
-        core.response.exit(503, "failed to sign jwt")
+        core.response.exit(core.ctx, 503, "failed to sign jwt")
     end
 
     local ok, jwt_token = pcall(jwt.sign, _M,
@@ -364,7 +364,7 @@ local function sign_jwt_with_RS256_ES256(key, consumer, payload)
     )
     if not ok then
         core.log.warn("failed to sign jwt, err: ", jwt_token.reason)
-        core.response.exit(500, "failed to sign jwt")
+        core.response.exit(core.ctx, 500, "failed to sign jwt")
     end
     return jwt_token
 end
@@ -445,7 +445,7 @@ end
 local function gen_token()
     local args = core.request.get_uri_args()
     if not args or not args.key then
-        return core.response.exit(400)
+        return core.response.exit(core.ctx, 400)
     end
 
     local key = args.key
@@ -456,7 +456,7 @@ local function gen_token()
 
     local consumer_conf = consumer_mod.plugin(plugin_name)
     if not consumer_conf then
-        return core.response.exit(404)
+        return core.response.exit(core.ctx, 404)
     end
 
     local consumers = consumer_mod.consumers_kv(plugin_name, consumer_conf, "key")
@@ -464,7 +464,7 @@ local function gen_token()
     core.log.info("consumers: ", core.json.delay_encode(consumers))
     local consumer = consumers[key]
     if not consumer then
-        return core.response.exit(404)
+        return core.response.exit(core.ctx, 404)
     end
 
     core.log.info("consumer: ", core.json.delay_encode(consumer))
@@ -472,10 +472,10 @@ local function gen_token()
     local sign_handler = algorithm_handler(consumer, true)
     local jwt_token = sign_handler(key, consumer, payload)
     if jwt_token then
-        return core.response.exit(200, jwt_token)
+        return core.response.exit(core.ctx, 200, jwt_token)
     end
 
-    return core.response.exit(404)
+    return core.response.exit(core.ctx, 404)
 end
 
 

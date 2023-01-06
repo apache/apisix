@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 
+local core              = require("apisix.core")
 local fetch_local_conf  = require("apisix.core.config_local").local_conf
 local try_read_attr     = require("apisix.core.table").try_read_attr
 local deepcopy          = require("apisix.core.table").deepcopy
@@ -92,7 +93,7 @@ local function pagination(body, args)
     end
 
     if args.page_size < 10 or args.page_size > 500 then
-        return response.exit(400, "page_size must be between 10 and 500")
+        return response.exit(core.ctx, 400, "page_size must be between 10 and 500")
     end
 
     if not args.page or args.page < 1 then

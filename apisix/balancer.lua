@@ -262,7 +262,7 @@ local function pick_server(route, ctx)
     local res, err = lrucache_addr(server, nil, parse_addr, server)
     if err then
         core.log.error("failed to parse server addr: ", server, " err: ", err)
-        return core.response.exit(502)
+        return core.response.exit(ctx, 502)
     end
 
     res.domain = domain
@@ -354,13 +354,13 @@ function _M.run(route, ctx, plugin_funcs)
             -- retry count is (try count - 1)
             core.log.error("proxy retry timeout, retry count: ", (ctx.balancer_try_count or 1) - 1,
                            ", deadline: ", ctx.proxy_retry_deadline, " now: ", ngx_now())
-            return core.response.exit(502)
+            return core.response.exit(ctx, 502)
         end
         -- retry
         server, err = pick_server(route, ctx)
         if not server then
             core.log.error("failed to pick server: ", err)
-            return core.response.exit(502)
+            return core.response.exit(ctx, 502)
         end
 
         local header_changed
@@ -387,7 +387,7 @@ function _M.run(route, ctx, plugin_funcs)
     if not ok then
         core.log.error("failed to set server peer [", server.host, ":",
                        server.port, "] err: ", err)
-        return core.response.exit(502)
+        return core.response.exit(ctx, 502)
     end
 
     ctx.proxy_passed = true

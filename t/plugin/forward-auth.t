@@ -86,27 +86,27 @@ property "request_method" validation failed: matches none of the enum values
                                     [[return function(conf, ctx)
                                         local core = require("apisix.core");
                                         if core.request.header(ctx, "Authorization") == "111" then
-                                            core.response.exit(200);
+                                            core.response.exit(core.ctx, 200);
                                         end
                                     end]],
                                     [[return function(conf, ctx)
                                         local core = require("apisix.core");
                                         if core.request.header(ctx, "Authorization") == "222" then
                                             core.response.set_header("X-User-ID", "i-am-an-user");
-                                            core.response.exit(200);
+                                            core.response.exit(core.ctx, 200);
                                         end
                                     end]],
                                     [[return function(conf, ctx)
                                         local core = require("apisix.core");
                                         if core.request.header(ctx, "Authorization") == "333" then
                                             core.response.set_header("Location", "http://example.com/auth");
-                                            core.response.exit(403);
+                                            core.response.exit(core.ctx, 403);
                                         end
                                     end]],
                                     [[return function(conf, ctx)
                                         local core = require("apisix.core");
                                         if core.request.header(ctx, "Authorization") == "444" then
-                                            core.response.exit(403, core.request.headers(ctx));
+                                            core.response.exit(core.ctx, 403, core.request.headers(ctx));
                                         end
                                     end]],
                                     [[return function(conf, ctx)
@@ -114,19 +114,19 @@ property "request_method" validation failed: matches none of the enum values
                                         if core.request.get_method() == "POST" then
                                            local req_body, err = core.request.get_body()
                                            if err then
-                                               core.response.exit(400)
+                                               core.response.exit(core.ctx, 400)
                                            end
                                            if req_body then
                                                local data, err = core.json.decode(req_body)
                                                if err then
-                                                   core.response.exit(400)
+                                                   core.response.exit(core.ctx, 400)
                                                end
                                                if data["authorization"] == "555" then
                                                    core.response.set_header("X-User-ID", "i-am-an-user")
-                                                   core.response.exit(200)
+                                                   core.response.exit(core.ctx, 200)
                                                elseif data["authorization"] == "666" then
                                                    core.response.set_header("Location", "http://example.com/auth")
-                                                   core.response.exit(403)
+                                                   core.response.exit(core.ctx, 403)
                                                end
                                            end
                                         end
@@ -146,7 +146,7 @@ property "request_method" validation failed: matches none of the enum values
                                 "functions": [
                                     "return function (conf, ctx)
                                         local core = require(\"apisix.core\");
-                                        core.response.exit(200, core.request.headers(ctx));
+                                        core.response.exit(core.ctx, 200, core.request.headers(ctx));
                                     end"
                                 ]
                             }

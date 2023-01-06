@@ -32,7 +32,7 @@ end
 function _M.export_metrics()
     local process_type = require("ngx.process").type()
     core.log.info("process type: ", process_type)
-    return core.response.exit(200)
+    return core.response.exit(core.ctx, 200)
 end
 
 
