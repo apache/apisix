@@ -54,8 +54,7 @@ _EOC_
     }
 
     if (!$block->stream_request) {
-        # GET /hello HTTP/1.0\r\nHost: 127.0.0.1:1985\r\n\r\n
-        $block->set_value("stream_request", "\x47\x45\x54\x20\x2f\x68\x65\x6c\x6c\x6f\x20\x48\x54\x54\x50\x2f\x31\x2e\x30\x0d\x0a\x48\x6f\x73\x74\x3a\x20\x31\x32\x37\x2e\x30\x2e\x30\x2e\x31\x3a\x31\x39\x38\x35\x0d\x0a\x0d\x0a");
+        $block->set_value("stream_request", "GET /hello HTTP/1.0\r\nHost: 127.0.0.1:1985\r\n\r\n");
     }
 
 });
@@ -85,7 +84,7 @@ upstreams:
       type: roundrobin
       id: 1
 --- error_log
-127.0.0.1:53
+connect to 127.0.0.1:53
 
 
 
@@ -297,11 +296,7 @@ upstreams:
       type: roundrobin
       id: 1
 --- error_log
-connect() failed
---- grep_error_log eval
-qr/proxy request to \S+/
---- grep_error_log_out
-proxy request to 127.0.0.1:nil
+no valid upstream node
 
 
 
@@ -344,88 +339,4 @@ upstreams:
       type: roundrobin
       id: 1
 --- error_log
-proxy request to 127.0.0.1:nil
-
-
-
-=== TEST 17: Invalid order type in config.yaml
---- yaml_config
-apisix:
-    node_listen: 1984
-    enable_admin: false
-deployment:
-    role: data_plane
-    role_data_plane:
-        config_provider: yaml
-discovery:
-    dns:
-        servers:
-            - "127.0.0.1:1053"
-        order:
-            - B
-            - SRV
---- apisix_yaml
-upstreams:
-    - service_name: "srv-a.test.local"
-      discovery_type: dns
-      type: roundrobin
-      id: 1
---- must_die
---- error_log
-matches none of the enum values
-
-
-
-=== TEST 18: Multiple order type in config.yaml
---- yaml_config
-apisix:
-    node_listen: 1984
-    enable_admin: false
-deployment:
-    role: data_plane
-    role_data_plane:
-        config_provider: yaml
-discovery:
-    dns:
-        servers:
-            - "127.0.0.1:1053"
-        order:
-            - SRV
-            - SRV
---- apisix_yaml
-upstreams:
-    - service_name: "srv-a.test.local"
-      discovery_type: dns
-      type: roundrobin
-      id: 1
---- must_die
---- error_log
-expected unique items but items 1 and 2 are equal
-
-
-
-=== TEST 19: invalid order type in config.yaml
---- yaml_config
-apisix:
-    node_listen: 1984
-    enable_admin: false
-deployment:
-    role: data_plane
-    role_data_plane:
-        config_provider: yaml
-discovery:
-    dns:
-        servers:
-            - "127.0.0.1:1053"
-        order:
-            - a
-            - SRV
---- apisix_yaml
-upstreams:
-    - service_name: "srv-a.test.local"
-      discovery_type: dns
-      type: roundrobin
-      id: 1
---- must_die
---- error_log
-matches none of the enum values
+no valid upstream node
