@@ -39,8 +39,6 @@ run_tests;
 __DATA__
 
 === TEST 1: set hmac-auth conf: secret_key uses secret ref
---- request
-GET /t
 --- config
     location /t {
         content_by_lua_block {
@@ -166,7 +164,5 @@ location /t {
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- response_body
 passed

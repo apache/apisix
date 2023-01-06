@@ -24,21 +24,6 @@ no_shuffle();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    my $http_config = $block->http_config // <<_EOC_;
-
-    server {
-        listen 8777;
-
-        location /secure-endpoint {
-            content_by_lua_block {
-                ngx.say("successfully invoked secure endpoint")
-            }
-        }
-    }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
-
     if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
         $block->set_value("no_error_log", "[error]");
     }
@@ -573,11 +558,11 @@ Success! Data written to: kv/apisix/rsa1
                     },
                     "upstream": {
                         "nodes": {
-                            "127.0.0.1:8777": 1
+                            "127.0.0.1:1980": 1
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/secure-endpoint"
+                    "uri": "/hello"
                 }]]
                 )
 
@@ -629,7 +614,7 @@ passed
 
 
 
-=== TEST 21: sign a jwt with with rsa key pair and access /secure-endpoint
+=== TEST 21: sign a jwt with with rsa key pair and access /hello
 --- config
     location /t {
         content_by_lua_block {
@@ -644,7 +629,7 @@ passed
                 return
             end
 
-            local code, _, res = t('/secure-endpoint?jwt=' .. sign,
+            local code, _, res = t('/hello?jwt=' .. sign,
                 ngx.HTTP_GET
             )
             if code >= 300 then
@@ -654,4 +639,4 @@ passed
         }
     }
 --- response_body
-successfully invoked secure endpoint
+hello world
