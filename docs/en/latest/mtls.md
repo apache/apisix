@@ -106,7 +106,7 @@ Here is an example Python script to create SSL with mTLS (id is `1`, changes adm
 ```py
 #!/usr/bin/env python
 # coding: utf-8
-# save this file as ssl.py
+# save this file as create-ssl.py
 import sys
 # sudo pip install requests
 import requests
@@ -144,7 +144,7 @@ print(resp.text)
 Create SSL:
 
 ```bash
-./ssl.py ./server.pem ./server.key 'mtls.test.com' ./client_ca.pem 10
+./create-ssl.py ./server.pem ./server.key 'mtls.test.com' ./client_ca.pem 10
 
 # test it
 curl --resolve 'mtls.test.com:<APISIX_HTTPS_PORT>:<APISIX_URL>' "https://<APISIX_URL>:<APISIX_HTTPS_PORT>/hello" -k --cert ./client.pem --key ./client.key

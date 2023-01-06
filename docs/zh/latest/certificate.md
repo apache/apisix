@@ -38,7 +38,7 @@ SNI（Server Name Indication）是用来改善 SSL 和 TLS 的一项特性，它
 ```python
 #!/usr/bin/env python
 # coding: utf-8
-# save this file as ssl.py
+# save this file as create-ssl.py
 import sys
 # sudo pip install requests
 import requests
@@ -65,7 +65,7 @@ print(resp.text)
 
 ```shell
 # 创建 SSL 对象
-./ssl.py t.crt t.key test.com
+./create-ssl.py t.crt t.key test.com
 
 # 创建 Router 对象
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -111,7 +111,7 @@ curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/hello  -vvv
 看下面这个例子，请注意我们把 `*.test.com` 作为 sni 传递进来：
 
 ```shell
-./ssl.py t.crt t.key '*.test.com'
+./create-ssl.py t.crt t.key '*.test.com'
 
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {

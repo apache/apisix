@@ -106,7 +106,7 @@ apisix:
 ```py
 #!/usr/bin/env python
 # coding: utf-8
-# 保存该文件为 ssl.py
+# 保存该文件为 create-ssl.py
 import sys
 # sudo pip install requests
 import requests
@@ -144,7 +144,7 @@ print(resp.text)
 使用上述 Python 脚本创建 SSL 资源：
 
 ```bash
-./ssl.py ./server.pem ./server.key 'mtls.test.com' ./client_ca.pem 10
+./create-ssl.py ./server.pem ./server.key 'mtls.test.com' ./client_ca.pem 10
 
 # 测试
 curl --resolve 'mtls.test.com:<APISIX_HTTPS_PORT>:<APISIX_URL>' "https://<APISIX_URL>:<APISIX_HTTPS_PORT>/hello" -k --cert ./client.pem --key ./client.key

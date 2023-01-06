@@ -36,7 +36,7 @@ We will use the Python script below to simplify the example:
 ```python
 #!/usr/bin/env python
 # coding: utf-8
-# save this file as ssl.py
+# save this file as create-ssl.py
 import sys
 # sudo pip install requests
 import requests
@@ -63,7 +63,7 @@ print(resp.text)
 
 ```shell
 # create SSL object
-./ssl.py t.crt t.key test.com
+./create-ssl.py t.crt t.key test.com
 
 # create Router object
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -109,7 +109,7 @@ that means it can accept more than one domain, eg: `www.test.com` or `mail.test.
 Here is an example, note that the value we pass as `sni` is `*.test.com`.
 
 ```shell
-./ssl.py t.crt t.key '*.test.com'
+./create-ssl.py t.crt t.key '*.test.com'
 
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
