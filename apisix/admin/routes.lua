@@ -24,13 +24,7 @@ local type = type
 local loadstring = loadstring
 
 
-local handler = resource.new("routes", "route")
-
-
-local _M = {
-    version = 0.2,
-    need_v3_filter = true,
-}
+local _M = {}
 
 
 local function check_conf(id, conf, need_id)
@@ -171,29 +165,4 @@ local function check_conf(id, conf, need_id)
 end
 
 
-function _M.put(id, conf, sub_path, args)
-    return handler.put(check_conf, id, conf, sub_path, args)
-end
-
-
-function _M.get(id)
-    return handler.get(id)
-end
-
-
-function _M.post(id, conf, sub_path, args)
-    return handler.post(check_conf, id, conf, sub_path, args)
-end
-
-
-function _M.delete(id)
-    return handler.delete(id)
-end
-
-
-function _M.patch(id, conf, sub_path, args)
-    return handler.patch(check_conf, id, conf, sub_path, args)
-end
-
-
-return _M
+return resource.new("routes", "route", check_conf)
