@@ -24,9 +24,6 @@ local type = type
 local loadstring = loadstring
 
 
-local _M = {}
-
-
 local function check_conf(id, conf, need_id)
     if not conf then
         return nil, {error_msg = "missing configurations"}
