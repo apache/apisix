@@ -442,3 +442,201 @@ IeQmD/K+DClZMqSrliUzUqJnCPCzy6kCIAekDsRh/UF4ONjAJkKuLedDUfL3rNFb
 YvIufaZvBa8f+E/9CANlVhm5wKAyM8N8GJsiCyEG
 -----END RSA PRIVATE KEY-----
 HrMHUvE9Esvn7GnZ+vAynaIg/8wlB3r0zm0htmnwofYPZeBpLnpW3iN9UtQG4ZIBYRZih6EBuRK8W3Kychw/SgjIFuzVeTFowBCUfd1wZ4Q+frUOLZ0Xmkh8j3yHUprnh+d9PA8EHCEapdkWY3psJj6rTgrREzjDEVf/TV3EjjfgG16ih5/c3TChApLXwfEwfBp5APSf7kzMccCRbA4bXvMDsQSQAwVsRD8cjJkSdHTvuzfg1g8xoCy4I05DsMM8CybJAd+BDZnJxhrGIQaItu5/0XQJy+uy/niOpzYYN+NDX+8fl65VUxdUtqXF82ChRlmGP3+zKN7epufAsL/36pHOnS73Q7WBKRxyyA16BEBk0wK7rI+KemBfG5YFXjcBnPkxYssSudqhmlcr6e5Tl0LhVj/BIj94fVE3/EJ+NO3BJMrlhjorilrQKAsiCWujWSqAK7gtAp3YEO//yOygh/p8gh22NdIV0ykGAx4QNKINUgdgh+g8DdykNGLGStH8TPUs8GmzV7nxvw/0cbiocLps6uk0VjjVUqUAvOdwpbiRwv6effPUB6cxW3G6QllBbTP8I+eoFIRfYd6cFJPpX1AtISfNZw459WarwZmHrZGOQU4iKlyl2yLcKY634Fx5JykUY5YP+MYYDHbIcD2gxA==
+
+
+
+=== TEST 16: set jwt-auth conf: secret uses secret ref
+--- request
+GET /t
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- put secret vault config
+            local code, body = t('/apisix/admin/secrets/vault/test1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://127.0.0.1:8200",
+                    "prefix" : "kv/apisix",
+                    "token" : "root"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            -- change consumer with secrets ref: vault
+            code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key",
+                            "secret": "$secret://vault/test1/jack/secret"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            -- set route
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {
+                            "header": "jwt-header",
+                            "query": "jwt-query",
+                            "cookie": "jwt-cookie",
+                            "hide_credentials": false
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 17: store secret into vault
+--- exec
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/jack secret=my-secret-key
+--- response_body
+Success! Data written to: kv/apisix/jack
+
+
+
+=== TEST 18: verify (in header) not hiding credentials
+--- request
+GET /echo
+--- more_headers
+jwt-header: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
+--- response_headers
+jwt-header: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
+
+
+
+=== TEST 19: store rsa key pairs and secret into vault from local filesystem
+--- exec
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/rsa1 secret=$3nsitiv3-c8d3 public_key=@t/certs/public.pem private_key=@t/certs/private.pem
+--- response_body
+Success! Data written to: kv/apisix/rsa1
+
+
+
+=== TEST 20: create consumer for RS256 algorithm with private/public key fetched from vault and public key in consumer schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- enable jwt auth plugin using admin api
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            -- create public API route (jwt-auth sign)
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "public-api": {}
+                        },
+                        "uri": "/apisix/plugin/jwt/sign"
+                 }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "john",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "rsa1",
+                            "algorithm": "RS256",
+                            "secret": "$secret://vault/test1/rsa1/secret",
+                            "public_key": "$secret://vault/test1/rsa1/public_key",
+                            "private_key": "$secret://vault/test1/rsa1/private_key"
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 21: sign a jwt with with rsa key pair and access /hello
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, err, sign = t('/apisix/plugin/jwt/sign?key=rsa1',
+                ngx.HTTP_GET
+            )
+
+            if code > 200 then
+                ngx.status = code
+                ngx.say(err)
+                return
+            end
+
+            local code, _, res = t('/hello?jwt=' .. sign,
+                ngx.HTTP_GET
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(res)
+        }
+    }
+--- response_body
+hello world
