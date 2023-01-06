@@ -546,3 +546,76 @@ qr/ERR_TOKEN_INVALID */
 ERR_TOKEN_INVALID
 ERR_TOKEN_INVALID
 ERR_TOKEN_INVALID
+
+
+
+=== TEST 31: set hmac-auth conf: appid uses secret ref
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+             -- put secret vault config
+            local code, body = t('/apisix/admin/secrets/vault/test1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://127.0.0.1:8200",
+                    "prefix" : "kv/apisix",
+                    "token" : "root"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "wolf_rbac_unit_test",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "$secret://vault/test1/wolf_rbac_unit_test/appid",
+                            "server": "http://127.0.0.1:1982"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 32: store secret into vault
+--- exec
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/wolf_rbac_unit_test appid=wolf-rbac-app
+--- response_body
+Success! Data written to: kv/apisix/wolf_rbac_unit_test
+
+
+
+=== TEST 33: login successfully
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/plugin/wolf-rbac/login',
+                ngx.HTTP_POST,
+                [[
+                {"appid": "wolf-rbac-app", "username": "admin","password": "123456"}
+                ]],
+                [[
+                {"rbac_token":"V1#wolf-rbac-app#wolf-rbac-token","user_info":{"nickname":"administrator","username":"admin","id":"100"}}
+                ]],
+                {["Content-Type"] = "application/json"}
+                )
+            ngx.status = code
+        }
+    }
