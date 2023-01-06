@@ -534,6 +534,8 @@ function _M.go(case)
                 if runner and runner == "Go-runner" then
                     headers["x-runner"] = "Test-Runner"
                 end
+
+                headers["Content-Type"] = "application/json"
             end
 
             local i = 1
