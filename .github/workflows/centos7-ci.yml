@@ -22,7 +22,7 @@ permissions:
 jobs:
   test_apisix:
     name: run ci on centos7
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     timeout-minutes: 90
     strategy:
       fail-fast: false
