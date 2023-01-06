@@ -124,6 +124,7 @@ local schema = {
             default = false
         }
     },
+    encrypt_fields = {"client_secret"},
     required = {"client_id", "client_secret", "discovery"}
 }
 
@@ -237,7 +238,7 @@ local function introspect(ctx, conf)
         -- Token successfully validated.
         local method = (conf.public_key and "public_key") or (conf.use_jwks and "jwks")
         core.log.debug("token validate successfully by ", method)
-        return res, err, token, nil
+        return res, err, token, res
     else
         -- Validate token against introspection endpoint.
         -- TODO: Same as above for public key validation.

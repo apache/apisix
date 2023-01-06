@@ -56,52 +56,96 @@ function _M.server_name()
 end
 
 
-local _aes_128_cbc_with_iv_tbl
-local function get_aes_128_cbc_with_iv()
-    if _aes_128_cbc_with_iv_tbl == nil then
-        _aes_128_cbc_with_iv_tbl = core.table.new(2, 0)
-        local local_conf = core.config.local_conf()
-        local ivs = core.table.try_read_attr(local_conf, "apisix", "ssl", "key_encrypt_salt")
-        local type_ivs = type(ivs)
+local function init_iv_tbl(ivs)
+    local _aes_128_cbc_with_iv_tbl = core.table.new(2, 0)
+    local type_ivs = type(ivs)
 
-        if type_ivs == "table" then
-            for _, iv in ipairs(ivs) do
-                local aes_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv = iv}))
-                core.table.insert(_aes_128_cbc_with_iv_tbl, aes_with_iv)
-            end
-        elseif type_ivs == "string" then
-            local aes_with_iv = assert(aes:new(ivs, nil, aes.cipher(128, "cbc"), {iv = ivs}))
+    if type_ivs == "table" then
+        for _, iv in ipairs(ivs) do
+            local aes_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv = iv}))
             core.table.insert(_aes_128_cbc_with_iv_tbl, aes_with_iv)
         end
+    elseif type_ivs == "string" then
+        local aes_with_iv = assert(aes:new(ivs, nil, aes.cipher(128, "cbc"), {iv = ivs}))
+        core.table.insert(_aes_128_cbc_with_iv_tbl, aes_with_iv)
     end
 
     return _aes_128_cbc_with_iv_tbl
 end
 
 
-function _M.aes_encrypt_pkey(origin)
-    local aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv()
-    local aes_128_cbc_with_iv = aes_128_cbc_with_iv_tbl[1]
-    if aes_128_cbc_with_iv ~= nil and core.string.has_prefix(origin, "---") then
-        local encrypted = aes_128_cbc_with_iv:encrypt(origin)
-        if encrypted == nil then
-            core.log.error("failed to encrypt key[", origin, "] ")
-            return origin
-        end
+local _aes_128_cbc_with_iv_tbl_ssl
+local function get_aes_128_cbc_with_iv_ssl(local_conf)
+    if _aes_128_cbc_with_iv_tbl_ssl == nil then
+        local ivs = core.table.try_read_attr(local_conf, "apisix", "ssl", "key_encrypt_salt")
+        _aes_128_cbc_with_iv_tbl_ssl = init_iv_tbl(ivs)
+    end
 
-        return ngx_encode_base64(encrypted)
+    return _aes_128_cbc_with_iv_tbl_ssl
+end
+
+
+local _aes_128_cbc_with_iv_tbl_gde
+local function get_aes_128_cbc_with_iv_gde(local_conf)
+    if _aes_128_cbc_with_iv_tbl_gde == nil then
+        local ivs = core.table.try_read_attr(local_conf, "apisix", "data_encryption", "keyring")
+        _aes_128_cbc_with_iv_tbl_gde = init_iv_tbl(ivs)
+    end
+
+    return _aes_128_cbc_with_iv_tbl_gde
+end
+
+
+
+local function encrypt(aes_128_cbc_with_iv, origin)
+    local encrypted = aes_128_cbc_with_iv:encrypt(origin)
+    if encrypted == nil then
+        core.log.error("failed to encrypt key[", origin, "] ")
+        return origin
+    end
+
+    return ngx_encode_base64(encrypted)
+end
+
+function _M.aes_encrypt_pkey(origin, field)
+    local local_conf = core.config.local_conf()
+
+    if not field then
+        -- default used by ssl
+        local aes_128_cbc_with_iv_tbl_ssl = get_aes_128_cbc_with_iv_ssl(local_conf)
+        local aes_128_cbc_with_iv_ssl = aes_128_cbc_with_iv_tbl_ssl[1]
+        if aes_128_cbc_with_iv_ssl ~= nil and core.string.has_prefix(origin, "---") then
+            return encrypt(aes_128_cbc_with_iv_ssl, origin)
+        end
+    else
+        if field == "data_encrypt" then
+            local aes_128_cbc_with_iv_tbl_gde = get_aes_128_cbc_with_iv_gde(local_conf)
+            local aes_128_cbc_with_iv_gde = aes_128_cbc_with_iv_tbl_gde[1]
+            if aes_128_cbc_with_iv_gde ~= nil then
+                return encrypt(aes_128_cbc_with_iv_gde, origin)
+            end
+        end
     end
 
     return origin
 end
 
 
-local function aes_decrypt_pkey(origin)
-    if core.string.has_prefix(origin, "---") then
-        return origin
+local function aes_decrypt_pkey(origin, field)
+    local local_conf = core.config.local_conf()
+    local aes_128_cbc_with_iv_tbl
+
+    if not field then
+        if core.string.has_prefix(origin, "---") then
+            return origin
+        end
+        aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv_ssl(local_conf)
+    else
+        if field == "data_encrypt" then
+            aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv_gde(local_conf)
+        end
     end
 
-    local aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv()
     if #aes_128_cbc_with_iv_tbl == 0 then
         return origin
     end
@@ -119,10 +163,9 @@ local function aes_decrypt_pkey(origin)
         end
     end
 
-    core.log.error("decrypt ssl key failed")
-
-    return nil
+    return nil, "decrypt ssl key failed"
 end
+_M.aes_decrypt_pkey = aes_decrypt_pkey
 
 
 local function validate(cert, key)
@@ -136,8 +179,10 @@ local function validate(cert, key)
         return true
     end
 
-    key = aes_decrypt_pkey(key)
+    local err
+    key, err = aes_decrypt_pkey(key)
     if not key then
+        core.log.error(err)
         return nil, "failed to decrypt previous encrypted key"
     end
 
@@ -173,7 +218,12 @@ end
 local function parse_pem_priv_key(sni, pkey)
     core.log.debug("parsing priv key for sni: ", sni)
 
-    local parsed, err = ngx_ssl.parse_pem_priv_key(aes_decrypt_pkey(pkey))
+    local key, err = aes_decrypt_pkey(pkey)
+    if not key then
+        core.log.error(err)
+        return nil, err
+    end
+    local parsed, err = ngx_ssl.parse_pem_priv_key(key)
     return parsed, err
 end
 

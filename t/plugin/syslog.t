@@ -43,8 +43,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -65,8 +63,6 @@ GET /t
 --- response_body
 property "port" is required
 done
---- no_error_log
-[error]
 
 
 
@@ -90,8 +86,6 @@ GET /t
 --- response_body
 property "port" validation failed: wrong type: expected integer, got string
 done
---- no_error_log
-[error]
 
 
 
@@ -128,8 +122,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -138,8 +130,6 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 --- wait: 0.2
 
 
@@ -178,8 +168,6 @@ hello world
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -241,8 +229,6 @@ GET /t
 --- response_body
 passed
 hello world
---- no_error_log
-[error]
 --- error_log
 try to lock with key route#1
 unlock with key route#1
@@ -338,3 +324,92 @@ qr/sending a batch logs to 127.0.0.1:(\d+)/
 --- grep_error_log_out
 sending a batch logs to 127.0.0.1:5044
 sending a batch logs to 127.0.0.1:5045
+
+
+
+=== TEST 9: add log format
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/syslog',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "log_format": {
+                        "host": "$host",
+                        "client_ip": "$remote_addr",
+                        "upstream": "$upstream_addr"
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 10: Add route and Enable Syslog Plugin, batch_max_size=1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "syslog": {
+                                "batch_max_size": 1,
+                                "disable": false,
+                                "flush_limit": 1,
+                                "host" : "127.0.0.1",
+                                "port" : 5050
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 11: hit route and report sys logger
+--- extra_init_by_lua
+    local syslog = require("apisix.plugins.syslog.init")
+    local json = require("apisix.core.json")
+    local log = require("apisix.core.log")
+    local old_f = syslog.push_entry
+    syslog.push_entry = function(conf, ctx, entry)
+        log.info("syslog-log-format => " ..  json.encode(entry))
+        return old_f(conf, ctx, entry)
+    end
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 0.5
+--- no_error_log
+[error]
+--- error_log eval
+qr/syslog-log-format.*\{.*"upstream":"127.0.0.1:\d+"/

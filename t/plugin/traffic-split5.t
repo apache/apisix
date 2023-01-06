@@ -28,10 +28,6 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    if (!$block->error_log && !$block->no_error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     my $http_config = $block->http_config // <<_EOC_;
     # fake server, only for test
     server {

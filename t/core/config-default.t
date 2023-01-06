@@ -115,8 +115,6 @@ apisix:
 GET /t
 --- response_body
 node_listen: [1985,1986]
---- no_error_log
-[error]
 
 
 
@@ -141,5 +139,3 @@ apisix:
 GET /t
 --- response_body
 node_listen: [{"enable_http2":true,"port":1985},{"enable_http2":true,"port":1986}]
---- no_error_log
-[error]

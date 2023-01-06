@@ -89,12 +89,24 @@ return function (apisix_home, pkg_cpath_org, pkg_path_org)
     local openresty_args = openresty_path_abs .. [[ -p ]] .. apisix_home .. [[ -c ]]
                            .. apisix_home .. [[/conf/nginx.conf]]
 
+    local or_info, err = util.execute_cmd("openresty -V 2>&1")
+    if not or_info then
+        error("failed to exec cmd \'openresty -V 2>&1\', err: " .. err)
+    end
+
+    local use_apisix_base = true
+    if not or_info:find("apisix-nginx-module", 1, true) then
+        use_apisix_base = false
+    end
+
     local min_etcd_version = "3.4.0"
 
     return {
         apisix_home = apisix_home,
         is_root_path = is_root_path,
         openresty_args = openresty_args,
+        openresty_info = or_info,
+        use_apisix_base = use_apisix_base,
         pkg_cpath_org = pkg_cpath_org,
         pkg_path_org = pkg_path_org,
         min_etcd_version = min_etcd_version,

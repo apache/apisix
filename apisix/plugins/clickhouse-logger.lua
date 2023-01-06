@@ -47,6 +47,7 @@ local schema = {
         {required = {"endpoint_addr", "user", "password", "database", "logtable"}},
         {required = {"endpoint_addrs", "user", "password", "database", "logtable"}}
     },
+    encrypt_fields = {"password"},
 }
 
 

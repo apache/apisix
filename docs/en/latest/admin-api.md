@@ -1,5 +1,13 @@
 ---
 title: Admin API
+keywords:
+  - APISIX
+  - API Gateway
+  - Admin API
+  - Route
+  - Plugin
+  - Upstream
+description: This article introduces the functions supported by the Apache APISIX Admin API, which you can use to get, create, update, and delete resources.
 ---
 
 <!--
@@ -21,13 +29,41 @@ title: Admin API
 #
 -->
 
+## Description
+
 The Admin API lets users control their deployed Apache APISIX instance. The [architecture design](./architecture-design/apisix.md) gives an idea about how everything fits together.
 
-By default, the Admin API listens to port `9180` when APISIX is launched. This can be changed by modifying your configuration file ([conf/config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml)).
+## Configuration
 
-**Note**: Mentions of `X-API-KEY` in this document refers to `deployment.admin.admin_key.key`—the access token for Admin API—in your configuration file.
+When APISIX is started, the Admin API will listen on port `9180` by default and take the API prefixed with `/apisix/admin`.
 
-## V3
+Therefore, to avoid conflicts between your designed API and `/apisix/admin`, you can modify the configuration file [`/conf/config.yaml`](https://github.com/apache/apisix/blob/master/conf/config.yaml) to modify the default listening port.
+
+APISIX supports setting the IP access allowlist of Admin API to prevent APISIX from being illegally accessed and attacked. You can configure the IP addresses to allow access in the `deployment.admin.allow_admin` option in the `./conf/config.yaml` file.
+
+The `X-API-KEY` shown below refers to the `deployment.admin.admin_key.key` in the `./conf/config.yaml` file, which is the access token for the Admin API.
+
+:::tip
+
+For security reasons, please modify the default `admin_key`, and check the `allow_admin` IP access list.
+
+:::
+
+```yaml title="./conf/config.yaml"
+deployment:
+    admin:
+        admin_key:
+        - name: admin
+            key: edd1c9f034335f136f87ad84b625c8f1  # using fixed API token has security risk, please update it when you deploy to production environment
+            role: admin
+        allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
+            - 127.0.0.0/24
+        admin_listen:
+            ip: 0.0.0.0                 # Specific IP, if not set, the default value is `0.0.0.0`.
+            port: 9180                  # Specific port, which must be different from node_listen's port.
+```
+
+## V3 new feature
 
 The Admin API has made some breaking changes in V3 version, as well as supporting additional features.
 
@@ -82,15 +118,15 @@ Return multiple resources:
 
 Paging query is supported when getting the resource list, paging parameters include:
 
-| parameter | Default | Valid range | Description                  |
-| --------- | ------  | ----------- | ---------------------------- |
-| page      | 1       | [1, ...]    | Number of pages              |
-| page_size |         | [10, 500]   | Number of resources per page |
+| parameter | Default | Valid range | Description                   |
+| --------- | ------  | ----------- | ----------------------------- |
+| page      | 1       | [1, ...]    | Number of pages.              |
+| page_size |         | [10, 500]   | Number of resources per page. |
 
 The example is as follows:
 
 ```shell
-$ curl "http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10" \
+curl "http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10" \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET
 ```
 
@@ -117,6 +153,7 @@ Resources that support paging queries:
 - SSL
 - Stream Route
 - Upstream
+- Secret
 
 ### Support filtering query
 
@@ -128,12 +165,16 @@ When getting a list of resources, it supports filtering resources based on `name
 | label     | Query resource by their `label`, which will not appear in the query results if the resource itself does not have `label`. |
 | uri       | Supported on Route resources only. If the `uri` of a Route is equal to the uri of the query or if the `uris` contains the uri of the query, the Route resource appears in the query results. |
 
+:::tip
+
 When multiple filter parameters are enabled, use the intersection of the query results for different filter parameters.
+
+:::
 
 The following example will return a list of routes, and all routes in the list satisfy: the `name` of the route contains the string "test", the `uri` contains the string "foo", and there is no restriction on the `label` of the route, since the label of the query is the empty string.
 
 ```shell
-$ curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
+curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET
 ```
 
@@ -150,11 +191,11 @@ $ curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
 
 ## Route
 
-**API**: /apisix/admin/routes/{id}?ttl=0
-
 [Routes](./terminology/route.md) match the client's request based on defined rules, loads and executes the corresponding [plugins](#plugin), and forwards the request to the specified [Upstream](#upstream).
 
-**Note**: When the Admin API is enabled, to avoid conflicts with your design API, use a different port for the Admin API. This can be set in your configuration file by changing the `admin_listen` key.
+### Route API
+
+Route resource request address: /apisix/admin/routes/{id}?ttl=0
 
 ### Request Methods
 
@@ -228,179 +269,258 @@ Example configuration:
 }
 ```
 
-Example API usage:
+### Example API usage
 
-```shell
-# Create a route
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
-{
-    "uri": "/index.html",
-    "hosts": ["foo.com", "*.bar.com"],
-    "remote_addrs": ["127.0.0.0/8"],
-    "methods": ["PUT", "GET"],
-    "enable_websocket": true,
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
+- Create a route
+
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+    {
+        "uri": "/index.html",
+        "hosts": ["foo.com", "*.bar.com"],
+        "remote_addrs": ["127.0.0.0/8"],
+        "methods": ["PUT", "GET"],
+        "enable_websocket": true,
+        "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
         }
-    }
-}'
+    }'
+    ```
 
-HTTP/1.1 201 Created
-Date: Sat, 31 Aug 2019 01:17:15 GMT
-...
+    ```shell
+    HTTP/1.1 201 Created
+    Date: Sat, 31 Aug 2019 01:17:15 GMT
+    ...
+    ```
 
-# Create a route expires after 60 seconds, then it's deleted automatically
-$ curl 'http://127.0.0.1:9180/apisix/admin/routes/2?ttl=60' -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
-{
-    "uri": "/aa/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
+- Create a route expires after 60 seconds, then it's deleted automatically
+
+    ```shell
+    curl 'http://127.0.0.1:9180/apisix/admin/routes/2?ttl=60' \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+    {
+        "uri": "/aa/index.html",
+        "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
         }
-    }
-}'
+    }'
+    ```
 
-HTTP/1.1 201 Created
-Date: Sat, 31 Aug 2019 01:17:15 GMT
-...
+    ```shell
+    HTTP/1.1 201 Created
+    Date: Sat, 31 Aug 2019 01:17:15 GMT
+    ...
+    ```
 
+- Add an upstream node to the Route
 
-# Add an upstream node to the Route
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
-{
-    "upstream": {
-        "nodes": {
-            "127.0.0.1:1981": 1
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    {
+        "upstream": {
+            "nodes": {
+                "127.0.0.1:1981": 1
+            }
         }
+    }'
+    ```
+
+    ```shell
+    HTTP/1.1 200 OK
+    ...
+    ```
+
+    After successful execution, upstream nodes will be updated to:
+
+    ```shell
+    {
+        "127.0.0.1:1980": 1,
+        "127.0.0.1:1981": 1
     }
-}'
-HTTP/1.1 200 OK
-...
+    ```
 
-After successful execution, upstream nodes will be updated to:
-{
-    "127.0.0.1:1980": 1,
-    "127.0.0.1:1981": 1
-}
+- Update the weight of an upstream node to the Route
 
-
-# Update the weight of an upstream node to the Route
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
-{
-    "upstream": {
-        "nodes": {
-            "127.0.0.1:1981": 10
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    {
+        "upstream": {
+            "nodes": {
+                "127.0.0.1:1981": 10
+            }
         }
+    }'
+    ```
+
+    ```shell
+    HTTP/1.1 200 OK
+    ...
+    ```
+
+    After successful execution, upstream nodes will be updated to:
+
+    ```shell
+    {
+        "127.0.0.1:1980": 1,
+        "127.0.0.1:1981": 10
     }
-}'
-HTTP/1.1 200 OK
-...
+    ```
 
-After successful execution, upstream nodes will be updated to:
-{
-    "127.0.0.1:1980": 1,
-    "127.0.0.1:1981": 10
-}
+- Delete an upstream node for the Route
 
-
-# Delete an upstream node for the Route
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
-{
-    "upstream": {
-        "nodes": {
-            "127.0.0.1:1980": null
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    {
+        "upstream": {
+            "nodes": {
+                "127.0.0.1:1980": null
+            }
         }
+    }'
+    ```
+
+    ```shell
+    HTTP/1.1 200 OK
+    ...
+    ```
+
+    After successful execution, upstream nodes will be updated to:
+
+    ```shell
+    {
+        "127.0.0.1:1981": 10
     }
-}'
-HTTP/1.1 200 OK
-...
+    ```
 
-After successful execution, upstream nodes will be updated to:
-{
-    "127.0.0.1:1981": 10
-}
+- Replace methods of the Route  --  array
 
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '{
+        "methods": ["GET", "POST"]
+    }'
+    ```
 
-# Replace methods of the Route  --  array
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '{
-    "methods": ["GET", "POST"]
-}'
-HTTP/1.1 200 OK
-...
+    ```shell
+    HTTP/1.1 200 OK
+    ...
+    ```
 
-After successful execution, methods will not retain the original data, and the entire update is:
-["GET", "POST"]
+    After successful execution, methods will not retain the original data, and the entire update is:
 
+    ```shell
+    ["GET", "POST"]
+    ```
 
-# Replace upstream nodes of the Route -- sub path
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1/upstream/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
-{
-    "127.0.0.1:1982": 1
-}'
-HTTP/1.1 200 OK
-...
+- Replace upstream nodes of the Route -- sub path
 
-After successful execution, nodes will not retain the original data, and the entire update is:
-{
-    "127.0.0.1:1982": 1
-}
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/routes/1/upstream/nodes \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    {
+        "127.0.0.1:1982": 1
+    }'
+    ```
 
+    ```shell
+    HTTP/1.1 200 OK
+    ...
+    ```
 
-# Replace methods of the Route -- sub path
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1/methods -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d'["POST", "DELETE", " PATCH"]'
-HTTP/1.1 200 OK
-...
+    After successful execution, nodes will not retain the original data, and the entire update is:
 
-After successful execution, methods will not retain the original data, and the entire update is:
-["POST", "DELETE", "PATCH"]
+    ```shell
+    {
+        "127.0.0.1:1982": 1
+    }
+    ```
 
+- Replace methods of the Route -- sub path
 
-# disable route
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
-{
-    "status": 0
-}'
-HTTP/1.1 200 OK
-...
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/routes/1/methods \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d'["POST", "DELETE", " PATCH"]'
+    ```
 
-After successful execution, status nodes will be updated to:
-{
-    "status": 0
-}
+    ```shell
+    HTTP/1.1 200 OK
+    ...
+    ```
 
+    After successful execution, methods will not retain the original data, and the entire update is:
 
-# enable route
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
-{
-    "status": 1
-}'
-HTTP/1.1 200 OK
-...
+    ```shell
+    ["POST", "DELETE", "PATCH"]
+    ```
 
-After successful execution, status nodes will be updated to:
-{
-    "status": 1
-}
+- Disable route
 
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    {
+        "status": 0
+    }'
+    ```
 
-```
+    ```shell
+    HTTP/1.1 200 OK
+    ...
+    ```
+
+    After successful execution, status nodes will be updated to:
+
+    ```shell
+    {
+        "status": 0
+    }
+    ```
+
+- Enable route
+
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    {
+        "status": 1
+    }'
+    ```
+
+    ```shell
+    HTTP/1.1 200 OK
+    ...
+    ```
+
+    After successful execution, status nodes will be updated to:
+
+    ```shell
+    {
+        "status": 1
+    }
+    ```
 
 ### Response Parameters
 
 Currently, the response is returned from etcd.
 
-[Back to TOC](#table-of-contents)
-
 ## Service
-
-**API**: /apisix/admin/services/{id}
 
 A Service is an abstraction of an API (which can also be understood as a set of Route abstractions). It usually corresponds to an upstream service abstraction.
 
 The relationship between Routes and a Service is usually N:1.
+
+### Service API
+
+Service resource request address: /apisix/admin/services/{id}
 
 ### Request Methods
 
@@ -444,114 +564,154 @@ Example configuration:
 }
 ```
 
-Example API usage:
+### Example API usage
 
-```shell
-$ curl http://127.0.0.1:9180/apisix/admin/services/201  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
-{
-    "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr"
+- Create a service
+
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/services/201  \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+    {
+        "plugins": {
+            "limit-count": {
+                "count": 2,
+                "time_window": 60,
+                "rejected_code": 503,
+                "key": "remote_addr"
+            }
+        },
+        "enable_websocket": true,
+        "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
         }
-    },
-    "enable_websocket": true,
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
+    }'
+    ```
+
+    ```shell
+    HTTP/1.1 201 Created
+    ...
+    ```
+
+- Add an upstream node to the Service
+
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/services/201 \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    {
+        "upstream": {
+            "nodes": {
+                "127.0.0.1:1981": 1
+            }
         }
+    }'
+    ```
+
+    ```shell
+    HTTP/1.1 200 OK
+    ...
+    ```
+
+    After successful execution, upstream nodes will be updated to:
+
+    ```shell
+    {
+        "127.0.0.1:1980": 1,
+        "127.0.0.1:1981": 1
     }
-}'
+    ```
 
-HTTP/1.1 201 Created
-...
+- Update the weight of an upstream node to the Service
 
-
-# Add an upstream node to the Service
-$ curl http://127.0.0.1:9180/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
-{
-    "upstream": {
-        "nodes": {
-            "127.0.0.1:1981": 1
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/services/201 \
+    -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    {
+        "upstream": {
+            "nodes": {
+                "127.0.0.1:1981": 10
+            }
         }
+    }'
+    ```
+
+    ```shell
+    HTTP/1.1 200 OK
+    ...
+    ```
+
+    After successful execution, upstream nodes will be updated to:
+
+    ```shell
+    {
+        "127.0.0.1:1980": 1,
+        "127.0.0.1:1981": 10
     }
-}'
-HTTP/1.1 200 OK
-...
+    ```
 
-After successful execution, upstream nodes will be updated to:
-{
-    "127.0.0.1:1980": 1,
-    "127.0.0.1:1981": 1
-}
+- Delete an upstream node for the Service
 
-
-# Update the weight of an upstream node to the Service
-$ curl http://127.0.0.1:9180/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
-{
-    "upstream": {
-        "nodes": {
-            "127.0.0.1:1981": 10
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/services/201 \
+    -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    {
+        "upstream": {
+            "nodes": {
+                "127.0.0.1:1980": null
+            }
         }
+    }'
+    ```
+
+    ```shell
+    HTTP/1.1 200 OK
+    ...
+    ```
+
+    After successful execution, upstream nodes will be updated to:
+
+    ```shell
+    {
+        "127.0.0.1:1981": 10
     }
-}'
-HTTP/1.1 200 OK
-...
+    ```
 
-After successful execution, upstream nodes will be updated to:
-{
-    "127.0.0.1:1980": 1,
-    "127.0.0.1:1981": 10
-}
+- Replace upstream nodes of the Service
 
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/services/201/upstream/nodes \
+    -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    {
+        "127.0.0.1:1982": 1
+    }'
+    ```
 
-# Delete an upstream node for the Service
-$ curl http://127.0.0.1:9180/apisix/admin/services/201 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
-{
-    "upstream": {
-        "nodes": {
-            "127.0.0.1:1980": null
-        }
+    ```shell
+    HTTP/1.1 200 OK
+    ...
+    ```
+
+    After successful execution, upstream nodes will not retain the original data, and the entire update is:
+
+    ```shell
+    {
+        "127.0.0.1:1982": 1
     }
-}'
-HTTP/1.1 200 OK
-...
-
-After successful execution, upstream nodes will be updated to:
-{
-    "127.0.0.1:1981": 10
-}
-
-
-# Replace upstream nodes of the Service
-$ curl http://127.0.0.1:9180/apisix/admin/services/201/upstream/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
-{
-    "127.0.0.1:1982": 1
-}'
-HTTP/1.1 200 OK
-...
-
-After successful execution, upstream nodes will not retain the original data, and the entire update is:
-{
-    "127.0.0.1:1982": 1
-}
-
-```
+    ```
 
 ### Response Parameters
 
 Currently, the response is returned from etcd.
 
-[Back to TOC](#table-of-contents)
-
 ## Consumer
 
-**API**: /apisix/admin/consumers/{username}
-
 Consumers are users of services and can only be used in conjunction with a user authentication system. A Consumer is identified by a `username` property. So, for creating a new Consumer, only the HTTP `PUT` method is supported.
+
+### Consumer API
+
+Consumer resource request address: /apisix/admin/consumers/{username}
 
 ### Request Methods
 
@@ -586,10 +746,11 @@ Example Configuration:
 
 When bound to a Route or Service, the Authentication Plugin infers the Consumer from the request and does not require any parameters. Whereas, when it is bound to a Consumer, username, password and other information needs to be provided.
 
-Example API usage:
+### Example API usage
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "username": "jack",
     "plugins": {
@@ -604,6 +765,9 @@ $ curl http://127.0.0.1:9180/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f03433
         }
     }
 }'
+```
+
+```shell
 HTTP/1.1 200 OK
 Date: Thu, 26 Dec 2019 08:17:49 GMT
 ...
@@ -617,15 +781,15 @@ Since `v2.2`, we can bind multiple authentication plugins to the same consumer.
 
 Currently, the response is returned from etcd.
 
-[Back to TOC](#table-of-contents)
-
 ## Upstream
-
-**API**: /apisix/admin/upstreams/{id}
 
 Upstream is a virtual host abstraction that performs load balancing on a given set of service nodes according to the configured rules.
 
 An Upstream configuration can be directly bound to a Route or a Service, but the configuration in Route has a higher priority. This behavior is consistent with priority followed by the Plugin object.
+
+### Upstream API
+
+Upstream resource request address: /apisix/admin/upstreams/{id}
 
 ### Request Methods
 
@@ -659,10 +823,10 @@ In addition to the equalization algorithm selections, Upstream also supports pas
 | desc                        | optional                                    | Description of usage scenarios.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
 | pass_host                   | optional                                    | Configures the `host` when the request is forwarded to the upstream. Can be one of `pass`, `node` or `rewrite`. Defaults to `pass` if not specified. `pass`- transparently passes the client's host to the Upstream. `node`- uses the host configured in the node of the Upstream. `rewrite`- Uses the value configured in `upstream_host`.                                                                                                                                                                                                                                                                                                                                                                                      |                                                                                                                                            |
 | upstream_host               | optional                                    | Specifies the host of the Upstream request. This is only valid if the `pass_host` is set to `rewrite`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |                                                                                                                                            |
-| scheme                      | optional                                    | The scheme used when communicating with the Upstream. For an L7 proxy, this value can be one of 'http', 'https', 'grpc', 'grpcs'. For an L4 proxy, this value could be one of 'tcp', 'udp', 'tls'. Defaults to 'http'.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |                                                                                                                                            |
-| labels                      | optional                                    | Attributes of the Upstream specified as key-value pairs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | {"version":"v2","build":"16","env":"production"}                                                                                           |
-| create_time                 | optional                                    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 1602883670                                                                                                                                 |
-| update_time                 | optional                                    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 1602883670                                                                                                                                 |
+| scheme                      | optional                                    | The scheme used when communicating with the Upstream. For an L7 proxy, this value can be one of `http`, `https`, `grpc`, `grpcs`. For an L4 proxy, this value could be one of `tcp`, `udp`, `tls`. Defaults to `http`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |                                                                                                                                            |
+| labels                      | optional                                    | Attributes of the Upstream specified as `key-value` pairs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | {"version":"v2","build":"16","env":"production"}                                                                                           |
+| create_time                 | optional                                    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | 1602883670                                                                                                                                 |
+| update_time                 | optional                                    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | 1602883670                                                                                                                                 |
 | tls.client_cert             | optional, can't be used with `tls.client_cert_id`       | Sets the client certificate while connecting to a TLS Upstream.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
 | tls.client_key              | optional, can't be used with `tls.client_cert_id`       | Sets the client private key while connecting to a TLS Upstream.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
 | tls.client_cert_id          | optional, can't be used with `tls.client_cert` and `tls.client_key`       | Set the referenced [SSL](#ssl) id.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |                                                                                                                                            |
@@ -720,130 +884,178 @@ Example Configuration:
 }
 ```
 
-Example API usage:
+### Example API usage
 
-Example 1: Create an Upstream and modify the data in `nodes`
+#### Create an Upstream and modify the data in `nodes`
 
-```shell
-# Create upstream
-$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
-{
-    "nodes":{
-        "127.0.0.1:1980": 1
-    }
-}'
-HTTP/1.1 201 Created
-...
+1. Create upstream
 
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/upstreams/100  \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+    {
+        "type":"roundrobin",
+        "nodes":{
+            "127.0.0.1:1980": 1
+        }
+    }'
+    ```
 
-# Add a node to the Upstream
-$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
-{
-    "nodes": {
+    ```shell
+    HTTP/1.1 201 Created
+    ...
+    ```
+
+2. Add a node to the Upstream
+
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/upstreams/100 \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    {
+        "nodes": {
+            "127.0.0.1:1981": 1
+        }
+    }'
+    ```
+
+    ```
+    HTTP/1.1 200 OK
+    ...
+    ```
+
+    After successful execution, nodes will be updated to:
+
+    ```shell
+    {
+        "127.0.0.1:1980": 1,
         "127.0.0.1:1981": 1
     }
-}'
-HTTP/1.1 200 OK
-...
+    ```
 
-After successful execution, nodes will be updated to:
-{
-    "127.0.0.1:1980": 1,
-    "127.0.0.1:1981": 1
-}
+3. Update the weight of a node to the Upstream
 
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/upstreams/100 \
+    -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    {
+        "nodes": {
+            "127.0.0.1:1981": 10
+        }
+    }'
+    ```
 
-# Update the weight of a node to the Upstream
-$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
-{
-    "nodes": {
+    ```shell
+    HTTP/1.1 200 OK
+    ...
+    ```
+
+    After successful execution, nodes will be updated to:
+
+    ```shell
+    {
+        "127.0.0.1:1980": 1,
         "127.0.0.1:1981": 10
     }
-}'
-HTTP/1.1 200 OK
-...
+    ```
 
-After successful execution, nodes will be updated to:
-{
-    "127.0.0.1:1980": 1,
-    "127.0.0.1:1981": 10
-}
+4. Delete a node for the Upstream
 
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/upstreams/100 \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    {
+        "nodes": {
+            "127.0.0.1:1980": null
+        }
+    }'
+    ```
 
-# Delete a node for the Upstream
-$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100 -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
-{
-    "nodes": {
-        "127.0.0.1:1980": null
+    ```
+    HTTP/1.1 200 OK
+    ...
+    ```
+
+    After successful execution, nodes will be updated to:
+
+    ```shell
+    {
+        "127.0.0.1:1981": 10
     }
-}'
-HTTP/1.1 200 OK
-...
+    ```
 
-After successful execution, nodes will be updated to:
-{
-    "127.0.0.1:1981": 10
-}
+5. Replace the nodes of the Upstream
 
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/upstreams/100/nodes \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    {
+        "127.0.0.1:1982": 1
+    }'
+    ```
 
-# Replace the nodes of the Upstream
-$ curl http://127.0.0.1:9180/apisix/admin/upstreams/100/nodes -H'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
-{
-    "127.0.0.1:1982": 1
-}'
-HTTP/1.1 200 OK
-...
+    ```
+    HTTP/1.1 200 OK
+    ...
+    ```
 
-After the execution is successful, nodes will not retain the original data, and the entire update is:
-{
-    "127.0.0.1:1982": 1
-}
+    After the execution is successful, nodes will not retain the original data, and the entire update is:
 
-```
+    ```shell
+    {
+        "127.0.0.1:1982": 1
+    }
+    ```
 
-Example 2: Proxy client request to `https` Upstream service
+#### Proxy client request to `https` Upstream service
 
 1. Create a route and configure the upstream scheme as `https`.
 
-```shell
-$ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "uri": "/get",
-    "upstream": {
-        "scheme": "https",
-        "nodes": {
-            "httpbin.org:443": 1
+    ```shell
+    curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    {
+        "uri": "/get",
+        "upstream": {
+            "type": "roundrobin",
+            "scheme": "https",
+            "nodes": {
+                "httpbin.org:443": 1
+            }
         }
-    }
-}'
-```
+    }'
+    ```
 
-After successful execution, the scheme when requesting to communicate with the upstream will be `https`.
+    After successful execution, the scheme when requesting to communicate with the upstream will be `https`.
 
 2. Send a request to test.
 
-```shell
-$ curl http://127.0.0.1:9080/get
-{
-  "args": {},
-  "headers": {
-    "Accept": "*/*",
-    "Host": "127.0.0.1",
-    "User-Agent": "curl/7.29.0",
-    "X-Amzn-Trace-Id": "Root=1-6058324a-0e898a7f04a5e95b526bb183",
-    "X-Forwarded-Host": "127.0.0.1"
-  },
-  "origin": "127.0.0.1",
-  "url": "https://127.0.0.1/get"
-}
-```
+    ```shell
+    curl http://127.0.0.1:9080/get
+    ```
+
+    ```shell
+    {
+    "args": {},
+    "headers": {
+        "Accept": "*/*",
+        "Host": "127.0.0.1",
+        "User-Agent": "curl/7.29.0",
+        "X-Amzn-Trace-Id": "Root=1-6058324a-0e898a7f04a5e95b526bb183",
+        "X-Forwarded-Host": "127.0.0.1"
+    },
+    "origin": "127.0.0.1",
+    "url": "https://127.0.0.1/get"
+    }
+    ```
 
 The request is successful, meaning that the proxy Upstream `https` is valid.
 
-**Note**:
+:::note
 
 Each node can be configured with a priority. A node with low priority will only be
 used when all the nodes with higher priority have been tried or are unavailable.
+
+:::
 
 As the default priority is 0, nodes with negative priority can be configured as a backup.
 
@@ -882,11 +1094,11 @@ It can therefore act as a backup for the node `127.0.0.1`.
 
 Currently, the response is returned from etcd.
 
-[Back to TOC](#table-of-contents)
-
 ## SSL
 
-**API**:/apisix/admin/ssls/{id}
+### SSL API
+
+SSL resource request address: /apisix/admin/ssls/{id}
 
 ### Request Methods
 
@@ -930,9 +1142,11 @@ See [Certificate](./certificate.md) for more examples.
 
 ## Global Rule
 
-**API**: /apisix/admin/global_rules/{id}
-
 Sets Plugins which run globally. i.e these Plugins will be run before any Route/Service level Plugins.
+
+### Global Rule API
+
+Global Rule resource request address: /apisix/admin/global_rules/{id}
 
 ### Request Methods
 
@@ -955,9 +1169,11 @@ Sets Plugins which run globally. i.e these Plugins will be run before any Route/
 
 ## Consumer group
 
-**API**: /apisix/admin/consumer_groups/{id}
-
 Group of Plugins which can be reused across Consumers.
+
+### Consumer group API
+
+Consumer group resource request address: /apisix/admin/consumer_groups/{id}
 
 ### Request Methods
 
@@ -980,13 +1196,13 @@ Group of Plugins which can be reused across Consumers.
 | create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
 | update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
 
-[Back to TOC](#table-of-contents)
-
 ## Plugin config
 
-**API**: /apisix/admin/plugin_configs/{id}
-
 Group of Plugins which can be reused across Routes.
+
+### Plugin Config API
+
+Plugin Config resource request address: /apisix/admin/plugin_configs/{id}
 
 ### Request Methods
 
@@ -1009,11 +1225,11 @@ Group of Plugins which can be reused across Routes.
 | create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
 | update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
 
-[Back to TOC](#table-of-contents)
-
 ## Plugin Metadata
 
-**API**: /apisix/admin/plugin_metadata/{plugin_name}
+### Plugin Metadata API
+
+Plugin Metadata resource request address: /apisix/admin/plugin_metadata/{plugin_name}
 
 ### Request Methods
 
@@ -1030,21 +1246,25 @@ A JSON object defined according to the `metadata_schema` of the Plugin ({plugin_
 Example Configuration:
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/example-plugin  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/example-plugin  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
     "skey": "val",
     "ikey": 1
 }'
+```
+
+```shell
 HTTP/1.1 201 Created
 Date: Thu, 26 Dec 2019 04:19:34 GMT
 Content-Type: text/plain
 ```
 
-[Back to TOC](#table-of-contents)
-
 ## Plugin
 
-**API**: /apisix/admin/plugins/{plugin_name}
+### Plugin API
+
+Plugin resource request address: /apisix/admin/plugins/{plugin_name}
 
 ### Request Methods
 
@@ -1057,21 +1277,33 @@ Content-Type: text/plain
 
 The Plugin ({plugin_name}) of the data structure.
 
-Example API usage:
+### Example API usage:
 
 ```shell
-$ curl "http://127.0.0.1:9180/apisix/admin/plugins/list" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
-["zipkin","request-id",...]
+curl "http://127.0.0.1:9180/apisix/admin/plugins/list" \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 
-$ curl "http://127.0.0.1:9180/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+```shell
+["zipkin","request-id",...]
+```
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+```
+
+```json
 {"$comment":"this is a mark for our injected plugin schema","properties":{"header":{"default":"apikey","type":"string"},"hide_credentials":{"default":false,"type":"boolean"},"_meta":{"properties":{"filter":{"type":"array","description":"filter determines whether the plugin needs to be executed at runtime"},"disable":{"type":"boolean"},"error_response":{"oneOf":[{"type":"string"},{"type":"object"}]},"priority":{"type":"integer","description":"priority of plugins by customized order"}},"type":"object"},"query":{"default":"apikey","type":"string"}},"type":"object"}
 ```
 
-**API**: /apisix/admin/plugins?all=true
+:::tip
 
-Get all attributes from all Plugins. Each Plugin has the attributes `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`. Defaults to only HTTP Plugins.
+You can use the `/apisix/admin/plugins?all=true` API to get all properties of all plugins.
 
-If you need to get attributes from stream Plugins, use `/apisix/admin/plugins?all=true&subsystem=stream`.
+Each Plugin has the attributes `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`.
+
+Defaults to only HTTP Plugins. If you need to get attributes from stream Plugins, use `/apisix/admin/plugins?all=true&subsystem=stream`.
+
+:::
 
 ### Request Methods
 
@@ -1085,13 +1317,13 @@ If you need to get attributes from stream Plugins, use `/apisix/admin/plugins?al
 | --------- | ----------------------------- | ------- |
 | subsystem | The subsystem of the Plugins. | http    |
 
-[Back to TOC](#table-of-contents)
-
 ## Stream Route
 
-**API**: /apisix/admin/stream_routes/{id}
-
 Route used in the [Stream Proxy](./stream-proxy.md).
+
+### Stream Route API
+
+Stream Route resource request address:  /apisix/admin/stream_routes/{id}
 
 ### Request Methods
 
@@ -1118,4 +1350,64 @@ Route used in the [Stream Proxy](./stream-proxy.md).
 
 To learn more about filtering in stream proxies, check [this](./stream-proxy.md#more-route-match-options) document.
 
-[Back to TOC](#table-of-contents)
+## kms
+
+kms means `Secrets Management`, which could use any secret manager supported, e.g. `vault`.
+
+### kms API
+
+kms resource request address: /apisix/admin/kms/{secretmanager}/{id}
+
+### Request Methods
+
+| Method | Request URI                        | Request Body | Description                                       |
+| ------ | ---------------------------------- | ------------ | ------------------------------------------------- |
+| GET    | /apisix/admin/secrets            | NULL         | Fetches a list of all secrets.                  |
+| GET    | /apisix/admin/secrets/{manager}/{id} | NULL         | Fetches specified secrets by id.           |
+| PUT    | /apisix/admin/secrets/{manager}            | {...}        | Create new secrets configuration.                              |
+| DELETE | /apisix/admin/secrets/{manager}/{id} | NULL         | Removes the secrets with the specified id. |
+| PATCH  | /apisix/admin/secrets/{manager}/{id}        | {...}        | Updates the selected attributes of the specified, existing secrets. To delete an attribute, set value of attribute set to null. |
+| PATCH  | /apisix/admin/secrets/{manager}/{id}/{path} | {...}        | Updates the attribute specified in the path. The values of other attributes remain unchanged.                                 |
+
+### Request Body Parameters
+
+When `{secretmanager}` is `vault`:
+
+| Parameter   | Required | Type        | Description                                                                                                        | Example                                          |
+| ----------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| uri    | True     | URI        | URI of the vault server.                                                                                              |                                                  |
+| prefix    | True    | string        | key prefix
+| token     | True    | string      | vault token. |                                                  |
+
+Example Configuration:
+
+```shell
+{
+    "uri": "https://localhost/vault",
+    "prefix": "/apisix/kv",
+    "token": "343effad"
+}
+```
+
+Example API usage:
+
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/kms/vault/test2 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "http://xxx/get",
+    "prefix" : "apisix",
+    "token" : "apisix"
+}'
+```
+
+```shell
+HTTP/1.1 200 OK
+...
+
+{"key":"\/apisix\/secrets\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
+```
+
+### Response Parameters
+
+Currently, the response is returned from etcd.

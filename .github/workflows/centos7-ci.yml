@@ -22,7 +22,7 @@ permissions:
 jobs:
   test_apisix:
     name: run ci on centos7
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     timeout-minutes: 90
     strategy:
       fail-fast: false
@@ -31,11 +31,11 @@ jobs:
           - t/plugin/[a-k]*
           - t/plugin/[l-z]*
           - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/deployment t/discovery t/error_page t/misc
-          - t/node t/pubsub t/router t/script t/stream-node t/utils t/wasm t/xds-library
+          - t/node t/pubsub t/router t/script t/secret t/stream-node t/utils t/wasm t/xds-library
 
     steps:
     - name: Check out code
-      uses: actions/checkout@v3.1.0
+      uses: actions/checkout@v3.2.0
       with:
         submodules: recursive
 
@@ -72,6 +72,7 @@ jobs:
     - name: Linux launch common services
       run: |
         make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
+        sudo ./ci/init-common-test-service.sh
 
     - name: Build rpm package
       if: ${{ startsWith(github.ref, 'refs/heads/release/') }}

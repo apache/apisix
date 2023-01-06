@@ -69,6 +69,7 @@ local schema = {
             }
         },
     },
+    encrypt_fields = {"secret_key"},
     required = {"nameserver_list", "topic"}
 }
 

@@ -37,6 +37,7 @@ local admin_init      = require("apisix.admin.init")
 local get_var         = require("resty.ngxvar").fetch
 local router          = require("apisix.router")
 local apisix_upstream = require("apisix.upstream")
+local apisix_secret   = require("apisix.secret")
 local set_upstream    = apisix_upstream.set_by_route
 local apisix_ssl      = require("apisix.ssl")
 local upstream_util   = require("apisix.utils.upstream")
@@ -82,6 +83,7 @@ local _M = {version = 0.4}
 function _M.http_init(args)
     core.resolver.init_resolver(args)
     core.id.init()
+    core.env.init()
 
     local process = require("ngx.process")
     local ok, err = process.enable_privileged_agent()
@@ -149,6 +151,7 @@ function _M.http_init_worker()
     plugin_config.init_worker()
     require("apisix.consumer").init_worker()
     consumer_group.init_worker()
+    apisix_secret.init_worker()
 
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()
@@ -891,13 +894,22 @@ function _M.stream_init_worker()
     -- for testing only
     core.log.info("random stream test in [1, 10000]: ", math.random(1, 10000))
 
+    if core.config.init_worker then
+        local ok, err = core.config.init_worker()
+        if not ok then
+            core.log.error("failed to init worker process of ", core.config.type,
+                           " config center, err: ", err)
+        end
+    end
+
     plugin.init_worker()
     xrpc.init_worker()
     router.stream_init_worker()
     apisix_upstream.init_worker()
 
-    if core.config == require("apisix.core.config_yaml") then
-        core.config.init_worker()
+    local discovery = require("apisix.discovery.init").discovery
+    if discovery and discovery.init_worker then
+        discovery.init_worker()
     end
 
     load_balancer = require("apisix.balancer")

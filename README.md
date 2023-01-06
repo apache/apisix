@@ -21,7 +21,7 @@
 
 <img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/apisix.svg" alt="APISIX logo" height="150px" align="right" />
 
-[![Build Status](https://github.com/apache/apisix/workflows/build/badge.svg?branch=master)](https://github.com/apache/apisix/actions)
+[![Build Status](https://github.com/apache/apisix/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/apache/apisix/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
 [![Commit activity](https://img.shields.io/github/commit-activity/m/apache/apisix)](https://github.com/apache/apisix/graphs/commit-activity)
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/apache/apisix.svg)](http://isitmaintained.com/project/apache/apisix "Average time to resolve an issue")
@@ -151,7 +151,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
 - **Multi-Language support**
   - Apache APISIX is a multi-language gateway for plugin development and provides support via `RPC` and `Wasm`.
-  ![Multi Language Support into Apache APISIX](docs/assets/images/apisix-multi-lang-support.png)
+  ![Multi Language Support into Apache APISIX](docs/assets/images/external-plugin.png)
   - The RPC way, is the current way. Developers can choose the language according to their needs and after starting an independent process with the RPC, it exchanges data with APISIX through local RPC communication. Till this moment, APISIX has support for [Java](https://github.com/apache/apisix-java-plugin-runner), [Golang](https://github.com/apache/apisix-go-plugin-runner), [Python](https://github.com/apache/apisix-python-plugin-runner) and Node.js.
   - The Wasm or WebAssembly, is an experimental way. APISIX can load and run Wasm bytecode via APISIX [wasm plugin](https://github.com/apache/apisix/blob/master/docs/en/latest/wasm.md) written with the [Proxy Wasm SDK](https://github.com/proxy-wasm/spec#sdks). Developers only need to write the code according to the SDK and then compile it into a Wasm bytecode that runs on Wasm VM with APISIX.
 
@@ -210,9 +210,12 @@ A wide variety of companies and organizations use APISIX API Gateway for researc
 
 - Airwallex
 - Bilibili
+- CVTE
 - European eFactory Platform
 - European Copernicus Reference System
+- Geely
 - HONOR
+- Horizon Robotics
 - iQIYI
 - NASA JPL
 - Nayuki
@@ -221,9 +224,11 @@ A wide variety of companies and organizations use APISIX API Gateway for researc
 - Swisscom
 - Tencent Game
 - Travelsky
-- VIVO
+- vivo
 - Sina Weibo
 - WPS
+- XPENG
+- Zoom
 
 ## Landscape
 

@@ -43,8 +43,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 --- timeout: 5
 
 
@@ -127,8 +125,6 @@ done
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 --- wait: 1
 --- grep_error_log eval
 qr/\w+ (data by key: 103)/

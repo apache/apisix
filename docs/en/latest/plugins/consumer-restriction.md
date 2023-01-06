@@ -34,7 +34,7 @@ The `consumer-restriction` Plugin allows users to set access restrictions based 
 
 | Name               | Type          | Required | Default       | Valid values  | Description |
 |--------------------|---------------|----------|---------------|---------------|-------------|
-| type               | string        | False    | consumer_name | ["consumer_name", "service_id", "route_id"]  | Type of object to base the restriction on.  |
+| type               | string        | False    | consumer_name | ["consumer_name", "consumer_group_id", "service_id", "route_id"]  | Type of object to base the restriction on.  |
 | whitelist          | array[string] | True     |               |                                              | List of objects to whitelist. Has a higher priority than `allowed_by_methods`. |
 | blacklist          | array[string] | True     |               |                                              | List of objects to blacklist. Has a higher priority than `whitelist`.          |
 | rejected_code      | integer       | False    | 403           | [200,...]                                    | HTTP status code returned when the request is rejected.                        |
@@ -46,6 +46,7 @@ The `consumer-restriction` Plugin allows users to set access restrictions based 
 The different values in the `type` attribute have these meanings:
 
 - `consumer_name`: Username of the Consumer to restrict access to a Route or a Service.
+- `consumer_group_id`: ID of the Consumer Group to restrict access to a Route or a Service.
 - `service_id`: ID of the Service to restrict access from a Consumer. Need to be used with an Authentication Plugin.
 - `route_id`: ID of the Route to restrict access from a Consumer.
 

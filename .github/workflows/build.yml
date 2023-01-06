@@ -33,7 +33,7 @@ jobs:
           - t/plugin/[a-k]*
           - t/plugin/[l-z]*
           - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/deployment t/discovery t/error_page t/misc
-          - t/node t/pubsub t/router t/script t/stream-node t/utils t/wasm t/xds-library t/xrpc
+          - t/node t/pubsub t/router t/script t/secret t/stream-node t/utils t/wasm t/xds-library t/xrpc
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 90
@@ -43,7 +43,7 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3.1.0
+        uses: actions/checkout@v3.2.0
         with:
           submodules: recursive
 
@@ -86,6 +86,7 @@ jobs:
       - name: Linux launch common services
         run: |
           make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
+          sudo ./ci/init-common-test-service.sh
 
       - name: Create tarball
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}

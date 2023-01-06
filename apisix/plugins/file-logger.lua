@@ -31,6 +31,14 @@ local schema = {
         path = {
             type = "string"
         },
+        include_resp_body = {type = "boolean", default = false},
+        include_resp_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        }
     },
     required = {"path"}
 }
@@ -75,6 +83,9 @@ if is_apisix_or then
             return nil, err
         end
 
+        -- it will case output problem with buffer when log is larger than buffer
+        file:setvbuf("no")
+
         handler.file = file
         handler.open_time = ngx.now() * 1000
         return handler
@@ -116,11 +127,14 @@ local function write_file_data(conf, log_message)
     if not file then
         core.log.error("failed to open file: ", conf.path, ", error info: ", err)
     else
-        local ok, err = file:write(msg, '\n')
+        -- file:write(msg, "\n") will call fwrite several times
+        -- which will cause problem with the log output
+        -- it should be atomic
+        msg = msg .. "\n"
+        -- write to file directly, no need flush
+        local ok, err = file:write(msg)
         if not ok then
             core.log.error("failed to write file: ", conf.path, ", error info: ", err)
-        else
-            file:flush()
         end
 
         -- file will be closed by gc, if open_file_cache exists
@@ -130,6 +144,9 @@ local function write_file_data(conf, log_message)
     end
 end
 
+function _M.body_filter(conf, ctx)
+    log_util.collect_body(conf, ctx)
+end
 
 function _M.log(conf, ctx)
     local metadata = plugin.plugin_metadata(plugin_name)

@@ -29,10 +29,6 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    if (!defined $block->error_log && !defined $block->no_error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     $block;
 });
 
@@ -127,6 +123,7 @@ udp-logger
 file-logger
 clickhouse-logger
 tencent-cloud-cls
+inspect
 example-plugin
 aws-lambda
 azure-functions
@@ -342,7 +339,7 @@ qr/\[\{"name":"wolf-rbac","priority":2555\},\{"name":"ldap-auth","priority":2540
         }
     }
 --- response_body eval
-qr/\{"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\}\},"required":\["username","password"\],"title":"work with consumer object","type":"object"\}/
+qr/\{"encrypt_fields":\["password"\],"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\}\},"required":\["username","password"\],"title":"work with consumer object","type":"object"\}/
 
 
 

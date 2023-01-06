@@ -40,6 +40,8 @@ The `authz-casdoor` Plugin can be used to add centralized authentication with [C
 | client_secret | string | True     | Client secret in Casdoor.                    |
 | callback_url  | string | True     | Callback URL used to receive state and code. |
 
+NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 :::info IMPORTANT
 
 `endpoint_addr` and `callback_url` should not end with '/'.

@@ -56,8 +56,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -80,8 +78,6 @@ done
 GET /t
 --- response_body
 property "status_code" validation failed: expected 599 to be at most 598
---- no_error_log
-[error]
 
 
 
@@ -108,8 +104,6 @@ property "status_code" validation failed: expected 599 to be at most 598
 GET /t
 --- response_body
 property "body" validation failed: wrong type: expected string, got number
---- no_error_log
-[error]
 
 
 
@@ -151,8 +145,6 @@ property "body" validation failed: wrong type: expected string, got number
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -194,8 +186,6 @@ passed
 GET /t
 --- response_body
 new body
---- no_error_log
-[error]
 
 
 
@@ -232,8 +222,6 @@ new body
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -256,8 +244,6 @@ Content-Length:
 Content-Encoding:
 Last-Modified:
 ETag:
---- no_error_log
-[error]
 
 
 
@@ -297,8 +283,6 @@ ETag:
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -309,8 +293,6 @@ GET /hello
 302
 --- response_headers
 Location: https://www.iresty.com
---- no_error_log
-[error]
 
 
 
@@ -336,8 +318,6 @@ Location: https://www.iresty.com
 GET /t
 --- response_body
 invalid field length in header
---- no_error_log
-[error]
 
 
 
@@ -363,8 +343,6 @@ invalid field length in header
 GET /t
 --- response_body
 invalid type as header value
---- no_error_log
-[error]
 
 
 
@@ -402,8 +380,6 @@ invalid type as header value
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -412,8 +388,6 @@ passed
 GET /hello
 --- response_body
 Hello
---- no_error_log
-[error]
 
 
 
@@ -436,8 +410,6 @@ Hello
 GET /t
 --- response_body
 invalid base64 content
---- no_error_log
-[error]
 
 
 
@@ -478,8 +450,6 @@ invalid base64 content
 GET /t
 --- response_body
 {"response-rewrite":{"body":"new body\n","body_base64":false,"headers":{"Content-Type":"","X-Server-id":3,"X-Server-status":"on"}}}
---- no_error_log
-[error]
 
 
 
@@ -505,8 +475,6 @@ GET /t
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -532,8 +500,6 @@ done
 GET /t
 --- response_body
 failed to validate the 'vars' expression: rule too short
---- no_error_log
-[error]
 
 
 
@@ -574,8 +540,6 @@ failed to validate the 'vars' expression: rule too short
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -598,8 +562,6 @@ GET /hello
 hello world
 --- error_code eval
 200
---- no_error_log
-[error]
 
 
 
@@ -622,8 +584,6 @@ hello world
 GET /t
 --- response_body
 invalid base64 content
---- no_error_log
-[error]
 
 
 
@@ -645,8 +605,6 @@ invalid base64 content
 GET /t
 --- response_body
 invalid base64 content
---- no_error_log
-[error]
 
 
 
@@ -686,8 +644,6 @@ invalid base64 content
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -697,8 +653,6 @@ GET /with_header
 --- response_headers
 X-A: 127.0.0.1
 X-B: from 127.0.0.1 to 127.0.0.1:1980
---- no_error_log
-[error]
 
 
 
@@ -735,8 +689,6 @@ X-B: from 127.0.0.1 to 127.0.0.1:1980
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -744,5 +696,3 @@ passed
 --- request
 GET /hello
 --- response_body
---- no_error_log
-[error]

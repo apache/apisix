@@ -42,14 +42,16 @@ Consumer 端：
 | 名称          | 类型     | 必选项 | 默认值  | 有效值                      | 描述                                                                                                          |
 | ------------- | ------- | ----- | ------- | --------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | key           | string  | 是    |         |                             | Consumer 的 `access_key` 必须是唯一的。如果不同 Consumer 使用了相同的 `access_key` ，将会出现请求匹配异常。 |
-| secret        | string  | 否    |         |                             | 加密秘钥。如果未指定，后台将会自动生成。                                                                  |
-| public_key    | string  | 否    |         |                             | RSA 或 ECDSA 公钥， `algorithm` 属性选择 `RS256` 或 `ES256` 算法时必选。                                                            |
-| private_key   | string  | 否    |         |                             | RSA 或 ECDSA 私钥， `algorithm` 属性选择 `RS256` 或 `ES256` 算法时必选。                                                            |
+| secret        | string  | 否    |         |                             | 加密秘钥。如果未指定，后台将会自动生成。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。   |
+| public_key    | string  | 否    |         |                             | RSA 或 ECDSA 公钥， `algorithm` 属性选择 `RS256` 或 `ES256` 算法时必选。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。       |
+| private_key   | string  | 否    |         |                             | RSA 或 ECDSA 私钥， `algorithm` 属性选择 `RS256` 或 `ES256` 算法时必选。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。       |
 | algorithm     | string  | 否    | "HS256" | ["HS256", "HS512", "RS256", "ES256"] | 加密算法。                                                                                                      |
 | exp           | integer | 否    | 86400   | [1,...]                     | token 的超时时间。                                                                                              |
 | base64_secret | boolean | 否    | false   |                             | 当设置为 `true` 时，密钥为 base64 编码。                                                                                         |
 | vault         | object  | 否    |         |                             | 是否使用 Vault 作为存储和检索密钥（HS256/HS512 的密钥或 RS256/ES256 的公钥和私钥）的方式。该插件默认使用 `kv/apisix/consumer/<consumer name>/jwt-auth` 路径进行密钥检索。 |
 | lifetime_grace_period | integer | 否    | 0  | [0,...]                  | 定义生成 JWT 的服务器和验证 JWT 的服务器之间的时钟偏移。该值应该是零（0）或一个正整数。 |
+
+注意：schema 中还定义了 `encrypt_fields = {"secret", "private_key"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
 :::info IMPORTANT
 

@@ -1,5 +1,12 @@
 ---
 title: Plugin
+keywords:
+  - API Gateway
+  - Apache APISIX
+  - Plugin
+  - Filter
+  - Priority
+description: This article introduces the related information of the APISIX Plugin object and how to use it, and introduces how to customize the plugin priority, customize the error response, and dynamically control the execution status of the plugin.
 ---
 
 <!--
@@ -25,13 +32,15 @@ title: Plugin
 
 This represents the configuration of the plugins that are executed during the HTTP request/response lifecycle. A **Plugin** configuration can be bound directly to a [`Route`](./route.md), a [`Service`](./service.md), a [`Consumer`](./consumer.md) or a [`Plugin Config`](./plugin-config.md).
 
+You can also refer to [Admin API](../admin-api.md#plugin) for how to use this resource.
+
 :::note
 
 While configuring the same plugin, only one copy of the configuration is valid. The order of precedence is always `Consumer` > `Consumer Group` > `Route` > `plugin_config` > `Service`.
 
 :::
 
-While [configuring APISIX](./architecture-design/apisix.md#configuring-apisix), you can declare the Plugins that are supported by the local APISIX node. This acts as a whitelisting mechanism as Plugins that are not in this whitelist will be automatically ignored. So, this feature can be used to temporarily turn off/turn on specific plugins.
+While configuring APISIX, you can declare the Plugins that are supported by the local APISIX node. This acts as a whitelisting mechanism as Plugins that are not in this whitelist will be automatically ignored. So, this feature can be used to temporarily turn off/turn on specific plugins.
 
 ## Adding a Plugin
 
@@ -78,12 +87,12 @@ ip-restriction exits with http status code 403
 
 Some common configurations can be applied to plugins through the `_meta` configuration items, the specific configuration items are as follows:
 
-| Name         | Type | Description |
-|--------------|------|-------------|
-| disable      | boolean  | Whether to disable the plugin |
-| error_response | string/object  | Custom error response |
-| priority       | integer        | Custom plugin priority |
-| filter  | array | Depending on the requested parameters, it is decided at runtime whether the plugin should be executed. Something like this: `{{var, operator, val}, {var, operator, val}, ...}}`. For example: `{"arg_version", "==", "v2"}`, indicating that the current request parameter `version` is `v2`. The variables here are consistent with NGINX internal variables. For details on supported operators, please see [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
+| Name           | Type           | Description |
+|----------------|--------------- |-------------|
+| disable        | boolean        | When set to `true`, the plugin is disabled. |
+| error_response | string/object  | Custom error response. |
+| priority       | integer        | Custom plugin priority. |
+| filter         | array          | Depending on the requested parameters, it is decided at runtime whether the plugin should be executed. Something like this: `{{var, operator, val}, {var, operator, val}, ...}}`. For example: `{"arg_version", "==", "v2"}`, indicating that the current request parameter `version` is `v2`. The variables here are consistent with NGINX internal variables. For details on supported operators, please see [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
 
 ### Disable the plugin
 
@@ -103,7 +112,7 @@ Through the `disable` configuration, you can add a new plugin with disabled stat
 
 Through the `error_response` configuration, you can configure the error response of any plugin to a fixed value to avoid troubles caused by the built-in error response information of the plugin.
 
-The configuration below means to customize the error response of the `jwt-auth` plugin to '{"message": "Missing credential in request"}'.
+The configuration below means to customize the error response of the `jwt-auth` plugin to `Missing credential in request`.
 
 ```json
 {
