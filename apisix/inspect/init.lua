@@ -107,7 +107,7 @@ end
 
 function _M.init(delay, file)
     if not running then
-        file = file or "/var/run/apisix_inspect_hooks.lua"
+        file = file or "/usr/local/apisix/plugin_inspect_hooks.lua"
         delay = delay or 3
 
         setup_hooks(file)
