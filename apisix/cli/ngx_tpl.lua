@@ -139,6 +139,7 @@ stream {
 
     lua_shared_dict lrucache-lock-stream {* stream.lua_shared_dict["lrucache-lock-stream"] *};
     lua_shared_dict etcd-cluster-health-check-stream {* stream.lua_shared_dict["etcd-cluster-health-check-stream"] *};
+    lua_shared_dict worker-events-stream {* stream.lua_shared_dict["worker-events-stream"] *};
 
     {% if enabled_stream_plugins["limit-conn"] then %}
     lua_shared_dict plugin-limit-conn-stream {* stream.lua_shared_dict["plugin-limit-conn-stream"] *};
