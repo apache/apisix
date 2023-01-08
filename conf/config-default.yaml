@@ -500,6 +500,7 @@ plugins:                          # plugin list (sorted by priority)
   - inspect                        # priority: 200
   #- log-rotate                    # priority: 100
   # <- recommend to use priority (0, 100) for your custom plugins
+  - guard                          # priority: 50
   - example-plugin                 # priority: 0
   #- gm                            # priority: -43
   - aws-lambda                     # priority: -1899
@@ -619,8 +620,9 @@ deployment:
 
     enable_admin_cors: true         # Admin API support CORS response headers.
     allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
-      - 127.0.0.0/24                # If we don't set any IP list, then any IP access is allowed by default.
-      #- "::/64"
+      # - 127.0.0.0/24                # If we don't set any IP list, then any IP access is allowed by default.
+      # - "::/64"
+      - 0.0.0.0/0
     admin_listen:                 # use a separate port
       ip: 0.0.0.0                 # Specific IP, if not set, the default value is `0.0.0.0`.
       port: 9180                  # Specific port, which must be different from node_listen's port.
