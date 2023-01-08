@@ -15,7 +15,7 @@ jobs:
       - name: Log in to the Container registry
         uses: docker/login-action@v1.10.0
         with:
-          registry: ghcr.io
+          registry: ghcr.io/unifra20/apisix
           username: "danielsunifra"
           password: "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"
       - name: Push to GitHub Packages
