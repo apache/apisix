@@ -12,7 +12,6 @@ RUN set -x \
     && apt-get -y update --fix-missing \
     && apt-get install -y curl \
         gawk \
-        git \
         libldap2-dev \
         liblua5.1-0-dev \
         lua5.1 \
@@ -20,8 +19,14 @@ RUN set -x \
         sudo \
         unzip \
         wget \
+        gnupg2
+
+RUN set -x \
+    && bash utils/install-dependencies.sh \
     && make deps \
-    && make install
+    && make install \
+    && mv /usr/share/lua/5.1/apisix /usr/local/apisix \
+    && mv /apisix/deps /usr/local/apisix
 
 FROM api7/apisix-base:dev AS production-stage
 
@@ -40,11 +45,18 @@ ENV PATH=$PATH:/usr/local/openresty-debug/luajit/bin:/usr/local/openresty-debug/
 
 EXPOSE 9080 9443
 
-COPY ./docker-entrypoint.sh /docker-entrypoint.sh
+COPY ./docker/docker-entrypoint.sh /docker-entrypoint.sh
+
+RUN chmod +x /docker-entrypoint.sh \
+    # forward request and error logs to docker log collector
+    && ln -sf /dev/stdout /usr/local/apisix/logs/access.log \
+    && ln -sf /dev/stderr /usr/local/apisix/logs/error.log \
+    && useradd -u 1001 apisix && chown -R apisix:apisix /usr/local/apisix
+
+USER apisix
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
 CMD ["docker-start"]
-
 
 STOPSIGNAL SIGQUIT
