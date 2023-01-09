@@ -3,7 +3,7 @@ name: Publish Docker image
 on:
   push:
     tags:
-      - '*'
+      - 'dev*'
 
 env:
   REGISTRY: ghcr.io/unifra20/apisix
