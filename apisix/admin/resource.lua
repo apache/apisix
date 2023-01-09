@@ -40,15 +40,15 @@ function _M:check_conf(id, conf, need_id)
     -- check id if need id
     id = id or conf.id
     if need_id and not id then
-        return nil, {error_msg = "missing id"}
+        return nil, {error_msg = "missing ".. self.kind .. " id"}
     end
 
     if not need_id and id then
-        return nil, {error_msg = "wrong id, do not need it"}
+        return nil, {error_msg = "wrong ".. self.kind .. " id, do not need it"}
     end
 
     if need_id and conf.id and tostring(conf.id) ~= tostring(id) then
-        return nil, {error_msg = "wrong id"}
+        return nil, {error_msg = "wrong ".. self.kind .. " id"}
     end
 
     conf.id = id
@@ -62,8 +62,8 @@ function _M:check_conf(id, conf, need_id)
         return nil, {error_msg = "invalid configuration: " .. err}
     end
 
-    -- check self validation
-    return self.check_conf_self(id, conf, need_id)
+    -- check the resource own rules
+    return self.checker(id, conf, need_id)
 end
 
 
@@ -205,12 +205,7 @@ end
 
 
 function _M.new(opt)
-    return setmetatable({
-        name = opt.name,
-        kind = opt.kind,
-        schema = opt.schema,
-        check_conf_self = opt.check_conf_self,
-    }, mt)
+    return setmetatable(opt, mt)
 end
 
 

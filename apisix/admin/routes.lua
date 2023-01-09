@@ -138,5 +138,5 @@ return resource.new({
     name = "routes",
     kind = "route",
     schema = core.schema.route,
-    check_conf_self = check_conf
+    checker = check_conf
 })
