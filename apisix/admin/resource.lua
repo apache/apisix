@@ -31,7 +31,13 @@ local mt = {
 }
 
 
-local function check_conf_id(id, conf, need_id)
+function _M:check_conf(id, conf, need_id)
+    -- check if missing configurations
+    if not conf then
+        return nil, {error_msg = "missing configurations"}
+    end
+
+    -- check id if need id
     id = id or conf.id
     if need_id and not id then
         return nil, {error_msg = "missing id"}
@@ -44,28 +50,14 @@ local function check_conf_id(id, conf, need_id)
     if need_id and conf.id and tostring(conf.id) ~= tostring(id) then
         return nil, {error_msg = "wrong id"}
     end
+
     conf.id = id
-    return id, nil
-end
-
-
-function _M:check_conf(id, conf, need_id)
-    -- check if missing configurations
-    if not conf then
-        return nil, {error_msg = "missing configurations"}
-    end
-
-    -- check id if need id
-    local ok, err = check_conf_id(id, conf, need_id)
-    if not ok then
-        return nil, err
-    end
 
     core.log.info("schema: ", core.json.delay_encode(self.schema))
     core.log.info("conf  : ", core.json.delay_encode(conf))
 
     -- check schema
-    ok, err = core.schema.check(self.schema, conf)
+    local ok, err = core.schema.check(self.schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end
