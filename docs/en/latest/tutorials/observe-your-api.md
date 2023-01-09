@@ -199,7 +199,7 @@ You can also check two other plugins for metrics:
 
 The third is **tracing** or distributed tracing allows you to understand the life of a request as it traverses your service network and allows you to answer questions like what service has this request touched and how much latency was introduced. Traces enable you to further explore which logs to look at for a particular session or related set of API calls.
 
-[Zipkin](https://zipkin.io/) an open-source distributed tracing system. [APISIX plugin](https://apisix.apache.org/docs/apisix/plugins/zipkin) is supported to collect tracing and report to Zipkin Collector based on [Zipkin API specification](https://zipkin.io/pages/instrumenting.html).
+[Zipkin](https://zipkin.io/) is an open-source distributed tracing system. [APISIX plugin](https://apisix.apache.org/docs/apisix/plugins/zipkin) is supported to collect tracing and report to Zipkin Collector based on [Zipkin API specification](https://zipkin.io/pages/instrumenting.html).
 
 Here’s an example to enable the `zipkin` plugin on the specified route:
 
