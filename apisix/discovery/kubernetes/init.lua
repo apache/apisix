@@ -25,6 +25,7 @@ local os = os
 local error = error
 local pcall = pcall
 local setmetatable = setmetatable
+local is_http = ngx.config.subsystem == "http"
 local process = require("ngx.process")
 local core = require("apisix.core")
 local util = require("apisix.cli.util")
@@ -334,6 +335,10 @@ end
 
 local function single_mode_init(conf)
     local endpoint_dict = ngx.shared.kubernetes
+    if not is_http then
+        endpoint_dict = ngx.shared["kubernetes-stream"]
+    end
+
     if not endpoint_dict then
         error("failed to get lua_shared_dict: ngx.shared.kubernetes, " ..
                 "please check your APISIX version")
@@ -408,6 +413,9 @@ local function multiple_mode_worker_init(confs)
         end
 
         local endpoint_dict = ngx.shared["kubernetes-" .. id]
+        if not is_http then
+            endpoint_dict = ngx.shared["kubernetes-" .. id .. "-stream"]
+        end
         if not endpoint_dict then
             error(string.format("failed to get lua_shared_dict: ngx.shared.kubernetes-%s, ", id) ..
                     "please check your APISIX version")
@@ -434,6 +442,9 @@ local function multiple_mode_init(confs)
         end
 
         local endpoint_dict = ngx.shared["kubernetes-" .. id]
+        if not is_http then
+            endpoint_dict = ngx.shared["kubernetes-" .. id .. "-stream"]
+        end
         if not endpoint_dict then
             error(string.format("failed to get lua_shared_dict: ngx.shared.kubernetes-%s, ", id) ..
                     "please check your APISIX version")
