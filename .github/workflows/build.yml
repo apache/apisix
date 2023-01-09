@@ -1,160 +1,38 @@
-name: CI
+name: Publish Docker image
 
 on:
   push:
-    branches: [master, 'release/**']
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
+    branches: [master]
+    tags:
+      - "v*"
   pull_request:
-    branches: [master, 'release/**']
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
+    branches: [master]
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-          - ubuntu-20.04
-        os_name:
-          - linux_openresty
-          - linux_openresty_1_19
-        test_dir:
-          - t/plugin/[a-k]*
-          - t/plugin/[l-z]*
-          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/deployment t/discovery t/error_page t/misc
-          - t/node t/pubsub t/router t/script t/secret t/stream-node t/utils t/wasm t/xds-library t/xrpc
-
-    runs-on: ${{ matrix.platform }}
-    timeout-minutes: 90
-    env:
-      SERVER_NAME: ${{ matrix.os_name }}
-      OPENRESTY_VERSION: default
-
+  package:
+    name: Package
+    runs-on: ubuntu-latest
     steps:
-      - name: Check out code
-        uses: actions/checkout@v3.2.0
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: Log in to the Container registry
+        uses: docker/login-action@v1.10.0
         with:
-          submodules: recursive
-
-      - name: Setup Go
-        uses: actions/setup-go@v3
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
         with:
-          go-version: "1.17"
-
-      - name: Cache deps
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-deps
-        with:
-          path: deps
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
-
-      - name: Extract branch name
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-        id: branch_env
-        shell: bash
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}      
+      
+      - name: Push to GitHub Packages
         run: |
-          echo "version=${GITHUB_REF##*/}" >>$GITHUB_OUTPUT
-          echo "fullname=apache-apisix-${GITHUB_REF##*/}-src.tgz" >>$GITHUB_OUTPUT
-
-      - name: Extract test type
-        shell: bash
-        id: test_env
-        run: |
-          test_dir="${{ matrix.test_dir }}"
-          if [[ $test_dir =~ 't/plugin' ]]; then
-            echo "type=plugin" >>$GITHUB_OUTPUT
-          fi
-          if [[ $test_dir =~ 't/admin ' ]]; then
-            echo "type=first" >>$GITHUB_OUTPUT
-          fi
-          if [[ $test_dir =~ ' t/xrpc' ]]; then
-            echo "type=last" >>$GITHUB_OUTPUT
-          fi
-
-      - name: Linux launch common services
-        run: |
-          make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
-          sudo ./ci/init-common-test-service.sh
-
-      - name: Create tarball
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-        run: |
-          make compress-tar VERSION=${{ steps.branch_env.outputs.version }}
-
-      - name: Remove source code
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-        run: |
-          rm -rf $(ls -1 --ignore=*.tgz --ignore=ci --ignore=t --ignore=utils --ignore=.github)
-          tar zxvf ${{ steps.branch_env.outputs.fullname }}
-
-      - name: Start CI env (FIRST_TEST)
-        if: steps.test_env.outputs.type == 'first'
-        run: |
-          # launch deps env
-          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
-
-      - name: Start CI env (PLUGIN_TEST)
-        if: steps.test_env.outputs.type == 'plugin'
-        run: |
-          # download keycloak cas provider
-          sudo wget https://github.com/jacekkow/keycloak-protocol-cas/releases/download/18.0.2/keycloak-protocol-cas-18.0.2.jar -O /opt/keycloak-protocol-cas-18.0.2.jar
-
-          ./ci/pod/openfunction/build-function-image.sh
-          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
-          sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
-
-      - name: Start CI env (LAST_TEST)
-        if: steps.test_env.outputs.type == 'last'
-        run: |
-          # generating SSL certificates for Kafka
-          sudo keytool -genkeypair -keyalg RSA -dname "CN=127.0.0.1" -alias 127.0.0.1 -keystore ./ci/pod/kafka/kafka-server/selfsigned.jks -validity 365 -keysize 2048 -storepass changeit
-          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
-          sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
-
-      - name: Start Dubbo Backend
-        if: matrix.os_name == 'linux_openresty' && steps.test_env.outputs.type == 'plugin'
-        run: |
-          sudo apt install -y maven
-          cd t/lib/dubbo-backend
-          mvn package
-          cd dubbo-backend-provider/target
-          java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java.log &
-
-      - name: Build xDS library
-        if: steps.test_env.outputs.type == 'last'
-        run: |
-          cd t/xds-library
-          go build -o libxds.so -buildmode=c-shared main.go export.go
-
-      - name: Build wasm code
-        if: matrix.os_name == 'linux_openresty' && steps.test_env.outputs.type == 'last'
-        run: |
-          export TINYGO_VER=0.20.0
-          wget https://github.com/tinygo-org/tinygo/releases/download/v${TINYGO_VER}/tinygo_${TINYGO_VER}_amd64.deb 2>/dev/null
-          sudo dpkg -i tinygo_${TINYGO_VER}_amd64.deb
-          cd t/wasm && find . -type f -name "*.go" | xargs -Ip tinygo build -o p.wasm -scheduler=none -target=wasi p
-
-      - name: Linux Before install
-        run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
-
-      - name: Linux Install
-        run: |
-          sudo --preserve-env=OPENRESTY_VERSION \
-          ./ci/${{ matrix.os_name }}_runner.sh do_install
-
-      - name: Linux Script
-        env:
-          TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
-        run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
+          docker build -t ghcr.io/unifra20/apisix:${{ steps.meta.outputs.tags }} -f docker/Dockerfile .
+          docker push ghcr.io/unifra20/apisix:${{ steps.meta.outputs.tags }}

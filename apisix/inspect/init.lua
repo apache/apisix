@@ -65,7 +65,7 @@ local function setup_hooks(file)
         for _, hook in ipairs(dbg.hooks()) do
             table_insert(hooks, hook.key)
         end
-        core.log.info("set hooks: err: ", err, ", hooks: ", core.json.delay_encode(hooks))
+        core.log.warn("set hooks: err: ", err, ", hooks: ", core.json.delay_encode(hooks))
     end
 end
 
