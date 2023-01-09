@@ -82,10 +82,13 @@ end
 
 
 local function parse_instance(node)
-    local service_name, host, port = node.Service, node.Address, node.Port
+    local service_name, host, port = node.ServiceName, node.ServiceAddress, node.ServicePort
     -- if exist, skip special service name
     if service_name and skip_service_map[service_name] then
         return false
+    end
+    if not host then
+        host = node.Address
     end
     -- "" means metadata of the service
     return true, host, tonumber(port), "", service_name
@@ -95,7 +98,7 @@ end
 local function update_all_services(server_name_prefix, data)
     local up_services = core.table.new(0, #data)
     local weight = default_weight
-    for _, node in pairs(data) do
+    for  _, node in ipairs(data) do
         local succ, ip, port, metadata, server_name = parse_instance(node)
         if succ then
             local nodes = up_services[server_name]
@@ -243,46 +246,43 @@ function _M.connect(premature, consul_server, retry_delay)
     -- if current index different last index then update service
     if consul_server.index ~= watch_result.headers['X-Consul-Index'] then
 
-        -- fetch all services info
-        local result, err = consul_client:get(consul_server.consul_sub_url)
+        for service, _ in pairs(watch_result.body) do
+            -- get node from service
+            local svc_url = consul_server.consul_sub_url .. "/" .. service
+            local result, err = consul_client:get(svc_url)
+            local error_info = (err ~= nil and err) or
+                    ((result ~= nil and result.status ~= 200) and result.status)
+            if error_info then
+                log.error("connect consul: ", consul_server.consul_server_url,
+                        " by sub url: ", consul_server.consul_sub_url,
+                        ", got result: ", json_delay_encode(result, true),
+                        ", with error: ", error_info)
+                goto CONTINUE
+            end
 
-        local error_info = (err ~= nil and err) or
-         ((result ~= nil and result.status ~= 200) and result.status)
+            -- decode body, decode json, update service, error handling
+            if result.body then
+                log.notice("server_name: ", consul_server.consul_server_url,
+                        ", header: ", json_delay_encode(result.headers, true),
+                        ", body: ", json_delay_encode(result.body, true))
+                update_all_services(consul_server.consul_server_url, result.body)
+                --update events
+                local ok, post_err = events.post(events_list._source, events_list.updating, all_services)
+                if not ok then
+                    log.error("post_event failure with ", events_list._source,
+                            ", update all services error: ", post_err)
+                end
 
-        if error_info then
-            log.error("connect consul: ", consul_server.consul_server_url,
-                    " by sub url: ", consul_server.consul_sub_url,
-                    ", got result: ", json_delay_encode(result, true),
-                    ", with error: ", error_info)
-
-            retry_delay = get_retry_delay(retry_delay)
-            log.warn("retry connecting consul after ", retry_delay, " seconds")
-            core_sleep(retry_delay)
-
-            goto ERR
+                if dump_params then
+                    ngx_timer_at(0, write_dump_services)
+                end
+            end
         end
 
         consul_server.index = watch_result.headers['X-Consul-Index']
         -- only long connect type use index
         if consul_server.keepalive then
             consul_server.default_args.index = watch_result.headers['X-Consul-Index']
-        end
-        -- decode body, decode json, update service, error handling
-        if result.body then
-            log.notice("server_name: ", consul_server.consul_server_url,
-                    ", header: ", json_delay_encode(result.headers, true),
-                    ", body: ", json_delay_encode(result.body, true))
-            update_all_services(consul_server.consul_server_url, result.body)
-            --update events
-            local ok, err = events.post(events_list._source, events_list.updating, all_services)
-            if not ok then
-                log.error("post_event failure with ", events_list._source,
-                        ", update all services error: ", err)
-            end
-
-            if dump_params then
-                ngx_timer_at(0, write_dump_services)
-            end
         end
     end
 
@@ -295,6 +295,8 @@ function _M.connect(premature, consul_server, retry_delay)
             return
         end
     end
+    :: CONTINUE ::
+    log.info()
 end
 
 
@@ -324,7 +326,7 @@ local function format_consul_params(consul_conf)
             port = port,
             connect_timeout = consul_conf.timeout.connect,
             read_timeout = consul_conf.timeout.read,
-            consul_sub_url = "/agent/services",
+            consul_sub_url = "/catalog/service",
             consul_watch_sub_url = "/catalog/services",
             consul_server_url = v .. "/v1",
             weight = consul_conf.weight,
