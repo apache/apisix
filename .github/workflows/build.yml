@@ -6,7 +6,7 @@ on:
       - '*'
 
 env:
-  REGISTRY: ghcr.io
+  REGISTRY: ghcr.io/unifra20/apisix
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
