@@ -67,7 +67,7 @@ function _M.http_balancer_phase()
     local ok, err = balancer.set_current_peer(ngx.ctx.ip, ngx.ctx.port)
     if not ok then
         ngx.log(ngx.ERR, "failed to set the current peer: ", err)
-        return ngx.exit(core.ctx, 500)
+        return ngx.exit(500)
     end
 end
 
