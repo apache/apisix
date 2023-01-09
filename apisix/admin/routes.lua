@@ -25,28 +25,6 @@ local loadstring = loadstring
 
 
 local function check_conf(id, conf, need_id)
-    if not conf then
-        return nil, {error_msg = "missing configurations"}
-    end
-
-    id = id or conf.id
-    if need_id and not id then
-        return nil, {error_msg = "missing route id"}
-    end
-
-    if not need_id and id then
-        return nil, {error_msg = "wrong route id, do not need it"}
-    end
-
-    if need_id and conf.id and tostring(conf.id) ~= tostring(id) then
-        return nil, {error_msg = "wrong route id"}
-    end
-
-    conf.id = id
-
-    core.log.info("schema: ", core.json.delay_encode(core.schema.route))
-    core.log.info("conf  : ", core.json.delay_encode(conf))
-
     if conf.host and conf.hosts then
         return nil, {error_msg = "only one of host or hosts is allowed"}
     end
@@ -54,11 +32,6 @@ local function check_conf(id, conf, need_id)
     if conf.remote_addr and conf.remote_addrs then
         return nil, {error_msg = "only one of remote_addr or remote_addrs is "
                                  .. "allowed"}
-    end
-
-    local ok, err = core.schema.check(core.schema.route, conf)
-    if not ok then
-        return nil, {error_msg = "invalid configuration: " .. err}
     end
 
     local upstream_conf = conf.upstream
@@ -162,4 +135,9 @@ local function check_conf(id, conf, need_id)
 end
 
 
-return resource.new("routes", "route", check_conf)
+return resource.new({
+    name = "routes",
+    kind = "route",
+    schema = core.schema.route,
+    check_conf_self = check_conf
+})

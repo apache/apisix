@@ -30,6 +30,47 @@ local mt = {
 }
 
 
+local function check_conf_id(id, conf, need_id)
+    id = id or conf.id
+    if need_id and not id then
+        return nil, {error_msg = "missing id"}
+    end
+
+    if not need_id and id then
+        return nil, {error_msg = "wrong id, do not need it"}
+    end
+
+    if need_id and conf.id and tostring(conf.id) ~= tostring(id) then
+        return nil, {error_msg = "wrong id"}
+    end
+
+    conf.id = id
+end
+
+
+function _M:check_conf(id, conf, need_id)
+    -- check if missing configurations
+    if not conf then
+        return nil, {error_msg = "missing configurations"}
+    end
+
+    -- check id if need id
+    check_conf_id(id, conf, need_id)
+
+    core.log.info("schema: ", core.json.delay_encode(self.schema))
+    core.log.info("conf  : ", core.json.delay_encode(conf))
+
+    -- check schema
+    local ok, err = core.schema.check(self.schema, conf)
+    if not ok then
+        return nil, {error_msg = "invalid configuration: " .. err}
+    end
+
+    -- check self validation
+    self.check_conf_self(id, conf, need_id)
+end
+
+
 function _M:get(id)
     local key = "/" .. self.name
     if id then
@@ -142,7 +183,7 @@ function _M:patch(id, conf, sub_path, args)
         local code, err, node_val = core.table.patch(node_value, sub_path, conf)
         node_value = node_val
         if code then
-            return code, err
+            return code, {error_msg = err}
         end
         utils.inject_timestamp(node_value, nil, true)
     else
@@ -167,11 +208,12 @@ function _M:patch(id, conf, sub_path, args)
 end
 
 
-function _M.new(name, kind, check_conf)
+function _M.new(opt)
     return setmetatable({
-        name = name,
-        kind = kind,
-        check_conf = check_conf
+        name = opt.name,
+        kind = opt.kind,
+        schema = opt.schema,
+        check_conf_self = opt.check_conf_self,
     }, mt)
 end
 
