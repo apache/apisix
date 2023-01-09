@@ -8,6 +8,10 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
   package:
     name: Package
@@ -18,10 +22,17 @@ jobs:
       - name: Log in to the Container registry
         uses: docker/login-action@v1.10.0
         with:
-          registry: ghcr.io/unifra20/apisix
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@98669ae865ea3cffbcbaa878cf57c20bbf1c6c38
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}      
+      
       - name: Push to GitHub Packages
         run: |
-          docker build -t ghcr.io/unifra20/apisix:${{ github.sha }} -f docker/Dockerfile .
-          docker push ghcr.io/unifra20/apisix:${{ github.sha }}
+          docker build -t ghcr.io/unifra20/apisix:${{ steps.meta.outputs.tags }} -f docker/Dockerfile .
+          docker push ghcr.io/unifra20/apisix:${{ steps.meta.outputs.tags }}
