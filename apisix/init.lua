@@ -267,11 +267,6 @@ local function set_upstream_headers(api_ctx, picked_server)
         api_ctx.var.var_x_forwarded_host = x_forwarded_host
     end
 
-    local x_forwarded_for = api_ctx.var.proxy_add_x_forwarded_for
-    if x_forwarded_for then
-        api_ctx.var.var_x_forwarded_for = x_forwarded_for
-    end
-
     local port = api_ctx.var.http_x_forwarded_port
     if port then
         api_ctx.var.var_x_forwarded_port = port
