@@ -16,6 +16,11 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
+        
+      - name: Get version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+        
       - name: Log in to the Container registry
         uses: docker/login-action@v1.10.0
         with:
