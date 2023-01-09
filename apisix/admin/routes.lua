@@ -24,8 +24,6 @@ local loadstring = loadstring
 
 
 local function check_conf(id, conf, need_id)
-    local ok, err
-
     if conf.host and conf.hosts then
         return nil, {error_msg = "only one of host or hosts is allowed"}
     end
