@@ -34,5 +34,5 @@ jobs:
       
       - name: Push to GitHub Packages
         run: |
-          docker build -t ghcr.io/unifra20/apisix:${{ steps.meta.outputs.tags }} -f docker/Dockerfile .
-          docker push ghcr.io/unifra20/apisix:${{ steps.meta.outputs.tags }}
+          docker build -t ${{ steps.meta.outputs.tags }} -f docker/Dockerfile .
+          docker push ${{ steps.meta.outputs.tags }}
