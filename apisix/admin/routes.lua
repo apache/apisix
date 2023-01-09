@@ -19,12 +19,13 @@ local core = require("apisix.core")
 local apisix_upstream = require("apisix.upstream")
 local resource = require("apisix.admin.resource")
 local schema_plugin = require("apisix.admin.plugins").check_schema
-local tostring = tostring
 local type = type
 local loadstring = loadstring
 
 
 local function check_conf(id, conf, need_id)
+    local ok, err
+
     if conf.host and conf.hosts then
         return nil, {error_msg = "only one of host or hosts is allowed"}
     end
@@ -101,7 +102,7 @@ local function check_conf(id, conf, need_id)
     end
 
     if conf.vars then
-        ok, err = expr.new(conf.vars)
+        local ok, err = expr.new(conf.vars)
         if not ok then
             return nil, {error_msg = "failed to validate the 'vars' expression: " .. err}
         end
