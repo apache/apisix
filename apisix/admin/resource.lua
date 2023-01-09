@@ -53,15 +53,6 @@ function _M:check_conf(id, conf, need_id)
 
     conf.id = id
 
-    core.log.info("schema: ", core.json.delay_encode(self.schema))
-    core.log.info("conf  : ", core.json.delay_encode(conf))
-
-    -- check schema
-    local ok, err = core.schema.check(self.schema, conf)
-    if not ok then
-        return nil, {error_msg = "invalid configuration: " .. err}
-    end
-
     -- check the resource own rules
     return self.checker(id, conf, need_id)
 end

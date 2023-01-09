@@ -24,6 +24,9 @@ local loadstring = loadstring
 
 
 local function check_conf(id, conf, need_id)
+    core.log.info("schema: ", core.json.delay_encode(core.schema.route))
+    core.log.info("conf  : ", core.json.delay_encode(conf))
+
     if conf.host and conf.hosts then
         return nil, {error_msg = "only one of host or hosts is allowed"}
     end
@@ -31,6 +34,11 @@ local function check_conf(id, conf, need_id)
     if conf.remote_addr and conf.remote_addrs then
         return nil, {error_msg = "only one of remote_addr or remote_addrs is "
                                  .. "allowed"}
+    end
+
+    local ok, err = core.schema.check(core.schema.route, conf)
+    if not ok then
+        return nil, {error_msg = "invalid configuration: " .. err}
     end
 
     local upstream_conf = conf.upstream
@@ -100,7 +108,7 @@ local function check_conf(id, conf, need_id)
     end
 
     if conf.vars then
-        local ok, err = expr.new(conf.vars)
+        ok, err = expr.new(conf.vars)
         if not ok then
             return nil, {error_msg = "failed to validate the 'vars' expression: " .. err}
         end
@@ -137,6 +145,5 @@ end
 return resource.new({
     name = "routes",
     kind = "route",
-    schema = core.schema.route,
     checker = check_conf
 })
