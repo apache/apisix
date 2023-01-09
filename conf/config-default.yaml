@@ -420,7 +420,8 @@ graphql:
 #ext-plugin:
   #cmd: ["ls", "-l"]
 
-plugins:                          # plugin list (sorted by priority)
+plugins:      # plugin list (sorted by priority)
+  - custom-ctx-var                 # priority: 24000
   - real-ip                        # priority: 23000
   - ai                             # priority: 22900
   - client-control                 # priority: 22000
