@@ -258,6 +258,13 @@ function _M.collect_body(conf, ctx)
                 return
             end
             ctx.resp_body = final_body
+            local resp_headers = ngx.resp.get_headers()
+            local encoding = resp_headers["Content-Encoding"]
+            if encoding == "gzip" then
+                ctx.var.resp_body = "binary"
+            else
+                ctx.var.resp_body = final_body
+            end
         end
     end
 end
