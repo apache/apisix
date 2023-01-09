@@ -44,8 +44,8 @@ local function check_conf_id(id, conf, need_id)
     if need_id and conf.id and tostring(conf.id) ~= tostring(id) then
         return nil, {error_msg = "wrong id"}
     end
-
     conf.id = id
+    return id, nil
 end
 
 
@@ -56,19 +56,22 @@ function _M:check_conf(id, conf, need_id)
     end
 
     -- check id if need id
-    check_conf_id(id, conf, need_id)
+    local ok, err = check_conf_id(id, conf, need_id)
+    if not ok then
+        return nil, err
+    end
 
     core.log.info("schema: ", core.json.delay_encode(self.schema))
     core.log.info("conf  : ", core.json.delay_encode(conf))
 
     -- check schema
-    local ok, err = core.schema.check(self.schema, conf)
+    ok, err = core.schema.check(self.schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end
 
     -- check self validation
-    self.check_conf_self(id, conf, need_id)
+    return self.check_conf_self(id, conf, need_id)
 end
 
 
@@ -90,7 +93,7 @@ end
 
 
 function _M:post(id, conf, sub_path, args)
-    local id, err = self.check_conf(id, conf, false)
+    local id, err = self:check_conf(id, conf, false)
     if not id then
         return 400, err
     end
@@ -108,7 +111,7 @@ end
 
 
 function _M:put(id, conf, sub_path, args)
-    local id, err = self.check_conf(id, conf, true)
+    local id, err = self:check_conf(id, conf, true)
     if not id then
         return 400, err
     end
@@ -194,7 +197,7 @@ function _M:patch(id, conf, sub_path, args)
 
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 
-    local id, err = self.check_conf(id, node_value, true)
+    local id, err = self:check_conf(id, node_value, true)
     if not id then
         return 400, err
     end
