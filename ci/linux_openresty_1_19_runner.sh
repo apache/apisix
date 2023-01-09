@@ -17,5 +17,5 @@
 #
 
 
-export OPENRESTY_VERSION=1.19.3.2
+export OPENRESTY_VERSION=1.19.9.1
 . ./ci/linux_openresty_common_runner.sh
