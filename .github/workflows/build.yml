@@ -2,11 +2,11 @@ name: Publish Docker image
 
 on:
   push:
-    branches: [master,dev]
+    branches: [master]
     tags:
       - "v*"
   pull_request:
-    branches: [master,dev]
+    branches: [master]
 
 env:
   REGISTRY: ghcr.io
