@@ -457,6 +457,7 @@ plugins:      # plugin list (sorted by priority)
   - forward-auth                   # priority: 2002
   - opa                            # priority: 2001
   - authz-keycloak                 # priority: 2000
+  - whitelist                      # priority: 1900
   #- error-log-logger              # priority: 1091
   - proxy-mirror                   # priority: 1010
   - proxy-cache                    # priority: 1009
