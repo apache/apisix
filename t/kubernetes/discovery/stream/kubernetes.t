@@ -319,7 +319,6 @@ Content-type: application/json
 
 === TEST 2: use default parameters
 --- yaml_config eval: $::yaml_config
---- extra_stream_config eval: $::yaml_config
 --- apisix_yaml
 stream_routes:
   -
