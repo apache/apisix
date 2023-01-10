@@ -2,16 +2,8 @@ local core = require("apisix.core")
 
 local schema = {
     type = "object",
-    properties = {
-        vars = {
-            type = "object",
-            description = "Key-value pairs for the variables to register",
-            additionalProperties = {
-                type = "string"
-            }
-        }
-    },
-    required = { "vars" },
+    description = "Key-value pairs for the variables to register",
+    additionalProperties = true
 }
 
 local plugin_name = "custom-ctx-var"
@@ -33,9 +25,9 @@ function _M.check_schema(conf)
 end
 
 function _M.access(conf, ctx)
-    local vars = conf.vars
-    for k, v in pairs(vars) do
-        ctx.var[k] = v
+    for k, v in pairs(conf) do
+        -- ctx.var[k] = v
+        core.ctx.register_var(k, function() return v end)
     end
 end
 
