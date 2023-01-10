@@ -19,7 +19,6 @@ local core            = require("apisix.core")
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
-local plugin          = require("apisix.plugin")
 
 local ngx             = ngx
 local str_format      = core.string.format
@@ -98,19 +97,7 @@ end
 
 
 local function get_logger_entry(conf, ctx)
-    local entry
-    local metadata = plugin.plugin_metadata(plugin_name)
-    core.log.info("metadata: ", core.json.delay_encode(metadata))
-    if metadata and metadata.value.log_format
-        and core.table.nkeys(metadata.value.log_format) > 0
-    then
-        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
-        core.log.info("custom log format entry: ", core.json.delay_encode(entry))
-    else
-        entry = log_util.get_full_log(ngx, conf)
-        core.log.info("full log entry: ", core.json.delay_encode(entry))
-    end
-
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
     return core.json.encode({
             create = {
                 _index = conf.field.index,
