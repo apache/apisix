@@ -158,7 +158,7 @@ local function run()
         if not local_conf.apisix.stream_proxy then
             core.log.warn("stream mode is disabled, can not add any stream ",
                           "routes")
-            core.response.exit(400, {error_msg = "stream mode is disabled, " ..
+            core.response.exit(core.ctx, 400, {error_msg = "stream mode is disabled, " ..
                                "can not add stream routes"})
         end
     end
@@ -193,7 +193,7 @@ local function run()
     local uri_args = ngx.req.get_uri_args() or {}
     if uri_args.ttl then
         if not tonumber(uri_args.ttl) then
-            core.response.exit(400, {error_msg = "invalid argument ttl: "
+            core.response.exit(core.ctx, 400, {error_msg = "invalid argument ttl: "
                                                  .. "should be a number"})
         end
     end
