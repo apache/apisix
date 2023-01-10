@@ -23,10 +23,7 @@ local type = type
 local loadstring = loadstring
 
 
-local function check_conf(id, conf, need_id)
-    core.log.info("schema: ", core.json.delay_encode(core.schema.route))
-    core.log.info("conf  : ", core.json.delay_encode(conf))
-
+local function check_conf(id, conf, need_id, schema)
     if conf.host and conf.hosts then
         return nil, {error_msg = "only one of host or hosts is allowed"}
     end
@@ -36,7 +33,7 @@ local function check_conf(id, conf, need_id)
                                  .. "allowed"}
     end
 
-    local ok, err = core.schema.check(core.schema.route, conf)
+    local ok, err = core.schema.check(schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end
@@ -145,5 +142,6 @@ end
 return resource.new({
     name = "routes",
     kind = "route",
+    schema = core.schema.route,
     checker = check_conf
 })

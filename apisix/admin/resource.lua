@@ -53,8 +53,11 @@ function _M:check_conf(id, conf, need_id)
 
     conf.id = id
 
+    core.log.info("schema: ", core.json.delay_encode(self.schema))
+    core.log.info("conf  : ", core.json.delay_encode(conf))
+
     -- check the resource own rules
-    return self.checker(id, conf, need_id)
+    return self.checker(id, conf, need_id, self.schema)
 end
 
 
