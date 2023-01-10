@@ -96,6 +96,7 @@ discovery:
       - "http://127.0.0.1:8600"
     skip_services:
       - "service_c"
+      - "consul"
     timeout:
       connect: 1000
       read: 1000

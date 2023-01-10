@@ -213,6 +213,12 @@ function _M.connect(premature, consul_server, retry_delay)
     -- if current index different last index then update service
     if consul_server.index ~= watch_result.headers['X-Consul-Index'] then
         local up_services = core.table.new(0, #watch_result.body)
+        local consul_client_svc = resty_consul:new({
+            host = consul_server.host,
+            port = consul_server.port,
+            connect_timeout = consul_server.connect_timeout,
+            read_timeout = consul_server.read_timeout,
+        })
         for service_name, _ in pairs(watch_result.body) do
             -- check is skip service
             if skip_service_map[service_name] then
@@ -220,11 +226,12 @@ function _M.connect(premature, consul_server, retry_delay)
             end
             -- get node from service
             local svc_url = consul_server.consul_sub_url .. "/" .. service_name
-            local result, err = consul_client:get(svc_url)
+            local result, err = consul_client_svc:get(svc_url)
             local error_info = (err ~= nil and err) or
                     ((result ~= nil and result.status ~= 200) and result.status)
             if error_info then
-                log.error("connect consul: ", consul_server.consul_server_url, " by svc url: ", svc_url, ", with error: ", error_info)
+                log.error("connect consul: ", consul_server.consul_server_url,
+                        " by svc url: ", svc_url, ", with error: ", error_info)
                 goto CONTINUE
             end
 
@@ -375,8 +382,8 @@ function _M.init_worker()
 
     consul_services = core.table.new(0, 1)
     -- success or failure
-    for i, server in ipairs(consul_servers_list) do
-        local ok, err = ngx_timer_at(i, _M.connect, server)
+    for _, server in ipairs(consul_servers_list) do
+        local ok, err = ngx_timer_at(0, _M.connect, server)
         if not ok then
             error("create consul got error: " .. err)
         end

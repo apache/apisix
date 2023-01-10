@@ -75,9 +75,11 @@ discovery:
   consul:
     servers:
       - "http://127.0.0.1:8500"
+    skip_services:
+      - "consul"
     dump:
       path: "consul.dump"
-      load_on_init: true
+      load_on_init: false
 --- config
     location /t {
         content_by_lua_block {
@@ -112,6 +114,8 @@ discovery:
   consul:
     servers:
       - "http://127.0.0.1:8500"
+    skip_services:
+      - "consul"
     dump:
       path: "/tmp/consul.dump"
       load_on_init: false
@@ -161,6 +165,8 @@ discovery:
   consul:
     servers:
       - "http://127.0.0.1:38500"
+    skip_services:
+      - "consul"
     dump:
       path: "/tmp/consul.dump"
       load_on_init: true
@@ -212,6 +218,8 @@ discovery:
   consul:
     servers:
       - "http://127.0.0.1:38500"
+    skip_services:
+      - "consul"
     dump:
       path: "/tmp/consul.dump"
       load_on_init: true
@@ -277,6 +285,8 @@ discovery:
   consul:
     servers:
       - "http://127.0.0.1:38500"
+    skip_services:
+      - "consul"
     dump:
       path: "/tmp/consul.dump"
       load_on_init: true
@@ -315,6 +325,8 @@ discovery:
   consul:
     servers:
       - "http://127.0.0.1:38500"
+    skip_services:
+      - "consul"
     dump:
       path: "/tmp/consul.dump"
       load_on_init: true
@@ -362,6 +374,8 @@ discovery:
   consul:
     servers:
       - "http://127.0.0.1:38500"
+    skip_services:
+      - "consul"
     dump:
       path: "/tmp/consul.dump"
 #END
@@ -382,6 +396,8 @@ discovery:
   consul:
     servers:
       - "http://127.0.0.1:38500"
+    skip_services:
+      - "consul"
 #END
 --- request
 GET /v1/discovery/consul/show_dump_file
@@ -430,6 +446,8 @@ discovery:
     servers:
       - "http://127.0.0.1:8500"
       - "http://127.0.0.1:8600"
+    skip_services:
+      - "consul"
     dump:
       path: "consul.dump"
       load_on_init: false
