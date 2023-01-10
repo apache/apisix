@@ -408,7 +408,8 @@ local function wolf_rbac_login()
     local wolf_token = body.data.token
 
     local rbac_token = create_rbac_token(appid, wolf_token)
-    core.response.exit(core.ctx, 200, success_response(nil, {rbac_token = rbac_token, user_info = userInfo}))
+    core.response.exit(core.ctx, 200,
+                       success_response(nil, {rbac_token = rbac_token, user_info = userInfo}))
 end
 
 local function get_wolf_token(ctx)
