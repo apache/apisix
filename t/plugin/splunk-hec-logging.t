@@ -192,3 +192,112 @@ GET /hello
 --- wait: 2
 --- response_body
 hello world
+
+
+
+=== TEST 6: bad custom log format
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/splunk-hec-logging',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "log_format": "'$host' '$time_iso8601'"
+                 }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"log_format\" validation failed: wrong type: expected object, got string"}
+
+
+
+=== TEST 7: set route to test custom log format
+--- config
+    location /t {
+        content_by_lua_block {
+            local config = {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["splunk-hec-logging"] = {
+                        endpoint = {
+                            uri = "http://127.0.0.1:1980/splunk_hec_logging",
+                            token = "BD274822-96AA-4DA6-90EC-18940FB2414C"
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1
+                    }
+                }
+            }
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/plugin_metadata/splunk-hec-logging',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "log_format": {
+                            "host": "$host",
+                            "@timestamp": "$time_iso8601",
+                            "client_ip": "$remote_addr"
+                        }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: hit
+--- extra_init_by_lua
+    local core = require("apisix.core")
+    local decode = require("toolkit.json").decode
+    local up = require("lib.server")
+    up.splunk_hec_logging = function()
+        ngx.log(ngx.WARN, "the mock backend is hit")
+
+        ngx.req.read_body()
+        local data = ngx.req.get_body_data()
+        ngx.log(ngx.WARN, data)
+        data = decode(data)
+        assert(data[1].event.client_ip == "127.0.0.1")
+        assert(data[1].source == "apache-apisix-splunk-hec-logging")
+        assert(data[1].host == core.utils.gethostname())
+        ngx.say('{}')
+    end
+--- request
+GET /hello
+--- wait: 2
+--- response_body
+hello world
+--- error_log
+the mock backend is hit
+--- no_error_log
+[error]
