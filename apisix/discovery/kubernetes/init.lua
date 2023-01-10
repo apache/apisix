@@ -332,12 +332,17 @@ local function start_fetch(handle)
     ngx.timer.at(0, timer_runner)
 end
 
+local function get_endpoint_dict(shm)
+    if not is_http then
+        shm = shm .. "-stream"
+    end
+
+    return ngx.shared[shm]
+end
+
 
 local function single_mode_init(conf)
-    local endpoint_dict = ngx.shared.kubernetes
-    if not is_http then
-        endpoint_dict = ngx.shared["kubernetes-stream"]
-    end
+    local endpoint_dict = get_endpoint_dict("kubernetes")
 
     if not endpoint_dict then
         error("failed to get lua_shared_dict: ngx.shared.kubernetes, " ..
@@ -412,10 +417,7 @@ local function multiple_mode_worker_init(confs)
             error("duplicate id value")
         end
 
-        local endpoint_dict = ngx.shared["kubernetes-" .. id]
-        if not is_http then
-            endpoint_dict = ngx.shared["kubernetes-" .. id .. "-stream"]
-        end
+        local endpoint_dict = get_endpoint_dict("kubernetes-" .. id)
         if not endpoint_dict then
             error(string.format("failed to get lua_shared_dict: ngx.shared.kubernetes-%s, ", id) ..
                     "please check your APISIX version")
@@ -441,10 +443,7 @@ local function multiple_mode_init(confs)
             error("duplicate id value")
         end
 
-        local endpoint_dict = ngx.shared["kubernetes-" .. id]
-        if not is_http then
-            endpoint_dict = ngx.shared["kubernetes-" .. id .. "-stream"]
-        end
+        local endpoint_dict = get_endpoint_dict("kubernetes-" .. id)
         if not endpoint_dict then
             error(string.format("failed to get lua_shared_dict: ngx.shared.kubernetes-%s, ", id) ..
                     "please check your APISIX version")
