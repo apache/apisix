@@ -81,6 +81,23 @@ function _M.nodes(service_name)
 end
 
 
+local function update_all_services(consul_server_url, up_services)
+    -- clean old unused data
+    local old_services = consul_services[consul_server_url] or {}
+    for k, _ in pairs(old_services) do
+        all_services[k] = nil
+    end
+    core.table.clear(old_services)
+
+    for k, v in pairs(up_services) do
+        all_services[k] = v
+    end
+    consul_services[consul_server_url] = up_services
+
+    log.info("update all services: ", json_delay_encode(all_services, true))
+end
+
+
 local function read_dump_services()
     local data, err = util.read_file(dump_params.path)
     if not data then
@@ -191,8 +208,7 @@ function _M.connect(premature, consul_server, retry_delay)
     log.info("connect consul: ", consul_server.consul_server_url,
             ", watch_result status: ", watch_result.status,
             ", watch_result.headers.index: ", watch_result.headers['X-Consul-Index'],
-            ", consul_server.index: ", consul_server.index,
-            ", consul_server: ", json_delay_encode(consul_server, true))
+            ", consul_server.index: ", consul_server.index)
 
     -- if current index different last index then update service
     if consul_server.index ~= watch_result.headers['X-Consul-Index'] then
@@ -202,23 +218,19 @@ function _M.connect(premature, consul_server, retry_delay)
             if skip_service_map[service_name] then
                 goto CONTINUE
             end
-
             -- get node from service
             local svc_url = consul_server.consul_sub_url .. "/" .. service_name
             local result, err = consul_client:get(svc_url)
             local error_info = (err ~= nil and err) or
                     ((result ~= nil and result.status ~= 200) and result.status)
             if error_info then
-                log.error("connect consul: ", consul_server.consul_server_url,
-                        " by sub url: ", consul_server.consul_sub_url,
-                        ", got result: ", json_delay_encode(result, true),
-                        ", with error: ", error_info)
+                log.error("connect consul: ", consul_server.consul_server_url, " by svc url: ", svc_url, ", with error: ", error_info)
                 goto CONTINUE
             end
 
             -- decode body, decode json, update service, error handling
             if result.body then
-                log.notice("server_name: ", consul_server.consul_server_url,
+                log.notice("service url: ", svc_url,
                         ", header: ", json_delay_encode(result.headers, true),
                         ", body: ", json_delay_encode(result.body, true))
                 -- add services to table
@@ -245,19 +257,7 @@ function _M.connect(premature, consul_server, retry_delay)
             :: CONTINUE ::
         end
 
-        -- clean old unused data
-        local old_services = consul_services[consul_server.consul_server_url] or {}
-        for k, _ in pairs(old_services) do
-            all_services[k] = nil
-        end
-        core.table.clear(old_services)
-
-        for k, v in pairs(up_services) do
-            all_services[k] = v
-        end
-        consul_services[consul_server.consul_server_url] = up_services
-
-        log.info("update all services: ", json_delay_encode(all_services, true))
+        update_all_services(consul_server.consul_server_url, up_services)
 
         --update events
         local ok, post_err = events.post(events_list._source, events_list.updating, all_services)
@@ -369,14 +369,14 @@ function _M.init_worker()
 
     local consul_servers_list, err = format_consul_params(consul_conf)
     if err then
-        error(err)
+        error("format consul config got error" .. err)
     end
     log.info("consul_server_list: ", json_delay_encode(consul_servers_list, true))
 
     consul_services = core.table.new(0, 1)
     -- success or failure
-    for _, server in ipairs(consul_servers_list) do
-        local ok, err = ngx_timer_at(0, _M.connect, server)
+    for i, server in ipairs(consul_servers_list) do
+        local ok, err = ngx_timer_at(i, _M.connect, server)
         if not ok then
             error("create consul got error: " .. err)
         end
