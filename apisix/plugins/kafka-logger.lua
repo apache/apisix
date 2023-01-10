@@ -18,14 +18,12 @@ local core     = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local producer = require ("resty.kafka.producer")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
-local plugin = require("apisix.plugin")
 
 local math     = math
 local pairs    = pairs
 local type     = type
 local plugin_name = "kafka-logger"
 local batch_processor_manager = bp_manager_mod.new("kafka logger")
-local ngx = ngx
 
 local lrucache = core.lrucache.new({
     type = "plugin",
@@ -220,17 +218,7 @@ function _M.log(conf, ctx)
         -- core.log.info("origin entry: ", entry)
 
     else
-        local metadata = plugin.plugin_metadata(plugin_name)
-        core.log.info("metadata: ", core.json.delay_encode(metadata))
-        if metadata and metadata.value.log_format
-          and core.table.nkeys(metadata.value.log_format) > 0
-        then
-            entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
-            core.log.info("custom log format entry: ", core.json.delay_encode(entry))
-        else
-            entry = log_util.get_full_log(ngx, conf)
-            core.log.info("full log entry: ", core.json.delay_encode(entry))
-        end
+        entry = log_util.get_log_entry(plugin_name, conf, ctx)
     end
 
     if batch_processor_manager:add_entry(conf, entry) then
