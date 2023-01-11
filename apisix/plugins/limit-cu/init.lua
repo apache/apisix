@@ -86,7 +86,7 @@ local policy_to_additional_properties = {
 local schema = {
     type = "object",
     properties = {
-        count = { type = "integer", exclusiveMinimum = 0 },
+        count = { type = "string", default = "$seconds_quota" },
         time_window = { type = "integer", exclusiveMinimum = 0 },
         group = { type = "string" },
         key = { type = "string", default = "remote_addr" },
@@ -179,24 +179,31 @@ function _M.check_schema(conf)
         end
     end
 
+    if conf.count then
+        if conf.count:byte(1, 1) ~= string.byte("$") then
+            return false, "count is a variable, it must start with $"
+        end
+    end
+
     return true
 end
 
-local function create_limit_obj(conf)
+local function create_limit_obj(conf, ctx)
     core.log.info("create new limit-cu plugin instance")
+    local count = tonumber(ctx.var[conf.count:sub(2)])
 
     if not conf.policy or conf.policy == "local" then
-        return limit_local_new("plugin-" .. plugin_name, conf.count,
+        return limit_local_new("plugin-" .. plugin_name, count,
             conf.time_window)
     end
 
     if conf.policy == "redis" then
         return limit_redis_new("plugin-" .. plugin_name,
-            conf.count, conf.time_window, conf)
+            count, conf.time_window, conf)
     end
 
     if conf.policy == "redis-cluster" then
-        return limit_redis_cluster_new("plugin-" .. plugin_name, conf.count,
+        return limit_redis_cluster_new("plugin-" .. plugin_name, count,
             conf.time_window, conf)
     end
 
@@ -225,7 +232,7 @@ end
 
 local function gen_limit_obj(conf, ctx)
     if conf.group then
-        return lrucache(conf.group, "", create_limit_obj, conf)
+        return lrucache(conf.group, "", create_limit_obj, conf, ctx)
     end
 
     local extra_key
@@ -235,7 +242,7 @@ local function gen_limit_obj(conf, ctx)
         extra_key = conf.policy
     end
 
-    return core.lrucache.plugin_ctx(lrucache, ctx, extra_key, create_limit_obj, conf)
+    return core.lrucache.plugin_ctx(lrucache, ctx, extra_key, create_limit_obj, conf, ctx)
 end
 
 function _M.rate_limit(conf, ctx)
@@ -300,11 +307,11 @@ function _M.rate_limit(conf, ctx)
                 return conf.rejected_code
             end
 
-            core.log.error("failed to limit count: ", err)
+            core.log.error("failed to limit cu: ", err)
             if conf.allow_degradation then
                 return
             end
-            return 500, { error_msg = "failed to limit count" }
+            return 500, { error_msg = "failed to limit cu" }
         end
     end
 
