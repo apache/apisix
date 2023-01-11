@@ -217,7 +217,7 @@ local function run()
             core.response.set_header("X-API-VERSION", "v2")
         end
         if resource.need_v3_filter then
-            data = v3_adapter.filter(data)
+            data = v3_adapter.filter(core.ctx, data)
         end
 
         data = strip_etcd_resp(data)

@@ -15,7 +15,6 @@
 -- limitations under the License.
 --
 
-local core              = require("apisix.core")
 local fetch_local_conf  = require("apisix.core.config_local").local_conf
 local try_read_attr     = require("apisix.core.table").try_read_attr
 local deepcopy          = require("apisix.core.table").deepcopy
@@ -85,7 +84,7 @@ local function sort(l, r)
 end
 
 
-local function pagination(body, args)
+local function pagination(ctx, body, args)
     args.page = tonumber(args.page)
     args.page_size = tonumber(args.page_size)
     if not args.page or not args.page_size then
@@ -93,7 +92,7 @@ local function pagination(body, args)
     end
 
     if args.page_size < 10 or args.page_size > 500 then
-        return response.exit(core.ctx, 400, "page_size must be between 10 and 500")
+        return response.exit(ctx, 400, "page_size must be between 10 and 500")
     end
 
     if not args.page or args.page < 1 then
@@ -176,7 +175,7 @@ local function filter(body, args)
 end
 
 
-function _M.filter(body)
+function _M.filter(ctx, body)
     if not enable_v3() then
         return body
     end
@@ -200,7 +199,7 @@ function _M.filter(body)
         -- calculate the total amount of filtered data
         processed_body.total = processed_body.list and #processed_body.list or 0
 
-        pagination(processed_body, args)
+        pagination(ctx, processed_body, args)
 
         -- remove the count field returned by etcd
         -- we don't need a field that reflects the length of the currently returned data,
