@@ -497,3 +497,33 @@ upvar2=yes
             assert(t4-t8 < t4*0.8, "hot2 jit recover")
         }
     }
+
+
+
+=== TEST 13: remove hook log
+--- config
+    location /t {
+        content_by_lua_block {
+            local code = set_test_route("run1")
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            write_hooks([[
+            local dbg = require "apisix.inspect.dbg"
+            dbg.set_hook("t/lib/test_inspect.lua", 27, nil, function(info)
+                return true
+            end)
+            ]])
+
+            ngx.sleep(1.5)
+
+            do_request()
+
+            os.remove("/tmp/apisix_inspect_hooks.lua")
+        }
+    }
+--- error_log
+inspect: remove hook: t/lib/test_inspect.lua#27
+inspect: all hooks removed

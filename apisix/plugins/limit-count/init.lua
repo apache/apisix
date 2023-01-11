@@ -14,18 +14,20 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local limit_local_new = require("resty.limit.count").new
 local core = require("apisix.core")
 local apisix_plugin = require("apisix.plugin")
 local tab_insert = table.insert
 local ipairs = ipairs
 local pairs = pairs
 
-
 local plugin_name = "limit-count"
 local limit_redis_cluster_new
 local limit_redis_new
+local limit_local_new
 do
+    local local_src = "apisix.plugins.limit-count.limit-count-local"
+    limit_local_new = require(local_src).new
+
     local redis_src = "apisix.plugins.limit-count.limit-count-redis"
     limit_redis_new = require(redis_src).new
 
@@ -38,7 +40,6 @@ local lrucache = core.lrucache.new({
 local group_conf_lru = core.lrucache.new({
     type = 'plugin',
 })
-
 
 local policy_to_additional_properties = {
     redis = {
@@ -78,6 +79,12 @@ local policy_to_additional_properties = {
             },
             redis_cluster_name = {
                 type = "string",
+            },
+            redis_cluster_ssl = {
+                type = "boolean", default = false,
+            },
+            redis_cluster_ssl_verify = {
+                type = "boolean", default = false,
             },
         },
         required = {"redis_cluster_nodes", "redis_cluster_name"},
@@ -242,7 +249,6 @@ local function gen_limit_obj(conf, ctx)
     return core.lrucache.plugin_ctx(lrucache, ctx, extra_key, create_limit_obj, conf)
 end
 
-
 function _M.rate_limit(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
 
@@ -283,10 +289,17 @@ function _M.rate_limit(conf, ctx)
     key = gen_limit_key(conf, ctx, key)
     core.log.info("limit key: ", key)
 
-    local delay, remaining = lim:incoming(key, true)
+    local delay, remaining, reset = lim:incoming(key, true, conf)
     if not delay then
         local err = remaining
         if err == "rejected" then
+            -- show count limit header when rejected
+            if conf.show_limit_quota_header then
+                core.response.set_header("X-RateLimit-Limit", conf.count,
+                    "X-RateLimit-Remaining", 0,
+                    "X-RateLimit-Reset", reset)
+            end
+
             if conf.rejected_msg then
                 return conf.rejected_code, { error_msg = conf.rejected_msg }
             end
@@ -302,7 +315,8 @@ function _M.rate_limit(conf, ctx)
 
     if conf.show_limit_quota_header then
         core.response.set_header("X-RateLimit-Limit", conf.count,
-            "X-RateLimit-Remaining", remaining)
+            "X-RateLimit-Remaining", remaining,
+            "X-RateLimit-Reset", reset)
     end
 end
 

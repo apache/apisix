@@ -51,6 +51,8 @@ The `limit-count` Plugin limits the number of requests to your service by a give
 | redis_timeout           | integer | False                                     | 1000          | [1,...]                                | Timeout in milliseconds for any command submitted to the Redis server. Used when the `policy` attribute is set to `redis` or `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                        |
 | redis_cluster_nodes     | array   | required when `policy` is `redis-cluster` |               |                                        | Addresses of Redis cluster nodes. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                        |
 | redis_cluster_name      | string  | required when `policy` is `redis-cluster` |               |                                        | Name of the Redis cluster service nodes. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                 |
+| redis_cluster_ssl      | boolean  |  False |     false         |                                        | If set to `true`, then uses SSL to connect to redis-cluster. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                 |
+| redis_cluster_ssl_verify      | boolean  | False |    false      |                                        | If set to `true`, then verifies the validity of the server SSL certificate. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## Enabling the Plugin
 
@@ -254,7 +256,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ## Example usage
 
-The above configuration limits to 2 requests in 60 seconds. The first two requests will work and the response headers will contain the headers `X-RateLimit-Limit` and `X-RateLimit-Remaining`:
+The above configuration limits to 2 requests in 60 seconds. The first two requests will work and the response headers will contain the headers `X-RateLimit-Limit` and `X-RateLimit-Remaining` and `X-RateLimit-Reset`, represents the total number of requests that are limited, the number of requests that can still be sent, and the number of seconds left for the counter to reset:
 
 ```shell
 curl -i http://127.0.0.1:9080/index.html
@@ -267,16 +269,20 @@ Content-Length: 13175
 Connection: keep-alive
 X-RateLimit-Limit: 2
 X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 58
 Server: APISIX web server
 ```
 
-When you visit for a third time in the 60 seconds, you will receive a response with 503 code:
+When you visit for a third time in the 60 seconds, you will receive a response with 503 code. Currently, in the case of rejection, the limit count headers is also returned:
 
 ```shell
 HTTP/1.1 503 Service Temporarily Unavailable
 Content-Type: text/html
 Content-Length: 194
 Connection: keep-alive
+X-RateLimit-Limit: 2
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 58
 Server: APISIX web server
 ```
 
@@ -287,6 +293,9 @@ HTTP/1.1 503 Service Temporarily Unavailable
 Content-Type: text/html
 Content-Length: 194
 Connection: keep-alive
+X-RateLimit-Limit: 2
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 58
 Server: APISIX web server
 
 {"error_msg":"Requests are too frequent, please try again later."}
