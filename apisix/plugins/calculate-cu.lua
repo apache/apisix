@@ -12,7 +12,6 @@ local schema = {
             }
         }
     },
-    required = { "methods" },
 }
 
 local _M = {
