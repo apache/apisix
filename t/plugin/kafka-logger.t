@@ -670,6 +670,7 @@ failed to do PLAIN auth with 127.0.0.1:19094: Authentication failed: Invalid use
                             }
                         }],
                             "kafka_topic":"test2",
+                            "producer_type":"sync",
                             "key":"key1",
                             "timeout":1,
                             "batch_max_size":1,
