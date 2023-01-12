@@ -18,8 +18,9 @@ local core     = require("apisix.core")
 local jwt      = require("resty.jwt")
 local consumer_mod = require("apisix.consumer")
 local resty_random = require("resty.random")
-local vault        = require("apisix.core.vault")
+local vault        = require("apisix.core.vault") -- to be removed later
 local new_tab = require ("table.new")
+local secrets = require("apisix.admin.secrets")
 
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
@@ -252,15 +253,12 @@ end
 local function get_secret(conf, consumer_name)
     local secret = conf.secret
     if conf.vault then
-        local res, err = vault.get(get_vault_path(consumer_name))
-        if not res then
+        local res, err = vault.get()
+        local status, body = secrets.get(nil, nil, get_vault_path(consumer_name))
+        if status == 503 then
             return nil, err
         end
-
-        if not res.data or not res.data.secret then
-            return nil, "secret could not found in vault: " .. core.json.encode(res)
-        end
-        secret = res.data.secret
+        secret = body
     end
 
     if conf.base64_secret then
