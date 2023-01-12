@@ -18,7 +18,6 @@ local core     = require("apisix.core")
 local jwt      = require("resty.jwt")
 local consumer_mod = require("apisix.consumer")
 local resty_random = require("resty.random")
-local vault        = require("apisix.core.vault") -- to be removed later
 local new_tab = require ("table.new")
 local secrets = require("apisix.admin.secrets")
 
@@ -252,14 +251,6 @@ end
 
 local function get_secret(conf, consumer_name)
     local secret = conf.secret
-    if conf.vault then
-        local res, err = vault.get()
-        local status, body = secrets.get(nil, nil, get_vault_path(consumer_name))
-        if status == 503 then
-            return nil, err
-        end
-        secret = body
-    end
 
     if conf.base64_secret then
         return ngx_decode_base64(secret)
@@ -278,17 +269,6 @@ local function get_rsa_or_ecdsa_keypair(conf, consumer_name)
     end
 
     local vout = {}
-    if conf.vault then
-        local res, err = vault.get(get_vault_path(consumer_name))
-        if not res then
-            return nil, nil, err
-        end
-
-        if not res.data then
-            return nil, nil, "key pairs could not found in vault: " .. core.json.encode(res)
-        end
-        vout = res.data
-    end
 
     if not public_key and not vout.public_key then
         return nil, nil, "missing public key, not found in config/vault"
