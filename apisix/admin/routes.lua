@@ -143,5 +143,6 @@ return resource.new({
     name = "routes",
     kind = "route",
     schema = core.schema.route,
-    checker = check_conf
+    checker = check_conf,
+    unsupported_methods = {}
 })

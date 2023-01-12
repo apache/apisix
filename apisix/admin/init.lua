@@ -199,7 +199,12 @@ local function run()
     end
 
     local code, data
-    if seg_res == "routes" then
+    local refactored_resources = {
+        "routes",
+        "stream_routes",
+        "upstreams",
+    }
+    if core.table.array_find(refactored_resources, seg_res) then
         code, data = resource[method](resource, seg_id, req_body, seg_sub_path, uri_args)
     else
         code, data = resource[method](seg_id, req_body, seg_sub_path, uri_args)
