@@ -45,6 +45,38 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 udp-logger �
 
 该插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
+## 插件元数据
+
+| 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
+| ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
+| log_format       | object  | 否    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头。则表明获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+
+:::info 注意
+
+该设置全局生效。如果指定了 `log_format`，则所有绑定 `udp-logger` 的路由或服务都将使用该日志格式。
+
+:::
+
+以下示例展示了如何通过 Admin API 配置插件元数据：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/udp-logger \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "log_format": {
+        "host": "$host",
+        "@timestamp": "$time_iso8601",
+        "client_ip": "$remote_addr"
+    }
+}'
+```
+
+配置完成后，你将在日志系统中看到如下类似日志：
+
+```json
+{"@timestamp":"2023-01-09T14:47:25+08:00","route_id":"1","host":"localhost","client_ip":"127.0.0.1"}
+```
+
 ## 如何开启
 
 你可以通过如下命令在指定路由上启用 `udp-logger` 插件：

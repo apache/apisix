@@ -37,17 +37,30 @@ local schema = {
     required = {"host", "port"}
 }
 
+local metadata_schema = {
+    type = "object",
+    properties = {
+        log_format = log_util.metadata_schema_log_format,
+    },
+}
 
 local _M = {
     version = 0.1,
     priority = 405,
     name = plugin_name,
+    metadata_schema = metadata_schema,
     schema = batch_processor_manager:wrap_schema(schema),
 }
 
-function _M.check_schema(conf)
+
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
+
     return core.schema.check(schema, conf)
 end
+
 
 local function send_tcp_data(conf, log_message)
     local err_msg
@@ -94,7 +107,7 @@ end
 
 
 function _M.log(conf, ctx)
-    local entry = log_util.get_full_log(ngx, conf)
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
 
     if batch_processor_manager:add_entry(conf, entry) then
         return

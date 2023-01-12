@@ -255,7 +255,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 curl -i http://127.0.0.1:9080/index.html
 ```
 
-在执行测试命令的前两次都会正常访问。其中响应头中包含了 `X-RateLimit-Limit` 和 `X-RateLimit-Remaining` 字段，分别代表限制的总请求数和剩余还可以发送的请求数：
+在执行测试命令的前两次都会正常访问。其中响应头中包含了 `X-RateLimit-Limit` 和 `X-RateLimit-Remaining` 和 `X-RateLimit-Reset` 字段，分别代表限制的总请求数和剩余还可以发送的请求数以及计数器剩余重置的秒数：
 
 ```shell
 HTTP/1.1 200 OK
@@ -264,16 +264,20 @@ Content-Length: 13175
 Connection: keep-alive
 X-RateLimit-Limit: 2
 X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 58
 Server: APISIX web server
 ```
 
-当第三次进行测试访问时，会收到包含 `503` HTTP 状态码的响应头，表示插件生效：
+当第三次进行测试访问时，会收到包含 `503` HTTP 状态码的响应头，目前在拒绝的情况下，也会返回相关的头，表示插件生效：
 
 ```shell
 HTTP/1.1 503 Service Temporarily Unavailable
 Content-Type: text/html
 Content-Length: 194
 Connection: keep-alive
+X-RateLimit-Limit: 2
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 58
 Server: APISIX web server
 ```
 
@@ -284,6 +288,9 @@ HTTP/1.1 503 Service Temporarily Unavailable
 Content-Type: text/html
 Content-Length: 194
 Connection: keep-alive
+X-RateLimit-Limit: 2
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 58
 Server: APISIX web server
 
 {"error_msg":"Requests are too frequent, please try again later."}
