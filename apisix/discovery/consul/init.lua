@@ -377,7 +377,7 @@ function _M.init_worker()
 
     local consul_servers_list, err = format_consul_params(consul_conf)
     if err then
-        error("format consul config got error" .. err)
+        error("format consul config got error: " .. err)
     end
     log.info("consul_server_list: ", json_delay_encode(consul_servers_list, true))
 
