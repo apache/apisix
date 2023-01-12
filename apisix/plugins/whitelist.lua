@@ -107,7 +107,7 @@ function _M.access(conf, ctx)
     local network = ctx.var["router_name"]
     local method = ctx.var.jsonrpc_method
     local methods = ctx.var.jsonrpc_methods
-    local monthly_quota = ctx.var.monthly_quota
+    local monthly_quota = tonumber(ctx.var.monthly_quota)
     local default_paid_quota = conf.default_paid_quota
 
     local self = new(_M)
