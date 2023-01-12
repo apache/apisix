@@ -704,6 +704,7 @@ abcdef
 hello world
 --- error_log eval
 qr/send data to kafka: \{.*"body":"abcdef"/
+--- no_error_log
 --- wait: 2
 
 
