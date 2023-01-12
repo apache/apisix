@@ -32,6 +32,10 @@ This guide walks you through how you can install and run Apache APISIX in your e
 
 Refer to the [Getting Started](./getting-started.md) guide for a quick walk-through on running Apache APISIX.
 
+**Note:** APISIX uses [etcd](https://github.com/etcd-io/etcd) to save and synchronize configuration. Before installing APISIX, you need to install etcd on your machine.
+
+It will be installed automatically if you choose the Docker or Helm install method while installing APISIX. If you choose a different method or you need to install it manually, follow the steps shown in [Installing etcd](#installing-etcd).
+
 ## Installing APISIX
 
 APISIX can be installed by the different methods listed below:
@@ -136,12 +140,14 @@ Currently the only DEB repository supported by APISIX is Debian 11 (Bullseye) an
 
 ```shell
 # amd64
-sudo echo "deb http://openresty.org/package/debian bullseye openresty" | tee /etc/apt/sources.list.d/openresty.list
+wget -O - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+echo "deb http://openresty.org/package/debian bullseye openresty" | tee /etc/apt/sources.list.d/openresty.list
 wget -O - http://repos.apiseven.com/pubkey.gpg | apt-key add -
 echo "deb http://repos.apiseven.com/packages/debian bullseye main" | tee /etc/apt/sources.list.d/apisix.list
 
 # arm64
-sudo echo "deb http://openresty.org/package/debian bullseye openresty" | tee /etc/apt/sources.list.d/openresty.list
+wget -O - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+echo "deb http://openresty.org/package/debian bullseye openresty" | tee /etc/apt/sources.list.d/openresty.list
 wget -O - http://repos.apiseven.com/pubkey.gpg | apt-key add -
 echo "deb http://repos.apiseven.com/packages/arm64/debian bullseye main" | tee /etc/apt/sources.list.d/apisix.list
 ```
@@ -150,7 +156,7 @@ Then, to install APISIX, run:
 
 ```shell
 sudo apt update
-sudo apt install -y apisix=3.0.0-0
+sudo apt install -y apisix
 ```
 
 ### Installation via RPM offline package
@@ -215,7 +221,7 @@ It would be installed automatically if you choose the Docker or Helm install met
 <TabItem value="linux">
 
 ```shell
-ETCD_VERSION='3.5.4'
+ETCD_VERSION='3.5.6'
 wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
 tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
   cd etcd-v${ETCD_VERSION}-linux-amd64 && \
