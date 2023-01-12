@@ -259,18 +259,13 @@ local function get_rsa_or_ecdsa_keypair(conf, consumer_name)
     -- if keys are present in conf, no need to query vault (fallback)
     if public_key and private_key then
         return public_key, private_key
+    elseif public_key and not private_key then
+        return public_key, nil, "missing private key"
+    elseif not public_key and private_key then
+        return nil, private_key, "missing public key"
+    else
+        return nil, nil, "public and private keys are missing"
     end
-
-    local vout = {}
-
-    if not public_key and not vout.public_key then
-        return nil, nil, "missing public key, not found in config/vault"
-    end
-    if not private_key and not vout.private_key then
-        return nil, nil, "missing private key, not found in config/vault"
-    end
-
-    return public_key or vout.public_key, private_key or vout.private_key
 end
 
 
