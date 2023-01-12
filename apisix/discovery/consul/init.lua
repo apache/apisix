@@ -208,7 +208,8 @@ function _M.connect(premature, consul_server, retry_delay)
     log.info("connect consul: ", consul_server.consul_server_url,
             ", watch_result status: ", watch_result.status,
             ", watch_result.headers.index: ", watch_result.headers['X-Consul-Index'],
-            ", consul_server.index: ", consul_server.index)
+            ", consul_server.index: ", consul_server.index,
+            ", consul_server: ", json_delay_encode(consul_server, true))
 
     -- if current index different last index then update service
     if consul_server.index ~= watch_result.headers['X-Consul-Index'] then
@@ -220,7 +221,7 @@ function _M.connect(premature, consul_server, retry_delay)
             read_timeout = consul_server.read_timeout,
         })
         for service_name, _ in pairs(watch_result.body) do
-            -- check is skip service
+            -- check if the service_name is 'skip service'
             if skip_service_map[service_name] then
                 goto CONTINUE
             end
