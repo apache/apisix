@@ -204,6 +204,10 @@ local function run()
         "stream_routes",
         "upstreams",
         "protos",
+        "global_rules",
+        "services",
+        "consumer_groups",
+        "plugin_configs",
     }
     if core.table.array_find(refactored_resources, seg_res) then
         code, data = resource[method](resource, seg_id, req_body, seg_sub_path, uri_args)
