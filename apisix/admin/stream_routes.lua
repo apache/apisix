@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
+local apisix_upstream = require("apisix.upstream")
 local stream_route_checker = require("apisix.stream.router.ip_port").stream_route_checker
 local tostring = tostring
 
@@ -51,6 +52,14 @@ local function check_conf(id, conf, need_id)
     local ok, err = core.schema.check(core.schema.stream_route, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
+    end
+
+    local upstream_conf = conf.upstream
+    if upstream_conf then
+        local ok, err = apisix_upstream.check_upstream_conf(upstream_conf)
+        if not ok then
+            return nil, {error_msg = err}
+        end
     end
 
     local upstream_id = conf.upstream_id
