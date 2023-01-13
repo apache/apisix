@@ -223,10 +223,10 @@ The steps below show how to run the test cases for APISIX:
    git clone https://github.com/openresty/test-nginx.git
    ```
 
-4. Append the current directory to Perl's module directory by running:
+4. Append the apisix directory to Perl's module directory by running:
 
    ```shell
-   export PERL5LIB=.:$PERL5LIB
+   export PERL5LIB=<path-to-apisix-directory>:$PERL5LIB
    ```
 
    You can specify the Nginx binary path by running:
@@ -235,7 +235,9 @@ The steps below show how to run the test cases for APISIX:
    TEST_NGINX_BINARY=/usr/local/bin/openresty prove -Itest-nginx/lib -r t
    ```
 
-5. Run the tests by running:
+5. Install [LuaJIT](https://luajit.org/install.html). macOS users can use `brew` package manager to install LuaJIT.
+
+6. Run the tests by running:
 
    ```shell
    make test
@@ -263,8 +265,16 @@ For the error `Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t
 
 - macOS default installation path (view homebrew):
 
+  For Intel based macOS:
+
   ```shell
   export PATH=/usr/local/opt/openresty/nginx/sbin:$PATH
+  ```
+
+  For M1 bases macOS:
+
+  ```shell
+  export PATH=/opt/homebrew/opt/openresty/nginx/sbin/:$PATH
   ```
 
 #### Running a specific test case
