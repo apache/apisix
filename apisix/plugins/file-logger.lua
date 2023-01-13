@@ -22,6 +22,7 @@ local is_apisix_or, process = pcall(require, "resty.apisix.process")
 
 
 local plugin_name = "file-logger"
+local std_out_file = "/dev/stdout"
 
 
 local schema = {
@@ -138,15 +139,15 @@ local function write_file_data(conf, log_message)
         end
 
         if conf.log_to_std then
-            local std_out, err = io_open("/dev/stdout", "w")
+            local std_out, err = io_open(std_out_file, "w")
             std_out:setvbuf("no")
             if std_out then
                 ok, err = std_out:write(msg)
                 if not ok then
-                    core.log.error("failed to write /dev/stdout, error info: ", err)
+                    core.log.error("failed to write "..std_out_file..", error info: ", err)
                 end
             else
-                core.log.error("failed to open /dev/stdout, error info: ", err)
+                core.log.error("failed to open "..std_out_file..", error info: ", err)
             end
         end
 
