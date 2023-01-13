@@ -30,6 +30,7 @@ local schema = {
         path = {
             type = "string"
         },
+        log_to_std = {type = "boolean", default = false},
         include_resp_body = {type = "boolean", default = false},
         include_resp_body_expr = {
             type = "array",
@@ -134,6 +135,19 @@ local function write_file_data(conf, log_message)
         local ok, err = file:write(msg)
         if not ok then
             core.log.error("failed to write file: ", conf.path, ", error info: ", err)
+        end
+
+        if conf.log_to_std then
+            local std_out, err = io_open("/dev/stdout", "w")
+            std_out:setvbuf("no")
+            if std_out then
+                ok, err = std_out:write(msg)
+                if not ok then
+                    core.log.error("failed to write /dev/stdout, error info: ", err)
+                end
+            else
+                core.log.error("failed to open /dev/stdout, error info: ", err)
+            end
         end
 
         -- file will be closed by gc, if open_file_cache exists
