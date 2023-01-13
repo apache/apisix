@@ -69,4 +69,4 @@ ZooKeeper and Nacos are currently supported, and more service registries will be
 
 - If you want to enable control plane ZooKeeper service discovery, please refer to: [ZooKeeper Deployment Tutorial](https://github.com/api7/apisix-seed/blob/main/docs/en/latest/zookeeper.md).
 
-- If you want to enable control plane Nacos service discovery, please refer to: [Nacos Deployment Tutorial](https://github.com/api7/apisix-seed/blob/main/docs/en/latest/zookeeper.md).
+- If you want to enable control plane Nacos service discovery, please refer to: [Nacos Deployment Tutorial](https://github.com/api7/apisix-seed/blob/main/docs/en/latest/nacos.md).
