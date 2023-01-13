@@ -78,8 +78,6 @@ local function check_conf(id, conf, need_id, schema)
             return nil, {error_msg = "'script' should be a Lua object"}
         end
     end
-
-    return need_id and id or true
 end
 
 
@@ -108,6 +106,5 @@ return resource.new({
     kind = "service",
     schema = core.schema.service,
     checker = check_conf,
-    unsupported_methods = {},
     delete_checker = delete_checker
 })

@@ -57,7 +57,13 @@ function _M:check_conf(id, conf, need_id)
     core.log.info("conf  : ", core.json.delay_encode(conf))
 
     -- check the resource own rules
-    return self.checker(id, conf, need_id, self.schema)
+    local ok, err = self.checker(id, conf, need_id, self.schema)
+
+    if err then
+        return ok, err
+    else
+        return need_id and id or true
+    end
 end
 
 

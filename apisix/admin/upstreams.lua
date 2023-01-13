@@ -29,8 +29,6 @@ local function check_conf(id, conf, need_id)
     if not ok then
         return nil, {error_msg = err}
     end
-
-    return need_id and id or true
 end
 
 
@@ -72,6 +70,5 @@ return resource.new({
     kind = "upstream",
     schema = core.schema.upstream,
     checker = check_conf,
-    unsupported_methods = {},
     delete_checker = delete_checker
 })

@@ -34,8 +34,6 @@ local function check_conf(id, conf, need_id, schema)
     if not ok then
         return nil, {error_msg = "invalid content: " .. err}
     end
-
-    return need_id and id or true
 end
 
 
