@@ -38,7 +38,7 @@ function _M.access(conf, ctx)
         end
     else
         -- Calculate cu for a single request
-        ctx.var["cu"] = conf.methods[method] or 1
+        ctx.var["cu"] = conf.methods and conf.methods[method] or 1
     end
 end
 

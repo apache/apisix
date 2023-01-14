@@ -324,17 +324,21 @@ local function merge_methods(...)
 end
 
 local function check_access(self, network, method, monthly_quota, default_paid_quota)
-    -- check if method is whitelisted
     local isPaid = monthly_quota > default_paid_quota
-    local whitelist = isPaid and self.paid_list or self.free_list
-    if whitelist[network] and whitelist[network][method] then
-        return nil -- access granted
-    else
-        if isPaid then
-            return "Unsupported method: " .. method .. ". See available methods at https://docs.unifra.io"
+    local supported = false
+    if self.paid_list[network] and self.paid_list[network][method] then
+        supported = true
+    elseif self.free_list[network] and self.free_list[network][method] then
+        supported = true
+    end
+    if supported then
+        if isPaid or self.free_list[network][method] then
+            return nil -- access granted
         else
             return "Method " .. method .. " is only available for paid users. See https://docs.unifra.io"
         end
+    else
+        return "Unsupported method: " .. method .. ". See available methods at https://docs.unifra.io"
     end
 end
 
@@ -369,7 +373,7 @@ function _M.init()
 end
 
 function _M.access(conf, ctx)
-    local network = ctx.var.router_name
+    local network = string.match(ctx.var.host, "^(.*)%.unifra%.io$")
     local method = ctx.var.jsonrpc_method
     local methods = ctx.var.jsonrpc_methods
     local monthly_quota = tonumber(ctx.var.monthly_quota)
