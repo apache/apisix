@@ -261,7 +261,10 @@ function _M.collect_body(conf, ctx)
             local resp_headers = ngx.resp.get_headers()
             local encoding = resp_headers["Content-Encoding"]
             if encoding == "gzip" then
-                ctx.var.resp_body = "binary"
+                ctx.var.resp_body = {
+                    jsonrpc = "2.0",
+                    result = "gzip body"
+                }
             else
                 ctx.var.resp_body = final_body
             end
