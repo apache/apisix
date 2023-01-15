@@ -146,6 +146,7 @@ local function write_file_data(conf, log_message)
                 if not ok then
                     core.log.error("failed to write "..std_out_file..", error info: ", err)
                 end
+                std_out:close()
             else
                 core.log.error("failed to open "..std_out_file..", error info: ", err)
             end
