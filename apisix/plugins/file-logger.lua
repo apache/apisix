@@ -14,16 +14,14 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local log_util     =   require("apisix.utils.log-util")
-local core         =   require("apisix.core")
-local ngx          =   ngx
-local io_open      =   io.open
+local log_util = require("apisix.utils.log-util")
+local core = require("apisix.core")
+local ngx = ngx
+local io_open = io.open
 local is_apisix_or, process = pcall(require, "resty.apisix.process")
-
 
 local plugin_name = "file-logger"
 local std_out_file = "/dev/stdout"
-
 
 local schema = {
     type = "object",
@@ -31,8 +29,8 @@ local schema = {
         path = {
             type = "string"
         },
-        log_to_stdout = {type = "boolean", default = false},
-        include_resp_body = {type = "boolean", default = false},
+        log_to_stdout = { type = "boolean", default = false },
+        include_resp_body = { type = "boolean", default = false },
         include_resp_body_expr = {
             type = "array",
             minItems = 1,
@@ -41,9 +39,8 @@ local schema = {
             }
         }
     },
-    required = {"path"}
+    required = { "path" }
 }
-
 
 local metadata_schema = {
     type = "object",
@@ -51,7 +48,6 @@ local metadata_schema = {
         log_format = log_util.metadata_schema_log_format
     }
 }
-
 
 local _M = {
     version = 0.1,
@@ -61,14 +57,12 @@ local _M = {
     metadata_schema = metadata_schema
 }
 
-
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
     return core.schema.check(schema, conf)
 end
-
 
 local open_file_cache
 if is_apisix_or then
@@ -114,6 +108,18 @@ if is_apisix_or then
     end
 end
 
+local function open_std_out(conf)
+    if not conf.log_to_stdout then
+        return
+    end
+    local std_out, err = io_open(std_out_file, "w")
+    if not std_out then
+        core.log.error("failed to open" .. std_out_file .. ", err: ", err)
+        return
+    end
+    std_out:setvbuf("no")
+    return std_out
+end
 
 local function write_file_data(conf, log_message)
     local msg = core.json.encode(log_message)
@@ -121,8 +127,10 @@ local function write_file_data(conf, log_message)
     local file, std_out, err
     if open_file_cache then
         file, err = open_file_cache(conf)
+        std_out = open_std_out(conf)
     else
         file, err = io_open(conf.path, 'a+')
+        std_out = open_std_out(conf)
     end
 
     if not file then
@@ -138,18 +146,12 @@ local function write_file_data(conf, log_message)
             core.log.error("failed to write file: ", conf.path, ", error info: ", err)
         end
 
-        if conf.log_to_stdout then
-            std_out, err = io_open(std_out_file, "w")
-            if std_out then
-                std_out:setvbuf("no")
-                ok, err = std_out:write(msg)
-                if not ok then
-                    core.log.error("failed to write "..std_out_file..", error info: ", err)
-                end
-                std_out:close()
-            else
-                core.log.error("failed to open "..std_out_file..", error info: ", err)
+        if conf.log_to_stdout and std_out then
+            ok, err = std_out:write(msg)
+            if not ok then
+                core.log.error("failed to write " .. std_out_file .. ", error info: ", err)
             end
+            std_out:close()
         end
 
         -- file will be closed by gc, if open_file_cache exists
@@ -167,6 +169,5 @@ function _M.log(conf, ctx)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
     write_file_data(conf, entry)
 end
-
 
 return _M
