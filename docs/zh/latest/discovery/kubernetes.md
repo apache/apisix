@@ -36,7 +36,7 @@ Kubernetes 服务发现以 [_List-Watch_](https://kubernetes.io/docs/reference/u
 
 :::note
 
-在四层中使用 Kubenetes 服务发现要求 OpenResty 版本大于等于 1.19.9.1
+在四层中使用 Kubernetes 服务发现要求 OpenResty 版本大于等于 1.19.9.1
 
 :::
 
