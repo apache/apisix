@@ -56,6 +56,8 @@ discovery:
 
 ### Upstream setting
 
+#### L7
+
 Here is an example of routing a request with an URI of "/nacos/*" to a service which named "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS" and use nacos discovery client in the registry:
 
 ```shell
@@ -94,6 +96,23 @@ The formatted response as below:
     }
   }
 }
+```
+
+#### L4
+
+Nacos service discovery also supports use in L4, the configuration method is similar to L7.
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "remote_addr": "127.0.0.1",
+    "upstream": {
+        "scheme": "tcp",
+        "discovery_type": "nacos",
+        "service_name": "APISIX-NACOS",
+        "type": "roundrobin"
+    }
+}'
 ```
 
 ### discovery_args

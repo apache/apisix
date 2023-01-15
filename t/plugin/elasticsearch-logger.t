@@ -158,11 +158,11 @@ passed
     local http = require("resty.http")
     local ngx_re = require("ngx.re")
     local log_util = require("apisix.utils.log-util")
-    log_util.get_full_log = function(ngx, conf)
+    log_util.inject_get_full_log(function(ngx, conf)
         return {
             test = "test"
         }
-    end
+    end)
 
     http.request_uri = function(self, uri, params)
         if not params.body or type(params.body) ~= "string" then
@@ -409,11 +409,11 @@ passed
     local http = require("resty.http")
     local ngx_re = require("ngx.re")
     local log_util = require("apisix.utils.log-util")
-    log_util.get_custom_format_log = function(ctx, format)
+    log_util.inject_get_custom_format_log(function(ctx, format)
         return {
             test = "test"
         }
-    end
+    end)
 
     http.request_uri = function(self, uri, params)
         if not params.body or type(params.body) ~= "string" then

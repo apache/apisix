@@ -19,9 +19,7 @@ local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local cls_sdk = require("apisix.plugins.tencent-cloud-cls.cls-sdk")
-local plugin = require("apisix.plugin")
 local math = math
-local ngx = ngx
 local pairs = pairs
 
 
@@ -102,19 +100,8 @@ function _M.log(conf, ctx)
         core.log.debug("cls not sampled, skip log")
         return
     end
-    local metadata = plugin.plugin_metadata(plugin_name)
-    core.log.info("metadata: ", core.json.delay_encode(metadata))
 
-    local entry
-
-    if metadata and metadata.value.log_format
-            and core.table.nkeys(metadata.value.log_format) > 0
-    then
-        core.log.debug("using custom format log")
-        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
-    else
-        entry = log_util.get_full_log(ngx, conf)
-    end
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
 
     if conf.global_tag then
         for k, v in pairs(conf.global_tag) do
