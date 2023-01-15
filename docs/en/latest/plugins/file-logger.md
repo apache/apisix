@@ -43,11 +43,12 @@ The `file-logger` Plugin is used to push log streams to a specific location.
 
 ## Attributes
 
-| Name | Type   | Required | Description   |
-| ---- | ------ | -------- | ------------- |
-| path | string | True     | Log file path. |
-| include_resp_body      | boolean | False     | When set to `true` includes the response body in the log file.                                                                                                                                                                |
+| Name                   | Type    | Required | Description                                                                                                                                                                                                                    |
+|------------------------|---------| -------- |--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| path                   | string  | True     | Log file path.                                                                                                                                                                                                                 |
+| include_resp_body      | boolean | False     | When set to `true` includes the response body in the log file.                                                                                                                                                                 |
 | include_resp_body_expr | array   | False     | When the `include_resp_body` attribute is set to `true`, use this to filter based on [lua-resty-expr](https://github.com/api7/lua-resty-expr). If present, only logs the response into file if the expression evaluates to `true`. |
+| log_to_std             | boolean | False     | When set to `true` log to  standard output                                                                                                                                                                                     |
 
 ## Metadata
 
