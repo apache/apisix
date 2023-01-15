@@ -31,7 +31,7 @@ local schema = {
         path = {
             type = "string"
         },
-        log_to_std = {type = "boolean", default = false},
+        log_to_stdout = {type = "boolean", default = false},
         include_resp_body = {type = "boolean", default = false},
         include_resp_body_expr = {
             type = "array",
@@ -118,7 +118,7 @@ end
 local function write_file_data(conf, log_message)
     local msg = core.json.encode(log_message)
 
-    local file, err
+    local file, std_out, err
     if open_file_cache then
         file, err = open_file_cache(conf)
     else
@@ -138,10 +138,10 @@ local function write_file_data(conf, log_message)
             core.log.error("failed to write file: ", conf.path, ", error info: ", err)
         end
 
-        if conf.log_to_std then
-            local std_out, err = io_open(std_out_file, "w")
-            std_out:setvbuf("no")
+        if conf.log_to_stdout then
+            std_out, err = io_open(std_out_file, "w")
             if std_out then
+                std_out:setvbuf("no")
                 ok, err = std_out:write(msg)
                 if not ok then
                     core.log.error("failed to write "..std_out_file..", error info: ", err)
