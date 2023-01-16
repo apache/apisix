@@ -22,7 +22,7 @@ jobs:
         export_or_prefix
         export OPENRESTY_VERSION=default
 
-        ./utils/linux-install-openresty.sh
+        ./ci/linux-install-openresty.sh
         ./utils/linux-install-luarocks.sh
         sudo luarocks install luacheck
 
