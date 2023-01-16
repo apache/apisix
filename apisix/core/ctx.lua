@@ -41,18 +41,18 @@ local error        = error
 local pcall        = pcall
 
 
-local _M = {version = 0.2}
-local GRAPHQL_DEFAULT_MAX_SIZE       = 1048576               -- 1MiB
-local GRAPHQL_REQ_DATA_KEY           = "query"
-local GRAPHQL_REQ_METHOD_HTTP_GET    = "GET"
-local GRAPHQL_REQ_METHOD_HTTP_POST   = "POST"
-local GRAPHQL_REQ_MIME_JSON          = "application/json"
+local _M                           = { version = 0.2 }
+local GRAPHQL_DEFAULT_MAX_SIZE     = 1048576 -- 1MiB
+local GRAPHQL_REQ_DATA_KEY         = "query"
+local GRAPHQL_REQ_METHOD_HTTP_GET  = "GET"
+local GRAPHQL_REQ_METHOD_HTTP_POST = "POST"
+local GRAPHQL_REQ_MIME_JSON        = "application/json"
 
-local JSONRPC_DEFAULT_MAX_SIZE       = 1048576               -- 1MiB
-local JSONRPC_REQ_METHOD_KEY         = "method"
-local JSONRPC_REQ_PARAMS             = "params"
-local JSONRPC_REQ_METHOD_HTTP_POST   = "POST"
-local JSONRPC_REQ_MIME_JSON          = "application/json"
+local JSONRPC_DEFAULT_MAX_SIZE     = 1048576 -- 1MiB
+local JSONRPC_REQ_METHOD_KEY       = "method"
+local JSONRPC_REQ_PARAMS           = "params"
+local JSONRPC_REQ_METHOD_HTTP_POST = "POST"
+local JSONRPC_REQ_MIME_JSON        = "application/json"
 
 
 
@@ -61,7 +61,7 @@ local fetch_graphql_data = {
         local body = request.get_uri_args(ctx)[GRAPHQL_REQ_DATA_KEY]
         if not body then
             return nil, "failed to read graphql data, args[" ..
-                        GRAPHQL_REQ_DATA_KEY .. "] is nil"
+                GRAPHQL_REQ_DATA_KEY .. "] is nil"
         end
 
         if type(body) == "table" then
@@ -86,7 +86,7 @@ local fetch_graphql_data = {
 
             if not res[GRAPHQL_REQ_DATA_KEY] then
                 return nil, "failed to read graphql data, json body[" ..
-                            GRAPHQL_REQ_DATA_KEY .. "] is nil"
+                    GRAPHQL_REQ_DATA_KEY .. "] is nil"
             end
 
             body = res[GRAPHQL_REQ_DATA_KEY]
@@ -133,7 +133,6 @@ local function parse_graphql(ctx)
     return res
 end
 
-
 local function get_parsed_graphql()
     local ctx = ngx.ctx.api_ctx
     if ctx._graphql then
@@ -149,7 +148,7 @@ local function get_parsed_graphql()
 
     if #res.definitions > 1 then
         log.warn("Multiple operations are not supported.",
-                    "Only the first one is handled")
+            "Only the first one is handled")
     end
 
     local def = res.definitions[1]
@@ -174,30 +173,57 @@ local function get_parsed_graphql()
 end
 
 local fetch_jsonrpc_data = {
-    [JSONRPC_REQ_METHOD_HTTP_POST] = function(ctx, max_size)
-        local body, err = request.get_body(max_size, ctx)
-        if not body then
-            return nil, "failed to read jsonrpc data, " .. (err or "request body has zero size")
+    [JSONRPC_REQ_METHOD_HTTP_POST] = function(request_context, max_request_size)
+        -- Try to read the request body
+        local request_body, read_error = request.get_body(max_request_size, request_context)
+        if not request_body then
+            -- Return nil and an error message if reading the body fails
+            return nil, "failed to read jsonrpc data, " .. (read_error or "request body has zero size")
         end
 
-        if request.header(ctx, "Content-Type") == JSONRPC_REQ_MIME_JSON then
-            local res
-            res, err = json.decode(body)
-            if not res then
-                return nil, "failed to read jsonrpc data, " .. err
+        if request.header(request_context, "Content-Type") == JSONRPC_REQ_MIME_JSON then
+            -- Try to decode the request body as a JSON object
+            local decoded_request
+            decoded_request, read_error = json.decode(request_body)
+            if not decoded_request then
+                -- Return nil and an error message if decoding the body fails
+                return nil, "failed to read jsonrpc data, " .. read_error
             end
 
-            if not res[JSONRPC_REQ_METHOD_KEY] then
-                return nil, "failed to read jsonrpc data method, json body[" ..
+            if type(decoded_request) == "table" and #decoded_request > 1 then
+                -- Batch request
+                local common_method
+                local methods = {}
+                for i, request in ipairs(decoded_request) do
+                    if not request[JSONRPC_REQ_METHOD_KEY] then
+                        -- Return nil and an error message if the method field is missing
+                        return nil, "failed to read jsonrpc data method, json body[" ..
                             JSONRPC_REQ_METHOD_KEY .. "] is nil"
+                    end
+                    methods[#methods + 1] = request[JSONRPC_REQ_METHOD_KEY]
+                    if not common_method then
+                        -- Save the first method name as the reference
+                        common_method = request[JSONRPC_REQ_METHOD_KEY]
+                    elseif common_method ~= request[JSONRPC_REQ_METHOD_KEY] then
+                        -- Different methods in batch request
+                        common_method = "batch"
+                    end
+                end
+                -- Return the common method name or "batch" and the array of methods
+                return { method = common_method, methods = methods }
+            elseif not decoded_request[JSONRPC_REQ_METHOD_KEY] then
+                -- Return nil and an error message if the method field is missing in a non-batch request
+                return nil, "failed to read jsonrpc data method, json body[" ..
+                    JSONRPC_REQ_METHOD_KEY .. "] is nil"
+            else
+                -- Single request with a method field
+                return { method = decoded_request[JSONRPC_REQ_METHOD_KEY],
+                    methods = { decoded_request[JSONRPC_REQ_METHOD_KEY] } }
             end
-
-            body = res[JSONRPC_REQ_METHOD_KEY]
         end
-
-        return body
     end
 }
+
 
 local function parse_jsonrpc(ctx)
     local local_conf, err = config_local.local_conf()
@@ -223,15 +249,6 @@ local function parse_jsonrpc(ctx)
         return nil, err
     end
 
-    -- local ok, res = pcall(gq_parse, body)
-    -- if not ok then
-    --     return nil, "failed to parse graphql: " .. res .. " body: " .. body
-    -- end
-
-    -- if #res.definitions == 0 then
-    --     return nil, "empty graphql: " .. body
-    -- end
-
     return body
 end
 
@@ -253,22 +270,25 @@ local function get_parsed_jsonrpc()
     --                 "Only the first one is handled")
     -- end
 
-    local method = res
-    -- local methods = res.methods
+    _M.register_var("jsonrpc_method", function()
+        return res.method
+    end)
+    _M.register_var("jsonrpc_methods", function()
+        return res.methods
+    end)
 
     ctx._jsonrpc = {
-        method = res
-        -- methods = methods
+        method = res.method,
+        methods = res.methods
     }
 
     return ctx._jsonrpc
 end
 
-
 do
     local var_methods = {
         method = ngx.req.get_method,
-        cookie = function ()
+        cookie = function()
             if ngx.var.http_cookie then
                 return ck:new()
             end
@@ -282,19 +302,19 @@ do
     }
 
     local ngx_var_names = {
-        upstream_scheme            = true,
-        upstream_host              = true,
-        upstream_upgrade           = true,
-        upstream_connection        = true,
-        upstream_uri               = true,
+        upstream_scheme     = true,
+        upstream_host       = true,
+        upstream_upgrade    = true,
+        upstream_connection = true,
+        upstream_uri        = true,
 
-        upstream_mirror_uri        = true,
+        upstream_mirror_uri = true,
 
-        upstream_cache_zone        = true,
-        upstream_cache_zone_info   = true,
-        upstream_no_cache          = true,
-        upstream_cache_key         = true,
-        upstream_cache_bypass      = true,
+        upstream_cache_zone      = true,
+        upstream_cache_zone_info = true,
+        upstream_no_cache        = true,
+        upstream_cache_key       = true,
+        upstream_cache_bypass    = true,
 
         var_x_forwarded_proto = true,
         var_x_forwarded_port  = true,
@@ -336,7 +356,7 @@ do
                     val, err = cookie:get(sub_str(key, 8))
                     if err then
                         log.warn("failed to fetch cookie value by key: ",
-                                 key, " error: ", err)
+                            key, " error: ", err)
                     end
                 end
 
@@ -413,64 +433,64 @@ do
         end,
     }
 
----
--- Register custom variables.
--- Register variables globally, and use them as normal builtin variables.
--- Note that the custom variables can't be used in features that depend
--- on the Nginx directive, like `access_log_format`.
---
--- @function core.ctx.register_var
--- @tparam string name custom variable name
--- @tparam function getter The fetch function for custom variables.
--- @tparam table opts An optional options table which controls the behavior about the variable
--- @usage
--- local core = require "apisix.core"
---
--- core.ctx.register_var("a6_labels_zone", function(ctx)
---     local route = ctx.matched_route and ctx.matched_route.value
---     if route and route.labels then
---         return route.labels.zone
---     end
---     return nil
--- end)
---
--- We support the options below in the `opts`:
--- * no_cacheable: if the result of getter is cacheable or not. Default to `false`.
-function _M.register_var(name, getter, opts)
-    if type(getter) ~= "function" then
-        error("the getter of registered var should be a function")
-    end
+    ---
+    -- Register custom variables.
+    -- Register variables globally, and use them as normal builtin variables.
+    -- Note that the custom variables can't be used in features that depend
+    -- on the Nginx directive, like `access_log_format`.
+    --
+    -- @function core.ctx.register_var
+    -- @tparam string name custom variable name
+    -- @tparam function getter The fetch function for custom variables.
+    -- @tparam table opts An optional options table which controls the behavior about the variable
+    -- @usage
+    -- local core = require "apisix.core"
+    --
+    -- core.ctx.register_var("a6_labels_zone", function(ctx)
+    --     local route = ctx.matched_route and ctx.matched_route.value
+    --     if route and route.labels then
+    --         return route.labels.zone
+    --     end
+    --     return nil
+    -- end)
+    --
+    -- We support the options below in the `opts`:
+    -- * no_cacheable: if the result of getter is cacheable or not. Default to `false`.
+    function _M.register_var(name, getter, opts)
+        if type(getter) ~= "function" then
+            error("the getter of registered var should be a function")
+        end
 
-    apisix_var_names[name] = getter
+        apisix_var_names[name] = getter
 
-    if opts then
-        if opts.no_cacheable then
-            no_cacheable_var_names[name] = true
+        if opts then
+            if opts.no_cacheable then
+                no_cacheable_var_names[name] = true
+            end
         end
     end
-end
 
-function _M.set_vars_meta(ctx)
-    local var = tablepool.fetch("ctx_var", 0, 32)
-    if not var._cache then
-        var._cache = {}
+    function _M.set_vars_meta(ctx)
+        local var = tablepool.fetch("ctx_var", 0, 32)
+        if not var._cache then
+            var._cache = {}
+        end
+
+        var._request = get_request()
+        var._ctx = ctx
+        setmetatable(var, mt)
+        ctx.var = var
     end
 
-    var._request = get_request()
-    var._ctx = ctx
-    setmetatable(var, mt)
-    ctx.var = var
-end
+    function _M.release_vars(ctx)
+        if ctx.var == nil then
+            return
+        end
 
-function _M.release_vars(ctx)
-    if ctx.var == nil then
-        return
+        core_tab.clear(ctx.var._cache)
+        tablepool.release("ctx_var", ctx.var, true)
+        ctx.var = nil
     end
-
-    core_tab.clear(ctx.var._cache)
-    tablepool.release("ctx_var", ctx.var, true)
-    ctx.var = nil
-end
 
 end -- do
 

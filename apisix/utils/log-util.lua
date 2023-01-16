@@ -46,9 +46,9 @@ local function gen_log_format(format)
     local log_format = {}
     for k, var_name in pairs(format) do
         if var_name:byte(1, 1) == str_byte("$") then
-            log_format[k] = {true, var_name:sub(2)}
+            log_format[k] = { true, var_name:sub(2) }
         else
-            log_format[k] = {false, var_name}
+            log_format[k] = { false, var_name }
         end
     end
     core.log.info("log_format: ", core.json.delay_encode(log_format))
@@ -102,6 +102,7 @@ local function latency_details_in_ms(ctx)
 
     return latency, upstream_latency, apisix_latency
 end
+
 _M.latency_details_in_ms = latency_details_in_ms
 
 
@@ -111,7 +112,7 @@ local function get_full_log(ngx, conf)
     local service_id
     local route_id
     local url = var.scheme .. "://" .. var.host .. ":" .. var.server_port
-                .. var.request_uri
+        .. var.request_uri
     local matched_route = ctx.matched_route and ctx.matched_route.value
 
     if matched_route then
@@ -130,7 +131,7 @@ local function get_full_log(ngx, conf)
 
     local latency, upstream_latency, apisix_latency = latency_details_in_ms(ctx)
 
-    local log =  {
+    local log = {
         request = {
             url = url,
             uri = var.request_uri,
@@ -200,6 +201,7 @@ local function get_full_log(ngx, conf)
 
     return log
 end
+
 _M.get_full_log = get_full_log
 
 
@@ -252,7 +254,6 @@ function _M.get_req_original(ctx, conf)
     return core.table.concat(headers, "")
 end
 
-
 function _M.check_log_schema(conf)
     if conf.include_req_body_expr then
         local ok, err = expr.new(conf.include_req_body_expr)
@@ -268,7 +269,6 @@ function _M.check_log_schema(conf)
     end
     return true, nil
 end
-
 
 function _M.collect_body(conf, ctx)
     if conf.include_resp_body then
@@ -299,10 +299,16 @@ function _M.collect_body(conf, ctx)
                 return
             end
             ctx.resp_body = final_body
+            local resp_headers = ngx.resp.get_headers()
+            local encoding = resp_headers["Content-Encoding"]
+            if encoding == "gzip" then
+                ctx.var.resp_body = '{ "jsonrpc": "2.0", "result": "gzip body" }'
+            else
+                ctx.var.resp_body = final_body
+            end
         end
     end
 end
-
 
 function _M.get_rfc3339_zulu_timestamp(timestamp)
     ngx_update_time()
@@ -311,6 +317,5 @@ function _M.get_rfc3339_zulu_timestamp(timestamp)
     local millisecond = math_floor((now - second) * 1000)
     return os_date("!%Y-%m-%dT%T.", second) .. core.string.format("%03dZ", millisecond)
 end
-
 
 return _M

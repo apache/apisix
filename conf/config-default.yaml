@@ -229,6 +229,7 @@ nginx_config:                     # config for render the template to generate n
       internal-status: 10m
       plugin-limit-req: 10m
       plugin-limit-count: 10m
+      plugin-limit-cu: 10m
       prometheus-metrics: 10m
       plugin-limit-conn: 10m
       upstream-healthcheck: 10m
@@ -238,6 +239,7 @@ nginx_config:                     # config for render the template to generate n
       balancer-ewma-locks: 10m
       balancer-ewma-last-touched-at: 10m
       plugin-limit-count-redis-cluster-slot-lock: 1m
+      plugin-limit-cu-redis-cluster-slot-lock: 1m
       tracing_buffer: 10m
       plugin-api-breaker: 10m
       etcd-cluster-health-check: 10m
@@ -418,7 +420,8 @@ graphql:
 #ext-plugin:
   #cmd: ["ls", "-l"]
 
-plugins:                          # plugin list (sorted by priority)
+plugins:      # plugin list (sorted by priority)
+  - custom-ctx-var                 # priority: 24000
   - real-ip                        # priority: 23000
   - ai                             # priority: 22900
   - client-control                 # priority: 22000
@@ -448,17 +451,22 @@ plugins:                          # plugin list (sorted by priority)
   - hmac-auth                      # priority: 2530
   - basic-auth                     # priority: 2520
   - jwt-auth                       # priority: 2510
+  - path-key-extractor             # priority: 2501
   - key-auth                       # priority: 2500
   - consumer-restriction           # priority: 2400
   - forward-auth                   # priority: 2002
   - opa                            # priority: 2001
   - authz-keycloak                 # priority: 2000
+  - whitelist                      # priority: 1900
   #- error-log-logger              # priority: 1091
   - proxy-mirror                   # priority: 1010
   - proxy-cache                    # priority: 1009
   - proxy-rewrite                  # priority: 1008
   - workflow                       # priority: 1006
   - api-breaker                    # priority: 1005
+  - calculate-cu                   # priority: 1012
+  - limit-monthly-cu               # priority: 1011
+  - limit-cu                       # priority: 1010
   - limit-conn                     # priority: 1003
   - limit-count                    # priority: 1002
   - limit-req                      # priority: 1001
@@ -494,6 +502,7 @@ plugins:                          # plugin list (sorted by priority)
   - inspect                        # priority: 200
   #- log-rotate                    # priority: 100
   # <- recommend to use priority (0, 100) for your custom plugins
+  - guard                          # priority: 50
   - example-plugin                 # priority: 0
   #- gm                            # priority: -43
   - aws-lambda                     # priority: -1899
@@ -613,8 +622,9 @@ deployment:
 
     enable_admin_cors: true         # Admin API support CORS response headers.
     allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
-      - 127.0.0.0/24                # If we don't set any IP list, then any IP access is allowed by default.
-      #- "::/64"
+      # - 127.0.0.0/24                # If we don't set any IP list, then any IP access is allowed by default.
+      # - "::/64"
+      - 0.0.0.0/0
     admin_listen:                 # use a separate port
       ip: 0.0.0.0                 # Specific IP, if not set, the default value is `0.0.0.0`.
       port: 9180                  # Specific port, which must be different from node_listen's port.

@@ -69,10 +69,10 @@ lua {
 {% if enabled_stream_plugins["prometheus"] and not enable_http then %}
 http {
     lua_package_path  "{*extra_lua_path*}$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
-                       .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
+    .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
     lua_package_cpath "{*extra_lua_cpath*}$prefix/deps/lib64/lua/5.1/?.so;]=]
-                      .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
-                      .. [=[{*lua_cpath*};";
+    .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
+    .. [=[{*lua_cpath*};";
 
     {% if enabled_stream_plugins["prometheus"] then %}
 
@@ -124,10 +124,10 @@ http {
 {% if stream_proxy then %}
 stream {
     lua_package_path  "{*extra_lua_path*}$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
-                      .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
+    .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
     lua_package_cpath "{*extra_lua_cpath*}$prefix/deps/lib64/lua/5.1/?.so;]=]
-                      .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
-                      .. [=[{*lua_cpath*};";
+    .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
+    .. [=[{*lua_cpath*};";
     lua_socket_log_errors off;
 
     {% if max_pending_timers then %}
@@ -233,10 +233,10 @@ http {
     # put extra_lua_path in front of the builtin path
     # so user can override the source code
     lua_package_path  "{*extra_lua_path*}$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
-                       .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
+    .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
     lua_package_cpath "{*extra_lua_cpath*}$prefix/deps/lib64/lua/5.1/?.so;]=]
-                      .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
-                      .. [=[{*lua_cpath*};";
+    .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
+    .. [=[{*lua_cpath*};";
 
     {% if max_pending_timers then %}
     lua_max_pending_timers {* max_pending_timers *};
@@ -278,6 +278,11 @@ http {
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-count-redis-cluster-slot-lock"] *};
     lua_shared_dict plugin-limit-count-reset-header {* http.lua_shared_dict["plugin-limit-count"] *};
     {% end %}
+    
+    {% if enabled_plugins["limit-cu"] then %}
+        lua_shared_dict plugin-limit-cu {* http.lua_shared_dict["plugin-limit-cu"] *};
+        lua_shared_dict plugin-limit-cu-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-cu-redis-cluster-slot-lock"] *};
+        {% end %}
 
     {% if enabled_plugins["prometheus"] and not enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* http.lua_shared_dict["prometheus-metrics"] *};

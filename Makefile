@@ -324,6 +324,9 @@ install: runtime
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-count
 	$(ENV_INSTALL) apisix/plugins/limit-count/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-count/
+	
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-cu
+	$(ENV_INSTALL) apisix/plugins/limit-cu/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-cu/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/opa
 	$(ENV_INSTALL) apisix/plugins/opa/*.lua $(ENV_INST_LUADIR)/apisix/plugins/opa/
