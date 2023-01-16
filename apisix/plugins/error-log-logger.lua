@@ -19,6 +19,7 @@ local core = require("apisix.core")
 local errlog = require("ngx.errlog")
 local batch_processor = require("apisix.utils.batch-processor")
 local plugin = require("apisix.plugin")
+local producer = require ("resty.kafka.producer")
 local timers = require("apisix.timers")
 local http = require("resty.http")
 local plugin_name = "error-log-logger"
@@ -66,6 +67,62 @@ local metadata_schema = {
             },
             required = {"endpoint_addr", "user", "password", "database", "logtable"}
         },
+        kafka = {
+            type = "object",
+            properties = {
+                brokers = {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        type = "object",
+                        properties = {
+                            host = {
+                                type = "string",
+                                description = "the host of kafka broker",
+                            },
+                            port = {
+                                type = "integer",
+                                minimum = 1,
+                                maximum = 65535,
+                                description = "the port of kafka broker",
+                            },
+                            sasl_config = {
+                                type = "object",
+                                description = "sasl config",
+                                properties = {
+                                    mechanism = {
+                                        type = "string",
+                                        default = "PLAIN",
+                                        enum = {"PLAIN"},
+                                    },
+                                    user = { type = "string", description = "user" },
+                                    password =  { type = "string", description = "password" },
+                                },
+                                required = {"user", "password"},
+                            },
+                        },
+                        required = {"host", "port"},
+                    },
+                    uniqueItems = true,
+                },
+                kafka_topic = {type = "string"},
+                producer_type = {
+                    type = "string",
+                    default = "async",
+                    enum = {"async", "sync"},
+                },
+                required_acks = {
+                    type = "integer",
+                    default = 1,
+                    enum = { 0, 1, -1 },
+                },
+                key = {type = "string"},
+                -- in lua-resty-kafka, cluster_name is defined as number
+                -- see https://github.com/doujiang24/lua-resty-kafka#new-1
+                cluster_name = {type = "integer", minimum = 1, default = 1},
+            },
+            required = {"brokers", "kafka_topic"},
+        },
         name = {type = "string", default = plugin_name},
         level = {type = "string", default = "WARN", enum = {"STDERR", "EMERG", "ALERT", "CRIT",
                 "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"}},
@@ -81,6 +138,7 @@ local metadata_schema = {
         {required = {"skywalking"}},
         {required = {"tcp"}},
         {required = {"clickhouse"}},
+        {required = {"kafka"}},
         -- for compatible with old schema
         {required = {"host", "port"}}
     },
@@ -272,6 +330,53 @@ local function send_to_clickhouse(log_message)
 end
 
 
+local function create_producer(broker_list, broker_config, cluster_name)
+    core.log.info("create new kafka producer instance")
+    return producer:new(broker_list, broker_config, cluster_name)
+end
+
+
+local function send_to_kafka(log_message)
+    core.log.info("sending a batch logs to kafka brokers: ", core.json.encode(config.kafka.brokers))
+
+    local broker_config = {}
+    broker_config["request_timeout"] = config.timeout * 1000
+    broker_config["producer_type"] = config.kafka.producer_type
+    broker_config["required_acks"] = config.kafka.required_acks
+
+    local prod
+    local err
+
+    local metadata = plugin.plugin_metadata(plugin_name)
+    if not (metadata and metadata.value and metadata.modifiedIndex) then
+        core.log.info("please set the correct plugin_metadata for ", plugin_name)
+        return
+    else
+        -- reuse producer via lrucache to avoid unbalanced partitions of messages in kafka
+        prod, err = lrucache(plugin_name .. "#kafka", metadata.modifiedIndex,
+                             create_producer, config.kafka.brokers, broker_config, config.kafka.cluster_name)
+        if not prod then
+            return false, "get kafka producer failed " .. err
+        end
+        core.log.info("kafka cluster name ", config.kafka.cluster_name, ", broker_list[1] port ",
+                      prod.client.broker_list[1].port)
+    end
+
+
+    local ok
+    for i = 1, #log_message, 2 do
+        ok, err = prod:send(config.kafka.kafka_topic, config.kafka.key, core.json.encode(log_message[i]))
+        if not ok then
+            return false, "failed to send data to Kafka topic: " .. err ..
+                    ", brokers: " .. core.json.encode(config.kafka.brokers)
+        end
+        core.log.info("send data to kafka: ", core.json.encode(log_message[i]))
+    end
+
+    return true
+end
+
+
 local function update_filter(value)
     local level = log_level[value.level]
     local status, err = errlog.set_filter_level(level)
@@ -286,10 +391,13 @@ end
 
 
 local function send(data)
+    core.log.info("send data is ", core.json.encode(data,false))
     if config.skywalking then
         return send_to_skywalking(data)
     elseif config.clickhouse then
         return send_to_clickhouse(data)
+    elseif config.kafka then
+        return send_to_kafka(data)
     end
     return send_to_tcp_server(data)
 end
@@ -307,7 +415,7 @@ local function process()
             core.log.warn("set log filter failed for ", err)
             return
         end
-        if not (config.tcp or config.skywalking or config.clickhouse) then
+        if not (config.tcp or config.skywalking or config.clickhouse or config.kafka) then
             config.tcp = {
                 host = config.host,
                 port =  config.port,
