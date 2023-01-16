@@ -59,7 +59,7 @@ function _M:check_conf(id, conf, need_id)
     -- check the resource own rules
     local ok, err = self.checker(id, conf, need_id, self.schema)
 
-    if err then
+    if not ok then
         return ok, err
     else
         return need_id and id or true

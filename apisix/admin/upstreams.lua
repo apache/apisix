@@ -29,6 +29,8 @@ local function check_conf(id, conf, need_id)
     if not ok then
         return nil, {error_msg = err}
     end
+
+    return true
 end
 
 

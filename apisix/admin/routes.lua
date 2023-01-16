@@ -134,6 +134,8 @@ local function check_conf(id, conf, need_id, schema)
             return nil, {error_msg = "'script' should be a Lua object"}
         end
     end
+
+    return true
 end
 
 
