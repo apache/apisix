@@ -354,7 +354,8 @@ local function send_to_kafka(log_message)
     else
         -- reuse producer via lrucache to avoid unbalanced partitions of messages in kafka
         prod, err = lrucache(plugin_name .. "#kafka", metadata.modifiedIndex,
-                             create_producer, config.kafka.brokers, broker_config, config.kafka.cluster_name)
+                             create_producer, config.kafka.brokers, broker_config,
+                             config.kafka.cluster_name)
         if not prod then
             return false, "get kafka producer failed " .. err
         end
@@ -365,7 +366,8 @@ local function send_to_kafka(log_message)
 
     local ok
     for i = 1, #log_message, 2 do
-        ok, err = prod:send(config.kafka.kafka_topic, config.kafka.key, core.json.encode(log_message[i]))
+        ok, err = prod:send(config.kafka.kafka_topic,
+                            config.kafka.key, core.json.encode(log_message[i]))
         if not ok then
             return false, "failed to send data to Kafka topic: " .. err ..
                     ", brokers: " .. core.json.encode(config.kafka.brokers)
@@ -391,7 +393,6 @@ end
 
 
 local function send(data)
-    core.log.info("send data is ", core.json.encode(data,false))
     if config.skywalking then
         return send_to_skywalking(data)
     elseif config.clickhouse then
