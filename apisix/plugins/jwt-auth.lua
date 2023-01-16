@@ -70,10 +70,6 @@ local consumer_schema = {
             type = "boolean",
             default = false
         },
-        vault = {
-            type = "object",
-            properties = {}
-        },
         lifetime_grace_period = {
             type = "integer",
             minimum = 0,
@@ -101,19 +97,6 @@ local consumer_schema = {
                     },
                     required = {"public_key", "private_key"},
                 },
-                {
-                    properties = {
-                        vault = {
-                            type = "object",
-                            properties = {}
-                        },
-                        algorithm = {
-                            enum = {"RS256", "ES256"},
-                        },
-                    },
-                    required = {"vault"},
-                },
-
             }
         }
     },
@@ -144,11 +127,6 @@ function _M.check_schema(conf, schema_type)
 
     if not ok then
         return false, err
-    end
-
-    if conf.vault then
-        core.log.info("skipping jwt-auth schema validation with vault")
-        return true
     end
 
     if conf.algorithm ~= "RS256" and conf.algorithm ~= "ES256" and not conf.secret then
@@ -256,7 +234,7 @@ end
 local function get_rsa_or_ecdsa_keypair(conf, consumer_name)
     local public_key = conf.public_key
     local private_key = conf.private_key
-    -- if keys are present in conf, no need to query vault (fallback)
+
     if public_key and private_key then
         return public_key, private_key
     elseif public_key and not private_key then

@@ -33,8 +33,6 @@ description: 本文介绍了关于 Apache APISIX `jwt-auth` 插件的基本信�
 
 通过 Consumer 将其密匙添加到查询字符串参数、请求头或 `cookie` 中用来验证其请求。
 
-`jwt-auth` 插件可以与 [HashiCorp Vault](https://www.vaultproject.io/) 集成，用于存储和获取密钥，并从 HashiCorp Vault 的 [encrypted KV engine](https://www.vaultproject.io/docs/secrets/kv)中获取 RSA 密匙对。你可以从下面的[示例](#与-hashicorp-vault-集成使用)中了解更多信息。
-
 ## 属性
 
 Consumer 端：
@@ -48,18 +46,9 @@ Consumer 端：
 | algorithm     | string  | 否    | "HS256" | ["HS256", "HS512", "RS256", "ES256"] | 加密算法。                                                                                                      |
 | exp           | integer | 否    | 86400   | [1,...]                     | token 的超时时间。                                                                                              |
 | base64_secret | boolean | 否    | false   |                             | 当设置为 `true` 时，密钥为 base64 编码。                                                                                         |
-| vault         | object  | 否    |         |                             | 是否使用 Vault 作为存储和检索密钥（HS256/HS512 的密钥或 RS256/ES256 的公钥和私钥）的方式。该插件默认使用 `kv/apisix/consumer/<consumer name>/jwt-auth` 路径进行密钥检索。 |
 | lifetime_grace_period | integer | 否    | 0  | [0,...]                  | 定义生成 JWT 的服务器和验证 JWT 的服务器之间的时钟偏移。该值应该是零（0）或一个正整数。 |
 
 注意：schema 中还定义了 `encrypt_fields = {"secret", "private_key"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
-
-:::info IMPORTANT
-
-如果你想要启用 Vault 集成，你需要在 [config.yaml](https://github.com/apache/apisix/blob/master/conf/config.yaml) 配置文件中，更新你的 Vault 服务器配置、主机地址和访问令牌。
-
-请参考默认配置文件 [config-default.yaml](https://github.com/apache/apisix/blob/master/conf/config-default.yaml) 中的 Vault 属性下了解相关配置。
-
-:::
 
 Route 端：
 
@@ -141,97 +130,6 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
     }
 }'
 ```
-
-### 与 HashiCorp Vault 集成使用
-
-[HashiCorp Vault](https://www.vaultproject.io/) 提供集中式密钥管理解决方案，可与 APISIX 一起用于身份验证。
-
-因此，如果你的企业经常更改 secret/keys（HS256/HS512 的密钥或 RS256 的 public_key 和 private_key）并且你不想每次都更新 APISIX 的 Consumer，或者你不想通过 Admin API（减少信息泄漏），你可以将 Vault 和 `jwt-auth` 插件一起使用。
-
-:::note
-
-当前版本的 Apache APISIX 期望存储在 Vault 中机密的密钥名称位于 `secret`、`public_key` 和 `private_key` 之间。前一个用于 HS256/HS512 算法，后两个用于 RS256 算法。
-
-在未来的版本中，该插件将支持引用自定义命名键。
-
-:::
-
-如果你要使用 Vault，可以在配置中添加一个空的 Vault 对象。
-
-例如，如果你在 Vault 中存储了一个 HS256 签名密钥，可以通过以下方式在 APISIX 中使用它：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "username": "jack",
-    "plugins": {
-        "jwt-auth": {
-            "key": "key-1",
-            "vault": {}
-        }
-    }
-}'
-```
-
-该插件将在提供的 Vault 路径（`<vault.prefix>/consumer/jack/jwt-auth`）中查找密钥 `secret`，并将其用于 JWT 身份验证。如果在同一路径中找不到密钥，插件会记录错误并且无法执行 JWT 验证。
-
-:::note
-
-`vault.prefix` 会在配置文件（`conf/config.yaml`）中根据启用 `Vault kv secret engine` 时选择的基本路径进行设置。
-
-例如，如果设置了 `vault secrets enable -path=foobar kv`，就需要在 `vault.prefix` 中使用 `foobar`。
-
-:::
-
-如果在此路径中找不到密钥，插件将记录错误。
-
-对于 RS256，公钥和私钥都应该存储在 Vault 中，可以通过以下方式配置：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "username": "jack",
-    "plugins": {
-        "jwt-auth": {
-            "key": "rsa-keypair",
-            "algorithm": "RS256",
-            "vault": {}
-        }
-    }
-}'
-```
-
-该插件将在提供的 Vault 键值对路径（`<vault.prefix from conf.yaml>/consumer/jim/jwt-auth`）中查找 `public_key` 和 `private_key`，并将其用于 JWT 身份认证。
-
-如果在此路径中没有找到密钥，则认证失败，插件将记录错误。
-
-你还可以在 Consumer 中配置 `public_key` 并使用存储在 Vault 中的 `private_key`：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "username": "rico",
-    "plugins": {
-        "jwt-auth": {
-            "key": "user-key",
-            "algorithm": "RS256",
-            "public_key": "-----BEGIN PUBLIC KEY-----\n……\n-----END PUBLIC KEY-----"
-            "vault": {}
-        }
-    }
-}'
-```
-
-你还可以通过 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 的 Web 界面完成上述操作。
-
-<!--
-![create a consumer](../../../assets/images/plugin/jwt-auth-1.png)
-![enable jwt plugin](../../../assets/images/plugin/jwt-auth-2.png)
-![enable jwt from route or service](../../../assets/images/plugin/jwt-auth-3.png)
--->
 
 ## 测试插件
 
