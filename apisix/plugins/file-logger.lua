@@ -18,10 +18,11 @@ local log_util = require("apisix.utils.log-util")
 local core = require("apisix.core")
 local ngx = ngx
 local io_open = io.open
+local io_output = io.output
 local is_apisix_or, process = pcall(require, "resty.apisix.process")
 
 local plugin_name = "file-logger"
-local std_out_file = "/dev/stdout"
+local std_out_file = "stdout"
 
 local schema = {
     type = "object",
@@ -29,7 +30,6 @@ local schema = {
         path = {
             type = "string"
         },
-        log_to_stdout = { type = "boolean", default = false },
         include_resp_body = { type = "boolean", default = false },
         include_resp_body_expr = {
             type = "array",
@@ -73,9 +73,14 @@ if is_apisix_or then
     })
 
     local function open_file_handler(conf, handler)
-        local file, err = io_open(conf.path, 'a+')
-        if not file then
-            return nil, err
+        local file, err
+        if conf.path == std_out_file then
+            file = io_output()
+        else
+            file, err = io_open(conf.path, 'a+')
+            if not file then
+                return nil, err
+            end
         end
 
         -- it will case output problem with buffer when log is larger than buffer
@@ -108,29 +113,18 @@ if is_apisix_or then
     end
 end
 
-local function open_std_out(conf)
-    if not conf.log_to_stdout then
-        return
-    end
-    local std_out, err = io_open(std_out_file, "w")
-    if not std_out then
-        core.log.error("failed to open" .. std_out_file .. ", err: ", err)
-        return
-    end
-    std_out:setvbuf("no")
-    return std_out
-end
-
 local function write_file_data(conf, log_message)
     local msg = core.json.encode(log_message)
 
-    local file, std_out, err
+    local file, err
     if open_file_cache then
         file, err = open_file_cache(conf)
-        std_out = open_std_out(conf)
     else
-        file, err = io_open(conf.path, 'a+')
-        std_out = open_std_out(conf)
+        if conf.path == std_out_file then
+            file = io_output()
+        else
+            file, err = io_open(conf.path, 'a+')
+        end
     end
 
     if not file then
@@ -144,14 +138,6 @@ local function write_file_data(conf, log_message)
         local ok, err = file:write(msg)
         if not ok then
             core.log.error("failed to write file: ", conf.path, ", error info: ", err)
-        end
-
-        if conf.log_to_stdout and std_out then
-            ok, err = std_out:write(msg)
-            if not ok then
-                core.log.error("failed to write " .. std_out_file .. ", error info: ", err)
-            end
-            std_out:close()
         end
 
         -- file will be closed by gc, if open_file_cache exists
