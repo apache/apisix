@@ -669,7 +669,7 @@ failed to do PLAIN auth with 127.0.0.1:19094: Authentication failed: Invalid use
                                     "password":"admin-secret"
                             }
                         }],
-                            "kafka_topic":"test2",
+                            "kafka_topic":"test4",
                             "producer_type":"sync",
                             "key":"key1",
                             "timeout":1,
