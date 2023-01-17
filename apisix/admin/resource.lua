@@ -68,7 +68,7 @@ end
 
 
 function _M:get(id)
-    if self.unsupported_methods and core.table.array_find(self.unsupported_methods, "get") then
+    if core.table.array_find(self.unsupported_methods, "get") then
         return 405, {error_msg = "not supported `GET` method for " .. self.kind}
     end
 
@@ -89,7 +89,7 @@ end
 
 
 function _M:post(id, conf, sub_path, args)
-    if self.unsupported_methods and core.table.array_find(self.unsupported_methods, "post") then
+    if core.table.array_find(self.unsupported_methods, "post") then
         return 405, {error_msg = "not supported `POST` method for " .. self.kind}
     end
 
@@ -117,7 +117,7 @@ end
 
 
 function _M:put(id, conf, sub_path, args)
-    if self.unsupported_methods and core.table.array_find(self.unsupported_methods, "put") then
+    if core.table.array_find(self.unsupported_methods, "put") then
         return 405, {error_msg = "not supported `PUT` method for " .. self.kind}
     end
 
@@ -149,7 +149,7 @@ end
 
 
 function _M:delete(id)
-    if self.unsupported_methods and core.table.array_find(self.unsupported_methods, "delete") then
+    if core.table.array_find(self.unsupported_methods, "delete") then
         return 405, {error_msg = "not supported `DELETE` method for " .. self.kind}
     end
 
@@ -176,7 +176,7 @@ end
 
 
 function _M:patch(id, conf, sub_path, args)
-    if self.unsupported_methods and core.table.array_find(self.unsupported_methods, "patch") then
+    if core.table.array_find(self.unsupported_methods, "patch") then
         return 405, {error_msg = "not supported `PATCH` method for " .. self.kind}
     end
 
