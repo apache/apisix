@@ -926,7 +926,7 @@ _M.decrypt_conf = decrypt_conf
 local function encrypt_conf(name, conf, schema_type)
     local schema = get_plugin_schema_for_gde(name, schema_type)
     if not schema then
-        core.log.warn("make sure you enable the plugin in your config.yaml, failed to get schema for plugin: ", name)
+        core.log.warn("make sure you enable the plugin, failed to get schema for plugin: ", name)
         return
     end
 
