@@ -502,6 +502,7 @@ plugins:                          # plugin list (sorted by priority)
   - openwhisk                      # priority: -1901
   - openfunction                   # priority: -1902
   - serverless-post-function       # priority: -2000
+  - body-transformer               # priority: -1999
   - ext-plugin-post-req            # priority: -3000
   - ext-plugin-post-resp           # priority: -4000
 
