@@ -1392,7 +1392,7 @@ Example Configuration:
 Example API usage:
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/secret/vault/test2 \
+curl -i http://127.0.0.1:9180/apisix/admin/secrets/vault/test2 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "http://xxx/get",
