@@ -322,7 +322,7 @@ nginx_config:                     # config for render the template to generate n
 #      - "http://127.0.0.1:8500"       # `http://127.0.0.1:8500` and `http://127.0.0.1:8600` are different clusters
 #      - "http://127.0.0.1:8600"
 #    skip_services:                    # if you need to skip special services
-#      - "service_a"                   # `consul` service is always registered by default
+#      - "service_a"                   # `consul` service is default skip service
 #    timeout:
 #      connect: 2000               # default 2000 ms
 #      read: 2000                  # default 2000 ms

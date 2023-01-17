@@ -36,7 +36,7 @@ discovery:
   consul:
     servers:                      # make sure service name is unique in these consul servers
       - "http://127.0.0.1:8500"   # `http://127.0.0.1:8500` and `http://127.0.0.1:8600` are different clusters
-      - "http://127.0.0.1:8600"   # `consul` service is always registered by default
+      - "http://127.0.0.1:8600"   # `consul` service is default skip service
     skip_services:                # if you need to skip special services
       - "service_a"
     timeout:

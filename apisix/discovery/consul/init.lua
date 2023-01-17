@@ -43,6 +43,8 @@ local events
 local events_list
 local consul_services
 
+local default_skip_services = {"consul"}
+
 local _M = {
     version = 0.2,
 }
@@ -373,6 +375,10 @@ function _M.init_worker()
         for _, v in ipairs(consul_conf.skip_services) do
             skip_service_map[v] = true
         end
+    end
+    -- set up default skip service
+    for _, v in ipairs(default_skip_services) do
+        skip_service_map[v] = true
     end
 
     local consul_servers_list, err = format_consul_params(consul_conf)
