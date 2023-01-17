@@ -19,7 +19,7 @@
 
 # Apache APISIX API Gateway
 
-<img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/apisix.svg" alt="APISIX logo" height="150px" align="right" />
+<img src="./logos/apisix-white-bg.jpg" alt="APISIX logo" height="150px" align="right" />
 
 [![Build Status](https://github.com/apache/apisix/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/apache/apisix/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
@@ -233,7 +233,7 @@ A wide variety of companies and organizations use APISIX API Gateway for researc
 ## Landscape
 
 <p align="left">
-<img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200" />
+<img src="./logos/cncf-landscape-white-bg.jpg" width="175">&nbsp;&nbsp;<img src="./logos/cncf-white-bg.jpg" width="200" />
 <br /><br />
 APISIX enriches the <a href="https://landscape.cncf.io/card-mode?category=api-gateway&grouping=category">
 CNCF API Gateway Landscape.</a>
