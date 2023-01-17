@@ -14,15 +14,17 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local log_util = require("apisix.utils.log-util")
-local core = require("apisix.core")
-local ngx = ngx
-local io_open = io.open
-local io_output = io.output
+local log_util     =   require("apisix.utils.log-util")
+local core         =   require("apisix.core")
+local ngx          =   ngx
+local io_open      =   io.open
+local io_output    =   io.output
 local is_apisix_or, process = pcall(require, "resty.apisix.process")
+
 
 local plugin_name = "file-logger"
 local std_out_file = "stdout"
+
 
 local schema = {
     type = "object",
@@ -30,7 +32,7 @@ local schema = {
         path = {
             type = "string"
         },
-        include_resp_body = { type = "boolean", default = false },
+        include_resp_body = {type = "boolean", default = false},
         include_resp_body_expr = {
             type = "array",
             minItems = 1,
@@ -39,8 +41,9 @@ local schema = {
             }
         }
     },
-    required = { "path" }
+    required = {"path"}
 }
+
 
 local metadata_schema = {
     type = "object",
@@ -48,6 +51,7 @@ local metadata_schema = {
         log_format = log_util.metadata_schema_log_format
     }
 }
+
 
 local _M = {
     version = 0.1,
@@ -57,12 +61,14 @@ local _M = {
     metadata_schema = metadata_schema
 }
 
+
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
     return core.schema.check(schema, conf)
 end
+
 
 local open_file_cache
 if is_apisix_or then
@@ -113,6 +119,7 @@ if is_apisix_or then
     end
 end
 
+
 local function write_file_data(conf, log_message)
     local msg = core.json.encode(log_message)
 
@@ -155,5 +162,6 @@ function _M.log(conf, ctx)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
     write_file_data(conf, entry)
 end
+
 
 return _M
