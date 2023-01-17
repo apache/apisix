@@ -340,7 +340,8 @@ end
 
 
 local function send_to_kafka(log_message)
-    core.log.info("sending a batch logs to kafka brokers: ", core.json.delay_encode(config.kafka.brokers))
+    core.log.info("sending a batch logs to kafka brokers: ",
+                   core.json.delay_encode(config.kafka.brokers))
 
     local broker_config = {}
     broker_config["request_timeout"] = config.timeout * 1000
