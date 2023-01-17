@@ -1356,7 +1356,7 @@ Secret means `Secrets Management`, which could use any secret manager supported,
 
 ### Secret API
 
-Secret resource request address: /apisix/admin/secret/{secretmanager}/{id}
+Secret resource request address: /apisix/admin/secrets/{secretmanager}/{id}
 
 ### Request Methods
 
