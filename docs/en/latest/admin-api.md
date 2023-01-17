@@ -1350,13 +1350,13 @@ Stream Route resource request address:  /apisix/admin/stream_routes/{id}
 
 To learn more about filtering in stream proxies, check [this](./stream-proxy.md#more-route-match-options) document.
 
-## kms
+## Secret
 
-kms means `Secrets Management`, which could use any secret manager supported, e.g. `vault`.
+Secret means `Secrets Management`, which could use any secret manager supported, e.g. `vault`.
 
-### kms API
+### Secret API
 
-kms resource request address: /apisix/admin/kms/{secretmanager}/{id}
+Secret resource request address: /apisix/admin/secret/{secretmanager}/{id}
 
 ### Request Methods
 
@@ -1392,7 +1392,7 @@ Example Configuration:
 Example API usage:
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/kms/vault/test2 \
+curl -i http://127.0.0.1:9180/apisix/admin/secret/vault/test2 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "http://xxx/get",
