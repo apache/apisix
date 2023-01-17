@@ -52,7 +52,8 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 \
 ```
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY:edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY:edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uris": ["/index.html"],
     "plugin_config_id": 1,
