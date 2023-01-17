@@ -19,9 +19,9 @@ local core = require("apisix.core")
 local errlog = require("ngx.errlog")
 local batch_processor = require("apisix.utils.batch-processor")
 local plugin = require("apisix.plugin")
-local producer = require ("resty.kafka.producer")
 local timers = require("apisix.timers")
 local http = require("resty.http")
+local producer = require("resty.kafka.producer")
 local plugin_name = "error-log-logger"
 local table = core.table
 local schema_def = core.schema
@@ -31,6 +31,9 @@ local tostring = tostring
 local ipairs = ipairs
 local string = require("string")
 local lrucache = core.lrucache.new({
+    ttl = 300, count = 32
+})
+local kafka_prod_lrucache = core.lrucache.new({
     ttl = 300, count = 32
 })
 
@@ -337,32 +340,28 @@ end
 
 
 local function send_to_kafka(log_message)
-    core.log.info("sending a batch logs to kafka brokers: ", core.json.encode(config.kafka.brokers))
+    core.log.info("sending a batch logs to kafka brokers: ", core.json.delay_encode(config.kafka.brokers))
 
     local broker_config = {}
     broker_config["request_timeout"] = config.timeout * 1000
     broker_config["producer_type"] = config.kafka.producer_type
     broker_config["required_acks"] = config.kafka.required_acks
 
-    local prod
-    local err
-
     local metadata = plugin.plugin_metadata(plugin_name)
     if not (metadata and metadata.value and metadata.modifiedIndex) then
         core.log.info("please set the correct plugin_metadata for ", plugin_name)
         return
-    else
-        -- reuse producer via lrucache to avoid unbalanced partitions of messages in kafka
-        prod, err = lrucache(plugin_name .. "#kafka", metadata.modifiedIndex,
-                             create_producer, config.kafka.brokers, broker_config,
-                             config.kafka.cluster_name)
-        if not prod then
-            return false, "get kafka producer failed " .. err
-        end
-        core.log.info("kafka cluster name ", config.kafka.cluster_name, ", broker_list[1] port ",
-                      prod.client.broker_list[1].port)
     end
 
+    -- reuse producer via kafka_prod_lrucache to avoid unbalanced partitions of messages in kafka
+    local prod, err = kafka_prod_lrucache(plugin_name .. "#kafka", metadata.modifiedIndex,
+                                          create_producer, config.kafka.brokers, broker_config,
+                                          config.kafka.cluster_name)
+    if not prod then
+        return false, "get kafka producer failed: " .. err
+    end
+    core.log.info("kafka cluster name ", config.kafka.cluster_name, ", broker_list[1] port ",
+                   prod.client.broker_list[1].port)
 
     local ok
     for i = 1, #log_message, 2 do
@@ -370,9 +369,9 @@ local function send_to_kafka(log_message)
                             config.kafka.key, core.json.encode(log_message[i]))
         if not ok then
             return false, "failed to send data to Kafka topic: " .. err ..
-                    ", brokers: " .. core.json.encode(config.kafka.brokers)
+                          ", brokers: " .. core.json.delay_encode(config.kafka.brokers)
         end
-        core.log.info("send data to kafka: ", core.json.encode(log_message[i]))
+        core.log.info("send data to kafka: ", core.json.delay_encode(log_message[i]))
     end
 
     return true

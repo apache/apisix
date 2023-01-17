@@ -97,7 +97,6 @@ done
             core.log.error("this is a error message for test2.")
         }
     }
---- response_body
 --- error_log eval
 [qr/this is a error message for test2/,
 qr/send data to kafka: .*test2/]
@@ -113,7 +112,6 @@ qr/send data to kafka: .*test2/]
             core.log.error("this is a error message for test3.")
         }
     }
---- response_body
 --- error_log eval
 [qr/this is a error message for test3/,
 qr/send data to kafka: .*test3/]
@@ -129,7 +127,6 @@ qr/send data to kafka: .*test3/]
             core.log.warn("this is an warning message for test4.")
         }
     }
---- response_body
 --- error_log
 this is an warning message for test4
 --- no_error_log eval
@@ -167,7 +164,6 @@ qr/send data to kafka: .*test4/
             core.log.error("this is a error message for test5.")
         }
     }
---- response_body
 --- error_log eval
 [qr/this is a error message for test5/,
 qr/send data to kafka: .*test5/]

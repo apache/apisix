@@ -58,6 +58,7 @@ description: API 网关 Apache APISIX error-log-logger 插件用于将 APISIX �
 | kafka.producer_type                 | string  | 否   | async          | ["async", "sync"]     | 生产者发送消息的模式。|
 | kafka.required_acks                 | integer | 否   | 1              | [0, 1, -1]            | 生产者在确认一个请求发送完成之前需要收到的反馈信息的数量。该参数是为了保证发送请求的可靠性。该属性的配置与 Kafka `acks` 属性相同，具体配置请参考 [Apache Kafka 文档](https://kafka.apache.org/documentation/#producerconfigs_acks)。 |
 | kafka.key                           | string  | 否   |                |                       | 用于消息分区而分配的密钥。 |
+| kafka.cluster_name           | integer | 否     | 1              | [0,...]               | Kafka 集群的名称，当有两个及以上 Kafka 集群时使用。只有当 `producer_type` 设为 `async` 模式时才可以使用该属性。|
 | timeout                          | integer | 否     | 3                              | [1,...]       | 连接和发送数据超时间，以秒为单位。                                                   |
 | keepalive                        | integer | 否     | 30                             | [1,...]       | 复用连接时，连接保持的时间，以秒为单位。                                             |
 | level                            | string  | 否     | WARN                           |               | 进行错误日志筛选的级别，默认为 `WARN`，取值 ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"]，其中 `ERR` 与 `ERROR` 级别一致。 |
