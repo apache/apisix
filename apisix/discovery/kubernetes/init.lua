@@ -521,9 +521,8 @@ end
 
 function _M.init_worker()
     if not support_process then
-        core.log.error("kubernetes discovery not support in subsystem: "
-                       .. ngx.config.subsystem
-                       .. ", please check if your openresty version >= 1.19.9.1 or not")
+        core.log.error("kubernetes discovery not support in subsystem: ", ngx.config.subsystem,
+                       ", please check if your openresty version >= 1.19.9.1 or not")
         return
     end
     local discovery_conf = local_conf.discovery.kubernetes
