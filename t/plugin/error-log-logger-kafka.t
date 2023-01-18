@@ -154,6 +154,7 @@ qr/send data to kafka: .*test4/
                                 "password": "admin-secret"
                             }
                         }],
+                        "producer_type": "sync",
                         "kafka_topic": "test4"
                     },
                     "level": "ERROR",
