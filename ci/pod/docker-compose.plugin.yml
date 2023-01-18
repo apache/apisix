@@ -109,8 +109,8 @@ services:
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper-server2:2181
     restart: unless-stopped
     ports:
-      - "19092:9092"
-      - "19094:9094"
+      - "19092:19092"
+      - "19094:19094"
     depends_on:
       - zookeeper-server1
       - zookeeper-server2
