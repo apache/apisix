@@ -317,7 +317,7 @@ hello world
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid remote_addr: :\/8"}
+{"error_msg":"invalid remote_addr: :/8"}
 
 
 

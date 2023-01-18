@@ -36,7 +36,7 @@ You can also refer to [Admin API](../admin-api.md#plugin) for how to use this re
 
 :::note
 
-While configuring the same plugin, only one copy of the configuration is valid. The order of precedence is always `Consumer` > `Consumer Group` > `Route` > `plugin_config` > `Service`.
+While configuring the same plugin, only one copy of the configuration is valid. The order of precedence is always `Consumer` > `Consumer Group` > `Route` > `Plugin Config` > `Service`.
 
 :::
 
