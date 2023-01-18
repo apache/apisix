@@ -1108,7 +1108,7 @@ title: CHANGELOG
 - 增加用于校验 nginx.conf 的命令。 [#1112](https://github.com/apache/incubator-apisix/pull/1112)
 - 支持「nginx 最多可以打开文件数」可配置，并增大其默认配置。[#1105](https://github.com/apache/incubator-apisix/pull/1105) [#1098](https://github.com/apache/incubator-apisix/pull/1098)
 - 优化日志模块。 [#1093](https://github.com/apache/incubator-apisix/pull/1093)
-- 支持 SO_REUSEPORT 。 [#1085](https://github.com/apache/incubator-apisix/pull/1085)
+- 支持 SO_REUSEPORT。 [#1085](https://github.com/apache/incubator-apisix/pull/1085)
 
 ### Doc
 
@@ -1120,8 +1120,8 @@ title: CHANGELOG
 - 增加文档贡献指引。 [#1086](https://github.com/apache/incubator-apisix/pull/1086)
 - 检查更新「快速上手」文档。 [#1084](https://github.com/apache/incubator-apisix/pull/1084)
 - 检查更新「插件开发指南」。 [#1078](https://github.com/apache/incubator-apisix/pull/1078)
-- 更新 admin-api-cn.md 。 [#1067](https://github.com/apache/incubator-apisix/pull/1067)
-- 更新 architecture-design-cn.md 。 [#1065](https://github.com/apache/incubator-apisix/pull/1065)
+- 更新 admin-api-cn.md。 [#1067](https://github.com/apache/incubator-apisix/pull/1067)
+- 更新 architecture-design-cn.md。 [#1065](https://github.com/apache/incubator-apisix/pull/1065)
 
 ### CI
 
@@ -1178,9 +1178,9 @@ title: CHANGELOG
 
 ### Plugins
 
-- :sunrise: **[Redirect URI](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/redirect.md)**： URI 重定向插件。 [#732](https://github.com/apache/incubator-apisix/pull/732)
+- :sunrise: **[Redirect URI](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/redirect.md)**：URI 重定向插件。 [#732](https://github.com/apache/incubator-apisix/pull/732)
 - [Proxy Rewrite](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/proxy-rewrite.md)：支持 `header` 删除功能。 [#658](https://github.com/apache/incubator-apisix/pull/658)
-- [Limit Count](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/limit-count.md)： 通过 `Redis Server` 聚合 `APISIX` 节点之间将共享流量限速结果，实现集群流量限速。[#624](https://github.com/apache/incubator-apisix/pull/624)
+- [Limit Count](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/limit-count.md)：通过 `Redis Server` 聚合 `APISIX` 节点之间将共享流量限速结果，实现集群流量限速。[#624](https://github.com/apache/incubator-apisix/pull/624)
 
 ### lua-resty-*
 
