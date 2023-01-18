@@ -36,34 +36,35 @@ While configuring the same plugin, only one copy of the configuration is valid. 
 
 The example below illustrates how to create a Plugin Config and bind it to a Route:
 
-    ```shell
-    curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
-    {
-        "desc": "blah",
-        "plugins": {
-            "limit-count": {
-                "count": 2,
-                "time_window": 60,
-                "rejected_code": 503
-            }
+```shell
+curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "desc": "blah",
+    "plugins": {
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503
         }
-    }'
-    ```
+    }
+}'
+```
 
-    ```shell
-    curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
-    {
-        "uris": ["/index.html"],
-        "plugin_config_id": 1,
-        "upstream": {
-            "type": "roundrobin",
-            "nodes": {
-                "127.0.0.1:1980": 1
-            }
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY:edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "uris": ["/index.html"],
+    "plugin_config_id": 1,
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
         }
-    }'
-    ```
+    }
+}'
+```
 
 When APISIX can't find the Plugin Config with the `id`, the requests reaching this Route are terminated with a status code of `503`.
 
