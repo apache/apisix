@@ -234,7 +234,8 @@ function _M.connect(premature, consul_server, retry_delay)
                     ((result ~= nil and result.status ~= 200) and result.status)
             if error_info then
                 log.error("connect consul: ", consul_server.consul_server_url,
-                        " by svc url: ", svc_url, ", with error: ", error_info)
+                        ", by service url: ", svc_url,
+                        ", with error: ", error_info)
                 goto CONTINUE
             end
 
