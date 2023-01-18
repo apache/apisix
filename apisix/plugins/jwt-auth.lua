@@ -138,8 +138,8 @@ function _M.check_schema(conf, schema_type)
     end
 
     if conf.algorithm == "RS256" or conf.algorithm == "ES256" then
-        -- Possible options are a) both are in vault, b) both in schema
-        -- c) one in schema, another in vault.
+        -- Possible options are a) public key is missing
+        -- b) private key is missing
         if not conf.public_key then
             return false, "missing valid public key"
         end
