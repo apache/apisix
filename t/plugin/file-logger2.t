@@ -266,11 +266,8 @@ passed
             local new_msg = core.json.decode(msg)
             ngx.status = code
 
-            if new_msg.resp_body ~= nil and new_msg.resp_body == "hello world\n" then
-                ngx.status = code
-                ngx.say('contain with target')
-            end
+            ngx.say(new_msg.resp_body)
         }
     }
 --- response_body
-contain with target
+hello world
