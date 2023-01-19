@@ -59,6 +59,9 @@ local _M = {
     metadata_schema = metadata_schema
 }
 
+core.ctx.register_var("resp_body", function(ctx)
+    return ctx.resp_body or ''
+end)
 
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
