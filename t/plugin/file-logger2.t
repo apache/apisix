@@ -263,10 +263,7 @@ passed
             -- note only for first line
             msg = fd:read()
 
-            local new_msg = core.json.decode(msg)
-            ngx.status = code
-
-            ngx.say(new_msg.resp_body)
+            ngx.say(msg)
         }
     }
 --- response_body
