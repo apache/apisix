@@ -44,6 +44,21 @@ jobs:
         with:
           path: deps
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
+
+      - name: Extract test type
+        shell: bash
+        id: test_env
+        run: |
+          test_dir="${{ matrix.test_dir }}"
+          if [[ $test_dir =~ 't/plugin' ]]; then
+            echo "type=plugin" >>$GITHUB_OUTPUT
+          fi
+          if [[ $test_dir =~ 't/admin ' ]]; then
+            echo "type=first" >>$GITHUB_OUTPUT
+          fi
+          if [[ $test_dir =~ ' t/xrpc' ]]; then
+            echo "type=last" >>$GITHUB_OUTPUT
+          fi
       
       - name: Cache images
         id: cache-images
@@ -105,6 +120,7 @@ jobs:
             sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
             echo "start last service done, time: `date`"
           fi
+          echo "started backing up, time: `date`"
           mkdir docker-images-buckup
           sum=` cat ci/pod/docker-compose.common.yml|grep image |wc -l`
           common_tag=`cat ci/pod/docker-compose.common.yml|grep image:|awk '{print $2}'|awk 'ORS=NR%"'$sum'"?" ":"\n"{print}'`
@@ -115,21 +131,6 @@ jobs:
           openwhisk_tag="openwhisk/action-nodejs-v14:nightly openwhisk/standalone:nightly
           docker save $common_tag $special_tag $openwhisk_tag -o docker-images-buckup/apisix-images.tar
           echo "docker save done, time `date`"
-
-      - name: Extract test type
-        shell: bash
-        id: test_env
-        run: |
-          test_dir="${{ matrix.test_dir }}"
-          if [[ $test_dir =~ 't/plugin' ]]; then
-            echo "type=plugin" >>$GITHUB_OUTPUT
-          fi
-          if [[ $test_dir =~ 't/admin ' ]]; then
-            echo "type=first" >>$GITHUB_OUTPUT
-          fi
-          if [[ $test_dir =~ ' t/xrpc' ]]; then
-            echo "type=last" >>$GITHUB_OUTPUT
-          fi
 
       - name: Remove source code
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
