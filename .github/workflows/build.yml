@@ -131,14 +131,6 @@ jobs:
           docker save $common_tag $special_tag $openwhisk_tag -o docker-images-buckup/apisix-images.tar
           echo "docker save done, time `date`"
 
-      - name: Extract branch name
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-        id: branch_env
-        shell: bash
-        run: |
-          echo "version=${GITHUB_REF##*/}" >>$GITHUB_OUTPUT
-          echo "fullname=apache-apisix-${GITHUB_REF##*/}-src.tgz" >>$GITHUB_OUTPUT
-
       - name: Extract test type
         shell: bash
         id: test_env
@@ -154,45 +146,11 @@ jobs:
             echo "type=last" >>$GITHUB_OUTPUT
           fi
 
-      - name: Linux launch common services
-        run: |
-          make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
-          sudo ./ci/init-common-test-service.sh
-
-      - name: Create tarball
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-        run: |
-          make compress-tar VERSION=${{ steps.branch_env.outputs.version }}
-
       - name: Remove source code
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         run: |
           rm -rf $(ls -1 --ignore=*.tgz --ignore=ci --ignore=t --ignore=utils --ignore=.github)
           tar zxvf ${{ steps.branch_env.outputs.fullname }}
-
-      - name: Start CI env (FIRST_TEST)
-        if: steps.test_env.outputs.type == 'first'
-        run: |
-          # launch deps env
-          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
-
-      - name: Start CI env (PLUGIN_TEST)
-        if: steps.test_env.outputs.type == 'plugin'
-        run: |
-          # download keycloak cas provider
-          sudo wget https://github.com/jacekkow/keycloak-protocol-cas/releases/download/18.0.2/keycloak-protocol-cas-18.0.2.jar -O /opt/keycloak-protocol-cas-18.0.2.jar
-
-          ./ci/pod/openfunction/build-function-image.sh
-          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
-          sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
-
-      - name: Start CI env (LAST_TEST)
-        if: steps.test_env.outputs.type == 'last'
-        run: |
-          # generating SSL certificates for Kafka
-          sudo keytool -genkeypair -keyalg RSA -dname "CN=127.0.0.1" -alias 127.0.0.1 -keystore ./ci/pod/kafka/kafka-server/selfsigned.jks -validity 365 -keysize 2048 -storepass changeit
-          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
-          sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
 
       - name: Start Dubbo Backend
         if: matrix.os_name == 'linux_openresty' && steps.test_env.outputs.type == 'plugin'
@@ -224,8 +182,3 @@ jobs:
         run: |
           sudo --preserve-env=OPENRESTY_VERSION \
           ./ci/${{ matrix.os_name }}_runner.sh do_install
-
-      - name: Linux Script
-        env:
-          TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
-        run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
