@@ -186,7 +186,7 @@ passed
                                 "password": "a",
                                 "database": "default",
                                 "logtable": "t",
-                                "endpoint_addrs": ["http://127.0.0.1:1980/clickhouse_logger_server",
+                                "endpoint_addr": ["http://127.0.0.1:1980/clickhouse_logger_server",
                                                   "http://127.0.0.1:10420/clickhouse-logger/test1"],
                                 "batch_max_size":1,
                                 "inactive_timeout":1

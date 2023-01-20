@@ -35,7 +35,7 @@ The `clickhouse-logger` Plugin is used to push logs to [ClickHouse](https://clic
 
 | Name          | Type    | Required | Default             | Valid values | Description                                                    |
 |---------------|---------|----------|---------------------|--------------|----------------------------------------------------------------|
-| endpoint_addr | Deprecated   | True     |                |              | Use `endpoint_addrs` instead. ClickHouse endpoints.            |
+| endpoint_addr | string/array   | True     |                |              | ClickHouse endpoints.            |
 | endpoint_addrs | array  | True     |                     |              | ClickHouse endpoints.                                          |
 | database      | string  | True     |                     |              | Name of the database to store the logs.                        |
 | logtable      | string  | True     |                     |              | Table name to store the logs.                                  |
@@ -111,7 +111,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
                 "password": "a",
                 "database": "default",
                 "logtable": "test",
-                "endpoint_addrs": ["http://127.0.0.1:8123"]
+                "endpoint_addr": ["http://127.0.0.1:8123"]
             }
        },
       "upstream": {

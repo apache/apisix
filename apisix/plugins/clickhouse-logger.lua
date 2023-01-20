@@ -23,16 +23,34 @@ local url             = require("net.url")
 local math_random     = math.random
 
 local tostring = tostring
+local type     = type
 
 local plugin_name = "clickhouse-logger"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
 
+
+local endpoint_schema = {
+    anyOf = {
+        {
+            -- deprecated, use "array" instead
+            type = "string",
+            pattern = [=[^[^\/]+:\/\/([\da-zA-Z.-]+|\[[\da-fA-F:]+\])(:\d+)?]=],
+        },
+        {
+            type = "array",
+            items= {
+                type = "string",
+                pattern = [=[^[^\/]+:\/\/([\da-zA-Z.-]+|\[[\da-fA-F:]+\])(:\d+)?]=],
+            },
+            minItems = 1,
+        }
+    }
+}
+
 local schema = {
     type = "object",
     properties = {
-        -- deprecated, use "endpoint_addrs" instead
-        endpoint_addr = core.schema.uri_def,
-        endpoint_addrs = {items = core.schema.uri_def, type = "array", minItems = 1},
+        endpoint_addr = endpoint_schema,
         user = {type = "string", default = ""},
         password = {type = "string", default = ""},
         database = {type = "string", default = ""},
@@ -41,10 +59,7 @@ local schema = {
         name = {type = "string", default = "clickhouse logger"},
         ssl_verify = {type = "boolean", default = true},
     },
-    oneOf = {
-        {required = {"endpoint_addr", "user", "password", "database", "logtable"}},
-        {required = {"endpoint_addrs", "user", "password", "database", "logtable"}}
-    },
+    required = {"endpoint_addr", "user", "password", "database", "logtable"},
     encrypt_fields = {"password"},
 }
 
@@ -78,10 +93,10 @@ local function send_http_data(conf, log_message)
     local err_msg
     local res = true
     local selected_endpoint_addr
-    if conf.endpoint_addr then
+    if type(conf.endpoint_addr) == "string" then
         selected_endpoint_addr = conf.endpoint_addr
     else
-        selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
+        selected_endpoint_addr = conf.endpoint_addr[math_random(#conf.endpoint_addr)]
     end
     local url_decoded = url.parse(selected_endpoint_addr)
     local host = url_decoded.host

@@ -35,8 +35,7 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 clickhouse-lo
 
 | 名称             | 类型    | 必选项  | 默认值              | 有效值       | 描述                                                     |
 | ---------------- | ------- | ------ | ------------------- | ----------- | -------------------------------------------------------- |
-| endpoint_addr    | 废弃    | 是     |                     |              | ClickHouse 的 `endpoints`。请使用 `endpoint_addrs` 代替。 |
-| endpoint_addrs   | array   | 是     |                     |              | ClickHouse 的 `endpoints。`。                            |
+| endpoint_addr    | string/array    | 是     |                     |              | ClickHouse 的 `endpoints` |
 | database         | string  | 是     |                     |              | 使用的数据库。                                            |
 | logtable         | string  | 是     |                     |              | 写入的表名。                                              |
 | user             | string  | 是     |                     |              | ClickHouse 的用户。                                       |
@@ -104,7 +103,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
                 "password": "a",
                 "database": "default",
                 "logtable": "test",
-                "endpoint_addrs": ["http://127.0.0.1:8123"]
+                "endpoint_addr": ["http://127.0.0.1:8123"]
             }
        },
       "upstream": {
