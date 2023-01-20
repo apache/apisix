@@ -4,6 +4,13 @@ on:
   push:
     branches: ['fix/decrease-ci-time']
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   build:
     strategy:
@@ -27,6 +34,8 @@ jobs:
       OPENRESTY_VERSION: default
 
     steps:
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
       - name: Check out code
         uses: actions/checkout@v3.2.0
         with:
