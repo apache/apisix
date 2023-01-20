@@ -34,8 +34,6 @@ jobs:
       OPENRESTY_VERSION: default
 
     steps:
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
       - name: Check out code
         uses: actions/checkout@v3.2.0
         with:
@@ -140,7 +138,8 @@ jobs:
           openwhisk_tag="openwhisk/action-nodejs-v14:nightly openwhisk/standalone:nightly
           docker save $common_tag $special_tag $openwhisk_tag -o docker-images-buckup/apisix-images.tar
           echo "docker save done, time `date`"
-
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
       - name: Remove source code
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         run: |
