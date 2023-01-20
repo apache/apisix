@@ -174,7 +174,7 @@ pair. So the length of `certs` and `keys` must be same.
 
 ### set up multiple CA certificates
 
-APISIX currently uses CA certificates in several places, such as [Protect Admin API](./mtls.md#protect-admin-api), [etcd with mTLS](./mtls.md#etcd-with-mtls), and [Deployment Modes](./architecture-design/deployment-role.md).
+APISIX currently uses CA certificates in several places, such as [Protect Admin API](./mtls.md#protect-admin-api), [etcd with mTLS](./mtls.md#etcd-with-mtls), and [Deployment Modes](./deployment-modes.md).
 
 In these places, `ssl_trusted_certificate` or `trusted_ca_cert` will be used to set up the CA certificate, but these configurations will eventually be translated into [lua_ssl_trusted_certificate](https://github.com/openresty/lua-nginx-module#lua_ssl_trusted_certificate) directive in OpenResty.
 
