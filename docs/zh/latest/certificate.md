@@ -171,7 +171,7 @@ curl --resolve 'www.test.com:9443:127.0.0.1' https://www.test.com:9443/hello  -v
 
 ### 设置多个 CA 证书
 
-APISIX 目前支持在多处设置 CA 证书，比如 [保护 Admin API](./mtls.md#保护-admin-api)，[保护 ETCD](./mtls.md#保护-etcd)，以及 [部署模式](../../en/latest/architecture-design/deployment-role.md) 等。
+APISIX 目前支持在多处设置 CA 证书，比如 [保护 Admin API](./mtls.md#保护-admin-api)，[保护 ETCD](./mtls.md#保护-etcd)，以及 [部署模式](../../en/latest/deployment-modes.md) 等。
 
 在这些地方，使用 `ssl_trusted_certificate` 或 `trusted_ca_cert` 来配置 CA 证书，但是这些配置最终将转化为 OpenResty 的 [lua_ssl_trusted_certificate](https://github.com/openresty/lua-nginx-module#lua_ssl_trusted_certificate) 指令。
 
