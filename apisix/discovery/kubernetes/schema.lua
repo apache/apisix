@@ -41,11 +41,16 @@ local token_schema = {
     oneOf = token_patterns,
 }
 
-local token_file_schema = {
+local file_schema = {
     type = "string",
     pattern = [[^[^\:*?"<>|]*$]],
     minLength = 1,
     maxLength = 500,
+}
+
+local default_ssl_verify_schema = {
+    type = "boolean",
+    default = false,
 }
 
 local namespace_pattern = [[^[a-z0-9]([-a-z0-9_.]*[a-z0-9])?$]]
@@ -135,7 +140,10 @@ return {
                     type = "object",
                     properties = {
                         token = token_schema,
-                        token_file = token_file_schema,
+                        token_file = file_schema,
+                        cert_file = file_schema,
+                        key_file = file_schema,
+                        ssl_verify = default_ssl_verify_schema,
                     },
                     default = {
                         token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
@@ -145,6 +153,7 @@ return {
                             anyOf = {
                                 { required = { "token" } },
                                 { required = { "token_file" } },
+                                { required = { "cert_file", "key_file" } },
                             }
                         }
                     },
@@ -191,11 +200,15 @@ return {
                         type = "object",
                         properties = {
                             token = token_schema,
-                            token_file = token_file_schema,
+                            token_file = file_schema,
+                            cert_file = file_schema,
+                            key_file = file_schema,
+                            ssl_verify = default_ssl_verify_schema,
                         },
                         oneOf = {
                             { required = { "token" } },
                             { required = { "token_file" } },
+                            { required = { "cert_file", "key_file" } },
                         },
                     },
                     namespace_selector = namespace_selector_schema,

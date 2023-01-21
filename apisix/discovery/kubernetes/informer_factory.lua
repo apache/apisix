@@ -22,6 +22,7 @@ local math = math
 local type = type
 local core = require("apisix.core")
 local http = require("resty.http")
+local patch = require("apisix.patch")
 
 if not http.tls_handshake then
     error("Bad http library. Should use api7-lua-resty-http instead")
@@ -49,15 +50,18 @@ end
 
 
 local function list(httpc, apiserver, informer)
+    local headers = {
+        ["Host"] = apiserver.host .. ":" .. apiserver.port,
+        ["Accept"] = "application/json",
+        ["Connection"] = "keep-alive"
+    }
+    if apiserver.token ~= "" then
+        headers["Authorization"] = "Bearer " .. apiserver.token
+    end
     local response, err = httpc:request({
         path = informer.path,
         query = list_query(informer),
-        headers = {
-            ["Host"] = apiserver.host .. ":" .. apiserver.port,
-            ["Authorization"] = "Bearer " .. apiserver.token,
-            ["Accept"] = "application/json",
-            ["Connection"] = "keep-alive"
-        }
+        headers = headers
     })
 
     core.log.info("--raw=", informer.path, "?", list_query(informer))
@@ -279,10 +283,12 @@ local function list_watch(informer, apiserver)
         port = apiserver.port,
         ssl_verify = apiserver.ssl_verify,
     }
-    if apiserver.schema == "https" and apiserver.certificate ~= "" and apiserver.key ~= "" then
-        opt.ssl_cert_path = apiserver.certificate
+    if apiserver.schema == "https" and apiserver.cert ~= "" and apiserver.key ~= "" then
+        opt.ssl_cert_path = apiserver.cert
         opt.ssl_key_path = apiserver.key
         opt.ssl_server_name = apiserver.host
+        -- replace tcp socket of http client to support mtls
+        httpc.sock = patch.lua_tcp_socket()
     end
     ok, message = httpc:connect(opt)
 

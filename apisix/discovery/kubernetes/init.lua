@@ -270,31 +270,22 @@ local function get_apiserver(conf)
         if err then
             return nil, err
         end
-    elseif conf.client.certificate and conf.client.key then
-        apiserver.certificate, err = read_env(conf.client.certificate)
+    elseif conf.client.cert_file and conf.client.key_file then
+        apiserver.cert, err = read_env(conf.client.cert_file)
         if err then
             return nil, err
         end
-        apiserver.key, err = read_env(conf.client.key)
+        apiserver.key, err = read_env(conf.client.key_file)
         if err then
             return nil, err
         end
     else
-        return nil, "one of [client.token,client.token_file, (client.certificate, client.key)] should be set but none"
+        return nil, "one of [client.token,client.token_file,(client.cert_file,client.key_file)] should be set but none"
     end
 
     apiserver.ssl_verify = false
     if conf.client.ssl_verify then
-        apiserver.ssl_verify, err = read_env(conf.client.ssl_verify)
-        if err then
-            return nil, err
-        end
-        if apiserver.ssl_verify ~= "true" and apiserver.ssl_verify ~= "false" then
-            return nil, "client.ssl_verify should be set to one of [true,false] but " .. apiserver.ssl_verify
-        end
-        if apiserver.ssl_verify == "true" then
-            apiserver.ssl_verify = true
-        end
+        apiserver.ssl_verify = conf.client.ssl_verify
     end
 
     -- remove possible extra whitespace
@@ -303,8 +294,8 @@ local function get_apiserver(conf)
     apiserver.key = apiserver.key:gsub("%s+", "")
 
     if apiserver.schema == "https" then
-        if (apiserver.token == "" or apiserver.certificate == "" or apiserver.key == "") then
-            return nil, "apiserver.token or (apiserver.certificate and apiserver.key) should set to non-empty string when service.schema is https"
+        if apiserver.token == "" and (apiserver.cert == "" or apiserver.key == "") then
+            return nil, "apiserver.token or (apiserver.cert and apiserver.key) should set to non-empty string when service.schema is https"
         end
     end
 
