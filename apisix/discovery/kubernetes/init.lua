@@ -280,7 +280,8 @@ local function get_apiserver(conf)
             return nil, err
         end
     else
-        return nil, "one of [client.token,client.token_file,(client.cert_file,client.key_file)] should be set but none"
+        return nil, "one of [client.token,client.token_file,(client.cert_file,client.key_file)] "..
+                "should be set but none"
     end
 
     apiserver.ssl_verify = false
@@ -295,7 +296,8 @@ local function get_apiserver(conf)
 
     if apiserver.schema == "https" then
         if apiserver.token == "" and (apiserver.cert == "" or apiserver.key == "") then
-            return nil, "apiserver.token or (apiserver.cert and apiserver.key) should set to non-empty string when service.schema is https"
+            return nil, "apiserver.token or (apiserver.cert and apiserver.key) "..
+                    "should set to non-empty string when service.schema is https"
         end
     end
 

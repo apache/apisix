@@ -24,9 +24,6 @@ local core = require("apisix.core")
 local http = require("resty.http")
 local patch = require("apisix.patch")
 
-if not http.tls_handshake then
-    error("Bad http library. Should use api7-lua-resty-http instead")
-end
 
 local function list_query(informer)
     local arguments = {
@@ -212,15 +209,18 @@ local function watch(httpc, apiserver, informer)
         local http_seconds = watch_seconds + 120
         httpc:set_timeouts(2000, 3000, http_seconds * 1000)
 
+        local headers = {
+            ["Host"] = apiserver.host .. ":" .. apiserver.port,
+            ["Accept"] = "application/json",
+            ["Connection"] = "keep-alive"
+        }
+        if apiserver.token ~= "" then
+            headers["Authorization"] = "Bearer " .. apiserver.token
+        end
         local response, err = httpc:request({
             path = informer.path,
             query = watch_query(informer),
-            headers = {
-                ["Host"] = apiserver.host .. ":" .. apiserver.port,
-                ["Authorization"] = "Bearer " .. apiserver.token,
-                ["Accept"] = "application/json",
-                ["Connection"] = "keep-alive"
-            }
+            headers = headers
         })
 
         core.log.info("--raw=", informer.path, "?", watch_query(informer))
