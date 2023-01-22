@@ -291,8 +291,6 @@ local function get_apiserver(conf)
 
     -- remove possible extra whitespace
     apiserver.token = apiserver.token:gsub("%s+", "")
-    apiserver.certificate = apiserver.certificate:gsub("%s+", "")
-    apiserver.key = apiserver.key:gsub("%s+", "")
 
     if apiserver.schema == "https" then
         if apiserver.token == "" and (apiserver.cert == "" or apiserver.key == "") then
