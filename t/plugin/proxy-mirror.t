@@ -838,3 +838,66 @@ GET /hello?a=1
 hello world
 --- error_log
 uri: /a/hello?a=1
+
+
+
+=== TEST 30: use proxy-rewrite to change uri before mirror
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-rewrite":{
+                                "_meta": {
+                                    "priority": 1010
+                                },
+                                "uri": "/hello"
+                            },
+                            "proxy-mirror": {
+                                "_meta": {
+                                    "priority": 1008
+                                },
+                               "host": "http://127.0.0.1:1986"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/nope"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- response_body
+passed
+
+
+
+=== TEST 31: hit route (with proxy-rewrite)
+--- request
+GET /nope
+--- response_body
+hello world
+--- error_log
+uri: /hello
+
+
+
+=== TEST 32: hit route (with proxy-rewrite and args)
+--- request
+GET /nope?a=b&b=c&c=d
+--- response_body
+hello world
+--- error_log
+uri: /hello?a=b&b=c&c=d
