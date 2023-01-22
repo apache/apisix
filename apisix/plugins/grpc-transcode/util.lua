@@ -131,7 +131,7 @@ local function get_from_request(request_table, name, kind)
 end
 
 
-function _M.map_message(field, default_values, request_table)
+function _M.map_message(field, default_values, request_table, real_key)
     if not pb.type(field) then
         return nil, "Field " .. field .. " is not defined"
     end
@@ -164,8 +164,23 @@ function _M.map_message(field, default_values, request_table)
                 end
                 sub = sub_array
             else
-                sub, err = _M.map_message(field_type, default_values and default_values[name],
-                                          request_table[name])
+                if ty == "map" then
+                    local tbl
+                    for k, v in pairs(request_table[name]) do
+                        tbl, err = _M.map_message(field_type,
+                            default_values and default_values[name],
+                            request_table[name], k)
+                        if not sub then
+                            sub = {}
+                        end
+                        sub[k]= tbl[k]
+                    end
+                else
+                    sub, err = _M.map_message(field_type,
+                        default_values and default_values[name],
+                        request_table[name])
+                end
+
                 if err then
                     return nil, err
                 end
@@ -173,6 +188,9 @@ function _M.map_message(field, default_values, request_table)
 
             request[name] = sub
         else
+            if real_key then
+                name = real_key
+            end
             request[name] = get_from_request(request_table, name, field_type)
                                 or (default_values and default_values[name])
         end
