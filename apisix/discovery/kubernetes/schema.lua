@@ -48,9 +48,8 @@ local file_schema = {
     maxLength = 500,
 }
 
-local default_ssl_verify_schema = {
+local ssl_verify_schema = {
     type = "boolean",
-    default = false,
 }
 
 local namespace_pattern = [[^[a-z0-9]([-a-z0-9_.]*[a-z0-9])?$]]
@@ -143,7 +142,7 @@ return {
                         token_file = file_schema,
                         cert_file = file_schema,
                         key_file = file_schema,
-                        ssl_verify = default_ssl_verify_schema,
+                        ssl_verify = ssl_verify_schema,
                     },
                     default = {
                         token_file = "/var/run/secrets/kubernetes.io/serviceaccount/token"
@@ -203,7 +202,7 @@ return {
                             token_file = file_schema,
                             cert_file = file_schema,
                             key_file = file_schema,
-                            ssl_verify = default_ssl_verify_schema,
+                            ssl_verify = ssl_verify_schema,
                         },
                         oneOf = {
                             { required = { "token" } },
