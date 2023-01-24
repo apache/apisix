@@ -141,6 +141,7 @@ jobs:
           echo special_tag: $special_tag
           echo openwhisk_tag: $openwhisk_tag
           echo
+          echo $common_tag $special_tag $openwhisk_tag | xargs -P10 -n1 docker pull
           docker save $common_tag $special_tag $openwhisk_tag -o docker-images-buckup/apisix-images.tar
           echo "docker save done, time: $(date)"
       # - name: Setup tmate session
