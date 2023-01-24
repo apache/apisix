@@ -283,7 +283,9 @@ local function list_watch(informer, apiserver)
         port = apiserver.port,
         ssl_verify = apiserver.ssl_verify,
     }
-    if apiserver.schema == "https" and apiserver.cert ~= "" and apiserver.key ~= "" then
+    if apiserver.schema == "https" and
+            apiserver.cert and apiserver.cert ~= "" and
+            apiserver.key and apiserver.key ~= "" then
         opt.ssl_cert_path = apiserver.cert
         opt.ssl_key_path = apiserver.key
         opt.ssl_server_name = apiserver.host
