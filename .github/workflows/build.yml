@@ -147,11 +147,13 @@ jobs:
           to_pull=""
           for tag in $all_tags
           do
-          if ! ( docker inspect $tag )
+          if ! ( docker inspect $tag &> /dev/null )
           then
           to_pull="${to_pull} ${tag}"
           fi
           done
+
+          echo to pull : $to_pull
 
           echo $to_pull | xargs -P10 -n1 docker pull
           docker save $common_tag $special_tag $openwhisk_tag -o docker-images-buckup/apisix-images.tar
