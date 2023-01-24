@@ -136,11 +136,16 @@ jobs:
           special_tag=$(cat ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml|grep image:|awk '{print $2}'|awk 'ORS=NR%"'$sum'"?" ":"\n"{print}')
           echo special: $special_tag
           openwhisk_tag="openwhisk/action-nodejs-v14:nightly openwhisk/standalone:nightly"
+          echo
+          echo common_tag: $common_tag
+          echo special_tag: $special_tag
+          echo openwhisk_tag: $openwhisk_tag
+          echo
           docker save $common_tag $special_tag $openwhisk_tag -o docker-images-buckup/apisix-images.tar
           echo "docker save done, time: $(date)"
-      - name: Setup tmate session
-        if: always()
-        uses: mxschmitt/action-tmate@v3
+      # - name: Setup tmate session
+      #   if: always()
+      #   uses: mxschmitt/action-tmate@v3
       - name: Remove source code
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         run: |
