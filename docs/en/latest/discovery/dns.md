@@ -24,7 +24,7 @@ title: DNS
 ## service discovery via DNS
 
 Some service discovery system, like Consul, support exposing service information
-via DNS. Therefore we can use this way to discover service directly.
+via DNS. Therefore we can use this way to discover service directly. Both L4 and L7 are supported.
 
 First of all, we need to configure the address of DNS servers:
 

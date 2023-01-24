@@ -52,6 +52,11 @@ __DATA__
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            -- ensure the format is not set
+            t('/apisix/admin/plugin_metadata/syslog',
+                ngx.HTTP_DELETE
+                )
+
             local code, body = t('/apisix/admin/upstreams/1',
                 ngx.HTTP_PUT,
                 [[{

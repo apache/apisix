@@ -80,7 +80,7 @@ __DATA__
 --- response_body
 {"error_msg":"failed to check the configuration of plugin real-ip err: property \"source\" is required"}
 {"error_msg":"failed to check the configuration of plugin real-ip err: property \"trusted_addresses\" validation failed: failed to validate item 1: object matches none of the required"}
-{"error_msg":"failed to check the configuration of plugin real-ip err: invalid ip address: ::1\/129"}
+{"error_msg":"failed to check the configuration of plugin real-ip err: invalid ip address: ::1/129"}
 
 
 

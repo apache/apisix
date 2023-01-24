@@ -669,7 +669,8 @@ failed to do PLAIN auth with 127.0.0.1:19094: Authentication failed: Invalid use
                                     "password":"admin-secret"
                             }
                         }],
-                            "kafka_topic":"test2",
+                            "kafka_topic":"test4",
+                            "producer_type":"sync",
                             "key":"key1",
                             "timeout":1,
                             "batch_max_size":1,
@@ -704,6 +705,8 @@ abcdef
 hello world
 --- error_log eval
 qr/send data to kafka: \{.*"body":"abcdef"/
+--- no_error_log
+[error]
 --- wait: 2
 
 

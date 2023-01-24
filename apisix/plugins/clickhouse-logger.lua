@@ -20,10 +20,8 @@ local log_util        = require("apisix.utils.log-util")
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local url             = require("net.url")
-local plugin          = require("apisix.plugin")
 local math_random     = math.random
 
-local ngx      = ngx
 local tostring = tostring
 
 local plugin_name = "clickhouse-logger"
@@ -169,17 +167,7 @@ end
 
 
 function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    core.log.info("metadata: ", core.json.delay_encode(metadata))
-    local entry
-
-    if metadata and metadata.value.log_format
-       and core.table.nkeys(metadata.value.log_format) > 0
-    then
-        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
-    else
-        entry = log_util.get_full_log(ngx, conf)
-    end
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
 
     if batch_processor_manager:add_entry(conf, entry) then
         return

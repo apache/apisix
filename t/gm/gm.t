@@ -157,7 +157,7 @@ location /t {
 }
 --- error_code: 400
 --- response_body
-{"error_msg":"sign cert\/key are required"}
+{"error_msg":"sign cert/key are required"}
 
 
 

@@ -198,8 +198,13 @@ local function run()
         end
     end
 
-    local code, data = resource[method](seg_id, req_body, seg_sub_path,
-                                        uri_args)
+    local code, data
+    if seg_res == "routes" then
+        code, data = resource[method](resource, seg_id, req_body, seg_sub_path, uri_args)
+    else
+        code, data = resource[method](seg_id, req_body, seg_sub_path, uri_args)
+    end
+
     if code then
         if method == "get" and plugin.enable_data_encryption then
             if seg_res == "consumers" then
