@@ -74,7 +74,7 @@ jobs:
           cache-name: cache-apisix-docker-images
         with:
           path: docker-images-buckup
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ steps.test_env.outputs.type }}
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ steps.test_env.outputs.type }}-${{ hashFiles('./ci/pod/*.yml') }}
 
       - if: ${{ steps.cache-images.outputs.cache-hit == 'true' }}
         name: Load saved docker images
