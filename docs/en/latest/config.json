@@ -257,6 +257,10 @@
     },
     {
       "type": "doc",
+      "id": "deployment-modes"
+    },
+    {
+      "type": "doc",
       "id": "FAQ"
     },
     {
@@ -295,15 +299,7 @@
         },
         {
           "type": "doc",
-          "id": "deployment-modes"
-        },
-        {
-          "type": "doc",
           "id": "router-radixtree"
-        },
-        {
-          "type": "doc",
-          "id": "stand-alone"
         },
         {
           "type": "doc",
