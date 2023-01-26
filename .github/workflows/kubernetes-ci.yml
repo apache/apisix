@@ -68,6 +68,8 @@ jobs:
           echo 'KUBERNETES_CLIENT_TOKEN='"${KUBERNETES_CLIENT_TOKEN_CONTENT}"
           echo 'KUBERNETES_CLIENT_TOKEN_FILE='${KUBERNETES_CLIENT_TOKEN_FILE}
 
+          openssl genrsa -out ./t/certs/k8s_mtls.key 4096
+
           openssl req -new -key ./t/certs/k8s_mtls.key -config ./t/certs/k8s_mtls_csr.conf -out ./t/certs/k8s_mtls.csr -nodes
 
           BASE64_CSR=$(cat ./t/certs/k8s_mtls.csr | base64 | tr -d '\n')
