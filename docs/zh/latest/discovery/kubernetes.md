@@ -334,7 +334,7 @@ A: 假定你指定的 [_ServiceAccount_](https://kubernetes.io/docs/tasks/config
  kubectl -n apisix get secret kubernetes-discovery-token-c64cv -o jsonpath={.data.token} | base64 -d
  ```
 
-**Q: 如何为 [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 创建 TLS 证书进而使用 mTLS 认证? **
+**Q: 如何为 [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 创建 TLS 证书进而使用 mTLS 认证?**
 
 A: 假定你使用以上的 [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 声明式定义来创建 `ServiceAccount`，请按如下步骤来创建 TLS 证书。
 
@@ -346,7 +346,7 @@ openssl genrsa -out k8s_mtls.key 4096
 
  2. 创建证书签名请求（CSR）对象发送到 Kubernetes API
 
- 使用以下配置文件生成 CSR：
+ CSR 配置文件如下：
 
 ```
 [req]
@@ -405,7 +405,13 @@ kubectl certificate approve k8s-mtls-csr
  4. 下载颁发的证书并将其保存本地文件 `k8s_mtls.pem`：
 
 ```shell
-kubectl get csr k8s-mtls-csr -o jsonpath='{.status.certificate}' | base64 --decode > ./t/certs/k8s_mtls.pem
+kubectl get csr k8s-mtls-csr -o jsonpath='{.status.certificate}' | base64 --decode > k8s_mtls.pem
 ```
 
-现在你可以使用 `k8s_mtls.key` 和 `k8s_mtls.pem` 文件进行 mTLS 认证，如果你想要进一步了解更多 TLS 证书详细内容，请参阅 [_Manage TLS Certificates in a Cluster_](https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/)。
+ 5. 下载 CA 证书文件：
+
+```shell
+kubectl get secrets | grep apisix-test | awk '{system("kubectl get secret -o jsonpath=\"{.data.ca\.crt}\" "$1" | base64 -d")}' > k8s_mtls_ca.pem
+```
+
+现在你可以使用证书文件 `k8s_mtls.pem`，证书私钥 `k8s_mtls.key` 及 CA 证书 `k8s_mtls_ca.pem` 文件进行 mTLS 认证，如果你想要进一步了解更多 TLS 证书详细内容，请参阅 [_Manage TLS Certificates in a Cluster_](https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/)。

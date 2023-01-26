@@ -76,9 +76,9 @@ jobs:
 
           cat ./t/certs/k8s_mtls_csr.yaml | envsubst | kubectl apply -f -
 
-          k certificate approve k8s-mtls-csr
+          kubectl certificate approve k8s-mtls-csr
 
-          k get csr k8s-mtls-csr -o jsonpath='{.status.certificate}' | base64 --decode > ./t/certs/k8s_mtls.pem
+          kubectl get csr k8s-mtls-csr -o jsonpath='{.status.certificate}' | base64 --decode > ./t/certs/k8s_mtls.pem
 
           kubectl get secrets | grep apisix-test | awk '{system("kubectl get secret -o jsonpath=\"{.data.ca\.crt}\" "$1" | base64 -d")}' > ./t/certs/k8s_mtls_ca.pem
 
