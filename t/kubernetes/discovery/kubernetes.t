@@ -24,6 +24,9 @@ workers(4);
 
 our $token_file = "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token";
 our $token_value = eval {`cat $token_file 2>/dev/null`};
+our $cert_file = "./t/certs/k8s_mtls.pem";
+our $key_file = "./t/certs/k8s_mtls.key";
+our $ca_cert_file = "./t/certs/k8s_mtls_ca.pem";
 
 add_block_preprocessor(sub {
     my ($block) = @_;
@@ -40,6 +43,9 @@ env MyPort=6443;
 env KUBERNETES_SERVICE_HOST=127.0.0.1;
 env KUBERNETES_SERVICE_PORT=6443;
 env KUBERNETES_CLIENT_TOKEN=$::token_value;
+env KUBERNETES_CLIENT_CERT=$::cert_file;
+env KUBERNETES_CLIENT_KEY=$::key_file;
+env KUBERNETES_CERTIFICATE_AUTHORITY=$::ca_cert_file;
 _EOC_
 
     $block->set_value("main_config", $main_config);
@@ -295,6 +301,153 @@ GET /compare
     },
     "client": {
       "token": "${KUBERNETES_CLIENT_TOKEN}"
+    },
+    "default_weight": 33,
+    "shared_size": "2m"
+  }
+]
+--- more_headers
+Content-type: application/json
+--- response_body
+true
+
+
+
+=== TEST 6: default value with minimal client tls configuration
+--- yaml_config
+apisix:
+  node_listen: 1984
+  config_center: yaml
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+    client:
+        cert_file: ${KUBERNETES_CLIENT_CERT}
+        key_file: ${KUBERNETES_CLIENT_KEY}
+--- request
+GET /compare
+{
+  "service": {
+    "schema": "https",
+    "host": "${KUBERNETES_SERVICE_HOST}",
+    "port": "${KUBERNETES_SERVICE_PORT}"
+  },
+  "client": {
+    "cert_file": "${KUBERNETES_CLIENT_CERT}",
+    "key_file": "${KUBERNETES_CLIENT_KEY}"
+  },
+  "shared_size": "1m",
+  "default_weight": 50
+}
+--- more_headers
+Content-type: application/json
+--- response_body
+true
+
+
+
+=== TEST 7: client tls configuration with ca cert
+--- yaml_config
+apisix:
+  node_listen: 1984
+  config_center: yaml
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+ssl:
+  ssl_trusted_certificate: ${KUBERNETES_CERTIFICATE_AUTHORITY}
+  ssl_protocols: TLSv1.2 TLSv1.3
+discovery:
+  kubernetes:
+    client:
+        cert_file: ${KUBERNETES_CLIENT_CERT}
+        key_file: ${KUBERNETES_CLIENT_KEY}
+        ssl_verify: true
+--- request
+GET /compare
+{
+  "service": {
+    "schema": "https",
+    "host": "${KUBERNETES_SERVICE_HOST}",
+    "port": "${KUBERNETES_SERVICE_PORT}"
+  },
+  "client": {
+    "cert_file": "${KUBERNETES_CLIENT_CERT}",
+    "key_file": "${KUBERNETES_CLIENT_KEY}",
+    "ssl_verify": true
+  },
+  "shared_size": "1m",
+  "default_weight": 50
+}
+--- more_headers
+Content-type: application/json
+--- response_body
+true
+
+
+
+=== TEST 8: multi cluster mode client tls configuration
+--- http_config
+lua_shared_dict kubernetes-debug 1m;
+lua_shared_dict kubernetes-release 1m;
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+  - id: "debug"
+    service:
+        schema: "http"
+        host: "1.cluster.com"
+        port: "6445"
+    client:
+        token: ${KUBERNETES_CLIENT_TOKEN}
+  - id: "release"
+    service:
+        schema: "https"
+        host: "2.cluster.com"
+        port: "${MyPort}"
+    client:
+        cert_file: ${KUBERNETES_CLIENT_CERT}
+        key_file: ${KUBERNETES_CLIENT_KEY}
+        ssl_verify: false
+    default_weight: 33
+    shared_size: "2m"
+--- request
+GET /compare
+[
+  {
+    "id": "debug",
+    "service": {
+      "schema": "http",
+      "host": "1.cluster.com",
+      "port": "6445"
+    },
+    "client": {
+      "token": "${KUBERNETES_CLIENT_TOKEN}"
+    },
+    "default_weight": 50,
+    "shared_size": "1m"
+  },
+  {
+    "id": "release",
+    "service": {
+      "schema": "https",
+      "host": "2.cluster.com",
+      "port": "${MyPort}"
+    },
+    "client": {
+      "cert_file": "${KUBERNETES_CLIENT_CERT}",
+      "key_file": "${KUBERNETES_CLIENT_KEY}",
+      "ssl_verify": false
     },
     "default_weight": 33,
     "shared_size": "2m"

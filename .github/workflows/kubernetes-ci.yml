@@ -68,6 +68,20 @@ jobs:
           echo 'KUBERNETES_CLIENT_TOKEN='"${KUBERNETES_CLIENT_TOKEN_CONTENT}"
           echo 'KUBERNETES_CLIENT_TOKEN_FILE='${KUBERNETES_CLIENT_TOKEN_FILE}
 
+          openssl req -new -key ./t/certs/k8s_mtls.key -config ./t/certs/k8s_mtls_csr.conf -out ./t/certs/k8s_mtls.csr -nodes
+
+          BASE64_CSR=$(cat ./t/certs/k8s_mtls.csr | base64 | tr -d '\n')
+
+          cat ./t/certs/k8s_mtls_csr.yaml | envsubst | kubectl apply -f -
+
+          k certificate approve k8s-mtls-csr
+
+          k get csr k8s-mtls-csr -o jsonpath='{.status.certificate}' | base64 --decode > ./t/certs/k8s_mtls.pem
+
+          kubectl get secrets | grep apisix-test | awk '{system("kubectl get secret -o jsonpath=\"{.data.ca\.crt}\" "$1" | base64 -d")}' > ./t/certs/k8s_mtls_ca.pem
+
+          export KUBERNETES_APISERVER_ADDR=$(kubectl -n kube-system get pod -l component=kube-apiserver -o=jsonpath="{.items[0].metadata.annotations.kubeadm\.kubernetes\.io/kube-apiserver\.advertise-address\.endpoint}" | awk -F: '{print $1}')
+
           kubectl proxy -p 6445 &
 
       - name: Linux Install

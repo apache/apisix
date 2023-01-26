@@ -52,7 +52,7 @@ local function list(httpc, apiserver, informer)
         ["Accept"] = "application/json",
         ["Connection"] = "keep-alive"
     }
-    if apiserver.token ~= "" then
+    if apiserver.token and apiserver.token ~= "" then
         headers["Authorization"] = "Bearer " .. apiserver.token
     end
     local response, err = httpc:request({
@@ -214,7 +214,7 @@ local function watch(httpc, apiserver, informer)
             ["Accept"] = "application/json",
             ["Connection"] = "keep-alive"
         }
-        if apiserver.token ~= "" then
+        if apiserver.token and apiserver.token ~= "" then
             headers["Authorization"] = "Bearer " .. apiserver.token
         end
         local response, err = httpc:request({
