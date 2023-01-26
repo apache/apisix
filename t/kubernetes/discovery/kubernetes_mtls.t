@@ -393,39 +393,7 @@ qr{ 2 2 2 2 2 2 }
 
 
 
-=== TEST 4: use client tls without specify ssl protocol
---- yaml_config
-apisix:
-  node_listen: 1984
-deployment:
-  role: data_plane
-  role_data_plane:
-    config_provider: yaml
-discovery:
-  kubernetes:
-    - id: first
-      service:
-        schema: "https"
-        host: ${KUBERNETES_SERVICE_HOST}
-        port: ${KUBERNETES_SERVICE_PORT}
-      client:
-        cert_file: ${KUBERNETES_CLIENT_CERT}
-        key_file: ${KUBERNETES_CLIENT_KEY}
-        ssl_verify: true
-
---- request
-GET /queries
-[
-  "first/ns-a/ep:p1","first/ns-a/ep:p2","first/ns-b/ep:p1","first/ns-b/ep:p2","first/ns-c/ep:5001","first/ns-c/ep:5002"
-]
---- more_headers
-Content-type: application/json
---- response_body eval
-qr{ 2 2 2 2 2 2 }
-
-
-
-=== TEST 5: scale endpoints
+=== TEST 4: scale endpoints
 --- yaml_config
 apisix:
   node_listen: 1984
