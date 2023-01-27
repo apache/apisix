@@ -60,6 +60,14 @@ jobs:
           path: deps
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
 
+      - name: Extract branch name
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
+        id: branch_env
+        shell: bash
+        run: |
+          echo "version=${GITHUB_REF##*/}" >>$GITHUB_OUTPUT
+          echo "fullname=apache-apisix-${GITHUB_REF##*/}-src.tgz" >>$GITHUB_OUTPUT
+
       - name: Extract test type
         shell: bash
         id: test_env
