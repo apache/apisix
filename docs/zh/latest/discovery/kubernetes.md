@@ -278,16 +278,6 @@ nodes("release/default/plat-dev:port") 调用会得到如下的返回值：
 
 ## Q&A
 
-**Q: 为什么只支持配置 token 来访问 Kubernetes APIServer?**
-
-A: 一般情况下，我们有三种方式可以完成与 Kubernetes APIServer 的认证：
-
-- mTLS
-- Token
-- Basic authentication
-
-因为 lua-resty-http 目前不支持 mTLS, Basic authentication 不被推荐使用，所以当前只实现了 Token 认证方式。
-
 **Q: APISIX 继承了 NGINX 的多进程模型，是否意味着每个 APISIX 工作进程都会监听 Kubernetes Endpoints？**
 
 A: Kubernetes 服务发现只使用特权进程监听 Kubernetes Endpoints，然后将其值存储到 `ngx.shared.DICT` 中，工作进程通过查询 `ngx.shared.DICT` 来获取结果。
@@ -343,3 +333,85 @@ A: 假定你指定的 [_ServiceAccount_](https://kubernetes.io/docs/tasks/config
  ```shell
  kubectl -n apisix get secret kubernetes-discovery-token-c64cv -o jsonpath={.data.token} | base64 -d
  ```
+
+**Q: 如何为 [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 创建 TLS 证书进而使用 mTLS 认证?**
+
+A: 假定你使用以上的 [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 声明式定义来创建 `ServiceAccount`，请按如下步骤来创建 TLS 证书。
+
+1. 创建 rsa 私钥：
+
+```shell
+openssl genrsa -out k8s_mtls.key 4096
+```
+
+2. 创建证书签名请求（CSR）对象发送到 Kubernetes API
+
+CSR 配置文件如下：
+
+```
+[req]
+default_bits = 2048
+default_md = sha256
+distinguished_name = dn
+prompt = no
+
+[dn]
+CN = system:serviceaccount:default:apisix-test
+O = system:serviceaccounts
+
+[v3_ext]
+authorityKeyIdentifier = keyid,issuer:always
+basicConstraints = CA:TRUE
+keyUsage = keyEncipherment,dataEncipherment
+extendedKeyUsage = clientAuth
+```
+
+创建 CSR：
+
+```shell
+openssl req -new -key k8s_mtls.key -config k8s_mtls_csr.cnf -out k8s_mtls.csr -nodes
+```
+
+Kubernetes CSR 资源声明式定义如下：
+
+```yaml
+apiVersion: certificates.k8s.io/v1
+kind: CertificateSigningRequest
+metadata:
+  name: k8s-mtls-csr
+spec:
+  groups:
+  - system:authenticated
+  request: ${BASE64_CSR}
+  signerName: kubernetes.io/kube-apiserver-client
+  usages:
+  - digital signature
+  - key encipherment
+  - client auth
+```
+
+获取 csr 文件内容并替换 `BASE64_CSR` 环境变量，创建 Kubernetes CSR 资源：
+```shell
+export BASE64_CSR=$(cat ./k8s_mtls.csr | base64 | tr -d '\n')
+cat k8s_mtls_csr.yaml | envsubst | kubectl apply -f -
+```
+
+3. 手动批准证书签名请求（CSR）:
+
+```shell
+kubectl certificate approve k8s-mtls-csr
+```
+
+4. 下载颁发的证书并将其保存本地文件 `k8s_mtls.pem`：
+
+```shell
+kubectl get csr k8s-mtls-csr -o jsonpath='{.status.certificate}' | base64 --decode > k8s_mtls.pem
+```
+
+5. 下载 CA 证书文件：
+
+```shell
+kubectl get secrets | grep apisix-test | awk '{system("kubectl get secret -o jsonpath=\"{.data.ca\.crt}\" "$1" | base64 -d")}' > k8s_mtls_ca.pem
+```
+
+现在你可以使用证书文件 `k8s_mtls.pem`，证书私钥 `k8s_mtls.key` 及 CA 证书 `k8s_mtls_ca.pem` 文件进行 mTLS 认证，如果你想要进一步了解更多 TLS 证书详细内容，请参阅 [_Manage TLS Certificates in a Cluster_](https://kubernetes.io/docs/tasks/tls/managing-tls-in-a-cluster/)。
