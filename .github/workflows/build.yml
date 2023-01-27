@@ -216,3 +216,7 @@ jobs:
         run: |
           sudo --preserve-env=OPENRESTY_VERSION \
           ./ci/${{ matrix.os_name }}_runner.sh do_install
+      - name: Linux Script
+        env:
+          TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
+        run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
