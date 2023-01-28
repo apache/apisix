@@ -22,6 +22,7 @@ no_root_location();
 no_shuffle();
 workers(4);
 
+our $apiserver_addr = $ENV{'KUBERNETES_APISERVER_ADDR'};
 our $token_file = "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token";
 our $token_value = eval {`cat $token_file 2>/dev/null`};
 our $cert_file = "./t/certs/k8s_mtls.pem";
@@ -40,7 +41,7 @@ _EOC_
 
     my $main_config = $block->main_config // <<_EOC_;
 env MyPort=6443;
-env KUBERNETES_SERVICE_HOST=127.0.0.1;
+env KUBERNETES_SERVICE_HOST=$::apiserver_addr;
 env KUBERNETES_SERVICE_PORT=6443;
 env KUBERNETES_CLIENT_TOKEN=$::token_value;
 env KUBERNETES_CLIENT_CERT=$::cert_file;

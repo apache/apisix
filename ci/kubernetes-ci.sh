@@ -21,6 +21,7 @@
 run_case() {
     export_or_prefix
     export PERL5LIB=.:$PERL5LIB
+    export KUBERNETES_APISERVER_ADDR=$(kubectl -n kube-system get pod -l component=kube-apiserver -o=jsonpath="{.items[0].metadata.annotations.kubeadm\.kubernetes\.io/kube-apiserver\.advertise-address\.endpoint}" | awk -F: '{print $1}')
     prove -Itest-nginx/lib -I./ -r t/kubernetes | tee test-result
     rerun_flaky_tests test-result
 }

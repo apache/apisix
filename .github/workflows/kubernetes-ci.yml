@@ -82,10 +82,6 @@ jobs:
 
           kubectl get secrets | grep mtls-client | awk '{system("kubectl get secret -o jsonpath=\"{.items[0].data}\"  $1")}'| jq -r '."ca.crt"' | base64 -d > ./t/certs/k8s_mtls_ca.pem
 
-          cat ./t/certs/k8s_mtls_ca.pem
-
-          export KUBERNETES_APISERVER_ADDR=$(kubectl -n kube-system get pod -l component=kube-apiserver -o=jsonpath="{.items[0].metadata.annotations.kubeadm\.kubernetes\.io/kube-apiserver\.advertise-address\.endpoint}" | awk -F: '{print $1}')
-
           kubectl proxy -p 6445 &
 
       - name: Linux Install
