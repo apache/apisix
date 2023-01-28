@@ -177,9 +177,6 @@ jobs:
           
           docker save $common_tag $special_tag $openwhisk_tag -o docker-images-buckup/apisix-images.tar
           echo "docker save done, time: $(date)"
-      # - name: Setup tmate session
-      #   if: always()
-      #   uses: mxschmitt/action-tmate@v3
       - name: Remove source code
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         run: |
@@ -220,3 +217,6 @@ jobs:
         env:
           TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
         run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
+      - name: Setup tmate session
+        if: always()
+        uses: mxschmitt/action-tmate@v3
