@@ -102,8 +102,11 @@ location /t {
         if res.status > 300 then
             return ngx.exit(res.status)
         else
+            local req = core.json.decode(body)
             local rsp = core.json.decode(res.body)
-            assert(core.table.deep_eq(rsp, core.json.decode(body)))
+            if not core.table.deep_eq(req, rsp) then
+                ngx.log(ngx.ERR, "failed: req=", body, ", rsp=", res.body)
+            end
         end
     }
 }
