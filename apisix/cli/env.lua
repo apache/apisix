@@ -20,6 +20,7 @@ local util = require("apisix.cli.util")
 
 local pcall = pcall
 local error = error
+local getenv = os.getenv
 local exit = os.exit
 local stderr = io.stderr
 local str_find = string.find
@@ -89,6 +90,12 @@ return function (apisix_home, pkg_cpath_org, pkg_path_org)
     local openresty_args = openresty_path_abs .. [[ -p ]] .. apisix_home .. [[ -c ]]
                            .. apisix_home .. [[/conf/nginx.conf]]
 
+    local apisix_daemon = true
+    if getenv("APISIX_DAEMON_OFF") then
+        apisix_daemon  = false
+        openresty_args = openresty_args .. [[ -g ]] .. "'daemon off;'"
+    end
+
     local or_info, err = util.execute_cmd("openresty -V 2>&1")
     if not or_info then
         error("failed to exec cmd \'openresty -V 2>&1\', err: " .. err)
@@ -104,6 +111,7 @@ return function (apisix_home, pkg_cpath_org, pkg_path_org)
     return {
         apisix_home = apisix_home,
         is_root_path = is_root_path,
+        apisix_daemon = apisix_daemon,
         openresty_args = openresty_args,
         openresty_info = or_info,
         use_apisix_base = use_apisix_base,

@@ -825,7 +825,7 @@ local function start(env, ...)
         init_etcd(env, args)
     end
 
-    util.execute_cmd(env.openresty_args)
+    util.execute_cmd(env.openresty_args, not env.apisix_daemon)
 end
 
 

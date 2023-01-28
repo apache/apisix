@@ -27,8 +27,6 @@ fi
 
 # setup upstream server
 echo '
-apisix:
-    node_listen: 9080
 nginx_config:
     http_configuration_snippet: |
         server {
@@ -41,7 +39,7 @@ nginx_config:
 
 make init
 
-stdbuf -o0 /usr/local/openresty/bin/openresty -p . -g 'daemon off;' > "$log_file" 2>&1 &
+APISIX_DAEMON_OFF=1 make run > "$log_file" &
 
 sleep 0.2
 
