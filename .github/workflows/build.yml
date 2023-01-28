@@ -118,6 +118,7 @@ jobs:
         run: |
           echo "start common service..., time: $(date)"
           make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
+          sudo ./ci/init-common-test-service.sh
           echo "start common service done, time: $(date)"
           if [[ ${{ steps.test_env.outputs.type }} == 'first' ]]; then
             # launch deps env
