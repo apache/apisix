@@ -22,6 +22,7 @@ local ngx               = ngx
 local string            = string
 local table             = table
 local ipairs            = ipairs
+local pairs             = pairs
 local tonumber          = tonumber
 local type              = type
 

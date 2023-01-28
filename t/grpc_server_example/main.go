@@ -18,6 +18,7 @@
 //go:generate protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/helloworld.proto
 //go:generate protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/import.proto
 //go:generate protoc  --include_imports --descriptor_set_out=proto.pb --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/src.proto
+//go:generate protoc  --descriptor_set_out=helloworld.pb --include_imports --proto_path=$PWD/proto helloworld.proto
 
 // Package main implements a server for Greeter service.
 package main
@@ -139,6 +140,14 @@ func (s *server) SayHelloAfterDelay(ctx context.Context, in *pb.HelloRequest) (*
 func (s *server) Plus(ctx context.Context, in *pb.PlusRequest) (*pb.PlusReply, error) {
 	log.Printf("Received: %v %v", in.A, in.B)
 	return &pb.PlusReply{Result: in.A + in.B}, nil
+}
+
+func (s *server) EchoStruct(ctx context.Context, in *pb.StructRequest) (*pb.StructReply, error) {
+	log.Printf("Received: %+v", in)
+
+	return &pb.StructReply{
+		Data: in.Data,
+	}, nil
 }
 
 // SayHelloServerStream streams HelloReply back to the client.
