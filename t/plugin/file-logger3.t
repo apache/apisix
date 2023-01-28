@@ -69,7 +69,7 @@ passed
                  [[{
                         "plugins": {
                             "file-logger": {
-                                "path": "file-with-resp-body.log",
+                                "path": "file-with-resp-body2.log",
                                 "include_resp_body": true
                             }
                         },
@@ -101,7 +101,7 @@ passed
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
             local code = t("/hello", ngx.HTTP_GET)
-            local fd, err = io.open("file-with-resp-body.log", 'r')
+            local fd, err = io.open("file-with-resp-body2.log", 'r')
             local msg
 
             if not fd then
