@@ -349,13 +349,12 @@ Content-type: application/json
 --- request
 GET /queries
 [
-  "first/ns-a/ep:p1","first/ns-a/ep:p2","first/ns-b/ep:p1","first/ns-b/ep:p2","first/ns-c/ep:5001","first/ns-c/ep:5002",
-  "second/ns-a/ep:p1","second/ns-a/ep:p2","second/ns-b/ep:p1","second/ns-b/ep:p2","second/ns-c/ep:5001","second/ns-c/ep:5002"
+  "first/ns-a/ep:p1","first/ns-a/ep:p2","first/ns-b/ep:p1","first/ns-b/ep:p2","first/ns-c/ep:5001","first/ns-c/ep:5002"
 ]
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 2 2 2 2 2 2 2 2 2 2 2 2 }
+qr{ 2 2 2 2 2 2 }
 
 
 

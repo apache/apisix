@@ -68,20 +68,6 @@ jobs:
           echo 'KUBERNETES_CLIENT_TOKEN='"${KUBERNETES_CLIENT_TOKEN_CONTENT}"
           echo 'KUBERNETES_CLIENT_TOKEN_FILE='${KUBERNETES_CLIENT_TOKEN_FILE}
 
-          openssl genrsa -out ./t/certs/k8s_mtls.key 4096
-
-          openssl req -new -key ./t/certs/k8s_mtls.key -config ./t/certs/k8s_mtls_csr.conf -out ./t/certs/k8s_mtls.csr -nodes
-
-          export BASE64_CSR=$(cat ./t/certs/k8s_mtls.csr | base64 | tr -d '\n')
-
-          envsubst < ./t/certs/k8s_mtls_csr.yaml | kubectl apply -f -
-
-          kubectl certificate approve k8s-mtls-csr
-
-          kubectl get csr k8s-mtls-csr -o jsonpath='{.status.certificate}' | base64 --decode > ./t/certs/k8s_mtls.pem
-
-          kubectl get secrets | grep mtls-client | awk '{system("kubectl get secret -o jsonpath=\"{.items[0].data}\"  $1")}'| jq -r '."ca.crt"' | base64 -d > ./t/certs/k8s_mtls_ca.pem
-
           kubectl proxy -p 6445 &
 
       - name: Linux Install

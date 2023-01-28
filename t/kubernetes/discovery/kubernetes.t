@@ -22,7 +22,11 @@ no_root_location();
 no_shuffle();
 workers(4);
 
-our $apiserver_addr = $ENV{'KUBERNETES_APISERVER_ADDR'};
+system('grep client-cert ~/.kube/config |cut -d" " -f 6 | base64 -d > ./t/certs/k8s_mtls.pem');
+system('grep client-key-data ~/.kube/config |cut -d" " -f 6 | base64 -d > ./t/certs/k8s_mtls.key');
+system('grep certificate-authority-data ~/.kube/config |cut -d" " -f 6 | base64 -d > ./t/certs/k8s_mtls_ca.pem');
+
+our $apiserver_addr = $ENV{'KUBERNETES_APISERVER_ADDR'} || "127.0.0.1";
 our $token_file = "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token";
 our $token_value = eval {`cat $token_file 2>/dev/null`};
 our $cert_file = "./t/certs/k8s_mtls.pem";
@@ -360,7 +364,7 @@ deployment:
   role_data_plane:
     config_provider: yaml
 ssl:
-  ssl_trusted_certificate: ${KUBERNETES_CERTIFICATE_AUTHORITY}
+  ssl_trusted_certificate: t/certs/k8s_mtls_ca.pem
   ssl_protocols: TLSv1.2 TLSv1.3
 discovery:
   kubernetes:
