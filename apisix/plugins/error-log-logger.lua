@@ -340,8 +340,11 @@ end
 
 
 local function send_to_kafka(log_message)
+    -- avoid race of the global config
+    local config = core.table.clone(config)
+
     core.log.info("sending a batch logs to kafka brokers: ",
-                   core.json.delay_encode(config.kafka.brokers))
+                  core.json.delay_encode(config.kafka.brokers))
 
     local broker_config = {}
     broker_config["request_timeout"] = config.timeout * 1000
@@ -350,19 +353,18 @@ local function send_to_kafka(log_message)
 
     local metadata = plugin.plugin_metadata(plugin_name)
     if not (metadata and metadata.value and metadata.modifiedIndex) then
-        core.log.info("please set the correct plugin_metadata for ", plugin_name)
-        return
+        return false, "please set the correct plugin_metadata for " .. plugin_name
     end
 
     -- reuse producer via kafka_prod_lrucache to avoid unbalanced partitions of messages in kafka
-    local prod, err = kafka_prod_lrucache(plugin_name .. "#kafka", metadata.modifiedIndex,
+    local prod, err = kafka_prod_lrucache(plugin_name, metadata.modifiedIndex,
                                           create_producer, config.kafka.brokers, broker_config,
                                           config.kafka.cluster_name)
     if not prod then
         return false, "get kafka producer failed: " .. err
     end
     core.log.info("kafka cluster name ", config.kafka.cluster_name, ", broker_list[1] port ",
-                   prod.client.broker_list[1].port)
+                  prod.client.broker_list[1].port)
 
     local ok
     for i = 1, #log_message, 2 do
@@ -370,7 +372,7 @@ local function send_to_kafka(log_message)
                             config.kafka.key, core.json.encode(log_message[i]))
         if not ok then
             return false, "failed to send data to Kafka topic: " .. err ..
-                          ", brokers: " .. core.json.delay_encode(config.kafka.brokers)
+                          ", brokers: " .. core.json.encode(config.kafka.brokers)
         end
         core.log.info("send data to kafka: ", core.json.delay_encode(log_message[i]))
     end
