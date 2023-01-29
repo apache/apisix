@@ -23,7 +23,7 @@ mkdir docker-images-backup
 sum=$(cat ci/pod/docker-compose.common.yml | grep image | wc -l)
 common_tag=$(cat ci/pod/docker-compose.common.yml | grep image: | awk '{print $2}' | awk 'ORS=NR%"'$sum'"?" ":"\n"{print}')
 echo common tag: $common_tag
-sum=$(cat ci/pod/docker-compose.${{ abc }}.yml | grep image | wc -l)
+sum=$(cat ci/pod/docker-compose.$test_type.yml | grep image | wc -l)
 special_tag=$(cat ci/pod/docker-compose.$test_type.yml | grep image: | awk '{print $2}' | awk 'ORS=NR%"'$sum'"?" ":"\n"{print}')
 echo special: $special_tag
 openwhisk_tag="openwhisk/action-nodejs-v14:nightly openwhisk/standalone:nightly"
