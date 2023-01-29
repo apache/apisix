@@ -42,7 +42,7 @@ to_pull="${to_pull} ${tag}"
 fi
 done
 echo to pull : $to_pull
-if ! [ -z $to_pull ]
+if [ -n $to_pull ]
 then
 echo $to_pull | xargs -P10 -n1 docker pull
 fi
