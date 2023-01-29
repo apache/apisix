@@ -42,9 +42,9 @@ to_pull="${to_pull} ${tag}"
 fi
 done
 echo to pull : $to_pull
-if [ -n $to_pull ]
+if [[ -n $to_pull ]]
 then
-echo $to_pull | xargs -P10 -n1 docker pull
+echo "$to_pull" | xargs -P10 -n1 docker pull
 fi
 docker save $common_tag $special_tag $openwhisk_tag -o docker-images-backup/apisix-images.tar
 echo "docker save done, time: $(date)"
