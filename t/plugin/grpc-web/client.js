@@ -36,8 +36,8 @@ const types = [TYPE_UNARY, TYPE_STREAM];
 class gRPCWebClient {
     constructor() {
         this.clients = {}
-        this.clients[MODE_BIN] = new RouteServiceBinProtocolClient("http://127.0.0.1:9080/grpc/web");
-        this.clients[MODE_TEXT] = new RouteServiceTextProtocolClient("http://127.0.0.1:9080/grpc/web");
+        this.clients[MODE_BIN] = new RouteServiceBinProtocolClient("http://127.0.0.1:1984/grpc/web");
+        this.clients[MODE_TEXT] = new RouteServiceTextProtocolClient("http://127.0.0.1:1984/grpc/web");
     };
 
     unary(mode) {

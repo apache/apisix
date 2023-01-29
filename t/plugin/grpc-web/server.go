@@ -18,7 +18,6 @@
 package main
 
 import (
-    "time"
 	"context"
 	"encoding/json"
 	"flag"
@@ -62,7 +61,6 @@ func (rss *routeServiceServer) GetRoutes(req *pb.Query, srv pb.RouteService_GetR
 		if err := srv.Send(savedRoute); err != nil {
 			return err
 		}
-        time.Sleep(3*time.Second)
 	}
 
 	return nil
