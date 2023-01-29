@@ -24,34 +24,27 @@ local plugin          = require("apisix.plugin")
 local ngx             = ngx
 local str_format      = core.string.format
 local math_random     = math.random
-local type            = type
 
 local plugin_name = "elasticsearch-logger"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
 
 
-local endpoint_schema = {
-    anyOf = {
-        {
-            -- deprecated, use "array" instead
+local schema = {
+    type = "object",
+    properties = {
+        -- deprecated, use "endpoint_addrs" instead
+        endpoint_addr = {
             type = "string",
             pattern = "[^/]$",
         },
-        {
+        endpoint_addrs = {
             type = "array",
             minItems = 1,
             items = {
                 type = "string",
                 pattern = "[^/]$",
             },
-        }
-    }
-}
-
-local schema = {
-    type = "object",
-    properties = {
-        endpoint_addr = endpoint_schema,
+        },
         field = {
             type = "object",
             properties = {
@@ -85,7 +78,10 @@ local schema = {
         }
     },
     encrypt_fields = {"auth.password"},
-    required = {"endpoint_addr", "field"},
+    oneOf = {
+        {required = {"endpoint_addr", "field"}},
+        {required = {"endpoint_addrs", "field"}}
+    },
 }
 
 
@@ -145,10 +141,10 @@ local function send_to_elasticsearch(conf, entries)
     end
 
     local selected_endpoint_addr
-    if type(conf.endpoint_addr) == "string" then
+    if conf.endpoint_addr then
         selected_endpoint_addr = conf.endpoint_addr
     else
-        selected_endpoint_addr = conf.endpoint_addr[math_random(#conf.endpoint_addr)]
+        selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
     end
     local uri = selected_endpoint_addr .. "/_bulk"
     local body = core.table.concat(entries, "")

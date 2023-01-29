@@ -106,10 +106,10 @@ __DATA__
 --- response_body_like
 passed
 passed
-property "endpoint_addr" is required
-property "field" is required
+value should match only one schema, but matches none
+value should match only one schema, but matches none
 property "field" validation failed: property "index" is required
-property "endpoint_addr" validation failed: object matches none of the required
+property "endpoint_addr" validation failed: failed to match pattern "\[\^/\]\$" with "http://127.0.0.1:9200/"
 
 
 
@@ -533,7 +533,7 @@ PTQvJEaPcNOXcOHeErC0XQ==
                 },
                 plugins = {
                     ["elasticsearch-logger"] = {
-                        endpoint_addr = {"http://127.0.0.1:9200", "http://127.0.0.1:9201"},
+                        endpoint_addrs = {"http://127.0.0.1:9200", "http://127.0.0.1:9201"},
                         field = {
                             index = "services"
                         },
