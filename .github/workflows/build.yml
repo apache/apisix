@@ -127,10 +127,10 @@ jobs:
             if [[ ${{ steps.test_env.outputs.type }} != 'first' ]]; then
               sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
             fi
-            echo "lanuch saved images done, time: $(date)"
+            echo "launch saved images done, time: $(date)"
           fi
       - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
-        name: Linux lanuch services
+        name: Linux launch services
         run: |
           echo "Start $test_type service..., time: $(date)"
           if [[ ${{ steps.test_env.outputs.type }} == 'plugin' ]]; then
