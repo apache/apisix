@@ -238,9 +238,9 @@ local function get_rsa_or_ecdsa_keypair(conf, consumer_name)
     if public_key and private_key then
         return public_key, private_key
     elseif public_key and not private_key then
-        return public_key, nil, "missing private key"
+        return nil, nil, "missing private key"
     elseif not public_key and private_key then
-        return nil, private_key, "missing public key"
+        return nil, nil, "missing public key"
     else
         return nil, nil, "public and private keys are missing"
     end
