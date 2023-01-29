@@ -333,6 +333,19 @@ local function send_to_clickhouse(log_message)
 end
 
 
+local function update_filter(value)
+    local level = log_level[value.level]
+    local status, err = errlog.set_filter_level(level)
+    if not status then
+        return nil, "failed to set filter level by ngx.errlog, the error is :" .. err
+    else
+        core.log.notice("set the filter_level to ", value.level)
+    end
+
+    return value
+end
+
+
 local function create_producer(broker_list, broker_config, cluster_name)
     core.log.info("create new kafka producer instance")
     return producer:new(broker_list, broker_config, cluster_name)
@@ -341,7 +354,14 @@ end
 
 local function send_to_kafka(log_message)
     -- avoid race of the global config
-    local config = core.table.clone(config)
+    local metadata = plugin.plugin_metadata(plugin_name)
+    if not (metadata and metadata.value and metadata.modifiedIndex) then
+        return false, "please set the correct plugin_metadata for " .. plugin_name
+    end
+    local config, err = lrucache(plugin_name, metadata.modifiedIndex, update_filter, metadata.value)
+    if not config then
+        return false, "get config failed: " .. err
+    end
 
     core.log.info("sending a batch logs to kafka brokers: ",
                   core.json.delay_encode(config.kafka.brokers))
@@ -350,11 +370,6 @@ local function send_to_kafka(log_message)
     broker_config["request_timeout"] = config.timeout * 1000
     broker_config["producer_type"] = config.kafka.producer_type
     broker_config["required_acks"] = config.kafka.required_acks
-
-    local metadata = plugin.plugin_metadata(plugin_name)
-    if not (metadata and metadata.value and metadata.modifiedIndex) then
-        return false, "please set the correct plugin_metadata for " .. plugin_name
-    end
 
     -- reuse producer via kafka_prod_lrucache to avoid unbalanced partitions of messages in kafka
     local prod, err = kafka_prod_lrucache(plugin_name, metadata.modifiedIndex,
@@ -378,19 +393,6 @@ local function send_to_kafka(log_message)
     end
 
     return true
-end
-
-
-local function update_filter(value)
-    local level = log_level[value.level]
-    local status, err = errlog.set_filter_level(level)
-    if not status then
-        return nil, "failed to set filter level by ngx.errlog, the error is :" .. err
-    else
-        core.log.notice("set the filter_level to ", value.level)
-    end
-
-    return value
 end
 
 
