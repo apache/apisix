@@ -33,6 +33,12 @@ add_block_preprocessor(sub {
     local orig_new = core.etcd.new
     core.etcd.new = function(...)
         local cli, prefix = orig_new(...)
+        -- in 2.15.x, there is an extra call in init_worker phase
+        -- so when backporting this fix, we need to filter out the
+        -- extra call in the test
+        if ngx.get_phase() ~= "timer" then
+            return cli, prefix
+        end
         cli.keepalive = function(...)
             return false, "test error"
         end
@@ -61,6 +67,9 @@ __DATA__
 
 === TEST 1: unregister timer when etcd keepalive failed
 --- yaml_config
+apisix:
+  node_listen: 1984
+  admin_key: null
 plugins:
     - request-id
 plugin_attr:
