@@ -20,8 +20,6 @@ syntax = "proto3";
 package helloworld;
 option go_package = "./proto";
 
-import "google/protobuf/struct.proto";
-
 service Greeter {
   // Unary RPC.
   rpc SayHello (HelloRequest) returns (HelloReply) {}
@@ -29,7 +27,6 @@ service Greeter {
   rpc Plus (PlusRequest) returns (PlusReply) {}
   rpc SayHelloAfterDelay (HelloRequest) returns (HelloReply) {}
   rpc SayMultipleHello(MultipleHelloRequest) returns (MultipleHelloReply) {}
-  rpc EchoStruct (StructRequest) returns (StructReply) {}
 
   // Server side streaming.
   rpc SayHelloServerStream (HelloRequest) returns (stream HelloReply) {}
@@ -92,12 +89,4 @@ message ErrorDetail {
     int64 code = 1;
     string message = 2;
     string type = 3;
-}
-
-message StructRequest {
-  google.protobuf.Struct data = 1;
-}
-
-message StructReply {
-  google.protobuf.Struct data = 1;
 }

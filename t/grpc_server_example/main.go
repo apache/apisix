@@ -18,7 +18,8 @@
 //go:generate protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/helloworld.proto
 //go:generate protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/import.proto
 //go:generate protoc  --include_imports --descriptor_set_out=proto.pb --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/src.proto
-//go:generate protoc  --descriptor_set_out=helloworld.pb --include_imports --proto_path=$PWD/proto helloworld.proto
+//go:generate protoc --descriptor_set_out=echo.pb --include_imports --proto_path=$PWD/proto echo.proto
+//go:generate protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/echo.proto
 
 // Package main implements a server for Greeter service.
 package main
@@ -77,6 +78,7 @@ type server struct {
 	// Embed the unimplemented server
 	pb.UnimplementedGreeterServer
 	pb.UnimplementedTestImportServer
+	pb.UnimplementedEchoServer
 }
 
 // SayHello implements helloworld.GreeterServer
@@ -260,6 +262,7 @@ func main() {
 		reflection.Register(s)
 		pb.RegisterGreeterServer(s, &server{})
 		pb.RegisterTestImportServer(s, &server{})
+		pb.RegisterEchoServer(s, &server{})
 
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("failed to serve: %v", err)

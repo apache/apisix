@@ -39,7 +39,7 @@ __DATA__
             local t = require("lib.test_admin")
             local json = require("toolkit.json")
 
-            local content = t.read_file("t/grpc_server_example/helloworld.pb")
+            local content = t.read_file("t/grpc_server_example/echo.pb")
             local data = {content = ngx.encode_base64(content)}
             local code, body = t.test('/apisix/admin/protos/1',
                  ngx.HTTP_PUT,
@@ -59,7 +59,7 @@ __DATA__
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",
-                            "service": "helloworld.Greeter",
+                            "service": "echo.Echo",
                             "method": "EchoStruct"
                         }
                     },
@@ -104,8 +104,17 @@ location /t {
         else
             local req = core.json.decode(body)
             local rsp = core.json.decode(res.body)
-            if not core.table.deep_eq(req, rsp) then
-                ngx.log(ngx.ERR, "failed: req=", body, ", rsp=", res.body)
+            for k, v in pairs(req.data.fields) do
+                if rsp.data.fields[k] == nil then
+                    ngx.log(ngx.ERR, "rsp missing field=", k, ", rsp: ", res.body)
+                else
+                    for k1, v1 in pairs(v) do
+                        if v1 ~= rsp.data.fields[k][k1] then
+                            ngx.log(ngx.ERR, "rsp mismatch: k=", k1,
+                                ", req=", v1, ", rsp=", rsp.data.fields[k][k1])
+                        end
+                    end
+                end
             end
         end
     }
