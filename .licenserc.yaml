@@ -47,6 +47,5 @@ header:
     - 't/plugin/authz-casbin'
     - 't/coredns'
     - 'autodocs/'
-    - 't/grpc_server_example/proto/google'
 
   comment: on-failure
