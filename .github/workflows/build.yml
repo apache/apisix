@@ -99,29 +99,92 @@ jobs:
           rm -rf $(ls -1 --ignore=*.tgz --ignore=ci --ignore=t --ignore=utils --ignore=.github)
           tar zxvf ${{ steps.branch_env.outputs.fullname }}
 
-      - name: Start CI env (FIRST_TEST)
-        if: steps.test_env.outputs.type == 'first'
-        run: |
-          # launch deps env
-          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
+      - name: Cache images
+        id: cache-images
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-apisix-docker-images
+        with:
+          path: docker-images-buckup
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ steps.test_env.outputs.type }}-${{ hashFiles('./ci/pod/*.yml') }}
 
-      - name: Start CI env (PLUGIN_TEST)
-        if: steps.test_env.outputs.type == 'plugin'
+      - if: ${{ steps.cache-images.outputs.cache-hit == 'true' }}
+        name: Load saved docker images
         run: |
-          # download keycloak cas provider
-          sudo wget https://github.com/jacekkow/keycloak-protocol-cas/releases/download/18.0.2/keycloak-protocol-cas-18.0.2.jar -O /opt/keycloak-protocol-cas-18.0.2.jar
-
-          ./ci/pod/openfunction/build-function-image.sh
-          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
-          sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
-
-      - name: Start CI env (LAST_TEST)
-        if: steps.test_env.outputs.type == 'last'
+          if [[ -f docker-images-buckup/apisix-images.tar ]]; then
+            echo "load saved images..., time: $(date)"
+            docker load --input docker-images-buckup/apisix-images.tar
+            echo "load saved images done, time: $(date)"
+            if [[ ${{ steps.test_env.outputs.type }} == 'last' ]]; then
+              # generating SSL certificates for Kafka
+              sudo keytool -genkeypair -keyalg RSA -dname "CN=127.0.0.1" -alias 127.0.0.1 -keystore ./ci/pod/kafka/kafka-server/selfsigned.jks -validity 365 -keysize 2048 -storepass changeit
+            fi
+            if [[ ${{ steps.test_env.outputs.type }} == 'plugin' ]]; then
+              # download keycloak cas provider
+              sudo wget https://github.com/jacekkow/keycloak-protocol-cas/releases/download/18.0.2/keycloak-protocol-cas-18.0.2.jar -O /opt/keycloak-protocol-cas-18.0.2.jar
+            fi
+            make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
+            if [[ ${{ steps.test_env.outputs.type }} != 'first' ]]; then
+              sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
+            fi
+            echo "lanuch saved images done, time: $(date)"
+          fi
+      - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
+        name: Linux lanuch services
         run: |
-          # generating SSL certificates for Kafka
-          sudo keytool -genkeypair -keyalg RSA -dname "CN=127.0.0.1" -alias 127.0.0.1 -keystore ./ci/pod/kafka/kafka-server/selfsigned.jks -validity 365 -keysize 2048 -storepass changeit
-          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
-          sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
+          if [[ ${{ steps.test_env.outputs.type }} == 'first' ]]; then
+            # launch deps env
+            echo "start first service ..., time: $(date)"
+            make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
+            echo "start first service done, time: $(date)"
+          fi
+          if [[ ${{ steps.test_env.outputs.type }} == 'plugin' ]]; then
+            echo "start plugin service ..., time: $(date)"
+            # download keycloak cas provider
+            sudo wget https://github.com/jacekkow/keycloak-protocol-cas/releases/download/18.0.2/keycloak-protocol-cas-18.0.2.jar -O /opt/keycloak-protocol-cas-18.0.2.jar
+            bash ci/pod/openfunction/build-function-image.sh
+            make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
+            sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
+            echo "start plugin service done, time: $(date)"
+          fi
+          if [[ ${{ steps.test_env.outputs.type }} == 'last' ]]; then
+            echo "start last service ..., time: $(date)"
+            # generating SSL certificates for Kafka
+            sudo keytool -genkeypair -keyalg RSA -dname "CN=127.0.0.1" -alias 127.0.0.1 -keystore ./ci/pod/kafka/kafka-server/selfsigned.jks -validity 365 -keysize 2048 -storepass changeit
+            make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
+            sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
+            echo "start last service done, time: $(date)"
+          fi
+          echo "started backing up, time: $(date)"
+          mkdir docker-images-buckup
+          sum=$( cat ci/pod/docker-compose.common.yml|grep image |wc -l)
+          common_tag=$(cat ci/pod/docker-compose.common.yml|grep image:|awk '{print $2}'|awk 'ORS=NR%"'$sum'"?" ":"\n"{print}')
+          echo common tag: $common_tag
+          sum=$( cat ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml|grep image |wc -l)
+          special_tag=$(cat ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml|grep image:|awk '{print $2}'|awk 'ORS=NR%"'$sum'"?" ":"\n"{print}')
+          echo special: $special_tag
+          openwhisk_tag="openwhisk/action-nodejs-v14:nightly openwhisk/standalone:nightly"
+          echo
+          echo common_tag: $common_tag
+          echo special_tag: $special_tag
+          echo openwhisk_tag: $openwhisk_tag
+          echo
+          all_tags="${common_tag} ${special_tag} ${openwhisk_tag}"
+          to_pull=""
+          for tag in $all_tags
+          do
+          if ! ( docker inspect $tag &> /dev/null )
+          then
+          to_pull="${to_pull} ${tag}"
+          fi
+          done
+          echo to pull : $to_pull
+          if ! [ -z $to_pull ]
+          then
+          echo $to_pull | xargs -P10 -n1 docker pull
+          fi
+          docker save $common_tag $special_tag $openwhisk_tag -o docker-images-buckup/apisix-images.tar
+          echo "docker save done, time: $(date)"
 
       - name: Start Dubbo Backend
         if: matrix.os_name == 'linux_openresty' && steps.test_env.outputs.type == 'plugin'
