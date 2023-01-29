@@ -105,15 +105,15 @@ jobs:
         env:
           cache-name: cache-apisix-docker-images
         with:
-          path: docker-images-buckup
+          path: docker-images-backup
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ steps.test_env.outputs.type }}-${{ hashFiles('./ci/pod/*.yml') }}
 
       - if: ${{ steps.cache-images.outputs.cache-hit == 'true' }}
         name: Load saved docker images
         run: |
-          if [[ -f docker-images-buckup/apisix-images.tar ]]; then
+          if [[ -f docker-images-backup/apisix-images.tar ]]; then
             echo "load saved images..., time: $(date)"
-            docker load --input docker-images-buckup/apisix-images.tar
+            docker load --input docker-images-backup/apisix-images.tar
             echo "load saved images done, time: $(date)"
             if [[ ${{ steps.test_env.outputs.type }} == 'last' ]]; then
               # generating SSL certificates for Kafka
@@ -156,7 +156,7 @@ jobs:
             echo "start last service done, time: $(date)"
           fi
           echo "started backing up, time: $(date)"
-          mkdir docker-images-buckup
+          mkdir docker-images-backup
           sum=$( cat ci/pod/docker-compose.common.yml|grep image |wc -l)
           common_tag=$(cat ci/pod/docker-compose.common.yml|grep image:|awk '{print $2}'|awk 'ORS=NR%"'$sum'"?" ":"\n"{print}')
           echo common tag: $common_tag
@@ -183,7 +183,7 @@ jobs:
           then
           echo $to_pull | xargs -P10 -n1 docker pull
           fi
-          docker save $common_tag $special_tag $openwhisk_tag -o docker-images-buckup/apisix-images.tar
+          docker save $common_tag $special_tag $openwhisk_tag -o docker-images-backup/apisix-images.tar
           echo "docker save done, time: $(date)"
 
       - name: Start Dubbo Backend
