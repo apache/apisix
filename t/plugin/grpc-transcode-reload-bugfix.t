@@ -34,7 +34,7 @@ add_block_preprocessor(sub {
     close_cnt = 0
     core.config.new = function(key, opts)
         local obj, err = orig_new(key, opts)
-        if key == "/protos" then
+        if key == "/proto" then
             local orig_close = obj.close
             obj.close = function(...)
                 core.log.warn("call config close")
