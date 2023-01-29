@@ -35,7 +35,7 @@ install_dependencies() {
     ./utils/linux-install-luarocks.sh
 
     # install etcdctl
-    ./utils/linux-install-etcd-client.sh
+    ./ci/linux-install-etcd-client.sh
 
     # install vault cli capabilities
     install_vault_cli
