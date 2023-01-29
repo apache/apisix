@@ -166,24 +166,25 @@ function _M.map_message(field, default_values, request_table, real_key)
                 sub = sub_array
             else
                 if ty == "map" then
-                    local tbl
                     for k, v in pairs(request_table[name]) do
-                        tbl, err = _M.map_message(field_type,
+                        local tbl, err = _M.map_message(field_type,
                             default_values and default_values[name],
                             request_table[name], k)
+                        if err then
+                            return nil, err
+                        end
                         if not sub then
                             sub = {}
                         end
-                        sub[k]= tbl[k]
+                        sub[k] = tbl[k]
                     end
                 else
                     sub, err = _M.map_message(field_type,
                         default_values and default_values[name],
                         request_table[name])
-                end
-
-                if err then
-                    return nil, err
+                    if err then
+                        return nil, err
+                    end
                 end
             end
 
