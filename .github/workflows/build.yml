@@ -83,11 +83,6 @@ jobs:
             echo "type=last" >>$GITHUB_OUTPUT
           fi
 
-      - name: Linux launch common services
-        run: |
-          make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
-          sudo ./ci/init-common-test-service.sh
-
       - name: Create tarball
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         run: |
@@ -132,6 +127,10 @@ jobs:
       - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
         name: Linux launch services
         run: |
+          # Launch common services
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
+          sudo ./ci/init-common-test-service.sh
+
           echo "Start $test_type service..., time: $(date)"
           if [[ ${{ steps.test_env.outputs.type }} == 'plugin' ]]; then
             # download keycloak cas provider
@@ -142,6 +141,7 @@ jobs:
             # generating SSL certificates for Kafka
             sudo keytool -genkeypair -keyalg RSA -dname "CN=127.0.0.1" -alias 127.0.0.1 -keystore ./ci/pod/kafka/kafka-server/selfsigned.jks -validity 365 -keysize 2048 -storepass changeit
           fi
+
           make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
           [ ${{ steps.test_env.outputs.type }} != "first" ] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
           echo "Start ${{ steps.test_env.outputs.type }} service done, time: $(date)"
