@@ -51,7 +51,7 @@ jobs:
       - name: check Chinese copywriting
         run: |
           version=v1.5.6
-          wget -O- "https://github.com/huacnlee/autocorrect/releases/download/$version/autocorrect-linux-amd64.tar.gz" | tar -xzv
+          wget -qO- "https://github.com/huacnlee/autocorrect/releases/download/$version/autocorrect-linux-amd64.tar.gz" | tar -xzv
           mv -v autocorrect /usr/local/bin/
           autocorrect --version
           git ls-files -- "docs/zh/latest/**.md" | xargs -t autocorrect --lint
