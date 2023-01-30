@@ -45,12 +45,6 @@ local _M = {
     schema = schema
 }
 
--- This code is copied from apisix/core/vault.lua.
--- The functions in apisix/core/vault.lua are currently only used in the jwt-auth plugin,
--- and it is not suitable to be placed in the core module of APISIX.
---
--- When KMS is fully functional, we will remove apisix/core/vault.lua.
---
 local function make_request_to_vault(conf, method, key, data)
     local httpc = http.new()
     -- config timeout or default to 5000 ms
