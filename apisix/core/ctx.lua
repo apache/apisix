@@ -213,6 +213,10 @@ do
         route_name = true,
         service_id = true,
         service_name = true,
+        resp_body = function(ctx)
+            -- only work when file-logger set include_resp_body = true
+            return ctx.resp_body or ''
+        end
     }
 
     local mt = {
