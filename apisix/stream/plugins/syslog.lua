@@ -19,7 +19,6 @@ local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local syslog = require("apisix.plugins.syslog.init")
-local plugin = require("apisix.plugin")
 local plugin_name = "syslog"
 
 local batch_processor_manager = bp_manager_mod.new("stream sys logger")
@@ -66,15 +65,11 @@ end
 
 
 function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    if not metadata or not metadata.value.log_format
-          or core.table.nkeys(metadata.value.log_format) <= 0
-    then
-        core.log.error("syslog's log_format is not set")
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
+    if not entry then
         return
     end
 
-    local entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
     syslog.push_entry(conf, ctx, entry)
 end
 

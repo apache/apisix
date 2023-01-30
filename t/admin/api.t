@@ -137,4 +137,4 @@ deployment:
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- response_headers
 X-API-VERSION: v2
---- response_body_like: "\\/apisix\\/routes"
+--- response_body_like: "/apisix/routes"

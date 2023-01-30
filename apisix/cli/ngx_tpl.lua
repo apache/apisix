@@ -145,6 +145,13 @@ stream {
     lua_shared_dict plugin-limit-conn-stream {* stream.lua_shared_dict["plugin-limit-conn-stream"] *};
     {% end %}
 
+    # for discovery shared dict
+    {% if discovery_shared_dicts then %}
+    {% for key, size in pairs(discovery_shared_dicts) do %}
+    lua_shared_dict {*key*}-stream {*size*};
+    {% end %}
+    {% end %}
+
     resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %} ipv6={% if enable_ipv6 then %}on{% else %}off{% end %};
     resolver_timeout {*resolver_timeout*};
 
@@ -277,6 +284,7 @@ http {
     {% if enabled_plugins["limit-count"] then %}
     lua_shared_dict plugin-limit-count {* http.lua_shared_dict["plugin-limit-count"] *};
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-count-redis-cluster-slot-lock"] *};
+    lua_shared_dict plugin-limit-count-reset-header {* http.lua_shared_dict["plugin-limit-count"] *};
     {% end %}
 
     {% if enabled_plugins["prometheus"] and not enabled_stream_plugins["prometheus"] then %}

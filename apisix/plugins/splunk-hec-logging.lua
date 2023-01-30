@@ -60,28 +60,42 @@ local schema = {
     required = { "endpoint" },
 }
 
+local metadata_schema = {
+    type = "object",
+    properties = {
+        log_format = log_util.metadata_schema_log_format,
+    },
+}
 
 local _M = {
     version = 0.1,
     priority = 409,
     name = plugin_name,
+    metadata_schema = metadata_schema,
     schema = batch_processor_manager:wrap_schema(schema),
 }
 
 
-function _M.check_schema(conf)
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
+
     return core.schema.check(schema, conf)
 end
 
 
-local function get_logger_entry(conf)
-    local entry = log_util.get_full_log(ngx, conf)
-    return {
+local function get_logger_entry(conf, ctx)
+    local entry, customized = log_util.get_log_entry(plugin_name, conf, ctx)
+    local splunk_entry = {
         time = ngx_now(),
-        host = entry.server.hostname,
         source = DEFAULT_SPLUNK_HEC_ENTRY_SOURCE,
         sourcetype = DEFAULT_SPLUNK_HEC_ENTRY_TYPE,
-        event = {
+    }
+
+    if not customized then
+        splunk_entry.host = entry.server.hostname
+        splunk_entry.event = {
             request_url = entry.request.url,
             request_method = entry.request.method,
             request_headers = entry.request.headers,
@@ -93,7 +107,12 @@ local function get_logger_entry(conf)
             latency = entry.latency,
             upstream = entry.upstream,
         }
-    }
+    else
+        splunk_entry.host = core.utils.gethostname()
+        splunk_entry.event = entry
+    end
+
+    return splunk_entry
 end
 
 
@@ -132,7 +151,7 @@ end
 
 
 function _M.log(conf, ctx)
-    local entry = get_logger_entry(conf)
+    local entry = get_logger_entry(conf, ctx)
 
     if batch_processor_manager:add_entry(conf, entry) then
         return

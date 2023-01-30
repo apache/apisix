@@ -25,7 +25,7 @@ install_dependencies() {
     apt-get -y install lua5.1 liblua5.1-0-dev libldap2-dev
     export_or_prefix
     export OPENRESTY_VERSION=source
-    ./utils/linux-install-openresty.sh
+    ./ci/linux-install-openresty.sh
     bash utils/install-dependencies.sh install_luarocks
     make deps
 }
