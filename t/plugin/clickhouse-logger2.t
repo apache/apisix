@@ -78,7 +78,7 @@ passed
 --- request
 GET /hello
 --- error_log eval
-qr/\{.*"body":"hello world\\n"/
+qr/clickhouse body: .*\{.*"body":"hello world\\n"/
 --- wait: 3
 
 
@@ -133,8 +133,9 @@ passed
 === TEST 4: skip collect response log for condition
 --- request
 GET /hello?foo=unknown
---- no_error_log
-"response":{"body":"hello world\n"
+--- no_error_log eval
+qr/clickhouse body: .*\{.*response":\{.*"body":"hello world\\n"/
+--- wait: 3
 
 
 
@@ -182,8 +183,8 @@ passed
 --- request
 POST /hello?foo=bar
 {"sample":"hello"}
---- error_log
-"body":"{\"sample\":\"hello\"}"
+--- error_log eval
+qr/clickhouse body: .*\{.*request":\{.*"body":"\{\\"sample\\":\\"hello\\"/
 --- wait: 3
 
 
@@ -239,6 +240,6 @@ passed
 --- request
 POST /hello?foo=unknown
 {"sample":"hello"}
---- no_error_log
-"body":"{\"sample\":\"hello\"}"
+--- no_error_log eval
+qr/clickhouse body: .*\{.*request":\{.*"body":"\{\\"sample\\":\\"hello\\"/
 --- wait: 3
