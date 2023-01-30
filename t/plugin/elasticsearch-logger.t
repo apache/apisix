@@ -551,3 +551,32 @@ PTQvJEaPcNOXcOHeErC0XQ==
     }
 --- response_body
 passed
+
+
+
+=== TEST 14: to show that different endpoints will be chosen randomly
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            for i = 1, 10 do
+                local code, body = t('/hello', ngx.HTTP_GET)
+                ngx.say("code: ", code)
+            end
+
+        }
+    }
+--- response_body
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+code: 200
+--- error_log
+http://127.0.0.1:9200/_bulk
+http://127.0.0.1:9201/_bulk
