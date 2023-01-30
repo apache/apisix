@@ -68,6 +68,7 @@ dependencies = {
     "lua-resty-consul = 0.3-2",
     "penlight = 1.9.2-1",
     "ext-plugin-proto = 0.6.0",
+    "luaposix = 35.1-1",
     "casbin = 1.41.3",
     "api7-snowflake = 2.0-1",
     "inspect == 3.1.1",
