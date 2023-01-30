@@ -107,22 +107,9 @@ jobs:
         name: Load saved docker images
         run: |
           if [[ -f docker-images-backup/apisix-images.tar ]]; then
-            echo "load saved images..., time: $(date)"
             docker load --input docker-images-backup/apisix-images.tar
-            echo "load saved images done, time: $(date)"
-            if [[ ${{ steps.test_env.outputs.type }} == 'last' ]]; then
-              # generating SSL certificates for Kafka
-              sudo keytool -genkeypair -keyalg RSA -dname "CN=127.0.0.1" -alias 127.0.0.1 -keystore ./ci/pod/kafka/kafka-server/selfsigned.jks -validity 365 -keysize 2048 -storepass changeit
-            fi
-            if [[ ${{ steps.test_env.outputs.type }} == 'plugin' ]]; then
-              # download keycloak cas provider
-              sudo wget https://github.com/jacekkow/keycloak-protocol-cas/releases/download/18.0.2/keycloak-protocol-cas-18.0.2.jar -O /opt/keycloak-protocol-cas-18.0.2.jar
-            fi
-            make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
-            if [[ ${{ steps.test_env.outputs.type }} != 'first' ]]; then
-              sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
-            fi
-            echo "launch saved images done, time: $(date)"
+            bash ./ci/before-launch-linux-services.sh ${{ steps.test_env.outputs.type }} true
+            bash ./ci/launch-linux-services.sh ${{ steps.test_env.outputs.type }}
           fi
       - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
         name: Linux launch services
@@ -130,22 +117,8 @@ jobs:
           # Launch common services
           make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
           sudo ./ci/init-common-test-service.sh
-
-          echo "Start $test_type service..., time: $(date)"
-          if [[ ${{ steps.test_env.outputs.type }} == 'plugin' ]]; then
-            # download keycloak cas provider
-            sudo wget https://github.com/jacekkow/keycloak-protocol-cas/releases/download/18.0.2/keycloak-protocol-cas-18.0.2.jar -O /opt/keycloak-protocol-cas-18.0.2.jar
-            bash ci/pod/openfunction/build-function-image.sh
-          fi
-          if [[ ${{ steps.test_env.outputs.type }} == 'last' ]]; then
-            # generating SSL certificates for Kafka
-            sudo keytool -genkeypair -keyalg RSA -dname "CN=127.0.0.1" -alias 127.0.0.1 -keystore ./ci/pod/kafka/kafka-server/selfsigned.jks -validity 365 -keysize 2048 -storepass changeit
-          fi
-
-          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
-          [ ${{ steps.test_env.outputs.type }} != "first" ] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
-          echo "Start ${{ steps.test_env.outputs.type }} service done, time: $(date)"
-
+          bash ./ci/before-launch-linux-services.sh ${{ steps.test_env.outputs.type }} false
+          bash ./ci/launch-linux-services.sh ${{ steps.test_env.outputs.type }}
           bash ./ci/backup-docker-images.sh ${{ steps.test_env.outputs.type }}
 
       - name: Start Dubbo Backend
