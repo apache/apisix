@@ -119,6 +119,9 @@ jobs:
           sudo ./ci/init-common-test-service.sh
           bash ./ci/before-launch-linux-services.sh ${{ steps.test_env.outputs.type }} false
           bash ./ci/launch-linux-services.sh ${{ steps.test_env.outputs.type }}
+
+          echo "start backing up"
+          echo test_type is ${{ steps.test_env.outputs.type }}
           bash ./ci/backup-docker-images.sh ${{ steps.test_env.outputs.type }}
 
       - name: Start Dubbo Backend
