@@ -1,11 +1,11 @@
 ---
 title: file-logger
 keywords:
-- APISIX
-- API 网关
-- Plugin
-- file-logger
-  description: API 网关 Apache APISIX file-logger 插件可用于将日志数据存储到指定位置。
+  - APISIX
+  - API 网关
+  - Plugin
+  - file-logger
+description: API 网关 Apache APISIX file-logger 插件可用于将日志数据存储到指定位置。
 ---
 
 <!--
