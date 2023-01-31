@@ -135,7 +135,7 @@ local function check_conf(id, conf, need_id, schema)
         end
     end
 
-    return need_id and id or true
+    return true
 end
 
 
