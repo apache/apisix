@@ -209,14 +209,14 @@ do
         balancer_port = true,
         consumer_group_id = true,
         consumer_name = true,
+        resp_body = function(ctx)
+            -- only for logger and requires the logger to have a special configuration
+            return ctx.resp_body or ''
+        end,
         route_id = true,
         route_name = true,
         service_id = true,
-        service_name = true,
-        resp_body = function(ctx)
-            -- only work when file-logger set include_resp_body = true
-            return ctx.resp_body or ''
-        end
+        service_name = true
     }
 
     local mt = {

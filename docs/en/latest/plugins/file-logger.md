@@ -1,11 +1,11 @@
 ---
 title: file-logger
 keywords:
-  - APISIX
-  - API Gateway
-  - Plugin
-  - File Logger
-description: This document contains information about the Apache APISIX file-logger Plugin.
+- APISIX
+- API Gateway
+- Plugin
+- File Logger
+  description: This document contains information about the Apache APISIX file-logger Plugin.
 ---
 
 <!--
@@ -43,10 +43,10 @@ The `file-logger` Plugin is used to push log streams to a specific location.
 
 ## Attributes
 
-| Name | Type   | Required | Description                                                                                                                                                                                                                        |
-| ---- | ------ | -------- |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Name | Type   | Required | Description   |
+| ---- | ------ | -------- | ------------- |
 | path | string | True     | Log file path. |
-| include_resp_body      | boolean | False     | When set to `true` includes the response body in the log file. If format is set, you can use the variable $resp_body to get the response body.                                                                                     |
+| include_resp_body      | boolean | False     | When set to `true` includes the response body in the log file.                                                                                                                                                                |
 | include_resp_body_expr | array   | False     | When the `include_resp_body` attribute is set to `true`, use this to filter based on [lua-resty-expr](https://github.com/api7/lua-resty-expr). If present, only logs the response into file if the expression evaluates to `true`. |
 
 ## Metadata
