@@ -43,6 +43,7 @@ description: 本文介绍了 Apache APISIX request-id 插件的相关操作，�
 | header_name         | string  | 否 | "X-Request-Id" |                       | unique ID 的请求头的名称。         |
 | include_in_response | boolean | 否 | true          |                       | 当设置为 `true` 时，将 unique ID 加入返回头。 |
 | algorithm           | string  | 否 | "uuid"         | ["uuid", "snowflake", "nanoid"] | 指定的 unique ID 生成算法。 |
+| get_from_query      | boolean | 否     | false          |                                 | 当设置为 `true` 时，将从query string里获取request ID。 |
 
 ### 使用 snowflake 算法生成 unique ID
 
