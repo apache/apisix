@@ -53,8 +53,8 @@ local _M = {
 local function discovery_consul_callback(data, event, source, pid)
     all_services = data
     log.notice("update local variable all_services, event is: ", event,
-            "source: ", source, "server pid:", pid,
-            ", all services: ", json_delay_encode(all_services, true))
+        "source: ", source, "server pid:", pid,
+        ", all services: ", json_delay_encode(all_services, true))
 end
 
 
@@ -77,7 +77,7 @@ function _M.nodes(service_name)
     end
 
     log.info("process id: ", ngx_worker_id(), ", all_services[", service_name, "] = ",
-            json_delay_encode(resp_list, true))
+        json_delay_encode(resp_list, true))
 
     return resp_list
 end
@@ -127,7 +127,7 @@ local function read_dump_services()
 
     local now_time = ngx.time()
     log.info("dump file last_update: ", entity.last_update, ", dump_params.expire: ",
-            dump_params.expire, ", now_time: ", now_time)
+        dump_params.expire, ", now_time: ", now_time)
     if dump_params.expire ~= 0  and (entity.last_update + dump_params.expire) < now_time then
         log.warn("dump file: ", dump_params.path, " had expired, ignored it")
         return
@@ -196,9 +196,9 @@ function _M.connect(premature, consul_server, retry_delay)
             and watch_result.status)
     if watch_error_info then
         log.error("connect consul: ", consul_server.consul_server_url,
-                " by sub url: ", consul_server.consul_watch_sub_url,
-                ", got watch result: ", json_delay_encode(watch_result, true),
-                 ", with error: ", watch_error_info)
+            " by sub url: ", consul_server.consul_watch_sub_url,
+            ", got watch result: ", json_delay_encode(watch_result, true),
+            ", with error: ", watch_error_info)
 
         retry_delay = get_retry_delay(retry_delay)
         log.warn("retry connecting consul after ", retry_delay, " seconds")
@@ -208,10 +208,10 @@ function _M.connect(premature, consul_server, retry_delay)
     end
 
     log.info("connect consul: ", consul_server.consul_server_url,
-            ", watch_result status: ", watch_result.status,
-            ", watch_result.headers.index: ", watch_result.headers['X-Consul-Index'],
-            ", consul_server.index: ", consul_server.index,
-            ", consul_server: ", json_delay_encode(consul_server, true))
+        ", watch_result status: ", watch_result.status,
+        ", watch_result.headers.index: ", watch_result.headers['X-Consul-Index'],
+        ", consul_server.index: ", consul_server.index,
+        ", consul_server: ", json_delay_encode(consul_server, true))
 
     -- if current index different last index then update service
     if consul_server.index ~= watch_result.headers['X-Consul-Index'] then
@@ -234,16 +234,15 @@ function _M.connect(premature, consul_server, retry_delay)
                     ((result ~= nil and result.status ~= 200) and result.status)
             if error_info then
                 log.error("connect consul: ", consul_server.consul_server_url,
-                        ", by service url: ", svc_url,
-                        ", with error: ", error_info)
+                    ", by service url: ", svc_url, ", with error: ", error_info)
                 goto CONTINUE
             end
 
             -- decode body, decode json, update service, error handling
             if result.body then
                 log.notice("service url: ", svc_url,
-                        ", header: ", json_delay_encode(result.headers, true),
-                        ", body: ", json_delay_encode(result.body, true))
+                    ", header: ", json_delay_encode(result.headers, true),
+                    ", body: ", json_delay_encode(result.body, true))
                 -- add services to table
                 local nodes = up_services[service_name]
                 for  _, node in ipairs(result.body) do
@@ -274,7 +273,7 @@ function _M.connect(premature, consul_server, retry_delay)
         local ok, post_err = events.post(events_list._source, events_list.updating, all_services)
         if not ok then
             log.error("post_event failure with ", events_list._source,
-                    ", update all services error: ", post_err)
+                ", update all services error: ", post_err)
         end
 
         if dump_params then

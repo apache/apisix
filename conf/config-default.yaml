@@ -340,6 +340,7 @@ nginx_config:                     # config for render the template to generate n
 #    dump:                         # if you need, when registered nodes updated can dump into file
 #       path: "logs/consul.dump"
 #       expire: 2592000            # unit sec, here is 30 day
+#       load_on_init: true         # default true, load the consul dump file on init
 #  kubernetes:
 #    ### kubernetes service discovery both support single-cluster and multi-cluster mode
 #    ### applicable to the case where the service is distributed in a single or multiple kubernetes clusters.
