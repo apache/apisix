@@ -1,11 +1,11 @@
 ---
 title: file-logger
 keywords:
-- APISIX
-- API Gateway
-- Plugin
-- File Logger
-  description: This document contains information about the Apache APISIX file-logger Plugin.
+  - APISIX
+  - API Gateway
+  - Plugin
+  - File Logger
+description: This document contains information about the Apache APISIX file-logger Plugin.
 ---
 
 <!--
