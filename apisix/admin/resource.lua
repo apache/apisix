@@ -57,11 +57,21 @@ function _M:check_conf(id, conf, need_id)
     core.log.info("conf  : ", core.json.delay_encode(conf))
 
     -- check the resource own rules
-    return self.checker(id, conf, need_id, self.schema)
+    local ok, err = self.checker(id, conf, need_id, self.schema)
+
+    if not ok then
+        return ok, err
+    else
+        return need_id and id or true
+    end
 end
 
 
 function _M:get(id)
+    if core.table.array_find(self.unsupported_methods, "get") then
+        return 405, {error_msg = "not supported `GET` method for " .. self.kind}
+    end
+
     local key = "/" .. self.name
     if id then
         key = key .. "/" .. id
@@ -79,6 +89,10 @@ end
 
 
 function _M:post(id, conf, sub_path, args)
+    if core.table.array_find(self.unsupported_methods, "post") then
+        return 405, {error_msg = "not supported `POST` method for " .. self.kind}
+    end
+
     local id, err = self:check_conf(id, conf, false)
     if not id then
         return 400, err
@@ -86,7 +100,13 @@ function _M:post(id, conf, sub_path, args)
 
     local key = "/" .. self.name
     utils.inject_timestamp(conf)
-    local res, err = core.etcd.push(key, conf, args.ttl)
+
+    local ttl = nil
+    if args then
+        ttl = args.ttl
+    end
+
+    local res, err = core.etcd.push(key, conf, ttl)
     if not res then
         core.log.error("failed to post ", self.kind, "[", key, "] to etcd: ", err)
         return 503, {error_msg = err}
@@ -97,6 +117,10 @@ end
 
 
 function _M:put(id, conf, sub_path, args)
+    if core.table.array_find(self.unsupported_methods, "put") then
+        return 405, {error_msg = "not supported `PUT` method for " .. self.kind}
+    end
+
     local id, err = self:check_conf(id, conf, true)
     if not id then
         return 400, err
@@ -109,7 +133,12 @@ function _M:put(id, conf, sub_path, args)
         return 503, {error_msg = err}
     end
 
-    local res, err = core.etcd.set(key, conf, args.ttl)
+    local ttl = nil
+    if args then
+        ttl = args.ttl
+    end
+
+    local res, err = core.etcd.set(key, conf, ttl)
     if not res then
         core.log.error("failed to put ", self.kind, "[", key, "] to etcd: ", err)
         return 503, {error_msg = err}
@@ -120,8 +149,19 @@ end
 
 
 function _M:delete(id)
+    if core.table.array_find(self.unsupported_methods, "delete") then
+        return 405, {error_msg = "not supported `DELETE` method for " .. self.kind}
+    end
+
     if not id then
         return 400, {error_msg = "missing " .. self.kind .. " id"}
+    end
+
+    if self.delete_checker then
+        local code, err = self.delete_checker(id)
+        if err then
+            return code, err
+        end
     end
 
     local key = "/" .. self.name .. "/" .. id
@@ -136,6 +176,10 @@ end
 
 
 function _M:patch(id, conf, sub_path, args)
+    if core.table.array_find(self.unsupported_methods, "patch") then
+        return 405, {error_msg = "not supported `PATCH` method for " .. self.kind}
+    end
+
     if not id then
         return 400, {error_msg = "missing " .. self.kind .. " id"}
     end
@@ -188,7 +232,12 @@ function _M:patch(id, conf, sub_path, args)
         return 400, err
     end
 
-    local res, err = core.etcd.atomic_set(key, node_value, args.ttl, modified_index)
+    local ttl = nil
+    if args then
+        ttl = args.ttl
+    end
+
+    local res, err = core.etcd.atomic_set(key, node_value, ttl, modified_index)
     if not res then
         core.log.error("failed to set new ", self.kind, "[", key, "] to etcd: ", err)
         return 503, {error_msg = err}
