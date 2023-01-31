@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.15.2](#2152)
 - [2.15.1](#2151)
 - [2.15.0](#2150)
 - [2.14.1](#2141)
@@ -60,6 +61,19 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.15.2
+
+### Bugfix
+
+- File-logger should avoid buffer-caused log truncation when writing logs: [#7884](https://github.com/apache/apisix/pull/7884)
+- Fix the problem that x-forwarded-host cannot be modified in proxy-rewrite plugin: [#8200](https://github.com/apache/apisix/pull/8200)
+- Fix the problem that userinfo is not set when use_jwks is true in the openid-connect plugin: [#8347](https://github.com/apache/apisix/pull/8347)
+- Fix a problem that 502 occurs when http and grpc share the same upstream node due to connection pool reuse: [#8364](https://github.com/apache/apisix/pull/8364)
+- Fix the problem that the plugin configured under service object cannot take effect in time under some circumstances: [#8482](https://github.com/apache/apisix/pull/8482)
+- When hotloading plugins, redundant timers may be left behind if the request-id plugin initializes the snowflake generator incorrectly: [#8556](https://github.com/apache/apisix/pull/8556)
+- Close previous proto synchronizer for grpc-transcode when hotloading plugins: [#8557](https://github.com/apache/apisix/pull/8557)
+- Fix plugin disable feature not working in 2.15.1: [#8609](https://github.com/apache/apisix/pull/8609)
 
 ## 2.15.1
 

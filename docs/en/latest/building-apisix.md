@@ -52,7 +52,7 @@ curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-depend
 Then, create a directory and set the environment variable `APISIX_VERSION`:
 
 ```shell
-APISIX_VERSION='2.15.1'
+APISIX_VERSION='2.15.2'
 mkdir apisix-${APISIX_VERSION}
 ```
 
