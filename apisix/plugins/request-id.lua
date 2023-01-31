@@ -41,6 +41,7 @@ local schema = {
         header_name = {type = "string", default = "X-Request-Id"},
         include_in_response = {type = "boolean", default = true},
         algorithm = {type = "string", enum = {"uuid", "snowflake", "nanoid"}, default = "uuid"},
+        id_name = {type = "string", default = "req-id"},
         get_from_query = {type = "boolean", default = false}
     }
 }
@@ -219,13 +220,12 @@ function _M.rewrite(conf, ctx)
     local headers = ngx.req.get_headers()
     local uuid_val
     if not headers[conf.header_name] then
-        -- request-id support get from query string
         if conf.get_from_query then
             local querystring = ngx.req.get_uri_args()
-            if not querystring[conf.header_name] then
+            if not querystring[conf.id_name] then
                 uuid_val = get_request_id(conf.algorithm)
             else
-                uuid_val = querystring[conf.header_name]
+                uuid_val = querystring[conf.id_name]
             end
         else
             uuid_val = get_request_id(conf.algorithm)
@@ -236,7 +236,7 @@ function _M.rewrite(conf, ctx)
         uuid_val = headers[conf.header_name]
     end
 
-    if conf.include_in_response then
+    if conf.include_in_response and not conf.get_from_query then
         ctx["request-id-" .. conf.header_name] = uuid_val
     end
 end
