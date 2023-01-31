@@ -558,25 +558,27 @@ passed
 --- config
     location /t {
         content_by_lua_block {
+            local code_count = {}
             local t = require("lib.test_admin").test
-            for i = 1, 10 do
+            for i = 1, 12 do
                 local code, body = t('/hello', ngx.HTTP_GET)
-                ngx.say("code: ", code)
+                if code ~= 200 then
+                    ngx.say("code: ", code, " body: ", body)
+                end
+                code_count[code] = (code_count[code] or 0) + 1
             end
 
+            local code_arr = {}
+            for code, count in pairs(code_count) do
+                table.insert(code_arr, {code = code, count = count})
+            end
+
+            ngx.say(require("toolkit.json").encode(code_arr))
+            ngx.exit(200)
         }
     }
 --- response_body
-code: 200
-code: 200
-code: 200
-code: 200
-code: 200
-code: 200
-code: 200
-code: 200
-code: 200
-code: 200
+[{"code":200,"count":12}]
 --- error_log
 http://127.0.0.1:9200/_bulk
 http://127.0.0.1:9201/_bulk
