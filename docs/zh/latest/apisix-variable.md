@@ -48,5 +48,6 @@ APISIX 除了支持 [NGINX 变量](http://nginx.org/en/docs/varindex.html)外，
 | service_name        | core       | APISIX 服务的名称。                                                               |                   |
 | redis_cmd_line      | Redis      | Redis 命令的内容。                                                                |                   |
 | rpc_time            | xRPC       | 在 RPC 请求级别所花费的时间。                                                      |                   |
+| resp_body           | core       | 此变量仅用于 Logger，并要求对应的 Logger 需要具备某些配置.                            |                  |
 
 当然，除上述变量外，你也可以创建自定义[变量](./plugin-develop.md#register-custom-variable)。
