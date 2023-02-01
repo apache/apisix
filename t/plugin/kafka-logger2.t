@@ -945,9 +945,9 @@ passed
 === TEST 23: restart kafka and hit route, expr eval success
 --- exec
 docker restart apache-apisix_kafka-server1_1
-sleep 1.2
+sleep 3    # wait for kafka to restart
 curl -X POST http://localhost:1984/hello -d "abcdef"
-sleep 1.2
+sleep 0.5  # wait for sending data to kafka
 --- response_body
 apache-apisix_kafka-server1_1
 hello world
