@@ -710,3 +710,61 @@ X-Request-ID: 123
 --- wait: 5
 --- response_body
 true
+
+
+=== TEST 21: add plugin with custom arg_name
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "request-id": {
+                                "arg_name": "traceId"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+=== TEST 22: check for request id in response header (custom arg_name)
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/opentracing?traceId=123456"
+            local res, err = httpc:request_uri(uri,
+                {
+                    method = "GET",
+                    headers = {
+                        ["Content-Type"] = "application/json",
+                    }
+                })
+
+            if res.headers["Custom-Header-Name"] then
+                ngx.say(res.headers["Custom-Header-Name"])
+            else
+                ngx.say("failed")
+            end
+        }
+    }
+--- response_body
+123456
