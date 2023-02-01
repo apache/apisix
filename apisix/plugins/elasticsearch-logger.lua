@@ -22,6 +22,7 @@ local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 
 local ngx             = ngx
 local str_format      = core.string.format
+local math_random     = math.random
 
 local plugin_name = "elasticsearch-logger"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
@@ -30,9 +31,18 @@ local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
+        -- deprecated, use "endpoint_addrs" instead
         endpoint_addr = {
             type = "string",
             pattern = "[^/]$",
+        },
+        endpoint_addrs = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "string",
+                pattern = "[^/]$",
+            },
         },
         field = {
             type = "object",
@@ -67,7 +77,10 @@ local schema = {
         }
     },
     encrypt_fields = {"auth.password"},
-    required = { "endpoint_addr", "field" },
+    oneOf = {
+        {required = {"endpoint_addr", "field"}},
+        {required = {"endpoint_addrs", "field"}}
+    },
 }
 
 
@@ -114,7 +127,13 @@ local function send_to_elasticsearch(conf, entries)
         return false, str_format("create http error: %s", err)
     end
 
-    local uri = conf.endpoint_addr .. "/_bulk"
+    local selected_endpoint_addr
+    if conf.endpoint_addr then
+        selected_endpoint_addr = conf.endpoint_addr
+    else
+        selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
+    end
+    local uri = selected_endpoint_addr .. "/_bulk"
     local body = core.table.concat(entries, "")
     local headers = {["Content-Type"] = "application/x-ndjson"}
     if conf.auth then
