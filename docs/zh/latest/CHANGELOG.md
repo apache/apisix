@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.15.2](#2152)
 - [2.15.1](#2151)
 - [2.15.0](#2150)
 - [2.14.1](#2141)
@@ -60,6 +61,19 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.15.2
+
+### Bugfix
+
+- file-logger 在写日志时，应避免缓冲区造成的日志截断：[#7884](https://github.com/apache/apisix/pull/7884)
+- 修复无法在 proxy-rewrite 插件中修改 x-forwarded-host 的问题：[#8200](https://github.com/apache/apisix/pull/8200)
+- 修复 openid-connect 插件中当 use_jwks 为 true 时没有设置 userinfo 的问题：[#8347](https://github.com/apache/apisix/pull/8347)
+- 修复因连接池复用，http 和 grpc 共用同一个上游节点时偶发 502 的问题：[#8364](https://github.com/apache/apisix/pull/8364)
+- 修复某些情况下，配置在 service 对象下的插件无法及时生效的问题：[#8482](https://github.com/apache/apisix/pull/8482)
+- 插件热加载时，如果 request-id 插件中初始化 snowflake 生成器出错，可能遗留多余的计时器：[#8556](https://github.com/apache/apisix/pull/8556)
+- 插件热加载时，关闭 grpc-transcode 的 proto 同步器：[#8557](https://github.com/apache/apisix/pull/8557)
+- 修复 2.15.1 中插件禁用功能无法使用的问题：[#8609](https://github.com/apache/apisix/pull/8609)
 
 ## 2.15.1
 
