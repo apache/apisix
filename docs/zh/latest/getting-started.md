@@ -48,7 +48,7 @@ Apache APISIX 是 Apache 软件基金会下的云原生 API 网关，它兼具�
 
 - 多平台支持：APISIX 提供了多平台解决方案，它不但支持裸机运行，也支持在 Kubernetes 中使用，还支持与 AWS Lambda、Azure Function、Lua 函数和 Apache OpenWhisk 等云服务集成。
 - 全动态能力：APISIX 支持热加载，这意味着你不需要重启服务就可以更新 APISIX 的配置。请访问[为什么 Apache APISIX 选择 Nginx + Lua 这个技术栈？](https://apisix.apache.org/zh/blog/2021/08/25/why-apache-apisix-chose-nginx-and-lua/)以了解实现原理。
-- 精细化路由：APISIX 支持使用 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)做为路由的匹配条件，你可以自定义匹配函数来过滤请求，匹配路由。
+- 精细化路由：APISIX 支持使用 [NGINX 内置变量](https://nginx.org/en/docs/varindex.html)做为路由的匹配条件，你可以自定义匹配函数来过滤请求，匹配路由。
 - 运维友好：APISIX 支持与以下工具和平台集成：[HashiCorp Vault](./terminology/secret.md#使用-vault-管理密钥)、[Zipkin](./plugins/zipkin.md)、[Apache SkyWalking](./plugins/skywalking.md)、[Consul](./discovery/consul_kv.md)、[Nacos](./discovery/nacos.md)、[Eureka](./discovery.md)。通过 [APISIX Dashboard](/docs/dashboard/USER_GUIDE)，运维人员可以通过友好且直观的 UI 配置 APISIX。
 - 多语言插件支持：APISIX 支持多种开发语言进行插件开发，开发人员可以选择擅长语言的 SDK 开发自定义插件。
 
