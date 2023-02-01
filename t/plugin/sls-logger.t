@@ -167,7 +167,7 @@ hello world
                 local first_idx = string.find(log_entry, " ") + 1
                 local last_idx2 = string.find(log_entry, " ", first_idx)
                 local rfc3339_date = string.sub(log_entry, first_idx, last_idx2)
-                local rfc3339_len = string.len(rfc3339_date)
+                local rfc3339_len = #rfc3339_date
                 local rfc3339_millisecond = string.sub(rfc3339_date, rfc3339_len - 4, rfc3339_len - 2)
                 return tonumber(rfc3339_millisecond)
             end
