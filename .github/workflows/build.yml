@@ -115,8 +115,10 @@ jobs:
             [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh before
             docker load --input docker-images-backup/apisix-images.tar
             echo "loaded docker images"
-            [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
+            echo test_type: 
+            [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after && echo "executed"
           fi
+          echo "exited if"
       - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
         name: Linux launch services
         run: |
