@@ -455,6 +455,7 @@ plugins:                          # plugin list (sorted by priority)
   - opa                            # priority: 2001
   - authz-keycloak                 # priority: 2000
   #- error-log-logger              # priority: 1091
+  - body-transformer               # priority: 1080
   - proxy-mirror                   # priority: 1010
   - proxy-cache                    # priority: 1009
   - proxy-rewrite                  # priority: 1008
