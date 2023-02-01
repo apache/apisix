@@ -130,6 +130,25 @@ local schema = {
                 "header to the request for downstream.",
             type = "boolean",
             default = false
+        },
+        claim_validators = {
+            type = "array",
+            items = {
+                type = "object",
+                properties = {
+                    claim = {
+                        type = "string",
+                        minLength = 1
+                    },
+                    matches = {
+                        type = "array",
+                        items = {
+                            type = "string",
+                            minLength = 1
+                        }
+                    }
+                }
+            }
         }
     },
     encrypt_fields = {"client_secret"},
@@ -285,6 +304,56 @@ local function add_access_token_header(ctx, conf, token)
     end
 end
 
+local function match_claim(claim, matches)
+    for k,match in pairs(matches) do
+        if (type(claim) == "table") then
+            for k, v in pairs(claim) do
+                if v == match then
+                    return true
+                end
+            end
+        else
+            if claim == match then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function validate_claims(ctx, conf, claims)
+    if conf.claim_validators then
+        for k,validator in pairs(conf.claim_validators) do
+            if claims[validator.claim] then
+                if match_claim(claims[validator.claim], validator.matches) == true then
+                    return nil
+                end
+                return "failed matching " .. validator.claim .. " claim"
+            end
+            return "missing " .. validator.claim .. " claim"
+        end
+    end
+    -- All available validators finished successfully
+    return nil
+end
+
+function validate_claims_in_oidcauth_response(ctx, conf, resp)
+    local data
+    if resp.user then
+        data = resp.user
+    elseif resp.access_token then
+        data = resp.access_token
+    elseif resp.id_token then
+        data = resp.id_token
+    end
+    if data then
+        local err = validate_claims(ctx, conf, data)
+        if err then
+            return err
+        end
+    end
+    return nil
+end
 
 function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
@@ -321,6 +390,13 @@ function _M.rewrite(plugin_conf, ctx)
         end
 
         if response then
+            local err = validate_claims(ctx, conf, userinfo)
+            if err then
+                ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
+                        '", error="invalid_token", error_description="' .. err .. '"'
+                return ngx.HTTP_UNAUTHORIZED
+            end
+
             -- Add configured access token header, maybe.
             add_access_token_header(ctx, conf, access_token)
 
@@ -361,6 +437,13 @@ function _M.rewrite(plugin_conf, ctx)
         end
 
         if response then
+            local err = validate_claims_in_oidcauth_response(ctx, conf, response)
+            if err then
+                core.log.error("OIDC claim validation failed: ", err)
+                ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
+                        '", error="invalid_token", error_description="' .. err .. '"'
+                return ngx.HTTP_UNAUTHORIZED
+            end
             -- If the openidc module has returned a response, it may contain,
             -- respectively, the access token, the ID token, the refresh token,
             -- and the userinfo.
