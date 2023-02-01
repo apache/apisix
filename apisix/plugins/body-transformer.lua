@@ -14,15 +14,15 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core        = require("apisix.core")
-local xml2lua     = require("xml2lua")
-local handler     = require("xmlhandler.tree")
-local template    = require("resty.template")
-local ngx         = ngx
+local core              = require("apisix.core")
+local xml2lua           = require("xml2lua")
+local handler           = require("xmlhandler.tree")
+local template          = require("resty.template")
+local ngx               = ngx
 local req_set_body_data = ngx.req.set_body_data
-local str_format  = string.format
-local pcall       = pcall
-local pairs       = pairs
+local str_format        = string.format
+local pcall             = pcall
+local pairs             = pairs
 
 
 local transform_schema = {
@@ -31,7 +31,7 @@ local transform_schema = {
         input_format = { type = "string", enum = {"xml", "json"} },
         template = { type = "string" },
     },
-    required = {"input_format", "template"},
+    required = {"template"},
 }
 
 local schema = {
@@ -42,12 +42,29 @@ local schema = {
     },
 }
 
+
 local _M = {
     version  = 0.1,
-    priority = -1999,
+    priority = 1080,
     name     = "body-transformer",
     schema   = schema,
 }
+
+
+-- luacheck: ignore
+function string.escape_xml(s)
+	return s:gsub("&", "&amp;")
+		:gsub("<", "&lt;")
+		:gsub(">", "&gt;")
+		:gsub("'", "&apos;")
+		:gsub('"', "&quot;")
+end
+
+
+-- luacheck: ignore
+function string.escape_json(s)
+	return core.json.encode(s)
+end
 
 
 local function remove_namespace(tbl)
@@ -88,11 +105,11 @@ function _M.check_schema(conf)
 end
 
 
-local function transform(conf, body, typ)
+local function transform(conf, body, typ, ctx)
     local out, err = decoders[conf[typ].input_format](body)
     if not out then
         err = str_format("%s body decode: %s", typ, err)
-        core.log.error(err)
+        core.log.error(err, ", body=", body)
         return nil, 400, err
     end
 
@@ -104,6 +121,7 @@ local function transform(conf, body, typ)
         return nil, 500, err
     end
 
+	out._ctx = ctx
     ok, out = pcall(render, out)
     if not ok then
         err = str_format("%s template rendering: %s", typ, out)
@@ -115,10 +133,26 @@ local function transform(conf, body, typ)
 end
 
 
-function _M.access(conf, ctx)
+local function set_input_format(conf, typ, ct)
+	if conf.input_format == nil and ct then
+		if ct:find("text/xml") then
+			conf[typ].input_format = "xml"
+		elseif ct:find("application/json") then
+			conf[typ].input_format = "json"
+		end
+	end
+end
+
+
+function _M.rewrite(conf, ctx)
     if conf.request then
         local body = core.request.get_body()
-        local out, status, err = transform(conf, body, "request")
+        if not body then
+            return
+        end
+
+        set_input_format(conf, "request", ctx.var.http_content_type)
+        local out, status, err = transform(conf, body, "request", ctx)
         if not out then
             return status, { message = err }
         end
@@ -129,24 +163,27 @@ end
 
 function _M.header_filter(conf, ctx)
     if conf.response then
+        set_input_format(conf, "response", ngx.header.content_type)
         core.response.clear_header_as_body_modified()
     end
 end
 
 
 function _M.body_filter(conf, ctx)
-    local body = core.response.hold_body_chunk(ctx)
-    if not body then
-        return
-    end
+    if conf.response then
+        local body = core.response.hold_body_chunk(ctx)
+        if not body then
+            return
+        end
 
-    local out = transform(conf, body, "response")
-    if not out then
-        core.log.error("failed to transform response body: ", body)
-        return
-    end
+        local out = transform(conf, body, "response", ctx)
+        if not out then
+            core.log.error("failed to transform response body: ", body)
+            return
+        end
 
-    ngx.arg[1] = out
+        ngx.arg[1] = out
+    end
 end
 
 
