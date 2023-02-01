@@ -114,6 +114,7 @@ jobs:
           if [[ -f docker-images-backup/apisix-images.tar ]]; then
             [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh before
             docker load --input docker-images-backup/apisix-images.tar
+            echo "loaded docker images"
             [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
           fi
       - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
