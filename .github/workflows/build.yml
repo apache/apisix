@@ -83,6 +83,11 @@ jobs:
             echo "type=last" >>$GITHUB_OUTPUT
           fi
 
+      - name: Linux launch common services
+        run: |
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
+          sudo ./ci/init-common-test-service.sh
+
       - name: Create tarball
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         run: |
@@ -107,18 +112,16 @@ jobs:
         name: Load saved docker images
         run: |
           if [[ -f docker-images-backup/apisix-images.tar ]]; then
+            [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh before
             docker load --input docker-images-backup/apisix-images.tar
-            bash ./ci/before-launch-linux-services.sh ${{ steps.test_env.outputs.type }} true
-            bash ./ci/launch-linux-services.sh ${{ steps.test_env.outputs.type }}
+            [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
           fi
       - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
         name: Linux launch services
         run: |
-          # Launch common services
-          make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
-          sudo ./ci/init-common-test-service.sh
-          bash ./ci/before-launch-linux-services.sh ${{ steps.test_env.outputs.type }} false
-          bash ./ci/launch-linux-services.sh ${{ steps.test_env.outputs.type }}
+          [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh before
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
+          [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
 
           echo "start backing up"
           echo test_type is ${{ steps.test_env.outputs.type }}
