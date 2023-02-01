@@ -106,8 +106,8 @@ __DATA__
 --- response_body_like
 passed
 passed
-property "endpoint_addr" is required
-property "field" is required
+value should match only one schema, but matches none
+value should match only one schema, but matches none
 property "field" validation failed: property "index" is required
 property "endpoint_addr" validation failed: failed to match pattern "\[\^/\]\$" with "http://127.0.0.1:9200/"
 
@@ -515,3 +515,70 @@ apisix:
 --- response_body
 123456
 PTQvJEaPcNOXcOHeErC0XQ==
+
+
+
+=== TEST 13: add plugin on routes using multi elasticsearch-logger
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addrs = {"http://127.0.0.1:9200", "http://127.0.0.1:9201"},
+                        field = {
+                            index = "services"
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: to show that different endpoints will be chosen randomly
+--- config
+    location /t {
+        content_by_lua_block {
+            local code_count = {}
+            local t = require("lib.test_admin").test
+            for i = 1, 12 do
+                local code, body = t('/hello', ngx.HTTP_GET)
+                if code ~= 200 then
+                    ngx.say("code: ", code, " body: ", body)
+                end
+                code_count[code] = (code_count[code] or 0) + 1
+            end
+
+            local code_arr = {}
+            for code, count in pairs(code_count) do
+                table.insert(code_arr, {code = code, count = count})
+            end
+
+            ngx.say(require("toolkit.json").encode(code_arr))
+            ngx.exit(200)
+        }
+    }
+--- response_body
+[{"code":200,"count":12}]
+--- error_log
+http://127.0.0.1:9200/_bulk
+http://127.0.0.1:9201/_bulk
