@@ -21,6 +21,7 @@ local template          = require("resty.template")
 local ngx               = ngx
 local req_set_body_data = ngx.req.set_body_data
 local str_format        = string.format
+local type              = type
 local pcall             = pcall
 local pairs             = pairs
 
@@ -53,17 +54,17 @@ local _M = {
 
 -- luacheck: ignore
 function string.escape_xml(s)
-	return s:gsub("&", "&amp;")
-		:gsub("<", "&lt;")
-		:gsub(">", "&gt;")
-		:gsub("'", "&apos;")
-		:gsub('"', "&quot;")
+    return s:gsub("&", "&amp;")
+        :gsub("<", "&lt;")
+        :gsub(">", "&gt;")
+        :gsub("'", "&apos;")
+        :gsub('"', "&quot;")
 end
 
 
 -- luacheck: ignore
 function string.escape_json(s)
-	return core.json.encode(s)
+    return core.json.encode(s)
 end
 
 
@@ -121,7 +122,7 @@ local function transform(conf, body, typ, ctx)
         return nil, 500, err
     end
 
-	out._ctx = ctx
+    out._ctx = ctx
     ok, out = pcall(render, out)
     if not ok then
         err = str_format("%s template rendering: %s", typ, out)
@@ -134,13 +135,13 @@ end
 
 
 local function set_input_format(conf, typ, ct)
-	if conf.input_format == nil and ct then
-		if ct:find("text/xml") then
-			conf[typ].input_format = "xml"
-		elseif ct:find("application/json") then
-			conf[typ].input_format = "json"
-		end
-	end
+    if conf.input_format == nil and ct then
+        if ct:find("text/xml") then
+            conf[typ].input_format = "xml"
+        elseif ct:find("application/json") then
+            conf[typ].input_format = "json"
+        end
+    end
 end
 
 
