@@ -45,8 +45,7 @@ The Plugin will not add a unique ID if the request already has a header with the
 | header_name         | string  | False    | "X-Request-Id" |                                 | Header name for the unique request ID.                                 |
 | include_in_response | boolean | False    | true           |                                 | When set to `true`, adds the unique request ID in the response header. |
 | algorithm           | string  | False    | "uuid"         | ["uuid", "snowflake", "nanoid"] | Algorithm to use for generating the unique request ID.                 |
-| id_name             | string  | False    | "req-id"       |                                 | Id name for the unique request ID.                                     |
-| get_from_query      | boolean | False    | false          |                                 | When set to `true`, will get request ID from query string.             |
+| arg_name            | string  | False    | "req-id"       |                                 | When this parameter is set and get the unique ID from request header fails, use this `arg_name` to get the unique ID from  query string. |
 
 ### Using snowflake algorithm to generate unique ID
 
