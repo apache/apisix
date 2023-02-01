@@ -532,7 +532,7 @@ function _M.google_logging_entries()
         return
     end
 
-    token = string.sub(token, string.len(args_token_type) + 2)
+    token = string.sub(token, #args_token_type + 2)
     local verify = jwt:verify(rsa_public_key, token)
     if not verify.verified then
         ngx.status = 401
