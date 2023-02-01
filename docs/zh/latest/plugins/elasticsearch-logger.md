@@ -38,7 +38,8 @@ description: 本文介绍了 API 网关 Apache APISIX 的 elasticsearch-logger �
 
 | 名称          | 类型    | 必选项 | 默认值               | 描述                                                         |
 | ------------- | ------- | -------- | -------------------- | ------------------------------------------------------------ |
-| endpoint_addr | string  | 是       |                      | Elasticsearch API。                                           |
+| endpoint_addr | string  | 废弃       |                      | Elasticsearch API。推荐使用 `endpoint_addrs`                                           |
+| endpoint_addrs | array  | 是       |                      | Elasticsearch API。如果配置多个 `endpoints`，日志将会随机写入到各个 `endpoints`。                                           |
 | field         | array   | 是       |                      | Elasticsearch `field`配置信息。                                |
 | field.index   | string  | 是       |                      | Elasticsearch `[_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field)`。 |
 | field.type    | string  | 否       | Elasticsearch 默认值 | Elasticsearch `[_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field)` |

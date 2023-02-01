@@ -37,7 +37,8 @@ When the Plugin is enabled, APISIX will serialize the request context informatio
 
 | Name          | Type    | Required | Default                     | Description                                                  |
 | ------------- | ------- | -------- | --------------------------- | ------------------------------------------------------------ |
-| endpoint_addr | string  | True     |                             | Elasticsearch API.                                            |
+| endpoint_addr | string  | Deprecated     |                             | Deprecated. Use `endpoint_addrs` instead. Elasticsearch API.                                            |
+| endpoint_addrs  | array  | True     |                             | Elasticsearch API. If multiple endpoints are configured, they will be written randomly.                                            |
 | field         | array   | True     |                             | Elasticsearch `field` configuration.                          |
 | field.index   | string  | True     |                             | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field). |
 | field.type    | string  | False    | Elasticsearch default value | Elasticsearch [_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field). |
