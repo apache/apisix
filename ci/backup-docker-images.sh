@@ -20,19 +20,15 @@ test_type=$1
 
 echo "started backing up, time: $(date)"
 mkdir docker-images-backup
-sum=$(cat ci/pod/docker-compose.common.yml | grep image | wc -l)
-common_tag=$(cat ci/pod/docker-compose.common.yml | grep image: | awk '{print $2}' | awk 'ORS=NR%"'$sum'"?" ":"\n"{print}')
-echo common tag: $common_tag
 sum=$(cat ci/pod/docker-compose.$test_type.yml | grep image | wc -l)
 special_tag=$(cat ci/pod/docker-compose.$test_type.yml | grep image: | awk '{print $2}' | awk 'ORS=NR%"'$sum'"?" ":"\n"{print}')
 echo special: $special_tag
 openwhisk_tag="openwhisk/action-nodejs-v14:nightly openwhisk/standalone:nightly"
 echo
-echo common_tag: $common_tag
 echo special_tag: $special_tag
 echo openwhisk_tag: $openwhisk_tag
 echo
-all_tags="${common_tag} ${special_tag} ${openwhisk_tag}"
+all_tags="${special_tag} ${openwhisk_tag}"
 to_pull=""
 for tag in $all_tags
 do
@@ -46,5 +42,5 @@ if [[ -n $to_pull ]]
 then
 echo "$to_pull" | xargs -P10 -n1 docker pull
 fi
-docker save $common_tag $special_tag $openwhisk_tag -o docker-images-backup/apisix-images.tar
+docker save $special_tag $openwhisk_tag -o docker-images-backup/apisix-images.tar
 echo "docker save done, time: $(date)"
