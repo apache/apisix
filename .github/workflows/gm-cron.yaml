@@ -100,7 +100,7 @@ jobs:
 
           ./ci/pod/openfunction/build-function-image.sh
           make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
-          sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
+          sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
 
       - name: Start CI env (LAST_TEST)
         if: steps.test_env.outputs.type == 'last'
@@ -108,7 +108,7 @@ jobs:
           # generating SSL certificates for Kafka
           sudo keytool -genkeypair -keyalg RSA -dname "CN=127.0.0.1" -alias 127.0.0.1 -keystore ./ci/pod/kafka/kafka-server/selfsigned.jks -validity 365 -keysize 2048 -storepass changeit
           make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
-          sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
+          sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
 
       - name: Start Dubbo Backend
         if: steps.test_env.outputs.type == 'plugin'
