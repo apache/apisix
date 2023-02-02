@@ -97,7 +97,7 @@ In any case, you could access body string via `{{ _body }}`.
 This is useful for below use cases:
 
 * you wish to generate body from scratch based on Nginx/APISIX variables, even if the original body is `nil`
-* you wish to parse the body string youself in the template via other lua modules
+* you wish to parse the body string yourself in the template via other lua modules
 
 You must ensure `template` is a valid JSON string, i.e. you need to take care of special characters escape, e.g. double quote.
 If it's cumbersome to escape big text file or complex file, you could use encode your template text file in base64 format instead.
