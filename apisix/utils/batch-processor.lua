@@ -43,6 +43,7 @@ local schema = {
         buffer_duration = {type = "integer", minimum = 1, default= 60},
         inactive_timeout = {type = "integer", minimum = 1, default= 5},
         batch_max_size = {type = "integer", minimum = 1, default= 1000},
+        entries_max_size = {type = "integer", minimum = 0, default= 0},
     }
 }
 batch_processor.schema = schema
@@ -161,10 +162,11 @@ function batch_processor:new(func, config)
         inactive_timeout = config.inactive_timeout,
         max_retry_count = config.max_retry_count,
         batch_max_size = config.batch_max_size,
+        entries_max_size = config.entries_max_size,
         retry_delay = config.retry_delay,
         name = config.name,
         batch_to_process = {},
-        entry_buffer = {entries = {}, retry_count = 0},
+        entry_buffer = {entries = {}, entries_size = 0, retry_count = 0},
         is_timer_running = false,
         first_entry_t = 0,
         last_entry_t = 0,
@@ -200,9 +202,18 @@ function batch_processor:push(entry)
     end
     self.last_entry_t = now()
 
+    local entry_size = #entry
+    local entries_size = self.entry_buffer.entries_size
+    self.entry_buffer.entries_size = entries_size + entry_size
+
     if self.batch_max_size <= #entries then
         core.log.debug("Batch Processor[", self.name ,
                        "] batch max size has exceeded")
+        self:process_buffer()
+    elseif self.entries_max_size ~= 0 and
+           self.entries_max_size <= self.entry_buffer.entries_size then
+        core.log.debug("Batch Processor[", self.name ,
+                       "] batch entries max size has exceeded")
         self:process_buffer()
     end
 
@@ -218,7 +229,7 @@ function batch_processor:process_buffer()
         core.log.debug("transferring buffer entries to processing pipe line, ",
             "buffercount[", #self.entry_buffer.entries ,"]")
         self.batch_to_process[#self.batch_to_process + 1] = self.entry_buffer
-        self.entry_buffer = {entries = {}, retry_count = 0}
+        self.entry_buffer = {entries = {}, entries_size = 0, retry_count = 0}
         set_metrics(self, 0)
     end
 

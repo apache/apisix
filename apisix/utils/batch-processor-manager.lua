@@ -104,6 +104,7 @@ function _M:add_entry_to_new_processor(conf, entry, ctx, func)
     local config = {
         name = conf.name,
         batch_max_size = conf.batch_max_size,
+        entries_max_size = conf.entries_max_size,
         max_retry_count = conf.max_retry_count,
         retry_delay = conf.retry_delay,
         buffer_duration = conf.buffer_duration,

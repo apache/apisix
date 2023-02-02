@@ -481,3 +481,41 @@ Batch Processor[log buffer] failed to process entries [2/3]: error after consumi
 Batch Processor[log buffer] failed to process entries [1/2]: error after consuming single entry
 [{"msg":"4"}]
 --- wait: 2
+
+
+
+=== TEST 13: batch processor batch entries max size exceeded
+--- config
+    location /t {
+        content_by_lua_block {
+            local Batch = require("apisix.utils.batch-processor")
+            local config = {
+                max_retry_count = 2,
+                batch_max_size = 10,
+                entries_max_size = 1,
+                retry_delay = 0,
+            }
+            local func_to_send = function(elements)
+                return true
+            end
+            local log_buffer, err = Batch:new(func_to_send, config)
+
+            if not log_buffer then
+                ngx.say(err)
+            end
+
+            log_buffer:push({hello='world'})
+            log_buffer:push({hello='world'})
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+Batch Processor[log buffer] buffer duration exceeded, activating buffer flush
+--- error_log
+Batch Processor[log buffer] batch entries max size has exceeded
+Batch Processor[log buffer] successfully processed the entries
+--- wait: 1
