@@ -89,7 +89,17 @@ Currently, it only supports below formats:
   * `json` (`application/json`)
 * `template` specifies the [template](https://github.com/bungle/lua-resty-template) text used by transformation.
 
-Note that you must ensure `template` is a valid JSON string, i.e. you need to take care of special characters escape, e.g. double quote.
+**Notes:**
+
+If you do not specify `input_format` and no `Content-Type` header, or body is `nil`, then this plugin will not parse the body before template rendering.
+In any case, you could access body string via `{{ _body }}`.
+
+This is useful for below use cases:
+
+* you wish to generate body from scratch based on Nginx/APISIX variables, even if the original body is `nil`
+* you wish to parse the body string youself in the template via other lua modules
+
+You must ensure `template` is a valid JSON string, i.e. you need to take care of special characters escape, e.g. double quote.
 If it's cumbersome to escape big text file or complex file, you could use encode your template text file in base64 format instead.
 
 For example, you could use `base64` command to encode your template text file:
@@ -121,7 +131,7 @@ In `template`, you can use below auxiliary functions to escape string to fit spe
 * `str:escape_json()`
 * `str:escape_xml()`
 
-And, you can refer to `_ctx` to access nginx request context, e.g. `_ctx.var.status`.
+And, you can refer to `_ctx` to access nginx request context, e.g. `{{ _ctx.var.status }}`.
 
 ## Example
 

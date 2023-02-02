@@ -16,9 +16,10 @@
 --
 local core              = require("apisix.core")
 local xml2lua           = require("xml2lua")
-local handler           = require("xmlhandler.tree")
+local xmlhandler        = require("xmlhandler.tree")
 local template          = require("resty.template")
 local ngx               = ngx
+local decode_base64     = ngx.decode_base64
 local req_set_body_data = ngx.req.set_body_data
 local str_format        = string.format
 local type              = type
@@ -86,7 +87,7 @@ end
 
 local decoders = {
     xml = function(data)
-        local handler = handler:new()
+        local handler = xmlhandler:new()
         local parser = xml2lua.parser(handler)
         local ok, err = pcall(parser.parse, parser, data)
         if ok then
@@ -107,14 +108,23 @@ end
 
 
 local function transform(conf, body, typ, ctx)
-    local out, err = decoders[conf[typ].input_format](body)
-    if not out then
-        err = str_format("%s body decode: %s", typ, err)
-        core.log.error(err, ", body=", body)
-        return nil, 400, err
+    local out = {_body = body}
+    if body then
+        local err
+        local format = conf[typ].input_format
+        if format then
+            out, err = decoders[format](body)
+            if not out then
+                err = str_format("%s body decode: %s", typ, err)
+                core.log.error(err, ", body=", body)
+                return nil, 400, err
+            end
+        end
     end
 
-    local ok, render = pcall(template.compile, conf[typ].template)
+    local text = conf[typ].template
+    text = decode_base64(text) or text
+    local ok, render = pcall(template.compile, text)
     if not ok then
         local err = render
         err = str_format("%s template compile: %s", typ, err)
@@ -125,7 +135,7 @@ local function transform(conf, body, typ, ctx)
     out._ctx = ctx
     ok, out = pcall(render, out)
     if not ok then
-        err = str_format("%s template rendering: %s", typ, out)
+        local err = str_format("%s template rendering: %s", typ, out)
         core.log.error(err)
         return nil, 500, err
     end
@@ -148,10 +158,6 @@ end
 function _M.rewrite(conf, ctx)
     if conf.request then
         local body = core.request.get_body()
-        if not body then
-            return
-        end
-
         set_input_format(conf, "request", ctx.var.http_content_type)
         local out, status, err = transform(conf, body, "request", ctx)
         if not out then
@@ -173,7 +179,7 @@ end
 function _M.body_filter(conf, ctx)
     if conf.response then
         local body = core.response.hold_body_chunk(ctx)
-        if not body then
+        if ngx.arg[2] == false and not body then
             return
         end
 
