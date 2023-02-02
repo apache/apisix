@@ -16,6 +16,8 @@
 # limitations under the License.
 #
 
+image_already_built=$2
+
 after() {
   docker exec -i apache-apisix_kafka-server1_1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server1:2181 --replication-factor 1 --partitions 1 --topic test2
   docker exec -i apache-apisix_kafka-server1_1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server1:2181 --replication-factor 1 --partitions 3 --topic test3
@@ -49,7 +51,7 @@ after() {
 before() {
   # download keycloak cas provider
   sudo wget https://github.com/jacekkow/keycloak-protocol-cas/releases/download/18.0.2/keycloak-protocol-cas-18.0.2.jar -O /opt/keycloak-protocol-cas-18.0.2.jar
-  ./ci/pod/openfunction/build-function-image.sh
+  [[ "$image_already_built" == 'false' ]] && ./ci/pod/openfunction/build-function-image.sh
 }
 
 if [[ $1 == 'before' ]]; then
