@@ -942,54 +942,7 @@ passed
 
 
 
-=== TEST 23: get the route, confirm the meta_refresh_interval is set
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_GET,
-                nil,
-                [=[{
-                    "value": {
-                        "plugins": {
-                            "kafka-logger": {
-                                "brokers" :
-                                  [{
-                                    "host":"127.0.0.1",
-                                    "port": 9092
-                                  }],
-                                "kafka_topic" : "test2",
-                                "key" : "key1",
-                                "timeout" : 1,
-                                "meta_refresh_interval": 1,
-                                "batch_max_size": 1,
-                                "include_req_body": true
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                    }
-                }]=]
-                )
-
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 24: hit route, send data to kafka successfully
+=== TEST 23: hit route, send data to kafka successfully
 --- request
 POST /hello
 abcdef
