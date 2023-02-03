@@ -32,8 +32,38 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: set route
+=== TEST 1: simulate simple SOAP proxy
 --- config
+location /demo {
+    content_by_lua_block {
+        local core = require("apisix.core")
+        local body = core.request.get_body()
+        local xml2lua = require("xml2lua")
+        local xmlhandler = require("xmlhandler.tree")
+        local handler = xmlhandler:new()
+        local parser = xml2lua.parser(handler)
+        parser:parse(body)
+        --core.log.error(core.json.encode(handler.root))
+
+        ngx.print(string.format([[
+<SOAP-ENV:Envelope
+    xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+    <SOAP-ENV:Header/>
+    <SOAP-ENV:Body>
+        <ns2:getCountryResponse
+            xmlns:ns2="http://spring.io/guides/gs-producing-web-service">
+            <ns2:country>
+                <ns2:name>%s</ns2:name>
+                <ns2:population>46704314</ns2:population>
+                <ns2:capital>Madrid</ns2:capital>
+                <ns2:currency>EUR</ns2:currency>
+            </ns2:country>
+        </ns2:getCountryResponse>
+    </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>
+        ]], handler.root["soap-env:Envelope"]["soap-env:Body"]["ns0:getCountryRequest"]["ns0:name"]))
+    }
+}
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin")
@@ -98,62 +128,531 @@ __DATA__
 
             if code >= 300 then
                 ngx.status = code
+                return
             end
-            ngx.sleep(1)
-            ngx.say(body)
+            ngx.sleep(0.5)
+
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ws"
+            local body = [[{"name": "Spain"}]]
+            local opt = {method = "POST", body = body, headers = {["Content-Type"] = "application/json"}}
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, opt)
+            if not res then
+                ngx.say(err)
+                return
+            end
+            assert(res.status == 200)
+            local data1 = core.json.decode(res.body)
+            local data2 = core.json.decode[[{"status":"200","currency":"EUR","population":46704314,"capital":"Madrid","name":"Spain"}]]
+            assert(core.json.stably_encode(data1), core.json.stably_encode(data2))
         }
     }
---- response_body
-passed
 
 
 
-=== TEST 2: hit route
+=== TEST 2: test JSON-to-JSON
 --- config
-location /demo {
-    content_by_lua_block {
-        local core = require("apisix.core")
-        local body = core.request.get_body()
-        local xml2lua = require("xml2lua")
-        local xmlhandler = require("xmlhandler.tree")
-        local handler = xmlhandler:new()
-        local parser = xml2lua.parser(handler)
-        --core.log.error(parser:parse(body))
-        ngx.print[[
-<SOAP-ENV:Envelope
-    xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
-    <SOAP-ENV:Header/>
-    <SOAP-ENV:Body>
-        <ns2:getCountryResponse
-            xmlns:ns2="http://spring.io/guides/gs-producing-web-service">
-            <ns2:country>
-                <ns2:name>Spain</ns2:name>
-                <ns2:population>46704314</ns2:population>
-                <ns2:capital>Madrid</ns2:capital>
-                <ns2:currency>EUR</ns2:currency>
-            </ns2:country>
-        </ns2:getCountryResponse>
-    </SOAP-ENV:Body>
-</SOAP-ENV:Envelope>
-        ]]
+    location /demo {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local body = core.request.get_body()
+            local data = core.json.decode(body)
+            assert(data.foo == "hello world" and data.bar == 30)
+        }
     }
-}
-location /t {
-    content_by_lua_block {
-        local core = require("apisix.core")
-        local http = require("resty.http")
-        local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ws"
-        local body = [[{"name": "Spain"}]]
-        local opt = {method = "POST", body = body, headers = {["Content-Type"] = "application/json"}}
-        local httpc = http.new()
-        local res, err = httpc:request_uri(uri, opt)
-        if not res then
-            ngx.say(err)
-            return
-        end
-        assert(res.status == 200)
-        local data1 = core.json.decode(res.body)
-        local data2 = core.json.decode[[{"status":"200","currency":"EUR","population":46704314,"capital":"Madrid","name":"Spain"}]]
-        assert(core.json.stably_encode(data1), core.json.stably_encode(data2))
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local core = require("apisix.core")
+            local req_template = [[{"foo":"{{name .. " world"}}","bar":{{age+10}}}]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format([[{
+                    "uri": "/foobar",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/demo"
+                        },
+                        "body-transformer": {
+                            "request": {
+                                "template": "%s"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:%d": 1
+                        }
+                    }
+                }]], req_template:gsub('"', '\\"'), ngx.var.server_port)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/foobar"
+            local body = [[{"name":"hello","age":20}]]
+            local opt = {method = "POST", body = body, headers = {["Content-Type"] = "application/json"}}
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, opt)
+            if not res then
+                ngx.say(err)
+                return
+            end
+            assert(res.status == 200)
+        }
     }
-}
+
+
+
+=== TEST 3: specify wrong input_format
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local core = require("apisix.core")
+            local req_template = [[{"foo":"{{name .. " world"}}","bar":{{age+10}}}]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format([[{
+                    "uri": "/foobar",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/demo"
+                        },
+                        "body-transformer": {
+                            "request": {
+                                "input_format": "xml",
+                                "template": "%s"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:%d": 1
+                        }
+                    }
+                }]], req_template:gsub('"', '\\"'), ngx.var.server_port)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/foobar"
+            local body = [[{"name":"hello","age":20}]]
+            local opt = {method = "POST", body = body, headers = {["Content-Type"] = "application/json"}}
+            local httpc = http.new()
+            httpc:request_uri(uri, opt)
+        }
+    }
+--- error_log
+Error Parsing XML
+
+
+
+=== TEST 4: invalid reference in template
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local core = require("apisix.core")
+            local req_template = [[{"foo":"{{name() .. " world"}}","bar":{{age+10}}}]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format([[{
+                    "uri": "/foobar",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/demo"
+                        },
+                        "body-transformer": {
+                            "request": {
+                                "template": "%s"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:%d": 1
+                        }
+                    }
+                }]], req_template:gsub('"', '\\"'), ngx.var.server_port)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/foobar"
+            local body = [[{"name":"hello","age":20}]]
+            local opt = {method = "POST", body = body, headers = {["Content-Type"] = "application/json"}}
+            local httpc = http.new()
+            httpc:request_uri(uri, opt)
+        }
+    }
+--- error_log
+attempt to call global 'name' (a string value)
+
+
+
+=== TEST 5: generate request body from scratch
+--- config
+    location /demo {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local body = core.request.get_body()
+            local data = core.json.decode(body)
+            assert(data.foo == "hello world")
+        }
+    }
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local core = require("apisix.core")
+            local req_template = [[{
+                "foo":"{{_ctx.var.arg_name .. " world"}}"
+            }]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format([[{
+                    "uri": "/foobar",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/demo",
+                            "method": "POST"
+                        },
+                        "body-transformer": {
+                            "request": {
+                                "template": "%s"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:%d": 1
+                        }
+                    }
+                }]], req_template:gsub('"', '\\"'), ngx.var.server_port)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/foobar?name=hello"
+            local opt = {method = "GET"}
+            local httpc = http.new()
+            httpc:request_uri(uri, opt)
+        }
+    }
+
+
+
+=== TEST 6: html escape in template
+--- config
+    location /demo {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local body = core.request.get_body()
+            local data = core.json.decode(body)
+            if (data == nil) or (data.agent:find("ngx_lua/", 0, true) == nil) then
+                return ngx.exit(400)
+            end
+        }
+    }
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local core = require("apisix.core")
+            -- html escape would escape '/' to '&#47' in string, which may be unexepcted.
+            -- 'lua-resty-http/0.16.1 (Lua) ngx_lua/10021'
+            -- would be escaped into
+            -- 'lua-resty-http&#47;0.16.1 (Lua) ngx_lua&#47;10021'
+            local req_template = [[{
+                "agent":"{{_ctx.var.http_user_agent}}"
+            }]]
+            local admin_body = [[{
+                "uri": "/foobar",
+                "plugins": {
+                    "proxy-rewrite": {
+                        "uri": "/demo",
+                        "method": "POST"
+                    },
+                    "body-transformer": {
+                        "request": {
+                            "template": "%s"
+                        }
+                    }
+                },
+                "upstream": {
+                    "type": "roundrobin",
+                    "nodes": {
+                        "127.0.0.1:%d": 1
+                    }
+                }
+            }]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format(admin_body, req_template:gsub('"', '\\"'), ngx.var.server_port)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/foobar?name=hello"
+            local opt = {method = "GET"}
+            local httpc = http.new()
+            local res = httpc:request_uri(uri, opt)
+            assert(res.status == 400)
+
+            -- disable html escape, now it's ok
+            local req_template = [[{"agent":"{*_ctx.var.http_user_agent*}"}]]
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format(admin_body, req_template:gsub('"', '\\"'), ngx.var.server_port)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+
+            local res = httpc:request_uri(uri, opt)
+            assert(res.status == 200)
+        }
+    }
+
+
+
+=== TEST 7: parse body in yaml format
+--- config
+    location /demo {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local body = core.request.get_body()
+            local data = core.json.decode(body)
+            if data == nil or data.foobar ~= "hello world" then
+                return ngx.exit(400)
+            end
+        }
+    }
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local core = require("apisix.core")
+            local req_template = [[
+            {%
+                local yaml = require("tinyyaml")
+                local body = yaml.parse(_body)
+            %}
+            {"foobar":"{{body.foobar.foo .. " " .. body.foobar.bar}}"}
+            ]]
+            local admin_body = [[{
+                "uri": "/foobar",
+                "plugins": {
+                    "proxy-rewrite": {
+                        "uri": "/demo",
+                        "method": "POST"
+                    },
+                    "body-transformer": {
+                        "request": {
+                            "template": "%s"
+                        }
+                    }
+                },
+                "upstream": {
+                    "type": "roundrobin",
+                    "nodes": {
+                        "127.0.0.1:%d": 1
+                    }
+                }
+            }]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format(admin_body, req_template:gsub('"', '\\"'), ngx.var.server_port)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local body = [[
+foobar:
+  foo: hello
+  bar: world
+            ]]
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/foobar"
+            local opt = {method = "POST", body = body}
+            local httpc = http.new()
+            local res = httpc:request_uri(uri, opt)
+            assert(res.status == 200)
+        }
+    }
+
+
+
+=== TEST 8: test escape_json
+--- config
+    location /demo {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local body = core.request.get_body()
+            local data = core.json.decode(body)
+            if data == nil or data.foobar ~= [[hello "world"]] then
+                return ngx.exit(400)
+            end
+        }
+    }
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local core = require("apisix.core")
+            local req_template = [[{"foobar":{*name:escape_json()*}}]]
+            local admin_body = [[{
+                "uri": "/foobar",
+                "plugins": {
+                    "proxy-rewrite": {
+                        "uri": "/demo",
+                        "method": "POST"
+                    },
+                    "body-transformer": {
+                        "request": {
+                            "input_format": "json",
+                            "template": "%s"
+                        }
+                    }
+                },
+                "upstream": {
+                    "type": "roundrobin",
+                    "nodes": {
+                        "127.0.0.1:%d": 1
+                    }
+                }
+            }]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format(admin_body, req_template:gsub('"', '\\"'), ngx.var.server_port)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local body = [[{"name":"hello \"world\""}]]
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/foobar"
+            local opt = {method = "POST", body = body}
+            local httpc = http.new()
+            local res = httpc:request_uri(uri, opt)
+            assert(res.status == 200)
+        }
+    }
+
+
+
+=== TEST 9: test escape_xml
+--- config
+    location /demo {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local body = core.request.get_body()
+            local xml2lua = require("xml2lua")
+            local xmlhandler = require("xmlhandler.tree")
+            local handler = xmlhandler:new()
+            local parser = xml2lua.parser(handler)
+            parser:parse(body)
+            assert(handler.root.foobar == "<nil>")
+        }
+    }
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local core = require("apisix.core")
+            local req_template = [[<foobar>{*name:escape_xml()*}</foobar>]]
+            local admin_body = [[{
+                "uri": "/foobar",
+                "plugins": {
+                    "proxy-rewrite": {
+                        "uri": "/demo",
+                        "method": "POST"
+                    },
+                    "body-transformer": {
+                        "request": {
+                            "input_format": "json",
+                            "template": "%s"
+                        }
+                    }
+                },
+                "upstream": {
+                    "type": "roundrobin",
+                    "nodes": {
+                        "127.0.0.1:%d": 1
+                    }
+                }
+            }]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format(admin_body, req_template:gsub('"', '\\"'), ngx.var.server_port)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local body = [[{"name":"<nil>"}]]
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/foobar"
+            local opt = {method = "POST", body = body}
+            local httpc = http.new()
+            local res = httpc:request_uri(uri, opt)
+            assert(res.status == 200)
+        }
+    }
