@@ -49,7 +49,7 @@ APISIX facilitates interface traffic handling for websites, mobile and IoT appli
 
 - Multi-platform support: APISIX can run from bare-metal machines to Kubernetes providing a vendor neutral, multi-platform solution. It also provides integration to cloud services like AWS Lambda, Azure Function, Lua functions and Apache OpenWhisk.
 - Fully dynamic: APISIX supports hot-reloading, meaning you don't need to restart the service to reflect changes in the configuration.
-- Fine-grained routing: APISIX supports using all [built-in NGINX variables](http://nginx.org/en/docs/varindex.html) for routing. You can define custom matching functions to filter requests and match Route.
+- Fine-grained routing: APISIX supports using all [built-in NGINX variables](https://nginx.org/en/docs/varindex.html) for routing. You can define custom matching functions to filter requests and match Route.
 - Ops-friendly: APISIX is renowned for its ops-friendliness by DevOps teams. It integrates with tools and platforms like [HashiCorp Vault](./terminology/secret.md#use-vault-to-manage-secrets), [Zipkin](./plugins/zipkin.md), [Apache SkyWalking](./plugins/skywalking.md), [Consul](./discovery/consul_kv.md), [Nacos](./discovery/nacos.md) and [Eureka](./discovery.md). With [APISIX Dashboard](https://github.com/apache/apisix-dashboard), operators can configure APISIX through an easy-to-use and intuitive UI.
 - Multi-language Plugin support: APISIX supports multiple programming languages for Plugin development. Developers can choose a language-specific SDK to write custom Plugins.
 
