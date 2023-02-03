@@ -392,7 +392,7 @@ attempt to call global 'name' (a string value)
         content_by_lua_block {
             local t = require("lib.test_admin")
             local core = require("apisix.core")
-            -- html escape would escape '/' to '&#47' in string, which may be unexepcted.
+            -- html escape would escape '/' to '&#47' in string, which may be unexpected.
             -- 'lua-resty-http/0.16.1 (Lua) ngx_lua/10021'
             -- would be escaped into
             -- 'lua-resty-http&#47;0.16.1 (Lua) ngx_lua&#47;10021'
