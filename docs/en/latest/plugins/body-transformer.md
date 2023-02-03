@@ -41,10 +41,12 @@ Use cases:
 
 | Name      | Type | Required      | Description |
 | ----------- | ----------- | ----------- | ----------- |
-| `request.input_format`      | string       | False      | request body original format      |
+| `request`      | object       | False      | request body transformation configuration      |
+| `request.input_format`      | string       | False      | request body original format, if not specified, it would be determined from `Content-Type` header.      |
 | `request.template`      | string       | False      | request body transformation template       |
+| `response`      | object       | False      | response body transformation configuration      |
 | `response.input_format`      | string       | False      | response body original format       |
-| `response.template`      | string       | False      | response body transformation template       |
+| `response.template`      | string       | False      | response body transformation template, if not specified, it would be determined from `Content-Type` header.       |
 
 ## Enabling the Plugin
 
@@ -83,11 +85,12 @@ Specify one of them, or both of them, to fit your need.
 
 `request`/`response`:
 
-* `input_format` specifies the body original format, if not specified, it would be determined from `Content-Type` header.
-Currently, it only supports below formats:
+* `input_format` specifies the body original format:
   * `xml` (`text/xml`)
   * `json` (`application/json`)
 * `template` specifies the [template](https://github.com/bungle/lua-resty-template) text used by transformation.
+
+Note that `{{ ... }}` in lua-resty-template will do html-escape, e.g. space character, so if it's not what you wish, use `{* ... *}` instead.
 
 **Notes:**
 
@@ -96,8 +99,18 @@ In any case, you could access body string via `{{ _body }}`.
 
 This is useful for below use cases:
 
-* you wish to generate body from scratch based on Nginx/APISIX variables, even if the original body is `nil`
-* you wish to parse the body string yourself in the template via other lua modules
+* you wish to generate body from scratch based on Nginx/APISIX variables, even if the original body is `nil`.
+* you wish to parse the body string yourself in the template via other lua modules, e.g. parse protobuf.
+
+For example, parse YAML to JSON yourself:
+
+```
+{%
+    local yaml = require("tinyyaml")
+    local body = yaml.parse(_body)
+%}
+{"foobar":"{{body.foobar.foo .. " " .. body.foobar.bar}}"}
+```
 
 You must ensure `template` is a valid JSON string, i.e. you need to take care of special characters escape, e.g. double quote.
 If it's cumbersome to escape big text file or complex file, you could use encode your template text file in base64 format instead.
@@ -130,6 +143,8 @@ In `template`, you can use below auxiliary functions to escape string to fit spe
 
 * `str:escape_json()`
 * `str:escape_xml()`
+
+Note that `escape_json()` would double quote the value of string type, so don't repeat double-quote in the template, e.g. `"foobar":{*name:escape_json()*}}`.
 
 And, you can refer to `_ctx` to access nginx request context, e.g. `{{ _ctx.var.status }}`.
 
