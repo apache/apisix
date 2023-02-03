@@ -140,12 +140,13 @@ local function transform(conf, body, typ, ctx)
         return nil, 500, err
     end
 
+    core.log.info(typ, " body transform output=", out)
     return out
 end
 
 
 local function set_input_format(conf, typ, ct)
-    if conf.input_format == nil and ct then
+    if conf[typ].input_format == nil and ct then
         if ct:find("text/xml") then
             conf[typ].input_format = "xml"
         elseif ct:find("application/json") then
