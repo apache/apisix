@@ -26,6 +26,7 @@ title: Changelog
 - [3.1.0](#310)
 - [3.0.0](#300)
 - [3.0.0-beta](#300-beta)
+- [2.15.2](#2152)
 - [2.15.1](#2151)
 - [2.15.0](#2150)
 - [2.14.1](#2141)
@@ -294,6 +295,12 @@ Returns multiple configurations:
 - the phases after proxy didn't run when 500 error happens before proxy: [#7703](https://github.com/apache/apisix/pull/7703)
 - avoid error when multiple plugins associated with consumer and have rewrite phase: [#7531](https://github.com/apache/apisix/pull/7531)
 - upgrade lua-resty-etcd to 1.8.3 which fixes various issues: [#7565](https://github.com/apache/apisix/pull/7565)
+
+## 2.15.2
+
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.15` branch.**
+
+[https://github.com/apache/apisix/blob/release/2.15/CHANGELOG.md#2152](https://github.com/apache/apisix/blob/release/2.15/CHANGELOG.md#2152)
 
 ## 2.15.1
 
