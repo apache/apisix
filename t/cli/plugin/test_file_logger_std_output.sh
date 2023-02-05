@@ -19,15 +19,11 @@
 
 . ./t/cli/common.sh
 
-log_file=logs/stdout.log
-
-if [ -f "$log_file" ]; then
-    rm "$log_file"
-fi
-
 # setup upstream server
 echo '
 nginx_config:
+    main_configuration_snippet: |
+        daemon off;
     http_configuration_snippet: |
         server {
             listen 15151;
@@ -39,7 +35,8 @@ nginx_config:
 
 make init
 
-APISIX_DAEMON_OFF=1 make run > "$log_file" &
+tmpout=$(mktemp)
+make run > "$tmpout" &
 
 sleep 0.2
 
@@ -73,10 +70,13 @@ if [ ! $code -eq 201 ]; then
 fi
 
 make stop
-if [ `grep -c '"status":201' "$log_file"` -ne '1' ]; then
+sleep 0.1
+if [ `grep -c '"status":201' "$tmpout"` -ne '1' ]; then
     echo "failed: standard output of the file-logger plugin does not match expectations"
-    cat "$log_file"
+    cat "$tmpout"
+    rm "$tmpout"
     exit 1
 fi
+rm "$tmpout"
 
 echo "passed: the file-logger plugin produced the expected output"

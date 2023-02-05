@@ -20,8 +20,8 @@ local pcall = pcall
 local open = io.open
 local popen = io.popen
 local exit = os.exit
-local stdout = io.stdout
 local stderr = io.stderr
+local stdout = io.stdout
 local str_format = string.format
 local tonumber = tonumber
 
@@ -30,32 +30,19 @@ local _M = {}
 
 -- Note: The `execute_cmd` return value will have a line break at the end,
 -- it is recommended to use the `trim` function to handle the return value.
-local function execute_cmd(cmd, print_output)
+local function execute_cmd(cmd)
     local t, err = popen(cmd)
     if not t then
         return nil, "failed to execute command: "
                     .. cmd .. ", error info: " .. err
     end
 
-    local data, c
-    if print_output then
-        stdout:setvbuf("no")
-        data = ""
-        repeat
-            c = t:read(1)
-            if c then
-                stdout:write(c)
-                data = data .. c
-            end
-        until not c
-        t:close()
-    else
-        data, err = t:read("*all")
-        t:close()
-        if not data then
-            return nil, "failed to read execution result of: "
-                        .. cmd .. ", error info: " .. err
-        end
+    local data, err = t:read("*all")
+    t:close()
+
+    if not data then
+        return nil, "failed to read execution result of: "
+                    .. cmd .. ", error info: " .. err
     end
 
     return data

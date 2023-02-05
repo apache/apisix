@@ -70,7 +70,8 @@ script() {
     ulimit -n -S
     ulimit -n -H
 
-    for f in ./t/cli/test_*.sh; do
+    shopt -s globstar
+    for f in ./t/cli/**/test_*.sh; do
         PATH="$PATH" "$f"
     done
 }

@@ -825,7 +825,10 @@ local function start(env, ...)
         init_etcd(env, args)
     end
 
-    util.execute_cmd(env.openresty_args, not env.apisix_daemon)
+    local data, err = util.execute_cmd(env.openresty_args)
+    if not err and data and data ~= "" then
+        print(data)
+    end
 end
 
 
