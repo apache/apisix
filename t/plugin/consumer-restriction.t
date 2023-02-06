@@ -564,13 +564,14 @@ Authorization: Basic amFjazIwMTk6MTIzNDU2
 
 
 
-=== TEST 27: verify jack2
+=== TEST 27: verify jack2 not in whitelist and allowed_by_methods
 --- request
 GET /hello
 --- more_headers
 Authorization: Basic amFjazIwMjA6MTIzNDU2
+--- error_code: 403
 --- response_body
-hello world
+{"message":"The consumer_name is forbidden."}
 
 
 

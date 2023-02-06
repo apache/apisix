@@ -105,7 +105,7 @@ local function is_method_allowed(allowed_methods, method, user)
             return false
         end
     end
-    return true
+    return false
 end
 
 local function reject(conf)
