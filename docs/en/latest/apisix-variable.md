@@ -49,6 +49,6 @@ additional variables.
 | service_name        | core       | Name of Service.                                                                    |                |
 | redis_cmd_line      | Redis      | The content of Redis command.                                                       |                |
 | rpc_time            | xRPC       | Time spent at the rpc request level.                                                |                |
-| resp_body           | core       | This variable is only for logger and requires the logger to have a special configuration. |                |
+| resp_body           | core       | This variable is only for logger and requires the logger plugin to have a special configuration like `include_resp_body`. |                |
 
 You can also register your own [variable](./plugin-develop.md#register-custom-variable).
