@@ -35,8 +35,11 @@ after() {
   echo "Kafka service initialization completed"
 }
 
-if [[ $1 == 'after' ]]; then
-  after
-else
-  before
-fi
+case $1 in
+  'after')
+    after
+    ;;
+  'before')
+    before
+    ;;
+esac

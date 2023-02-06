@@ -51,8 +51,11 @@ before() {
   sudo wget https://github.com/jacekkow/keycloak-protocol-cas/releases/download/18.0.2/keycloak-protocol-cas-18.0.2.jar -O /opt/keycloak-protocol-cas-18.0.2.jar
 }
 
-if [[ $1 == 'before' ]]; then
-  before
-else
-  after
-fi
+case $1 in
+  'after')
+    after
+    ;;
+  'before')
+    before
+    ;;
+esac
