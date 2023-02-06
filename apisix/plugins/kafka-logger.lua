@@ -122,6 +122,7 @@ local schema = {
         producer_batch_size = {type = "integer", minimum = 0, default = 1048576},
         producer_max_buffering = {type = "integer", minimum = 1, default = 50000},
         producer_time_linger = {type = "integer", minimum = 1, default = 1},
+        meta_refresh_interval = {type = "integer", minimum = 1, default = 30},
     },
     oneOf = {
         { required = {"broker_list", "kafka_topic"},},
@@ -246,6 +247,7 @@ function _M.log(conf, ctx)
     broker_config["batch_size"] = conf.producer_batch_size
     broker_config["max_buffering"] = conf.producer_max_buffering
     broker_config["flush_time"] = conf.producer_time_linger * 1000
+    broker_config["refresh_interval"] = conf.meta_refresh_interval * 1000
 
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
                                                broker_list, broker_config, conf.cluster_name)
