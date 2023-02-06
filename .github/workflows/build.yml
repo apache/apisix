@@ -116,10 +116,8 @@ jobs:
             docker load --input docker-images-backup/apisix-images.tar
             make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
             echo "loaded docker images"
-            echo test_type:
             [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after && echo "executed"
           fi
-          echo "exited if"
       - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
         name: Linux launch services
         run: |
