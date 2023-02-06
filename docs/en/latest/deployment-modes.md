@@ -31,13 +31,13 @@ APISIX has three different deployment modes for different production use cases. 
 |-----------------|----------------------------|-----------------------------------------------------------------------------------------------------------|
 | traditional     | traditional                | Data plane and control plane are deployed together. `enable_admin` attribute should be disabled manually. |
 | decoupled       | data_plane / control_plane | Data plane and control plane are deployed independently.                                                  |
-| standalone      | data_plane                 | Only data plane is deployed and the configurations are loaded from a local YAML file.                     |
+| standalone      | data_plane                 | Only `data_plane` is deployed and the configurations are loaded from a local YAML file.                     |
 
 Each of these deployment modes are explained in detail below.
 
 ## Traditional
 
-In the traditional deployment mode, one instance of APISIX will be both the data plane and the control plane.
+In the traditional deployment mode, one instance of APISIX will be both the `data_plane` and the `control_plane`.
 
 ![traditional deployment mode](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/deployment-traditional.png)
 
@@ -61,6 +61,7 @@ deployment:
            - http://${etcd_IP}:${etcd_Port}
        prefix: /apisix
        timeout: 30
+#END
 ```
 
 The instance of APISIX deployed as the traditional role will:
@@ -70,20 +71,20 @@ The instance of APISIX deployed as the traditional role will:
 
 ## Decoupled
 
-In the decoupled deployment mode the data plane and control plane instances of APISIX are deployed separately. i.e one instance of APISIX is configured to be a data plane and the other to be a control plane.
+In the decoupled deployment mode the `data_plane` and `control_plane` instances of APISIX are deployed separately, i.e one instance of APISIX is configured to be a *data plane* and the other to be a *control plane*.
 
 ![decoupled](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/deployment-cp_and_dp.png)
 
 The instance of APISIX deployed as the data plane will:
 
-1. Fetch the configuration from the control plane. The default port is `9280`.
+1. Fetch the configuration from the *control plane*. The default port is `9280`.
 2. Performs a health check on all configured control plane addresses before starting the service.
    1. If the control plane addresses are unavailable, the startup fails and an exception is thrown.
    2. If at least one control plane address is available, it prints the unhealthy control planes logs, and starts the APISIX service.
    3. If all control planes are normal, APISIX service is started normally.
 3. Once the service is started, it will handle the user requests.
 
-The example below shows the configuration of an APISIX instance as data plane in the decoupled mode:
+The example below shows the configuration of an APISIX instance as *data plane* in the decoupled mode:
 
 ```yaml title="conf/config.yaml"
 deployment:
@@ -99,6 +100,7 @@ deployment:
         cert: /path/to/ca-cert
         cert_key: /path/to/ca-cert
         trusted_ca_cert: /path/to/ca-cert
+#END
 ```
 
 The instance of APISIX deployed as the control plane will:
@@ -106,7 +108,7 @@ The instance of APISIX deployed as the control plane will:
 1. Listen on port `9180` and handle Admin API requests.
 2. Provide the conf server which will listen on port `9280`. Both the control plane and the data plane will connect to this via HTTPS enforced by mTLS.
 
-The example below shows the configuration of an APISIX instance as control plane in the decoupled mode:
+The example below shows the configuration of an APISIX instance as *control plane* in the decoupled mode:
 
 ```yaml title="conf/config.yaml"
 deployment:
@@ -127,6 +129,7 @@ deployment:
         cert: /path/to/ca-cert
         cert_key: /path/to/ca-cert
         trusted_ca_cert: /path/to/ca-cert
+#END
 ```
 
 :::tip
@@ -149,6 +152,7 @@ deployment:
        timeout: 30
     certs:
         trusted_ca_cert: /path/to/ca-cert
+#END
 ```
 
 :::
@@ -159,16 +163,16 @@ Turning on the APISIX node in Stand-alone mode will no longer use the default et
 
 This method is more suitable for two types of users:
 
-1. kubernetes(k8s)：Declarative API that dynamically updates the routing rules with a full yaml configuration.
+1. Kubernetes(k8s)：Declarative API that dynamically updates the routing rules with a full yaml configuration.
 2. Different configuration centers: There are many implementations of the configuration center, such as Consul, etc., using the full yaml file for intermediate conversion.
 
 The routing rules in the `conf/apisix.yaml` file are loaded into memory immediately after the APISIX node service starts. And every time interval (default 1 second), will try to detect whether the file content is updated, if there is an update, reload the rule.
 
-*Note*: When reloading and updating routing rules, they are all hot memory updates, and there will be no replacement of working processes, it is a hot update.
+*Note*: Reloading and updating routing rules are all hot memory updates. There is no replacement of working processes, since it's a hot update.
 
 Since the current Admin API is based on the etcd configuration center solution, enable Admin API is not allowed when the Stand-alone mode is enabled.
 
-The Stand-alone mode can only be enabled when set the role of APISIX as data plane. We can set `deployment.role` to `data_plane` and `deployment.role_data_plane.config_provider` to `yaml`.
+Standalone mode can only be enabled when we set the role of APISIX as data plane. We set `deployment.role` to `data_plane` and `deployment.role_data_plane.config_provider` to `yaml`.
 
 Refer to the example below:
 
@@ -177,14 +181,15 @@ deployment:
   role: data_plane
   role_data_plane:
     config_provider: yaml
+#END
 ```
 
 ### How to configure rules
 
 All of the rules are stored in one file which named `conf/apisix.yaml`,
-the APISIX will check if this file has any changed every second.
-If the file changed and we found `#END` at the end of the file,
-APISIX will load the rules in this file and update to memory of APISIX.
+APISIX checks if this file has any change **every second**.
+If the file is changed & it ends with `#END`,
+APISIX loads the rules from this file and updates its memory.
 
 Here is a mini example:
 
@@ -199,7 +204,7 @@ routes:
 #END
 ```
 
-*NOTE*: APISIX will not load the rules into memory from file `conf/apisix.yaml` if there is no `#END` at the end.
+*WARNING*: APISIX will not load the rules into memory from file `conf/apisix.yaml` if there is no `#END` at the end.
 
 ### How to configure Router
 
@@ -371,6 +376,7 @@ global_rules:
         plugins:
             response-rewrite:
                 body: "hello\n"
+#END
 ```
 
 ### How to configure consumer
@@ -382,6 +388,7 @@ consumers:
         jwt-auth:
             key: user-key
             secret: my-secret-key
+#END
 ```
 
 ### How to configure plugin metadata
@@ -405,6 +412,7 @@ plugin_metadata:
     log_format:
         host: "$host",
         remote_addr: "$remote_addr"
+#END
 ```
 
 ### How to configure stream route
@@ -424,4 +432,5 @@ upstreams:
       "127.0.0.1:1995": 1
     type: roundrobin
     id: 1
+#END
 ```
