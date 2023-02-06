@@ -484,7 +484,43 @@ Batch Processor[log buffer] failed to process entries [1/2]: error after consumi
 
 
 
-=== TEST 13: batch processor batch entries max size exceeded
+=== TEST 13: add a test for the new variable entries_max_size
+--- config
+    location /t {
+        content_by_lua_block {
+            local Batch = require("apisix.utils.batch-processor")
+            local func_to_send = function(elements)
+                return true
+            end
+
+            local config = {
+                max_retry_count  = 2,
+                batch_max_size = 1,
+                entries_max_size = 0,
+                retry_delay  = 0,
+            }
+
+            local log_buffer, err = Batch:new(func_to_send, config)
+
+            if not log_buffer then
+                ngx.say(err)
+            end
+
+            log_buffer:push({hello='world'})
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- error_log
+Batch Processor[log buffer] successfully processed the entries
+--- wait: 0.5
+
+
+
+=== TEST 14: batch processor batch entries max size exceeded
 --- config
     location /t {
         content_by_lua_block {
@@ -504,8 +540,10 @@ Batch Processor[log buffer] failed to process entries [1/2]: error after consumi
                 ngx.say(err)
             end
 
-            log_buffer:push({hello='world'})
-            log_buffer:push({hello='world'})
+            local entry = require("toolkit.json").encode({hello='world'})
+            log_buffer:push(entry)
+            local entry = require("toolkit.json").encode({hello='world'})
+            log_buffer:push(entry)
             ngx.say("done")
         }
     }
@@ -518,4 +556,3 @@ Batch Processor[log buffer] buffer duration exceeded, activating buffer flush
 --- error_log
 Batch Processor[log buffer] batch entries max size has exceeded
 Batch Processor[log buffer] successfully processed the entries
---- wait: 1
