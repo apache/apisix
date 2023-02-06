@@ -25,7 +25,7 @@ title: External Plugin
 
 APISIX supports writing plugins in Lua. This type of plugins will be executed
 inside APISIX. Sometimes you want to develop plugin in other languages, so APISIX
-provides sidecars that loading your plugins and run them when the requests hit
+provides sidecars that load and run them when the requests hit
 APISIX. These sidecars are called plugin runners and your plugins are called
 external plugins.
 
