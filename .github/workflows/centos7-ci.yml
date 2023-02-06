@@ -110,6 +110,7 @@ jobs:
         make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
         echo "make ci-env-up, done"
         [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
+        echo "Linux launch services, done"
 
     - name: Install dependencies
       run: |
