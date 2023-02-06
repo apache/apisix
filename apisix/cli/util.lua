@@ -21,7 +21,6 @@ local open = io.open
 local popen = io.popen
 local exit = os.exit
 local stderr = io.stderr
-local stdout = io.stdout
 local str_format = string.format
 local tonumber = tonumber
 
