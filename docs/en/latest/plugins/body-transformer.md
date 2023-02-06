@@ -90,9 +90,9 @@ Specify one of them, or both of them, to fit your need.
   * `json` (`application/json`)
 * `template` specifies the [template](https://github.com/bungle/lua-resty-template) text used by transformation.
 
-Note that `{{ ... }}` in lua-resty-template will do html-escape, e.g. space character, so if it's not what you wish, use `{* ... *}` instead.
-
 **Notes:**
+
+`{{ ... }}` in lua-resty-template will do html-escape, e.g. space character, so if it's not what you wish, use `{* ... *}` instead.
 
 If you do not specify `input_format` and no `Content-Type` header, or body is `nil`, then this plugin will not parse the body before template rendering.
 In any case, you could access body string via `{{ _body }}`.
@@ -144,7 +144,7 @@ In `template`, you can use below auxiliary functions to escape string to fit spe
 * `str:escape_json()`
 * `str:escape_xml()`
 
-Note that `escape_json()` would double quote the value of string type, so don't repeat double-quote in the template, e.g. `"foobar":{*name:escape_json()*}}`.
+Note that `escape_json()` would double quote the value of string type, so don't repeat double-quote in the template, e.g. `{"foobar":{*name:escape_json()*}}`.
 
 And, you can refer to `_ctx` to access nginx request context, e.g. `{{ _ctx.var.status }}`.
 
