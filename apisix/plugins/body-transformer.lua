@@ -53,7 +53,8 @@ local _M = {
 }
 
 
-local function escape_xml(s)
+-- luacheck: ignore
+function string.escape_xml(s)
     return s:gsub("&", "&amp;")
         :gsub("<", "&lt;")
         :gsub(">", "&gt;")
@@ -62,7 +63,8 @@ local function escape_xml(s)
 end
 
 
-local function escape_json(s)
+-- luacheck: ignore
+function string.escape_json(s)
     return core.json.encode(s)
 end
 
@@ -132,15 +134,7 @@ local function transform(conf, body, typ, ctx)
     end
 
     out._ctx = ctx
-
-    string.escape_xml = escape_xml
-    string.escape_json = escape_json
-
     local ok, render_out = pcall(render, out)
-
-    string.escape_xml = nil
-    string.escape_json = nil
-
     if not ok then
         local err = str_format("%s template rendering: %s", typ, render_out)
         core.log.error(err)
