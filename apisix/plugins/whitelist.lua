@@ -36,6 +36,7 @@ local networks = {
     "opt-mainnet",
     "scroll-prealpha",
     "ckb-mirana",
+    "starknet-mainnet",
 
     -- staging
     "staging-eth-mainnet",
@@ -47,6 +48,7 @@ local networks = {
     "staging-opt-mainnet",
     "staging-scroll-prealpha",
     "staging-ckb-mirana",
+    "staging-starknet-mainnet"
 }
 
 local web3_methods = {
@@ -313,6 +315,32 @@ local ckb_subscription_methods = {
     "unsubscribe"
 }
 
+local starknet_methods = {
+    "starknet_getStateUpdate",
+    "starknet_getNonce",
+    "starknet_getBlockWithTxHashes",
+    "starknet_getBlockWithTxs",
+    "starknet_getStorageAt",
+    "starknet_getTransactionByBlockIdAndIndex",
+    "starknet_getBlockTransactionCount",
+    "starknet_pendingTransactions",
+    "starknet_getTransactionByHash",
+    "starknet_getTransactionReceipt",
+    "starknet_getClass",
+    "starknet_getClassHashAt",
+    "starknet_getClassAt",
+    "starknet_call",
+    "starknet_blockNumber",
+    "starknet_blockHashAndNumber",
+    "starknet_chainId",
+    "starknet_syncing",
+    "starknet_getEvents",
+    "starknet_addInvokeTransaction",
+    "starknet_addDeployTransaction",
+    "starknet_addDeclareTransaction",
+    "starknet_estimateFee"
+}
+
 local function merge_methods(...)
     local methods = {}
     for _, method_list in ipairs({ ... }) do
@@ -366,6 +394,9 @@ function _M.init()
         elseif network == "ckb-mirana" or network == "staging-ckb-mirana" then
             _M.free_list[network] = merge_methods(ckb_chain_methods, ckb_net_methods, ckb_experiment_methods,
                 ckb_indexer_methods, ckb_pool_methods, ckb_stats_methods, ckb_subscription_methods)
+        elseif network == "starknet-mainnet" or network == "staging-starknet-mainnet" then
+            _M.free_list[network] = merge_methods(starknet_methods)
+            _M.paid_list[network] = _M.free_list[network]
         else
             error("unknown network: " .. network)
         end
