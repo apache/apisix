@@ -582,3 +582,89 @@ passed
 --- error_log
 http://127.0.0.1:9200/_bulk
 http://127.0.0.1:9201/_bulk
+
+
+
+=== TEST 15: log format in plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addr = "http://127.0.0.1:9201",
+                        field = {
+                            index = "services"
+                        },
+                        log_format = {
+                            custom_host = "$host"
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: hit route and check custom elasticsearch logger
+--- extra_init_by_lua
+    local core = require("apisix.core")
+    local http = require("resty.http")
+    local ngx_re = require("ngx.re")
+    local log_util = require("apisix.utils.log-util")
+    log_util.inject_get_custom_format_log(function(ctx, format)
+        return {
+            test = "test"
+        }
+    end)
+
+    http.request_uri = function(self, uri, params)
+        if not params.body or type(params.body) ~= "string" then
+            return nil, "invalid params body"
+        end
+
+        local arr = ngx_re.split(params.body, "\n")
+        if not arr or #arr ~= 2 then
+            return nil, "invalid params body"
+        end
+
+        local entry = core.json.decode(arr[2])
+        local origin_entry = log_util.get_custom_format_log(nil, nil)
+        for k, v in pairs(origin_entry) do
+            local vv = entry[k]
+            if not vv or vv ~= v then
+                return nil, "invalid params body"
+            end
+        end
+
+        core.log.error("check elasticsearch custom body success")
+        return {
+            status = 200,
+            body = "success"
+        }, nil
+    end
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 2
+--- error_log
+check elasticsearch custom body success

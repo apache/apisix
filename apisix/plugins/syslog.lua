@@ -33,6 +33,7 @@ local schema = {
         sock_type = {type = "string", default = "tcp", enum = {"tcp", "udp"}},
         pool_size = {type = "integer", minimum = 5, default = 5},
         tls = {type = "boolean", default = false},
+        log_format = {type = "object"},
         include_req_body = {type = "boolean", default = false}
     },
     required = {"host", "port"}

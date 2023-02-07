@@ -37,6 +37,7 @@ local schema = {
             default = "default",
             enum = {"default", "origin"},
         },
+        log_format = {type = "object"},
         -- deprecated, use "brokers" instead
         broker_list = {
             type = "object",

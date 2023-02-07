@@ -30,6 +30,7 @@ local schema = {
         host = {type = "string"},
         port = {type = "integer", minimum = 0},
         timeout = {type = "integer", minimum = 1, default = 3},
+        log_format = {type = "object"},
         include_req_body = {type = "boolean", default = false}
     },
     required = {"host", "port"}

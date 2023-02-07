@@ -85,6 +85,7 @@ local schema = {
             type = "boolean",
             default = true
         },
+        log_format = {type = "object"},
         severity_map = {
             type = "object",
             description = "upstream response code vs syslog severity mapping",
