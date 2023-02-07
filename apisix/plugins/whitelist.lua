@@ -37,6 +37,7 @@ local networks = {
     "scroll-prealpha",
     "ckb-mirana",
     "starknet-mainnet",
+    "starknet-testnet",
 
     -- staging
     "staging-eth-mainnet",
@@ -48,7 +49,8 @@ local networks = {
     "staging-opt-mainnet",
     "staging-scroll-prealpha",
     "staging-ckb-mirana",
-    "staging-starknet-mainnet"
+    "staging-starknet-mainnet",
+    "staging-starknet-testnet",
 }
 
 local web3_methods = {
@@ -393,8 +395,9 @@ function _M.init()
             _M.paid_list[network] = merge_methods(cfx_methods, cfx_pos_methods, cfx_trace_methods)
         elseif network == "ckb-mirana" or network == "staging-ckb-mirana" then
             _M.free_list[network] = merge_methods(ckb_chain_methods, ckb_net_methods, ckb_experiment_methods,
-                ckb_indexer_methods, ckb_pool_methods, ckb_stats_methods, ckb_subscription_methods)
-        elseif network == "starknet-mainnet" or network == "staging-starknet-mainnet" then
+                    ckb_indexer_methods, ckb_pool_methods, ckb_stats_methods, ckb_subscription_methods)
+        elseif network == "starknet-mainnet" or network == "staging-starknet-mainnet" or
+            network == "starknet-testnet" or network == "staging-starknet-testnet" then
             _M.free_list[network] = merge_methods(starknet_methods)
             _M.paid_list[network] = _M.free_list[network]
         else
