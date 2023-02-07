@@ -125,7 +125,7 @@ APISIX can be easily installed and started with the quickstart script.
 curl -sL https://run.api7.ai/apisix/quickstart | sh
 ```
 
-This command runs APISIX and etcd locally with Docker. APISIX uses etcd to save and synchronize configuration. Both the etcd and the APISIX use [**host**](https://docs.docker.com/network/host/) Docker network mode. That is, the APISIX can be accessed from local.
+This command runs APISIX and etcd locally with Docker. APISIX uses etcd to save and synchronize configuration. Both etcd and APISIX use the [**host**](https://docs.docker.com/network/host/) Docker network mode. That is, APISIX can be accessed locally.
 
 If everything is ok, you will see the following message.
 
