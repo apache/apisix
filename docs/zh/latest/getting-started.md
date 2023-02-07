@@ -134,7 +134,6 @@ curl -sL https://run.api7.ai/apisix/quickstart | sh
 :::info IMPORTANT
 
 请确保其他系统进程没有占用 **9080、9180、9443 和 2379** 端口。
-```
 
 :::
 
