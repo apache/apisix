@@ -216,7 +216,7 @@ do
         route_id = true,
         route_name = true,
         service_id = true,
-        service_name = true
+        service_name = true,
     }
 
     local mt = {
