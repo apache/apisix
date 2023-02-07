@@ -119,7 +119,7 @@ We receive a JSON response when we send the request:
 
 ## Install Apache APISIX
 
-The APISIX can be easily installed and started with the quickstart script.
+APISIX can be easily installed and started with the quickstart script.
 
 ```sh
 curl -sL https://run.api7.ai/apisix/quickstart | sh
