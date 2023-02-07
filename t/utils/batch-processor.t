@@ -540,10 +540,8 @@ Batch Processor[log buffer] successfully processed the entries
                 ngx.say(err)
             end
 
-            local entry = require("toolkit.json").encode({hello='world'})
-            log_buffer:push(entry)
-            local entry = require("toolkit.json").encode({hello='world'})
-            log_buffer:push(entry)
+            log_buffer:push({hello='world'})
+            log_buffer:push({hello='world'})
             ngx.say("done")
         }
     }

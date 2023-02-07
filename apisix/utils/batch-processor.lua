@@ -202,7 +202,8 @@ function batch_processor:push(entry)
     end
     self.last_entry_t = now()
 
-    local entry_size = #entry
+    local entry_encode = core.json.encode(entry)
+    local entry_size = #entry_encode
     local entries_size = self.entry_buffer.entries_size
     self.entry_buffer.entries_size = entries_size + entry_size
 
