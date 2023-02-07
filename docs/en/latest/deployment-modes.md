@@ -71,7 +71,7 @@ The instance of APISIX deployed as the traditional role will:
 
 ## Decoupled
 
-In the decoupled deployment mode the `data_plane` and `control_plane` instances of APISIX are deployed separately, i.e one instance of APISIX is configured to be a *data plane* and the other to be a *control plane*.
+In the decoupled deployment mode the `data_plane` and `control_plane` instances of APISIX are deployed separately, i.e., one instance of APISIX is configured to be a *data plane* and the other to be a *control plane*.
 
 ![decoupled](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/deployment-cp_and_dp.png)
 
