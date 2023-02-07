@@ -43,10 +43,10 @@ Use cases:
 | ----------- | ----------- | ----------- | ----------- |
 | `request`      | object       | False      | request body transformation configuration      |
 | `request.input_format`      | string       | False      | request body original format, if not specified, it would be determined from `Content-Type` header.      |
-| `request.template`      | string       | False      | request body transformation template       |
+| `request.template`      | string       | True      | request body transformation template       |
 | `response`      | object       | False      | response body transformation configuration      |
-| `response.input_format`      | string       | False      | response body original format       |
-| `response.template`      | string       | False      | response body transformation template, if not specified, it would be determined from `Content-Type` header.       |
+| `response.input_format`      | string       | False      | response body original format, if not specified, it would be determined from `Content-Type` header.       |
+| `response.template`      | string       | True      | response body transformation template       |
 
 ## Enabling the Plugin
 

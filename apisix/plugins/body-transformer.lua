@@ -53,8 +53,7 @@ local _M = {
 }
 
 
--- luacheck: ignore
-function string.escape_xml(s)
+local function escape_xml(s)
     return s:gsub("&", "&amp;")
         :gsub("<", "&lt;")
         :gsub(">", "&gt;")
@@ -63,8 +62,7 @@ function string.escape_xml(s)
 end
 
 
--- luacheck: ignore
-function string.escape_json(s)
+local function escape_json(s)
     return core.json.encode(s)
 end
 
@@ -72,9 +70,10 @@ end
 local function remove_namespace(tbl)
     for k, v in pairs(tbl) do
         if type(k) == "string" then
-            k = k:match(".*:(.*)")
-            if k then
-                tbl[k] = v
+            local newk = k:match(".*:(.*)")
+            if newk then
+                tbl[newk] = v
+                tbl[k] = nil
             end
             if type(v) == "table" then
                 remove_namespace(v)
@@ -129,19 +128,27 @@ local function transform(conf, body, typ, ctx)
         local err = render
         err = str_format("%s template compile: %s", typ, err)
         core.log.error(err)
-        return nil, 500, err
+        return nil, 503, err
     end
 
     out._ctx = ctx
-    ok, out = pcall(render, out)
+
+    string.escape_xml = escape_xml
+    string.escape_json = escape_json
+
+    local ok, render_out = pcall(render, out)
+
+    string.escape_xml = nil
+    string.escape_json = nil
+
     if not ok then
-        local err = str_format("%s template rendering: %s", typ, out)
+        local err = str_format("%s template rendering: %s", typ, render_out)
         core.log.error(err)
-        return nil, 500, err
+        return nil, 503, err
     end
 
-    core.log.info(typ, " body transform output=", out)
-    return out
+    core.log.info(typ, " body transform output=", render_out)
+    return render_out
 end
 
 
@@ -158,6 +165,8 @@ end
 
 function _M.rewrite(conf, ctx)
     if conf.request then
+        conf = core.table.deepcopy(conf)
+        ctx.body_transformer_conf = conf
         local body = core.request.get_body()
         set_input_format(conf, "request", ctx.var.http_content_type)
         local out, status, err = transform(conf, body, "request", ctx)
@@ -169,7 +178,8 @@ function _M.rewrite(conf, ctx)
 end
 
 
-function _M.header_filter(conf, ctx)
+function _M.header_filter(_, ctx)
+    local conf = ctx.body_transformer_conf
     if conf.response then
         set_input_format(conf, "response", ngx.header.content_type)
         core.response.clear_header_as_body_modified()
@@ -177,7 +187,8 @@ function _M.header_filter(conf, ctx)
 end
 
 
-function _M.body_filter(conf, ctx)
+function _M.body_filter(_, ctx)
+    local conf = ctx.body_transformer_conf
     if conf.response then
         local body = core.response.hold_body_chunk(ctx)
         if ngx.arg[2] == false and not body then

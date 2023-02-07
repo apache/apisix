@@ -43,7 +43,6 @@ location /demo {
         local handler = xmlhandler:new()
         local parser = xml2lua.parser(handler)
         parser:parse(body)
-        --core.log.error(core.json.encode(handler.root))
 
         ngx.print(string.format([[
 <SOAP-ENV:Envelope
@@ -138,11 +137,7 @@ location /demo {
             local body = [[{"name": "Spain"}]]
             local opt = {method = "POST", body = body, headers = {["Content-Type"] = "application/json"}}
             local httpc = http.new()
-            local res, err = httpc:request_uri(uri, opt)
-            if not res then
-                ngx.say(err)
-                return
-            end
+            local res = httpc:request_uri(uri, opt)
             assert(res.status == 200)
             local data1 = core.json.decode(res.body)
             local data2 = core.json.decode[[{"status":"200","currency":"EUR","population":46704314,"capital":"Madrid","name":"Spain"}]]
@@ -203,11 +198,7 @@ location /demo {
             local body = [[{"name":"hello","age":20}]]
             local opt = {method = "POST", body = body, headers = {["Content-Type"] = "application/json"}}
             local httpc = http.new()
-            local res, err = httpc:request_uri(uri, opt)
-            if not res then
-                ngx.say(err)
-                return
-            end
+            local res = httpc:request_uri(uri, opt)
             assert(res.status == 200)
         }
     }
@@ -258,7 +249,8 @@ location /demo {
             local body = [[{"name":"hello","age":20}]]
             local opt = {method = "POST", body = body, headers = {["Content-Type"] = "application/json"}}
             local httpc = http.new()
-            httpc:request_uri(uri, opt)
+            local res = httpc:request_uri(uri, opt)
+            assert(res.status == 400)
         }
     }
 --- error_log
@@ -309,11 +301,14 @@ Error Parsing XML
             local body = [[{"name":"hello","age":20}]]
             local opt = {method = "POST", body = body, headers = {["Content-Type"] = "application/json"}}
             local httpc = http.new()
-            httpc:request_uri(uri, opt)
+            local res = httpc:request_uri(uri, opt)
+            assert(res.status == 503)
         }
     }
---- error_log
-attempt to call global 'name' (a string value)
+--- grep_error_log eval
+qr/transform\(\): request template rendering:.*/
+--- grep_error_log_out eval
+qr/attempt to call global 'name' \(a string value\)/
 
 
 
@@ -370,7 +365,8 @@ attempt to call global 'name' (a string value)
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/foobar?name=hello"
             local opt = {method = "GET"}
             local httpc = http.new()
-            httpc:request_uri(uri, opt)
+            local res = httpc:request_uri(uri, opt)
+            assert(res.status == 200)
         }
     }
 
