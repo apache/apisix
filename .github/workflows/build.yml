@@ -127,10 +127,7 @@ jobs:
           [[ ${{ steps.test_env.outputs.type }} == plugin ]] && ./ci/pod/openfunction/build-function-image.sh
           make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
           [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
-
-          echo "start backing up, $(date)"
-          bash ./ci/backup-docker-images.sh ${{ steps.test_env.outputs.type }}
-          echo "backup done, $(date)"
+          echo "Linux launch services, done."
       - name: Start Dubbo Backend
         if: matrix.os_name == 'linux_openresty' && steps.test_env.outputs.type == 'plugin'
         run: |
@@ -166,3 +163,9 @@ jobs:
         env:
           TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
         run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
+      
+      - name: Save docker images
+        run: |
+          echo "start backing up, $(date)"
+          bash ./ci/backup-docker-images.sh ${{ steps.test_env.outputs.type }}
+          echo "backup done, $(date)"
