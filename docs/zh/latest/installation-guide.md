@@ -53,7 +53,8 @@ import TabItem from '@theme/TabItem';
 首先下载 [apisix-docker](https://github.com/apache/apisix-docker) 仓库。
 
 ```shell
-git clone https://github.com/apache/apisix-docker.git
+APISIX_VERSION='3.1.0'
+git clone -b release/apisix-${APISIX_VERSION} https://github.com/apache/apisix-docker.git
 cd apisix-docker/example
 ```
 

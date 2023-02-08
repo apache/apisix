@@ -50,7 +50,8 @@ APISIX can be installed by the different methods listed below:
 First clone the [apisix-docker](https://github.com/apache/apisix-docker) repository:
 
 ```shell
-git clone https://github.com/apache/apisix-docker.git
+APISIX_VERSION='3.1.0'
+git clone -b apisix-${APISIX_VERSION} https://github.com/apache/apisix-docker.git
 cd apisix-docker/example
 ```
 
