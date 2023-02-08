@@ -305,11 +305,11 @@ nginx_config:                     # config for render the template to generate n
 #       path: "logs/consul_kv.dump"
 #       expire: 2592000            # unit sec, here is 30 day
 #  consul:
-#    servers:
-#      - "http://127.0.0.1:8500"
+#    servers:                          # make sure service name is unique in these consul servers
+#      - "http://127.0.0.1:8500"       # `http://127.0.0.1:8500` and `http://127.0.0.1:8600` are different clusters
 #      - "http://127.0.0.1:8600"
 #    skip_services:                    # if you need to skip special services
-#      - "service_a"
+#      - "service_a"                   # `consul` service is default skip service
 #    timeout:
 #      connect: 2000               # default 2000 ms
 #      read: 2000                  # default 2000 ms
@@ -327,6 +327,7 @@ nginx_config:                     # config for render the template to generate n
 #    dump:                         # if you need, when registered nodes updated can dump into file
 #       path: "logs/consul.dump"
 #       expire: 2592000            # unit sec, here is 30 day
+#       load_on_init: true         # default true, load the consul dump file on init
 #  kubernetes:
 #    ### kubernetes service discovery both support single-cluster and multi-cluster mode
 #    ### applicable to the case where the service is distributed in a single or multiple kubernetes clusters.
