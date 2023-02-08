@@ -44,6 +44,7 @@ The `clickhouse-logger` Plugin is used to push logs to [ClickHouse](https://clic
 | timeout       | integer | False    | 3                   | [1,...]      | Time to keep the connection alive for after sending a request. |
 | name          | string  | False    | "clickhouse logger" |              | Unique identifier for the logger.                              |
 | ssl_verify    | boolean | False    | true                | [true,false] | When set to `true`, verifies SSL.                              |
+| log_format       | object  | False    |              |              | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 NOTE: `encrypt_fields = {"password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 

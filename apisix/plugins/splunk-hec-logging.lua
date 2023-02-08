@@ -56,6 +56,7 @@ local schema = {
             type = "boolean",
             default = true
         },
+        log_format = {type = "object"},
     },
     required = { "endpoint" },
 }
