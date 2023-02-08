@@ -163,7 +163,7 @@ jobs:
         env:
           TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
         run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
-      
+
       - name: Save docker images
         run: |
           echo "start backing up, $(date)"
