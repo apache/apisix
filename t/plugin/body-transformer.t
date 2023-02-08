@@ -72,7 +72,7 @@ location /demo {
 <soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/">
  <soap-env:Body>
   <ns0:getCountryRequest xmlns:ns0="http://spring.io/guides/gs-producing-web-service">
-   <ns0:name>{{name:escape_xml()}}</ns0:name>
+   <ns0:name>{{_escape_xml(name)}}</ns0:name>
   </ns0:getCountryRequest>
  </soap-env:Body>
 </soap-env:Envelope>
@@ -89,7 +89,7 @@ location /demo {
 }
 {% else %}
 {
-   "message":"{{Envelope.Body.Fault.faultstring[1]:escape_json()}}",
+   "message":{*_escape_json(Envelope.Body.Fault.faultstring[1])*},
    "code":"{{Envelope.Body.Fault.faultcode}}"
    {% if Envelope.Body.Fault.faultactor ~= nil then %}
    , "actor":"{{Envelope.Body.Fault.faultactor}}"
@@ -527,7 +527,7 @@ foobar:
 
 
 
-=== TEST 8: test escape_json
+=== TEST 8: test _escape_json
 --- config
     location /demo {
         content_by_lua_block {
@@ -543,7 +543,7 @@ foobar:
         content_by_lua_block {
             local t = require("lib.test_admin")
             local core = require("apisix.core")
-            local req_template = [[{"foobar":{*name:escape_json()*}}]]
+            local req_template = [[{"foobar":{*_escape_json(name)*}}]]
             local admin_body = [[{
                 "uri": "/foobar",
                 "plugins": {
@@ -590,7 +590,7 @@ foobar:
 
 
 
-=== TEST 9: test escape_xml
+=== TEST 9: test _escape_xml
 --- config
     location /demo {
         content_by_lua_block {
@@ -608,7 +608,7 @@ foobar:
         content_by_lua_block {
             local t = require("lib.test_admin")
             local core = require("apisix.core")
-            local req_template = [[<foobar>{*name:escape_xml()*}</foobar>]]
+            local req_template = [[<foobar>{*_escape_xml(name)*}</foobar>]]
             local admin_body = [[{
                 "uri": "/foobar",
                 "plugins": {

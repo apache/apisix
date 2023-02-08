@@ -53,8 +53,7 @@ local _M = {
 }
 
 
--- luacheck: ignore
-function string.escape_xml(s)
+local function escape_xml(s)
     return s:gsub("&", "&amp;")
         :gsub("<", "&lt;")
         :gsub(">", "&gt;")
@@ -63,8 +62,7 @@ function string.escape_xml(s)
 end
 
 
--- luacheck: ignore
-function string.escape_json(s)
+local function escape_json(s)
     return core.json.encode(s)
 end
 
@@ -134,6 +132,8 @@ local function transform(conf, body, typ, ctx)
     end
 
     out._ctx = ctx
+    out._escape_xml = escape_xml
+    out._escape_json = escape_json
     local ok, render_out = pcall(render, out)
     if not ok then
         local err = str_format("%s template rendering: %s", typ, render_out)
@@ -172,9 +172,12 @@ function _M.rewrite(conf, ctx)
 end
 
 
-function _M.header_filter(_, ctx)
-    local conf = ctx.body_transformer_conf
+function _M.header_filter(conf, ctx)
     if conf.response then
+        if not ctx.body_transformer_conf then
+            conf = core.table.deepcopy(conf)
+            ctx.body_transformer_conf = conf
+        end
         set_input_format(conf, "response", ngx.header.content_type)
         core.response.clear_header_as_body_modified()
     end

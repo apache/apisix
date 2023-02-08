@@ -141,10 +141,10 @@ curl http://127.0.0.1:9180/apisix/admin/routes/test_ws \
 
 In `template`, you can use below auxiliary functions to escape string to fit specific format:
 
-* `str:escape_json()`
-* `str:escape_xml()`
+* `_escape_json()`
+* `_escape_xml()`
 
-Note that `escape_json()` would double quote the value of string type, so don't repeat double-quote in the template, e.g. `{"foobar":{*name:escape_json()*}}`.
+Note that `_escape_json()` would double quote the value of string type, so don't repeat double-quote in the template, e.g. `{"foobar":{*_escape_json(name)*}}`.
 
 And, you can refer to `_ctx` to access nginx request context, e.g. `{{ _ctx.var.status }}`.
 
@@ -173,7 +173,7 @@ req_template=$(cat <<EOF | awk '{gsub(/"/,"\\\"");};1' | awk '{$1=$1};1' | tr -d
 <soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/">
  <soap-env:Body>
   <ns0:getCountryRequest xmlns:ns0="http://spring.io/guides/gs-producing-web-service">
-   <ns0:name>{{name:escape_xml()}}</ns0:name>
+   <ns0:name>{{_escape_xml(name)}}</ns0:name>
   </ns0:getCountryRequest>
  </soap-env:Body>
 </soap-env:Envelope>
@@ -191,7 +191,7 @@ rsp_template=$(cat <<EOF | awk '{gsub(/"/,"\\\"");};1' | awk '{$1=$1};1' | tr -d
 }
 {% else %}
 {
-   "message":"{{Envelope.Body.Fault.faultstring[1]:escape_json()}}",
+   "message":{*_escape_json(Envelope.Body.Fault.faultstring[1])*},
    "code":"{{Envelope.Body.Fault.faultcode}}"
    {% if Envelope.Body.Fault.faultactor ~= nil then %}
    , "actor":"{{Envelope.Body.Fault.faultactor}}"
