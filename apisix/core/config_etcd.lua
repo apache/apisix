@@ -367,12 +367,9 @@ local function sync_data(self)
             return false, err
         end
 
-        local dir_res, headers = res.body.list or {}, res.headers
+        local dir_res, headers = res.body.list or res.body.node or {}, res.headers
         log.debug("readdir key: ", self.key, " res: ",
                   json.delay_encode(dir_res))
-        if not dir_res then
-            return false, err
-        end
 
         if self.values then
             for i, val in ipairs(self.values) do
@@ -673,6 +670,7 @@ local function _automatic_fetch(premature, self)
 end
 
 -- for test
+_M.test_sync_data = sync_data
 _M.test_automatic_fetch = _automatic_fetch
 function _M.inject_sync_data(f)
     sync_data = f
