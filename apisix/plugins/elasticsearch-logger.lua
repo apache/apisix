@@ -52,6 +52,7 @@ local schema = {
             },
             required = {"index"}
         },
+        log_format = {type = "object"},
         auth = {
             type = "object",
             properties = {

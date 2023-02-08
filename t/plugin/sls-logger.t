@@ -323,3 +323,65 @@ apisix:
 --- response_body
 your_access_key_secret
 1T6nR0fz4yhz/zTuRTvt7Xu3c9ASelDXG2//e/A5OiA=
+
+
+
+=== TEST 12: log format in plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "sls-logger": {
+                                "host": "100.100.99.135",
+                                "port": 10009,
+                                "project": "your_project",
+                                "logstore": "your_logstore",
+                                "access_key_id": "your_access_key_id",
+                                "access_key_secret": "your_access_key_secret",
+                                "log_format": {
+                                    "vip": "$remote_addr"
+                                },
+                                "timeout": 30000
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: access
+--- extra_init_by_lua
+    local json = require("toolkit.json")
+    local rfc5424 = require("apisix.plugins.slslog.rfc5424")
+    local old_f = rfc5424.encode
+    rfc5424.encode = function(facility, severity, hostname, appname, pid, project,
+                   logstore, access_key_id, access_key_secret, msg)
+        local r = json.decode(msg)
+        assert(r.vip == "127.0.0.1", r.vip)
+        return old_f(facility, severity, hostname, appname, pid, project,
+                     logstore, access_key_id, access_key_secret, msg)
+    end
+--- request
+GET /hello
+--- response_body
+hello world

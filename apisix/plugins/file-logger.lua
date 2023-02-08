@@ -30,6 +30,7 @@ local schema = {
         path = {
             type = "string"
         },
+        log_format = {type = "object"},
         include_resp_body = {type = "boolean", default = false},
         include_resp_body_expr = {
             type = "array",
