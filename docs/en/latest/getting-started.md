@@ -119,40 +119,19 @@ We receive a JSON response when we send the request:
 
 ## Install Apache APISIX
 
-To get started, we will install Apache APISIX with Docker and enable the [Admin API](./admin-api.md).
+APISIX can be easily installed and started with the quickstart script.
 
-First clone the [apisix-docker](https://github.com/apache/apisix-docker) repository:
-
-```shell
-git clone https://github.com/apache/apisix-docker.git
-cd apisix-docker/example
+```sh
+curl -sL https://run.api7.ai/apisix/quickstart | sh
 ```
 
-Now, you can use `docker-compose` to start APISIX.
+This command runs APISIX and etcd locally with Docker. APISIX uses etcd to save and synchronize configuration. Both etcd and APISIX use the [**host**](https://docs.docker.com/network/host/) Docker network mode. That is, APISIX can be accessed locally.
 
-<Tabs
-  groupId="cpu-arch"
-  defaultValue="x86"
-  values={[
-    {label: 'x86', value: 'x86'},
-    {label: 'ARM/M1', value: 'arm'},
-  ]}>
-<TabItem value="x86">
+If everything is ok, you will see the following message.
 
-```shell
-docker-compose -p docker-apisix up -d
+```text
+✔ APISIX is ready!
 ```
-
-</TabItem>
-
-<TabItem value="arm">
-
-```shell
-docker-compose -p docker-apisix -f docker-compose-arm64.yml up -d
-```
-
-</TabItem>
-</Tabs>
 
 :::note
 
@@ -164,38 +143,21 @@ You can check out [Installing Apache APISIX](./installation-guide.md) for differ
 
 Make sure that all the required ports (default: 9080, 9180, 9443 and 2379) are available and not used by other system processes.
 
-On Unix-based systems, you can run the command below to terminate a process listening on a specific port:
-
-```bash
-sudo fuser -k 9443/tcp
-```
-
-If a Docker container is crashing, you can inspect the logs to diagnose the problem:
-
-```bash
-docker logs -f --tail <container_id>
-```
-
 :::
 
-Once APISIX is running, you can use `curl` to access the Admin API. You can also check if APISIX is running properly by running this command and checking the response.
+Once APISIX is running, you can use curl to access it. Send a simple HTTP request to validate if APISIX is working properly or not.
 
-```bash
-curl "http://127.0.0.1:9180/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+```sh
+curl "http://127.0.0.1:9080" --head | grep Server
 ```
 
-This response indicates that APISIX is running successfully:
+If everything is ok, you will get the following response.
 
-```json
-{
-  "count":0,
-  "node":{
-    "key":"/apisix/services",
-    "nodes":[],
-    "dir":true
-  }
-}
+```text
+Server: APISIX/3.1.0
 ```
+
+You now have APISIX installed and running successfully!​
 
 ## Create a Route
 
@@ -206,7 +168,7 @@ APISIX provides a powerful [Admin API](./admin-api.md) and [APISIX Dashboard](ht
 We will configure the Route so that APISIX can forward the request to the corresponding Upstream service:
 
 ```bash
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT -d '
 {
   "methods": ["GET"],
   "host": "example.com",
@@ -241,7 +203,7 @@ Instead of configuring the Upstream directly to the Route, you can create an Ups
 To create an Upstream object:
 
 ```bash
-curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -X PUT -d '
 {
   "type": "roundrobin",
   "nodes": {
@@ -255,7 +217,7 @@ This is the same as the Upstream service we configured directly into the Route o
 To bind this Upstream to the Route, we can use the `upstream_id` as `1`:
 
 ```bash
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT -d '
 {
   "methods": ["GET"],
   "host": "example.com",

@@ -111,40 +111,19 @@ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 
 ## 安装 APISIX
 
-我们将使用 Docker 安装 APISIX 并启用 [Admin API](./admin-api.md)。
+APISIX 可以借助 quickstart 脚本快速安装并启动。
 
-首先，通过 `git` 命令克隆 [apisix-docker](https://github.com/apache/apisix-docker) 仓库：
-
-```bash
-git clone https://github.com/apache/apisix-docker.git
-cd apisix-docker/example
+```sh
+curl -sL https://run.api7.ai/apisix/quickstart | sh
 ```
 
-现在你可以通过 `docker-compose` 启动 APISIX。
+该命令在本地安装并运行了基于 Docker 的 APISIX 和 etcd 容器，其中 APISIX 采用 etcd 保存和同步配置信息。APISIX 和 etcd 容器使用 [**host**](https://docs.docker.com/network/host/) 的 Docker 网络模式，因此可以从本地直接访问。
 
-<Tabs
-  groupId="cpu-arch"
-  defaultValue="x86"
-  values={[
-    {label: 'x86', value: 'x86'},
-    {label: 'ARM/M1', value: 'arm'},
-  ]}>
-<TabItem value="x86">
+如果一切顺利，将输出如下信息。
 
-```shell
-docker-compose -p docker-apisix up -d
+```text
+✔ APISIX is ready!
 ```
-
-</TabItem>
-
-<TabItem value="arm">
-
-```shell
-docker-compose -p docker-apisix -f docker-compose-arm64.yml up -d
-```
-
-</TabItem>
-</Tabs>
 
 :::note
 
@@ -156,41 +135,21 @@ docker-compose -p docker-apisix -f docker-compose-arm64.yml up -d
 
 请确保其他系统进程没有占用 **9080、9180、9443 和 2379** 端口。
 
-在基于 UNIX 的系统中，可以使用以下命令来终止指定监听端口的运行：
-
-```bash
-sudo fuser -k 9443/tcp
-```
-
-如果 Docker 容器不能正常运行，你可以通过以下命令检查日志进行问题诊断：
-
-```bash
-docker logs -f --tail $<container_id>
-```
-
 :::
 
-安装完成后，你可以在运行 Docker 的宿主机上执行 `curl` 命令访问 Admin API，根据返回数据判断 APISIX 是否成功启动。
+你可以通过 curl 来访问正在运行的 APISIX 实例。比如，你可以发送一个简单的 HTTP 请求来验证 APISIX 运行状态是否正常。
 
-```bash
-# 注意：请在运行 Docker 的宿主机上执行 curl 命令。
-curl "http://127.0.0.1:9180/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+```sh
+curl "http://127.0.0.1:9080" --head | grep Server
 ```
 
-如果返回数据如下所示，则表示 APISIX 成功启动：
+I如果一切顺利，将输出如下信息。
 
-```json
-{
-  "count":0,
-  "node":{
-    "key":"/apisix/services",
-    "nodes":[],
-    "dir":true
-  }
-}
+```text
+Server: APISIX/3.1.0
 ```
 
-完成上述步骤后，你就已经拥有了一个正在运行的 APISIX 的实例了，现在你可以从之后的小节中学习如何创建路由以及了解 APISIX Dashboard 的操作。
+现在，你已经成功安装并运行了 APISIX ！
 
 ## 创建路由
 
@@ -199,7 +158,7 @@ APISIX 提供了强大的 [Admin API](./admin-api.md) 和 [Dashboard](https://gi
 以下示例代码中，我们将为路由配置匹配规则，以便 APISIX 可以将请求转发到对应的上游服务：
 
 ```bash
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT -d '
 {
   "methods": ["GET"],
   "host": "example.com",
@@ -232,7 +191,7 @@ curl -i -X GET "http://127.0.0.1:9080/anything/foo?arg=10" -H "Host: example.com
 你可以通过以下命令创建一个上游，并在路由中使用它，而不是直接将其配置在路由中：
 
 ```bash
-curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -X PUT -d '
 {
   "type": "roundrobin",
   "nodes": {
@@ -246,7 +205,7 @@ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f0343
 上游服务创建完成后，可以通过以下命令绑定到指定路由：
 
 ```bash
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT -d '
 {
   "uri": "/get",
   "host": "httpbin.org",
