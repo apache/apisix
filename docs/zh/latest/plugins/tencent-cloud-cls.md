@@ -44,6 +44,7 @@ description: API 网关 Apache APISIX tencent-cloud-cls 插件可用于将日志
 | include_req_body  | boolean | 否     | false | [false, true]| 当设置为 `true` 时，日志中将包含请求体。                                                     |
 | include_resp_body | boolean | 否     | false | [false, true]| 当设置为 `true` 时，日志中将包含响应体。                                                     |
 | global_tag        | object  | 否     |       |              | kv 形式的 JSON 数据，可以写入每一条日志，便于在 CLS 中检索。                                        |
+| log_format        | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
 注意：schema 中还定义了 `encrypt_fields = {"secret_key"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 

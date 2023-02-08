@@ -40,6 +40,7 @@ local schema = {
         timeout = {type = "integer", minimum = 1, default = 3},
         name = {type = "string", default = "clickhouse logger"},
         ssl_verify = {type = "boolean", default = true},
+        log_format = {type = "object"},
     },
     oneOf = {
         {required = {"endpoint_addr", "user", "password", "database", "logtable"}},

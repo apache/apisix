@@ -217,11 +217,12 @@ function _M.get_log_entry(plugin_name, conf, ctx)
     local entry
     local customized = false
 
-    if metadata and metadata.value.log_format
+    local has_meta_log_format = metadata and metadata.value.log_format
         and core.table.nkeys(metadata.value.log_format) > 0
-    then
+
+    if conf.log_format or has_meta_log_format then
         customized = true
-        entry = get_custom_format_log(ctx, metadata.value.log_format)
+        entry = get_custom_format_log(ctx, conf.log_format or metadata.value.log_format)
     else
         if is_http then
             entry = get_full_log(ngx, conf)

@@ -86,6 +86,7 @@ local schema = {
             type = "string",
             default = "apisix.apache.org%2Flogs"
         },
+        log_format = {type = "object"},
     },
     oneOf = {
         { required = { "auth_config" } },
