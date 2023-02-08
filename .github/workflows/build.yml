@@ -168,6 +168,8 @@ jobs:
       - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
         name: Save docker images
         run: |
+          # free some space to avoid disk full
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /usr/share/swift
           echo "start backing up, $(date)"
           bash ./ci/backup-docker-images.sh ${{ steps.test_env.outputs.type }}
           echo "backup done, $(date)"
