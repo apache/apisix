@@ -106,7 +106,7 @@ jobs:
           cache-name: cache-apisix-docker-images
         with:
           path: docker-images-backup
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ steps.test_env.outputs.type }}-${{ hashFiles(format('./ci/pod/docker-compose.{0}.yml', steps.test_env.outputs.type )) }}
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ steps.test_env.outputs.type }}-${{ matrix.os_name }}-${{ hashFiles(format('./ci/pod/docker-compose.{0}.yml', steps.test_env.outputs.type )) }}
 
       - if: ${{ steps.cache-images.outputs.cache-hit == 'true' }}
         name: Load saved docker images
