@@ -42,6 +42,11 @@ local schema = {
         request = transform_schema,
         response = transform_schema,
     },
+    anyOf = {
+        {required = {"request"}},
+        {required = {"response"}},
+        {required = {"request", "response"}},
+    },
 }
 
 
