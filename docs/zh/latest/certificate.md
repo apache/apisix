@@ -35,10 +35,9 @@ SNI（Server Name Indication）是用来改善 SSL 和 TLS 的一项特性，它
 
 为了简化示例，我们会使用下面的 Python 脚本：
 
-```python
+```python title="create-ssl.py"
 #!/usr/bin/env python
 # coding: utf-8
-# save this file as create-ssl.py
 import sys
 # sudo pip install requests
 import requests
@@ -201,7 +200,7 @@ APISIX 目前支持在多处设置 CA 证书，比如 [保护 Admin API](./mtls.
 
 1. 制作 CA bundle 文件
 
-```
+```shell
 cat /path/to/foo_ca.crt /path/to/bar_ca.crt > apisix.ca-bundle
 ```
 
@@ -224,7 +223,7 @@ goreman -f Procfile-single-enable-mtls start > goreman.log 2>&1 &
 
 3. 更新 `config.yaml`
 
-```yaml
+```yaml title="conf/config.yaml"
 deployment:
   admin:
     admin_key

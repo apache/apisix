@@ -33,10 +33,9 @@ It is most common for an SSL certificate to contain only one domain. We can crea
 
 We will use the Python script below to simplify the example:
 
-```python
+```python title="create-ssl.py"
 #!/usr/bin/env python
 # coding: utf-8
-# save this file as create-ssl.py
 import sys
 # sudo pip install requests
 import requests
@@ -204,7 +203,7 @@ The following table details the configurations involved in this example and what
 
 1. Create CA bundle files
 
-```
+```shell
 cat /path/to/foo_ca.crt /path/to/bar_ca.crt > apisix.ca-bundle
 ```
 
@@ -227,7 +226,7 @@ goreman -f Procfile-single-enable-mtls start > goreman.log 2>&1 &
 
 3. Update `config.yaml`
 
-```yaml
+```yaml title="conf/config.yaml"
 deployment:
   admin:
     admin_key
