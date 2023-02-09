@@ -87,7 +87,8 @@ done
                             "host": "127.0.0.1",
                             "port": 9092
                         }],
-                        "kafka_topic": "test2"
+                        "kafka_topic": "test2",
+                        "meta_refresh_interval": 1
                     },
                     "level": "ERROR",
                     "inactive_timeout": 1
