@@ -209,6 +209,10 @@ do
         balancer_port = true,
         consumer_group_id = true,
         consumer_name = true,
+        resp_body = function(ctx)
+            -- only for logger and requires the logger to have a special configuration
+            return ctx.resp_body or ''
+        end,
         route_id = true,
         route_name = true,
         service_id = true,
