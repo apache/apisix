@@ -191,7 +191,7 @@ function gen_by_property(property)
 end
 
 
-function _M.access(conf)
+function _M.access(conf, ctx)
     local response_content = ""
 
     if conf.response_example then
@@ -218,7 +218,7 @@ function _M.access(conf)
     if conf.delay > 0 then
         ngx.sleep(conf.delay)
     end
-    return conf.response_status, core.utils.resolve_var(response_content)
+    return conf.response_status, core.utils.resolve_var(response_content, ctx.var)
 end
 
 return _M
