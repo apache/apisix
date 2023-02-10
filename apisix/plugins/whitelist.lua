@@ -400,6 +400,12 @@ function _M.init()
             network == "starknet-testnet" or network == "staging-starknet-testnet" then
             _M.free_list[network] = merge_methods(starknet_methods)
             _M.paid_list[network] = _M.free_list[network]
+        elseif string.find(network, "inner-") == 1 then
+            -- if network has inner- placeholder, allow access to all methods
+            _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods, bor_methods, cfx_methods,
+                    cfx_pos_methods, cfx_trace_methods, ckb_chain_methods, ckb_net_methods, ckb_experiment_methods,
+                    ckb_indexer_methods, ckb_pool_methods, ckb_stats_methods, ckb_subscription_methods, starknet_methods)
+            _M.paid_list[network] = _M.free_list[network]
         else
             error("unknown network: " .. network)
         end
