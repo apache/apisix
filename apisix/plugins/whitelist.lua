@@ -354,6 +354,11 @@ local function merge_methods(...)
 end
 
 local function check_access(self, network, method, monthly_quota, default_paid_quota)
+    -- if network has inner- prefix, grant access
+    if string.find(network, "inner-") then
+        return nil
+    end
+
     local isPaid = monthly_quota > default_paid_quota
     local supported = false
     if self.paid_list[network] and self.paid_list[network][method] then
@@ -399,12 +404,6 @@ function _M.init()
         elseif network == "starknet-mainnet" or network == "staging-starknet-mainnet" or
             network == "starknet-testnet" or network == "staging-starknet-testnet" then
             _M.free_list[network] = merge_methods(starknet_methods)
-            _M.paid_list[network] = _M.free_list[network]
-        elseif string.find(network, "inner-") == 1 then
-            -- if network has inner- placeholder, allow access to all methods
-            _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods, bor_methods, cfx_methods,
-                    cfx_pos_methods, cfx_trace_methods, ckb_chain_methods, ckb_net_methods, ckb_experiment_methods,
-                    ckb_indexer_methods, ckb_pool_methods, ckb_stats_methods, ckb_subscription_methods, starknet_methods)
             _M.paid_list[network] = _M.free_list[network]
         else
             error("unknown network: " .. network)
