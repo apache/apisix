@@ -35,7 +35,7 @@ title: TLS 双向认证
 
 2. 修改 `conf/config.yaml` 中的配置项：
 
-```yaml
+```yaml title="conf/config.yaml"
   admin_listen:
     ip: 127.0.0.1
     port: 9180
@@ -70,7 +70,7 @@ curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /
 
 你需要构建 [APISIX-Base](./FAQ.md#如何构建-APISIX-Base-环境？)，并且需要在配置文件中设定 `etcd.tls` 来使 ETCD 的双向认证功能正常工作。
 
-```yaml
+```yaml title="conf/config.yaml"
 deployment:
   role: traditional
   role_traditional:
@@ -83,7 +83,7 @@ deployment:
 
 如果 APISIX 不信任 etcd server 使用的 CA 证书，我们需要设置 CA 证书。
 
-```yaml
+```yaml title="conf/config.yaml"
 apisix:
   ssl:
     ssl_trusted_certificate: /path/to/certs/ca-certificates.crt       # path of CA certificate used by the etcd server
@@ -103,10 +103,9 @@ apisix:
 
 下面是一个可用于生成带双向认证配置的 SSL 资源的 Python 脚本示例。如果需要，可修改 API 地址、API Key 和 SSL 资源的 ID。
 
-```py
+```python title="create-ssl.py"
 #!/usr/bin/env python
 # coding: utf-8
-# 保存该文件为 ssl.py
 import sys
 # sudo pip install requests
 import requests
@@ -144,7 +143,7 @@ print(resp.text)
 使用上述 Python 脚本创建 SSL 资源：
 
 ```bash
-./ssl.py ./server.pem ./server.key 'mtls.test.com' ./client_ca.pem 10
+./create-ssl.py ./server.pem ./server.key 'mtls.test.com' ./client_ca.pem 10
 
 # 测试
 curl --resolve 'mtls.test.com:<APISIX_HTTPS_PORT>:<APISIX_URL>' "https://<APISIX_URL>:<APISIX_HTTPS_PORT>/hello" -k --cert ./client.pem --key ./client.key
@@ -166,10 +165,9 @@ curl --resolve 'mtls.test.com:<APISIX_HTTPS_PORT>:<APISIX_URL>' "https://<APISIX
 
 下面是一个与配置 SSL 时相似的 Python 脚本，可为一个已存在的 upstream 资源配置双向认证。如果需要，可修改 API 地址和 API Key。
 
-```python
+```python title="patch_upstream_mtls.py"
 #!/usr/bin/env python
 # coding: utf-8
-# 保存该文件为 patch_upstream_mtls.py
 import sys
 # sudo pip install requests
 import requests
