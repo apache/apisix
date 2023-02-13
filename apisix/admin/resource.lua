@@ -43,7 +43,7 @@ function _M:check_conf(id, conf, need_id)
         return nil, {error_msg = "missing ".. self.kind .. " id"}
     end
 
-    if not need_id and id then
+    if not need_id and id and self.kind ~= "consumer" then
         return nil, {error_msg = "wrong ".. self.kind .. " id, do not need it"}
     end
 
@@ -62,7 +62,11 @@ function _M:check_conf(id, conf, need_id)
     if not ok then
         return ok, err
     else
-        return need_id and id or true
+        if self.kind == "consumer" then
+            return ok
+        else
+            return need_id and id or true
+        end
     end
 end
 
@@ -121,7 +125,8 @@ function _M:put(id, conf, sub_path, args)
         return 405, {error_msg = "not supported `PUT` method for " .. self.kind}
     end
 
-    local id, err = self:check_conf(id, conf, true)
+    local need_id = (self.kind ~= "consumer")
+    local id, err = self:check_conf(id, conf, need_id)
     if not id then
         return 400, err
     end
