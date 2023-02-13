@@ -704,6 +704,21 @@ Another solution is to switch to an experimental gRPC-based configuration synchr
     prefix: "/apisix"
 ```
 
+## How does APISIX configure ETCD with authentication
+
+If you are using an auth ETCD instance, you need to use the correct user and password to access it. You need to do edit this in the `conf/config.yaml` file.
+
+```yaml
+deployment:
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    user: root                     # root username for etcd
+    password: 5tHkHhYkjr6cQY       # root password for etcd
+```
+
+For other ETCD configurations, such as expiration times, retries, and so on, you can see the `ETCD` section in the `conf/config-default.yaml` file.
+
 ## Where can I find more answers?
 
 You can find more answers on:
