@@ -515,7 +515,7 @@ GET /hello
         }
     }
 --- error_log
-undefined path in test server, uri: /plugin_proxy_rewrite_args?a=2
+undefined path in test server, uri: /plugin_proxy_rewrite_args%3Fa=2
 --- error_code: 404
 
 
