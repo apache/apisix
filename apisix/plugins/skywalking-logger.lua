@@ -36,6 +36,7 @@ local schema = {
         endpoint_addr = core.schema.uri_def,
         service_name = {type = "string", default = "APISIX"},
         service_instance_name = {type = "string", default = "APISIX Instance Name"},
+        log_format = {type = "object"},
         timeout = {type = "integer", minimum = 1, default = 3},
         include_req_body = {type = "boolean", default = false},
     },

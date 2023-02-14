@@ -895,3 +895,61 @@ hello world
 --- error_log eval
 qr/send data to kafka: \{.*"body":"abcdef"/
 --- wait: 2
+
+
+
+=== TEST 22: setup route with meta_refresh_interval
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "plugins": {
+                            "kafka-logger": {
+                                "brokers" :
+                                  [{
+                                    "host":"127.0.0.1",
+                                    "port": 9092
+                                  }],
+                                "kafka_topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "meta_refresh_interval": 1,
+                                "batch_max_size": 1,
+                                "include_req_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]=]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+--- response_body
+passed
+
+
+
+=== TEST 23: hit route, send data to kafka successfully
+--- request
+POST /hello
+abcdef
+--- response_body
+hello world
+--- no_error_log
+[error]
+--- error_log eval
+qr/send data to kafka: \{.*"body":"abcdef"/
+--- wait: 2

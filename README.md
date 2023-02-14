@@ -19,7 +19,7 @@
 
 # Apache APISIX API Gateway
 
-<img src="https://svn.apache.org/repos/asf/comdev/project-logos/originals/apisix.svg" alt="APISIX logo" height="150px" align="right" />
+<img src="./logos/apisix-white-bg.jpg" alt="APISIX logo" height="150px" align="right" />
 
 [![Build Status](https://github.com/apache/apisix/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/apache/apisix/actions/workflows/build.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/apache/apisix/blob/master/LICENSE)
@@ -140,7 +140,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [Elasticsearch](docs/en/latest/plugins/elasticsearch-logger.md): push logs to Elasticsearch.
   - [Datadog](docs/en/latest/plugins/datadog.md): push custom metrics to the DogStatsD server, comes bundled with [Datadog agent](https://docs.datadoghq.com/agent/), over the UDP protocol. DogStatsD basically is an implementation of StatsD protocol which collects the custom metrics for Apache APISIX agent, aggregates it into a single data point and sends it to the configured Datadog server.
   - [Helm charts](https://github.com/apache/apisix-helm-chart)
-  - [HashiCorp Vault](https://www.vaultproject.io/): Support secret management solution for accessing secrets from Vault secure storage backed in a low trust environment. Currently, RS256 keys (public-private key pairs) or secret keys can be linked from vault in [jwt-auth](docs/en/latest/plugins/jwt-auth.md#enable-jwt-auth-with-vault-compatibility) authentication plugin.
+  - [HashiCorp Vault](https://www.vaultproject.io/): Support secret management solution for accessing secrets from Vault secure storage backed in a low trust environment. Currently, RS256 keys (public-private key pairs) or secret keys can be linked from vault in jwt-auth authentication plugin using [APISIX Secret](docs/en/latest/terminology/secret.md) resource.
 
 - **Highly scalable**
   - [Custom plugins](docs/en/latest/plugin-develop.md): Allows hooking of common phases, such as `rewrite`, `access`, `header filter`, `body filter` and `log`, also allows to hook the `balancer` stage.
@@ -233,7 +233,7 @@ A wide variety of companies and organizations use APISIX API Gateway for researc
 ## Landscape
 
 <p align="left">
-<img src="https://landscape.cncf.io/images/left-logo.svg" width="150">&nbsp;&nbsp;<img src="https://landscape.cncf.io/images/right-logo.svg" width="200" />
+<img src="./logos/cncf-landscape-white-bg.jpg" width="175">&nbsp;&nbsp;<img src="./logos/cncf-white-bg.jpg" width="200" />
 <br /><br />
 APISIX enriches the <a href="https://landscape.cncf.io/card-mode?category=api-gateway&grouping=category">
 CNCF API Gateway Landscape.</a>

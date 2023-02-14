@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - 错误日志
   - Plugin
-description: API 网关 Apache APISIX error-log-logger 插件用于将 APISIX 的错误日志推送到 TCP、Apache SkyWalking 或 ClickHouse 服务器。
+description: API 网关 Apache APISIX error-log-logger 插件用于将 APISIX 的错误日志推送到 TCP、Apache SkyWalking、Apache Kafka 或 ClickHouse 服务器。
 ---
 
 <!--
@@ -29,7 +29,7 @@ description: API 网关 Apache APISIX error-log-logger 插件用于将 APISIX �
 
 ## 描述
 
-`error-log-logger` 插件用于将 APISIX 的错误日志 (`error.log`) 推送到 TCP、Apache SkyWalking 或 ClickHouse 服务器，你还可以设置错误日志级别以将日志发送到服务器。
+`error-log-logger` 插件用于将 APISIX 的错误日志 (`error.log`) 推送到 TCP、Apache SkyWalking、Apache Kafka 或 ClickHouse 服务器，你还可以设置错误日志级别以将日志发送到服务器。
 
 ## 属性
 
@@ -47,6 +47,18 @@ description: API 网关 Apache APISIX error-log-logger 插件用于将 APISIX �
 | clickhouse.password              | String  | 否     |                                |               | ClickHouse 的密码。                                                                |
 | clickhouse.database              | String  | 否     |                                |               | ClickHouse 的用于接收日志的数据库。                                                |
 | clickhouse.logtable              | String  | 否     |                                |               | ClickHouse 的用于接收日志的表。                                                    |
+| kafka.brokers                    | array   | 是     |                                |               | 需要推送的 Kafka broker 列表。	|
+| kafka.brokers.host                  | string  | 是   |                |                       | Kafka broker 的节点 host 配置，例如 `192.168.1.1`|
+| kafka.brokers.port                  | string  | 是   |                |                       | Kafka broker 的节点端口配置  |
+| kafka.brokers.sasl_config           | object  | 否   |                |                       | Kafka broker 中的 sasl_config |
+| kafka.brokers.sasl_config.mechanism | string  | 否   | "PLAIN"          | ["PLAIN"]   | Kafka broker 中的 sasl 认证机制 |
+| kafka.brokers.sasl_config.user      | string  | 是   |                  |             | Kafka broker 中 sasl 配置中的 user，如果 sasl_config 存在，则必须填写 |
+| kafka.brokers.sasl_config.password  | string  | 是   |                  |             | Kafka broker 中 sasl 配置中的 password，如果 sasl_config 存在，则必须填写 |
+| kafka.kafka_topic                   | string  | 是   |                |                       | 需要推送的 Kafka topic。|
+| kafka.producer_type                 | string  | 否   | async          | ["async", "sync"]     | 生产者发送消息的模式。|
+| kafka.required_acks                 | integer | 否   | 1              | [0, 1, -1]            | 生产者在确认一个请求发送完成之前需要收到的反馈信息的数量。该参数是为了保证发送请求的可靠性。该属性的配置与 Kafka `acks` 属性相同，具体配置请参考 [Apache Kafka 文档](https://kafka.apache.org/documentation/#producerconfigs_acks)。 |
+| kafka.key                           | string  | 否   |                |                       | 用于消息分区而分配的密钥。 |
+| kafka.cluster_name           | integer | 否     | 1              | [0,...]               | Kafka 集群的名称，当有两个及以上 Kafka 集群时使用。只有当 `producer_type` 设为 `async` 模式时才可以使用该属性。|
 | timeout                          | integer | 否     | 3                              | [1,...]       | 连接和发送数据超时间，以秒为单位。                                                   |
 | keepalive                        | integer | 否     | 30                             | [1,...]       | 复用连接时，连接保持的时间，以秒为单位。                                             |
 | level                            | string  | 否     | WARN                           |               | 进行错误日志筛选的级别，默认为 `WARN`，取值 ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"]，其中 `ERR` 与 `ERROR` 级别一致。 |
@@ -124,6 +136,28 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
       "logtable": "t",
       "endpoint_addr": "http://127.0.0.1:8123"
   }
+}'
+```
+
+### 配置 Kafka
+
+该插件支持将错误日志发送到 Kafka，你可以按照如下方式进行配置：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+   "kafka":{
+      "brokers":[
+         {
+            "host":"127.0.0.1",
+            "port":9092
+         }
+      ],
+      "kafka_topic":"test2"
+   },
+   "level":"ERROR",
+   "inactive_timeout":1
 }'
 ```
 

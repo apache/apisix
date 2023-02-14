@@ -37,6 +37,7 @@ title: sls-logger
 | host | 必要的 | TCP 服务的 IP 地址或主机名，请参考：[阿里云日志服务列表](https://help.aliyun.com/document_detail/29008.html?spm=a2c4g.11186623.2.14.49301b4793uX0z#reference-wgx-pwq-zdb)，建议配置 IP 取代配置域名。|
 | port | 必要的 | 目标端口，阿里云日志服务默认端口为 10009。|
 | timeout | 可选的 | 发送数据超时间。|
+| log_format             | 可选的  | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | project | 必要的 | 日志服务 Project 名称，请提前在阿里云日志服务中创建 Project。|
 | logstore | 必须的 | 日志服务 Logstore 名称，请提前在阿里云日志服务中创建 Logstore。|
 | access_key_id | 必须的 | AccessKey ID。建议使用阿里云子账号 AK，详情请参见 [授权](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry)。|

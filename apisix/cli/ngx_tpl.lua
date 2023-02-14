@@ -145,6 +145,13 @@ stream {
     lua_shared_dict plugin-limit-conn-stream {* stream.lua_shared_dict["plugin-limit-conn-stream"] *};
     {% end %}
 
+    # for discovery shared dict
+    {% if discovery_shared_dicts then %}
+    {% for key, size in pairs(discovery_shared_dicts) do %}
+    lua_shared_dict {*key*}-stream {*size*};
+    {% end %}
+    {% end %}
+
     resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %} ipv6={% if enable_ipv6 then %}on{% else %}off{% end %};
     resolver_timeout {*resolver_timeout*};
 

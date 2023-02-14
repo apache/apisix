@@ -347,3 +347,100 @@ GET /t
 reconnected to etcd
 --- response_body
 passed
+
+
+
+=== TEST 11: reloaded data may be in res.body.node (special kvs structure)
+--- yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    admin:
+        admin_key: null
+--- config
+    location /t {
+        content_by_lua_block {
+            local config_etcd = require("apisix.core.config_etcd")
+            local etcd_cli = {}
+            function etcd_cli.readdir()
+                return {
+                    status = 200,
+                    headers = {},
+                    body = {
+                        header = {revision = 1},
+                        kvs = {{key = "foo", value = "bar"}},
+                    }
+                }
+            end
+            config_etcd.test_sync_data({
+                etcd_cli = etcd_cli,
+                key = "fake",
+                single_item = true,
+                -- need_reload because something wrong happened before
+                need_reload = true,
+                upgrade_version = function() end,
+                conf_version = 1,
+            })
+        }
+    }
+--- request
+GET /t
+--- log_level: debug
+--- grep_error_log eval
+qr/readdir key: fake res: .+/
+--- grep_error_log_out eval
+qr/readdir key: fake res: \{("value":"bar","key":"foo"|"key":"foo","value":"bar")\}/
+--- wait: 1
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: reloaded data may be in res.body.node (admin_api_version is v2)
+--- yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    admin:
+        admin_key: null
+        admin_api_version: v2
+--- config
+    location /t {
+        content_by_lua_block {
+            local config_etcd = require("apisix.core.config_etcd")
+            local etcd_cli = {}
+            function etcd_cli.readdir()
+                return {
+                    status = 200,
+                    headers = {},
+                    body = {
+                        header = {revision = 1},
+                        kvs = {
+                            {key = "/foo"},
+                            {key = "/foo/bar", value = {"bar"}}
+                        },
+                    }
+                }
+            end
+            config_etcd.test_sync_data({
+                etcd_cli = etcd_cli,
+                key = "fake",
+                -- need_reload because something wrong happened before
+                need_reload = true,
+                upgrade_version = function() end,
+                conf_version = 1,
+            })
+        }
+    }
+--- request
+GET /t
+--- log_level: debug
+--- grep_error_log eval
+qr/readdir key: fake res: .+/
+--- grep_error_log_out eval
+qr/readdir key: fake res: \{.*"nodes":\[\{.*"value":\["bar"\].*\}\].*\}/
+--- wait: 1
+--- no_error_log
+[error]

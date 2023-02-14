@@ -35,10 +35,9 @@ SNI（Server Name Indication）是用来改善 SSL 和 TLS 的一项特性，它
 
 为了简化示例，我们会使用下面的 Python 脚本：
 
-```python
+```python title="create-ssl.py"
 #!/usr/bin/env python
 # coding: utf-8
-# save this file as ssl.py
 import sys
 # sudo pip install requests
 import requests
@@ -65,7 +64,7 @@ print(resp.text)
 
 ```shell
 # 创建 SSL 对象
-./ssl.py t.crt t.key test.com
+./create-ssl.py t.crt t.key test.com
 
 # 创建 Router 对象
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -111,7 +110,7 @@ curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/hello  -vvv
 看下面这个例子，请注意我们把 `*.test.com` 作为 sni 传递进来：
 
 ```shell
-./ssl.py t.crt t.key '*.test.com'
+./create-ssl.py t.crt t.key '*.test.com'
 
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
@@ -171,7 +170,7 @@ curl --resolve 'www.test.com:9443:127.0.0.1' https://www.test.com:9443/hello  -v
 
 ### 设置多个 CA 证书
 
-APISIX 目前支持在多处设置 CA 证书，比如 [保护 Admin API](./mtls.md#保护-admin-api)，[保护 ETCD](./mtls.md#保护-etcd)，以及 [部署模式](../../en/latest/architecture-design/deployment-role.md) 等。
+APISIX 目前支持在多处设置 CA 证书，比如 [保护 Admin API](./mtls.md#保护-admin-api)，[保护 ETCD](./mtls.md#保护-etcd)，以及 [部署模式](../../en/latest/deployment-modes.md) 等。
 
 在这些地方，使用 `ssl_trusted_certificate` 或 `trusted_ca_cert` 来配置 CA 证书，但是这些配置最终将转化为 OpenResty 的 [lua_ssl_trusted_certificate](https://github.com/openresty/lua-nginx-module#lua_ssl_trusted_certificate) 指令。
 
@@ -201,7 +200,7 @@ APISIX 目前支持在多处设置 CA 证书，比如 [保护 Admin API](./mtls.
 
 1. 制作 CA bundle 文件
 
-```
+```shell
 cat /path/to/foo_ca.crt /path/to/bar_ca.crt > apisix.ca-bundle
 ```
 
@@ -224,7 +223,7 @@ goreman -f Procfile-single-enable-mtls start > goreman.log 2>&1 &
 
 3. 更新 `config.yaml`
 
-```yaml
+```yaml title="conf/config.yaml"
 deployment:
   admin:
     admin_key

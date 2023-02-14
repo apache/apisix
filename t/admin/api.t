@@ -137,7 +137,7 @@ deployment:
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- response_headers
 X-API-VERSION: v2
---- response_body_like: "\\/apisix\\/routes"
+--- response_body_like: "/apisix/routes"
 
 
 
@@ -148,7 +148,6 @@ X-API-VERSION: v2
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin',
                 ngx.HTTP_HEAD)
-
             ngx.status = code
             ngx.say(body)
         }

@@ -18,7 +18,6 @@ local core     = require("apisix.core")
 local jwt      = require("resty.jwt")
 local consumer_mod = require("apisix.consumer")
 local resty_random = require("resty.random")
-local vault        = require("apisix.core.vault")
 local new_tab = require ("table.new")
 
 local ngx_encode_base64 = ngx.encode_base64
@@ -71,10 +70,6 @@ local consumer_schema = {
             type = "boolean",
             default = false
         },
-        vault = {
-            type = "object",
-            properties = {}
-        },
         lifetime_grace_period = {
             type = "integer",
             minimum = 0,
@@ -102,19 +97,6 @@ local consumer_schema = {
                     },
                     required = {"public_key", "private_key"},
                 },
-                {
-                    properties = {
-                        vault = {
-                            type = "object",
-                            properties = {}
-                        },
-                        algorithm = {
-                            enum = {"RS256", "ES256"},
-                        },
-                    },
-                    required = {"vault"},
-                },
-
             }
         }
     },
@@ -147,11 +129,6 @@ function _M.check_schema(conf, schema_type)
         return false, err
     end
 
-    if conf.vault then
-        core.log.info("skipping jwt-auth schema validation with vault")
-        return true
-    end
-
     if conf.algorithm ~= "RS256" and conf.algorithm ~= "ES256" and not conf.secret then
         conf.secret = ngx_encode_base64(resty_random.bytes(32, true))
     elseif conf.base64_secret then
@@ -161,8 +138,8 @@ function _M.check_schema(conf, schema_type)
     end
 
     if conf.algorithm == "RS256" or conf.algorithm == "ES256" then
-        -- Possible options are a) both are in vault, b) both in schema
-        -- c) one in schema, another in vault.
+        -- Possible options are a) public key is missing
+        -- b) private key is missing
         if not conf.public_key then
             return false, "missing valid public key"
         end
@@ -243,25 +220,8 @@ local function fetch_jwt_token(conf, ctx)
     return val
 end
 
-
-local function get_vault_path(username)
-    return "consumer/".. username .. "/jwt-auth"
-end
-
-
 local function get_secret(conf, consumer_name)
     local secret = conf.secret
-    if conf.vault then
-        local res, err = vault.get(get_vault_path(consumer_name))
-        if not res then
-            return nil, err
-        end
-
-        if not res.data or not res.data.secret then
-            return nil, "secret could not found in vault: " .. core.json.encode(res)
-        end
-        secret = res.data.secret
-    end
 
     if conf.base64_secret then
         return ngx_decode_base64(secret)
@@ -274,32 +234,16 @@ end
 local function get_rsa_or_ecdsa_keypair(conf, consumer_name)
     local public_key = conf.public_key
     local private_key = conf.private_key
-    -- if keys are present in conf, no need to query vault (fallback)
+
     if public_key and private_key then
         return public_key, private_key
+    elseif public_key and not private_key then
+        return nil, nil, "missing private key"
+    elseif not public_key and private_key then
+        return nil, nil, "missing public key"
+    else
+        return nil, nil, "public and private keys are missing"
     end
-
-    local vout = {}
-    if conf.vault then
-        local res, err = vault.get(get_vault_path(consumer_name))
-        if not res then
-            return nil, nil, err
-        end
-
-        if not res.data then
-            return nil, nil, "key pairs could not found in vault: " .. core.json.encode(res)
-        end
-        vout = res.data
-    end
-
-    if not public_key and not vout.public_key then
-        return nil, nil, "missing public key, not found in config/vault"
-    end
-    if not private_key and not vout.private_key then
-        return nil, nil, "missing private key, not found in config/vault"
-    end
-
-    return public_key or vout.public_key, private_key or vout.private_key
 end
 
 
