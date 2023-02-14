@@ -30,17 +30,21 @@ echo openwhisk_tag: $openwhisk_tag
 echo
 all_tags="${special_tag} ${openwhisk_tag}"
 to_pull=""
+
 for tag in $all_tags
 do
-  if ! ( docker inspect $tag &> /dev/null )
-  then
-    to_pull="${to_pull} ${tag}"
-  fi
+    if ! ( docker inspect $tag &> /dev/null )
+    then
+        to_pull="${to_pull} ${tag}"
+    fi
 done
+
 echo to pull : $to_pull
+
 if [[ -n $to_pull ]]
 then
-  echo "$to_pull" | xargs -P10 -n1 docker pull
+    echo "$to_pull" | xargs -P10 -n1 docker pull
 fi
+
 docker save $special_tag $openwhisk_tag -o docker-images-backup/apisix-images.tar
 echo "docker save done, time: $(date)"
