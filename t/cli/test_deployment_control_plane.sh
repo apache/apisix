@@ -53,7 +53,7 @@ deployment:
             cert: t/certs/mtls_server.crt
             cert_key: t/certs/mtls_server.key
     admin:
-      https_admin: "abc"
+        https_admin: "abc"
     etcd:
         prefix: "/apisix"
         host:
