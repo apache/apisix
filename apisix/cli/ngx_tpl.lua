@@ -559,11 +559,6 @@ http {
                 apisix.http_admin()
             }
         }
-
-        location / {
-            default_type text/html;
-            return 200 'Welcome to Apache APISIX!\n';
-        }
     }
     {% end %}
 
