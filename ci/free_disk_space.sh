@@ -16,6 +16,11 @@
 # limitations under the License.
 #
 
+# GitHub Action CI runner comes with a limited disk space, due to several reasons
+# it may become full. For example, caching docker images creates an archive of
+# several GBs of size, this sometimes leads to disk usage becoming full.
+# To keep CI functional, we delete large directories that we do not need.
+
 echo "=============================================================================="
 echo "Freeing up disk space on CI system"
 echo "=============================================================================="
