@@ -32,7 +32,7 @@ __DATA__
             local vault = require("apisix.secret.vault")
             local conf = {
                 prefix = "/kv/prefix",
-                token = "root",
+                token = "$ENV://VAULT_TOKEN",
                 uri = "http://127.0.0.1:2800"
             }
             local data, err = vault.get(conf, "apisix")
@@ -57,7 +57,7 @@ error key format, key: apisix
             local vault = require("apisix.secret.vault")
             local conf = {
                 prefix = "/kv/prefix",
-                token = "root",
+                token = "$ENV://VAULT_TOKEN",
                 uri = "http://127.0.0.1:2800"
             }
             local data, err = vault.get(conf, "/apisix")
@@ -82,7 +82,7 @@ can't find main key, key: /apisix
             local vault = require("apisix.secret.vault")
             local conf = {
                 prefix = "/kv/prefix",
-                token = "root",
+                token = "$ENV://VAULT_TOKEN",
                 uri = "http://127.0.0.1:2800"
             }
             local data, err = vault.get(conf, "apisix/")
@@ -107,7 +107,7 @@ can't find sub key, key: apisix/
             local vault = require("apisix.secret.vault")
             local conf = {
                 prefix = "/kv/prefix",
-                token = "root",
+                token = "$ENV://VAULT_TOKEN",
                 uri = "http://127.0.0.2:2800"
             }
             local data, err = vault.get(conf, "/apisix/sub")
@@ -141,7 +141,7 @@ Success! Data written to: kv/apisix/apisix-key/jack
             local vault = require("apisix.secret.vault")
             local conf = {
                 prefix = "kv/apisix",
-                token = "root",
+                token = "$ENV://VAULT_TOKEN",
                 uri = "http://127.0.0.1:8200"
             }
             local value, err = vault.get(conf, "/apisix-key/jack/key")

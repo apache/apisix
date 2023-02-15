@@ -61,7 +61,7 @@ __DATA__
 secrets:
   - id: vault/1
     prefix: kv/apisix
-    token: root
+    token: "$ENV://VAULT_TOKEN"
     uri: 127.0.0.1:8200
 #END
 --- config
@@ -86,7 +86,7 @@ property "uri" validation failed: failed to match pattern "^[^\\/]+:\\/\\/([\\da
 secrets:
   - id: hhh/1
     prefix: kv/apisix
-    token: root
+    token: "$ENV://VAULT_TOKEN"
     uri: 127.0.0.1:8200
 #END
 --- config
@@ -111,7 +111,7 @@ secret manager not exits
 secrets:
   - id: vault/1
     prefix: kv/apisix
-    token: root
+    token: "$ENV://VAULT_TOKEN"
     uri: http://127.0.0.1:8200
 #END
 --- config
@@ -133,7 +133,7 @@ GET /t
 len: 1
 id: vault/1
 prefix: kv/apisix
-token: root
+token: $ENV://VAULT_TOKEN
 uri: http://127.0.0.1:8200
 
 
@@ -151,7 +151,7 @@ Success! Data written to: kv/apisix/apisix-key
 secrets:
   - id: vault/1
     prefix: kv/apisix
-    token: root
+    token: "$ENV://VAULT_TOKEN"
     uri: http://127.0.0.1:8200
 #END
 --- config

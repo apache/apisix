@@ -49,7 +49,7 @@ __DATA__
                 [[{
                     "uri": "http://127.0.0.1:8200",
                     "prefix" : "kv/apisix",
-                    "token" : "root"
+                    "token" : "$ENV://VAULT_TOKEN"
                 }]]
                 )
 
