@@ -54,10 +54,15 @@ local function make_request_to_vault(conf, method, key, data)
     local req_addr = conf.uri .. norm_path("/v1/"
                 .. conf.prefix .. "/" .. key)
 
+    local token, _ = env.fetch_by_uri(conf.token)
+    if not token then
+        token = conf.token
+    end
+
     local res, err = httpc:request_uri(req_addr, {
         method = method,
         headers = {
-            ["X-Vault-Token"] = env.fetch_by_uri(conf.token)
+            ["X-Vault-Token"] = token
         },
         body = core.json.encode(data or {}, true)
     })
