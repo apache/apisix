@@ -52,6 +52,36 @@ deployment:
             listen: admin.apisix.dev:12345
             cert: t/certs/mtls_server.crt
             cert_key: t/certs/mtls_server.key
+    admin:
+        https_admin: "abc"
+    etcd:
+        prefix: "/apisix"
+        host:
+            - http://127.0.0.1:2379
+    certs:
+        trusted_ca_cert: t/certs/mtls_ca.crt
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'property "https_admin" validation failed: wrong type: expected boolean, got string'; then
+    echo "failed: should check deployment schema during init"
+    exit 1
+fi
+
+echo "passed: should check deployment schema during init"
+
+# The 'admin.apisix.dev' is injected by ci/common.sh@set_coredns
+echo '
+apisix:
+    enable_admin: false
+deployment:
+    role: control_plane
+    role_control_plane:
+        config_provider: etcd
+        conf_server:
+            listen: admin.apisix.dev:12345
+            cert: t/certs/mtls_server.crt
+            cert_key: t/certs/mtls_server.key
     etcd:
         prefix: "/apisix"
         host:
