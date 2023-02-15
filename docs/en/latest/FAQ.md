@@ -706,7 +706,7 @@ Another solution is to switch to an experimental gRPC-based configuration synchr
 
 ## How does APISIX configure ETCD with authentication
 
-If you are using an auth ETCD instance, you need to use the correct user and password to access it. You need to do edit this in the `conf/config.yaml` file.
+Suppose you have an ETCD cluster that enables the auth. To access this cluster, you need to configure the correct username and password for Apache APISIX. Edit the `conf/config.yaml` file as follows:
 
 ```yaml
 deployment:
