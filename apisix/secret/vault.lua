@@ -26,6 +26,7 @@ local norm_path = require("pl.path").normpath
 local sub        = core.string.sub
 local rfind_char = core.string.rfind_char
 
+local env        = require("apisix.core.env")
 
 local schema = {
     type = "object",
@@ -56,7 +57,7 @@ local function make_request_to_vault(conf, method, key, data)
     local res, err = httpc:request_uri(req_addr, {
         method = method,
         headers = {
-            ["X-Vault-Token"] = conf.token
+            ["X-Vault-Token"] = env.fetch_by_uri(conf.token)
         },
         body = core.json.encode(data or {}, true)
     })
