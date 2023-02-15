@@ -130,6 +130,11 @@ local function strip_etcd_resp(data)
 end
 
 
+local function head()
+    core.response.exit(200)
+end
+
+
 local function run()
     local api_ctx = {}
     core.ctx.set_vars_meta(api_ctx)
@@ -365,6 +370,11 @@ end
 
 
 local uri_route = {
+    {
+        paths = [[/apisix/admin]],
+        methods = {"HEAD"},
+        handler = head,
+    },
     {
         paths = [[/apisix/admin/*]],
         methods = {"GET", "PUT", "POST", "DELETE", "PATCH"},
