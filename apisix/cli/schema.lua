@@ -375,6 +375,7 @@ local deployment_schema = {
     control_plane = {
         properties = {
             etcd = etcd_schema,
+            admin = admin_schema,
             role_control_plane = {
                 properties = {
                     config_provider = {
