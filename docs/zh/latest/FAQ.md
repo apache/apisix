@@ -709,7 +709,7 @@ make GOOS=linux GOARCH=amd64
 
 ## APISIX 如何配置带认证的 ETCD
 
-如果你使用的 ETCD 实例，是需要使用正确的用户和密码才能访问。你需要在`conf/config.yaml`文件中这样配置。
+假设您有一个启用身份验证的 ETCD 集群。要访问该集群，需要为 Apache APISIX 配置正确的用户名和密码。需要配置`conf/config.yaml` 文件，添加如下内容:
 
 ```yaml
 deployment:
