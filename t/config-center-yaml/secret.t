@@ -388,3 +388,131 @@ env secret=apisix;
 GET /t
 --- response_body
 nil
+
+
+
+=== TEST 17: validate secret/vault with the token in an env var: wrong schema
+--- apisix_yaml
+secrets:
+  - id: vault/1
+    prefix: kv/apisix
+    token: "$ENV://VAULT_TOKEN"
+    uri: 127.0.0.1:8200
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local secret = require("apisix.secret")
+            local values = secret.secrets()
+            ngx.say(#values)
+        }
+    }
+--- request
+GET /t
+--- response_body
+0
+--- error_log
+property "uri" validation failed: failed to match pattern "^[^\\/]+:\\/\\/([\\da-zA-Z.-]+|\\[[\\da-fA-F:]+\\])(:\\d+)?"
+
+
+
+=== TEST 18: validate secrets with the token in an env var: manager not exits
+--- apisix_yaml
+secrets:
+  - id: hhh/1
+    prefix: kv/apisix
+    token: "$ENV://VAULT_TOKEN"
+    uri: 127.0.0.1:8200
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local secret = require("apisix.secret")
+            local values = secret.secrets()
+            ngx.say(#values)
+        }
+    }
+--- request
+GET /t
+--- response_body
+0
+--- error_log
+secret manager not exits
+
+
+
+=== TEST 19: load config normal with the token in an env var
+--- apisix_yaml
+secrets:
+  - id: vault/1
+    prefix: kv/apisix
+    token: "$ENV://VAULT_TOKEN"
+    uri: http://127.0.0.1:8200
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local secret = require("apisix.secret")
+            local values = secret.secrets()
+            ngx.say("len: ", #values)
+
+            ngx.say("id: ", values[1].value.id)
+            ngx.say("prefix: ", values[1].value.prefix)
+            ngx.say("token: ", values[1].value.token)
+            ngx.say("uri: ", values[1].value.uri)
+        }
+    }
+--- request
+GET /t
+--- response_body
+len: 1
+id: vault/1
+prefix: kv/apisix
+token: $ENV://VAULT_TOKEN
+uri: http://127.0.0.1:8200
+
+
+
+=== TEST 20: secret.fetch_by_uri with the token in an env var: start with $secret://
+--- apisix_yaml
+secrets:
+  - id: vault/1
+    prefix: kv/apisix
+    token: "$ENV://VAULT_TOKEN"
+    uri: http://127.0.0.1:8200
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local secret = require("apisix.secret")
+            local value = secret.fetch_by_uri("$secret://vault/1/apisix-key/key")
+            ngx.say(value)
+        }
+    }
+--- request
+GET /t
+--- response_body
+value
+
+
+
+=== TEST 21: secret.fetch_by_uri, no sub key value with the token in an env var
+--- apisix_yaml
+secrets:
+  - id: vault/1
+    prefix: kv/apisix
+    token: "$ENV://VAULT_TOKEN"
+    uri: http://127.0.0.1:8200
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local secret = require("apisix.secret")
+            local value = secret.fetch_by_uri("$secret://vault/1/apisix-key/bar")
+            ngx.say(value)
+        }
+    }
+--- request
+GET /t
+--- response_body
+nil
