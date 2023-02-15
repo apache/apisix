@@ -560,7 +560,7 @@ ERR_TOKEN_INVALID
                 [[{
                     "uri": "http://127.0.0.1:8200",
                     "prefix" : "kv/apisix",
-                    "token" : "$ENV://VAULT_TOKEN"
+                    "token" : "root"
                 }]]
                 )
 
