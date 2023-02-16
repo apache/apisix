@@ -210,7 +210,7 @@ value
 --- request
 GET /t
 --- response_body
-failed to decode result, res: {"errors":["missing client token"]}
+failed to decode result, res: {"errors":["permission denied"]}
 
 
 
@@ -235,4 +235,4 @@ failed to decode result, res: {"errors":["missing client token"]}
 --- request
 GET /t
 --- response_body
-permission denied
+failed to decode result, res: {"errors":["permission denied"]}
