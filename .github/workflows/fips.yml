@@ -89,29 +89,14 @@ jobs:
         run: |
           make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
 
-      - name: Start CI env (FIRST_TEST)
-        if: steps.test_env.outputs.type == 'first'
+      - name: Linux launch services
         run: |
-          # launch deps env
+          [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh before
+          [[ ${{ steps.test_env.outputs.type }} == plugin ]] && ./ci/pod/openfunction/build-function-image.sh
           make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
-
-      - name: Start CI env (PLUGIN_TEST)
-        if: steps.test_env.outputs.type == 'plugin'
-        run: |
-          # download keycloak cas provider
-          sudo wget https://github.com/jacekkow/keycloak-protocol-cas/releases/download/18.0.2/keycloak-protocol-cas-18.0.2.jar -O /opt/keycloak-protocol-cas-18.0.2.jar
-
-          ./ci/pod/openfunction/build-function-image.sh
-          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
-          sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
-
-      - name: Start CI env (LAST_TEST)
-        if: steps.test_env.outputs.type == 'last'
-        run: |
-          # generating SSL certificates for Kafka
-          sudo keytool -genkeypair -keyalg RSA -dname "CN=127.0.0.1" -alias 127.0.0.1 -keystore ./ci/pod/kafka/kafka-server/selfsigned.jks -validity 365 -keysize 2048 -storepass changeit
-          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
-          sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
+          echo "make ci-env-up, done"
+          [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
+          echo "Linux launch services, done"
 
       - name: Linux Before install
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
