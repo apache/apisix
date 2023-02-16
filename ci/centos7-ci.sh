@@ -84,7 +84,6 @@ run_case() {
     export_or_prefix
     make init
     set_coredns
-    export VAULT_TOKEN="root"
     # run test cases
     FLUSH_ETCD=1 prove --timer -Itest-nginx/lib -I./ -r ${TEST_FILE_SUB_DIR} | tee /tmp/test.result
     rerun_flaky_tests /tmp/test.result
