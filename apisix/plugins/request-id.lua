@@ -42,6 +42,10 @@ local schema = {
         include_in_response = {type = "boolean", default = true},
         algorithm = {type = "string", enum = {"uuid", "snowflake", "nanoid"}, default = "uuid"},
         arg_name = {type = "string", default = "req-id"}
+    },
+    oneOf = {
+        {required = {"arg_name"}},
+        {required = {"header_name"}}
     }
 }
 
@@ -75,7 +79,6 @@ function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 
-
 -- Generates the current process data machine
 local function gen_data_machine(max_number)
     if data_machine == nil then
@@ -88,7 +91,7 @@ local function gen_data_machine(max_number)
             local res, err = etcd_cli:grant(attr.snowflake.data_machine_ttl)
             if err then
                 id = id + 1
-                core.log.error("Etcd grant failure, err: ".. err)
+                core.log.error("Etcd grant failure, err: " .. err)
                 goto continue
             end
 
@@ -103,13 +106,13 @@ local function gen_data_machine(max_number)
 
                 local _, err3 =
                     etcd_cli:set(
-                    prefix .. tostring(id),
-                    uuid,
-                    {
-                        prev_kv = true,
-                        lease = res.body.ID
-                    }
-                )
+                        prefix .. tostring(id),
+                        uuid,
+                        {
+                            prev_kv = true,
+                            lease = res.body.ID
+                        }
+                    )
 
                 if err3 then
                     id = id + 1
@@ -180,7 +183,7 @@ local function snowflake_init()
             node_id_bits, datacenter_id_bits)
 
         core.log.info("snowflake init datacenter_id: " ..
-            datacenter_id .. " worker_id: " .. worker_id)
+        datacenter_id .. " worker_id: " .. worker_id)
         snowflake.init(
             datacenter_id,
             worker_id,
@@ -218,21 +221,39 @@ end
 function _M.rewrite(conf, ctx)
     local headers = ngx.req.get_headers()
     local uuid_val
-    if not headers[conf.header_name] then
-        local querystring = ngx.req.get_uri_args()
-        if not querystring[conf.arg_name] then
+
+    if conf.header_name then
+        if not headers[conf.header_name] then
             uuid_val = get_request_id(conf.algorithm)
+            core.request.set_header(ctx, conf.header_name, uuid_val)
         else
-            uuid_val = querystring[conf.arg_name]
+            uuid_val = headers[conf.header_name]
+        end
+    end
+
+    if conf.arg_name then
+        if not headers[conf.arg_name] then
+            local querystring = ngx.req.get_uri_args()
+            if not querystring[conf.arg_name] then
+                uuid_val = get_request_id(conf.algorithm)
+            else
+                uuid_val = querystring[conf.arg_name]
+            end
+        else
+            uuid_val = headers[conf.arg_name]
         end
 
-        core.request.set_header(ctx, conf.header_name, uuid_val)
-    else
-        uuid_val = headers[conf.header_name]
+        core.request.set_header(ctx, conf.arg_name, uuid_val)
     end
 
     if conf.include_in_response then
-        ctx["request-id-" .. conf.header_name] = uuid_val
+        if conf.header_name then
+            ctx["request-id-" .. conf.header_name] = uuid_val
+        end
+
+        if conf.arg_name then
+            ctx["request-id-" .. conf.arg_name] = uuid_val
+        end
     end
 end
 

@@ -759,8 +759,8 @@ passed
                     }
                 })
 
-            if res.headers["Custom-Header-Name"] then
-                ngx.say(res.headers["Custom-Header-Name"])
+            if res.headers["traceId"] then
+                ngx.say(res.headers["traceId"])
             else
                 ngx.say("failed")
             end
