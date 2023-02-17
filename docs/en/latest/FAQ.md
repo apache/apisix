@@ -713,8 +713,8 @@ deployment:
   etcd:
     host:
       - "http://127.0.0.1:2379"
-    user: root                     # root username for etcd
-    password: 5tHkHhYkjr6cQY       # root password for etcd
+    user: etcd_user                       # root username for etcd
+    password: etcd_password     # root password for etcd
 ```
 
 For other ETCD configurations, such as expiration times, retries, and so on, you can see the `ETCD` section in the `conf/config-default.yaml` file.
