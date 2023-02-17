@@ -643,7 +643,7 @@ GET /t
                 core.json.encode({create_time = 0, update_time = 1})
             )
 
-            if code ~= 201 then
+            if code ~= 200 then
                 ngx.status = code
                 ngx.say(body)
                 return

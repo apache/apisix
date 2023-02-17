@@ -507,7 +507,6 @@ function _M.atomic_set(key, value, ttl, mod_revision)
         key = key,
         value = value,
     }
-    res.status = 201
 
     return res, nil
 end
