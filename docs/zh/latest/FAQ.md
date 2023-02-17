@@ -720,7 +720,7 @@ deployment:
     password: 5tHkHhYkjr6cQY       # root password for etcd
 ```
 
-关于 ETCD 的其他配置，比如过期时间、重试次数等等，你可以查看`conf/config-default.yaml`文件中的`ETCD`部分。
+关于 ETCD 的其他配置，比如过期时间、重试次数等等，你可以参考 `conf/config-default.yaml` 文件中的 `ETCD` 部分。
 
 ## 如果在使用 APISIX 过程中遇到问题，我可以在哪里寻求更多帮助？
 
