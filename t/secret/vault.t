@@ -204,7 +204,7 @@ value
                 return ngx.say(err)
             end
 
-            ngx.say("value")
+            ngx.print("value")
         }
     }
 --- request
@@ -231,7 +231,7 @@ GET /t
                 return ngx.say(err)
             end
 
-            ngx.say("value")
+            ngx.print("value")
         }
     }
 --- request
