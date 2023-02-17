@@ -160,6 +160,8 @@ local debug_methods = {
     "debug_traceTransaction",
     "debug_traceCall",
     "debug_traceCallMany",
+
+    "debug_getRawReceipts",
 }
 
 
@@ -383,7 +385,10 @@ function _M.init()
     _M.paid_list = {}
     for _, network in ipairs(networks) do
         _M.network_list[network] = true
-        if network == "eth-mainnet" or network == "eth-sepolia" or network == "cfx-espace" or
+        if network == "eth-mainnet" then
+            _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
+            _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, trace_methods, debug_methods)
+        elseif network == "eth-sepolia" or network == "cfx-espace" or
             network == "scroll-prealpha" or network == "staging-eth-mainnet" or network == "staging-eth-sepolia" or
             network == "staging-cfx-espace" or network == "staging-scroll-prealpha" then
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
@@ -400,7 +405,7 @@ function _M.init()
             _M.paid_list[network] = merge_methods(cfx_methods, cfx_pos_methods, cfx_trace_methods)
         elseif network == "ckb-mirana" or network == "staging-ckb-mirana" then
             _M.free_list[network] = merge_methods(ckb_chain_methods, ckb_net_methods, ckb_experiment_methods,
-                    ckb_indexer_methods, ckb_pool_methods, ckb_stats_methods, ckb_subscription_methods)
+                ckb_indexer_methods, ckb_pool_methods, ckb_stats_methods, ckb_subscription_methods)
         elseif network == "starknet-mainnet" or network == "staging-starknet-mainnet" or
             network == "starknet-testnet" or network == "staging-starknet-testnet" then
             _M.free_list[network] = merge_methods(starknet_methods)
