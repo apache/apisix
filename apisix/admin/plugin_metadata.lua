@@ -58,9 +58,6 @@ local function check_conf(plugin_name, conf)
     end
     local schema = plugin_object.metadata_schema
 
-    core.log.info("schema: ", core.json.delay_encode(schema))
-    core.log.info("conf: ", core.json.delay_encode(conf))
-
     local ok, err
     if schema['$comment'] == injected_mark
       -- check_schema is not required. If missing, fallback to check schema directly

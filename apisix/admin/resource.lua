@@ -31,7 +31,10 @@ local mt = {
 }
 
 
-local no_id_res = {"consumers", "plugin_metadata"}
+local no_id_res = {
+    consumers = {},
+    plugin_metadata = {}
+}
 
 
 function _M:check_conf(id, conf, need_id)
@@ -41,7 +44,7 @@ function _M:check_conf(id, conf, need_id)
     end
 
     -- check id if need id
-    if not core.table.array_find(no_id_res, self.name) then
+    if not no_id_res[self.name] then
         id = id or conf.id
         if need_id and not id then
             return nil, {error_msg = "missing ".. self.kind .. " id"}
@@ -67,7 +70,7 @@ function _M:check_conf(id, conf, need_id)
     if not ok then
         return ok, err
     else
-        if core.table.array_find(no_id_res, self.name) then
+        if no_id_res[self.name] then
             return ok
         else
             return need_id and id or true
@@ -130,7 +133,7 @@ function _M:put(id, conf, sub_path, args)
         return 405, {error_msg = "not supported `PUT` method for " .. self.kind}
     end
 
-    local need_id = not core.table.array_find(no_id_res, self.name)
+    local need_id = not no_id_res[self.name]
     local id, err = self:check_conf(id, conf, need_id)
     if not id then
         return 400, err
