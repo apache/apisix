@@ -246,6 +246,11 @@ local function test_expect(var)
     return expect and str_lower(expect) == "100-continue"
 end
 
+function _M.set_body(new_body_data)
+    ngx.req.set_body_data(new_body_data)
+    ngx.req.set_header("Content-Length", tostring(#new_body_data))
+end
+
 
 function _M.get_body(max_size, ctx)
     if max_size then
