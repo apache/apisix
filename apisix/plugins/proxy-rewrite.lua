@@ -253,18 +253,24 @@ do
     end
 
 
-    function _M.rewrite(conf, ctx)
-        for _, name in ipairs(upstream_names) do
-            if conf[name] then
-                ctx.var[upstream_vars[name]] = conf[name]
-            end
+    local function escape_separator(s)
+        return re_sub(s, [[\?]], "%3F", "jo")
+    end
+
+function _M.rewrite(conf, ctx)
+    for _, name in ipairs(upstream_names) do
+        if conf[name] then
+            ctx.var[upstream_vars[name]] = conf[name]
         end
+    end
 
     local upstream_uri = ctx.var.uri
+    local separator_escaped = false
     if conf.use_real_request_uri_unsafe then
         upstream_uri = ctx.var.real_request_uri
     elseif conf.uri ~= nil then
-        upstream_uri = core.utils.resolve_var(conf.uri, ctx.var)
+        separator_escaped = true
+        upstream_uri = core.utils.resolve_var(conf.uri, ctx.var, escape_separator)
     elseif conf.regex_uri ~= nil then
         local uri, _, err = re_sub(ctx.var.uri, conf.regex_uri[1],
                                    conf.regex_uri[2], "jo")
@@ -280,11 +286,17 @@ do
     end
 
     if not conf.use_real_request_uri_unsafe then
-        local index = str_find(upstream_uri, "?")
+        local index
+        if separator_escaped then
+            index = str_find(upstream_uri, "?")
+        end
+
         if index then
-            upstream_uri = core.utils.uri_safe_encode(sub_str(upstream_uri, 1, index-1)) ..
-                           sub_str(upstream_uri, index)
+            upstream_uri = core.utils.uri_safe_encode(sub_str(upstream_uri, 1, index - 1)) ..
+                sub_str(upstream_uri, index)
         else
+            -- The '?' may come from client request '%3f' when we use ngx.var.uri directly or
+            -- via regex_uri
             upstream_uri = core.utils.uri_safe_encode(upstream_uri)
         end
 
