@@ -942,10 +942,9 @@ Access-Control-Allow-Credentials: true
                         "cors": {
                             "allow_origins": "*",
                             "allow_methods": "GET,POST",
-                            "allow_headers": "headr1,headr2",
-                            "expose_headers": "ex-headr1,ex-headr2",
+                            "allow_headers": "request-h",
+                            "expose_headers": "expose-h",
                             "max_age": 50,
-                            "allow_credential": true,
                             "allow_origins_by_regex":[".*\\.test.com"]
                         }
                     },
@@ -972,15 +971,12 @@ passed
 
 
 
-
 === TEST 37: multiple regex specified not match
 --- request
 GET /hello HTTP/1.1
 --- more_headers
 Origin: http://sub.domain.com
 resp-vary: Via
---- response_body
-hello world
 --- response_headers
 Access-Control-Allow-Origin:
 Access-Control-Allow-Methods:
@@ -997,13 +993,10 @@ GET /hello HTTP/1.1
 --- more_headers
 Origin: http://sub.test.com
 resp-vary: Via
---- response_body
-hello world
 --- response_headers
 Access-Control-Allow-Origin: http://sub.test.com
 Vary: Via, Origin
 Access-Control-Allow-Methods: GET,POST
-Access-Control-Allow-Headers: headr1,headr2
-Access-Control-Expose-Headers: ex-headr1,ex-headr2
+Access-Control-Allow-Headers: request-h
+Access-Control-Expose-Headers: expose-h
 Access-Control-Max-Age: 50
-Access-Control-Allow-Credentials: true
