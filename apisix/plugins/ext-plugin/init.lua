@@ -288,7 +288,7 @@ local function handle_extra_info(ctx, input)
 
     local res
     local info_type = req:InfoType()
-    if info_type == extra_info.SetReqBody then  --4 set_body
+    if info_type == extra_info.RespBody + 1 then  --4 set_body
         local info = req:Info()
         local var_req = extra_info_var.New()
         var_req:Init(info.bytes, info.pos)
