@@ -213,7 +213,7 @@ echo "passed: resolve variables"
 
 # support reserved environment variable APISIX_DEPLOYMENT_ETCD_HOST
 
-echo "
+echo '
 deployment:
   role: traditional
   role_traditional:
@@ -221,7 +221,7 @@ deployment:
   etcd:
     host:
       - "http://127.0.0.1:2379"
-" > conf/config.yaml
+' > conf/config.yaml
 
 out=$(APISIX_DEPLOYMENT_ETCD_HOST='["http://127.0.0.1:2333"]' make init 2>&1 || true)
 if ! echo "$out" | grep "connection refused" > /dev/null; then
