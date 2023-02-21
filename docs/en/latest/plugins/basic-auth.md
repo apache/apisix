@@ -31,7 +31,7 @@ description: This document contains information about the Apache APISIX basic-au
 
 The `basic-auth` Plugin is used to add [basic access authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) to a Route or a Service.
 
-This works well with a [Consumer](../terminology/consumer.md). Consumers of the API can then add their key to the header to authenticate their requests.
+This works well with a [Consumer](../terminology/consumer.md). Consumers of the API can then add their key to the header to authenticate their requests. The Consumer Name and Consumer Group ID are written to the request header and passed to Upstream if a match is made to the corresponding Consumer.
 
 ## Attributes
 

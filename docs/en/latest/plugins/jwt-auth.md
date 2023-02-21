@@ -31,7 +31,7 @@ description: This document contains information about the Apache APISIX jwt-auth
 
 The `jwt-auth` Plugin is used to add [JWT](https://jwt.io/) authentication to a [Service](../terminology/service.md) or a [Route](../terminology/route.md).
 
-A [Consumer](../terminology/consumer.md) of the service then needs to provide a key through a query string, a request header or a cookie to verify its request.
+A [Consumer](../terminology/consumer.md) of the service then needs to provide a key through a query string, a request header or a cookie to verify its request. The Consumer Name and Consumer Group ID are written to the request header and passed to Upstream if a match is made to the corresponding Consumer.
 
 The `jwt-auth` Plugin can be integrated with [HashiCorp Vault](https://www.vaultproject.io/) to store and fetch secrets and RSA keys pairs from its [encrypted KV engine](https://www.vaultproject.io/docs/secrets/kv). Learn more from the [examples](#enable-jwt-auth-with-vault-compatibility) below.
 

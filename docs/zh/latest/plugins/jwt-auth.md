@@ -31,7 +31,7 @@ description: 本文介绍了关于 Apache APISIX `jwt-auth` 插件的基本信�
 
 `jwt-auth` 插件用于将 [JWT](https://jwt.io/) 身份验证添加到 [Service](../terminology/service.md) 或 [Route](../terminology/route.md) 中。
 
-通过 Consumer 将其密匙添加到查询字符串参数、请求头或 `cookie` 中用来验证其请求。
+通过 Consumer 将其密匙添加到查询字符串参数、请求头或 `cookie` 中用来验证其请求。如果匹配到对应的 Consumer 会将 Consumer Name 和 Consumer Group ID 写到请求头中传递给 Upstream 。
 
 `jwt-auth` 插件可以与 [HashiCorp Vault](https://www.vaultproject.io/) 集成，用于存储和获取密钥，并从 HashiCorp Vault 的 [encrypted KV engine](https://www.vaultproject.io/docs/secrets/kv)中获取 RSA 密匙对。你可以从下面的[示例](#与-hashicorp-vault-集成使用)中了解更多信息。
 

@@ -347,13 +347,14 @@ passed
 
 
 
-=== TEST 15: verify apikey request header should not hidden
+=== TEST 15: verify apikey request header should not hidden, and X-Consumer-Name should return
 --- request
 GET /echo
 --- more_headers
 apikey: auth-one
 --- response_headers
 apikey: auth-one
+X-Consumer-Name: jack
 
 
 
@@ -393,13 +394,14 @@ passed
 
 
 
-=== TEST 17: verify apikey request header is hidden
+=== TEST 17: verify apikey request header is hidden, and X-Consumer-Name should return
 --- request
 GET /echo
 --- more_headers
 apikey: auth-one
 --- response_headers
 !apikey
+X-Consumer-Name: jack
 
 
 

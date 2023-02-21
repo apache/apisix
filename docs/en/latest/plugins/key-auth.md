@@ -31,7 +31,7 @@ description: This document contains information about the Apache APISIX key-auth
 
 The `key-auth` Plugin is used to add an authentication key (API key) to a Route or a Service.
 
-This works well with a [Consumer](../terminology/consumer.md). Consumers of the API can then add their key to the query string or the header to authenticate their requests.
+This works well with a [Consumer](../terminology/consumer.md). Consumers of the API can then add their key to the query string or the header to authenticate their requests. The Consumer Name and Consumer Group ID are written to the request header and passed to Upstream if a match is made to the corresponding Consumer.
 
 ## Attributes
 

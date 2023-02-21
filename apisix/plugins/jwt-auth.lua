@@ -438,6 +438,8 @@ function _M.rewrite(conf, ctx)
     end
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
+    consumer_mod.attach_consumer_to_request(ctx, core.request, consumer)
+
     core.log.info("hit jwt-auth rewrite")
 end
 
