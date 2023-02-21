@@ -214,7 +214,7 @@ echo "passed: resolve variables"
 # support reserved environment variable APISIX_DEPLOYMENT_ETCD_HOST
 
 echo '' > conf/config.yaml
-out=$(APISIX_DEPLOYMENT_ETCD_HOST='["http://127.0.0.2:2379"]' make init 2>&1 || true)
+out=$(APISIX_DEPLOYMENT_ETCD_HOST='["http://127.0.0.1:2333"]' make init 2>&1 || true)
 if ! echo "$out" | grep "connection refused" > /dev/null; then
     echo "failed: failed to configure etcd host with reserved environment variable"
     exit 1
