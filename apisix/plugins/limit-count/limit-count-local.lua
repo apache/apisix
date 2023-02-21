@@ -51,11 +51,11 @@ local function read_reset(self, key)
     return reset
 end
 
-function _M.new(plugin_name, limit, window)
+function _M.new(plugin_name, limit, window, conf)
     assert(limit > 0 and window > 0)
 
     local self = {
-        limit_count = limit_local_new(plugin_name, limit, window),
+        limit_count = limit_local_new(plugin_name, limit, window, conf),
         dict = ngx.shared["plugin-limit-count-reset-header"]
     }
 
