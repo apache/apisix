@@ -132,9 +132,6 @@ local function replace_by_reserved_env_vars(conf)
 end
 
 
-_M.replace_by_reserved_env_vars = replace_by_reserved_env_vars
-
-
 local function tinyyaml_type(t)
     local mt = getmetatable(t)
     if mt then
