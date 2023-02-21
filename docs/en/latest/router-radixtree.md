@@ -114,7 +114,6 @@ curl http://127.0.0.1:1980/hello
 
 All requests will only hit the route of port `1980` because it has a priority of 3 while the route with the port of `1981` has a priority of 2.
 
-
 2. Different routes have the same `uri` but different matching conditions
 
 To understand this, look at the example of setting host matching rules:
@@ -261,7 +260,9 @@ query getRepo {
     }
 }
 ```
+
 Where
+
 * The `graphql_operation` is `query`
 * The `graphql_name` is `getRepo`,
 * The `graphql_root_fields` is `["owner", "repo"]`
