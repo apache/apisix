@@ -63,9 +63,9 @@ deployment:
             port: 9180                  # Specific port, which must be different from node_listen's port.
 ```
 
-### Support environment variables
+### Using environment variables
 
-To configure via environment variables, you can use `${{VAR}}` syntax. For instance:
+To configure via environment variables, you can use the `${{VAR}}` syntax. For instance:
 
 ```yaml title="./conf/config.yaml"
 deployment:
@@ -81,12 +81,11 @@ deployment:
       port: 9180     
 ```
 
- And then run `export ADMIN_KEY=$your_admin_key` before `make init`.
+And then run `export ADMIN_KEY=$your_admin_key` before running `make init`.
 
- If the configured environment variable can't be found, an error will be thrown.
+If the configured environment variable can't be found, an error will be thrown.
 
- Also, If you want to use default value when the environment variable not set,
- Use `${{VAR:=default_value}}` instead. For instance:
+If you want to use a default value when the environment variable is not set, use `${{VAR:=default_value}}` instead. For instance:
 
 ```yaml title="./conf/config.yaml"
 deployment:
@@ -102,7 +101,7 @@ deployment:
       port: 9180       
 ```
 
-This will find environment variable `ADMIN_KEY` first, and if it's not exist it will use `edd1c9f034335f136f87ad84b625c8f1` as default value.
+This will find the environment variable `ADMIN_KEY` first, and if it does not exist, it will use `edd1c9f034335f136f87ad84b625c8f1` as the default value.
 
 ## V3 new feature
 
