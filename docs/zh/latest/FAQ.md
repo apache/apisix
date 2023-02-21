@@ -716,8 +716,8 @@ deployment:
   etcd:
     host:
       - "http://127.0.0.1:2379"
-    user: root                     # root username for etcd
-    password: 5tHkHhYkjr6cQY       # root password for etcd
+    user: etcd_user             # username for etcd
+    password: etcd_password     # password for etcd
 ```
 
 关于 ETCD 的其他配置，比如过期时间、重试次数等等，你可以参考 `conf/config-default.yaml` 文件中的 `ETCD` 部分。
