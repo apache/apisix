@@ -88,6 +88,11 @@ function _M.attach_consumer(ctx, consumer, conf)
     ctx.consumer_ver = conf.conf_version
 end
 
+-- attach chosen consumer to the request headers, used in auth plugin
+function _M.attach_consumer_to_request(ctx, req, consumer)
+    req.set_header(ctx, "X-Consumer-Name", consumer.consumer_name)
+    req.set_header(ctx, "X-Consumer-Group-ID", consumer.group_id)
+end
 
 function _M.consumers()
     if not consumers then

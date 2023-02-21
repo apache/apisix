@@ -163,7 +163,8 @@ function _M.rewrite(conf, ctx)
     end
 
     consumer.attach_consumer(ctx, cur_consumer, consumer_conf)
-
+    consumer.attach_consumer_to_request(ctx, core.request, cur_consumer)
+    
     core.log.info("hit basic-auth access")
 end
 

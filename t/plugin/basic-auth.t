@@ -540,3 +540,13 @@ GET /echo
 Authorization: Basic Zm9vOmJhcg==
 --- response_headers
 Authorization: Basic Zm9vOmJhcg==
+
+
+
+=== TEST 25: verify Authorization with foo/bar, request header should contain X-Consumer-Name
+--- request
+GET /echo
+--- more_headers
+Authorization: Basic Zm9vOmJhcg==
+--- response_headers
+X-Consumer-Name: foo
