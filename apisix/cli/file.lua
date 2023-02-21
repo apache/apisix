@@ -123,7 +123,7 @@ local function replace_by_reserved_env_vars(conf)
     if v and conf["deployment"] and conf["deployment"]["etcd"] then
         local val, _, err = dkjson.decode(v)
         if err or not val then
-            print("parse ${APISIX_DEPLOYMENT_ETCD_HOST} failed and use default config instead. error:", err)
+            print("parse ${APISIX_DEPLOYMENT_ETCD_HOST} failed, error:", err)
             return
         end
 
