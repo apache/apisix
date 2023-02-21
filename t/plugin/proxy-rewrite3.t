@@ -450,11 +450,14 @@ passed
 
 
 
-=== TEST 20: set and test priority test
+=== TEST 20: set and test priority test & deprecated calls test
 --- request
 GET /echo HTTP/1.1
 --- response_headers
 test: test_in_set
+--- no_error_log
+DEPRECATED: use add_header(ctx, header_name, header_value) instead
+DEPRECATED: use set_header(ctx, header_name, header_value) instead
 
 
 
@@ -619,3 +622,50 @@ GET /test/plugin/proxy/rewrite HTTP/1.1
     }
 --- response_body
 /plugin_proxy_rewrite?a=c
+
+
+
+=== TEST 27: set route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "headers": {
+                                    "add":{"test": "t1"},
+                                    "set":{"test": "t2"}
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 28: deprecated calls test
+--- request
+GET /echo HTTP/1.1
+--- no_error_log
+DEPRECATED: use add_header(ctx, header_name, header_value) instead
+DEPRECATED: use set_header(ctx, header_name, header_value) instead
