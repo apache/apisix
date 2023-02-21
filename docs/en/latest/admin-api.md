@@ -63,6 +63,47 @@ deployment:
             port: 9180                  # Specific port, which must be different from node_listen's port.
 ```
 
+### Support environment variables
+
+To configure via environment variables, you can use `${{VAR}}` syntax. For instance:
+
+```yaml title="./conf/config.yaml"
+deployment:
+  admin:
+    admin_key:
+    - name: admin
+      key: ${{ADMIN_KEY}} 
+      role: admin
+    allow_admin:  
+    - 127.0.0.0/24
+    admin_listen:
+      ip: 0.0.0.0            
+      port: 9180                  
+```
+
+ And then run `export ADMIN_KEY=$your_admin_key` before `make init`.
+
+ If the configured environment variable can't be found, an error will be thrown.
+
+ Also, If you want to use default value when the environment variable not set,
+ Use `${{VAR:=default_value}}` instead. For instance:
+
+```yaml title="./conf/config.yaml"
+deployment:
+  admin:
+    admin_key:
+    - name: admin
+      key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}} 
+      role: admin
+    allow_admin:  
+    - 127.0.0.0/24
+    admin_listen:
+      ip: 0.0.0.0            
+      port: 9180                  
+```
+
+This will find environment variable `ADMIN_KEY` first, and if it's not exist it will use `edd1c9f034335f136f87ad84b625c8f1` as default value.
+
 ## V3 new feature
 
 The Admin API has made some breaking changes in V3 version, as well as supporting additional features.
