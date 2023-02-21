@@ -211,6 +211,16 @@ fi
 
 echo "passed: resolve variables"
 
+# support reserved environment variable APISIX_DEPLOYMENT_ETCD_HOST
+
+out=$(APISIX_DEPLOYMENT_ETCD_HOST='["http://127.0.0.2:2379"]' make init 2>&1 || true)
+if ! echo "$out" | grep "Warning! Request etcd endpoint 'http://127.0.0.2:2379/version' error, connection refused"; then
+    echo "failed: failed to configure etcd host with reserved environment variable"
+    exit 1
+fi
+
+echo "passed: configure etcd host with reserved environment variable"
+
 echo '
 nginx_config:
     worker_rlimit_nofile: ${{nofile9}}
