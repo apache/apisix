@@ -74,11 +74,11 @@ deployment:
     - name: admin
       key: ${{ADMIN_KEY}} 
       role: admin
-    allow_admin:  
+    allow_admin:
     - 127.0.0.0/24
     admin_listen:
-      ip: 0.0.0.0            
-      port: 9180                  
+      ip: 0.0.0.0
+      port: 9180     
 ```
 
  And then run `export ADMIN_KEY=$your_admin_key` before `make init`.
@@ -93,13 +93,13 @@ deployment:
   admin:
     admin_key:
     - name: admin
-      key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}} 
+      key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}}
       role: admin
-    allow_admin:  
+    allow_admin:
     - 127.0.0.0/24
     admin_listen:
-      ip: 0.0.0.0            
-      port: 9180                  
+      ip: 0.0.0.0
+      port: 9180       
 ```
 
 This will find environment variable `ADMIN_KEY` first, and if it's not exist it will use `edd1c9f034335f136f87ad84b625c8f1` as default value.
