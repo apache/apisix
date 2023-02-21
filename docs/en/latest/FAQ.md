@@ -717,7 +717,7 @@ deployment:
     password: etcd_password     # password for etcd
 ```
 
-For other ETCD configurations, such as expiration times, retries, and so on, you can see the `ETCD` section in the `conf/config-default.yaml` file.
+For other ETCD configurations, such as expiration times, retries, and so on, you can refer to the `ETCD` section in the `conf/config-default.yaml` file.
 
 ## Where can I find more answers?
 
