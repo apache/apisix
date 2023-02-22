@@ -707,7 +707,7 @@ make GOOS=linux GOARCH=amd64
     prefix: "/apisix"
 ```
 
-## APISIX 如何配置带认证的 ETCD
+## APISIX 如何配置带认证的 ETCD？
 
 假设您有一个启用身份验证的 ETCD 集群。要访问该集群，需要在 `conf/config.yaml` 中为 Apache APISIX 配置正确的用户名和密码：
 
