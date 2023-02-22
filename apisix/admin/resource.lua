@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
+local apisix_ssl = require("apisix.ssl")
 local setmetatable = setmetatable
 local tostring = tostring
 local type = type
@@ -123,6 +124,13 @@ function _M:get(id, conf, sub_path)
         return 503, {error_msg = err}
     end
 
+    if self.name == "ssls" then
+        -- not return private key for security
+        if res.body and res.body.node and res.body.node.value then
+            res.body.node.value.key = nil
+        end
+    end
+
     utils.fix_count(res.body, id)
     return res.status, res.body
 end
@@ -136,6 +144,17 @@ function _M:post(id, conf, sub_path, args)
     local id, err = self:check_conf(id, conf, false)
     if not id then
         return 400, err
+    end
+
+    if self.name == "ssls" then
+        -- encrypt private key
+        conf.key = apisix_ssl.aes_encrypt_pkey(conf.key)
+
+        if conf.keys then
+            for i = 1, #conf.keys do
+                conf.keys[i] = apisix_ssl.aes_encrypt_pkey(conf.keys[i])
+            end
+        end
     end
 
     local key = "/" .. self.name
@@ -179,6 +198,17 @@ function _M:put(id, conf, sub_path, args)
 
     if self.name ~= "secrets" then
         id = ok
+    end
+
+    if self.name == "ssls" then
+        -- encrypt private key
+        conf.key = apisix_ssl.aes_encrypt_pkey(conf.key)
+
+        if conf.keys then
+            for i = 1, #conf.keys do
+                conf.keys[i] = apisix_ssl.aes_encrypt_pkey(conf.keys[i])
+            end
+        end
     end
 
     key = key .. "/" .. id
@@ -297,6 +327,15 @@ function _M:patch(id, conf, sub_path, args)
     local modified_index = res_old.body.node.modifiedIndex
 
     if sub_path and sub_path ~= "" then
+        if self.name == "ssls" then
+            if sub_path == "key" then
+                conf = apisix_ssl.aes_encrypt_pkey(conf)
+            elseif sub_path == "keys" then
+                for i = 1, #conf do
+                    conf[i] = apisix_ssl.aes_encrypt_pkey(conf[i])
+                end
+            end
+        end
         local code, err, node_val = core.table.patch(node_value, sub_path, conf)
         node_value = node_val
         if code then
@@ -304,6 +343,17 @@ function _M:patch(id, conf, sub_path, args)
         end
         utils.inject_timestamp(node_value, nil, true)
     else
+        if self.name == "ssls" then
+            if conf.key then
+                conf.key = apisix_ssl.aes_encrypt_pkey(conf.key)
+            end
+
+            if conf.keys then
+                for i = 1, #conf.keys do
+                    conf.keys[i] = apisix_ssl.aes_encrypt_pkey(conf.keys[i])
+                end
+            end
+        end
         node_value = core.table.merge(node_value, conf)
         utils.inject_timestamp(node_value, nil, conf)
     end
