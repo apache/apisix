@@ -25,7 +25,6 @@ local norm_path = require("pl.path").normpath
 
 local sub        = core.string.sub
 local rfind_char = core.string.rfind_char
-
 local env        = core.env
 
 local schema = {
