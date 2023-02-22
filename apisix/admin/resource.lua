@@ -32,8 +32,8 @@ local mt = {
 
 
 local no_id_res = {
-    consumers = {},
-    plugin_metadata = {}
+    consumers = true,
+    plugin_metadata = true
 }
 
 
