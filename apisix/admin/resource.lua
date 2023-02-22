@@ -37,7 +37,21 @@ local no_id_res = {
 }
 
 
-function _M:check_conf(id, conf, need_id)
+local function split_typ_and_id(id, sub_path)
+    local uri_segs = core.utils.split_uri(sub_path)
+    local typ = id
+    local id = nil
+    if #uri_segs > 0 then
+        id = uri_segs[1]
+    end
+    return typ, id
+end
+
+
+function _M:check_conf(id, conf, need_id, typ)
+    if self.name == "secrets" then
+        id = typ .. "/" .. id
+    end
     -- check if missing configurations
     if not conf then
         return nil, {error_msg = "missing configurations"}
@@ -61,11 +75,16 @@ function _M:check_conf(id, conf, need_id)
         conf.id = id
     end
 
-    core.log.info("schema: ", core.json.delay_encode(self.schema))
     core.log.info("conf  : ", core.json.delay_encode(conf))
 
     -- check the resource own rules
-    local ok, err = self.checker(id, conf, need_id, self.schema)
+    if self.schema then
+        typ = self.schema
+    else
+        core.log.info("schema: ", core.json.delay_encode(self.schema))
+    end
+
+    local ok, err = self.checker(id, conf, need_id, typ)
 
     if not ok then
         return ok, err
@@ -79,13 +98,22 @@ function _M:check_conf(id, conf, need_id)
 end
 
 
-function _M:get(id)
+function _M:get(id, conf, sub_path)
     if core.table.array_find(self.unsupported_methods, "get") then
         return 405, {error_msg = "not supported `GET` method for " .. self.kind}
     end
 
     local key = "/" .. self.name
+    local typ = nil
+    if self.name == "secrets" then
+        key = key .. "/"
+        typ, id = split_typ_and_id(id, sub_path)
+    end
+
     if id then
+        if self.name == "secrets" then
+            key = key .. typ
+        end
         key = key .. "/" .. id
     end
 
@@ -133,13 +161,27 @@ function _M:put(id, conf, sub_path, args)
         return 405, {error_msg = "not supported `PUT` method for " .. self.kind}
     end
 
+    local key = "/" .. self.name
+    local typ = nil
+    if self.name == "secrets" then
+        typ, id = split_typ_and_id(id, sub_path)
+    end
+
+    if self.name == "secrets" then
+        key = key .. "/" .. typ
+    end
+
     local need_id = not no_id_res[self.name]
-    local id, err = self:check_conf(id, conf, need_id)
-    if not id then
+    local ok, err = self:check_conf(id, conf, need_id, typ)
+    if not ok then
         return 400, err
     end
 
-    local key = "/" .. self.name .. "/" .. id
+    if self.name ~= "secrets" then
+        id = ok
+    end
+
+    key = key .. "/" .. id
 
     if self.name ~= "plugin_metadata" then
         local ok, err = utils.inject_conf_with_prev_conf(self.kind, key, conf)
@@ -163,14 +205,28 @@ function _M:put(id, conf, sub_path, args)
 end
 
 
-function _M:delete(id)
+function _M:delete(id, conf, sub_path)
     if core.table.array_find(self.unsupported_methods, "delete") then
         return 405, {error_msg = "not supported `DELETE` method for " .. self.kind}
+    end
+
+    local key = "/" .. self.name
+    local typ = nil
+    if self.name == "secrets" then
+        typ, id = split_typ_and_id(id, sub_path)
     end
 
     if not id then
         return 400, {error_msg = "missing " .. self.kind .. " id"}
     end
+
+    -- core.log.error("failed to delete ", self.kind, "[", key, "] in etcd: ", err)
+
+    if self.name == "secrets" then
+        key = key .. "/" .. typ
+    end
+
+    key = key .. "/" .. id
 
     if self.delete_checker then
         local code, err = self.delete_checker(id)
@@ -179,7 +235,6 @@ function _M:delete(id)
         end
     end
 
-    local key = "/" .. self.name .. "/" .. id
     local res, err = core.etcd.delete(key)
     if not res then
         core.log.error("failed to delete ", self.kind, "[", key, "] in etcd: ", err)
@@ -195,9 +250,27 @@ function _M:patch(id, conf, sub_path, args)
         return 405, {error_msg = "not supported `PATCH` method for " .. self.kind}
     end
 
+    local key = "/" .. self.name
+    local typ = nil
+    if self.name == "secrets" then
+        local uri_segs = core.utils.split_uri(sub_path)
+        if #uri_segs < 2 then
+            return 400, {error_msg = "no secret id and/or sub path in uri"}
+        end
+        typ = id
+        id = uri_segs[1]
+        sub_path = core.table.concat(uri_segs, "/", 2)
+    end
+
     if not id then
         return 400, {error_msg = "missing " .. self.kind .. " id"}
     end
+
+    if self.name == "secrets" then
+        key = key .. "/" .. typ
+    end
+
+    key = key .. "/" .. id
 
     if conf == nil then
         return 400, {error_msg = "missing new configuration"}
@@ -207,11 +280,6 @@ function _M:patch(id, conf, sub_path, args)
         if type(conf) ~= "table"  then
             return 400, {error_msg = "invalid configuration"}
         end
-    end
-
-    local key = "/" .. self.name
-    if id then
-        key = key .. "/" .. id
     end
 
     local res_old, err = core.etcd.get(key)
@@ -242,8 +310,8 @@ function _M:patch(id, conf, sub_path, args)
 
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 
-    local id, err = self:check_conf(id, node_value, true)
-    if not id then
+    local ok, err = self:check_conf(id, node_value, true, typ)
+    if not ok then
         return 400, err
     end
 
