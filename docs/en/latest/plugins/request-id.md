@@ -44,7 +44,9 @@ The Plugin will not add a unique ID if the request already has a header with the
 | ------------------- | ------- | -------- | -------------- | ------------------------------- | ---------------------------------------------------------------------- |
 | header_name         | string  | False    | "X-Request-Id" |                                 | Header name for the unique request ID.                                 |
 | include_in_response | boolean | False    | true           |                                 | When set to `true`, adds the unique request ID in the response header. |
-| algorithm           | string  | False    | "uuid"         | ["uuid", "snowflake", "nanoid"] | Algorithm to use for generating the unique request ID.                 |
+| algorithm           | string  | False    | "uuid"         | ["uuid", "snowflake", "nanoid", "range_id"] | Algorithm to use for generating the unique request ID.                 |
+| range_id.char_set      | string | False | "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789| The minimum string length is 6 | Character set for range_id |
+| range_id.length    | integer | False | 16             | Minimum 6 | Id length for range_id algorithm |
 
 ### Using snowflake algorithm to generate unique ID
 
