@@ -704,7 +704,7 @@ Another solution is to switch to an experimental gRPC-based configuration synchr
     prefix: "/apisix"
 ```
 
-## How does APISIX configure ETCD with authentication
+## How does APISIX configure ETCD with authentication?
 
 Suppose you have an ETCD cluster that enables the auth. To access this cluster, you need to configure the correct username and password for Apache APISIX in `conf/config.yaml`:
 
