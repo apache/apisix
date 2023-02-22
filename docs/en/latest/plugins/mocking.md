@@ -38,7 +38,7 @@ The `mocking` Plugin is used for mocking an API. When executed, it returns rando
 | delay            | integer | False    |                  | Response delay in seconds.                                                             |
 | response_status  | integer | False    | 200              | HTTP status code of the response.                                                      |
 | content_type     | string  | False    | application/json | Header `Content-Type` of the response.                                                 |
-| response_example | string  | False    |                  | Body of the response.                                                                  |
+| response_example | string  | False    |                  | Body of the response, support use variables, like `$remote_addr $consumer_name`.       |
 | response_schema  | object  | False    |                  | The JSON schema object for the response. Works when `response_example` is unspecified. |
 | with_mock_header | boolean | False    | true             | When set to `true`, adds a response header `x-mock-by: APISIX/{version}`.              |
 

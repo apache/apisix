@@ -225,3 +225,59 @@ clickhouse headers: x-clickhouse-key:a
 clickhouse headers: x-clickhouse-user:default
 clickhouse headers: x-clickhouse-database:default
 --- wait: 5
+
+
+
+=== TEST 7: log format in plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "clickhouse-logger": {
+                                "user": "default",
+                                "password": "a",
+                                "database": "default",
+                                "logtable": "t",
+                                "endpoint_addrs": ["http://127.0.0.1:10420/clickhouse-logger/test1"],
+                                "log_format": {
+                                    "vip": "$remote_addr"
+                                },
+                                "batch_max_size":1,
+                                "inactive_timeout":1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 8: hit route and report logger
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 1.5
+--- error_log eval
+qr/clickhouse body: INSERT INTO t FORMAT JSONEachRow \{.*"vip":"127.0.0.1".*\}/
