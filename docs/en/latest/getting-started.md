@@ -125,6 +125,7 @@ First clone the [apisix-docker](https://github.com/apache/apisix-docker) reposit
 
 ```shell
 git clone https://github.com/apache/apisix-docker.git
+git checkout release/2.15
 cd apisix-docker/example
 ```
 

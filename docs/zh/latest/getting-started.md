@@ -117,6 +117,7 @@ curl --location --request GET "http://httpbin.org/get?foo1=bar1&foo2=bar2"
 
 ```bash
 git clone https://github.com/apache/apisix-docker.git
+git checkout release/2.15
 cd apisix-docker/example
 ```
 
