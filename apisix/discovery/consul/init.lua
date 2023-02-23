@@ -46,7 +46,7 @@ local consul_services
 local default_skip_services = {"consul"}
 
 local _M = {
-    version = 0.2,
+    version = 0.3,
 }
 
 
@@ -215,14 +215,38 @@ function _M.connect(premature, consul_server, retry_delay)
 
     -- if current index different last index then update service
     if consul_server.index ~= watch_result.headers['X-Consul-Index'] then
-        local up_services = core.table.new(0, #watch_result.body)
-        local consul_client_svc = resty_consul:new({
+
+        local consul_client_catalog = resty_consul:new({
             host = consul_server.host,
             port = consul_server.port,
             connect_timeout = consul_server.connect_timeout,
             read_timeout = consul_server.read_timeout,
         })
-        for service_name, _ in pairs(watch_result.body) do
+
+        local catalog_result, catalog_err = consul_client_catalog:get(consul_server.consul_catalog_sub_url)
+        local catalog_error_info = (catalog_err ~= nil and catalog_err)
+                or ((catalog_result ~= nil and catalog_result.status ~= 200)
+                and catalog_result.status)
+        if catalog_error_info then
+            log.error("connect consul: ", consul_server.consul_server_url,
+                " by sub url: ", consul_server.consul_catalog_sub_url,
+                ", got watch result: ", json_delay_encode(catalog_result, true),
+                ", with error: ", catalog_error_info)
+            -- retry_delay = get_retry_delay(retry_delay)
+            -- log.warn("retry connecting consul after ", retry_delay, " seconds")
+            -- core_sleep(retry_delay)
+            goto ERR
+        end
+
+        local up_services = core.table.new(0, #catalog_result.body)
+        local consul_client_svc = resty_consul:new({
+            host = consul_server.host,
+            port = consul_server.port,
+            connect_timeout = consul_server.connect_timeout,
+            read_timeout = consul_server.read_timeout,
+            default_args = { passing = "true" },
+        })
+        for service_name, _ in pairs(catalog_result.body) do
             -- check if the service_name is 'skip service'
             if skip_service_map[service_name] then
                 goto CONTINUE
@@ -246,7 +270,7 @@ function _M.connect(premature, consul_server, retry_delay)
                 -- add services to table
                 local nodes = up_services[service_name]
                 for  _, node in ipairs(result.body) do
-                    local svc_address, svc_port = node.ServiceAddress, node.ServicePort
+                    local svc_address, svc_port = node.Service.Address, node.Service.Port
                     if not svc_address then
                         svc_address = node.Address
                     end
@@ -325,8 +349,9 @@ local function format_consul_params(consul_conf)
             port = port,
             connect_timeout = consul_conf.timeout.connect,
             read_timeout = consul_conf.timeout.read,
-            consul_sub_url = "/catalog/service",
-            consul_watch_sub_url = "/catalog/services",
+            consul_catalog_sub_url = "/catalog/services",
+            consul_sub_url = "/health/service",
+            consul_watch_sub_url = "/health/state/any",
             consul_server_url = v .. "/v1",
             weight = consul_conf.weight,
             keepalive = consul_conf.keepalive,
