@@ -220,16 +220,10 @@ deployment:
     config_provider: etcd
   etcd:
     host:
-      - "http://127.0.0.1:2379"
+      - "http://127.0.0.1:2333"
 ' > conf/config.yaml
 
 failed_msg="failed: failed to configure etcd host with reserved environment variable"
-
-out=$(APISIX_DEPLOYMENT_ETCD_HOST='["http://127.0.0.1:2333"]' make init 2>&1 || true)
-if ! echo "$out" | grep "connection refused" > /dev/null; then
-    echo $failed_msg
-    exit 1
-fi
 
 out=$(APISIX_DEPLOYMENT_ETCD_HOST='["http://127.0.0.1:2379"]' make init 2>&1 || true)
 if echo "$out" | grep "connection refused" > /dev/null; then
@@ -238,12 +232,6 @@ if echo "$out" | grep "connection refused" > /dev/null; then
 fi
 
 make stop
-
-out=$(APISIX_DEPLOYMENT_ETCD_HOST='["http://127.0.0.1:2333"]' make run 2>&1 || true)
-if ! echo "$out" | grep "connection refused" > /dev/null; then
-    echo $failed_msg
-    exit 1
-fi
 
 out=$(APISIX_DEPLOYMENT_ETCD_HOST='["http://127.0.0.1:2379"]' make run 2>&1 || true)
 if echo "$out" | grep "connection refused" > /dev/null; then
