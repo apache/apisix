@@ -45,10 +45,6 @@ local function check_conf(plugin_name, conf)
         return nil, {error_msg = "invalid plugin name"}
     end
 
-    if not conf then
-        return nil, {error_msg = "missing configurations"}
-    end
-
     if not plugin_object.metadata_schema then
         plugin_object.metadata_schema = {
             type = "object",
