@@ -47,7 +47,11 @@ This Plugin works with a [Consumer](../terminology/consumer.md) object and a con
 | validate_request_body | boolean       | False    | false         | [ true, false ]                             | When set to `true`, validates the request body.                                                                                                                                                           |
 | max_req_body          | integer       | False    | 512 * 1024    |                                             | Max size of the request body to allow.                                                                                                                                                                    |
 
-NOTE: `encrypt_fields = {"secret_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+:::note
+
+`encrypt_fields = {"secret_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
+:::
 
 ## Enabling the Plugin
 

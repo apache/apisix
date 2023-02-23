@@ -62,7 +62,11 @@ description: OpenID Connect allows the client to obtain user information from th
 | session.secret                       | string  | True     | Automatic generation  | 16 or more characters | The key used for session encrypt and HMAC operation. |
 | unauth_action                        | string  | False    | "auth"                |              | Specify the response type on unauthenticated requests. "auth" redirects to identity provider, "deny" results in a 401 response, "pass" will allow the request without authentication. |
 
-NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+:::note
+
+`encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
+:::
 
 ## Scenarios
 

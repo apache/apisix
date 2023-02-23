@@ -48,7 +48,11 @@ This plugin also allows to push logs as a batch to your Google Cloud Logging Ser
 | log_id                  | False    | apisix.apache.org%2Flogs                                                                                                                                                                             | Google Cloud logging ID. See [LogEntry](https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry) for details.                                          |
 | log_format       | False    |                             | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
-NOTE: `encrypt_fields = {"auth_config.private_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+:::note
+
+`encrypt_fields = {"auth_config.private_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
+:::
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
