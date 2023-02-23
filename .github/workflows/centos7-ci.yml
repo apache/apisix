@@ -149,3 +149,12 @@ jobs:
     - name: Run test cases
       run: |
         docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
+
+    - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
+      name: Save docker images
+      run: |
+        # free disk space
+        bash ./ci/free_disk_space.sh
+        echo "start backing up, $(date)"
+        bash ./ci/backup-docker-images.sh ${{ steps.test_env.outputs.type }}
+        echo "backup done, $(date)"

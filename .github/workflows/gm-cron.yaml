@@ -156,3 +156,12 @@ jobs:
         env:
           TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
         run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
+
+      - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
+        name: Save docker images
+        run: |
+          # free disk space
+          bash ./ci/free_disk_space.sh
+          echo "start backing up, $(date)"
+          bash ./ci/backup-docker-images.sh ${{ steps.test_env.outputs.type }}
+          echo "backup done, $(date)"
