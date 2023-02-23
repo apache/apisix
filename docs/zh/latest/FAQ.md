@@ -707,6 +707,14 @@ make GOOS=linux GOARCH=amd64
     prefix: "/apisix"
 ```
 
+## ssls 和 upstream 配置中的 tls.client 以及 config-default.yaml 中的 ssl_trusted_certificate 它们的区别是什么？
+
+ssls 是通过 `/apisix/admin/ssls` 这个接口进行管理的。如果 APISIX 需要接收来自外网的 HTTPS 请求，那就需要用到存放在这里的证书来握手。SSLS中可以配置多个证书，不同域名的证书 APISIX 将使用 Server Name Indication (SNI) 来做区分。
+
+upstream 中的 `tls.client_cert` `tls.client_key` `tls.client_cert_id`。这里的证书实际上是 Client 端的证书，用于需要与上游进行 mTLS 通信的情况。
+
+config-default.yaml 中的 `ssl_trusted_certificate` 是配置一个受信任的根证书。它仅用于在 APISIX 内部访问某些具有自签名证书的服务（例如 Keycloak）时，避免提示对方证书不合法。需要注意的是，它不用于信任 APISIX 上游的证书，因为 APISIX 不会验证上游证书的合法性。因此，即使上游使用了无效的 TLS 证书，仍然可以访问它，无需配置根证书。
+
 ## 如果在使用 APISIX 过程中遇到问题，我可以在哪里寻求更多帮助？
 
 - [Apache APISIX Slack Channel](/docs/general/join/#加入-slack-频道)：加入后请选择 channel-apisix 频道，即可通过此频道进行 APISIX 相关问题的提问。

@@ -704,6 +704,14 @@ Another solution is to switch to an experimental gRPC-based configuration synchr
     prefix: "/apisix"
 ```
 
+## What is the difference between SSLS and tls.client_cli in upstream configurations, and ssl_trusted_certificate in config-default.yaml?
+
+The `ssls` is managed through the `/apisix/admin/ssls` API. If APISIX needs to receive HTTPS requests from the Internet, the certificate stored here is used for handshake. Multiple certificates can be configured in SSLS, and APISIX uses Server Name Indication (SNI) to differentiate between certificates of different domains.
+
+The `tls.client_cert`, `tls.client_key`, and `tls.client_cert_id` in upstream are actually certificates for the client, used in cases where mTLS communication is required with the upstream.
+
+The `ssl_trusted_certificate` in config-default.yaml configures a trusted root certificate. It is only used for accessing services with self-signed certificates (such as Keycloak) within APISIX, to avoid prompting that the certificate of the other party is invalid. Note that it is not used to trust the certificates of APISIX upstream, because APISIX does not verify the legality of the upstream certificates. Therefore, even if the upstream uses an invalid TLS certificate, it can still be accessed without configuring a root certificate.
+
 ## Where can I find more answers?
 
 You can find more answers on:
