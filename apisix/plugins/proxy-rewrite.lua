@@ -272,7 +272,11 @@ function _M.rewrite(conf, ctx)
         separator_escaped = true
         upstream_uri = core.utils.resolve_var(conf.uri, ctx.var, escape_separator)
     elseif conf.regex_uri ~= nil then
-        local uri, _, err = re_sub(ctx.var.uri, conf.regex_uri[1],
+        if not str_find(upstream_uri, "?") then
+            separator_escaped = true
+        end
+
+        local uri, _, err = re_sub(upstream_uri, conf.regex_uri[1],
                                    conf.regex_uri[2], "jo")
         if uri then
             upstream_uri = uri
