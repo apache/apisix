@@ -109,13 +109,19 @@ function _M.header(ctx, name)
     return _headers(ctx)[name]
 end
 
-local function modify_header(ctx, header_name, header_value, update_func, override)
+local function modify_header(ctx, header_name, header_value, override)
     if type(ctx) == "string" then
         -- It would be simpler to keep compatibility if we put 'ctx'
         -- after 'header_value', but the style is too ugly!
         header_value = header_name
         header_name = ctx
         ctx = nil
+
+        if override then
+            log.warn("DEPRECATED: use set_header(ctx, header_name, header_value) instead")
+        else
+            log.warn("DEPRECATED: use add_header(ctx, header_name, header_value) instead")
+        end
     end
 
     local err
@@ -129,7 +135,11 @@ local function modify_header(ctx, header_name, header_value, update_func, overri
         changed = a6_request.is_request_header_set()
     end
 
-    update_func(header_name, header_value)
+    if override then
+        ngx.req.set_header(header_name, header_value)
+    else
+        req_add_header(header_name, header_value)
+    end
 
     if is_apisix_or and not changed then
         -- if the headers are not changed before,
@@ -151,19 +161,11 @@ local function modify_header(ctx, header_name, header_value, update_func, overri
 end
 
 function _M.set_header(ctx, header_name, header_value)
-    if type(ctx) == "string" then
-        log.warn("DEPRECATED: use set_header(ctx, header_name, header_value) instead")
-    end
-
-    modify_header(ctx, header_name, header_value, ngx.req.set_header, true)
+    modify_header(ctx, header_name, header_value, true)
 end
 
 function _M.add_header(ctx, header_name, header_value)
-    if type(ctx) == "string" then
-        log.warn("DEPRECATED: use add_header(ctx, header_name, header_value) instead")
-    end
-
-    modify_header(ctx, header_name, header_value, req_add_header, false)
+    modify_header(ctx, header_name, header_value, false)
 end
 
 -- return the remote address of client which directly connecting to APISIX.

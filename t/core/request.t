@@ -454,16 +454,16 @@ $s
             ngx.say(h)
             core.request.add_header(ctx, "test_header", "t2")
             local h2 = core.request.header(ctx, "test_header")
-            ngx.say("[" .. table.concat(h2, ", ") .. "]")
+            ngx.say(core.json.encode(h2))
             core.request.add_header(ctx, "test_header", "t3")
             local h3 = core.request.header(ctx, "test_header")
-            ngx.say("[" .. table.concat(h3, ", ") .. "]")
+            ngx.say(core.json.encode(h3))
         }
     }
 --- response_body
 test
-[test, t2]
-[test, t2, t3]
+["test","t2"]
+["test","t2","t3"]
 
 
 
