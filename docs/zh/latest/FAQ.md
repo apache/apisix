@@ -707,6 +707,10 @@ make GOOS=linux GOARCH=amd64
     prefix: "/apisix"
 ```
 
+## 为什么 file-logger 记录日志会出现乱码？
+
+如果你使用的是 `file-logger` 插件，但是在日志文件中出现了乱码，那么可能是因为你的上游的响应返回是压缩格式的响应主体。你可以将请求头带上不接收压缩响应参数以解决这个问题。
+
 ## 如果在使用 APISIX 过程中遇到问题，我可以在哪里寻求更多帮助？
 
 - [Apache APISIX Slack Channel](/docs/general/join/#加入-slack-频道)：加入后请选择 channel-apisix 频道，即可通过此频道进行 APISIX 相关问题的提问。
