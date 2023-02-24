@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v3.3.0
         with:
           submodules: recursive
       - uses: ./.github/actions/action-semantic-pull-request
