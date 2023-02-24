@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+BEGIN {
+    $ENV{VAULT_TOKEN} = "root";
+}
+
 use t::APISIX 'no_plan';
 
 repeat_each(2);
@@ -634,6 +638,58 @@ Success! Data written to: kv/apisix/jack
 
 
 === TEST 30: verify auth request
+--- request
+GET /hello?auth=authtwo
+--- response_args
+auth: authtwo
+
+
+
+=== TEST 31: set key-auth conf with the token in an env var: key uses secret ref
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- put secret vault config
+            local etcd = require("apisix.core.etcd")
+            local code, body = t('/apisix/admin/secrets/vault/test1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://127.0.0.1:8200",
+                    "prefix" : "kv/apisix",
+                    "token" : "$ENV://VAULT_TOKEN"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+            -- change consumer with secrets ref: vault
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "$secret://vault/test1/jack/key"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 32: verify auth request
 --- request
 GET /hello?auth=authtwo
 --- response_args
