@@ -267,7 +267,10 @@ function _M.connect(premature, consul_server, retry_delay)
                 -- add services to table
                 local nodes = up_services[service_name]
                 for  _, node in ipairs(result.body) do
-                    local svc_address, svc_port = node.Service.Address, node.Service.Port
+                    local svc_address, svc_port = nil, nil
+                    if node.Service then
+                        svc_address, svc_port = node.Service.Address, node.Service.Port
+                    end
                     if not svc_address then
                         svc_address = node.Address
                     end
