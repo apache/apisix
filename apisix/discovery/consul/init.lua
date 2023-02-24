@@ -223,7 +223,9 @@ function _M.connect(premature, consul_server, retry_delay)
             read_timeout = consul_server.read_timeout,
         })
 
-        local catalog_result, catalog_err = consul_client_catalog:get(consul_server.consul_catalog_sub_url)
+        local catalog_result, catalog_err = consul_client_catalog:get(
+            consul_server.consul_catalog_sub_url
+        )
         local catalog_error_info = (catalog_err ~= nil and catalog_err)
                 or ((catalog_result ~= nil and catalog_result.status ~= 200)
                 and catalog_result.status)
@@ -240,7 +242,7 @@ function _M.connect(premature, consul_server, retry_delay)
             host = consul_server.host,
             port = consul_server.port,
             connect_timeout = consul_server.connect_timeout,
-            read_timeout = consul_server.read_timeout,            
+            read_timeout = consul_server.read_timeout,
         })
         for service_name, _ in pairs(catalog_result.body) do
             -- check if the service_name is 'skip service'
@@ -267,12 +269,11 @@ function _M.connect(premature, consul_server, retry_delay)
                 -- add services to table
                 local nodes = up_services[service_name]
                 for  _, node in ipairs(result.body) do
-                    local svc_address, svc_port = nil, nil
-                    if node.Service then
-                        svc_address, svc_port = node.Service.Address, node.Service.Port
-                    else
+                    if not node.Service then
                         goto CONTINUE
                     end
+
+                    local svc_address, svc_port = node.Service.Address, node.Service.Port
                     if not svc_address then
                         svc_address = node.Address
                     end
