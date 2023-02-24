@@ -232,9 +232,6 @@ function _M.connect(premature, consul_server, retry_delay)
                 " by sub url: ", consul_server.consul_catalog_sub_url,
                 ", got watch result: ", json_delay_encode(catalog_result, true),
                 ", with error: ", catalog_error_info)
-            -- retry_delay = get_retry_delay(retry_delay)
-            -- log.warn("retry connecting consul after ", retry_delay, " seconds")
-            -- core_sleep(retry_delay)
             goto ERR
         end
 
