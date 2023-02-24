@@ -46,7 +46,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: prepare nodes
+=== TEST 1: prepare nodes (with health check)
 --- config
 location /v1/agent {
     proxy_pass http://127.0.0.1:8500;
@@ -57,16 +57,17 @@ location /v1/agent {
     "PUT /v1/agent/service/deregister/service_a2",
     "PUT /v1/agent/service/deregister/service_b1",
     "PUT /v1/agent/service/deregister/service_b2",
-    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
-    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_b1\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":8002,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"Checks\": [{\"http\": \"http://127.0.0.1:30513\",\"interval\": \"1s\"}],\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"Checks\": [{\"http\": \"http://127.0.0.1:8002\",\"interval\": \"1s\"}],{\"ID\":\"service_b1\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":8002,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"Checks\": [{\"http\": \"http://127.0.0.1:9000\",\"interval\": \"1s\"}],{\"ID\":\"service_b1\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":9000,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
 ]
 --- response_body eval
 --- error_code eval
-[200, 200, 200, 200, 200, 200]
+[200, 200, 200, 200, 200, 200, 200]
 
 
 
-=== TEST 2: show dump services
+=== TEST 2: show dump services (with health check)
 --- yaml_config
 apisix:
   node_listen: 1984
