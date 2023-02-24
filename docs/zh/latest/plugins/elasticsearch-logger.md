@@ -38,15 +38,15 @@ description: 本文介绍了 API 网关 Apache APISIX 的 elasticsearch-logger �
 
 | 名称          | 类型    | 必选项 | 默认值               | 描述                                                         |
 | ------------- | ------- | -------- | -------------------- | ------------------------------------------------------------ |
-| endpoint_addr | string  | 废弃       |                      | Elasticsearch API。推荐使用 `endpoint_addrs`                                           |
-| endpoint_addrs | array  | 是       |                      | Elasticsearch API。如果配置多个 `endpoints`，日志将会随机写入到各个 `endpoints`。                                           |
+| endpoint_addr | string  | 废弃       |                      | Elasticsearch API 推荐使用 `endpoint_addrs`                                           |
+| endpoint_addrs | array  | 是       |                      | Elasticsearch API。如果配置多个 `endpoints`，日志将会随机写入到各个 `endpoints`                                           |
 | field         | array   | 是       |                      | Elasticsearch `field`配置信息。                                |
-| field.index   | string  | 是       |                      | Elasticsearch `[_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field)`。 |
-| field.type    | string  | 否       | Elasticsearch 默认值 | Elasticsearch `[_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field)` |
+| field.index   | string  | 是       |                      | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field) |
+| field.type    | string  | 否       | Elasticsearch 默认值 | Elasticsearch [_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field) |
 | log_format    | object  | 否   |          | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
-| auth          | array   | 否       |                      | Elasticsearch `[authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html)` 配置信息 |
-| auth.username | string  | 是       |                      | Elasticsearch `[authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html)` 用户名。 |
-| auth.password | string  | 是       |                      | Elasticsearch `[authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html)` 密码。 |
+| auth          | array   | 否       |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 配置信息 |
+| auth.username | string  | 是       |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 用户名。 |
+| auth.password | string  | 是       |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 密码。 |
 | ssl_verify    | boolean | 否       | true                 | 当设置为 `true` 时则启用 SSL 验证。更多信息请参考 [lua-nginx-module](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake)。 |
 | timeout       | integer | 否       | 10                   | 发送给 Elasticsearch 请求超时时间。                            |
 
