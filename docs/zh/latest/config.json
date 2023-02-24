@@ -56,9 +56,11 @@
             "plugins/gzip",
             "plugins/real-ip",
             "plugins/server-info",
-            "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-pre-req",
-            "plugins/ext-plugin-post-resp"
+            "plugins/ext-plugin-post-req",
+            "plugins/ext-plugin-post-resp",
+            "plugins/inspect",
+            "plugins/workflow"
           ]
         },
         {
@@ -178,7 +180,6 @@
             "plugins/azure-functions",
             "plugins/openwhisk",
             "plugins/aws-lambda",
-            "plugins/workflow",
             "plugins/openfunction"
           ]
         },
