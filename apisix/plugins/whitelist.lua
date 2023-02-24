@@ -357,7 +357,7 @@ end
 
 local function check_access(self, network, method, monthly_quota, default_paid_quota)
     -- if network has inner- prefix, grant access
-    if string.find(network, "inner-") then
+    if string.find(network, "inner-") or string.find(network, "das-account-indexer") then
         return nil
     end
 
