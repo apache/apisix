@@ -449,15 +449,16 @@ $s
             local core = require("apisix.core")
             ngx.ctx.api_ctx = {}
             local ctx = ngx.ctx.api_ctx
+            local json = require("toolkit.json")
             core.request.add_header(ctx, "test_header", "test")
             local h = core.request.header(ctx, "test_header")
             ngx.say(h)
             core.request.add_header(ctx, "test_header", "t2")
             local h2 = core.request.header(ctx, "test_header")
-            ngx.say(core.json.encode(h2))
+            ngx.say(json.encode(h2))
             core.request.add_header(ctx, "test_header", "t3")
             local h3 = core.request.header(ctx, "test_header")
-            ngx.say(core.json.encode(h3))
+            ngx.say(json.encode(h3))
         }
     }
 --- response_body
