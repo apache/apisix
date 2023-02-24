@@ -46,7 +46,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: prepare nodes (with health check)
+=== TEST 1: prepare nodes (with consul health check)
 --- config
 location /v1/agent {
     proxy_pass http://127.0.0.1:8500;
@@ -67,7 +67,7 @@ location /v1/agent {
 
 
 
-=== TEST 2: show dump services (with health check)
+=== TEST 2: show dump services
 --- yaml_config
 apisix:
   node_listen: 1984
