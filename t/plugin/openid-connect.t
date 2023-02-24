@@ -1303,3 +1303,92 @@ passed
     }
 --- response_body_like
 x-userinfo: ey.*
+
+
+
+=== TEST 34: Re-configure plugin with redirect_after_logout_uri option.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
+                                "realm": "University",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "redirect_after_logout_uri" : "https://iresty.com"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 35: Access route w/o bearer token and request logout to verify the redirected url is the same than redirect_after_logout_uri url.
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local login_keycloak = require("lib.keycloak").login_keycloak
+            local concatenate_cookies = require("lib.keycloak").concatenate_cookies
+
+            local httpc = http.new()
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = login_keycloak(uri, "teacher@gmail.com", "123456")
+            if err then
+                ngx.status = 500
+                return
+            end
+
+            local cookie_str = concatenate_cookies(res.headers['Set-Cookie'])
+
+            -- Request the logout uri with the log-in cookie
+            local logout_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/logout"
+            res, err = httpc:request_uri(logout_uri, {
+                    method = "GET",
+                    headers = {
+                        ["Cookie"] = cookie_str
+                    }
+            })
+            if not res then
+                -- No response, must be an error
+                -- Use 500 to indicate error
+                ngx.status = 500
+                ngx.say(err)
+                return
+            elseif res.status ~= 302 then
+                ngx.status = 500
+                ngx.say("Request the logout URI didn't return the expected status.")
+                return
+            end
+
+            ngx.status = 200
+            ngx.say(res.headers["Location"])
+        }
+    }
+--- response_body_like
+https://iresty.com

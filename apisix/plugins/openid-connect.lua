@@ -78,6 +78,12 @@ local schema = {
             type = "string",
             default = "/logout",
         },
+        redirect_after_logout_uri = {
+            type = "string",
+            description = "Where should the user be redirected after logout from the RP." ..
+                "This option overrides any end_session_endpoint that the OP may have provided " ..
+                "in the discovery response."
+        },
         redirect_uri = {
             type = "string",
             description = "use ngx.var.request_uri if not configured"
