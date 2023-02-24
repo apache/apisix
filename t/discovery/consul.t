@@ -576,8 +576,3 @@ GET /thc
 [{"host":"127.0.0.1","port":30513,"priority":0,"weight":1},{"host":"127.0.0.1","port":30514,"priority":0,"weight":1}]
 [{"host":"127.0.0.1","port":30513,"priority":0,"weight":1},{"host":"127.0.0.1","port":30514,"priority":0,"weight":1}]
 --- ignore_error_log
-
-
-
-
-
