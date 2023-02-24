@@ -243,8 +243,7 @@ function _M.connect(premature, consul_server, retry_delay)
             host = consul_server.host,
             port = consul_server.port,
             connect_timeout = consul_server.connect_timeout,
-            read_timeout = consul_server.read_timeout,
-            default_args = { passing = "true" },
+            read_timeout = consul_server.read_timeout,            
         })
         for service_name, _ in pairs(catalog_result.body) do
             -- check if the service_name is 'skip service'
@@ -253,7 +252,8 @@ function _M.connect(premature, consul_server, retry_delay)
             end
             -- get node from service
             local svc_url = consul_server.consul_sub_url .. "/" .. service_name
-            local result, err = consul_client_svc:get(svc_url)
+            local svc_args = { passing = "true" }
+            local result, err = consul_client_svc:get(svc_url,svc_args)
             local error_info = (err ~= nil and err) or
                     ((result ~= nil and result.status ~= 200) and result.status)
             if error_info then
