@@ -270,6 +270,8 @@ function _M.connect(premature, consul_server, retry_delay)
                     local svc_address, svc_port = nil, nil
                     if node.Service then
                         svc_address, svc_port = node.Service.Address, node.Service.Port
+                    else
+                        goto CONTINUE
                     end
                     if not svc_address then
                         svc_address = node.Address
