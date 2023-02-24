@@ -156,7 +156,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 - Apache APISIX 是一个通过 `RPC` 和 `Wasm` 支持不同语言来进行插件开发的网关。
   ![Multi Language Support into Apache APISIX](../../../docs/assets/images/external-plugin.png)
     - RPC 是当前采用的开发方式。开发者可以使用他们需要的语言来进行 RPC 服务的开发，该 RPC 通过本地通讯来跟 APISIX 进行数据交换。到目前为止，APISIX 已支持[Java](https://github.com/apache/apisix-java-plugin-runner), [Golang](https://github.com/apache/apisix-go-plugin-runner), [Python](https://github.com/apache/apisix-python-plugin-runner) 和 Node.js。
-    - Wasm 或 WebAssembly 是实验性的开发方式。 APISIX 能加载运行使用[Proxy Wasm SDK](https://github.com/proxy-wasm/spec#sdks)编译的 Wasm 字节码。开发者仅需要使用该 SDK 编写代码，然后编译成 Wasm 字节码，即可运行在 APISIX 中的 Wasm 虚拟机中。
+    - Wasm 或 WebAssembly 是实验性的开发方式。APISIX 能加载运行使用[Proxy Wasm SDK](https://github.com/proxy-wasm/spec#sdks)编译的 Wasm 字节码。开发者仅需要使用该 SDK 编写代码，然后编译成 Wasm 字节码，即可运行在 APISIX 中的 Wasm 虚拟机中。
 
 - **Serverless**
     - [Lua functions](plugins/serverless.md)：能在 APISIX 每个阶段调用 lua 函数。
@@ -214,7 +214,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 ## 用户实际使用案例
 
 - [新浪微博：基于 Apache APISIX，新浪微博 API 网关的定制化开发之路](https://apisix.apache.org/blog/2021/07/14/the-road-to-customization-of-Sina-Weibo-API-gateway-based-on-Apache-APISIX)
-- [欧盟数字工厂平台: API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
+- [欧盟数字工厂平台：API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
 - [贝壳找房：如何基于 Apache APISIX 搭建网关](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
 - [360：Apache APISIX 在基础运维平台项目中的实践](https://mp.weixin.qq.com/s/mF8w8hW4alIMww0MSu9Sjg)
 - [HelloTalk：基于 OpenResty 和 Apache APISIX 的全球化探索之路](https://www.upyun.com/opentalk/447.html)
