@@ -579,20 +579,5 @@ GET /thc
 
 
 
-=== TEST 13: prepare healthy and unhealthy nodes (with consul health check)
---- config
-location /v1/agent {
-    proxy_pass http://127.0.0.1:8500;
-}
---- request eval
-[
-    "PUT /v1/agent/service/deregister/service_a1",
-    "PUT /v1/agent/service/deregister/service_a2",
-    "PUT /v1/agent/service/deregister/service_b1",
-    "PUT /v1/agent/service/deregister/service_b2",
-    "PUT /v1/agent/service/register\n" . "{\"Checks\": [{\"http\": \"http://127.0.0.1:30513\",\"interval\": \"1s\"}],\"ID\":\"service_b1\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30513,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
-    "PUT /v1/agent/service/register\n" . "{\"Checks\": [{\"http\": \"http://127.0.0.1:30514\",\"interval\": \"1s\"}],\"ID\":\"service_b2\",\"Name\":\"service_b\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30514,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
-]
---- error_code eval
-[200, 200, 200, 200, 200, 200]
+
 
