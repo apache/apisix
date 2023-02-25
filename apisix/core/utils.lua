@@ -293,6 +293,7 @@ do
     local _ctx
     local n_resolved
     local pat = [[(?<!\\)\$\{?(\w+)\}?]]
+    local _escaper
 
     local function resolve(m)
         local v = _ctx[m[1]]
@@ -300,10 +301,13 @@ do
             return ""
         end
         n_resolved = n_resolved + 1
+        if _escaper then
+            return _escaper(tostring(v))
+        end
         return tostring(v)
     end
 
-    function resolve_var(tpl, ctx)
+    function resolve_var(tpl, ctx, escaper)
         n_resolved = 0
         if not tpl then
             return tpl, nil, n_resolved
@@ -316,8 +320,10 @@ do
 
         -- avoid creating temporary function
         _ctx = ctx
+        _escaper = escaper
         local res, _, err = re_gsub(tpl, pat, resolve, "jo")
         _ctx = nil
+        _escaper = nil
         if not res then
             return nil, err
         end
