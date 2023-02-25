@@ -297,11 +297,11 @@ end
 
 function _M.header_filter(conf, ctx)
     local req_origin =  ctx.original_request_origin
-    -- Try allow_origins first, if mismatched, try allow_origins_by_regex.
+    -- Try allow_origins_by_regex first, if mismatched and allow_origins_by_regex is not nil, try allow_origins
     local allow_origins
-    allow_origins = process_with_allow_origins(conf.allow_origins, ctx, req_origin)
-    if not match_origins(req_origin, allow_origins) then
-        allow_origins = process_with_allow_origins_by_regex(conf, ctx, req_origin)
+    allow_origins = process_with_allow_origins_by_regex(conf, ctx, req_origin)
+    if not match_origins(req_origin, allow_origins) and conf.allow_origins_by_regex == nil then
+		allow_origins = process_with_allow_origins(conf.allow_origins, ctx, req_origin)
     end
     if not allow_origins then
         allow_origins = process_with_allow_origins_by_metadata(
