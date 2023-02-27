@@ -22,7 +22,7 @@ local resource = require("apisix.admin.resource")
 local pcall = pcall
 
 
-local function check_conf(id, conf, need_id, typ)
+local function check_conf(id, conf, need_id, schema, typ)
     local ok, secret_manager = pcall(require, "apisix.secret." .. typ)
     if not ok then
         return false, {error_msg = "invalid secret manager: " .. typ}

@@ -79,13 +79,11 @@ function _M:check_conf(id, conf, need_id, typ)
     core.log.info("conf  : ", core.json.delay_encode(conf))
 
     -- check the resource own rules
-    if self.schema then
-        typ = self.schema
-    else
+    if self.name == "secrets" then
         core.log.info("schema: ", core.json.delay_encode(self.schema))
     end
 
-    local ok, err = self.checker(id, conf, need_id, typ)
+    local ok, err = self.checker(id, conf, need_id, self.schema, typ)
 
     if not ok then
         return ok, err
