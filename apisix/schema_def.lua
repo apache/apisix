@@ -236,7 +236,7 @@ local health_checker = {
                         },
                         successes = {
                             type = "integer",
-                            minimum = 0,
+                            minimum = 1,
                             maximum = 254,
                             default = 5
                         }
