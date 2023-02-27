@@ -79,7 +79,7 @@ function _M:check_conf(id, conf, need_id, typ)
     core.log.info("conf  : ", core.json.delay_encode(conf))
 
     -- check the resource own rules
-    if self.name == "secrets" then
+    if self.name ~= "secrets" then
         core.log.info("schema: ", core.json.delay_encode(self.schema))
     end
 
