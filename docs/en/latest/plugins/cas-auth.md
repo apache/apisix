@@ -2,6 +2,7 @@
 title: cas-auth
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - CAS AUTH
   - cas-auth

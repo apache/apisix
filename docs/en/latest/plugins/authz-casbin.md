@@ -2,6 +2,7 @@
 title: authz-casbin
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - Authz Casbin
   - authz-casbin
@@ -31,7 +32,7 @@ description: This document contains information about the Apache APISIX authz-ca
 
 The `authz-casbin` Plugin is an authorization Plugin based on [Lua Casbin](https://github.com/casbin/lua-casbin/). This Plugin supports powerful authorization scenarios based on various [access control models](https://casbin.org/docs/en/supported-models).
 
-## Attributes
+## Attribute
 
 | Name        | Type   | Required | Description                                                                            |
 |-------------|--------|----------|----------------------------------------------------------------------------------------|

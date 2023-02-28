@@ -2,6 +2,7 @@
 title: body-transformer
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - BODY TRANSFORMER
   - body-transformer

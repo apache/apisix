@@ -3,6 +3,7 @@ title: azure-functions
 keywords:
   - APISIX
   - Plugin
+  - API Gateway
   - Azure Functions
   - azure-functions
 description: This document contains information about the Apache APISIX azure-functions Plugin.

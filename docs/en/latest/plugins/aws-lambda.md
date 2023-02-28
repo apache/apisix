@@ -3,6 +3,7 @@ title: aws-lambda
 keywords:
   - APISIX
   - Plugin
+  - API Gateway
   - AWS Lambda
   - aws-lambda
 description: This document contains information about the Apache APISIX aws-lambda Plugin.

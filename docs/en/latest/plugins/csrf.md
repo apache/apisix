@@ -2,6 +2,7 @@
 title: csrf
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - Cross-site request forgery
   - csrf
