@@ -182,16 +182,13 @@ function _M:put(id, conf, sub_path, args)
     local typ = nil
     if self.name == "secrets" then
         typ, id = split_typ_and_id(id, sub_path)
+        key = key .. "/" .. typ
     end
 
     local need_id = not no_id_res[self.name]
     local id, err = self:check_conf(id, conf, need_id)
     if not id then
         return 400, err
-    end
-
-    if self.name == "secrets" then
-        key = key .. "/" .. typ
     end
 
     local need_id = not no_id_res[self.name]
@@ -239,7 +236,7 @@ function _M:put(id, conf, sub_path, args)
 end
 
 
-function _M:delete(id, conf, sub_path)
+function _M:delete(id, sub_path)
     if core.table.array_find(self.unsupported_methods, "delete") then
         return 405, {error_msg = "not supported `DELETE` method for " .. self.kind}
     end
