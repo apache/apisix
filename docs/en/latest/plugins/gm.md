@@ -2,6 +2,7 @@
 title: GM
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - GM
 description: This article introduces the basic information and usage of the Apache APISIX `gm` plugin.
