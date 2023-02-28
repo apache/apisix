@@ -236,7 +236,7 @@ function _M:put(id, conf, sub_path, args)
 end
 
 
-function _M:delete(id, sub_path)
+function _M:delete(id, conf, sub_path)
     if core.table.array_find(self.unsupported_methods, "delete") then
         return 405, {error_msg = "not supported `DELETE` method for " .. self.kind}
     end
