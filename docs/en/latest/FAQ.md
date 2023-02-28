@@ -708,7 +708,7 @@ Another solution is to switch to an experimental gRPC-based configuration synchr
 
 The `ssls` is managed through the `/apisix/admin/ssls` API. It's used for managing TLS certificates. These certificates may be used during TLS handshake (between Apache APISIX and its clients). Apache APISIX uses Server Name Indication (SNI) to differentiate between certificates of different domains.
 
-The `tls.client_cert`, `tls.client_key`, and `tls.client_cert_id` in upstream are actually certificates for the client, used in cases where mTLS communication is required with the upstream.
+The `tls.client_cert`, `tls.client_key`, and `tls.client_cert_id` in upstream are used for mTLS communication with the upstream.
 
 The `ssl_trusted_certificate` in config-default.yaml configures a trusted root certificate. It is only used for accessing services with self-signed certificates (such as Keycloak) within APISIX, to avoid prompting that the certificate of the other party is invalid. Note that it is not used to trust the certificates of APISIX upstream, because APISIX does not verify the legality of the upstream certificates. Therefore, even if the upstream uses an invalid TLS certificate, it can still be accessed without configuring a root certificate.
 
