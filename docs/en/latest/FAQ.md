@@ -704,7 +704,7 @@ Another solution is to switch to an experimental gRPC-based configuration synchr
     prefix: "/apisix"
 ```
 
-## What is the difference between SSLS and tls.client_cert in upstream configurations, and ssl_trusted_certificate in config-default.yaml?
+## What is the difference between SSLs and tls.client_cert in upstream configurations, and ssl_trusted_certificate in config-default.yaml?
 
 The `ssls` is managed through the `/apisix/admin/ssls` API. It's used for managing TLS certificates. These certificates may be used during TLS handshake (between Apache APISIX and its clients). Apache APISIX uses Server Name Indication (SNI) to differentiate between certificates of different domains.
 
