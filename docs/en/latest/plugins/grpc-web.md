@@ -2,6 +2,7 @@
 title: grpc-web
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - gRPC Web
   - grpc-web
