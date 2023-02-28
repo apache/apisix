@@ -709,7 +709,7 @@ make GOOS=linux GOARCH=amd64
 
 ## SSL 对象与 `upstream` 对象中的 `tls.client_cert` 以及 `config-default.yaml` 中的 `ssl_trusted_certificate` 区别是什么？
 
-ssls 是通过 `/apisix/admin/ssls` 这个接口进行管理的。如果 APISIX 需要接收来自外网的 HTTPS 请求，那就需要用到存放在这里的证书来握手。SSLS 中可以配置多个证书，不同域名的证书 APISIX 将使用 Server Name Indication (SNI) 来做区分。
+Admin API 中 `/apisix/admin/ssls` 用于管理 SSL 对象，如果 APISIX 需要接收来自外网的 HTTPS 请求，那就需要用到存放在这里的证书完成握手。SSL 对象中支持配置多个证书，不同域名的证书 APISIX 将使用 Server Name Indication (SNI) 进行区分。
 
 upstream 中的 `tls.client_cert` `tls.client_key` `tls.client_cert_id`。这里的证书实际上是 Client 端的证书，用于需要与上游进行 mTLS 通信的情况。
 
