@@ -2,6 +2,7 @@
 title: grpc-transcode
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - gRPC Transcode
   - grpc-transcode
