@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -17,15 +16,16 @@
 # limitations under the License.
 #
 
-ETCD_ARCH="amd64"
-ETCD_VERSION=${ETCD_VERSION:-'3.5.4'}
-ARCH=${ARCH:-`(uname -m | tr '[:upper:]' '[:lower:]')`}
+# GitHub Action CI runner comes with a limited disk space, due to several reasons
+# it may become full. For example, caching docker images creates an archive of
+# several GBs of size, this sometimes leads to disk usage becoming full.
+# To keep CI functional, we delete large directories that we do not need.
 
-if [[ $ARCH == "arm64" ]] || [[ $ARCH == "aarch64" ]]; then
-    ETCD_ARCH="arm64"
-fi
+echo "=============================================================================="
+echo "Freeing up disk space on CI system"
+echo "=============================================================================="
 
-wget -q https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-${ETCD_ARCH}.tar.gz
-tar xf etcd-v${ETCD_VERSION}-linux-${ETCD_ARCH}.tar.gz
-sudo cp etcd-v${ETCD_VERSION}-linux-${ETCD_ARCH}/etcdctl /usr/local/bin/
-rm -rf etcd-v${ETCD_VERSION}-linux-${ETCD_ARCH}
+df -h
+echo "Removing unnecessary large directories"
+sudo rm -rf /usr/local/lib/android /usr/share/dotnet /usr/share/swift
+df -h

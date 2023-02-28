@@ -184,6 +184,12 @@ function _M:put(id, conf, sub_path, args)
         typ, id = split_typ_and_id(id, sub_path)
     end
 
+    local need_id = not no_id_res[self.name]
+    local id, err = self:check_conf(id, conf, need_id)
+    if not id then
+        return 400, err
+    end
+
     if self.name == "secrets" then
         key = key .. "/" .. typ
     end

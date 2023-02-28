@@ -36,10 +36,9 @@ local span_status = require("opentelemetry.trace.span_status")
 local resource_new = require("opentelemetry.resource").new
 local attr = require("opentelemetry.attribute")
 
-local context_storage = require("opentelemetry.context_storage")
-local context = require("opentelemetry.context").new(context_storage)
-local carrier_new = require("opentelemetry.trace.propagation.carrier").new
-local trace_context = require("opentelemetry.trace.propagation.trace_context")
+local context = require("opentelemetry.context").new()
+local trace_context_propagator =
+                require("opentelemetry.trace.propagation.text_map.trace_context_propagator").new()
 
 local ngx     = ngx
 local ngx_var = ngx.var
@@ -310,7 +309,7 @@ function _M.rewrite(conf, api_ctx)
     end
 
     -- extract trace context from the headers of downstream HTTP request
-    local upstream_context = trace_context.extract(context, carrier_new())
+    local upstream_context = trace_context_propagator:extract(context, ngx.req)
     local attributes = {
         attr.string("service", api_ctx.service_name),
         attr.string("route", api_ctx.route_name),
@@ -333,27 +332,24 @@ function _M.rewrite(conf, api_ctx)
         kind = span_kind.server,
         attributes = attributes,
     })
-    ctx:attach()
+    api_ctx.otel_context_token = ctx:attach()
 
     -- inject trace context into the headers of upstream HTTP request
-    trace_context.inject(ctx, carrier_new())
+    trace_context_propagator:inject(ctx, ngx.req)
 end
 
 
 function _M.delayed_body_filter(conf, api_ctx)
-    if ngx.arg[2] then
+    if api_ctx.otel_context_token and ngx.arg[2] then
         local ctx = context:current()
-        if not ctx then
-            return
-        end
-
-        local upstream_status = core.response.get_upstream_status(api_ctx)
-        ctx:detach()
+        ctx:detach(api_ctx.otel_context_token)
+        api_ctx.otel_context_token = nil
 
         -- get span from current context
         local span = ctx:span()
+        local upstream_status = core.response.get_upstream_status(api_ctx)
         if upstream_status and upstream_status >= 500 then
-            span:set_status(span_status.error,
+            span:set_status(span_status.ERROR,
                             "upstream response status: " .. upstream_status)
         end
 
@@ -365,15 +361,14 @@ end
 -- body_filter maybe not called because of empty http body response
 -- so we need to check if the span has finished in log phase
 function _M.log(conf, api_ctx)
-    local ctx = context:current()
-    if ctx then
+    if api_ctx.otel_context_token then
         -- ctx:detach() is not necessary, because of ctx is stored in ngx.ctx
         local upstream_status = core.response.get_upstream_status(api_ctx)
 
         -- get span from current context
-        local span = ctx:span()
+        local span = context:current():span()
         if upstream_status and upstream_status >= 500 then
-            span:set_status(span_status.error,
+            span:set_status(span_status.ERROR,
                     "upstream response status: " .. upstream_status)
         end
 
