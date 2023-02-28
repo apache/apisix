@@ -234,12 +234,14 @@ fi
 out=$(APISIX_DEPLOYMENT_ETCD_HOST='["http://127.0.0.1:2379"]' make run 2>&1 || true)
 if echo "$out" | grep "connection refused" > /dev/null; then
     echo $failed_msg
+    make stop
     exit 1
 fi
 
 if ! grep "env APISIX_DEPLOYMENT_ETCD_HOST;" conf/nginx.conf > /dev/null; then
     echo "failed: 'env APISIX_DEPLOYMENT_ETCD_HOST;' not in nginx.conf"
     echo $failed_msg
+    make stop
     exit 1
 fi
 
