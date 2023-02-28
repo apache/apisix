@@ -733,10 +733,10 @@ apisix:
                 ngx.status = code
                 return
             end
-            ngx.say(body)       
+            ngx.say(body)
         }
     }
---- reponse_body 
+--- reponse_body
 passed
 --- no_error_log
 failed to get schema for plugin
