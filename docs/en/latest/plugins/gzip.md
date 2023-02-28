@@ -2,6 +2,7 @@
 title: gzip
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - gzip
 description: This document contains information about the Apache APISIX gzip Plugin.
