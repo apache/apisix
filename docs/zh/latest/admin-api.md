@@ -103,7 +103,8 @@ deployment:
       port: 9180
 ```
 
-This will find environment variable `ADMIN_KEY` first, and if it's not exist it will use `edd1c9f034335f136f87ad84b625c8f1` as default value
+首先查找环境变量 `ADMIN_KEY`，如果该环境变量不存在，它将使用 `edd1c9f034335f136f87ad84b625c8f1` 作为默认值。
+
 
 ## v3 版本新功能 {#v3-new-function}
 
