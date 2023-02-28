@@ -102,6 +102,7 @@ server-info
 traffic-split
 redirect
 response-rewrite
+degraphql
 kafka-proxy
 grpc-transcode
 grpc-web
