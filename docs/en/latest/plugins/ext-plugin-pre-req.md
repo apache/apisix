@@ -2,6 +2,7 @@
 title: ext-plugin-pre-req
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - ext-plugin-pre-req
 description: This document contains information about the Apache APISIX ext-plugin-pre-req Plugin.
