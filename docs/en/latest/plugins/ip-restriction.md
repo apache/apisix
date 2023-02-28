@@ -2,6 +2,7 @@
 title: ip-restriction
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - IP restriction
   - ip-restriction
