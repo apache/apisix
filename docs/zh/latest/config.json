@@ -258,10 +258,6 @@
         },
         {
           "type": "doc",
-          "id": "stand-alone"
-        },
-        {
-          "type": "doc",
           "id": "stream-proxy"
         },
         {

@@ -31,6 +31,12 @@ local mt = {
 }
 
 
+local no_id_res = {
+    consumers = true,
+    plugin_metadata = true
+}
+
+
 function _M:check_conf(id, conf, need_id)
     -- check if missing configurations
     if not conf then
@@ -38,20 +44,22 @@ function _M:check_conf(id, conf, need_id)
     end
 
     -- check id if need id
-    id = id or conf.id
-    if need_id and not id then
-        return nil, {error_msg = "missing ".. self.kind .. " id"}
-    end
+    if not no_id_res[self.name] then
+        id = id or conf.id
+        if need_id and not id then
+            return nil, {error_msg = "missing ".. self.kind .. " id"}
+        end
 
-    if not need_id and id then
-        return nil, {error_msg = "wrong ".. self.kind .. " id, do not need it"}
-    end
+        if not need_id and id then
+            return nil, {error_msg = "wrong ".. self.kind .. " id, do not need it"}
+        end
 
-    if need_id and conf.id and tostring(conf.id) ~= tostring(id) then
-        return nil, {error_msg = "wrong ".. self.kind .. " id"}
-    end
+        if need_id and conf.id and tostring(conf.id) ~= tostring(id) then
+            return nil, {error_msg = "wrong ".. self.kind .. " id"}
+        end
 
-    conf.id = id
+        conf.id = id
+    end
 
     core.log.info("schema: ", core.json.delay_encode(self.schema))
     core.log.info("conf  : ", core.json.delay_encode(conf))
@@ -62,7 +70,11 @@ function _M:check_conf(id, conf, need_id)
     if not ok then
         return ok, err
     else
-        return need_id and id or true
+        if no_id_res[self.name] then
+            return ok
+        else
+            return need_id and id or true
+        end
     end
 end
 
@@ -121,16 +133,19 @@ function _M:put(id, conf, sub_path, args)
         return 405, {error_msg = "not supported `PUT` method for " .. self.kind}
     end
 
-    local id, err = self:check_conf(id, conf, true)
+    local need_id = not no_id_res[self.name]
+    local id, err = self:check_conf(id, conf, need_id)
     if not id then
         return 400, err
     end
 
     local key = "/" .. self.name .. "/" .. id
 
-    local ok, err = utils.inject_conf_with_prev_conf(self.kind, key, conf)
-    if not ok then
-        return 503, {error_msg = err}
+    if self.name ~= "plugin_metadata" then
+        local ok, err = utils.inject_conf_with_prev_conf(self.kind, key, conf)
+        if not ok then
+            return 503, {error_msg = err}
+        end
     end
 
     local ttl = nil

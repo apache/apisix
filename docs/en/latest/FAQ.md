@@ -704,6 +704,21 @@ Another solution is to switch to an experimental gRPC-based configuration synchr
     prefix: "/apisix"
 ```
 
+## How does APISIX configure ETCD with authentication?
+
+Suppose you have an ETCD cluster that enables the auth. To access this cluster, you need to configure the correct username and password for Apache APISIX in `conf/config.yaml`:
+
+```yaml
+deployment:
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    user: etcd_user             # username for etcd
+    password: etcd_password     # password for etcd
+```
+
+For other ETCD configurations, such as expiration times, retries, and so on, you can refer to the `ETCD` section in the `conf/config-default.yaml` file.
+
 ## What is the difference between SSLs and tls.client_cert in upstream configurations, and ssl_trusted_certificate in config-default.yaml?
 
 The `ssls` is managed through the `/apisix/admin/ssls` API. It's used for managing TLS certificates. These certificates may be used during TLS handshake (between Apache APISIX and its clients). Apache APISIX uses Server Name Indication (SNI) to differentiate between certificates of different domains.
