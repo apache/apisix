@@ -213,6 +213,8 @@ local function run()
         "services",
         "consumer_groups",
         "plugin_configs",
+        "consumers",
+        "plugin_metadata",
     }
     if core.table.array_find(refactored_resources, seg_res) then
         code, data = resource[method](resource, seg_id, req_body, seg_sub_path, uri_args)
