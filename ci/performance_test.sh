@@ -57,7 +57,7 @@ EOF
 
     # install systemtap
     cd /usr/local/
-    wget http://sourceware.org/systemtap/ftp/releases/systemtap-4.6.tar.gz
+    wget -q http://sourceware.org/systemtap/ftp/releases/systemtap-4.6.tar.gz
     tar -zxf systemtap-4.6.tar.gz
     mv systemtap-4.6 systemtap
     cd systemtap
