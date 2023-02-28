@@ -2,6 +2,7 @@
 title: fault-injection
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - Fault Injection
   - fault-injection
