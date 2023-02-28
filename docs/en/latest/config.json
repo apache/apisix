@@ -74,7 +74,8 @@
             "plugins/grpc-transcode",
             "plugins/grpc-web",
             "plugins/fault-injection",
-            "plugins/mocking"
+            "plugins/mocking",
+            "plugins/body-transformer"
           ]
         },
         {
@@ -257,6 +258,10 @@
     },
     {
       "type": "doc",
+      "id": "deployment-modes"
+    },
+    {
+      "type": "doc",
       "id": "FAQ"
     },
     {
@@ -295,15 +300,7 @@
         },
         {
           "type": "doc",
-          "id": "deployment-modes"
-        },
-        {
-          "type": "doc",
           "id": "router-radixtree"
-        },
-        {
-          "type": "doc",
-          "id": "stand-alone"
         },
         {
           "type": "doc",

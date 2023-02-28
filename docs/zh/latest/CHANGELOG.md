@@ -26,6 +26,7 @@ title: CHANGELOG
 - [3.1.0](#310)
 - [3.0.0](#300)
 - [3.0.0-beta](#300-beta)
+- [2.15.2](#2152)
 - [2.15.1](#2151)
 - [2.15.0](#2150)
 - [2.14.1](#2141)
@@ -292,6 +293,10 @@ title: CHANGELOG
 - 当代理到上游之前发生 500 错误时，代理到上游之后运行的插件不应被跳过 [#7703](https://github.com/apache/apisix/pull/7703)
 - 当 consumer 上绑定了多个插件且该插件定义了 rewrite 方法时，避免抛出异常 [#7531](https://github.com/apache/apisix/pull/7531)
 - 升级 lua-resty-etcd 到 1.8.3。该版本修复了若干问题。 [#7565](https://github.com/apache/apisix/pull/7565)
+
+## 2.15.2
+
+**这是一个 LTS 维护版本，您可以在 `release/2.15` 分支中看到 CHANGELOG。**
 
 ## 2.15.1
 
@@ -1108,7 +1113,7 @@ title: CHANGELOG
 - 增加用于校验 nginx.conf 的命令。 [#1112](https://github.com/apache/incubator-apisix/pull/1112)
 - 支持「nginx 最多可以打开文件数」可配置，并增大其默认配置。[#1105](https://github.com/apache/incubator-apisix/pull/1105) [#1098](https://github.com/apache/incubator-apisix/pull/1098)
 - 优化日志模块。 [#1093](https://github.com/apache/incubator-apisix/pull/1093)
-- 支持 SO_REUSEPORT 。 [#1085](https://github.com/apache/incubator-apisix/pull/1085)
+- 支持 SO_REUSEPORT。 [#1085](https://github.com/apache/incubator-apisix/pull/1085)
 
 ### Doc
 
@@ -1120,8 +1125,8 @@ title: CHANGELOG
 - 增加文档贡献指引。 [#1086](https://github.com/apache/incubator-apisix/pull/1086)
 - 检查更新「快速上手」文档。 [#1084](https://github.com/apache/incubator-apisix/pull/1084)
 - 检查更新「插件开发指南」。 [#1078](https://github.com/apache/incubator-apisix/pull/1078)
-- 更新 admin-api-cn.md 。 [#1067](https://github.com/apache/incubator-apisix/pull/1067)
-- 更新 architecture-design-cn.md 。 [#1065](https://github.com/apache/incubator-apisix/pull/1065)
+- 更新 admin-api-cn.md。 [#1067](https://github.com/apache/incubator-apisix/pull/1067)
+- 更新 architecture-design-cn.md。 [#1065](https://github.com/apache/incubator-apisix/pull/1065)
 
 ### CI
 
@@ -1178,9 +1183,9 @@ title: CHANGELOG
 
 ### Plugins
 
-- :sunrise: **[Redirect URI](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/redirect.md)**： URI 重定向插件。 [#732](https://github.com/apache/incubator-apisix/pull/732)
+- :sunrise: **[Redirect URI](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/redirect.md)**：URI 重定向插件。 [#732](https://github.com/apache/incubator-apisix/pull/732)
 - [Proxy Rewrite](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/proxy-rewrite.md)：支持 `header` 删除功能。 [#658](https://github.com/apache/incubator-apisix/pull/658)
-- [Limit Count](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/limit-count.md)： 通过 `Redis Server` 聚合 `APISIX` 节点之间将共享流量限速结果，实现集群流量限速。[#624](https://github.com/apache/incubator-apisix/pull/624)
+- [Limit Count](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/limit-count.md)：通过 `Redis Server` 聚合 `APISIX` 节点之间将共享流量限速结果，实现集群流量限速。[#624](https://github.com/apache/incubator-apisix/pull/624)
 
 ### lua-resty-*
 

@@ -34,6 +34,7 @@ local schema = {
     properties = {
         include_req_body = {type = "boolean", default = false},
         timeout = {type = "integer", minimum = 1, default= 5000},
+        log_format = {type = "object"},
         host = {type = "string"},
         port = {type = "integer"},
         project = {type = "string"},

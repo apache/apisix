@@ -68,7 +68,7 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
     fi
 
     cd ..
-    wget https://raw.githubusercontent.com/api7/apisix-build-tools/$abt_branch/build-apisix-base.sh
+    wget -q https://raw.githubusercontent.com/api7/apisix-build-tools/$abt_branch/build-apisix-base.sh
     chmod +x build-apisix-base.sh
     ./build-apisix-base.sh latest
 

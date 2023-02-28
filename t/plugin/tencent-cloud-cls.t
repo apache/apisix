@@ -409,3 +409,94 @@ apisix:
 --- response_body
 secret_key
 oshn8tcqE8cJArmEILVNPQ==
+
+
+
+=== TEST 13: log format in plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.tencent-cloud-cls")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "tencent-cloud-cls": {
+                                "cls_host": "127.0.0.1:10421",
+                                "cls_topic": "143b5d70-139b-4aec-b54e-bb97756916de",
+                                "secret_id": "secret_id",
+                                "secret_key": "secret_key",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "inactive_timeout": 1,
+                                "log_format": {
+                                    "host": "$host",
+                                    "@timestamp": "$time_iso8601",
+                                    "vip": "$remote_addr"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: log use log_format
+--- extra_init_by_lua
+    local cls = require("apisix.plugins.tencent-cloud-cls.cls-sdk")
+    cls.send_cls_request = function(self, pb_obj)
+        if (#pb_obj.logGroupList ~= 1) then
+            ngx.log(ngx.ERR, "unexpected logGroupList length: ", #pb_obj.logGroupList)
+            return false
+        end
+        local log_group = pb_obj.logGroupList[1]
+        if #log_group.logs ~= 1 then
+            ngx.log(ngx.ERR, "unexpected logs length: ", #log_group.logs)
+            return false
+        end
+        local log = log_group.logs[1]
+        if #log.contents == 0 then
+            ngx.log(ngx.ERR, "unexpected contents length: ", #log.contents)
+            return false
+        end
+        local has_host, has_timestamp, has_vip = false, false, false
+        for i, tag in ipairs(log.contents) do
+            if tag.key == "host" then
+                has_host = true
+            end
+            if tag.key == "@timestamp" then
+                has_timestamp = true
+            end
+            if tag.key == "vip" then
+                has_vip = true
+            end
+        end
+        if not(has_host and has_timestamp and has_vip) then
+            return false
+        end
+        return true
+    end
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- wait: 0.5

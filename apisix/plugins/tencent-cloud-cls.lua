@@ -41,6 +41,7 @@ local schema = {
         include_req_body = { type = "boolean", default = false },
         include_resp_body = { type = "boolean", default = false },
         global_tag = { type = "object" },
+        log_format = {type = "object"},
     },
     encrypt_fields = {"secret_key"},
     required = { "cls_host", "cls_topic", "secret_id", "secret_key" }

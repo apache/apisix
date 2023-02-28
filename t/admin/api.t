@@ -138,3 +138,21 @@ X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- response_headers
 X-API-VERSION: v2
 --- response_body_like: "/apisix/routes"
+
+
+
+=== TEST 9: Head method support for admin API
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin',
+                ngx.HTTP_HEAD)
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed

@@ -393,6 +393,11 @@ _EOC_
     lua_shared_dict etcd-cluster-health-check-stream 10m;
     lua_shared_dict worker-events-stream 10m;
 
+    lua_shared_dict kubernetes-stream 1m;
+    lua_shared_dict kubernetes-first-stream 1m;
+    lua_shared_dict kubernetes-second-stream 1m;
+    lua_shared_dict tars-stream 1m;
+
     upstream apisix_backend {
         server 127.0.0.1:1900;
         balancer_by_lua_block {
@@ -401,6 +406,8 @@ _EOC_
     }
 _EOC_
 
+    my $stream_extra_init_by_lua_start = $block->stream_extra_init_by_lua_start // "";
+
     my $stream_init_by_lua_block = $block->stream_init_by_lua_block // <<_EOC_;
         if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
             require("luacov.runner")("t/apisix.luacov")
@@ -408,6 +415,8 @@ _EOC_
         end
 
         require "resty.core"
+
+        $stream_extra_init_by_lua_start
 
         apisix = require("apisix")
         local args = {

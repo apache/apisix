@@ -26,7 +26,7 @@ install_dependencies() {
         git sudo openldap-devel which
 
     # curl with http2
-    wget https://github.com/moparisthebest/static-curl/releases/download/v7.79.1/curl-amd64 -O /usr/bin/curl
+    wget https://github.com/moparisthebest/static-curl/releases/download/v7.79.1/curl-amd64 -qO /usr/bin/curl
     # install openresty to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
     yum install -y openresty openresty-debug openresty-openssl111-debug-devel pcre pcre-devel
@@ -35,7 +35,7 @@ install_dependencies() {
     ./utils/linux-install-luarocks.sh
 
     # install etcdctl
-    ./utils/linux-install-etcd-client.sh
+    ./ci/linux-install-etcd-client.sh
 
     # install vault cli capabilities
     install_vault_cli
@@ -47,7 +47,7 @@ install_dependencies() {
     # add go1.15 binary to the path
     mkdir build-cache
     # centos-7 ci runs on a docker container with the centos image on top of ubuntu host. Go is required inside the container.
-    cd build-cache/ && wget https://golang.org/dl/go1.17.linux-amd64.tar.gz && tar -xf go1.17.linux-amd64.tar.gz
+    cd build-cache/ && wget -q https://golang.org/dl/go1.17.linux-amd64.tar.gz && tar -xf go1.17.linux-amd64.tar.gz
     export PATH=$PATH:$(pwd)/go/bin
     cd ..
     # install and start grpc_server_example
