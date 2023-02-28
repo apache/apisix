@@ -707,6 +707,21 @@ make GOOS=linux GOARCH=amd64
     prefix: "/apisix"
 ```
 
+## APISIX 如何配置带认证的 ETCD？
+
+假设您有一个启用身份验证的 ETCD 集群。要访问该集群，需要在 `conf/config.yaml` 中为 Apache APISIX 配置正确的用户名和密码：
+
+```yaml
+deployment:
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    user: etcd_user             # username for etcd
+    password: etcd_password     # password for etcd
+```
+
+关于 ETCD 的其他配置，比如过期时间、重试次数等等，你可以参考 `conf/config-default.yaml` 文件中的 `ETCD` 部分。
+
 ## 如果在使用 APISIX 过程中遇到问题，我可以在哪里寻求更多帮助？
 
 - [Apache APISIX Slack Channel](/docs/general/join/#加入-slack-频道)：加入后请选择 channel-apisix 频道，即可通过此频道进行 APISIX 相关问题的提问。
