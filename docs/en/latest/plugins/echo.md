@@ -2,6 +2,7 @@
 title: echo
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - Echo
 description: This document contains information about the Apache APISIX echo Plugin.
