@@ -2,6 +2,7 @@
 title: aws-lambda
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - AWS Lambda
   - aws-lambda
