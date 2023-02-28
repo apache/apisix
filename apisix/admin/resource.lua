@@ -186,12 +186,6 @@ function _M:put(id, conf, sub_path, args)
     end
 
     local need_id = not no_id_res[self.name]
-    local id, err = self:check_conf(id, conf, need_id)
-    if not id then
-        return 400, err
-    end
-
-    local need_id = not no_id_res[self.name]
     local ok, err = self:check_conf(id, conf, need_id, typ)
     if not ok then
         return 400, err
