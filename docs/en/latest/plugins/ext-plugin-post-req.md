@@ -2,6 +2,7 @@
 title: ext-plugin-post-req
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - ext-plugin-post-req
 description: This document contains information about the Apache APISIX ext-plugin-post-req Plugin.
