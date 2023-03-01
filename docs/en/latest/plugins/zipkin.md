@@ -2,6 +2,7 @@
 title: zipkin
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - Zipkin
   - zipkin
