@@ -2,6 +2,7 @@
 title: authz-casdoor
 keywords:
   - APISIX
+  - API 网关
   - Plugin
   - Authz Casdoor
   - authz-casdoor
