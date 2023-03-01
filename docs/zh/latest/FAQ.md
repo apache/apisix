@@ -728,7 +728,7 @@ Admin API 中 `/apisix/admin/ssls` 用于管理 SSL 对象，如果 APISIX 需�
 
 Upstream 对象中的 `tls.client_cert`、`tls.client_key` 与 `tls.client_cert_id` 用于存放客户端的证书，适用于需要与上游进行 [mTLS 通信](https://apisix.apache.org/zh/docs/apisix/tutorials/client-to-apisix-mtls/)的情况。
 
-`config-default.yaml` 中的 `ssl_trusted_certificate` 用于配置一个受信任的根证书。它仅用于在 APISIX 内部访问某些具有自签名证书的服务（例如 Keycloak）时，避免提示拒绝对方的 SSL 证书。注意：它不用于信任 APISIX 上游的证书，因为 APISIX 不会验证上游证书的合法性。因此，即使上游使用了无效的 TLS 证书，APISIX 仍然可以与其通信，而无需配置根证书。
+`config-default.yaml` 中的 `ssl_trusted_certificate` 用于配置一个受信任的根证书。它仅用于在 APISIX 内部访问某些具有自签名证书的服务时，避免提示拒绝对方的 SSL 证书。注意：它不用于信任 APISIX 上游的证书，因为 APISIX 不会验证上游证书的合法性。因此，即使上游使用了无效的 TLS 证书，APISIX 仍然可以与其通信，而无需配置根证书。
 
 ## 如果在使用 APISIX 过程中遇到问题，我可以在哪里寻求更多帮助？
 
