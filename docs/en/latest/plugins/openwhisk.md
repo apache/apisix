@@ -2,6 +2,7 @@
 title: openwhisk
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - OpenWhisk
   - openwhisk
