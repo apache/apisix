@@ -142,7 +142,7 @@ function _M.set_cert_and_key(sni, value)
 end
 
 
-function _M.match_and_set(api_ctx, match_only)
+function _M.match_and_set(api_ctx, match_only, alt_sni)
     local err
     if not radixtree_router or
        radixtree_router_ver ~= ssl_certificates.conf_version then
@@ -153,13 +153,15 @@ function _M.match_and_set(api_ctx, match_only)
         radixtree_router_ver = ssl_certificates.conf_version
     end
 
-    local sni
-    sni, err = apisix_ssl.server_name()
-    if type(sni) ~= "string" then
-        local advise = "please check if the client requests via IP or uses an outdated protocol" ..
-                       ". If you need to report an issue, " ..
-                       "provide a packet capture file of the TLS handshake."
-        return false, "failed to find SNI: " .. (err or advise)
+    local sni = alt_sni
+    if not sni then
+        sni, err = apisix_ssl.server_name()
+        if type(sni) ~= "string" then
+            local advise = "please check if the client requests via IP or uses an outdated " ..
+                           "protocol. If you need to report an issue, " ..
+                           "provide a packet capture file of the TLS handshake."
+            return false, "failed to find SNI: " .. (err or advise)
+        end
     end
 
     core.log.debug("sni: ", sni)
@@ -167,7 +169,11 @@ function _M.match_and_set(api_ctx, match_only)
     local sni_rev = sni:reverse()
     local ok = radixtree_router:dispatch(sni_rev, nil, api_ctx)
     if not ok then
-        core.log.error("failed to find any SSL certificate by SNI: ", sni)
+        if not alt_sni then
+            -- it is expected that alternative SNI doesn't have a SSL certificate associated
+            -- with it sometimes
+            core.log.error("failed to find any SSL certificate by SNI: ", sni)
+        end
         return false
     end
 
