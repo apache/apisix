@@ -313,6 +313,12 @@ services:
     ports:
       - '7002:6379'
 
+  graphql-demo:
+    # the owner doesn't provide a semver tag
+    image: npalm/graphql-java-demo:latest
+    ports:
+      - '8888:8080'
+
 networks:
   apisix_net:
   kafka_net:
