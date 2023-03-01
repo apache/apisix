@@ -2,6 +2,7 @@
 title: splunk-hec-logging
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - Splunk HTTP Event Collector
   - splunk-hec-logging
