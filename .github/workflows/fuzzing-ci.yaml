@@ -69,6 +69,7 @@ jobs:
 
     - name: run tests
       run: |
+        export APISIX_FUZZING_PWD=$PWD
         python $PWD/t/fuzzing/simpleroute_test.py
         python $PWD/t/fuzzing/serverless_route_test.py
         python $PWD/t/fuzzing/vars_route_test.py
