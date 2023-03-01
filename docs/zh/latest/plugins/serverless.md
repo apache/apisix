@@ -2,6 +2,7 @@
 title: serverless
 keywords:
   - APISIX
+  - API 网关
   - Plugin
   - Serverless
   - serverless
