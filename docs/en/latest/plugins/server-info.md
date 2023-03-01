@@ -2,6 +2,7 @@
 title: server-info
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - Server info
   - server-info
