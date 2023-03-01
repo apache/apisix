@@ -47,11 +47,20 @@ Only Lua functions are allowed here and not other Lua code.
 
 For example, anonymous functions are legal:
 
-```lua
-return function()
-    ngx.log(ngx.ERR, 'one')
-end
-```
+
+        "serverless-pre-function": {
+            "phase": "rewrite",
+            "functions" : [
+                "return function(conf, ctx)
+                    local core = require(\"apisix.core\")
+                      if not ngx.var.arg_name then
+                        local uri_args = core.request.get_uri_args(ctx)
+                        uri_args.name = \"world\"
+                        ngx.req.set_uri_args(uri_args)
+                    end
+                end"
+            ]
+        }
 
 Closures are also legal:
 
