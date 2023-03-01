@@ -2,6 +2,7 @@
 title: gzip
 keywords:
   - APISIX
+  - API 网关
   - Plugin
   - gzip
 description: 本文介绍了关于 Apache APISIX `gzip` 插件的基本信息及使用方法。
