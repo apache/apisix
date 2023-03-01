@@ -2,6 +2,7 @@
 title: openfunction
 keywords:
   - APISIX
+  - API 网关
   - Plugin
   - OpenFunction
   - openfunction
