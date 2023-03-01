@@ -2,6 +2,7 @@
 title: real-ip
 keywords:
   - APISIX
+  - API 网关
   - Plugin
   - Real IP
   - real ip
