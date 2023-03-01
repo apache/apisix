@@ -18,6 +18,7 @@
 local yaml = require("tinyyaml")
 local profile = require("apisix.core.profile")
 local util = require("apisix.cli.util")
+local dkjson = require("dkjson")
 
 local pairs = pairs
 local type = type
@@ -27,6 +28,7 @@ local getenv = os.getenv
 local str_gmatch = string.gmatch
 local str_find = string.find
 local str_sub = string.sub
+local print = print
 
 local _M = {}
 local exported_vars
@@ -113,6 +115,21 @@ end
 
 
 _M.resolve_conf_var = resolve_conf_var
+
+
+local function replace_by_reserved_env_vars(conf)
+    -- TODO: support more reserved environment variables
+    local v = getenv("APISIX_DEPLOYMENT_ETCD_HOST")
+    if v and conf["deployment"] and conf["deployment"]["etcd"] then
+        local val, _, err = dkjson.decode(v)
+        if err or not val then
+            print("parse ${APISIX_DEPLOYMENT_ETCD_HOST} failed, error:", err)
+            return
+        end
+
+        conf["deployment"]["etcd"]["host"] = val
+    end
+end
 
 
 local function tinyyaml_type(t)
@@ -282,6 +299,8 @@ function _M.read_yaml_conf(apisix_home)
             end
         end
     end
+
+    replace_by_reserved_env_vars(default_conf)
 
     return default_conf
 end
