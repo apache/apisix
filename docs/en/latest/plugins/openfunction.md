@@ -2,6 +2,7 @@
 title: openfunction
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - OpenFunction
   - openfunction
