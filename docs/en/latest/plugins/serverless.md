@@ -2,6 +2,7 @@
 title: serverless
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - Serverless
   - serverless
