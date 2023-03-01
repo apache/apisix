@@ -2,6 +2,7 @@
 title: key-auth
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - Key Auth
   - key-auth
