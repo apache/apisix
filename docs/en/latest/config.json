@@ -76,6 +76,7 @@
             "plugins/grpc-web",
             "plugins/fault-injection",
             "plugins/mocking",
+            "plugins/degraphql",
             "plugins/body-transformer"
           ]
         },
