@@ -1,7 +1,7 @@
 ---
 title: Control Plane Service Discovery
 keywords:
-  - API Geteway
+  - API Gateway
   - APISIX
   - ZooKeeper
   - Nacos
