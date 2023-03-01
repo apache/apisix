@@ -2,6 +2,7 @@
 title: workflow
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - workflow
   - traffic control
