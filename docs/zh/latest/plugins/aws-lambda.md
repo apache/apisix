@@ -2,7 +2,6 @@
 title: aws-lambda
 keywords:
   - APISIX
-  - API 网关
   - Plugin
   - AWS Lambda
   - aws-lambda
