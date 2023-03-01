@@ -2,6 +2,7 @@
 title: ldap-auth
 keywords:
   - APISIX
+  - API 网关
   - Plugin
   - LDAP Authentication
   - ldap-auth
