@@ -708,6 +708,21 @@ Another solution is to switch to an experimental gRPC-based configuration synchr
 
 If you are using the `file-logger` plugin and you are getting garbled log files, it may be because your upstream response is returning a compressed response body. You can fix this by bringing the request header with no compressed response parameters.
 
+## How does APISIX configure ETCD with authentication?
+
+Suppose you have an ETCD cluster that enables the auth. To access this cluster, you need to configure the correct username and password for Apache APISIX in `conf/config.yaml`:
+
+```yaml
+deployment:
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    user: etcd_user             # username for etcd
+    password: etcd_password     # password for etcd
+```
+
+For other ETCD configurations, such as expiration times, retries, and so on, you can refer to the `ETCD` section in the `conf/config-default.yaml` file.
+
 ## Where can I find more answers?
 
 You can find more answers on:

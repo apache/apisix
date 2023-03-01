@@ -62,7 +62,8 @@
             "plugins/ext-plugin-pre-req",
             "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-post-resp",
-            "plugins/inspect"
+            "plugins/inspect",
+            "plugins/workflow"
           ]
         },
         {
@@ -184,7 +185,6 @@
             "plugins/azure-functions",
             "plugins/openwhisk",
             "plugins/aws-lambda",
-            "plugins/workflow",
             "plugins/openfunction"
           ]
         },
@@ -258,6 +258,10 @@
     },
     {
       "type": "doc",
+      "id": "deployment-modes"
+    },
+    {
+      "type": "doc",
       "id": "FAQ"
     },
     {
@@ -296,15 +300,7 @@
         },
         {
           "type": "doc",
-          "id": "deployment-modes"
-        },
-        {
-          "type": "doc",
           "id": "router-radixtree"
-        },
-        {
-          "type": "doc",
-          "id": "stand-alone"
         },
         {
           "type": "doc",

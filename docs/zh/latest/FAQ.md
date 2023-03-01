@@ -119,8 +119,8 @@ make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 
 举个例子，比如：`foo.com/product/index.html?id=204&page=2`，并考虑您需要根据查询字符串中的 `id` 在此条件下进行灰度发布：
 
-1. Group A：`id <= 1000`
-2. Group B：`id > 1000`
+1. Group A:`id <= 1000`
+2. Group B:`id > 1000`
 
 在 Apache APISIX 中有两种不同的方法来实现这一点：
 
@@ -710,6 +710,21 @@ make GOOS=linux GOARCH=amd64
 ## 为什么 file-logger 记录日志会出现乱码？
 
 如果你使用的是 `file-logger` 插件，但是在日志文件中出现了乱码，那么可能是因为你的上游的响应返回是压缩格式的响应主体。你可以将请求头带上不接收压缩响应参数以解决这个问题。
+
+## APISIX 如何配置带认证的 ETCD？
+
+假设您有一个启用身份验证的 ETCD 集群。要访问该集群，需要在 `conf/config.yaml` 中为 Apache APISIX 配置正确的用户名和密码：
+
+```yaml
+deployment:
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    user: etcd_user             # username for etcd
+    password: etcd_password     # password for etcd
+```
+
+关于 ETCD 的其他配置，比如过期时间、重试次数等等，你可以参考 `conf/config-default.yaml` 文件中的 `ETCD` 部分。
 
 ## 如果在使用 APISIX 过程中遇到问题，我可以在哪里寻求更多帮助？
 
