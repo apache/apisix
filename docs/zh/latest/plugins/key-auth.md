@@ -2,6 +2,7 @@
 title: key-auth
 keywords:
   - APISIX
+  - API 网关
   - Plugin
   - Key Auth
   - key-auth
