@@ -2,6 +2,7 @@
 title: ext-plugin-post-resp
 keywords:
   - APISIX
+  - API 网关
   - Plugin
   - ext-plugin-post-resp
 description: 本文介绍了关于 Apache APISIX `ext-plugin-post-resp` 插件的基本信息及使用方法。
