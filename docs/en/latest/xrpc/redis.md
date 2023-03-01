@@ -2,6 +2,7 @@
 title: redis
 keywords:
   - APISIX
+  - API Gateway
   - xRPC
   - redis
 description: This document contains information about the Apache APISIX xRPC implementation for Redis.
