@@ -2,6 +2,7 @@
 title: azure-functions
 keywords:
   - APISIX
+  - API 网关
   - Plugin
   - Azure Functions
   - azure-functions
