@@ -229,7 +229,7 @@ function _M:put(id, conf, sub_path, args)
     return res.status, res.body
 end
 
-
+-- Keep the unused conf to make the args list consistent with other methods
 function _M:delete(id, conf, sub_path)
     if core.table.array_find(self.unsupported_methods, "delete") then
         return 405, {error_msg = "not supported `DELETE` method for " .. self.kind}
