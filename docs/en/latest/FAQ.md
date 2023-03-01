@@ -706,7 +706,7 @@ Another solution is to switch to an experimental gRPC-based configuration synchr
 
 ## Why is the file-logger logging garbled?
 
-If you are using the `file-logger` plugin and you are getting garbled log files, it may be because your upstream response is returning a compressed response body. You can fix this by bringing the request header with no compressed response parameters.
+If you are using the `file-logger` plugin but getting garbled logs, one possible reason is your upstream response has returned a compressed response body. You can fix this by setting the request header with no compressed response parameters.
 
 ## How does APISIX configure ETCD with authentication?
 
