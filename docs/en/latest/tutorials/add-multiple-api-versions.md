@@ -2,6 +2,7 @@
 title: Add multiple API versions
 keywords:
   - API Versioning
+  - API Gateway 
   - Multiple APIs
   - Proxy rewrite
   - Request redirect
