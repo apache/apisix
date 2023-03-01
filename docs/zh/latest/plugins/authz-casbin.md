@@ -2,7 +2,6 @@
 title: authz-casbin
 keywords:
   - APISIX
-  - API 网关
   - Plugin
   - Authz Casbin
   - authz-casbin
