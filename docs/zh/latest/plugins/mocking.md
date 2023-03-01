@@ -2,6 +2,7 @@
 title: mocking
 keywords:
   - APISIX
+  - API 网关
   - Plugin
   - Mocking
   - mocking
