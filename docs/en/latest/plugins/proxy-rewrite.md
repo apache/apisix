@@ -2,6 +2,7 @@
 title: proxy-rewrite
 keywords:
   - APISIX
+  - API Gateway
   - Plugin
   - Proxy Rewrite
   - proxy-rewrite
