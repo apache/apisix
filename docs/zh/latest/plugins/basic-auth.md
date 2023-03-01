@@ -2,6 +2,7 @@
 title: basic-auth
 keywords:
   - APISIX
+  - API 网关
   - Plugin
   - Basic Auth
   - basic-auth
