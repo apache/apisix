@@ -89,6 +89,8 @@ apisix:
 
 Using mTLS is a way to verify clients cryptographically. It is useful and important in cases where you want to have encrypted and secure traffic in both directions.
 
+* Note: the mTLS protection only happens in HTTPS. If your route can also be accessed via HTTP, you should add additional protection in HTTP or disable the access via HTTP.*
+
 ### How to configure
 
 When configuring `ssl`, use parameter `client.ca` and `client.depth` to configure the root CA that signing client certificates and the max length of certificate chain. Please refer to [Admin API](./admin-api.md#ssl) for details.
