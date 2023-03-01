@@ -2,6 +2,7 @@
 title: hmac-auth
 keywords:
   - APISIX
+  - API 网关
   - Plugin
   - HMAC Authentication
   - hmac-auth
