@@ -1,7 +1,8 @@
 ---
 title: server-info
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Server info
   - server-info

@@ -1,7 +1,7 @@
 ---
 title: referer-restriction
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Referer restriction
 description: This document contains information about the Apache APISIX referer-restriction Plugin, which can be used to restrict access to a Service or a Route by whitelisting/blacklisting the Referer request header.

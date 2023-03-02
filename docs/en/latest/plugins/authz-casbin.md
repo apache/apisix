@@ -1,7 +1,8 @@
 ---
 title: authz-casbin
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Authz Casbin
   - authz-casbin

@@ -2,7 +2,7 @@
 id: support-fips-in-apisix
 title: Support FIPS in APISIX
 keywords:
-  - API gateway
+  - API Gateway
   - Apache APISIX
   - Code Contribution
   - Building APISIX

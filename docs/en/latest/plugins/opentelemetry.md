@@ -1,7 +1,8 @@
 ---
 title: opentelemetry
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - OpenTelemetry
   - opentelemetry

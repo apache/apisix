@@ -1,7 +1,8 @@
 ---
 title: authz-keycloak
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Authz Keycloak
   - authz-keycloak

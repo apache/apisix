@@ -1,7 +1,8 @@
 ---
 title: real-ip
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Real IP
   - real ip

@@ -2,7 +2,7 @@
 id: building-apisix
 title: Building APISIX from source
 keywords:
-  - API gateway
+  - API Gateway
   - Apache APISIX
   - Code Contribution
   - Building APISIX

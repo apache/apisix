@@ -1,7 +1,8 @@
 ---
 title: openwhisk
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - OpenWhisk
   - openwhisk

@@ -1,7 +1,8 @@
 ---
 title: mocking
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Mocking
   - mocking

@@ -1,7 +1,7 @@
 ---
 title: datadog
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - Datadog

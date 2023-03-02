@@ -1,7 +1,7 @@
 ---
 title: prometheus
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - Prometheus
