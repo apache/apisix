@@ -43,6 +43,7 @@ local req_get_post_args = ngx.req.get_post_args
 local req_get_uri_args = ngx.req.get_uri_args
 local req_set_uri_args = ngx.req.set_uri_args
 local table_insert = table.insert
+local req_set_header = ngx.req.set_header
 
 
 local _M = {}
@@ -136,7 +137,7 @@ local function modify_header(ctx, header_name, header_value, override)
     end
 
     if override then
-        ngx.req.set_header(header_name, header_value)
+        req_set_header(header_name, header_value)
     else
         req_add_header(header_name, header_value)
     end
