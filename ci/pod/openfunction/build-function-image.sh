@@ -18,7 +18,7 @@
 set -xeuo pipefail
 
 if [ ! -f "./pack" ]; then
-    wget https://github.com/buildpacks/pack/releases/download/v0.27.0/pack-v0.27.0-linux.tgz
+    wget -q https://github.com/buildpacks/pack/releases/download/v0.27.0/pack-v0.27.0-linux.tgz
     tar -zxvf pack-v0.27.0-linux.tgz
 fi
 

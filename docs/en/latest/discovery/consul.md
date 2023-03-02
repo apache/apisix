@@ -35,8 +35,8 @@ First of all, we need to add following configuration in `conf/config.yaml` :
 discovery:
   consul:
     servers:                      # make sure service name is unique in these consul servers
-      - "http://127.0.0.1:8500"
-      - "http://127.0.0.1:8600"   # `http://127.0.0.1:8500` and `http://127.0.0.1:8600` are different clusters
+      - "http://127.0.0.1:8500"   # `http://127.0.0.1:8500` and `http://127.0.0.1:8600` are different clusters
+      - "http://127.0.0.1:8600"   # `consul` service is default skip service
     skip_services:                # if you need to skip special services
       - "service_a"
     timeout:
@@ -148,6 +148,8 @@ To avoid confusion, use the full consul key url path as service name in practice
 
 ### Upstream setting
 
+#### L7
+
 Here is an example of routing a request with a URL of "/*" to a service which named "service_a" and use consul discovery client in the registry :
 
 ```shell
@@ -187,6 +189,25 @@ The format response as below:
 ```
 
 You could find more usage in the `apisix/t/discovery/consul.t` file.
+
+#### L4
+
+Consul service discovery also supports use in L4, the configuration method is similar to L7.
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "remote_addr": "127.0.0.1",
+    "upstream": {
+      "scheme": "tcp",
+      "service_name": "service_a",
+      "type": "roundrobin",
+      "discovery_type": "consul"
+    }
+}'
+```
+
+You could find more usage in the `apisix/t/discovery/stream/consul.t` file.
 
 ## Debugging API
 

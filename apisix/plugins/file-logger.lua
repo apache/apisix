@@ -16,7 +16,6 @@
 --
 local log_util     =   require("apisix.utils.log-util")
 local core         =   require("apisix.core")
-local plugin       =   require("apisix.plugin")
 local ngx          =   ngx
 local io_open      =   io.open
 local is_apisix_or, process = pcall(require, "resty.apisix.process")
@@ -31,6 +30,7 @@ local schema = {
         path = {
             type = "string"
         },
+        log_format = {type = "object"},
         include_resp_body = {type = "boolean", default = false},
         include_resp_body_expr = {
             type = "array",
@@ -149,17 +149,7 @@ function _M.body_filter(conf, ctx)
 end
 
 function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    local entry
-
-    if metadata and metadata.value.log_format
-        and core.table.nkeys(metadata.value.log_format) > 0
-    then
-        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
-    else
-        entry = log_util.get_full_log(ngx, conf)
-    end
-
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
     write_file_data(conf, entry)
 end
 

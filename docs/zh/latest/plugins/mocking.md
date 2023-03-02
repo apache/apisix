@@ -38,7 +38,7 @@ description: 本文介绍了关于 Apache APISIX `mocking` 插件的基本信息
 | delay           | integer| 否    |                  | 延时返回的时间，单位为秒。                                            |
 | response_status | integer| 否    | 200              | 返回响应的 HTTP 状态码。                                            |
 | content_type    | string | 否    | application/json | 返回响应的 Header `Content-Type`。                                            |
-| response_example| string | 否    |                  | 返回响应的 Body，与 `response_schema` 字段二选一。                                            |
+| response_example| string | 否    |                  | 返回响应的 Body，支持使用变量，例如 `$remote_addr $consumer_name`，与 `response_schema` 字段二选一。 |
 | response_schema | object | 否    |                  | 指定响应的 `jsonschema` 对象，未指定 `response_example` 字段时生效。                        |
 | with_mock_header| boolean| 否    | true             | 当设置为 `true` 时，将添加响应头 `x-mock-by: APISIX/{version}`。设置为 `false` 时则不添加该响应头。   |
 
