@@ -51,6 +51,21 @@ return function()
     ngx.log(ngx.ERR, 'one')
 end
 ```
+A better non-trivial example is:
+     
+     "serverless-pre-function": {
+            "phase": "rewrite",
+            "functions" : [
+                "return function(conf, ctx)
+                    local core = require(\"apisix.core\")
+                    if not ngx.var.arg_name then
+                        local uri_args = core.request.get_uri_args(ctx)
+                        uri_args.name = \"world\"
+                        ngx.req.set_uri_args(uri_args)
+                    end
+                end"
+            ]
+        }
 
 Closures are also legal:
 
