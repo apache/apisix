@@ -23,7 +23,7 @@ title: consul
 
 ## Summary
 
-APACHE APISIX API Gateway supports Consul as a service discovery
+APACHE APISIX supports Consul as a service discovery
 
 ## Configuration for discovery client
 
