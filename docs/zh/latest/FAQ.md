@@ -722,6 +722,14 @@ deployment:
 
 关于 ETCD 的其他配置，比如过期时间、重试次数等等，你可以参考 `conf/config-default.yaml` 文件中的 `ETCD` 部分。
 
+## SSLs 对象与 `upstream` 对象中的 `tls.client_cert` 以及 `config-default.yaml` 中的 `ssl_trusted_certificate` 区别是什么？
+
+Admin API 中 `/apisix/admin/ssls` 用于管理 SSL 对象，如果 APISIX 需要接收来自外网的 HTTPS 请求，那就需要用到存放在这里的证书完成握手。SSL 对象中支持配置多个证书，不同域名的证书 APISIX 将使用 Server Name Indication (SNI) 进行区分。
+
+Upstream 对象中的 `tls.client_cert`、`tls.client_key` 与 `tls.client_cert_id` 用于存放客户端的证书，适用于需要与上游进行 [mTLS 通信](https://apisix.apache.org/zh/docs/apisix/tutorials/client-to-apisix-mtls/)的情况。
+
+`config-default.yaml` 中的 `ssl_trusted_certificate` 用于配置一个受信任的根证书。它仅用于在 APISIX 内部访问某些具有自签名证书的服务时，避免提示拒绝对方的 SSL 证书。注意：它不用于信任 APISIX 上游的证书，因为 APISIX 不会验证上游证书的合法性。因此，即使上游使用了无效的 TLS 证书，APISIX 仍然可以与其通信，而无需配置根证书。
+
 ## 如果在使用 APISIX 过程中遇到问题，我可以在哪里寻求更多帮助？
 
 - [Apache APISIX Slack Channel](/docs/general/join/#加入-slack-频道)：加入后请选择 channel-apisix 频道，即可通过此频道进行 APISIX 相关问题的提问。
