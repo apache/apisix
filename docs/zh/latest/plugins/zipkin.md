@@ -5,7 +5,6 @@ keywords:
   - API 网关
   - Plugin
   - Zipkin
-  - zipkin
 description: 本文介绍了关于 Apache APISIX zipkin 插件的基本信息及使用方法。
 ---
 

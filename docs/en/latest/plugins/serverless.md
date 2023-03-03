@@ -5,7 +5,6 @@ keywords:
   - API Gateway
   - Plugin
   - Serverless
-  - serverless
 description: This document contains information about the Apache APISIX serverless Plugin.
 ---
 

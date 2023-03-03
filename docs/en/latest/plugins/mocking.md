@@ -5,7 +5,6 @@ keywords:
   - API Gateway
   - Plugin
   - Mocking
-  - mocking
 description: This document contains information about the Apache APISIX mocking Plugin.
 ---
 

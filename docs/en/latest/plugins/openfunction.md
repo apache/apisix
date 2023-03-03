@@ -5,7 +5,6 @@ keywords:
   - API Gateway
   - Plugin
   - OpenFunction
-  - openfunction
 description: This document contains information about the Apache APISIX openfunction Plugin.
 ---
 

@@ -5,7 +5,6 @@ keywords:
   - API Gateway
   - Plugin
   - OpenWhisk
-  - openwhisk
 description: This document contains information about the Apache openwhisk Plugin.
 ---
 

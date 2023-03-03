@@ -5,7 +5,6 @@ keywords:
   - API Gateway
   - Plugin
   - Real IP
-  - real ip
 description: This document contains information about the Apache APISIX real-ip Plugin.
 ---
 

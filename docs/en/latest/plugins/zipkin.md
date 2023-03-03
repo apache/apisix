@@ -5,7 +5,6 @@ keywords:
   - API Gateway
   - Plugin
   - Zipkin
-  - zipkin
 description: This document contains information about the Apache zipkin Plugin.
 ---
 
