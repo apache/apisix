@@ -35,6 +35,7 @@ local networks = {
     "arb-mainnet",
     "opt-mainnet",
     "scroll-prealpha",
+    "scroll-alpha",
     "ckb-mirana",
     "starknet-mainnet",
     "starknet-testnet",
@@ -48,6 +49,7 @@ local networks = {
     "staging-arb-mainnet",
     "staging-opt-mainnet",
     "staging-scroll-prealpha",
+    "staging-scroll-alpha",
     "staging-ckb-mirana",
     "staging-starknet-mainnet",
     "staging-starknet-testnet",
@@ -390,7 +392,8 @@ function _M.init()
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, trace_methods, debug_methods)
         elseif network == "eth-sepolia" or network == "cfx-espace" or
             network == "scroll-prealpha" or network == "staging-eth-mainnet" or network == "staging-eth-sepolia" or
-            network == "staging-cfx-espace" or network == "staging-scroll-prealpha" then
+            network == "staging-cfx-espace" or network == "staging-scroll-prealpha" or
+            network == "staging-scroll-alpha" or network == "scroll-alpha" then
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, trace_methods)
         elseif network == "arb-mainnet" or network == "opt-mainnet" or
