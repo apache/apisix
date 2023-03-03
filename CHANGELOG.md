@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [2.15.3](#2153)
 - [2.15.2](#2152)
 - [2.15.1](#2151)
 - [2.15.0](#2150)
@@ -61,6 +62,13 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.15.3
+
+### Bugfix
+
+- Fix mTLS protection when the host and SNI mismatch: [#8967](https://github.com/apache/apisix/pull/8967)
+- The proxy-rewrite plugin should escape URI parameter parts if they do not come from user config: [#8888](https://github.com/apache/apisix/pull/8888)
 
 ## 2.15.2
 
