@@ -51,7 +51,7 @@ return function()
     ngx.log(ngx.ERR, 'one')
 end
 ```
-A better non-trivial example is:
+A better non-trivial example is :
      
      "serverless-pre-function": {
             "phase": "rewrite",
