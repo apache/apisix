@@ -71,6 +71,7 @@ ngx.say(count)
 
 Serverless-Pre-Function Example:
 
+```
 "serverless-pre-function": {
             "phase": "rewrite",
             "functions" : [
@@ -83,14 +84,14 @@ Serverless-Pre-Function Example:
                     end
                 end"
             ]
-        }
+        }```
 Serverless-Post-Function Example:
 
-"serverless-post-function": {
+```"serverless-post-function": {
     "phase": "rewrite",
     "functions" : ["return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"]
         }
-    }
+    }```
 
 :::
 
