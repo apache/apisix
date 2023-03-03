@@ -71,7 +71,7 @@ ngx.say(count)
 
 Serverless-Pre-Function Example:
 
-```
+```lua
           "serverless-pre-function": {
             "phase": "rewrite",
             "functions" : [
@@ -86,6 +86,7 @@ Serverless-Pre-Function Example:
             ]
         }
 ```
+
 
 :::
 
