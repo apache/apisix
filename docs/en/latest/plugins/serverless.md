@@ -87,8 +87,8 @@ Serverless-Pre-Function Example:
 Serverless-Post-Function Example:
 
 "serverless-post-function": {
-            "phase": "rewrite",
-            "functions" : ["return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"]
+    "phase": "rewrite",
+    "functions" : ["return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"]
         }
     }
 
