@@ -1,10 +1,10 @@
 ---
 title: serverless
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Serverless
-  - serverless
 description: This document contains information about the Apache APISIX serverless Plugin.
 ---
 
@@ -51,21 +51,6 @@ return function()
     ngx.log(ngx.ERR, 'one')
 end
 ```
-A better non-trivial example is :
-     
-     "serverless-pre-function": {
-            "phase": "rewrite",
-            "functions" : [
-                "return function(conf, ctx)
-                    local core = require(\"apisix.core\")
-                    if not ngx.var.arg_name then
-                        local uri_args = core.request.get_uri_args(ctx)
-                        uri_args.name = \"world\"
-                        ngx.req.set_uri_args(uri_args)
-                    end
-                end"
-            ]
-        }
 
 Closures are also legal:
 
@@ -83,6 +68,29 @@ But code other than functions are illegal:
 local count = 1
 ngx.say(count)
 ```
+
+Serverless-Pre-Function Example:
+
+"serverless-pre-function": {
+            "phase": "rewrite",
+            "functions" : [
+                "return function(conf, ctx)
+                    local core = require(\"apisix.core\")
+                    if not ngx.var.arg_name then
+                        local uri_args = core.request.get_uri_args(ctx)
+                        uri_args.name = \"world\"
+                        ngx.req.set_uri_args(uri_args)
+                    end
+                end"
+            ]
+        }
+Serverless-Post-Function Example:
+
+"serverless-post-function": {
+            "phase": "rewrite",
+            "functions" : ["return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"]
+        }
+    }
 
 :::
 
