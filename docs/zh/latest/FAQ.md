@@ -707,6 +707,36 @@ make GOOS=linux GOARCH=amd64
     prefix: "/apisix"
 ```
 
+## 为什么 file-logger 记录日志会出现乱码？
+
+如果你使用的是 `file-logger` 插件，但是在日志文件中出现了乱码，那么可能是因为上游服务的响应体被进行了压缩。你可以将请求头带上不接收压缩响应参数（`gzip;q=0,deflate,sdch`）以解决这个问题，你可以使用 [proxy-rewirte](https://apisix.apache.org/docs/apisix/plugins/proxy-rewrite/) 插件将请求头中的 `accept-encoding` 设置为不接收压缩响应：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: YOUR-TOKEN' -X PUT -d '
+{
+    "methods":[
+        "GET"
+    ],
+    "uri":"/test/index.html",
+    "plugins":{
+        "proxy-rewrite":{
+            "headers":{
+                "set":{
+                    "accept-encoding":"gzip;q=0,deflate,sdch"
+                }
+            }
+        }
+    },
+    "upstream":{
+        "type":"roundrobin",
+        "nodes":{
+            "127.0.0.1:80":1
+        }
+    }
+}'
+```
+
 ## APISIX 如何配置带认证的 ETCD？
 
 假设您有一个启用身份验证的 ETCD 集群。要访问该集群，需要在 `conf/config.yaml` 中为 Apache APISIX 配置正确的用户名和密码：
