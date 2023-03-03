@@ -84,8 +84,7 @@ Serverless-Pre-Function Example:
                     end
                 end"
             ]
-        }
-```
+        }```
 
 
 :::
