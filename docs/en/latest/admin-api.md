@@ -1282,6 +1282,7 @@ The Plugin ({plugin_name}) of the data structure.
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/plugins/list" \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+```
 
 ```shell
 ["zipkin","request-id",...]
