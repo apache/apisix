@@ -704,6 +704,35 @@ Another solution is to switch to an experimental gRPC-based configuration synchr
     prefix: "/apisix"
 ```
 
+## Why is the file-logger logging garbled?
+
+If you are using the `file-logger` plugin but getting garbled logs, one possible reason is your upstream response has returned a compressed response body. You can fix this by setting the accept-encoding in the request header to not receive compressed responses using the [proxy-rewirte](https://apisix.apache.org/docs/apisix/plugins/proxy-rewrite/) plugin:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: YOUR-TOKEN' -X PUT -d '
+{
+    "methods":[
+        "GET"
+    ],
+    "uri":"/test/index.html",
+    "plugins":{
+        "proxy-rewrite":{
+            "headers":{
+                "set":{
+                    "accept-encoding":"gzip;q=0,deflate,sdch"
+                }
+            }
+        }
+    },
+    "upstream":{
+        "type":"roundrobin",
+        "nodes":{
+            "127.0.0.1:80":1
+        }
+    }
+}'
+
 ## How does APISIX configure ETCD with authentication?
 
 Suppose you have an ETCD cluster that enables the auth. To access this cluster, you need to configure the correct username and password for Apache APISIX in `conf/config.yaml`:
