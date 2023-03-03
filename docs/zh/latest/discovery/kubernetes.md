@@ -134,7 +134,7 @@ service_name 必须满足格式: [namespace]/[name]:[portName]
 
 + name: Endpoints 的资源名
 
-+ portName: Endpoints 定义包含的 ports.name 值，如果 Endpoints 没有定义 ports.name，请依次使用 targetPort, port 代替
++ portName: Endpoints 定义包含的 `ports.name` 值，如果 Endpoints 没有定义 `ports.name`，请依次使用 `targetPort`, `port` 代替。设置了 `ports.name` 的情况下，不能使用后两者。
 
 **返回值：**
 以如下 Endpoints 为例：
@@ -245,7 +245,7 @@ service_name 必须满足格式: [id]/[namespace]/[name]:[portName]
 
 + name: Endpoints 的资源名
 
-+ portName: Endpoints 定义包含的 ports.name 值，如果 Endpoints 没有定义 ports.name，请依次使用 targetPort, port 代替
++ portName: Endpoints 定义包含的 `ports.name` 值，如果 Endpoints 没有定义 `ports.name`，请依次使用 `targetPort`, `port` 代替。设置了 `ports.name` 的情况下，不能使用后两者。
 
 **返回值：**
 以如下 Endpoints 为例：
