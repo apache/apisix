@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [2.15.3](#2153)
 - [2.15.2](#2152)
 - [2.15.1](#2151)
 - [2.15.0](#2150)
@@ -61,6 +62,13 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 2.15.3
+
+### Bugfix
+
+- 修复 Host 和 SNI 不匹配时，mTLS 失效的问题：[#8967](https://github.com/apache/apisix/pull/8967)
+- 如果 URI 参数部分不来自于用户配置，proxy-rewrite 插件应当对其转义：[#8888](https://github.com/apache/apisix/pull/8888)
 
 ## 2.15.2
 
