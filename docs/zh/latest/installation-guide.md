@@ -286,7 +286,7 @@ APISIX 的默认配置可以在 `./conf/config-default.yaml` 文件中看到，�
 ```yaml title="./conf/config.yaml"
 deployment:
   admin:
-    admin_key
+    admin_key:
       -
         name: "admin"
         key: newsupersecurekey  # 请修改 key 的值
