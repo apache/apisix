@@ -52,6 +52,5 @@ Router 具有以下配置：
 
 :::
 
-
 - `apisix.router.ssl`：SSL 加载匹配路由。
   - `radixtree_sni`：（默认）使用 `SNI` (Server Name Indication) 作为主索引（基于 radixtree 引擎）。
