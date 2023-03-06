@@ -68,6 +68,7 @@ But code other than functions are illegal:
 local count = 1
 ngx.say(count)
 ```
+
 Serverless Pre Function Example:
 ```lua
 local function pre_handler(conf, ctx)
@@ -109,7 +110,7 @@ return {
 Serverless Post Function Example:
 
 ```lua
-function handler(plugin_conf, ctx, res)
+function handler(conf, ctx, res)
     -- Get the response body as a Lua table
     local body = cjson.decode(res.body)
 
