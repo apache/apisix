@@ -111,13 +111,10 @@ Serverless Post Function Example:
 
 ```lua
 function handler(conf, ctx, res)
-   
-    local body = cjson.decode(res.body)
+   local body = cjson.decode(res.body)
     res.headers["X-My-Header"] = "my-header-value"
     body["new_field"] = "new_value"
     res.body = cjson.encode(body)
-
-    -- If everything is valid, allow the response to be returned to the client
     return res
 end
 
