@@ -95,6 +95,8 @@ apisix:
 
 Using mTLS is a way to verify clients cryptographically. It is useful and important in cases where you want to have encrypted and secure traffic in both directions.
 
+* Note: the mTLS protection only happens in HTTPS. If your route can also be accessed via HTTP, you should add additional protection in HTTP or disable the access via HTTP.*
+
 ### How to configure
 
 We provide a [tutorial](./tutorials/client-to-apisix-mtls.md) that explains in detail how to configure mTLS between the client and APISIX.

@@ -42,7 +42,9 @@ description: 本文介绍了 Apache APISIX request-id 插件的相关操作，�
 | ------------------- | ------- | -------- | -------------- | ------ | ------------------------------ |
 | header_name         | string  | 否 | "X-Request-Id" |                       | unique ID 的请求头的名称。         |
 | include_in_response | boolean | 否 | true          |                       | 当设置为 `true` 时，将 unique ID 加入返回头。 |
-| algorithm           | string  | 否 | "uuid"         | ["uuid", "snowflake", "nanoid"] | 指定的 unique ID 生成算法。 |
+| algorithm           | string  | 否 | "uuid"         | ["uuid", "snowflake", "nanoid", "range_id"] | 指定的 unique ID 生成算法。 |
+| range_id.char_set      | string | 否 | "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789| 字符串长度最小为 6 | range_id 算法的字符集 |
+| range_id.length    | integer | 否 | 16             | 最小值为 6 | range_id 算法的 id 长度 |
 
 ### 使用 snowflake 算法生成 unique ID
 

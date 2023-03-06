@@ -204,20 +204,10 @@ local function run()
     end
 
     local code, data
-    local refactored_resources = {
-        "routes",
-        "stream_routes",
-        "upstreams",
-        "protos",
-        "global_rules",
-        "services",
-        "consumer_groups",
-        "plugin_configs",
-    }
-    if core.table.array_find(refactored_resources, seg_res) then
-        code, data = resource[method](resource, seg_id, req_body, seg_sub_path, uri_args)
-    else
+    if seg_res == "schema" or seg_res == "plugins" then
         code, data = resource[method](seg_id, req_body, seg_sub_path, uri_args)
+    else
+        code, data = resource[method](resource, seg_id, req_body, seg_sub_path, uri_args)
     end
 
     if code then
