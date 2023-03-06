@@ -115,7 +115,6 @@ passed
 plugins:
   - batch-requests
   - error-log-logger
-  - server-info
   - example-plugin
   - node-status
 --- config
@@ -146,4 +145,4 @@ plugins:
         }
     }
 --- response_body
-{"batch-requests":"global","error-log-logger":"global","node-status":"global","server-info":"global"}
+{"batch-requests":"global","error-log-logger":"global","node-status":"global"}

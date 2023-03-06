@@ -98,7 +98,6 @@ limit-conn
 limit-count
 limit-req
 gzip
-server-info
 traffic-split
 redirect
 response-rewrite
@@ -380,7 +379,6 @@ qr/\{"encrypt_fields":\["password"\],"properties":\{"password":\{"type":"string"
 plugins:
   - batch-requests
   - error-log-logger
-  - server-info
   - example-plugin
   - node-status
 --- config
@@ -410,4 +408,4 @@ plugins:
         }
     }
 --- response_body
-{"batch-requests":"global","error-log-logger":"global","node-status":"global","server-info":"global"}
+{"batch-requests":"global","error-log-logger":"global","node-status":"global"}
