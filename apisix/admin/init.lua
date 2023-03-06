@@ -237,6 +237,25 @@ local function run()
 end
 
 
+local function get_data_planes()
+    local key = "/data_plane/server_info"
+    local is_dir = true
+    local uri_segs = core.utils.split_uri(ngx.var.uri)
+    local id = uri_segs[5]
+    if id then
+        key = key .. "/" .. id
+        is_dir = false
+    end
+
+    local etcd_cli, prefix = core.etcd.get_etcd_cli()
+    key = prefix .. key
+    local res = etcd_cli:readdir(key)
+    if res.status == 200 then
+        core.response.exit(200, is_dir and res.body.kvs or res.body.kvs[1])
+    end
+end
+
+
 local function get_plugins_list()
     local api_ctx = {}
     core.ctx.set_vars_meta(api_ctx)
@@ -379,6 +398,16 @@ local uri_route = {
         paths = reload_event,
         methods = {"PUT"},
         handler = post_reload_plugins,
+    },
+    {
+        paths = [[/apisix/admin/data_planes]],
+        methods = {"GET"},
+        handler = get_data_planes,
+    },
+    {
+        paths = [[/apisix/admin/data_planes/*]],
+        methods = {"GET"},
+        handler = get_data_planes,
     },
 }
 
