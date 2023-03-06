@@ -1,7 +1,7 @@
 ---
 title: log-rotate
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - Log rotate

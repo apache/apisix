@@ -1,7 +1,7 @@
 ---
 title: sls-logger
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - SLS Logger

@@ -1,7 +1,8 @@
 ---
 title: ldap-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - LDAP Authentication
   - ldap-auth

@@ -1,7 +1,7 @@
 ---
 title: proxy-control
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Proxy Control
 description: This document contains information about the Apache APISIX proxy-control Plugin, you can use it to control the behavior of the NGINX proxy dynamically.

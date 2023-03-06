@@ -1,7 +1,8 @@
 ---
 title: key-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Key Auth
   - key-auth

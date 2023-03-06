@@ -1,7 +1,7 @@
 ---
 title: GM
 keywords:
-  - APISIX
+  - Apache APISIX
   - Plugin
   - GM
 description: 本文介绍了关于 Apache APISIX gm 插件的基本信息及使用方法。

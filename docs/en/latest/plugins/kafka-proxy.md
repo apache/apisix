@@ -1,7 +1,8 @@
 ---
 title: kafka-proxy
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Kafka proxy
 description: This document contains information about the Apache APISIX kafka-proxy Plugin.

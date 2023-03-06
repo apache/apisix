@@ -1,8 +1,8 @@
 ---
 title: openid-connect
 keywords:
-  - APISIX
-  - API Gateway
+  - Apache APISIX
+  - API 网关
   - OpenID Connect
   - OIDC
 description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议，APISIX 可以与支持该协议的身份认证服务对接，如 Okta、Keycloak、Ory Hydra、Authing 等，实现对客户端请求的身份认证。
