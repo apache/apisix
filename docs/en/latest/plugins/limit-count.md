@@ -1,7 +1,7 @@
 ---
 title: limit-count
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Limit Count
 description: This document contains information about the Apache APISIX limit-count Plugin, you can use it to limit the number of requests to your service by a given count per time.

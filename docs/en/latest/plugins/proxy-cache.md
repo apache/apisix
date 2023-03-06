@@ -1,7 +1,7 @@
 ---
 title: proxy-cache
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Proxy Cache
 description: This document contains information about the Apache APISIX proxy-cache Plugin, you can use it to cache the response from the Upstream.

@@ -1,7 +1,8 @@
 ---
 title: jwt-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - JWT Auth
   - jwt-auth

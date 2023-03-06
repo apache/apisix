@@ -1,7 +1,7 @@
 ---
 title: syslog
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - Syslog

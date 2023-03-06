@@ -74,6 +74,14 @@ done
 
 
 === TEST 2: put plugin metadata and log an error level message - no auth kafka
+--- extra_init_by_lua
+    local core = require("apisix.core")
+    local producer = require("resty.kafka.producer")
+    local old_producer_new = producer.new
+    producer.new = function(self, broker_list, producer_config, cluster_name)
+        core.log.info("broker_config is: ", core.json.delay_encode(producer_config))
+        return old_producer_new(self, broker_list, producer_config, cluster_name)
+    end
 --- config
     location /t {
         content_by_lua_block {
@@ -87,7 +95,8 @@ done
                             "host": "127.0.0.1",
                             "port": 9092
                         }],
-                        "kafka_topic": "test2"
+                        "kafka_topic": "test2",
+                        "meta_refresh_interval": 1
                     },
                     "level": "ERROR",
                     "inactive_timeout": 1
@@ -99,7 +108,9 @@ done
     }
 --- error_log eval
 [qr/this is a error message for test2/,
-qr/send data to kafka: .*test2/]
+qr/send data to kafka: .*test2/,
+qr/broker_config is: \{.*"refresh_interval":1000/,
+]
 --- wait: 3
 
 

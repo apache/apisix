@@ -172,11 +172,11 @@ undeps:
 .PHONY: utils
 utils:
 ifeq ("$(wildcard utils/lj-releng)", "")
-	wget -P utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/lj-releng
+	wget -qP utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/lj-releng
 	chmod a+x utils/lj-releng
 endif
 ifeq ("$(wildcard utils/reindex)", "")
-	wget -P utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/reindex
+	wget -qP utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/reindex
 	chmod a+x utils/reindex
 endif
 

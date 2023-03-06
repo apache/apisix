@@ -1,7 +1,7 @@
 ---
 title: csrf
 keywords:
-  - APISIX
+  - Apache APISIX
   - API 网关
   - 跨站请求伪造攻击
   - Cross-site request forgery

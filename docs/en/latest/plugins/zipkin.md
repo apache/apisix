@@ -1,10 +1,10 @@
 ---
 title: zipkin
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Zipkin
-  - zipkin
 description: This document contains information about the Apache zipkin Plugin.
 ---
 

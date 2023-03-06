@@ -326,10 +326,10 @@ Enable `data_encryption` in `config.yaml`.
 ```yaml
 apisix:
     data_encryption:
-    enable: true
-    keyring:
-        - edd1c9f0985e76a2
-        - qeddd145sfvddff4
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+            - qeddd145sfvddff4
 ```
 
 APISIX will try to decrypt the data with keys in the order of the keys in the keyring (only for parameters declared in `encrypt_fields`). If the decryption fails, the next key will be tried until the decryption succeeds.

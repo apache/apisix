@@ -1,7 +1,7 @@
 ---
 title: node-status
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - Node status
