@@ -745,7 +745,10 @@ function _M.init_worker()
     -- someone's plugin needs to be initialized after prometheus
     -- see https://github.com/apache/apisix/issues/3286
     _M.load()
-    require("apisix.plugins.server-info").init_worker()
+
+    if is_http then
+        require("apisix.plugins.server-info").init_worker()
+    end
 
     if local_conf and not local_conf.apisix.enable_admin then
         init_plugins_syncer()
