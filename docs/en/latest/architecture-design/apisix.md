@@ -37,6 +37,7 @@ APISIX has two main parts:
 The APISIX core handles the important functions like matching Routes, load balancing, service discovery, configuration management, and provides a management API. It also includes APISIX Plugin runtime supporting Lua and multilingual Plugins (Go, Java , Python, JavaScript, etc) including the experimental WASM Plugin runtime.
 
 APISIX also has a set of [built-in Plugins](https://apisix.apache.org/docs/apisix/plugins/batch-requests) that adds features like authentication, security, observability, etc. They are written in Lua.
+
 ##Here is an overview of the architecture
 
 1.Nginx: APISIX is built on top of Nginx, an open source web server that is known for its high performance and scalability. Nginx acts as a reverse proxy and is responsible for routing the client requests to the appropriate backend service.
