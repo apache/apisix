@@ -82,3 +82,16 @@ Response delivery: Finally, APISIX delivers the response to the client. If any p
 The chart below shows the order in which different types of Plugin are applied to a request:
 
 ![flow-plugin-internal](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/flow-plugin-internal.png)
+
+In APISIX, the order in which plugins are applied to a request is determined by the order in which they are specified in the configuration file. There are several different types of plugins that can be applied to a request, and they can be categorized into three main groups based on when they are executed:
+
+Global plugins: These plugins are executed before any route-specific plugins and are applied to all incoming requests. Examples of global plugins include access control, request/response logging, and rate limiting. Global plugins can be added to the http level of the configuration file.
+
+Route plugins: These plugins are executed after the global plugins and are applied only to requests that match a specific route. Examples of route plugins include authentication, request/response transformation, and traffic splitting. Route plugins can be added to the route level of the configuration file.
+
+Service plugins: These plugins are executed after the route plugins and are applied only to requests that are routed to a specific upstream service. Examples of service plugins include load balancing, health checking, and circuit breaking. Service plugins can be added to the service level of the configuration file.
+
+Within each group of plugins, the order in which they are applied is determined by their position in the configuration file. For example, if two global plugins are specified, the one that appears first in the file will be executed before the second one. Similarly, if two route plugins are specified for a particular route, the first one will be executed before the second one.
+
+It's worth noting that some plugins may have dependencies on other plugins, meaning that they need to be executed in a specific order. In such cases, the order in which the plugins are specified in the configuration file becomes even more important. APISIX provides a flexible plugin system that allows developers to create custom plugins and define their execution order in the configuration file, enabling powerful and fine-grained control over the behavior of the API gateway.
+
