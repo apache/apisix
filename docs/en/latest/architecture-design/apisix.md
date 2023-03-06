@@ -37,6 +37,25 @@ APISIX has two main parts:
 The APISIX core handles the important functions like matching Routes, load balancing, service discovery, configuration management, and provides a management API. It also includes APISIX Plugin runtime supporting Lua and multilingual Plugins (Go, Java , Python, JavaScript, etc) including the experimental WASM Plugin runtime.
 
 APISIX also has a set of [built-in Plugins](https://apisix.apache.org/docs/apisix/plugins/batch-requests) that adds features like authentication, security, observability, etc. They are written in Lua.
+##Here is an overview of the architecture
+
+1.Nginx: APISIX is built on top of Nginx, an open source web server that is known for its high performance and scalability. Nginx acts as a reverse proxy and is responsible for routing the client requests to the appropriate backend service.
+
+2.Lua: APISIX is implemented in Lua, a lightweight programming language that is easy to learn and highly extensible. Lua is used to write plugins and extensions that can be added to APISIX to add custom functionality.
+
+3.Etcd: APISIX uses etcd, a distributed key-value store, to store its configuration data. The configuration data includes information about the backend services, the routes, and the plugins that are used by APISIX.
+
+4.REST API: APISIX provides a REST API that can be used to configure and manage the gateway. The REST API allows developers to add new routes, plugins, and services, as well as modify the existing configuration.
+
+5.Plugin System: APISIX has a plugin system that allows developers to extend the functionality of the gateway. APISIX provides a number of plugins out of the box, such as rate limiting, authentication, and SSL termination, but developers can also create their own custom plugins.
+
+6.Load Balancing: APISIX provides load balancing capabilities out of the box. It can distribute traffic evenly across multiple backend services, improving reliability and scalability.
+
+7.Caching: APISIX has a built-in caching system that can be used to cache responses from backend services. This can improve performance and reduce the load on the backend services.
+
+8.Service Discovery: APISIX can use service discovery systems, such as Consul or ZooKeeper, to automatically discover backend services and configure routing accordingly.
+
+9.Metrics: APISIX provides metrics and monitoring capabilities that can be used to monitor the performance of the gateway and the backend services.
 
 ## Request handling process
 
