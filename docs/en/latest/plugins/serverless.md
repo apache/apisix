@@ -111,6 +111,7 @@ Serverless Post Function Example:
 
 ```lua
 function handler(conf, ctx, res)
+    -- You can configure the code as per your needs
     -- Get the response body as a Lua table
     local body = cjson.decode(res.body)
 
@@ -128,6 +129,7 @@ end
 return {
     handler = handler
 }
+
 ```
 
 :::
