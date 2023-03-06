@@ -63,6 +63,19 @@ APISIX also has a set of [built-in Plugins](https://apisix.apache.org/docs/apisi
 The diagram below shows how APISIX handles an incoming request and applies corresponding Plugins:
 
 ![flow-load-plugin](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/flow-load-plugin.png)
+When a request arrives at APISIX, the following steps take place:
+
+APISIX receives the request: When a client sends a request to the API, APISIX receives it and processes it. The request could be an HTTP request or any other protocol that APISIX supports.
+
+Route matching: APISIX checks the incoming request against the configured routes to find a match. Each route is defined by a combination of a URI path, an HTTP method, and any additional criteria, such as headers or query parameters. If a match is found, APISIX proceeds to the next step.
+
+Plugin execution: Once APISIX has identified the correct route, it executes the plugins associated with that route. Plugins can perform a variety of actions, such as authentication, rate limiting, request/response transformation, and more. The plugins are executed in the order specified in the configuration file.
+
+Proxying: After all the plugins have been executed, APISIX proxies the request to the upstream service. The upstream service could be a web application, a microservice, or any other endpoint that can handle the request.
+
+Response processing: When the upstream service returns a response, APISIX processes it according to the plugins associated with the route. Plugins can modify the response, add headers, or perform other actions.
+
+Response delivery: Finally, APISIX delivers the response to the client. If any plugins have modified the response, the modified version is returned to the client.
 
 ## Plugin hierarchy
 
