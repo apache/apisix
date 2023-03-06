@@ -69,21 +69,43 @@ local count = 1
 ngx.say(count)
 ```
 Serverless Pre Function Example:
-```json
-"serverless-pre-function": {
-            "phase": "rewrite",
-            "functions" : [
-                "return function(conf, ctx)
-                    local core = require(\"apisix.core\")
-                    if not ngx.var.arg_name then
-                        local uri_args = core.request.get_uri_args(ctx)
-                        uri_args.name = \"world\"
-                        ngx.req.set_uri_args(uri_args)
-                    end
-                end"
-            ]
-        }
+```lua
+local function pre_handler(plugin_conf, ctx)
+    local api_key = ngx.req.get_headers()["x-api-key"]
+    if not api_key then
+        return responses.send_HTTP_UNAUTHORIZED("API key missing")
+    end
+    if api_key ~= plugin_conf.api_key then
+        return responses.send_HTTP_FORBIDDEN("Invalid API key")
+    end
+
+   
+    return
+end
+
+return {
+    name = "serverless-pre-function",
+    scope = "pre-function",
+    fields = {
+        { config = {
+            type = "record",
+            fields = {
+                { api_key = { type = "string", required = true } },
+            },
+        }, },
+    },
+    
+    self_check = function(schema, plugin_t, dao, is_updating)
+        if not plugin_t.config.api_key then
+            return false, "API key is missing in plugin configuration"
+        end
+
+        return true
+    end,
+    pre_handler = pre_handler,
+}
 ```
+
 Serverless Post Function Example:
 
 ```json
