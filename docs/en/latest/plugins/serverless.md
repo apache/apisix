@@ -70,7 +70,7 @@ ngx.say(count)
 ```
 Serverless Pre Function Example:
 ```lua
-local function pre_handler(plugin_conf, ctx)
+local function pre_handler(conf, ctx)
     local api_key = ngx.req.get_headers()["x-api-key"]
     if not api_key then
         return responses.send_HTTP_UNAUTHORIZED("API key missing")
@@ -108,12 +108,24 @@ return {
 
 Serverless Post Function Example:
 
-```json
-"serverless-post-function": {
-    "phase": "rewrite",
-    "functions" : [
-        "return function(conf, ctx) ngx.log(ngx.ERR, \"match uri \", ctx.curr_req_matched and ctx.curr_req_matched._path); end"
-    ]
+```lua
+function handler(plugin_conf, ctx, res)
+    -- Get the response body as a Lua table
+    local body = cjson.decode(res.body)
+
+    -- Add a custom response header
+    res.headers["X-My-Header"] = "my-header-value"
+
+    -- Modify the response body
+    body["new_field"] = "new_value"
+    res.body = cjson.encode(body)
+
+    -- If everything is valid, allow the response to be returned to the client
+    return res
+end
+
+return {
+    handler = handler
 }
 ```
 
