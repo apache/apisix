@@ -1,7 +1,7 @@
 ---
 title: proxy-mirror
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Proxy Mirror
 description: This document describes the information about the Apache APISIX proxy-mirror Plugin, you can use it to mirror the client requests.

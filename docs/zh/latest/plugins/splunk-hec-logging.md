@@ -1,7 +1,7 @@
 ---
 title: splunk-hec-logging
 keywords:
-  - APISIX
+  - Apache APISIX
   - API 网关
   - 插件
   - Splunk

@@ -1,7 +1,8 @@
 ---
 title: batch-requests
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Batch Requests
 description: This document contains information about the Apache APISIX batch-request Plugin.

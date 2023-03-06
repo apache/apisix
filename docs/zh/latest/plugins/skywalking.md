@@ -1,7 +1,8 @@
 ---
 title: skywalking
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - SkyWalking
 description: 本文将介绍 API 网关 Apache APISIX 如何通过 skywalking 插件将 metrics 上报到 Apache SkyWalking（一个开源的 APM）。

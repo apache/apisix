@@ -1,7 +1,7 @@
 ---
 title: Deployment modes
 keywords:
-  - API gateway
+  - API Gateway
   - Apache APISIX
   - APISIX deployment modes
 description: Documentation about the three deployment modes of Apache APISIX.

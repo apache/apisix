@@ -49,6 +49,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Check Chinese copywriting
-        uses: huacnlee/autocorrect-action@v2.6.1
+        uses: huacnlee/autocorrect-action@v2.6.2
         with:
           args: --lint --no-diff-bg-color docs/zh/latest/**.md

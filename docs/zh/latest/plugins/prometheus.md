@@ -1,8 +1,8 @@
 ---
 title: prometheus
 keywords:
-  - APISIX
-  - API Gateway
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Prometheus
 description:  本文将介绍 API 网关 Apache APISIX 如何通过 prometheus 插件将 metrics 上报到开源的监控软件 Prometheus。

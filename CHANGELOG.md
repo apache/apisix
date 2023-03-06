@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.2.0](#320)
 - [3.1.0](#310)
 - [3.0.0](#300)
 - [3.0.0-beta](#300-beta)
@@ -65,6 +66,48 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.2.0
+
+### Change
+
+- Deprecated separate Vault configuration in jwt-auth. Users can use secret to achieve the same function: [#8660](https://github.com/apache/apisix/pull/8660)
+
+### Core
+
+- :sunrise: Support Vault token to configure secret through environment variables: [#8866](https://github.com/apache/apisix/pull/8866)
+- :sunrise: Supports service discovery on stream subsystem:
+     - [#8583](https://github.com/apache/apisix/pull/8583)
+     - [#8593](https://github.com/apache/apisix/pull/8593)
+     - [#8584](https://github.com/apache/apisix/pull/8584)
+     - [#8640](https://github.com/apache/apisix/pull/8640)
+     - [#8633](https://github.com/apache/apisix/pull/8633)
+     - [#8696](https://github.com/apache/apisix/pull/8696)
+     - [#8826](https://github.com/apache/apisix/pull/8826)
+
+### Plugins
+
+- :sunrise: Add RESTful to graphQL conversion plugin: [#8959](https://github.com/apache/apisix/pull/8959)
+- :sunrise: Supports setting the log format on each log plugin:
+     - [#8806](https://github.com/apache/apisix/pull/8806)
+     - [#8643](https://github.com/apache/apisix/pull/8643)
+- :sunrise: Add request body/response body conversion plugin: [#8766](https://github.com/apache/apisix/pull/8766)
+- :sunrise: Support sending error logs to Kafka: [#8693](https://github.com/apache/apisix/pull/8693)
+- :sunrise: limit-count plugin supports X-RateLimit-Reset: [#8578](https://github.com/apache/apisix/pull/8578)
+- :sunrise: limit-count plugin supports setting TLS to access Redis cluster: [#8558](https://github.com/apache/apisix/pull/8558)
+- :sunrise: consumer-restriction plugin supports permission control via consumer_group_id: [#8567](https://github.com/apache/apisix/pull/8567)
+
+### Bugfixes
+
+- Fix mTLS protection when the host and SNI mismatch: [#8967](https://github.com/apache/apisix/pull/8967)
+- The proxy-rewrite plugin should escape URI parameter parts if they do not come from user config: [#8888](https://github.com/apache/apisix/pull/8888)
+- Admin API PATCH operation should return 200 status code after success: [#8855](https://github.com/apache/apisix/pull/8855)
+- Under certain conditions, the reload after etcd synchronization failure does not take effect: [#8736](https://github.com/apache/apisix/pull/8736)
+- Fix the problem that the nodes found by the Consul service discovery are incomplete: [#8651](https://github.com/apache/apisix/pull/8651)
+- Fix grpc-transcode plugin's conversion of Map data: [#8731](https://github.com/apache/apisix/pull/8731)
+- External plugins should be able to set the content-type response header: [#8588](https://github.com/apache/apisix/pull/8588)
+- When hotloading plugins, redundant timers may be left behind if the request-id plugin initializes the snowflake generator incorrectly: [#8556](https://github.com/apache/apisix/pull/8556)
+- Close previous proto synchronizer for grpc-transcode when hotloading plugins: [#8557](https://github.com/apache/apisix/pull/8557)
 
 ## 3.1.0
 

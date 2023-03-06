@@ -1,7 +1,7 @@
 ---
 title: elasticsearch-logger
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - Elasticsearch-logger

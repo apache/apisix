@@ -1,5 +1,5 @@
 {
-  "version": "3.1.0",
+  "version": "3.2.0",
   "sidebar": [
     {
       "type": "doc",
@@ -62,7 +62,8 @@
             "plugins/ext-plugin-pre-req",
             "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-post-resp",
-            "plugins/inspect"
+            "plugins/inspect",
+            "plugins/workflow"
           ]
         },
         {
@@ -75,6 +76,7 @@
             "plugins/grpc-web",
             "plugins/fault-injection",
             "plugins/mocking",
+            "plugins/degraphql",
             "plugins/body-transformer"
           ]
         },
@@ -184,7 +186,6 @@
             "plugins/azure-functions",
             "plugins/openwhisk",
             "plugins/aws-lambda",
-            "plugins/workflow",
             "plugins/openfunction"
           ]
         },
