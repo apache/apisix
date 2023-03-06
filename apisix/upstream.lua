@@ -23,6 +23,7 @@ local error = error
 local tostring = tostring
 local ipairs = ipairs
 local pairs = pairs
+local pcall = pcall
 local ngx_var = ngx.var
 local is_http = ngx.config.subsystem == "http"
 local upstreams
@@ -103,6 +104,12 @@ local function create_checker(upstream)
         return healthcheck_parent.checker
     end
 
+    if upstream.is_creating_checker then
+        core.log.info("another request is creating new checker")
+        return nil
+    end
+    upstream.is_creating_checker = true
+
     local checker, err = healthcheck.new({
         name = get_healthchecker_name(healthcheck_parent),
         shm_name = "upstream-healthcheck",
@@ -115,8 +122,11 @@ local function create_checker(upstream)
     end
 
     if healthcheck_parent.checker then
-        core.config_util.cancel_clean_handler(healthcheck_parent,
+        local ok, err = pcall(core.config_util.cancel_clean_handler, healthcheck_parent,
                                               healthcheck_parent.checker_idx, true)
+        if not ok then
+            core.log.error("cancel clean handler error: ", err)
+        end
     end
 
     core.log.info("create new checker: ", tostring(checker))
@@ -139,6 +149,8 @@ local function create_checker(upstream)
     healthcheck_parent.checker_upstream = upstream
     healthcheck_parent.checker_idx =
         core.config_util.add_clean_handler(healthcheck_parent, release_checker)
+
+    upstream.is_creating_checker = nil
 
     return checker
 end

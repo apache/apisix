@@ -88,9 +88,15 @@ function _M.cancel_clean_handler(item, idx, fire)
     end
 
     core_tab.remove(item.clean_handlers, pos)
-    if fire then
+    if not fire then
+        return
+    end
+
+    if f then
         f(item)
     end
+
+    log.error("call cancel_clean_handler error, f is nil")
 end
 
 
