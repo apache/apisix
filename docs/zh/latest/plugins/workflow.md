@@ -1,7 +1,8 @@
 ---
 title: workflow
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - workflow
   - 流量控制

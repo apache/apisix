@@ -1,7 +1,7 @@
 ---
 title: Admin API
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Admin API
   - Route

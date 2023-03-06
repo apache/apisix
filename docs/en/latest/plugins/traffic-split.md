@@ -1,7 +1,7 @@
 ---
 title: traffic-split
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Traffic Split
   - Blue-green Deployment

@@ -1,7 +1,8 @@
 ---
 title: hmac-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - HMAC Authentication
   - hmac-auth

@@ -1,7 +1,8 @@
 ---
 title: proxy-rewrite
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Proxy Rewrite
   - proxy-rewrite

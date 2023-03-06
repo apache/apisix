@@ -1,7 +1,7 @@
 ---
 title: cors
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - CORS
 description: This document contains information about the Apache APISIX cors Plugin.

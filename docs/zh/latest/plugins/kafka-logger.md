@@ -1,8 +1,8 @@
 ---
 title: kafka-logger
 keywords:
-  - APISIX
-  - API Gateway
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Kafka Logger
 description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作为 JSON 对象推送到 Apache Kafka 集群中。

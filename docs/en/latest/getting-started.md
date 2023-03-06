@@ -1,7 +1,8 @@
 ---
 title: Getting started
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Getting Started
 description: This document walks you through how you can get started with Apache APISIX.
 ---
