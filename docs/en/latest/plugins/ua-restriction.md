@@ -1,7 +1,7 @@
 ---
 title: ua-restriction
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - UA restriction
 description: This document contains information about the Apache APISIX ua-restriction Plugin, which allows you to restrict access to a Route or Service based on the User-Agent header with an allowlist and a denylist.

@@ -1,7 +1,8 @@
 ---
 title: azure-functions
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Azure Functions
   - azure-functions

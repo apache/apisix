@@ -1,7 +1,8 @@
 ---
 title: opa
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Open Policy Agent
   - opa

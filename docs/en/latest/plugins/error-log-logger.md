@@ -1,7 +1,7 @@
 ---
 title: error-log-logger
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - Error log logger

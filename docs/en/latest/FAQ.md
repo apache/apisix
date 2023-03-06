@@ -1,7 +1,7 @@
 ---
 title: FAQ
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - FAQ
 description: This article lists solutions to common problems when using Apache APISIX.

@@ -1,7 +1,7 @@
 ---
 title: 常见问题
 keywords:
-  - APISIX
+  - Apache APISIX
   - API 网关
   - 常见问题
   - FAQ

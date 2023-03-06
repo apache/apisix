@@ -1,8 +1,8 @@
 ---
 title: cors
 keywords:
-  - APISIX
-  - API Gateway
+  - Apache APISIX
+  - API 网关
   - CORS
 description: 本文介绍了 Apache APISIX cors 插件的基本信息及使用方法。
 ---

@@ -1,7 +1,7 @@
 ---
 title: request-id
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Request ID
 description: This document describes information about the Apache APISIX request-id Plugin, you can use it to track API requests by adding a unique ID to each request.
