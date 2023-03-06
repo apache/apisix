@@ -68,6 +68,22 @@ But code other than functions are illegal:
 local count = 1
 ngx.say(count)
 ```
+Serverless Pre Function Example:
+```json
+"serverless-pre-function": {
+            "phase": "rewrite",
+            "functions" : [
+                "return function(conf, ctx)
+                    local core = require(\"apisix.core\")
+                    if not ngx.var.arg_name then
+                        local uri_args = core.request.get_uri_args(ctx)
+                        uri_args.name = \"world\"
+                        ngx.req.set_uri_args(uri_args)
+                    end
+                end"
+            ]
+        }
+```
 
 :::
 
@@ -105,6 +121,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
+
 
 ## Example usage
 
