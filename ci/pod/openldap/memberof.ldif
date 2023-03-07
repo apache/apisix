@@ -1,0 +1,19 @@
+dn: cn=module,cn=config
+cn: module
+objectClass: olcModuleList
+olcModulePath: /opt/bitnami/openldap/lib/openldap
+olcModuleLoad: memberof.so
+olcModuleLoad: refint.so
+
+dn: olcOverlay=memberof,olcDatabase={2}mdb,cn=config
+objectClass: olcMemberOf
+objectClass: olcOverlayConfig
+olcOverlay: memberof
+
+dn: olcOverlay=refint,olcDatabase={2}mdb,cn=config
+objectClass: olcConfig
+objectClass: olcOverlayConfig
+objectClass: olcRefintConfig
+objectClass: top
+olcOverlay: refint
+olcRefintAttribute: memberof member manager owner
