@@ -20,13 +20,14 @@ local consumer_mod = require("apisix.consumer")
 local ldap_cli     = require("resty.ldap.client")
 local ldap_proto   = require("resty.ldap.protocol")
 
-local ipairs = ipairs
-local str_find = core.string.find
-local str_format = string.format
+local pcall         = pcall
+local ipairs        = ipairs
+local str_find      = core.string.find
+local str_format    = string.format
 local decode_base64 = ngx.decode_base64
-local ngx_re_match = ngx.re.match
-local ngx_re_gsub = ngx.re.gsub
-local ngx_re_split = require("ngx.re").split
+local ngx_re_match  = ngx.re.match
+local ngx_re_gsub   = ngx.re.gsub
+local ngx_re_split  = require("ngx.re").split
 
 local LDAP_SEARCH_SCOPE_BASE_OBJECT = ldap_proto.SEARCH_SCOPE_BASE_OBJECT
 local LDAP_SEARCH_DEREF_ALIASES_ALWAYS = ldap_proto.SEARCH_DEREF_ALIASES_ALWAYS
