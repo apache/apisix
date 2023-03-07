@@ -256,7 +256,7 @@ function _M.rewrite(conf, ctx)
     end
 
     -- following codes does not use consumer_mod.consumers_kv because it
-    -- does not support the ability to adaptively cull objects for which 
+    -- does not support the ability to adaptively cull objects for which
     -- the specified key does not exist, and there is no need to use the
     -- secret manager to store data here (user_dn and group_dn are
     -- supposed to be accessible)
