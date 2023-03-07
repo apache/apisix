@@ -301,6 +301,10 @@
         },
         {
           "type": "doc",
+          "id": "get-data-planes-from-etcd"
+        },
+        {
+          "type": "doc",
           "id": "router-radixtree"
         },
         {
