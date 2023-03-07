@@ -94,9 +94,9 @@ function _M.cancel_clean_handler(item, idx, fire)
 
     if f then
         f(item)
+    else
+        log.error("call cancel_clean_handler error, f is nil")
     end
-
-    log.error("call cancel_clean_handler error, f is nil")
 end
 
 
