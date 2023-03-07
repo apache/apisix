@@ -79,6 +79,10 @@ local schema = {
         },
         vary = {
             type = "boolean",
+        },
+        disable_via = {
+            type = "boolean",
+            default = false,
         }
     },
 }
@@ -97,6 +101,14 @@ local _M = {
 
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
+end
+
+
+function _M.rewrite(conf, ctx)
+    if conf.disable_via == true then
+        -- According to nginx source code, via header will cause gzip not work
+        core.request.set_header(ctx, "via", nil)
+    end
 end
 
 

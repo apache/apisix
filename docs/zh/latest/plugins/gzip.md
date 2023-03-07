@@ -39,15 +39,16 @@ description: 本文介绍了关于 Apache APISIX `gzip` 插件的基本信息及
 
 ## 属性
 
-| 名称           | 类型                  | 必选项  | 默认值         | 有效值    | 描述                                                                                                                            |
-| ---------------| -------------------- | ------- | -------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 名称             | 类型                  | 必选项  | 默认值         | 有效值    | 描述                                                                                                                  |
+|----------------| -------------------- | ------- | -------------- | ------- |---------------------------------------------------------------------------------------------------------------------|
 | types          | array[string] or "*" | 否      |  ["text/html"] |          | 动态设置 [`gzip_types`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_types) 指令，特殊值 `"*"` 匹配任何 MIME 类型。 |
-| min_length     | integer              | 否      |  20            | >= 1     | 动态设置 [`gzip_min_length`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_min_length) 指令。                      |
-| comp_level     | integer              | 否      |  1             | [1, 9]   | 动态设置 [`gzip_comp_level`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_comp_level) 指令。                      |
-| http_version   | number               | 否      |  1.1           | 1.1, 1.0 | 动态设置 [`gzip_http_version`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_http_version) 指令。                  |
-| buffers.number | integer              | 否      |  32            | >= 1     | 动态设置 [`gzip_buffers`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_buffers) 指令。                            |
-| buffers.size   | integer              | 否      |  4096          | >= 1     | 动态设置 [`gzip_buffers`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_buffers) 指令。                            |
-| vary           | boolean              | 否      |  false         |          | 动态设置 [`gzip_vary`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_vary) 指令。                                  |
+| min_length     | integer              | 否      |  20            | >= 1     | 动态设置 [`gzip_min_length`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_min_length) 指令。              |
+| comp_level     | integer              | 否      |  1             | [1, 9]   | 动态设置 [`gzip_comp_level`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_comp_level) 指令。              |
+| http_version   | number               | 否      |  1.1           | 1.1, 1.0 | 动态设置 [`gzip_http_version`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_http_version) 指令。          |
+| buffers.number | integer              | 否      |  32            | >= 1     | 动态设置 [`gzip_buffers`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_buffers) 指令。                    |
+| buffers.size   | integer              | 否      |  4096          | >= 1     | 动态设置 [`gzip_buffers`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_buffers) 指令。                    |
+| vary           | boolean              | 否      |  false         |          | 动态设置 [`gzip_vary`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_vary) 指令。                          |
+| disable_via    | boolean              | 否      |  false         |          | 当设置为 `true` 时，会清除请求头中的 `via`。                                                                                       |
 
 ## 启用插件
 

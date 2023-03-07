@@ -48,6 +48,7 @@ This Plugin requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-the
 | buffers.number | integer              | False    | 32            | >= 1         | Dynamically sets the `gzip_buffers` directive.                                          |
 | buffers.size   | integer              | False    | 4096          | >= 1         | Dynamically sets the `gzip_buffers` directive.                                          |
 | vary           | boolean              | False    | false         |              | Dynamically sets the `gzip_vary` directive.                                             |
+| disable_via    | boolean              | False    | false         |              | If set to `true`, the via header in the request header will be cleared.                 |
 
 ## Enabling the Plugin
 

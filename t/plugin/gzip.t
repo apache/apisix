@@ -540,3 +540,51 @@ Vary: upstream, Accept-Encoding
 {"error_msg":"failed to check the configuration of plugin gzip err: property \"buffers\" validation failed: property \"number\" validation failed: expected 0 to be at least 1"}
 {"error_msg":"failed to check the configuration of plugin gzip err: property \"buffers\" validation failed: property \"size\" validation failed: expected 0 to be at least 1"}
 {"error_msg":"failed to check the configuration of plugin gzip err: property \"vary\" validation failed: wrong type: expected boolean, got number"}
+
+
+
+=== TEST 20: via header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/echo",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "gzip": {
+                            "disable_via": true
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 21: hit with via
+--- request
+POST /echo
+0123456789
+012345678
+--- more_headers
+Accept-Encoding: gzip
+Content-Type: text/html
+Via: 0123456
+--- response_headers
+Content-Encoding: gzip
