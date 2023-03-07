@@ -120,12 +120,14 @@ function _M.check_schema(conf, schema_type)
         return ok, err
     end
 
-    if not str_find(conf.user_dn_template, "%s") or not ok then -- ensure %s in template
+    -- ensure %s in template
+    if not str_find(conf.user_dn_template, "%s") or not ok then
         return false, "User DN template doesn't contain " ..
                         "the %s placeholder for the uid variable"
     end
 
-    if not pcall(str_format, conf.user_dn_template, "username") then -- ensure only one %s in template
+    -- ensure only one %s in template
+    if not pcall(str_format, conf.user_dn_template, "username") then
         return false, "User DN template has more than one " ..
                         "placeholder %s for the username variable."
     end
