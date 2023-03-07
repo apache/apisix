@@ -44,7 +44,7 @@ _EOC_
     set \$opentelemetry_context_traceparent "";
     set \$opentelemetry_trace_id "";
     set \$opentelemetry_span_id "";
-    access_log /tmp/access.log opentelemetry_log; 
+    access_log logs/error.log opentelemetry_log; 
 _EOC_
 
     $block->set_value("upstream_server_config", $upstream_server_config);

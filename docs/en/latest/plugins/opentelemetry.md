@@ -100,19 +100,16 @@ The following nginx variables are set by OpenTelemetry:
 How to use variables? you have to add it to your configuration file (`conf/config.yaml`):
 
 ```yaml title="./conf/config.yaml"
-    nginx_config:
-      http_server_configuration_snippet: |
-        set $opentelemetry_context_traceparent ""
-        set $opentelemetry_trace_id ""
-        set $opentelemetry_span_id ""
-    http:
-        enable_access_log: true
-        access_log: "/dev/stdout"
-        access_log_format: '{"time": "$time_iso8601","opentelemetry_context_traceparent": "$opentelemetry_context_traceparent","opentelemetry_trace_id": "$opentelemetry_trace_id","opentelemetry_span_id": "$opentelemetry_span_id","remote_addr": "$remote_addr","uri": "$uri"}'
-        access_log_format_escape: json
-    plugin_attr:
-      opentelemetry:
-        set_ngx_var: true
+http:
+    enable_access_log: true
+    access_log: "/dev/stdout"
+    access_log_format: '{"time": "$time_iso8601","opentelemetry_context_traceparent": "$opentelemetry_context_traceparent","opentelemetry_trace_id": "$opentelemetry_trace_id","opentelemetry_span_id": "$opentelemetry_span_id","remote_addr": "$remote_addr","uri": "$uri"}'
+    access_log_format_escape: json
+plugins:
+  - opentelemetry
+plugin_attr:
+  opentelemetry:
+    set_ngx_var: true
 ```
 
 ## Enabling the Plugin
