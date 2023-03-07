@@ -1,10 +1,10 @@
 ---
 title: openwhisk
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - OpenWhisk
-  - openwhisk
 description: This document contains information about the Apache openwhisk Plugin.
 ---
 

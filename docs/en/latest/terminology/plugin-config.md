@@ -1,7 +1,7 @@
 ---
 title: Plugin Config
 keywords:
-  - API gateway
+  - API Gateway
   - Apache APISIX
   - Plugin Config
 description: Plugin Config in Apache APISIX.

@@ -1,7 +1,7 @@
 ---
 title: client-control
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Client Control
 description: This document describes the Apache APISIX client-control Plugin, you can use it to control NGINX behavior to handle a client request dynamically.

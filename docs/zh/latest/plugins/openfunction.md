@@ -1,10 +1,10 @@
 ---
 title: openfunction
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - OpenFunction
-  - openfunction
 description: 本文介绍了 API 网关 Apache APISIX 的 openfunction 插件的基本信息及使用方法。
 ---
 

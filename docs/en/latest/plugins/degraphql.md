@@ -1,7 +1,7 @@
 ---
 title: degraphql
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - Degraphql

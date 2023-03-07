@@ -1,10 +1,10 @@
 ---
 title: mocking
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Mocking
-  - mocking
 description: 本文介绍了关于 Apache APISIX `mocking` 插件的基本信息及使用方法。
 ---
 

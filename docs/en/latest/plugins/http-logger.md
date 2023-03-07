@@ -1,8 +1,8 @@
 ---
 title: http-logger
 keywords:
-  - APISIX
-  - API 网关
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - HTTP Logger
 description: This document contains information about the Apache APISIX http-logger Plugin. Using this Plugin, you can push APISIX log data to HTTP or HTTPS servers.

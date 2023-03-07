@@ -1,7 +1,7 @@
 ---
 title: api-breaker
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - API Breaker
 description: This document describes the information about the Apache APISIX api-breaker Plugin, you can use it to protect Upstream services.

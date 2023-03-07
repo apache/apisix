@@ -1,7 +1,7 @@
 ---
 title: GM
 keywords:
-  - APISIX
+  - Apache APISIX
   - Plugin
   - GM
 description: This article introduces the basic information and usage of the Apache APISIX `gm` plugin.

@@ -1,7 +1,7 @@
 ---
 title: loggly
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - SolarWinds Loggly

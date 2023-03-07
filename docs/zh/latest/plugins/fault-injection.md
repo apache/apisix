@@ -1,7 +1,8 @@
 ---
 title: fault-injection
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Fault Injection
   - fault-injection

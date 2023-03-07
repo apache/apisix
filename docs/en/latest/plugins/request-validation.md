@@ -1,7 +1,7 @@
 ---
 title: request-validation
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Request Validation
 description: This document describes the information about the Apache APISIX request-validation Plugin, you can use it to validate the requests before forwarding them to an Upstream service.
