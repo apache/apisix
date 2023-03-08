@@ -120,7 +120,7 @@ function _M.rewrite(conf, ctx)
         core.log.warn(err)
         return 401, { message = "Invalid authorization in request" }
     end
-·
+
     -- 2. try authenticate the user against the ldap server
     local ldap_host, ldap_port = core.utils.parse_addr(conf.ldap_uri)
     local ldap_client = ldap_cli:new(ldap_host, ldap_port, {
