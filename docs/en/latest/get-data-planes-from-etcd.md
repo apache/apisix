@@ -34,7 +34,7 @@ https://apisix.apache.org/en/docs/apisix/plugins/server-info/
 
 ## Admin API to query data planes
 
-### GET /apisix/admin/data_planes
+* `GET /apisix/admin/data_planes`
 
 It returns a JSON array which contains all alive data planes.
 
@@ -73,7 +73,7 @@ curl http://127.0.0.1:9180/apisix/admin/data_planes \
 ]
 ```
 
-### GET /apisix/admin/data_planes/<id>
+* `GET /apisix/admin/data_planes/<id>`
 
 It returns a JSON object which contains the specific alive data plane.
 
