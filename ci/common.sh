@@ -85,6 +85,10 @@ install_nodejs () {
     npm config set registry https://registry.npmjs.org/
 }
 
+install_rust () {
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+}
+
 set_coredns() {
     # test a domain name is configured as upstream
     echo "127.0.0.1 test.com" | sudo tee -a /etc/hosts
