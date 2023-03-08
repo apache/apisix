@@ -121,14 +121,6 @@ local function create_checker(upstream)
         return nil
     end
 
-    if healthcheck_parent.checker then
-        local ok, err = pcall(core.config_util.cancel_clean_handler, healthcheck_parent,
-                                              healthcheck_parent.checker_idx, true)
-        if not ok then
-            core.log.error("cancel clean handler error: ", err)
-        end
-    end
-
     core.log.info("create new checker: ", tostring(checker))
 
     local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
