@@ -17,7 +17,7 @@
 
 local core         = require("apisix.core")
 local consumer_mod = require("apisix.consumer")
-local ldap_cli     = require("resty.ldap.client")
+local ok, ldap_cli = pcall(require, "resty.ldap.client")
 local ldap_proto   = require("resty.ldap.protocol")
 
 local pcall         = pcall
@@ -187,6 +187,11 @@ end
 
 
 function _M.rewrite(conf, ctx)
+    if not ok then -- ensure rasn library loaded
+        core.log.error("failed to load lua-resty-ldap lib: ", ldap_cli)
+        return 500
+    end
+
     -- extract userinfo from Authorization header
     local auth_header = core.request.header(ctx, "Authorization")
     if not auth_header then
