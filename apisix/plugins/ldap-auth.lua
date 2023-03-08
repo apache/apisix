@@ -18,7 +18,6 @@ local core = require("apisix.core")
 local ngx = ngx
 local ngx_re = require("ngx.re")
 local consumer_mod = require("apisix.consumer")
-local ldap = require("resty.ldap")
 local ok, ldap_cli = pcall(require, "resty.ldap.client")
 
 local schema = {
@@ -128,7 +127,8 @@ function _M.rewrite(conf, ctx)
         ldaps = conf.use_tls,
         ssl_verify = conf.tls_verify,
         socket_timeout = 10000,
-        keepalive_pool_name = ldap_host .. ":" .. ldap_port .. "_ldapauth" .. (conf.use_tls and "_tls" or ""),
+        keepalive_pool_name = ldap_host .. ":" .. ldap_port .. "_ldapauth"
+                                .. (conf.use_tls and "_tls" or ""),
         keepalive_pool_size = 5,
         keepalive_timeout = 60000,
     })
