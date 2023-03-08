@@ -21,6 +21,9 @@
 before_install() {
     linux_get_dependencies
 
+    # install rust
+    install_rust
+
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
 }
 

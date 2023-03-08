@@ -26,9 +26,6 @@ do_install() {
     ./ci/linux-install-openresty.sh
     ./utils/linux-install-luarocks.sh
     ./ci/linux-install-etcd-client.sh
-
-    # install rust
-    install_rust
 }
 
 script() {
