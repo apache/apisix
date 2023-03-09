@@ -965,7 +965,6 @@ qr/^.*?\[error\](?!.*process exiting).*/
             local healthcheck = require("resty.healthcheck")
             local test = healthcheck.new
             healthcheck.new = function(...)
-                ngx.log(ngx.ERR, "================= levy")
                 ngx.sleep(1)
                 return test(...)
             end
