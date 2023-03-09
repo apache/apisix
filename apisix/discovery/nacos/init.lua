@@ -315,6 +315,7 @@ local function fetch_full_registry(premature)
                 host = host.ip,
                 port = host.port,
                 weight = host.weight or default_weight,
+                metadata = host.metadata or {},
             }
 
             -- docs: https://github.com/yidongnan/grpc-spring-boot-starter/pull/496
