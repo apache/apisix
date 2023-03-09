@@ -95,7 +95,7 @@ function _M.cancel_clean_handler(item, idx, fire)
     if f then
         f(item)
     else
-        log.error("call cancel_clean_handler error, f is nil")
+        log.error("The function used to clear the health checker is nil, plese check")
     end
 end
 
