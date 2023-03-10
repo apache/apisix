@@ -252,19 +252,19 @@ local function get_data_planes()
     local res, err = etcd_cli:readdir(key)
     if err then
         core.log.warn("failed to do etcd readdir: ", err)
-        core.response.exit(502, {error_msg =
+        core.response.exit(503, {error_msg =
             "failed to do etcd readdir: " .. err})
     end
 
     if res.status ~= 200 then
         core.log.warn("failed to do etcd readdir: status=", res.status)
-        core.response.exit(502, {error_msg =
+        core.response.exit(503, {error_msg =
             "failed to do etcd readdir: status=" .. res.status})
     end
 
     if res.body.kvs == nil then
         core.log.warn("empty server-info")
-        core.response.exit(502, {error_msg = "empty server-info"})
+        core.response.exit(503, {error_msg = "empty server-info"})
     end
 
     core.response.exit(200, is_dir and res.body.kvs or res.body.kvs[1])
