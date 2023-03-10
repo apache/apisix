@@ -44,7 +44,7 @@ description: 本文档介绍了 Apache APISIX mqtt-proxy 插件的信息，通�
 
 为了启用该插件，需要先在配置文件（`./conf/config.yaml`）中加载 `stream_proxy` 相关配置。以下配置代表监听 `9100` TCP 端口：
 
-```yaml title=“./conf/config.yaml”
+```yaml title="./conf/config.yaml"
     ...
     router:
         http: 'radixtree_uri'
