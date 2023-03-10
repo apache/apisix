@@ -29,6 +29,15 @@ description: This document contains information about the Apache APISIX server-i
 
 ## Description
 
+**Note that this plugin has been enabled by default by the APISIX core,
+so no need to enable it explicitly, otherwise you will get below warning log:**
+
+```
+server-info plugin was moved into APISIX core, no need to enable it explicitly
+```
+
+---
+
 The `server-info` Plugin periodically reports basic server information to etcd.
 
 The information reported by the Plugin is explained below:
