@@ -30,7 +30,13 @@ To query all data planes information from etcd, we move `server-info` plugin int
 
 The data plane information keeps the same format of `server-info` plugin output:
 
-https://apisix.apache.org/en/docs/apisix/plugins/server-info/
+| Name         | Type    | Description                                                                                                            |
+|--------------|---------|------------------------------------------------------------------------------------------------------------------------|
+| boot_time    | integer | Bootstrap time (UNIX timestamp) of the APISIX instance. Resets when hot updating but not when APISIX is just reloaded. |
+| id           | string  | APISIX instance ID.                                                                                                    |
+| etcd_version | string  | Version of the etcd cluster used by APISIX. Will be `unknown` if the network to etcd is partitioned.                   |
+| version      | string  | Version of APISIX instance.                                                                                            |
+| hostname     | string  | Hostname of the machine/pod APISIX is deployed to.                                                                     |
 
 ## Admin API to query data planes
 
