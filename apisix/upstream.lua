@@ -118,6 +118,7 @@ local function create_checker(upstream)
 
     if not checker then
         core.log.error("fail to create healthcheck instance: ", err)
+        upstream.is_creating_checker = nil
         return nil
     end
 
