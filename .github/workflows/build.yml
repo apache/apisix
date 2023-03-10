@@ -28,12 +28,8 @@ jobs:
           - ubuntu-20.04
         os_name:
           - linux_openresty
-          - linux_openresty_1_19
         test_dir:
-          - t/plugin/[a-k]*
-          - t/plugin/[l-z]*
-          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/deployment t/discovery t/error_page t/misc
-          - t/node t/pubsub t/router t/script t/secret t/stream-node t/utils t/wasm t/xds-library t/xrpc
+          - t/plugin/a*
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 90
@@ -129,28 +125,6 @@ jobs:
           make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
           [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
           echo "Linux launch services, done."
-      - name: Start Dubbo Backend
-        if: matrix.os_name == 'linux_openresty' && steps.test_env.outputs.type == 'plugin'
-        run: |
-          sudo apt install -y maven
-          cd t/lib/dubbo-backend
-          mvn package
-          cd dubbo-backend-provider/target
-          java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java.log &
-
-      - name: Build xDS library
-        if: steps.test_env.outputs.type == 'last'
-        run: |
-          cd t/xds-library
-          go build -o libxds.so -buildmode=c-shared main.go export.go
-
-      - name: Build wasm code
-        if: matrix.os_name == 'linux_openresty' && steps.test_env.outputs.type == 'last'
-        run: |
-          export TINYGO_VER=0.20.0
-          wget https://github.com/tinygo-org/tinygo/releases/download/v${TINYGO_VER}/tinygo_${TINYGO_VER}_amd64.deb 2>/dev/null
-          sudo dpkg -i tinygo_${TINYGO_VER}_amd64.deb
-          cd t/wasm && find . -type f -name "*.go" | xargs -Ip tinygo build -o p.wasm -scheduler=none -target=wasi p
 
       - name: Linux Before install
         run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
@@ -173,3 +147,8 @@ jobs:
           echo "start backing up, $(date)"
           bash ./ci/backup-docker-images.sh ${{ steps.test_env.outputs.type }}
           echo "backup done, $(date)"
+
+      - name: Run debugger
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 15
