@@ -1452,3 +1452,74 @@ HTTP/1.1 200 OK
 ### Response Parameters
 
 Currently, the response is returned from etcd.
+
+## Query Data planes
+
+### Request Methods
+
+| Method | Request URI                         | Request Body | Description                                    |
+| ------ | ----------------------------------- | ------------ | ---------------------------------------------- |
+| GET    | /apisix/admin/data_planes          | NULL         | Fetches a list of all alive data planes.                 |
+| GET    | /apisix/admin/data_planes/{id} | NULL         | Fetches the specified alive data plane by `id`. |
+
+### Example API usage:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/data_planes \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET -s | jq
+```
+
+```json
+[
+  {
+    "value": {
+      "etcd_version": "3.5.0",
+      "hostname": "bar",
+      "version": "3.2.0",
+      "id": "de900110-a4b2-456a-9112-f3f76578657c",
+      "boot_time": 1678095922
+    },
+    "key": "/apisix/data_plane/server_info/de900110-a4b2-456a-9112-f3f76578657c",
+    "lease": "7587868007797608997",
+    "create_revision": "2687091",
+    "version": "1",
+    "mod_revision": "2687091"
+  },
+  {
+    "value": {
+      "etcd_version": "3.5.0",
+      "hostname": "foo",
+      "version": "3.2.0",
+      "id": "e16b5da2-1b5c-4cd3-866c-7bcea7b32ffe",
+      "boot_time": 1678095822
+    },
+    "create_revision": "2687090",
+    "key": "/apisix/data_plane/server_info/e16b5da2-1b5c-4cd3-866c-7bcea7b32ffe",
+    "lease": "7587868007797608997",
+    "version": "1",
+    "mod_revision": "2687090"
+  }
+]
+```
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/data_planes/e16b5da2-1b5c-4cd3-866c-7bcea7b32ffe \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET -s | jq
+```
+
+```json
+{
+  "value": {
+    "etcd_version": "3.5.0",
+    "hostname": "foo",
+    "version": "3.2.0",
+    "id": "e16b5da2-1b5c-4cd3-866c-7bcea7b32ffe",
+    "boot_time": 1678095822
+  },
+  "create_revision": "2687090",
+  "key": "/apisix/data_plane/server_info/e16b5da2-1b5c-4cd3-866c-7bcea7b32ffe",
+  "lease": "7587868007797608997",
+  "version": "1",
+  "mod_revision": "2687090"
+}
+```
