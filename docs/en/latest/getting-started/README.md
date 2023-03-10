@@ -48,7 +48,6 @@ The quickstart script relies on several components:
 To provide a better experience in this tutorial, the authorization of Admin API is switched off by default. Please turn on the authorization of Admin API in the production environment.
 
 :::
-     
 APISIX can be easily installed and started with the quickstart script:
 
 ```shell
