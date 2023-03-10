@@ -35,12 +35,12 @@ In this tutorial, you will create a _consumer_ with _key authentication_, and le
 
 A Consumer is an application or a developer who consumes the API.
 
-In APISIX, a Consumer requires a unique _username_ and an authentication _plugin_ from the list above to be created. 
+In APISIX, a Consumer requires a unique _username_ and an authentication _plugin_ from the list above to be created.
 
 ## What is Key Authentication
 
-Key authentication is a relatively simple but widely used authentication approach. The idea is as follows: 
-1. Administrator adds an authentication key (API key) to the Route. 
+Key authentication is a relatively simple but widely used authentication approach. The idea is as follows:
+1. Administrator adds an authentication key (API key) to the Route.
 2. API consumers add the key to the query string or headers for authentication when sending requests.
 
 ## Enable Key Authentication

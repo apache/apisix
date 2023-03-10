@@ -9,7 +9,7 @@ slug: /getting-started/configure-routes
 
 > The Getting Started tutorials are contributed by [API7.ai](https://api7.ai/) and are licensed under the Apache 2.0 license.
 
-Apache APISIX provides flexible gateway management capabilities based on _routes_, where routing paths and targets are defined for requests. 
+Apache APISIX provides flexible gateway management capabilities based on _routes_, where routing paths and targets are defined for requests.
 
 This tutorial guides you on how to create a route and validate it. You will complete the following steps:
 

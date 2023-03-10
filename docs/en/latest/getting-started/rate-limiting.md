@@ -43,11 +43,11 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes/getting-started-ip" -X PATCH 
 }'
 ```
 
-You will receive an `HTTP/1.1 201 OK` response if the plugin was added successfully. The above configuration limits the incoming requests to a maximum of 2 requests within 10 seconds. 
+You will receive an `HTTP/1.1 201 OK` response if the plugin was added successfully. The above configuration limits the incoming requests to a maximum of 2 requests within 10 seconds.
 
 ### Validate
 
-Let's generate 100 simultaneous requests to see the rate limiting plugin in effect. 
+Let's generate 100 simultaneous requests to see the rate limiting plugin in effect.
 
 ```shell
 count=$(seq 100 | xargs -i curl "http://127.0.0.1:9080/ip" -I -sL | grep "503" | wc -l); echo \"200\": $((100 - $count)), \"503\": $count
@@ -101,4 +101,4 @@ You can use the APISIX variables to configure fined matching rules of rate limit
 
 Congratulations! You have learned how to configure rate limiting and completed the Getting Started tutorials.
 
-You can continue to explore other documentations to customize APISIX and meet your production needs. 
+You can continue to explore other documentations to customize APISIX and meet your production needs.

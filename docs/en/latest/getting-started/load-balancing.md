@@ -9,7 +9,7 @@ slug: /getting-started/load-balancing
 
 > The Getting Started tutorials are contributed by [API7.ai](https://api7.ai/) and are licensed under the Apache 2.0 license.
 
-Load balancing manages traffic between clients and servers. It is a mechanism used to decide which server handles a specific request, allowing for improved performance, scalability, and reliability. Load balancing is a key consideration in designing systems that need to handle a large volume of traffic. 
+Load balancing manages traffic between clients and servers. It is a mechanism used to decide which server handles a specific request, allowing for improved performance, scalability, and reliability. Load balancing is a key consideration in designing systems that need to handle a large volume of traffic.
 
 Apache APISIX supports weighted round-robin load balancing, in which incoming traffic are distributed across a set of servers in a cyclical pattern, with each server taking a turn in a predefined order.
 
