@@ -42,7 +42,7 @@ __DATA__
                  [[{
                         "plugins": {
                             "authz-keycloak": {
-                                "token_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token",
+                                "token_endpoint": "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token",
                                 "access_denied_redirect_uri": "http://127.0.0.1/test",
                                 "permissions": ["course_resource#delete"],
                                 "client_id": "course_management",
@@ -78,7 +78,7 @@ passed
             local json_decode = require("toolkit.json").decode
             local http = require "resty.http"
             local httpc = http.new()
-            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token"
+            local uri = "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token"
             local res, err = httpc:request_uri(uri, {
                     method = "POST",
                     body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=student@gmail.com&password=123456",
@@ -127,7 +127,7 @@ apisix:
                  [[{
                         "plugins": {
                             "authz-keycloak": {
-                                "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "token_endpoint": "https://127.0.0.1:8443/realms/University/protocol/openid-connect/token",
                                 "permissions": ["course_resource#view"],
                                 "client_id": "course_management",
                                 "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",

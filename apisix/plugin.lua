@@ -858,10 +858,6 @@ end
 
 
 local function get_plugin_schema_for_gde(name, schema_type)
-    if not enable_gde() then
-        return nil
-    end
-
     local plugin_schema = local_plugins_hash and local_plugins_hash[name]
     if not plugin_schema then
         return nil
@@ -881,6 +877,9 @@ end
 
 
 local function decrypt_conf(name, conf, schema_type)
+    if not enable_gde() then
+        return
+    end
     local schema = get_plugin_schema_for_gde(name, schema_type)
     if not schema then
         core.log.warn("failed to get schema for plugin: ", name)
@@ -924,6 +923,9 @@ _M.decrypt_conf = decrypt_conf
 
 
 local function encrypt_conf(name, conf, schema_type)
+    if not enable_gde() then
+        return
+    end
     local schema = get_plugin_schema_for_gde(name, schema_type)
     if not schema then
         core.log.warn("failed to get schema for plugin: ", name)
@@ -1091,7 +1093,9 @@ function _M.run_plugin(phase, plugins, api_ctx)
                 end
 
                 plugin_run = true
+                api_ctx._plugin_name = plugins[i]["name"]
                 local code, body = phase_func(conf, api_ctx)
+                api_ctx._plugin_name = nil
                 if code or body then
                     if is_http then
                         if code >= 400 then
@@ -1126,7 +1130,9 @@ function _M.run_plugin(phase, plugins, api_ctx)
         local conf = plugins[i + 1]
         if phase_func and meta_filter(api_ctx, plugins[i]["name"], conf) then
             plugin_run = true
+            api_ctx._plugin_name = plugins[i]["name"]
             phase_func(conf, api_ctx)
+            api_ctx._plugin_name = nil
         end
     end
 
