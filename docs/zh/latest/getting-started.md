@@ -143,7 +143,7 @@ curl -sL https://run.api7.ai/apisix/quickstart | sh
 curl "http://127.0.0.1:9080" --head | grep Server
 ```
 
-I 如果一切顺利，将输出如下信息。
+如果一切顺利，将输出如下信息。
 
 ```text
 Server: APISIX/3.1.0
