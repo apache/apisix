@@ -37,7 +37,7 @@ script() {
     # install rust
     install_rust
 
-    echo $PATH
+    sudo echo $PATH
 
     # install APISIX with local version
     sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps > build.log 2>&1 || (cat build.log && exit 1)
