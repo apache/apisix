@@ -21,9 +21,6 @@
 before_install() {
     linux_get_dependencies
 
-    # install rust
-    install_rust
-
     sudo cpanm --notest Test::Nginx >build.log 2>&1 || (cat build.log && exit 1)
 }
 
@@ -35,6 +32,9 @@ do_install() {
     ./utils/linux-install-luarocks.sh
 
     ./ci/linux-install-etcd-client.sh
+
+    # install rust
+    install_rust
 
     create_lua_deps
 
