@@ -24,9 +24,11 @@ install_dependencies() {
     # install build & runtime deps
     yum install -y wget tar gcc automake autoconf libtool make unzip \
         git sudo openldap-devel which ca-certificates openssl-devel \
-        epel-release libnghttp2-devel
+        epel-release
 
     # install newer curl
+    yum makecache
+    yum install -y libnghttp2-devel
     install_curl
 
     # install openresty to make apisix's rpm test work
