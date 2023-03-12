@@ -36,8 +36,7 @@ script() {
 
     # install rust
     install_rust
-command -v cargo
-ls -la $HOME/.cargo/bin
+command -v cargo >/dev/null 2>&1 || echo "NOT EXIST"; exit 1
     # install APISIX with local version
     sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps > build.log 2>&1 || (cat build.log && exit 1)
     sudo luarocks make rockspec/apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
