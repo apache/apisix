@@ -33,6 +33,7 @@ RUN set -x \
     git \
     openldap-dev \
     pcre-dev \
+    sudo \
     && cd apisix \
     && git config --global url.https://github.com/.insteadOf git://github.com/ \
     && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo sh -s -- -y \
