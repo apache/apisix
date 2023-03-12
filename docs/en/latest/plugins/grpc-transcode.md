@@ -102,26 +102,14 @@ The output binary file, `proto.pb` will contain both `helloworld.proto` and `imp
 
 We can now use the content of `proto.pb` in the `content` field of the API request.
 
-As the content of the proto is binary, we encode it in `base64` using this shell script:
+As the content of the proto is binary, we encode it in `base64` using this shell command:
 
 ```shell
-#!/usr/bin/env bash
-
-set -xeu
-
-if [ $# -lt 2 ]; then
-    echo "usage: $0 <proto_file> <proto_id>"
-    exit 1
-fi
-
-proto_file_name=$1
-id=$2
-api_key=edd1c9f034335f136f87ad84b625c8f1
-
-content=$(base64 -i "$proto_file_name")
-request_body="{\"content\": \"$content\"}"
-
-curl http://127.0.0.1:9180/apisix/admin/protos/"$id" -X PUT -H "X-API-KEY: $api_key" -d "$request_body"
+curl http://127.0.0.1:9180/apisix/admin/protos/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "content" : "'"$(base64 -w0 /path/to/proto.pb)"'"
+}'
 ```
 
 This script will take in a `.pb` file and the `id` to create, encodes the content of the proto to `base64`, and calls the Admin API with this encoded content.
