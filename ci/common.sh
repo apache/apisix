@@ -57,12 +57,15 @@ rerun_flaky_tests() {
 }
 
 install_curl () {
-    wget https://curl.haxx.se/download/curl-7.80.0.tar.gz
-    tar -xzvf curl-7.80.0.tar.gz
-    cd curl-7.80.0
+    wget https://curl.se/download/curl-7.88.0.tar.gz
+    tar -xzvf curl-7.88.0.tar.gz
+    cd curl-7.88.0
     ./configure --prefix=/usr/local --with-ssl
     make
     sudo make install
+    sudo ldconfig
+    cd ..
+    rm -rf curl-7.88.0
     curl -V
 }
 
