@@ -84,7 +84,7 @@ total 10.5K
 
 **该插件默认为禁用状态**，你可以在 `./conf/config.yaml` 中启用 `log-rotate` 插件，不需要在任何路由或服务中绑定。
 
-```yaml title=“./conf/config.yaml”
+```yaml title="./conf/config.yaml"
 plugins:
     # the plugins you enabled
     - log-rotate
