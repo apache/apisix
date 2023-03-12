@@ -39,7 +39,8 @@ RUN set -x \
     && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo sh -s -- -y \
     && source "$HOME/.cargo/env" \
     && export CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse \
-    && export RUSTFLAGS="-C target-feature=-crt-static" # for musl cdylib \
+    # next line is for rust cdylib compile on musl
+    && export RUSTFLAGS="-C target-feature=-crt-static"  \
     && make deps \
     && cp -v bin/apisix /usr/bin/ \
     && mv ../apisix /usr/local/apisix \
