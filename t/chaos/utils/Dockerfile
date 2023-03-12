@@ -35,6 +35,8 @@ RUN set -x \
     pcre-dev \
     && cd apisix \
     && git config --global url.https://github.com/.insteadOf git://github.com/ \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo sh -s -- -y \
+    && source "$HOME/.cargo/env" \
     && make deps \
     && cp -v bin/apisix /usr/bin/ \
     && mv ../apisix /usr/local/apisix \
