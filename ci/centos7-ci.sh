@@ -23,10 +23,7 @@ install_dependencies() {
 
     # install build & runtime deps
     yum install -y wget tar gcc automake autoconf libtool make unzip \
-        git sudo openldap-devel which
-
-    rm -f /etc/ssl/certs/ca-bundle.crt
-    yum reinstall -y ca-certificates
+        git sudo openldap-devel which ca-certificates
 
     # install newer curl
     install_curl
