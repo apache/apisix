@@ -102,34 +102,26 @@ The output binary file, `proto.pb` will contain both `helloworld.proto` and `imp
 
 We can now use the content of `proto.pb` in the `content` field of the API request.
 
-As the content of the proto is binary, we encode it in `base64` using this Python script:
+As the content of the proto is binary, we encode it in `base64` using this shell script:
 
-```python title="upload_pb.py"
-#!/usr/bin/env python
-# coding: utf-8
+```shell
+#!/usr/bin/env bash
 
-import base64
-import sys
+set -xeu
 
-# sudo pip install requests
-import requests
+if [ $# -lt 2 ]; then
+    echo "usage: $0 <proto_file> <proto_id>"
+    exit 1
+fi
 
-if len(sys.argv) <= 1:
-    print("bad argument")
-    sys.exit(1)
-with open(sys.argv[1], 'rb') as f:
-    content = base64.b64encode(f.read())
-id = sys.argv[2]
-api_key = "edd1c9f034335f136f87ad84b625c8f1" # use a different API key
+proto_file_name=$1
+id=$2
+api_key=edd1c9f034335f136f87ad84b625c8f1
 
-reqParam = {
-    "content": content,
-}
-resp = requests.put("http://127.0.0.1:9180/apisix/admin/protos/" + id, json=reqParam, headers={
-    "X-API-KEY": api_key,
-})
-print(resp.status_code)
-print(resp.text)
+content=$(base64 -i "$proto_file_name")
+request_body="{\"content\": \"$content\"}"
+
+curl http://127.0.0.1:9180/apisix/admin/protos/"$id" -X PUT -H "X-API-KEY: $api_key" -d "$request_body"
 ```
 
 This script will take in a `.pb` file and the `id` to create, encodes the content of the proto to `base64`, and calls the Admin API with this encoded content.

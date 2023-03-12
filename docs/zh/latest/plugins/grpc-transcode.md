@@ -103,34 +103,26 @@ protoc --include_imports --descriptor_set_out=proto.pb proto/helloworld.proto
 
 然后将 `proto.pb` 的内容作为 proto 的 `content` 字段提交。
 
-由于 proto 的内容是二进制的，我们需要使用以下 Python 脚本将其转换成 `base64`：
+由于 proto 的内容是二进制的，我们需要使用以下 shell 脚本将其转换成 `base64`：
 
-```python
-#!/usr/bin/env python
-# coding: utf-8
+```shell
+#!/usr/bin/env bash
 
-import base64
-import sys
+set -xeu
 
-# sudo pip install requests
-import requests
+if [ $# -lt 2 ]; then
+    echo "usage: $0 <proto_file> <proto_id>"
+    exit 1
+fi
 
-if len(sys.argv) <= 1:
-    print("bad argument")
-    sys.exit(1)
-with open(sys.argv[1], 'rb') as f:
-    content = base64.b64encode(f.read())
-id = sys.argv[2]
-api_key = "edd1c9f034335f136f87ad84b625c8f1" # use your API key
+proto_file_name=$1
+id=$2
+api_key=edd1c9f034335f136f87ad84b625c8f1
 
-reqParam = {
-    "content": content,
-}
-resp = requests.put("http://127.0.0.1:9180/apisix/admin/protos/" + id, json=reqParam, headers={
-    "X-API-KEY": api_key,
-})
-print(resp.status_code)
-print(resp.text)
+content=$(base64 -i "$proto_file_name")
+request_body="{\"content\": \"$content\"}"
+
+curl http://127.0.0.1:9180/apisix/admin/protos/"$id" -X PUT -H "X-API-KEY: $api_key" -d "$request_body"
 ```
 
 该脚本将使用 `.pb` 文件和要创建的 `id`，将 proto 的内容转换成 `base64`，并使用转换后的内容调用 Admin API。
