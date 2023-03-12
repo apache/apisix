@@ -69,6 +69,7 @@ install_dependencies() {
     # install nodejs
     install_nodejs
 
+sudo ls /etc/ssl/certs/
     # install rust
     install_rust
 
