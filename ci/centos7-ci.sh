@@ -28,8 +28,9 @@ install_dependencies() {
     rm -f /etc/ssl/certs/ca-bundle.crt
     yum reinstall -y ca-certificates
 
-    # curl with http2
-    wget https://github.com/moparisthebest/static-curl/releases/download/v7.88.1/curl-amd64 -qO /usr/bin/curl
+    # install newer curl
+    install_curl
+
     # install openresty to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
     yum install -y openresty openresty-debug openresty-openssl111-debug-devel pcre pcre-devel

@@ -56,6 +56,16 @@ rerun_flaky_tests() {
     FLUSH_ETCD=1 prove --timer -I./test-nginx/lib -I./ $(echo "$tests" | xargs)
 }
 
+install_curl () {
+    wget https://curl.haxx.se/download/curl-7.80.0.tar.gz
+    tar -xzvf curl-7.80.0.tar.gz
+    cd curl-7.80.0
+    ./configure --prefix=/usr/local --with-ssl
+    make
+    sudo make install
+    curl -V
+}
+
 install_grpcurl () {
     # For more versions, visit https://github.com/fullstorydev/grpcurl/releases
     GRPCURL_VERSION="1.8.5"
