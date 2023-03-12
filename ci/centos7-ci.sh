@@ -25,6 +25,8 @@ install_dependencies() {
     yum install -y wget tar gcc automake autoconf libtool make unzip \
         git sudo openldap-devel which ca-certificates
 
+    sudo update-ca-certificates
+
     # curl with http2
     wget https://github.com/moparisthebest/static-curl/releases/download/v7.79.1/curl-amd64 -qO /usr/bin/curl
     # install openresty to make apisix's rpm test work

@@ -86,7 +86,7 @@ install_nodejs () {
 }
 
 install_rust () {
-    wget -qO- https://sh.rustup.rs | sudo sh -s -- -y
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo sh -s -- -y
     source "$HOME/.cargo/env"
 }
 
