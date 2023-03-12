@@ -37,11 +37,9 @@ script() {
     # install rust
     install_rust
 
-    sudo echo $PATH
-
     # install APISIX with local version
-    sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps > build.log 2>&1 || (cat build.log && exit 1)
-    sudo luarocks make rockspec/apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
+    sudo -E luarocks install rockspec/apisix-master-0.rockspec --only-deps > build.log 2>&1 || (cat build.log && exit 1)
+    sudo -E luarocks make rockspec/apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
     # ensure all files under apisix is installed
     diff -rq apisix /usr/local/share/lua/5.1/apisix
 
