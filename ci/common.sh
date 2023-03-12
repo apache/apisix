@@ -60,7 +60,7 @@ install_curl () {
     wget https://curl.se/download/curl-7.88.0.tar.gz
     tar -xzvf curl-7.88.0.tar.gz
     cd curl-7.88.0
-    ./configure --prefix=/usr/local --with-openssl
+    ./configure --prefix=/usr/local --with-openssl --with-nghttp2
     make
     sudo make install
     sudo ldconfig
