@@ -102,7 +102,7 @@ end
 function _M.rewrite(conf, ctx)
     if not ok then -- ensure rasn library loaded
         core.log.error("failed to load lua-resty-ldap lib: ", ldap_cli)
-        return 500
+        return 501
     end
 
     core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
