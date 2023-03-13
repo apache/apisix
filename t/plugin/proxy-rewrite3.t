@@ -450,11 +450,14 @@ passed
 
 
 
-=== TEST 20: set and test priority test
+=== TEST 20: set and test priority test & deprecated calls test
 --- request
 GET /echo HTTP/1.1
 --- response_headers
 test: test_in_set
+--- no_error_log
+DEPRECATED: use add_header(ctx, header_name, header_value) instead
+DEPRECATED: use set_header(ctx, header_name, header_value) instead
 
 
 
