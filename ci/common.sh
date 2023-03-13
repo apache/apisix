@@ -57,15 +57,16 @@ rerun_flaky_tests() {
 }
 
 install_curl () {
-    wget https://curl.se/download/curl-7.88.0.tar.gz
-    tar -xzvf curl-7.88.0.tar.gz
-    cd curl-7.88.0
+    CURL_VERSION="7.88.0"
+    wget https://curl.se/download/curl-${CURL_VERSION}.tar.gz
+    tar -xzvf curl-${CURL_VERSION}.tar.gz
+    cd curl-${CURL_VERSION}
     ./configure --prefix=/usr/local --with-openssl --with-nghttp2
     make
     sudo make install
     sudo ldconfig
     cd ..
-    rm -rf curl-7.88.0
+    rm -rf curl-${CURL_VERSION}
     curl -V
 }
 
