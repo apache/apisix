@@ -48,7 +48,7 @@ A Router can have the following configurations:
 
 :::note
 
-In version 3.2 and earlier, APISIX used `radixtree_uri` as the default Router. `radixtree_uri` has better performance than `radixtree_host_uri`, so if you have higher performance requirements and can live with the fact that `radixtree_uri` only matches uri, consider continuing to use `radixtree_uri` as the default Router.
+In version 3.2 and earlier, APISIX used `radixtree_uri` as the default Router. `radixtree_uri` has better performance than `radixtree_host_uri`, so if you have higher performance requirements and can live with the fact that `radixtree_uri` only use the `uri` as the primary index, consider continuing to use `radixtree_uri` as the default Router.
 
 :::
 

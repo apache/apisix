@@ -21,6 +21,15 @@ no_root_location();
 
 $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+});
+
 run_tests;
 
 __DATA__
@@ -59,8 +68,6 @@ location /t {
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- response_body
 passed
 
@@ -100,8 +107,6 @@ location /t {
         -- collectgarbage()
     }
 }
---- request
-GET /t
 --- response_body
 connected: 1
 ssl handshake: true
@@ -143,8 +148,6 @@ location /t {
         -- collectgarbage()
     }
 }
---- request
-GET /t
 --- response_body
 connected: 1
 ssl handshake: true
@@ -177,8 +180,6 @@ location /t {
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- response_body
 passed
 
@@ -222,8 +223,6 @@ location /t {
         -- collectgarbage()
     }
 }
---- request
-GET /t
 --- response_body eval
 qr{connected: 1
 ssl handshake: true
@@ -269,8 +268,6 @@ location /t {
         ngx.print(body)
     }
 }
---- request
-GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to handle cert-key pair[1]: failed to decrypt previous encrypted key"}
@@ -299,8 +296,6 @@ location /t {
         ngx.print(body)
     }
 }
---- request
-GET /t
 --- response_body
 {"error_msg":"failed to parse cert: PEM_read_bio_X509_AUX() failed"}
 --- error_code: 400
@@ -338,8 +333,6 @@ location /t {
         -- collectgarbage()
     }
 }
---- request
-GET /t
 --- response_body
 failed to do SSL handshake: handshake failed
 --- error_log
@@ -384,8 +377,6 @@ location /t {
         -- collectgarbage()
     }
 }
---- request
-GET /t
 --- response_body
 ssl handshake: true
 
@@ -411,8 +402,6 @@ location /t {
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- response_body
 passed
 
@@ -445,8 +434,6 @@ location /t {
         -- collectgarbage()
     }
 }
---- request
-GET /t
 --- response_body
 ssl handshake: true
 
@@ -472,8 +459,6 @@ location /t {
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- response_body
 passed
 
@@ -506,8 +491,6 @@ location /t {
         -- collectgarbage()
     }
 }
---- request
-GET /t
 --- response_body
 ssl handshake: true
 
@@ -553,8 +536,6 @@ location /t {
         ngx.log(ngx.WARN, "release table ", name)
         return old_release(name, ...)
     end
---- request
-GET /t
 --- response_body
 ssl handshake: true
 --- grep_error_log eval

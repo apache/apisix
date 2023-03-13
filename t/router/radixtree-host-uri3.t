@@ -16,17 +16,8 @@
 #
 use t::APISIX 'no_plan';
 
-our $yaml_config = <<_EOC_;
-apisix:
-    node_listen: 1984
-    router:
-        http: 'radixtree_host_uri'
-_EOC_
-
 add_block_preprocessor(sub {
     my ($block) = @_;
-
-    $block->set_value("yaml_config", $yaml_config);
 
     if (!$block->request) {
         $block->set_value("request", "GET /t");

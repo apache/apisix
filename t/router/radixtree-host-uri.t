@@ -22,13 +22,6 @@ worker_connections(256);
 no_root_location();
 no_shuffle();
 
-our $yaml_config = <<_EOC_;
-apisix:
-    node_listen: 1984
-    router:
-        http: 'radixtree_host_uri'
-_EOC_
-
 run_tests();
 
 __DATA__
@@ -58,7 +51,6 @@ __DATA__
             ngx.say(body)
         }
     }
---- yaml_config eval: $::yaml_config
 --- request
 GET /t
 --- response_body
@@ -69,7 +61,6 @@ passed
 === TEST 2: /not_found
 --- request
 GET /not_found
---- yaml_config eval: $::yaml_config
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
@@ -79,7 +70,6 @@ GET /not_found
 === TEST 3: /not_found
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
@@ -89,7 +79,6 @@ GET /hello
 === TEST 4: /not_found
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- more_headers
 Host: not_found.com
 --- error_code: 404
@@ -101,7 +90,6 @@ Host: not_found.com
 === TEST 5: hit routes
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- more_headers
 Host: foo.com
 --- response_body
@@ -112,7 +100,6 @@ hello world
 === TEST 6: hit routes
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- more_headers
 Host: foo.com
 --- response_body
@@ -144,7 +131,6 @@ hello world
             ngx.say(body)
         }
     }
---- yaml_config eval: $::yaml_config
 --- request
 GET /t
 --- response_body
@@ -155,7 +141,6 @@ passed
 === TEST 8: /not_found
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
@@ -165,7 +150,6 @@ GET /hello
 === TEST 9: hit routes
 --- request
 GET /server_port
---- yaml_config eval: $::yaml_config
 --- more_headers
 Host: anydomain.com
 --- response_body_like eval
@@ -197,7 +181,6 @@ qr/1981/
             ngx.say(body)
         }
     }
---- yaml_config eval: $::yaml_config
 --- request
 GET /t
 --- response_body
@@ -208,7 +191,6 @@ passed
 === TEST 11: /not_found
 --- request
 GET /hello2
---- yaml_config eval: $::yaml_config
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
@@ -218,7 +200,6 @@ GET /hello2
 === TEST 12: hit routes
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- more_headers
 Host: anydomain.com
 --- response_body
@@ -241,7 +222,6 @@ hello world
             ngx.say(body)
         }
     }
---- yaml_config eval: $::yaml_config
 --- request
 GET /t
 --- response_body
@@ -274,7 +254,6 @@ passed
             ngx.say(body)
         }
     }
---- yaml_config eval: $::yaml_config
 --- request
 GET /t
 --- response_body
@@ -285,7 +264,6 @@ passed
 === TEST 15: hit routes
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- more_headers
 Host: www.foo.com
 --- response_body
