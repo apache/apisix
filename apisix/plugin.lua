@@ -747,7 +747,8 @@ function _M.init_worker()
     _M.load()
 
     if is_http then
-        require("apisix.plugins.server-info").init_worker()
+        local attr = plugin_attr("server-info")
+        require("apisix.plugins.server-info.init_worker").init_worker(attr)
     end
 
     if local_conf and not local_conf.apisix.enable_admin then
