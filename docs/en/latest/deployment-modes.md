@@ -161,6 +161,8 @@ deployment:
 
 Turning on the APISIX node in Stand-alone mode will no longer use the default etcd as the configuration center.
 
+For the old version of the standalone mode deployment guide, see the [Old Standalone Doc](https://apisix.apache.org/docs/apisix/2.15/stand-alone/).
+
 This method is more suitable for two types of users:
 
 1. Kubernetes(k8s)：Declarative API that dynamically updates the routing rules with a full yaml configuration.
