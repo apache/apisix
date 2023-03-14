@@ -17,24 +17,18 @@
 
 use t::APISIX 'no_plan';
 
-log_level('debug');
+repeat_each(1);
+no_long_string();
+no_root_location();
+log_level("info");
 
 add_block_preprocessor(sub {
     my ($block) = @_;
 
     if (!$block->extra_yaml_config) {
         my $extra_yaml_config = <<_EOC_;
-nginx_config:
-  http_server_configuration_snippet: |
-    set \$opentelemetry_context_traceparent ""
-    set \$opentelemetry_trace_id ""
-    set \$opentelemetry_span_id ""
-  http:
-    enable_access_log: true
-    access_log: "/tmp/access.log"
-    access_log_format: '{"timestamp": "\$time_iso8601","opentelemetry_context_traceparent": "\$opentelemetry_context_traceparent","opentelemetry_trace_id": "\$opentelemetry_trace_id","opentelemetry_span_id": "\$opentelemetry_span_id","remote_addr": "\$remote_addr","uri": "\$uri"}'
-    access_log_format_escape: json
 plugins:
+    - http-logger
     - opentelemetry
 plugin_attr:
     opentelemetry:
@@ -45,6 +39,35 @@ plugin_attr:
 _EOC_
         $block->set_value("extra_yaml_config", $extra_yaml_config);
     }
+
+    my $upstream_server_config = $block->upstream_server_config // <<_EOC_;
+    set \$opentelemetry_context_traceparent "";
+    set \$opentelemetry_trace_id "";
+    set \$opentelemetry_span_id "";
+    access_log logs/error.log opentelemetry_log;
+_EOC_
+
+    $block->set_value("upstream_server_config", $upstream_server_config);
+
+    my $http_config = $block->http_config // <<_EOC_;
+    log_format opentelemetry_log '{"time": "\$time_iso8601","opentelemetry_context_traceparent": "\$opentelemetry_context_traceparent","opentelemetry_trace_id": "\$opentelemetry_trace_id","opentelemetry_span_id": "\$opentelemetry_span_id","remote_addr": "\$remote_addr","uri": "\$uri"}';
+_EOC_
+
+    $block->set_value("http_config", $http_config);
+
+    if (!$block->extra_init_by_lua) {
+        my $extra_init_by_lua = <<_EOC_;
+-- mock exporter http client
+local client = require("opentelemetry.trace.exporter.http_client")
+client.do_request = function()
+    ngx.log(ngx.INFO, "opentelemetry export span")
+    return "ok"
+end
+_EOC_
+
+        $block->set_value("extra_init_by_lua", $extra_init_by_lua);
+    }
+
 
     if (!$block->request) {
         $block->set_value("request", "GET /t");
@@ -57,15 +80,39 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: add plugin
+=== TEST 1: add plugin metadata
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/http-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "log_format": {
+                        "opentelemetry_context_traceparent": "$opentelemetry_context_traceparent",
+                        "opentelemetry_trace_id": "$opentelemetry_trace_id",
+                        "opentelemetry_span_id": "$opentelemetry_span_id"
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return body
+            end
+
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
                     "plugins": {
+                        "http-logger": {
+                                "uri": "http://127.0.0.1:1980/log",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "concat_method": "new_line"
+                        },
                         "opentelemetry": {
                             "sampler": {
                                 "name": "always_on"
@@ -74,15 +121,15 @@ __DATA__
                     },
                     "upstream": {
                         "nodes": {
-                            "127.0.0.1:1980": 1
+                            "127.0.0.1:1982": 1
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/opentracing"
+                    "uri": "/hello"
                 }]]
                 )
 
-            if code >= 300 then
+            if code >=300 then
                 ngx.status = code
             end
             ngx.say(body)
@@ -95,28 +142,29 @@ passed
 
 
 
-=== TEST 2: trigger opentelemetry
+=== TEST 2: trigger opentelemetry with open set variables
 --- request
-GET /opentracing
---- access_log
+GET /hello
 --- response_body
-opentracing
---- no_error_log
-[error]
+hello world
+--- wait: 1
+--- grep_error_log eval
+qr/opentelemetry export span/
+--- grep_error_log_out
+opentelemetry export span
+--- error_log eval
+qr/request log: \{.*"opentelemetry_context_traceparent":"00-\w{32}-\w{16}-01".*\}/
 
 
 
-=== TEST 3: allow integer worker processes
---- config
-    location /t {
-        content_by_lua_block {
-            local config = require("apisix.core").config.local_conf()
-        }
-    }
---- extra_yaml_config
-nginx_config:
-    
+=== TEST 3: trigger opentelemetry with disable set variables
+--- yaml_config
+plugin_attr:
+    opentelemetry:
+        set_ngx_var: false
 --- request
-GET /t
+GET /hello
 --- response_body
-1
+hello world
+--- error_log eval
+qr/request log: \{.*"opentelemetry_context_traceparent":"".*\}/
