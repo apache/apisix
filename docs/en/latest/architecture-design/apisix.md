@@ -49,3 +49,70 @@ The diagram below shows how APISIX handles an incoming request and applies corre
 The chart below shows the order in which different types of Plugin are applied to a request:
 
 ![flow-plugin-internal](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/flow-plugin-internal.png)
+
+## Examples of route matching
+
+1. Host + URI: This criterion matches requests based on the combination of the host and URI. For example, you could use this to match all requests to https://example.com/api.
+
+```
+{
+    "uri": "/foo/bar",
+    "host": "example.com",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.org:80": 1
+        }
+    }
+}
+
+```
+
+2. Host + URI + Vars: This criterion matches requests based on the combination of the host, URI, and variables extracted from the URI using regular expressions. For example, you could use this to match all requests to https://example.com/api/users/123, where 123 is a variable extracted from the URI.
+
+```
+{
+    "uri": "/foo/bar",
+    "host": "example.com",
+    "vars": {
+        "foo": "bar"
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.org:80": 1
+        }
+    }
+}
+
+```
+
+3. Host + URI + Vars + FilterFunctions: This criterion matches requests based on the combination of the host, URI, variables extracted from the URI using regular expressions, and the output of a user-defined filter function. For example, you could use this to match all requests to https://example.com/api/users/123 where the variable 123 represents a user ID that is valid in your application's database.
+
+```
+{
+    "uri": "/foo/bar",
+    "host": "example.com",
+    "vars": {
+        "foo": "bar"
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.org:80": 1
+        }
+    },
+    "plugins": {
+        "limit-count": {
+            "count": 10,
+            "time_window": 60,
+            "rejected_code": 503
+        }
+    },
+    "filter_fun": [
+        "function(req, ctx) return true end"
+    ]
+}
+
+```
+In general, using more criteria for route matching allows for more fine-grained control over which requests are matched by a particular route. It's important to note that using more criteria can also increase the complexity of your routing configuration.
