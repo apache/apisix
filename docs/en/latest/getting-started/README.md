@@ -60,6 +60,12 @@ Server: APISIX/3.1.0
 
 You now have APISIX installed and running successfully!​
 
+
+## Login to dashboard
+
+To access the API Gateway dashboard, you can use the default credentials provided in the YAML configuration file. The username is 'admin' and the password is 'admin'. If you have changed the default credentials, please use the new ones to login.
+
+
 ## Next Steps
 
 The following tutorial is based on the working APISIX, please keep everything running and move on to the next step.
