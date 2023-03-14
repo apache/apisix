@@ -535,7 +535,6 @@ Please modify "admin_key" in conf/config.yaml .
     if enabled_plugins["opentelemetry"] and yaml_conf.plugin_attr["opentelemetry"] then
         opentelemetry_set_ngx_var = yaml_conf.plugin_attr["opentelemetry"].set_ngx_var
     end
-
     -- Using template.render
     local sys_conf = {
         lua_path = env.pkg_path_org,

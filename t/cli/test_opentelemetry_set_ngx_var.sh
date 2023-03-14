@@ -40,7 +40,7 @@ if ! grep "set \$opentelemetry_trace_id                     '';" conf/nginx.conf
 fi
 
 if ! grep "set \$opentelemetry_span_id                      '';" conf/nginx.conf > /dev/null; then
-    echo "failed: $opentelemetry_span_id not found in nginx.conf"
+    echo "failed: opentelemetry_span_id not found in nginx.conf"
     exit 1
 fi
 
