@@ -224,6 +224,26 @@ local function introspect(ctx, conf)
             return nil, nil, nil, nil
         end
     end
+local claim_validators = conf.claim_validators or {}
+for _, validator in ipairs(claim_validators) do
+    local claim = validator.claim
+    local matches = validator.matches or {}
+
+    local claim_value = json.decode(claims[claim] or "{}")[1]
+    if not validate_custom_claim(claim_value, matches) then
+        return responses.send_HTTP_UNAUTHORIZED("Invalid custom claim")
+    end
+end
+
+local function validate_custom_claim(claim_value, allowed_values)
+    for _, v in ipairs(allowed_values) do
+        if v == claim_value then
+            return true
+        end
+    end
+
+    return false
+end
 
     -- If we get here, token was found in request.
 
