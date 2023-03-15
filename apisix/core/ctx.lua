@@ -214,6 +214,9 @@ local fetch_jsonrpc_data = {
                 -- Return the common method name or "batch" and the array of methods
                 return { method = common_method, methods = methods }
             elseif not decoded_request[JSONRPC_REQ_METHOD_KEY] then
+                -- print decoded_request
+                log.warn("request_body: ", request_body)
+                log.warn("decoded_request: ", json.encode(decoded_request))
                 -- Return nil and an error message if the method field is missing in a non-batch request
                 return nil, "failed to read jsonrpc data method, json body[" ..
                     JSONRPC_REQ_METHOD_KEY .. "] is nil"
