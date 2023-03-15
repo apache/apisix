@@ -40,6 +40,4 @@ The data plane information keeps the same format of `server-info` plugin output:
 
 ## Admin API to query data planes
 
-Refer to this link for detail:
-
-https://apisix.apache.org/en/docs/apisix/admin-api/#query-data-planes
+Refer to the [Admin API](../admin-api.md#query-data-planes) page for detail.
