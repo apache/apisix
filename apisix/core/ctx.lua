@@ -171,6 +171,15 @@ local function get_parsed_graphql()
     return ctx._graphql
 end
 
+local function isArray(t)
+    local i = 0
+    for _ in pairs(t) do
+        i = i + 1
+        if t[i] == nil then return false end
+    end
+    return true
+end
+
 local fetch_jsonrpc_data = {
     [JSONRPC_REQ_METHOD_HTTP_POST] = function(request_context, max_request_size)
         -- Try to read the request body
@@ -189,7 +198,7 @@ local fetch_jsonrpc_data = {
                 return nil, "failed to read jsonrpc data, " .. read_error
             end
 
-            if type(decoded_request) == "table" then
+            if isArray(decoded_request) then
                 -- If batch is empty, return nil empty batch error
                 if #decoded_request == 0 then
                     return nil, "empty batch"
@@ -229,6 +238,8 @@ local fetch_jsonrpc_data = {
         end
     end
 }
+
+
 
 
 local function parse_jsonrpc(ctx)
