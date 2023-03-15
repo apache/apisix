@@ -19,7 +19,6 @@
 --
 -- @module core.ctx
 
-local core         = require("apisix.core")
 local core_str     = require("apisix.core.string")
 local core_tab     = require("apisix.core.table")
 local request      = require("apisix.core.request")
@@ -182,7 +181,7 @@ local fetch_jsonrpc_data = {
         end
 
         -- print all header
-        log.warn("request headers: ", core.json.encode(request.headers(request_context)))
+        log.warn("request headers: ", json.encode(request.headers(request_context)))
 
         if request.header(request_context, "Content-Type") == JSONRPC_REQ_MIME_JSON then
             -- Try to decode the request body as a JSON object
