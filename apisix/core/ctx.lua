@@ -70,7 +70,6 @@ local fetch_graphql_data = {
 
         return body
     end,
-
     [GRAPHQL_REQ_METHOD_HTTP_POST] = function(ctx, max_size)
         local body, err = request.get_body(max_size, ctx)
         if not body then
@@ -217,8 +216,10 @@ local fetch_jsonrpc_data = {
                     JSONRPC_REQ_METHOD_KEY .. "] is nil"
             else
                 -- Single request with a method field
-                return { method = decoded_request[JSONRPC_REQ_METHOD_KEY],
-                    methods = { decoded_request[JSONRPC_REQ_METHOD_KEY] } }
+                return {
+                    method = decoded_request[JSONRPC_REQ_METHOD_KEY],
+                    methods = { decoded_request[JSONRPC_REQ_METHOD_KEY] }
+                }
             end
         end
     end
@@ -302,23 +303,20 @@ do
     }
 
     local ngx_var_names = {
-        upstream_scheme     = true,
-        upstream_host       = true,
-        upstream_upgrade    = true,
-        upstream_connection = true,
-        upstream_uri        = true,
-
-        upstream_mirror_uri = true,
-
+        upstream_scheme          = true,
+        upstream_host            = true,
+        upstream_upgrade         = true,
+        upstream_connection      = true,
+        upstream_uri             = true,
+        upstream_mirror_uri      = true,
         upstream_cache_zone      = true,
         upstream_cache_zone_info = true,
         upstream_no_cache        = true,
         upstream_cache_key       = true,
         upstream_cache_bypass    = true,
-
-        var_x_forwarded_proto = true,
-        var_x_forwarded_port  = true,
-        var_x_forwarded_host  = true,
+        var_x_forwarded_proto    = true,
+        var_x_forwarded_port     = true,
+        var_x_forwarded_host     = true,
     }
 
     -- sort in alphabetical
@@ -348,7 +346,6 @@ do
             local method = var_methods[key]
             if method then
                 val = method()
-
             elseif core_str.has_prefix(key, "cookie_") then
                 local cookie = t.cookie
                 if cookie then
@@ -359,7 +356,6 @@ do
                             key, " error: ", err)
                     end
                 end
-
             elseif core_str.has_prefix(key, "arg_") then
                 local arg_key = sub_str(key, 5)
                 local args = request.get_uri_args()[arg_key]
@@ -370,7 +366,6 @@ do
                         val = args
                     end
                 end
-
             elseif core_str.has_prefix(key, "post_arg_") then
                 -- only match default post form
                 if request.header(nil, "Content-Type") == "application/x-www-form-urlencoded" then
@@ -384,22 +379,18 @@ do
                         end
                     end
                 end
-
             elseif core_str.has_prefix(key, "http_") then
                 key = key:lower()
                 key = re_gsub(key, "-", "_", "jo")
                 val = get_var(key, t._request)
-
             elseif core_str.has_prefix(key, "graphql_") then
                 -- trim the "graphql_" prefix
                 key = sub_str(key, 9)
                 val = get_parsed_graphql()[key]
-
             elseif core_str.has_prefix(key, "jsonrpc_") then
                 -- trim the "jsonrpc_" prefix
                 key = sub_str(key, 9)
                 val = get_parsed_jsonrpc()[key]
-
             else
                 local getter = apisix_var_names[key]
                 if getter then
@@ -410,7 +401,6 @@ do
                         -- the getter is registered by ctx.register_var
                         val = getter(ctx)
                     end
-
                 else
                     val = get_var(key, t._request)
                 end
@@ -422,7 +412,6 @@ do
 
             return val
         end,
-
         __newindex = function(t, key, val)
             if ngx_var_names[key] then
                 ngx_var[key] = val
@@ -491,7 +480,6 @@ do
         tablepool.release("ctx_var", ctx.var, true)
         ctx.var = nil
     end
-
 end -- do
 
 
