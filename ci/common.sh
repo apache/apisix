@@ -56,6 +56,20 @@ rerun_flaky_tests() {
     FLUSH_ETCD=1 prove --timer -I./test-nginx/lib -I./ $(echo "$tests" | xargs)
 }
 
+install_curl () {
+    CURL_VERSION="7.88.0"
+    wget https://curl.se/download/curl-${CURL_VERSION}.tar.gz
+    tar -xzvf curl-${CURL_VERSION}.tar.gz
+    cd curl-${CURL_VERSION}
+    ./configure --prefix=/usr/local --with-openssl --with-nghttp2
+    make
+    sudo make install
+    sudo ldconfig
+    cd ..
+    rm -rf curl-${CURL_VERSION}
+    curl -V
+}
+
 install_grpcurl () {
     # For more versions, visit https://github.com/fullstorydev/grpcurl/releases
     GRPCURL_VERSION="1.8.5"
@@ -83,6 +97,11 @@ install_nodejs () {
     ln -s ${NODEJS_PREFIX}/bin/npm /usr/local/bin/npm
 
     npm config set registry https://registry.npmjs.org/
+}
+
+install_rust () {
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo sh -s -- -y
+    source "$HOME/.cargo/env"
 }
 
 set_coredns() {
