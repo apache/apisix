@@ -180,9 +180,6 @@ local fetch_jsonrpc_data = {
             return nil, "failed to read jsonrpc data, " .. (read_error or "request body has zero size")
         end
 
-        -- print all header
-        log.warn("request headers: ", json.encode(request.headers(request_context)))
-
         if request.header(request_context, "Content-Type") == JSONRPC_REQ_MIME_JSON then
             -- Try to decode the request body as a JSON object
             local decoded_request
@@ -192,7 +189,12 @@ local fetch_jsonrpc_data = {
                 return nil, "failed to read jsonrpc data, " .. read_error
             end
 
-            if type(decoded_request) == "table" and #decoded_request > 1 then
+            if type(decoded_request) == "table" then
+                -- If batch is empty, return nil empty batch error
+                if #decoded_request == 0 then
+                    return nil, "empty batch"
+                end
+
                 -- Batch request
                 local common_method
                 local methods = {}
@@ -214,9 +216,6 @@ local fetch_jsonrpc_data = {
                 -- Return the common method name or "batch" and the array of methods
                 return { method = common_method, methods = methods }
             elseif not decoded_request[JSONRPC_REQ_METHOD_KEY] then
-                -- print decoded_request
-                log.warn("request_body: ", request_body)
-                log.warn("decoded_request: ", json.encode(decoded_request))
                 -- Return nil and an error message if the method field is missing in a non-batch request
                 return nil, "failed to read jsonrpc data method, json body[" ..
                     JSONRPC_REQ_METHOD_KEY .. "] is nil"
@@ -268,7 +267,27 @@ local function get_parsed_jsonrpc()
     local res, err = parse_jsonrpc(ctx)
     if not res then
         log.error(err)
-        ctx._jsonrpc = {}
+        local message = err
+        local code = -32600
+        if err ~= "empty batch" then
+            message = "parse error"
+            code = -32700
+        end
+
+        -- write jsonrpc responses
+        local jsonrpc_res = json.encode({
+            jsonrpc = "2.0",
+            id = nil,
+            error = {
+                code = code,
+                message = message
+            }
+        })
+        ngx.header.content_type = JSONRPC_REQ_MIME_JSON
+        ngx.status = 200
+        ngx.say(jsonrpc_res)
+        ngx.exit(200)
+
         return ctx._jsonrpc
     end
 
