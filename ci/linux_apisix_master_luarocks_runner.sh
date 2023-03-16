@@ -42,7 +42,7 @@ script() {
     install_rust
 
     # install APISIX by luarocks
-    sudo luarocks install $APISIX_MAIN > build.log 2>&1 || (cat build.log && exit 1)
+    luarocks install $APISIX_MAIN > build.log 2>&1 || (cat build.log && exit 1)
     cp ../bin/apisix /usr/local/bin/apisix
 
     # show install files
