@@ -278,4 +278,4 @@ If a configured Plugin is disabled, then its execution will be skipped.
 
 ### Hot reload in stand-alone mode
 
-For hot-reloading in stand-alone mode, see the plugin related section in [stand alone mode](../deployment-modes.md#stand-alone).
+For hot-reloading in stand-alone mode, see the plugin related section in [stand alone mode](https://apisix.apache.org/docs/apisix/deployment-modes/#standalone).
