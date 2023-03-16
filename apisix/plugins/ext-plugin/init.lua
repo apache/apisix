@@ -791,13 +791,11 @@ local rpc_handlers = {
             for i = 1, len do
                 local entry = call_resp:Headers(i)
                 local name = str_lower(entry:Name())
-                if not exclude_resp_header[name] then
-                    if resp_headers[name] == nil then
-                        core.response.set_header(name, entry:Value())
-                        resp_headers[name] = true
-                    else
-                        core.response.add_header(name, entry:Value())
-                    end
+                if resp_headers[name] == nil then
+                    core.response.set_header(name, entry:Value())
+                    resp_headers[name] = true
+                else
+                    core.response.add_header(name, entry:Value())
                 end
             end
         else

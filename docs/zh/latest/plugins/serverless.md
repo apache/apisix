@@ -1,10 +1,10 @@
 ---
 title: serverless
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Serverless
-  - serverless
 description: 本文介绍了关于 API 网关 Apache APISIX serverless-pre-function 和 serverless-post-function 插件的基本信息及使用方法。
 ---
 

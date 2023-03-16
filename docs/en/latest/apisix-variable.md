@@ -48,6 +48,7 @@ additional variables.
 | service_id          | core       | Id of Service.                                                                      |                |
 | service_name        | core       | Name of Service.                                                                    |                |
 | redis_cmd_line      | Redis      | The content of Redis command.                                                       |                |
+| resp_body           | core       | In the logger plugin, if some of the plugins support logging of response body, for example by configuring `include_resp_body: true`, then this variable can be used in the log format. |                |
 | rpc_time            | xRPC       | Time spent at the rpc request level.                                                |                |
 
 You can also register your own [variable](./plugin-develop.md#register-custom-variable).

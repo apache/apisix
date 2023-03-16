@@ -32,21 +32,21 @@ description = {
 
 dependencies = {
     "lua-resty-ctxdump = 0.1-0",
-    "lua-resty-dns-client = 6.0.2",
+    "api7-lua-resty-dns-client = 7.0.1",
     "lua-resty-template = 2.0",
-    "lua-resty-etcd = 1.9.0",
+    "lua-resty-etcd = 1.10.3",
     "api7-lua-resty-http = 0.2.0",
     "lua-resty-balancer = 0.04",
     "lua-resty-ngxvar = 0.5.2",
     "lua-resty-jit-uuid = 0.0.7",
-    "lua-resty-healthcheck-api7 = 2.2.1",
+    "lua-resty-healthcheck-api7 = 2.2.2",
     "api7-lua-resty-jwt = 0.2.4",
     "lua-resty-hmac-ffi = 0.05",
     "lua-resty-cookie = 0.1.0",
     "lua-resty-session = 3.10",
     "opentracing-openresty = 0.1",
     "lua-resty-radixtree = 2.8.2",
-    "lua-protobuf = 0.3.4",
+    "lua-protobuf = 0.4.1",
     "lua-resty-openidc = 1.7.5",
     "luafilesystem = 1.7.0-2",
     "api7-lua-tinyyaml = 0.4.2",
@@ -68,17 +68,17 @@ dependencies = {
     "lua-resty-consul = 0.3-2",
     "penlight = 1.9.2-1",
     "ext-plugin-proto = 0.6.0",
-    "casbin = 1.41.1",
+    "casbin = 1.41.5",
     "api7-snowflake = 2.0-1",
     "inspect == 3.1.1",
     "lualdap = 1.2.6-1",
     "lua-resty-rocketmq = 0.3.0-0",
-    "opentelemetry-lua = 0.1-3",
+    "opentelemetry-lua = 0.2-3",
     "net-url = 0.9-1",
     "xml2lua = 1.5-2",
     "nanoid = 0.1-1",
     "lua-resty-mediador = 0.1.2-1",
-    "lua-resty-ldap = 0.1.0-0"
+    "lua-resty-ldap = 0.2.0-0"
 }
 
 build = {

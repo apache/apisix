@@ -33,10 +33,9 @@ It is most common for an SSL certificate to contain only one domain. We can crea
 
 We will use the Python script below to simplify the example:
 
-```python
+```python title="create-ssl.py"
 #!/usr/bin/env python
 # coding: utf-8
-# save this file as ssl.py
 import sys
 # sudo pip install requests
 import requests
@@ -63,7 +62,7 @@ print(resp.text)
 
 ```shell
 # create SSL object
-./ssl.py t.crt t.key test.com
+./create-ssl.py t.crt t.key test.com
 
 # create Router object
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
@@ -109,7 +108,7 @@ that means it can accept more than one domain, eg: `www.test.com` or `mail.test.
 Here is an example, note that the value we pass as `sni` is `*.test.com`.
 
 ```shell
-./ssl.py t.crt t.key '*.test.com'
+./create-ssl.py t.crt t.key '*.test.com'
 
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
@@ -174,7 +173,7 @@ pair. So the length of `certs` and `keys` must be same.
 
 ### set up multiple CA certificates
 
-APISIX currently uses CA certificates in several places, such as [Protect Admin API](./mtls.md#protect-admin-api), [etcd with mTLS](./mtls.md#etcd-with-mtls), and [Deployment Modes](./architecture-design/deployment-role.md).
+APISIX currently uses CA certificates in several places, such as [Protect Admin API](./mtls.md#protect-admin-api), [etcd with mTLS](./mtls.md#etcd-with-mtls), and [Deployment Modes](./deployment-modes.md).
 
 In these places, `ssl_trusted_certificate` or `trusted_ca_cert` will be used to set up the CA certificate, but these configurations will eventually be translated into [lua_ssl_trusted_certificate](https://github.com/openresty/lua-nginx-module#lua_ssl_trusted_certificate) directive in OpenResty.
 
@@ -204,7 +203,7 @@ The following table details the configurations involved in this example and what
 
 1. Create CA bundle files
 
-```
+```shell
 cat /path/to/foo_ca.crt /path/to/bar_ca.crt > apisix.ca-bundle
 ```
 
@@ -227,7 +226,7 @@ goreman -f Procfile-single-enable-mtls start > goreman.log 2>&1 &
 
 3. Update `config.yaml`
 
-```yaml
+```yaml title="conf/config.yaml"
 deployment:
   admin:
     admin_key

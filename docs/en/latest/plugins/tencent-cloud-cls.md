@@ -1,7 +1,7 @@
 ---
 title: tencent-cloud-cls
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - CLS
@@ -30,7 +30,7 @@ description: This document contains information about the Apache APISIX tencent-
 
 ## Description
 
-The `tencent-cloud-cls` Plugin uses [TencentCloud CLS](https://cloud.tencent.com/document/product/614)API to forward APISIX logs to your topic.
+The `tencent-cloud-cls` Plugin uses [TencentCloud CLS](https://cloud.tencent.com/document/product/614) API to forward APISIX logs to your topic.
 
 ## Attributes
 
@@ -44,6 +44,9 @@ The `tencent-cloud-cls` Plugin uses [TencentCloud CLS](https://cloud.tencent.com
 | include_req_body  | boolean | No       | false   | [false, true] | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to NGINX's limitations. |
 | include_resp_body | boolean | No       | false   | [false, true] | When set to `true` includes the response body in the log.                                                                                                        |
 | global_tag        | object  | No       |         |               | kv pairs in JSON，send with each log.                                                                                                                             |
+| log_format       | object  | No    |              |              | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+
+NOTE: `encrypt_fields = {"secret_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 

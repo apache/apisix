@@ -1,7 +1,7 @@
 ---
 title: openid-connect
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - OpenID Connect
   - OIDC
@@ -60,6 +60,9 @@ description: OpenID Connect allows the client to obtain user information from th
 | set_refresh_token_header             | boolean | False    | false                 |              | When set to true and a refresh token object is available, sets it in the `X-Refresh-Token` request header.               |
 | session                              | object  | False    |                       |              | When bearer_only is set to false, openid-connect will use Authorization Code flow to authenticate on the IDP, so you need to set the session-related configuration. |
 | session.secret                       | string  | True     | Automatic generation  | 16 or more characters | The key used for session encrypt and HMAC operation. |
+| unauth_action                        | string  | False    | "auth"                |              | Specify the response type on unauthenticated requests. "auth" redirects to identity provider, "deny" results in a 401 response, "pass" will allow the request without authentication. |
+
+NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 ## Scenarios
 

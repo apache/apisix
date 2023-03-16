@@ -48,10 +48,6 @@ _EOC_
 
         $block->set_value("extra_stream_config", $stream_config);
     }
-
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests();

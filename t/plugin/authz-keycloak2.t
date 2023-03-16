@@ -61,8 +61,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -109,8 +107,6 @@ passed
 GET /t
 --- response_body
 true
---- no_error_log
-[error]
 
 
 
@@ -178,8 +174,6 @@ Invalid bearer token
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -226,8 +220,6 @@ passed
 GET /t
 --- response_body
 true
---- no_error_log
-[error]
 
 
 
@@ -295,8 +287,6 @@ Invalid bearer token
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -385,8 +375,6 @@ true
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -433,8 +421,6 @@ passed
 GET /t
 --- response_body
 true
---- no_error_log
-[error]
 
 
 
@@ -481,8 +467,6 @@ true
 GET /t
 --- response_body
 true
---- no_error_log
-[error]
 
 
 
@@ -529,8 +513,6 @@ true
 GET /t
 --- response_body
 true
---- no_error_log
-[error]
 
 
 
@@ -625,8 +607,6 @@ true
 GET /t
 --- response_body
 true
---- no_error_log
-[error]
 
 
 
@@ -673,5 +653,3 @@ true
 GET /t
 --- response_body
 true
---- no_error_log
-[error]

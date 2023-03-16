@@ -18,6 +18,7 @@ use t::APISIX 'no_plan';
 
 workers(4);
 log_level('info');
+worker_connections(256);
 repeat_each(1);
 no_long_string();
 no_root_location();
@@ -76,5 +77,3 @@ random[1] == random[2]: false
 random[2] == random[3]: false
 random[3] == random[4]: false
 random[4] == random[5]: false
---- no_error_log
-[error]

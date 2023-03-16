@@ -1,7 +1,8 @@
 ---
 title: kafka-proxy
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Kafka proxy
 description: This document contains information about the Apache APISIX kafka-proxy Plugin.
@@ -37,6 +38,8 @@ The `kafka-proxy` plugin can be used to configure advanced parameters for the ka
 | sasl              | object  | optional |         | {"username": "user", "password" :"pwd"} | SASL/PLAIN authentication configuration, when this configuration exists, turn on SASL authentication; this object will contain two parameters username and password, they must be configured. |
 | sasl.username     | string  | required |         |               | SASL/PLAIN authentication username |
 | sasl.password     | string  | required |         |               | SASL/PLAIN authentication password |
+
+NOTE: `encrypt_fields = {"sasl.password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 :::note
 If SASL authentication is enabled, the `sasl.username` and `sasl.password` must be set.

@@ -65,6 +65,46 @@ deployment:
             port: 9180                  # Admin API 监听的 端口，必须使用与 node_listen 不同的端口。
 ```
 
+### 使用环境变量 {$using-environment-variables}
+
+要通过环境变量进行配置，可以使用 `${{VAR}}` 语法。例如：
+
+```yaml title="./conf/config.yaml"
+deployment:
+  admin:
+    admin_key:
+    - name: admin
+      key: ${{ADMIN_KEY}}
+      role: admin
+    allow_admin:
+    - 127.0.0.0/24
+    admin_listen:
+      ip: 0.0.0.0
+      port: 9180
+```
+
+然后在 `make init` 之前运行 `export ADMIN_KEY=$your_admin_key`.
+
+如果找不到配置的环境变量，将抛出错误。
+
+此外，如果要在未设置环境变量时使用默认值，请改用 `${{VAR:=default_value}}`。例如：
+
+```yaml title="./conf/config.yaml"
+deployment:
+  admin:
+    admin_key:
+    - name: admin
+      key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}}
+      role: admin
+    allow_admin:
+    - 127.0.0.0/24
+    admin_listen:
+      ip: 0.0.0.0
+      port: 9180
+```
+
+首先查找环境变量 `ADMIN_KEY`，如果该环境变量不存在，它将使用 `edd1c9f034335f136f87ad84b625c8f1` 作为默认值。
+
 ## v3 版本新功能 {#v3-new-function}
 
 在 APISIX v3 版本中，Admin API 支持了一些不向下兼容的新特性，比如支持新的响应体格式、支持分页查询、支持过滤资源等。
@@ -158,7 +198,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10" \
 }
 ```
 
-### 支持过滤资源 {#support filtering query}
+### 支持过滤资源 {#support-filtering-query}
 
 在 APISIX v3 版本中，在获取资源列表时，你可以使用 `name`、`label` 和 `uri` 参数过滤资源。支持参数如下：
 
@@ -209,7 +249,7 @@ Route 也称之为路由，可以通过定义一些规则来匹配客户端的�
 | GET    | /apisix/admin/routes             | 无        | 获取资源列表。                                                                                                                              |
 | GET    | /apisix/admin/routes/{id}        | 无        | 获取资源。                                                                                                                                         |
 | PUT    | /apisix/admin/routes/{id}        | {...}     | 根据 id 创建资源。                                                                                                                        |
-| POST   | /apisix/admin/routes             | {...}     | 创建资源，id 将会自动生成成。                                                                                                                      |
+| POST   | /apisix/admin/routes             | {...}     | 创建资源，id 将会自动生成。                                                                                                                      |
 | DELETE | /apisix/admin/routes/{id}        | 无        | 删除指定资源。                                                                                                                                                |
 | PATCH  | /apisix/admin/routes/{id}        | {...}     | 标准 PATCH，修改指定 Route 的部分属性，其他不涉及的属性会原样保留；如果你需要删除某个属性，可以将该属性的值设置为 `null`；当需要修改属性的值为数组时，该属性将全量更新。 |
 | PATCH  | /apisix/admin/routes/{id}/{path} | {...}     | SubPath PATCH，通过 `{path}` 指定 Route 要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。两种 PATCH 的区别，请参考使用示例。                         |
@@ -542,7 +582,7 @@ Service 是某类 API 的抽象（也可以理解为一组 Route 的抽象）。
 | PUT    | /apisix/admin/services/{id}        | {...}     | 创建指定 id 资源。                                                                                                                                                  |
 | POST   | /apisix/admin/services             | {...}     | 创建资源，id 由后台服务自动生成。                                                                                                                                    |
 | DELETE | /apisix/admin/services/{id}        | 无        | 删除资源。                                                                                                                                                          |
-| PATCH  | /apisix/admin/services/{id}        | {...}     | 标准 PATCH ，修改已有 Service 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为 null 即可删除；**注意**：当需要修改属性的值为数组时，该属性将全量更新。|
+| PATCH  | /apisix/admin/services/{id}        | {...}     | 标准 PATCH，修改已有 Service 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为 null 即可删除；**注意**：当需要修改属性的值为数组时，该属性将全量更新。|
 | PATCH  | /apisix/admin/services/{id}/{path} | {...}     | SubPath PATCH，通过 {path} 指定 Service 需要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。                                                                |
 
 ### body 请求参数 {#service-request-body-parameters}
@@ -726,12 +766,12 @@ Consumer 资源请求地址：/apisix/admin/consumers/{username}
 
 ### 请求方法 {#consumer-request-methods}
 
-| 名称   | 请求 URI                      | 请求 body  | 描述         |
-| ------ | ---------------------------- | --------- | ------------ |
-| GET    | /apisix/admin/consumers      | 无        | 获取资源列表。 |
-| GET    | /apisix/admin/consumers/{id} | 无        | 获取资源。     |
-| PUT    | /apisix/admin/consumers      | {...}     | 创建资源。     |
-| DELETE | /apisix/admin/consumers/{id} | 无        | 删除资源。     |
+| 名称   | 请求 URI                           | 请求 body | 描述          |
+| ------ | ---------------------------------- | --------- | ------------- |
+| GET    | /apisix/admin/consumers            | 无        | 获取资源列表。|
+| GET    | /apisix/admin/consumers/{username} | 无        | 获取资源。    |
+| PUT    | /apisix/admin/consumers            | {...}     | 创建资源。    |
+| DELETE | /apisix/admin/consumers/{username} | 无        | 删除资源。    |
 
 ### body 请求参数 {#consumer-body-request-methods}
 
@@ -739,11 +779,11 @@ Consumer 资源请求地址：/apisix/admin/consumers/{username}
 | ----------- | ----- | ------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | username    | 是   | 辅助     | Consumer 名称。                                                                                                                  |                                                  |
 | group_id    | 否   | 辅助     | Consumer Group 名称。                                                                                                            |                                                  |
-| plugins     | 否   | Plugin   | 该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Service。对于具体插件配置，请可以参考 [Plugins](#plugin)。     |                                                  |
+| plugins     | 否   | Plugin   | 该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Plugin Config > Service。对于具体插件配置，请参考 [Plugins](#plugin)。     |                                                  |
 | desc        | 否   | 辅助     | consumer 描述。                                                                                                                  |                                                  |
 | labels      | 否   | 匹配规则  | 标识附加属性的键值对。                                                                                                             | {"version":"v2","build":"16","env":"production"} |
-| create_time | 否   | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建。                                                                                       | 1602883670                                       |
-| update_time | 否   | 辅助     | 单位为秒的 epoch 时间戳，如果不指定则自动创建。                                                                                       | 1602883670                                       |
+| create_time | 否   | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                       | 1602883670                                       |
+| update_time | 否   | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                       | 1602883670                                       |
 
 Consumer 对象 JSON 配置示例：
 
@@ -814,7 +854,7 @@ Upstream 资源请求地址：/apisix/admin/upstreams/{id}
 | PUT    | /apisix/admin/upstreams/{id}        | {...}     | 创建指定 id 的资源。                                                                                                                                               |
 | POST   | /apisix/admin/upstreams             | {...}     | 创建资源，id 由后台服务自动生成。                                                                                                                                 |
 | DELETE | /apisix/admin/upstreams/{id}        | 无        | 删除资源。                                                                                                                                                        |
-| PATCH  | /apisix/admin/upstreams/{id}        | {...}     | 标准 PATCH ，修改已有 Upstream 的部分属性，其他不涉及的属性会原样保留；如果需要删除某个属性，可将该属性的值设置为 `null`；**注意**：当需要修改属性的值为数组时，该属性将全量更新。|
+| PATCH  | /apisix/admin/upstreams/{id}        | {...}     | 标准 PATCH，修改已有 Upstream 的部分属性，其他不涉及的属性会原样保留；如果需要删除某个属性，可将该属性的值设置为 `null`；**注意**：当需要修改属性的值为数组时，该属性将全量更新。|
 | PATCH  | /apisix/admin/upstreams/{id}/{path} | {...}     | SubPath PATCH，通过 `{path}` 指定 Upstream 需要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。                                                            |
 
 ### body 请求参数 {#upstream-body-request-methods}
@@ -869,7 +909,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 - `scheme` 可以设置成 `tls`，表示 `TLS over TCP`。
 - `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。他们的格式和 SSL 对象的 `cert` 和 `key` 一样。
 - `tls.client_cert_id` 可以用来指定引用的 SSL 对象。只有当 SSL 对象的 `type` 字段为 client 时才能被引用，否则请求会被 APISIX 拒绝。另外，SSL 对象中只有 `cert` 和 `key` 会被使用。
-- `keepalive_pool` 允许 Upstream 有自己单独的连接池。它下属的字段，比如 `requests`，可以用于配置上游连接保持的参数。该特性需要 APISIX 运行于 [APISIX-Base](./FAQ.md#如何构建-apisix-base-环境) 中。
+- `keepalive_pool` 允许 Upstream 有自己单独的连接池。它下属的字段，比如 `requests`，可以用于配置上游连接保持的参数。
 
 Upstream 对象 JSON 配置示例：
 
@@ -1164,7 +1204,7 @@ Global Rule 资源请求地址：/apisix/admin/global_rules/{id}
 | GET    | /apisix/admin/global_rules/{id}        | 无        | 获取资源。                                                                                                                                                                               |
 | PUT    | /apisix/admin/global_rules/{id}        | {...}     | 将创建指定 id 的资源。                                                                                                                                                                   |
 | DELETE | /apisix/admin/global_rules/{id}        | 无        | 删除资源。                                                                                                                                                                               |
-| PATCH  | /apisix/admin/global_rules/{id}        | {...}     | 标准 PATCH ，修改已有 Global Rule 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为 null 即可删除；**注意**：当需要修改属性的值为数组时，该属性将全量更新。       |
+| PATCH  | /apisix/admin/global_rules/{id}        | {...}     | 标准 PATCH，修改已有 Global Rule 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为 null 即可删除；**注意**：当需要修改属性的值为数组时，该属性将全量更新。       |
 | PATCH  | /apisix/admin/global_rules/{id}/{path} | {...}     | SubPath PATCH，通过 `{path}` 指定 Global Rule 要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。                                                                             |
 
 ### body 请求参数  {#global-rule-body-request-parameters}
@@ -1220,7 +1260,7 @@ Plugin Config 资源请求地址：/apisix/admin/plugin_configs/{id}
 | GET    | /apisix/admin/plugin_configs/{id}        | 无        | 获取资源。                                                                                                                                                                                 |
 | PUT    | /apisix/admin/plugin_configs/{id}        | {...}     | 根据 id 创建资源。                                                                                                                                                                         |
 | DELETE | /apisix/admin/plugin_configs/{id}        | 无        | 删除资源。                                                                                                                                                                                 |
-| PATCH  | /apisix/admin/plugin_configs/{id}        | {...}     | 标准 PATCH ，修改已有 Plugin Config 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为 null 即可删除；**注意**：当需要修改属性的值为数组时，该属性将全量更新。 |
+| PATCH  | /apisix/admin/plugin_configs/{id}        | {...}     | 标准 PATCH，修改已有 Plugin Config 的部分属性，其他不涉及的属性会原样保留；如果你要删除某个属性，将该属性的值设置为 null 即可删除；**注意**：当需要修改属性的值为数组时，该属性将全量更新。 |
 | PATCH  | /apisix/admin/plugin_configs/{id}/{path} | {...}     | SubPath PATCH，通过 {path} 指定 Plugin Config 要更新的属性，全量更新该属性的数据，其他不涉及的属性会原样保留。                                                                           |
 
 ### body 请求参数 {#plugin-config-body-request-parameters}

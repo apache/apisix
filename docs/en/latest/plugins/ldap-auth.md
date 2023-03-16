@@ -1,7 +1,8 @@
 ---
 title: ldap-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - LDAP Authentication
   - ldap-auth
@@ -41,7 +42,7 @@ For Consumer:
 
 | Name    | Type   | Required | Description                                                                      |
 | ------- | ------ | -------- | -------------------------------------------------------------------------------- |
-| user_dn | string | True     | User dn of the LDAP client. For example, `cn=user01,ou=users,dc=example,dc=org`. |
+| user_dn | string | True     | User dn of the LDAP client. For example, `cn=user01,ou=users,dc=example,dc=org`. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource. |
 
 For Route:
 

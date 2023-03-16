@@ -50,6 +50,8 @@ end
 
 
 function _M.matching(api_ctx)
+    core.log.info("route match mode: radixtree_uri_with_parameter")
+
     return base_router.match_uri(uri_router, match_opts, api_ctx)
 end
 

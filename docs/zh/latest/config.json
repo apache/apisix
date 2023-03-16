@@ -1,5 +1,5 @@
 {
-  "version": "3.0.0",
+  "version": "3.2.0",
   "sidebar": [
     {
       "type": "doc",
@@ -20,7 +20,8 @@
         "tutorials/expose-api",
         "tutorials/protect-api",
         "tutorials/observe-your-api",
-        "tutorials/health-check"
+        "tutorials/health-check",
+        "tutorials/client-to-apisix-mtls"
       ]
     },
     {
@@ -29,6 +30,7 @@
       "items": [
         "terminology/api-gateway",
         "terminology/consumer",
+        "terminology/consumer-group",
         "terminology/global-rule",
         "terminology/plugin",
         "terminology/plugin-config",
@@ -36,7 +38,8 @@
         "terminology/router",
         "terminology/script",
         "terminology/service",
-        "terminology/upstream"
+        "terminology/upstream",
+        "terminology/secret"
       ]
     },
     {
@@ -53,9 +56,10 @@
             "plugins/gzip",
             "plugins/real-ip",
             "plugins/server-info",
-            "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-pre-req",
-            "plugins/ext-plugin-post-resp"
+            "plugins/ext-plugin-post-req",
+            "plugins/ext-plugin-post-resp",
+            "plugins/workflow"
           ]
         },
         {
@@ -99,7 +103,8 @@
             "plugins/referer-restriction",
             "plugins/consumer-restriction",
             "plugins/csrf",
-            "plugins/public-api"
+            "plugins/public-api",
+            "plugins/gm"
           ]
         },
         {
@@ -174,7 +179,6 @@
             "plugins/azure-functions",
             "plugins/openwhisk",
             "plugins/aws-lambda",
-            "plugins/workflow",
             "plugins/openfunction"
           ]
         },
@@ -254,10 +258,6 @@
         },
         {
           "type": "doc",
-          "id": "stand-alone"
-        },
-        {
-          "type": "doc",
           "id": "stream-proxy"
         },
         {
@@ -305,6 +305,10 @@
     {
       "type": "doc",
       "id": "CHANGELOG"
+    },
+    {
+      "type": "doc",
+      "id": "upgrade-guide-from-2.15.x-to-3.0.0"
     }
   ]
 }

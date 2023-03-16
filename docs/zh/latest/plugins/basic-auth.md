@@ -1,7 +1,8 @@
 ---
 title: basic-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Basic Auth
   - basic-auth
@@ -40,7 +41,9 @@ Consumer 端：
 | 名称     | 类型   | 必选项 | 描述                                                                                           |
 | -------- | ------ | -----| ----------------------------------------------------------------------------------------------- |
 | username | string | 是   | Consumer 的用户名并且该用户名是唯一，如果多个 Consumer 使用了相同的 `username`，将会出现请求匹配异常。|
-| password | string | 是   | 用户的密码。                                                                                      |
+| password | string | 是   | 用户的密码。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。        |
+
+注意：schema 中还定义了 `encrypt_fields = {"password"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
 Route 端：
 

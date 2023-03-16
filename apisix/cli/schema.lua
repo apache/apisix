@@ -61,7 +61,12 @@ local etcd_schema = {
             default = 30,
             minimum = 1,
             description = "etcd connection timeout in seconds",
-        }
+        },
+        use_grpc = {
+            type = "boolean",
+            -- TODO: set true by default in v3.2
+            default = false,
+        },
     },
     required = {"prefix", "host"}
 }
@@ -370,6 +375,7 @@ local deployment_schema = {
     control_plane = {
         properties = {
             etcd = etcd_schema,
+            admin = admin_schema,
             role_control_plane = {
                 properties = {
                     config_provider = {

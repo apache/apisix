@@ -1,7 +1,8 @@
 ---
 title: forward-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Forward Authentication
   - forward-auth

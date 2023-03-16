@@ -38,15 +38,19 @@ description: 本文介绍了 API 网关 Apache APISIX 的 elasticsearch-logger �
 
 | 名称          | 类型    | 必选项 | 默认值               | 描述                                                         |
 | ------------- | ------- | -------- | -------------------- | ------------------------------------------------------------ |
-| endpoint_addr | string  | 是       |                      | Elasticsearch API。                                           |
+| endpoint_addr | string  | 废弃       |                      | Elasticsearch API 推荐使用 `endpoint_addrs`                                           |
+| endpoint_addrs | array  | 是       |                      | Elasticsearch API。如果配置多个 `endpoints`，日志将会随机写入到各个 `endpoints`                                           |
 | field         | array   | 是       |                      | Elasticsearch `field`配置信息。                                |
-| field.index   | string  | 是       |                      | Elasticsearch `[_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field)`。 |
-| field.type    | string  | 否       | Elasticsearch 默认值 | Elasticsearch `[_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field)` |
-| auth          | array   | 否       |                      | Elasticsearch `[authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html)` 配置信息 |
-| auth.username | string  | 是       |                      | Elasticsearch `[authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html)` 用户名。 |
-| auth.password | string  | 是       |                      | Elasticsearch `[authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html)` 密码。 |
+| field.index   | string  | 是       |                      | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field) |
+| field.type    | string  | 否       | Elasticsearch 默认值 | Elasticsearch [_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field) |
+| log_format    | object  | 否   |          | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| auth          | array   | 否       |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 配置信息 |
+| auth.username | string  | 是       |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 用户名。 |
+| auth.password | string  | 是       |                      | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 密码。 |
 | ssl_verify    | boolean | 否       | true                 | 当设置为 `true` 时则启用 SSL 验证。更多信息请参考 [lua-nginx-module](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake)。 |
 | timeout       | integer | 否       | 10                   | 发送给 Elasticsearch 请求超时时间。                            |
+
+注意：schema 中还定义了 `encrypt_fields = {"auth.password"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
 本插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 

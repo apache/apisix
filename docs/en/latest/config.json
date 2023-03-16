@@ -1,9 +1,16 @@
 {
-  "version": "3.0.0",
+  "version": "3.2.0",
   "sidebar": [
     {
-      "type": "doc",
-      "id": "getting-started"
+      "type": "category",
+      "label": "Getting Started",
+      "items": [
+        "getting-started/README",
+        "getting-started/configure-routes",
+        "getting-started/load-balancing",
+        "getting-started/key-authentication",
+        "getting-started/rate-limiting"
+      ]
     },
     {
       "type": "doc",
@@ -20,8 +27,11 @@
         "tutorials/expose-api",
         "tutorials/protect-api",
         "tutorials/observe-your-api",
+        "tutorials/manage-api-consumers",
         "tutorials/cache-api-responses",
-        "tutorials/health-check"
+        "tutorials/add-multiple-api-versions",
+        "tutorials/health-check",
+        "tutorials/client-to-apisix-mtls"
       ]
     },
     {
@@ -38,7 +48,8 @@
         "terminology/router",
         "terminology/script",
         "terminology/service",
-        "terminology/upstream"
+        "terminology/upstream",
+        "terminology/secret"
       ]
     },
     {
@@ -57,7 +68,9 @@
             "plugins/server-info",
             "plugins/ext-plugin-pre-req",
             "plugins/ext-plugin-post-req",
-            "plugins/ext-plugin-post-resp"
+            "plugins/ext-plugin-post-resp",
+            "plugins/inspect",
+            "plugins/workflow"
           ]
         },
         {
@@ -69,7 +82,9 @@
             "plugins/grpc-transcode",
             "plugins/grpc-web",
             "plugins/fault-injection",
-            "plugins/mocking"
+            "plugins/mocking",
+            "plugins/degraphql",
+            "plugins/body-transformer"
           ]
         },
         {
@@ -102,7 +117,8 @@
             "plugins/referer-restriction",
             "plugins/consumer-restriction",
             "plugins/csrf",
-            "plugins/public-api"
+            "plugins/public-api",
+            "plugins/gm"
           ]
         },
         {
@@ -177,7 +193,6 @@
             "plugins/azure-functions",
             "plugins/openwhisk",
             "plugins/aws-lambda",
-            "plugins/workflow",
             "plugins/openfunction"
           ]
         },
@@ -216,6 +231,10 @@
         },
         {
           "type": "doc",
+          "id": "support-fips-in-apisix"
+        },
+        {
+          "type": "doc",
           "id": "external-plugin"
         },
         {
@@ -247,6 +266,10 @@
     },
     {
       "type": "doc",
+      "id": "deployment-modes"
+    },
+    {
+      "type": "doc",
       "id": "FAQ"
     },
     {
@@ -259,6 +282,7 @@
           "items": [
             "discovery",
             "discovery/dns",
+            "discovery/consul",
             "discovery/consul_kv",
             "discovery/nacos",
             "discovery/eureka",
@@ -284,15 +308,7 @@
         },
         {
           "type": "doc",
-          "id": "deployment-modes"
-        },
-        {
-          "type": "doc",
           "id": "router-radixtree"
-        },
-        {
-          "type": "doc",
-          "id": "stand-alone"
         },
         {
           "type": "doc",
@@ -348,6 +364,10 @@
       "type": "link",
       "label": "CHANGELOG",
       "href": "https://github.com/apache/apisix/blob/master/CHANGELOG.md"
+    },
+    {
+      "type": "doc",
+      "id": "upgrade-guide-from-2.15.x-to-3.0.0"
     }
   ]
 }

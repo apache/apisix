@@ -51,13 +51,16 @@ worker_shutdown_timeout {* worker_shutdown_timeout *};
 env APISIX_PROFILE;
 env PATH; # for searching external plugin runner's binary
 
+# reserved environment variables for configuration
+env APISIX_DEPLOYMENT_ETCD_HOST;
+
 {% if envs then %}
 {% for _, name in ipairs(envs) do %}
 env {*name*};
 {% end %}
 {% end %}
 
-{% if use_apisix_openresty then %}
+{% if use_apisix_base then %}
 thread_pool grpc-client-nginx-module threads=1;
 
 lua {
@@ -75,12 +78,26 @@ http {
                       .. [=[{*lua_cpath*};";
 
     {% if enabled_stream_plugins["prometheus"] then %}
+
+    init_by_lua_block {
+        require "resty.core"
+        local process = require("ngx.process")
+        local ok, err = process.enable_privileged_agent()
+        if not ok then
+            ngx.log(ngx.ERR, "failed to enable privileged_agent: ", err)
+        end
+    }
+
     init_worker_by_lua_block {
         require("apisix.plugins.prometheus.exporter").http_init(true)
     }
 
     server {
-        listen {* prometheus_server_addr *};
+        {% if use_apisix_base then %}
+            listen {* prometheus_server_addr *} enable_process=privileged_agent;
+        {% else %}
+            listen {* prometheus_server_addr *};
+        {% end %}
 
         access_log off;
 
@@ -125,9 +142,21 @@ stream {
 
     lua_shared_dict lrucache-lock-stream {* stream.lua_shared_dict["lrucache-lock-stream"] *};
     lua_shared_dict etcd-cluster-health-check-stream {* stream.lua_shared_dict["etcd-cluster-health-check-stream"] *};
+    lua_shared_dict worker-events-stream {* stream.lua_shared_dict["worker-events-stream"] *};
+
+    {% if enabled_discoveries["tars"] then %}
+    lua_shared_dict tars-stream {* stream.lua_shared_dict["tars-stream"] *};
+    {% end %}
 
     {% if enabled_stream_plugins["limit-conn"] then %}
     lua_shared_dict plugin-limit-conn-stream {* stream.lua_shared_dict["plugin-limit-conn-stream"] *};
+    {% end %}
+
+    # for discovery shared dict
+    {% if discovery_shared_dicts then %}
+    {% for key, size in pairs(discovery_shared_dicts) do %}
+    lua_shared_dict {*key*}-stream {*size*};
+    {% end %}
     {% end %}
 
     resolver {% for _, dns_addr in ipairs(dns_resolver or {}) do %} {*dns_addr*} {% end %} {% if dns_resolver_valid then %} valid={*dns_resolver_valid*}{% end %} ipv6={% if enable_ipv6 then %}on{% else %}off{% end %};
@@ -201,7 +230,7 @@ stream {
 
         proxy_pass apisix_backend;
 
-        {% if use_apisix_openresty then %}
+        {% if use_apisix_base then %}
         set $upstream_sni "apisix_backend";
         proxy_ssl_server_name on;
         proxy_ssl_name $upstream_sni;
@@ -262,6 +291,7 @@ http {
     {% if enabled_plugins["limit-count"] then %}
     lua_shared_dict plugin-limit-count {* http.lua_shared_dict["plugin-limit-count"] *};
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-count-redis-cluster-slot-lock"] *};
+    lua_shared_dict plugin-limit-count-reset-header {* http.lua_shared_dict["plugin-limit-count"] *};
     {% end %}
 
     {% if enabled_plugins["prometheus"] and not enabled_stream_plugins["prometheus"] then %}
@@ -381,7 +411,7 @@ http {
     upstream apisix_backend {
         server 0.0.0.1;
 
-        {% if use_apisix_openresty then %}
+        {% if use_apisix_base then %}
         keepalive {* http.upstream.keepalive *};
         keepalive_requests {* http.upstream.keepalive_requests *};
         keepalive_timeout {* http.upstream.keepalive_timeout *};
@@ -417,7 +447,7 @@ http {
     }
     {% end %}
 
-    {% if use_apisix_openresty then %}
+    {% if use_apisix_base then %}
     apisix_delay_client_max_body_check on;
     apisix_mirror_on_demand on;
     {% end %}
@@ -469,7 +499,11 @@ http {
 
     {% if enabled_plugins["prometheus"] and prometheus_server_addr then %}
     server {
-        listen {* prometheus_server_addr *};
+        {% if use_apisix_base then %}
+            listen {* prometheus_server_addr *} enable_process=privileged_agent;
+        {% else %}
+            listen {* prometheus_server_addr *};
+        {% end %}
 
         access_log off;
 
@@ -728,7 +762,7 @@ http {
                 apisix.grpc_access_phase()
             }
 
-            {% if use_apisix_openresty then %}
+            {% if use_apisix_base then %}
             # For servers which obey the standard, when `:authority` is missing,
             # `host` will be used instead. When used with apisix-base, we can do
             # better by setting `:authority` directly
@@ -781,7 +815,7 @@ http {
         location = /proxy_mirror {
             internal;
 
-            {% if not use_apisix_openresty then %}
+            {% if not use_apisix_base then %}
             if ($upstream_mirror_uri = "") {
                 return 200;
             }

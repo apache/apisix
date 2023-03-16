@@ -23,9 +23,9 @@ local log          = require("apisix.core.log")
 local ws_server    = require("resty.websocket.server")
 local protoc       = require("protoc")
 local pb           = require("pb")
+local ngx          = ngx
 local setmetatable = setmetatable
 local pcall        = pcall
-local pairs        = pairs
 
 
 local _M = { version = 0.1 }
@@ -42,7 +42,7 @@ local function init_pb_state()
     -- initialize protoc compiler
     protoc.reload()
     local pubsub_protoc = protoc.new()
-    pubsub_protoc:addpath("apisix/include/apisix/model")
+    pubsub_protoc:addpath(ngx.config.prefix() .. "apisix/include/apisix/model")
     local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
     if not ok then
         pubsub_protoc:reset()
@@ -56,13 +56,10 @@ end
 
 -- parse command name and parameters from client message
 local function get_cmd(data)
-    for key, value in pairs(data) do
-        -- There are sequence and command properties in the data,
-        -- select the handler according to the command value.
-        if key ~= "sequence" then
-            return key, value
-        end
-    end
+    -- There are sequence and command properties in the data,
+    -- select the handler according to the command value.
+    local key = data.req
+    return key, data[key]
 end
 
 

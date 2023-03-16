@@ -1,7 +1,7 @@
 ---
 title: csrf
 keywords:
-  - APISIX
+  - Apache APISIX
   - API 网关
   - 跨站请求伪造攻击
   - Cross-site request forgery
@@ -42,6 +42,8 @@ description: CSRF 插件基于 Double Submit Cookie 的方式，帮助用户阻�
 | name   | string | 否    | `apisix-csrf-token`  |    | 生成的 Cookie 中的 Token 名称，需要使用此名称在请求头携带 Cookie 中的内容。 |
 | expires | number | 否 | `7200` | | CSRF Cookie 的过期时间，单位为秒。当设置为 `0` 时，会忽略 CSRF Cookie 过期时间检查。|
 | key | string | 是 |  |  | 加密 Token 的密钥。        |
+
+注意：schema 中还定义了 `encrypt_fields = {"key"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
 ## 启用插件
 

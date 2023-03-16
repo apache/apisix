@@ -198,8 +198,6 @@ deployment:
 GET /t
 --- response_body
 prev_index updated
---- no_error_log
-[error]
 --- error_log
 waitdir key
 
@@ -248,8 +246,6 @@ deployment:
 --- stream_enable
 --- stream_response
 prev_index updated
---- no_error_log
-[error]
 --- error_log
 waitdir key
 

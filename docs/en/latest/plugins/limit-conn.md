@@ -1,7 +1,7 @@
 ---
 title: limit-conn
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Limit Connection
 description: This document contains information about the Apache APISIX limit-con Plugin, you can use it to limits the number of concurrent requests to your services.

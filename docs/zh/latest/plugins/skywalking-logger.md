@@ -1,7 +1,7 @@
 ---
 title: skywalking-logger
 keywords:
-  - APISIX
+  - Apache APISIX
   - API 网关
   - Plugin
   - SkyWalking
@@ -31,7 +31,7 @@ description: 本文将介绍 API 网关 Apache APISIX 如何通过 skywalking-lo
 
 `skywalking-logger` 插件可用于将 APISIX 的访问日志数据推送到 SkyWalking OAP 服务器。
 
-如果上下文中存在 `tracing context`，插件会自动建立 `trace` 与日志的关联，该功能依赖于 [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/latest/en/protocols/skywalking-cross-process-propagation-headers-protocol-v3/)。
+如果上下文中存在 `tracing context`，插件会自动建立 `trace` 与日志的关联，该功能依赖于 [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/next/en/api/x-process-propagation-headers-v3/)。
 
 该插件也提供了将访问日志作为 JSON 对象发送到 SkyWalking OAP 服务器的能力。
 
@@ -42,6 +42,7 @@ description: 本文将介绍 API 网关 Apache APISIX 如何通过 skywalking-lo
 | endpoint_addr          | string  | 是     |                      |               | SkyWalking OAP 服务器的 URI。                                      |
 | service_name           | string  | 否     |"APISIX"              |               | SkyWalking 服务名称。                                              |
 | service_instance_name  | string  | 否     |"APISIX Instance Name"|               | SkyWalking 服务的实例名称。当设置为 `$hostname`会直接获取本地主机名。 |
+| log_format             | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | timeout                | integer | 否     | 3                    | [1,...]       | 发送请求后保持连接活动的时间。                                       |
 | name                   | string  | 否     | "skywalking logger"  |               | 标识 logger 的唯一标识符。                                         |
 | include_req_body       | boolean | 否     | false                | [false, true] | 当设置为 `true` 时，将请求正文包含在日志中。                         |

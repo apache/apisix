@@ -1,7 +1,7 @@
 ---
 title: public-api
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Public API
 description: The public-api is used for exposing an API endpoint through a general HTTP API router.

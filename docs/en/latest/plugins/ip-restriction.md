@@ -1,7 +1,8 @@
 ---
 title: ip-restriction
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - IP restriction
   - ip-restriction

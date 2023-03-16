@@ -40,8 +40,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -63,8 +61,6 @@ GET /t
 --- response_body
 property "host" is required
 done
---- no_error_log
-[error]
 
 
 
@@ -86,8 +82,6 @@ GET /t
 --- response_body
 property "timeout" validation failed: wrong type: expected integer, got string
 done
---- no_error_log
-[error]
 
 
 
@@ -126,8 +120,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -136,8 +128,6 @@ passed
 GET /opentracing
 --- response_body
 opentracing
---- no_error_log
-[error]
 --- wait: 1
 
 
@@ -278,3 +268,214 @@ qr/sending a batch logs to 127.0.0.1:(\d+)/
 --- grep_error_log_out
 sending a batch logs to 127.0.0.1:2000
 sending a batch logs to 127.0.0.1:2001
+
+
+
+=== TEST 8: bad custom log format
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/udp-logger',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "log_format": "'$host' '$time_iso8601'"
+                 }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"log_format\" validation failed: wrong type: expected object, got string"}
+
+
+
+=== TEST 9: add plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "udp-logger": {
+                                "host": "127.0.0.1",
+                                "port": 8125,
+                                "tls": false,
+                                "batch_max_size": 1,
+                                "inactive_timeout": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/plugin_metadata/udp-logger',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "log_format": {
+                            "host": "$host",
+                            "@timestamp": "$time_iso8601",
+                            "client_ip": "$remote_addr"
+                        }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 10: access
+--- stream_conf_enable
+--- extra_stream_config
+    server {
+        listen 8125 udp;
+        content_by_lua_block {
+            local decode = require("toolkit.json").decode
+            ngx.log(ngx.WARN, "the mock backend is hit")
+
+            local sock, err = ngx.req.socket(true)
+            if not sock then
+                ngx.log(ngx.ERR, "failed to get the request socket: ", err)
+                return
+            end
+
+            local data, err = sock:receive()
+
+            if not data then
+                if err and err ~= "no more data" then
+                    ngx.log(ngx.ERR, "socket error, returning: ", err)
+                end
+                return
+            end
+
+            data = decode(data)
+            assert(data.client_ip == "127.0.0.1")
+        }
+    }
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 2
+--- error_log
+the mock backend is hit
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: log format in plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "udp-logger": {
+                                "host": "127.0.0.1",
+                                "port": 8125,
+                                "tls": false,
+                                "log_format": {
+                                    "vip": "$remote_addr"
+                                },
+                                "batch_max_size": 1,
+                                "inactive_timeout": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 12: access
+--- stream_conf_enable
+--- extra_stream_config
+    server {
+        listen 8125 udp;
+        content_by_lua_block {
+            local decode = require("toolkit.json").decode
+            ngx.log(ngx.WARN, "the mock backend is hit")
+
+            local sock, err = ngx.req.socket(true)
+            if not sock then
+                ngx.log(ngx.ERR, "failed to get the request socket: ", err)
+                return
+            end
+
+            local data, err = sock:receive()
+
+            if not data then
+                if err and err ~= "no more data" then
+                    ngx.log(ngx.ERR, "socket error, returning: ", err)
+                end
+                return
+            end
+
+            data = decode(data)
+            assert(data.vip == "127.0.0.1")
+        }
+    }
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 2
+--- error_log
+the mock backend is hit
+--- no_error_log
+[error]

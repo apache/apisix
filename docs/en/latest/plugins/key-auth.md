@@ -1,7 +1,8 @@
 ---
 title: key-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Key Auth
   - key-auth
@@ -39,7 +40,9 @@ For Consumer:
 
 | Name | Type   | Requirement | Description                |
 |------|--------|-------------|----------------------------|
-| key  | string | required    | Unique key for a Consumer. |
+| key  | string | required    | Unique key for a Consumer. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource. |
+
+NOTE: `encrypt_fields = {"key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 For Route:
 

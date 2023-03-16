@@ -42,6 +42,7 @@ _EOC_
 local client = require("opentelemetry.trace.exporter.http_client")
 client.do_request = function()
     ngx.log(ngx.INFO, "opentelemetry export span")
+    return "ok"
 end
 local ctx_new = require("opentelemetry.context").new
 require("opentelemetry.context").new = function (...)
@@ -60,10 +61,6 @@ _EOC_
 
     if (!$block->request) {
         $block->set_value("request", "GET /t");
-    }
-
-    if (!$block->no_error_log && !$block->error_log) {
-        $block->set_value("no_error_log", "[error]");
     }
 
     $block;
@@ -139,7 +136,6 @@ qr/(opentelemetry export span|opentelemetry context current|plugin body_filter p
 --- grep_error_log_out
 plugin body_filter phase
 plugin body_filter phase
-opentelemetry context current
 opentelemetry context current
 opentelemetry export span
 

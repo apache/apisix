@@ -39,6 +39,7 @@ description: API 网关 Apache APISIX 的 rocketmq-logger 插件用于将日志�
 | topic                  | string  | 是     |                   |                       | 要推送的 topic 名称。                             |
 | key                    | string  | 否     |                   |                       | 发送消息的 keys。                                 |
 | tag                    | string  | 否     |                   |                       | 发送消息的 tags。                                 |
+| log_format             | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | timeout                | integer | 否     | 3                 | [1,...]               | 发送数据的超时时间。                              |
 | use_tls                | boolean | 否     | false             |                       | 当设置为 `true` 时，开启 TLS 加密。               |
 | access_key             | string  | 否     | ""                |                       | ACL 认证的 Access key，空字符串表示不开启 ACL。    |
@@ -49,6 +50,8 @@ description: API 网关 Apache APISIX 的 rocketmq-logger 插件用于将日志�
 | include_req_body_expr  | array   | 否     |                   |                       | 当 `include_req_body` 属性设置为 `true` 时进行过滤请求体，并且只有当此处设置的表达式计算结果为 `true` 时，才会记录请求体。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
 | include_resp_body      | boolean | 否     | false             | [false, true]         | 当设置为 `true` 时，包含响应体。 |
 | include_resp_body_expr | array   | 否     |                   |                       | 当 `include_resp_body` 属性设置为 `true` 时进行过滤响应体，并且只有当此处设置的表达式计算结果为 `true` 时，才会记录响应体。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
+
+注意：schema 中还定义了 `encrypt_fields = {"secret_key"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
 该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 

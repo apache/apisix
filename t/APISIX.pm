@@ -391,6 +391,12 @@ _EOC_
     lua_shared_dict lrucache-lock-stream 10m;
     lua_shared_dict plugin-limit-conn-stream 10m;
     lua_shared_dict etcd-cluster-health-check-stream 10m;
+    lua_shared_dict worker-events-stream 10m;
+
+    lua_shared_dict kubernetes-stream 1m;
+    lua_shared_dict kubernetes-first-stream 1m;
+    lua_shared_dict kubernetes-second-stream 1m;
+    lua_shared_dict tars-stream 1m;
 
     upstream apisix_backend {
         server 127.0.0.1:1900;
@@ -400,6 +406,8 @@ _EOC_
     }
 _EOC_
 
+    my $stream_extra_init_by_lua_start = $block->stream_extra_init_by_lua_start // "";
+
     my $stream_init_by_lua_block = $block->stream_init_by_lua_block // <<_EOC_;
         if os.getenv("APISIX_ENABLE_LUACOV") == "1" then
             require("luacov.runner")("t/apisix.luacov")
@@ -407,6 +415,8 @@ _EOC_
         end
 
         require "resty.core"
+
+        $stream_extra_init_by_lua_start
 
         apisix = require("apisix")
         local args = {
@@ -416,6 +426,7 @@ _EOC_
 _EOC_
 
     my $stream_extra_init_by_lua = $block->stream_extra_init_by_lua // "";
+    my $stream_extra_init_worker_by_lua = $block->stream_extra_init_worker_by_lua // "";
 
     $stream_config .= <<_EOC_;
     init_by_lua_block {
@@ -424,6 +435,7 @@ _EOC_
     }
     init_worker_by_lua_block {
         apisix.stream_init_worker()
+        $stream_extra_init_worker_by_lua
     }
 
     $extra_stream_config
@@ -531,6 +543,7 @@ _EOC_
 
     lua_shared_dict plugin-limit-req 10m;
     lua_shared_dict plugin-limit-count 10m;
+    lua_shared_dict plugin-limit-count-reset-header 10m;
     lua_shared_dict plugin-limit-conn 10m;
     lua_shared_dict internal-status 10m;
     lua_shared_dict upstream-healthcheck 32m;
@@ -837,6 +850,17 @@ deployment:
 _EOC_
 
     if ($yaml_config !~ m/deployment:/) {
+        # TODO: remove this temporary option once we have using gRPC by default
+        if ($ENV{TEST_CI_USE_GRPC}) {
+            $default_deployment .= <<_EOC_;
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: /apisix
+    use_grpc: true
+_EOC_
+        }
+
         $yaml_config = $default_deployment . $yaml_config;
     }
 
@@ -874,6 +898,12 @@ $user_apisix_yaml
 _EOC_
 
     $block->set_value("user_files", $user_files);
+
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)
+        && (!defined $block->grep_error_log)
+        && (!defined $block->ignore_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
 
     $block;
 });

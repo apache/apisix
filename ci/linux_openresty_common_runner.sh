@@ -27,18 +27,21 @@ before_install() {
 do_install() {
     export_or_prefix
 
-    ./utils/linux-install-openresty.sh
+    ./ci/linux-install-openresty.sh
 
     ./utils/linux-install-luarocks.sh
 
-    ./utils/linux-install-etcd-client.sh
+    ./ci/linux-install-etcd-client.sh
+
+    # install rust
+    install_rust
 
     create_lua_deps
 
     # sudo apt-get install tree -y
     # tree deps
 
-    git clone https://github.com/openresty/test-nginx.git test-nginx
+    git clone --depth 1 https://github.com/openresty/test-nginx.git test-nginx
     make utils
 
     mkdir -p build-cache
@@ -71,7 +74,7 @@ script() {
     set_coredns
 
     ./t/grpc_server_example/grpc_server_example \
-        -grpc-address :50051 -grpcs-address :50052 -grpcs-mtls-address :50053 \
+        -grpc-address :50051 -grpcs-address :50052 -grpcs-mtls-address :50053 -grpc-http-address :50054 \
         -crt ./t/certs/apisix.crt -key ./t/certs/apisix.key -ca ./t/certs/mtls_ca.crt \
         &
 

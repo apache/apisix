@@ -1,7 +1,8 @@
 ---
 title: skywalking-logger
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - SkyWalking Logger
   - skywalking-logger
@@ -30,7 +31,7 @@ description: This document contains information about the Apache APISIX skywalki
 
 The `skywalking-logger` Plugin can be used to push access log data to SkyWalking OAP server of HTTP.
 
-If there is an existing tracing context, it sets up the trace-log correlation automatically and relies on [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/latest/en/protocols/skywalking-cross-process-propagation-headers-protocol-v3/). This provides the ability to send access logs as JSON objects to the SkyWalking OAP server.
+If there is an existing tracing context, it sets up the trace-log correlation automatically and relies on [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/next/en/api/x-process-propagation-headers-v3/). This provides the ability to send access logs as JSON objects to the SkyWalking OAP server.
 
 ## Attributes
 
@@ -39,6 +40,7 @@ If there is an existing tracing context, it sets up the trace-log correlation au
 | endpoint_addr         | string  | True     |                        |               | URI of the SkyWalking OAP server.                                                                            |
 | service_name          | string  | False    | "APISIX"               |               | Service name for the SkyWalking reporter.                                                                    |
 | service_instance_name | string  | False    | "APISIX Instance Name" |               | Service instance name for the SkyWalking reporter. Set it to `$hostname` to directly get the local hostname. |
+| log_format | object | False    |         |            | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 | timeout               | integer | False    | 3                      | [1,...]       | Time to keep the connection alive for after sending a request.                                               |
 | name                  | string  | False    | "skywalking logger"    |               | Unique identifier to identify the logger.                                                                    |
 | include_req_body      | boolean | False    | false                  | [false, true] | When set to `true` includes the request body in the log.                                                     |

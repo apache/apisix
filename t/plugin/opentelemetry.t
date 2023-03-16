@@ -40,6 +40,7 @@ _EOC_
 local client = require("opentelemetry.trace.exporter.http_client")
 client.do_request = function()
     ngx.log(ngx.INFO, "opentelemetry export span")
+    return "ok"
 end
 _EOC_
 
@@ -52,10 +53,6 @@ _EOC_
 
     if (!defined $block->response_body) {
         $block->set_value("response_body", "passed\n");
-    }
-
-    if (!$block->no_error_log && !$block->error_log) {
-        $block->set_value("no_error_log", "[error]");
     }
 
     $block;

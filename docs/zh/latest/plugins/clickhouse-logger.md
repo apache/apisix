@@ -44,6 +44,13 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 clickhouse-lo
 | timeout          | integer | 否     | 3                   | [1,...]      | 发送请求后保持连接活动的时间。                             |
 | name             | string  | 否     | "clickhouse logger" |              | 标识 logger 的唯一标识符。                                |
 | ssl_verify       | boolean | 否     | true                | [true,false] | 当设置为 `true` 时，验证证书。                                                |
+| log_format             | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| include_req_body       | boolean | 否     | false          | [false, true]         | 当设置为 `true` 时，包含请求体。**注意**：如果请求体无法完全存放在内存中，由于 NGINX 的限制，APISIX 无法将它记录下来。|
+| include_req_body_expr  | array   | 否     |                |                       | 当 `include_req_body` 属性设置为 `true` 时进行过滤。只有当此处设置的表达式计算结果为 `true` 时，才会记录请求体。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
+| include_resp_body      | boolean | 否     | false          | [false, true]         | 当设置为 `true` 时，包含响应体。 |
+| include_resp_body_expr | array   | 否     |                |                       | 当 `include_resp_body` 属性设置为 `true` 时进行过滤。只有当此处设置的表达式计算结果为 `true` 时才会记录响应体。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。|
+
+注意：schema 中还定义了 `encrypt_fields = {"password"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
 该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 

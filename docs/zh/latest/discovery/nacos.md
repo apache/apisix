@@ -56,6 +56,8 @@ discovery:
 
 ### Upstream 设置
 
+#### 七层
+
 例如，转发 URI 匹配 "/nacos/*" 的请求到一个上游服务，
 该服务在 Nacos 中的服务名是 APISIX-NACOS ，查询地址是 http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS ，创建路由时指定服务发现类型为 nacos 。
 
@@ -95,6 +97,23 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
   }
 }
+```
+
+#### 四层
+
+nacos 服务发现也支持在四层中使用，配置方式与七层的类似。
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "remote_addr": "127.0.0.1",
+    "upstream": {
+        "scheme": "tcp",
+        "discovery_type": "nacos",
+        "service_name": "APISIX-NACOS",
+        "type": "roundrobin"
+    }
+}'
 ```
 
 ### 参数

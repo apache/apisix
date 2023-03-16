@@ -23,9 +23,9 @@ do_install() {
 
     export_or_prefix
 
-    ./utils/linux-install-openresty.sh
+    ./ci/linux-install-openresty.sh
     ./utils/linux-install-luarocks.sh
-    ./utils/linux-install-etcd-client.sh
+    ./ci/linux-install-etcd-client.sh
 }
 
 script() {
@@ -37,6 +37,9 @@ script() {
     # run the test case in an empty folder
     mkdir tmp && cd tmp
     cp -r ../utils ./
+
+    # install rust
+    install_rust
 
     # install APISIX by luarocks
     sudo luarocks install $APISIX_MAIN > build.log 2>&1 || (cat build.log && exit 1)

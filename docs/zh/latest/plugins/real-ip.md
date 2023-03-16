@@ -1,10 +1,10 @@
 ---
 title: real-ip
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Real IP
-  - real ip
 description: 本文介绍了关于 Apache APISIX `real-ip` 插件的基本信息及使用方法。
 ---
 

@@ -23,8 +23,12 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.2.0](#320)
+- [3.1.0](#310)
 - [3.0.0](#300)
 - [3.0.0-beta](#300-beta)
+- [2.15.3](#2153)
+- [2.15.2](#2152)
 - [2.15.1](#2151)
 - [2.15.0](#2150)
 - [2.14.1](#2141)
@@ -63,6 +67,91 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.2.0
+
+### Change
+
+- Deprecated separate Vault configuration in jwt-auth. Users can use secret to achieve the same function: [#8660](https://github.com/apache/apisix/pull/8660)
+
+### Core
+
+- :sunrise: Support Vault token to configure secret through environment variables: [#8866](https://github.com/apache/apisix/pull/8866)
+- :sunrise: Supports service discovery on stream subsystem:
+     - [#8583](https://github.com/apache/apisix/pull/8583)
+     - [#8593](https://github.com/apache/apisix/pull/8593)
+     - [#8584](https://github.com/apache/apisix/pull/8584)
+     - [#8640](https://github.com/apache/apisix/pull/8640)
+     - [#8633](https://github.com/apache/apisix/pull/8633)
+     - [#8696](https://github.com/apache/apisix/pull/8696)
+     - [#8826](https://github.com/apache/apisix/pull/8826)
+
+### Plugins
+
+- :sunrise: Add RESTful to graphQL conversion plugin: [#8959](https://github.com/apache/apisix/pull/8959)
+- :sunrise: Supports setting the log format on each log plugin:
+     - [#8806](https://github.com/apache/apisix/pull/8806)
+     - [#8643](https://github.com/apache/apisix/pull/8643)
+- :sunrise: Add request body/response body conversion plugin: [#8766](https://github.com/apache/apisix/pull/8766)
+- :sunrise: Support sending error logs to Kafka: [#8693](https://github.com/apache/apisix/pull/8693)
+- :sunrise: limit-count plugin supports X-RateLimit-Reset: [#8578](https://github.com/apache/apisix/pull/8578)
+- :sunrise: limit-count plugin supports setting TLS to access Redis cluster: [#8558](https://github.com/apache/apisix/pull/8558)
+- :sunrise: consumer-restriction plugin supports permission control via consumer_group_id: [#8567](https://github.com/apache/apisix/pull/8567)
+
+### Bugfixes
+
+- Fix mTLS protection when the host and SNI mismatch: [#8967](https://github.com/apache/apisix/pull/8967)
+- The proxy-rewrite plugin should escape URI parameter parts if they do not come from user config: [#8888](https://github.com/apache/apisix/pull/8888)
+- Admin API PATCH operation should return 200 status code after success: [#8855](https://github.com/apache/apisix/pull/8855)
+- Under certain conditions, the reload after etcd synchronization failure does not take effect: [#8736](https://github.com/apache/apisix/pull/8736)
+- Fix the problem that the nodes found by the Consul service discovery are incomplete: [#8651](https://github.com/apache/apisix/pull/8651)
+- Fix grpc-transcode plugin's conversion of Map data: [#8731](https://github.com/apache/apisix/pull/8731)
+- External plugins should be able to set the content-type response header: [#8588](https://github.com/apache/apisix/pull/8588)
+- When hotloading plugins, redundant timers may be left behind if the request-id plugin initializes the snowflake generator incorrectly: [#8556](https://github.com/apache/apisix/pull/8556)
+- Close previous proto synchronizer for grpc-transcode when hotloading plugins: [#8557](https://github.com/apache/apisix/pull/8557)
+
+## 3.1.0
+
+### Core
+
+- :sunrise: Support for etcd configuration synchronization via gRPC:
+    - [#8485](https://github.com/apache/apisix/pull/8485)
+    - [#8450](https://github.com/apache/apisix/pull/8450)
+    - [#8411](https://github.com/apache/apisix/pull/8411)
+- :sunrise: Support for configuring encrypted fields in plugins:
+    - [#8487](https://github.com/apache/apisix/pull/8487)
+    - [#8403](https://github.com/apache/apisix/pull/8403)
+- :sunrise: Support for placing partial fields in Vault or environment variable using secret resources:
+    - [#8448](https://github.com/apache/apisix/pull/8448)
+    - [#8421](https://github.com/apache/apisix/pull/8421)
+    - [#8412](https://github.com/apache/apisix/pull/8412)
+    - [#8394](https://github.com/apache/apisix/pull/8394)
+    - [#8390](https://github.com/apache/apisix/pull/8390)
+- :sunrise: Allows upstream configuration in the stream subsystem as a domain name: [#8500](https://github.com/apache/apisix/pull/8500)
+- :sunrise: Support Consul service discovery: [#8380](https://github.com/apache/apisix/pull/8380)
+
+### Plugin
+
+- :sunrise: Optimize resource usage for prometheus collection: [#8434](https://github.com/apache/apisix/pull/8434)
+- :sunrise: Add inspect plugin for easy debugging: [#8400](https://github.com/apache/apisix/pull/8400)
+- :sunrise: jwt-auth plugin supports parameters to hide authentication token from upstream : [#8206](https://github.com/apache/apisix/pull/8206)
+- :sunrise: proxy-rewrite plugin supports adding new request headers without overwriting existing request headers with the same name: [#8336](https://github.com/apache/apisix/pull/8336)
+- :sunrise: grpc-transcode plugin supports setting the grpc-status-details-bin response header into the response body: [#7639](https://github.com/apache/apisix/pull/7639)
+- :sunrise: proxy-mirror plugin supports setting the prefix: [#8261](https://github.com/apache/apisix/pull/8261)
+
+### Bugfix
+
+- Fix the problem that the plug-in configured under service object cannot take effect in time under some circumstances: [#8482](https://github.com/apache/apisix/pull/8482)
+- Fix an occasional 502 problem when http and grpc share the same upstream connection due to connection pool reuse: [#8364](https://github.com/apache/apisix/pull/8364)
+- file-logger should avoid buffer-induced log truncation when writing logs: [#7884](https://github.com/apache/apisix/pull/7884)
+- max_kept parameter of log-rotate plugin should take effect on compressed files: [#8366](https://github.com/apache/apisix/pull/8366)
+- Fix userinfo not being set when use_jwks is true in the openid-connect plugin: [#8347](https://github.com/apache/apisix/pull/8347)
+- Fix an issue where x-forwarded-host cannot be changed in the proxy-rewrite plugin: [#8200](https://github.com/apache/apisix/pull/8200)
+- Fix a bug where disabling the v3 admin API resulted in missing response bodies under certain circumstances: [#8349](https://github.com/apache/apisix/pull/8349)
+- In zipkin plugin, pass trace ID even if there is a rejected sampling decision: [#8099](https://github.com/apache/apisix/pull/8099)
+- Fix `_meta.filter` in plugin configuration not working with variables assigned after upstream response and custom variables in APISIX.
+    - [#8162](https://github.com/apache/apisix/pull/8162)
+    - [#8256](https://github.com/apache/apisix/pull/8256)
 
 ## 3.0.0
 
@@ -139,7 +228,7 @@ In the static configuration, we removed several fields as follows:
 - Removed `apisix.port_admin`: [#7716](https://github.com/apache/apisix/pull/7716)
 - Removed `etcd.health_check_retry`: [#7676](https://github.com/apache/apisix/pull/7676)
 - Removed `nginx_config.http.lua_shared_dicts`: [#7677](https://github.com/apache/apisix/pull/7677)
-- Removed `nginx_config.http.real_ip_header`: [#7696](https://github.com/apache/apisix/pull/7696)
+- Removed `apisix.real_ip_header`: [#7696](https://github.com/apache/apisix/pull/7696)
 
 In the dynamic configuration, we made the following adjustments:
 
@@ -250,6 +339,18 @@ Returns multiple configurations:
 - the phases after proxy didn't run when 500 error happens before proxy: [#7703](https://github.com/apache/apisix/pull/7703)
 - avoid error when multiple plugins associated with consumer and have rewrite phase: [#7531](https://github.com/apache/apisix/pull/7531)
 - upgrade lua-resty-etcd to 1.8.3 which fixes various issues: [#7565](https://github.com/apache/apisix/pull/7565)
+
+## 2.15.3
+
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.15` branch.**
+
+[https://github.com/apache/apisix/blob/release/2.15/CHANGELOG.md#2153](https://github.com/apache/apisix/blob/release/2.15/CHANGELOG.md#2153)
+
+## 2.15.2
+
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/2.15` branch.**
+
+[https://github.com/apache/apisix/blob/release/2.15/CHANGELOG.md#2152](https://github.com/apache/apisix/blob/release/2.15/CHANGELOG.md#2152)
 
 ## 2.15.1
 

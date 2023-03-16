@@ -1,5 +1,10 @@
 ---
-title: Global Rule
+title: Global Rules
+keywords:
+  - API Gateway
+  - Apache APISIX
+  - Global Rules
+description: This article describes how to use global rules.
 ---
 
 <!--
@@ -25,13 +30,15 @@ title: Global Rule
 
 A [Plugin](./plugin.md) configuration can be bound directly to a [Route](./route.md), a [Service](./service.md) or a [Consumer](./consumer.md). But what if we want a Plugin to work on all requests? This is where we register a global Plugin with Global Rule.
 
+Compared with the plugin configuration in Route, Service, Plugin Config, and Consumer, the plugin in the Global Rules is always executed first.
+
 ## Example
 
 The example below shows how you can use the `limit-count` Plugin on all requests:
 
 ```shell
 curl -X PUT \
-  https://{apisix_listen_address}/apisix/admin/global_rules/1 \
+  http://{apisix_listen_address}/apisix/admin/global_rules/1 \
   -H 'Content-Type: application/json' \
   -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
   -d '{
@@ -50,5 +57,5 @@ curl -X PUT \
 You can also list all the Global rules by making this request with the Admin API:
 
 ```shell
-curl https://{apisix_listen_address}/apisix/admin/global_rules
+curl http://{apisix_listen_address}/apisix/admin/global_rules -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```

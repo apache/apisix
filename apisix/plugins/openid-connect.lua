@@ -86,6 +86,14 @@ local schema = {
             type = "string",
             description = "the URI will be redirect when request logout_path",
         },
+        unauth_action = {
+            type = "string",
+            default = "auth",
+            enum = {"auth", "deny", "pass"},
+            description = "The action performed when client is not authorized. Use auth to " ..
+                "redirect user to identity provider, deny to respond with 401 Unauthorized, and " ..
+                "pass to allow the request regardless."
+        },
         public_key = {type = "string"},
         token_signing_alg_values_expected = {type = "string"},
         use_pkce = {
@@ -124,6 +132,7 @@ local schema = {
             default = false
         }
     },
+    encrypt_fields = {"client_secret"},
     required = {"client_id", "client_secret", "discovery"}
 }
 
@@ -237,7 +246,7 @@ local function introspect(ctx, conf)
         -- Token successfully validated.
         local method = (conf.public_key and "public_key") or (conf.use_jwks and "jwks")
         core.log.debug("token validate successfully by ", method)
-        return res, err, token, nil
+        return res, err, token, res
     else
         -- Validate token against introspection endpoint.
         -- TODO: Same as above for public key validation.
@@ -327,15 +336,26 @@ function _M.rewrite(plugin_conf, ctx)
         -- Either token validation via introspection endpoint or public key is
         -- not configured, and/or token could not be extracted from the request.
 
+        local unauth_action = conf.unauth_action
+        if unauth_action ~= "auth" then
+            unauth_action = "deny"
+        end
+
         -- Authenticate the request. This will validate the access token if it
         -- is stored in a session cookie, and also renew the token if required.
         -- If no token can be extracted, the response will redirect to the ID
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, _, session  = openidc.authenticate(conf, nil, nil, conf.session)
+        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action, conf.session)
 
         if err then
+            if err == "unauthorized request" then
+                if conf.unauth_action == "pass" then
+                    return nil
+                end
+                return 401
+            end
             core.log.error("OIDC authentication failed: ", err)
             return 500
         end

@@ -1,7 +1,7 @@
 ---
 title: FAQ
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - FAQ
 description: This article lists solutions to common problems when using Apache APISIX.
@@ -652,7 +652,7 @@ In actual scenarios, if APISIX uses a certificate to connect to etcd through HTT
 1. Query or write data through APISIX Admin API.
 2. In the monitoring scenario, Prometheus crawls the APISIX data plane Metrics API timeout.
 
-These problems related to higher latency seriously affect the service stability of APISIX, and the reason why such problems occur is mainly because etcd provides two modes of operation: HTTP (HTTPS) and gRPC. And APISIX uses the HTTP (HTTPS) protocol to operate etcd.
+These problems related to higher latency seriously affect the service stability of APISIX, and the reason why such problems occur is mainly because etcd provides two modes of operation: HTTP (HTTPS) and gRPC. And APISIX uses the HTTP (HTTPS) protocol to operate etcd by default.
 In this scenario, etcd has a bug about HTTP/2: if etcd is operated over HTTPS (HTTP is not affected), the upper limit of HTTP/2 connections is the default `250` in Golang. Therefore, when the number of APISIX data plane nodes is large, once the number of connections between all APISIX nodes and etcd exceeds this upper limit, the response of APISIX API interface will be very slow.
 
 In Golang, the default upper limit of HTTP/2 connections is `250`, the code is as follows:
@@ -693,6 +693,68 @@ For more information, please refer to:
 - [bug: when apisix starts for a while, its communication with etcd starts to time out](https://github.com/apache/apisix/issues/7078)
 - [the prometheus metrics API is tool slow](https://github.com/apache/apisix/issues/7353)
 - [Support configuring `MaxConcurrentStreams` for http2](https://github.com/etcd-io/etcd/pull/14169)
+
+Another solution is to switch to an experimental gRPC-based configuration synchronization. This requires setting `use_grpc: true` in the configuration file `conf/config.yaml`:
+
+```yaml
+  etcd:
+    use_grpc: true
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: "/apisix"
+```
+
+## Why is the file-logger logging garbled?
+
+If you are using the `file-logger` plugin but getting garbled logs, one possible reason is your upstream response has returned a compressed response body. You can fix this by setting the accept-encoding in the request header to not receive compressed responses using the [proxy-rewirte](https://apisix.apache.org/docs/apisix/plugins/proxy-rewrite/) plugin:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: YOUR-TOKEN' -X PUT -d '
+{
+    "methods":[
+        "GET"
+    ],
+    "uri":"/test/index.html",
+    "plugins":{
+        "proxy-rewrite":{
+            "headers":{
+                "set":{
+                    "accept-encoding":"gzip;q=0,deflate,sdch"
+                }
+            }
+        }
+    },
+    "upstream":{
+        "type":"roundrobin",
+        "nodes":{
+            "127.0.0.1:80":1
+        }
+    }
+}'
+
+## How does APISIX configure ETCD with authentication?
+
+Suppose you have an ETCD cluster that enables the auth. To access this cluster, you need to configure the correct username and password for Apache APISIX in `conf/config.yaml`:
+
+```yaml
+deployment:
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    user: etcd_user             # username for etcd
+    password: etcd_password     # password for etcd
+```
+
+For other ETCD configurations, such as expiration times, retries, and so on, you can refer to the `ETCD` section in the `conf/config-default.yaml` file.
+
+## What is the difference between SSLs and tls.client_cert in upstream configurations, and ssl_trusted_certificate in config-default.yaml?
+
+The `ssls` is managed through the `/apisix/admin/ssls` API. It's used for managing TLS certificates. These certificates may be used during TLS handshake (between Apache APISIX and its clients). Apache APISIX uses Server Name Indication (SNI) to differentiate between certificates of different domains.
+
+The `tls.client_cert`, `tls.client_key`, and `tls.client_cert_id` in upstream are used for mTLS communication with the upstream.
+
+The `ssl_trusted_certificate` in config-default.yaml configures a trusted CA certificate. It is used for verifying some certificates signed by private authorities within APISIX, to avoid APISIX rejects the certificate. Note that it is not used to trust the certificates of APISIX upstream, because APISIX does not verify the legality of the upstream certificates. Therefore, even if the upstream uses an invalid TLS certificate, it can still be accessed without configuring a root certificate.
 
 ## Where can I find more answers?
 

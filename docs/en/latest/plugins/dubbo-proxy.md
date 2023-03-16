@@ -1,7 +1,7 @@
 ---
 title: dubbo-proxy
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - Apache Dubbo

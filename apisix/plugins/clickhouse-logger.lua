@@ -20,10 +20,8 @@ local log_util        = require("apisix.utils.log-util")
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local url             = require("net.url")
-local plugin          = require("apisix.plugin")
 local math_random     = math.random
 
-local ngx      = ngx
 local tostring = tostring
 
 local plugin_name = "clickhouse-logger"
@@ -42,11 +40,29 @@ local schema = {
         timeout = {type = "integer", minimum = 1, default = 3},
         name = {type = "string", default = "clickhouse logger"},
         ssl_verify = {type = "boolean", default = true},
+        log_format = {type = "object"},
+        include_req_body = {type = "boolean", default = false},
+        include_req_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
+        include_resp_body = {type = "boolean", default = false},
+        include_resp_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        }
     },
     oneOf = {
         {required = {"endpoint_addr", "user", "password", "database", "logtable"}},
         {required = {"endpoint_addrs", "user", "password", "database", "logtable"}}
     },
+    encrypt_fields = {"password"},
 }
 
 
@@ -146,18 +162,13 @@ local function send_http_data(conf, log_message)
 end
 
 
-function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    core.log.info("metadata: ", core.json.delay_encode(metadata))
-    local entry
+function _M.body_filter(conf, ctx)
+    log_util.collect_body(conf, ctx)
+end
 
-    if metadata and metadata.value.log_format
-       and core.table.nkeys(metadata.value.log_format) > 0
-    then
-        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
-    else
-        entry = log_util.get_full_log(ngx, conf)
-    end
+
+function _M.log(conf, ctx)
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
 
     if batch_processor_manager:add_entry(conf, entry) then
         return

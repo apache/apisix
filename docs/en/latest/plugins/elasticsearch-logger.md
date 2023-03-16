@@ -1,7 +1,7 @@
 ---
 title: elasticsearch-logger
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - Elasticsearch-logger
@@ -37,15 +37,19 @@ When the Plugin is enabled, APISIX will serialize the request context informatio
 
 | Name          | Type    | Required | Default                     | Description                                                  |
 | ------------- | ------- | -------- | --------------------------- | ------------------------------------------------------------ |
-| endpoint_addr | string  | True     |                             | Elasticsearch API.                                            |
+| endpoint_addr | string  | Deprecated     |                             | Deprecated. Use `endpoint_addrs` instead. Elasticsearch API.                                            |
+| endpoint_addrs  | array  | True     |                             | Elasticsearch API. If multiple endpoints are configured, they will be written randomly.                                            |
 | field         | array   | True     |                             | Elasticsearch `field` configuration.                          |
 | field.index   | string  | True     |                             | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field). |
 | field.type    | string  | False    | Elasticsearch default value | Elasticsearch [_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field). |
+| log_format | object | False    |          | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 | auth          | array   | False    |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) configuration. |
 | auth.username | string  | True     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username. |
 | auth.password | string  | True     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password. |
 | ssl_verify    | boolean | False    | true                        | When set to `true` enables SSL verification as per [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake). |
 | timeout       | integer | False    | 10                          | Elasticsearch send data timeout in seconds.                  |
+
+NOTE: `encrypt_fields = {"auth.password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 

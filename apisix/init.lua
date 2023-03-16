@@ -37,6 +37,7 @@ local admin_init      = require("apisix.admin.init")
 local get_var         = require("resty.ngxvar").fetch
 local router          = require("apisix.router")
 local apisix_upstream = require("apisix.upstream")
+local apisix_secret   = require("apisix.secret")
 local set_upstream    = apisix_upstream.set_by_route
 local apisix_ssl      = require("apisix.ssl")
 local upstream_util   = require("apisix.utils.upstream")
@@ -82,6 +83,7 @@ local _M = {version = 0.4}
 function _M.http_init(args)
     core.resolver.init_resolver(args)
     core.id.init()
+    core.env.init()
 
     local process = require("ngx.process")
     local ok, err = process.enable_privileged_agent()
@@ -149,6 +151,7 @@ function _M.http_init_worker()
     plugin_config.init_worker()
     require("apisix.consumer").init_worker()
     consumer_group.init_worker()
+    apisix_secret.init_worker()
 
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()
@@ -293,6 +296,51 @@ local function verify_tls_client(ctx)
                 core.log.error("client certificate verification is not passed: ", res)
             end
 
+            return false
+        end
+    end
+
+    return true
+end
+
+
+local function verify_https_client(ctx)
+    local scheme = ctx.var.scheme
+    if scheme ~= "https" then
+        return true
+    end
+
+    local host = ctx.var.host
+    local matched = router.router_ssl.match_and_set(ctx, true, host)
+    if not matched then
+        return true
+    end
+
+    local matched_ssl = ctx.matched_ssl
+    if matched_ssl.value.client and apisix_ssl.support_client_verification() then
+        local verified = apisix_base_flags.client_cert_verified_in_handshake
+        if not verified then
+            -- vanilla OpenResty requires to check the verification result
+            local res = ctx.var.ssl_client_verify
+            if res ~= "SUCCESS" then
+                if res == "NONE" then
+                    core.log.error("client certificate was not present")
+                else
+                    core.log.error("client certificate verification is not passed: ", res)
+                end
+
+                return false
+            end
+        end
+
+        local sni = apisix_ssl.server_name()
+        if sni ~= host then
+            -- There is a case that the user configures a SSL object with `*.domain`,
+            -- and the client accesses with SNI `a.domain` but uses Host `b.domain`.
+            -- This case is complex and we choose to restrict the access until there
+            -- is a stronge demand in real world.
+            core.log.error("client certificate verified with SNI ", sni,
+                           ", but the host is ", host)
             return false
         end
     end
@@ -472,11 +520,11 @@ function _M.http_access_phase()
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
 
-    if not verify_tls_client(api_ctx) then
+    core.ctx.set_vars_meta(api_ctx)
+
+    if not verify_https_client(api_ctx) then
         return core.response.exit(400)
     end
-
-    core.ctx.set_vars_meta(api_ctx)
 
     debug.dynamic_debug(api_ctx)
 
@@ -891,13 +939,27 @@ function _M.stream_init_worker()
     -- for testing only
     core.log.info("random stream test in [1, 10000]: ", math.random(1, 10000))
 
+    if core.config.init_worker then
+        local ok, err = core.config.init_worker()
+        if not ok then
+            core.log.error("failed to init worker process of ", core.config.type,
+                           " config center, err: ", err)
+        end
+    end
+
     plugin.init_worker()
     xrpc.init_worker()
     router.stream_init_worker()
     apisix_upstream.init_worker()
 
-    if core.config == require("apisix.core.config_yaml") then
-        core.config.init_worker()
+    local we = require("resty.worker.events")
+    local ok, err = we.configure({shm = "worker-events-stream", interval = 0.1})
+    if not ok then
+        error("failed to init worker event: " .. err)
+    end
+    local discovery = require("apisix.discovery.init").discovery
+    if discovery and discovery.init_worker then
+        discovery.init_worker()
     end
 
     load_balancer = require("apisix.balancer")

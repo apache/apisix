@@ -1,8 +1,8 @@
 ---
 title: ua-restriction
 keywords:
-  - APISIX
-  - API Gateway
+  - Apache APISIX
+  - API 网关
   - UA restriction
 description: 本文介绍了 Apache APISIX ua-restriction 插件的使用方法，通过该插件可以将指定的 User-Agent 列入白名单或黑名单来限制对服务或路由的访问。
 ---

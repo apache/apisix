@@ -1,7 +1,8 @@
 ---
 title: ldap-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - LDAP Authentication
   - ldap-auth
@@ -39,7 +40,7 @@ Consumer 端：
 
 | 名称    | 类型   | 必选项 | 描述                                                                      |
 | ------- | ------ | -------- | -------------------------------------------------------------------------------- |
-| user_dn | string | 是     | LDAP 客户端的 dn，例如：`cn=user01,ou=users,dc=example,dc=org`。 |
+| user_dn | string | 是     | LDAP 客户端的 dn，例如：`cn=user01,ou=users,dc=example,dc=org`。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。 |
 
 Route 端：
 

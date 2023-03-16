@@ -19,10 +19,10 @@ local core            = require("apisix.core")
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
-local plugin          = require("apisix.plugin")
 
 local ngx             = ngx
 local str_format      = core.string.format
+local math_random     = math.random
 
 local plugin_name = "elasticsearch-logger"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
@@ -31,9 +31,18 @@ local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
+        -- deprecated, use "endpoint_addrs" instead
         endpoint_addr = {
             type = "string",
             pattern = "[^/]$",
+        },
+        endpoint_addrs = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "string",
+                pattern = "[^/]$",
+            },
         },
         field = {
             type = "object",
@@ -43,6 +52,7 @@ local schema = {
             },
             required = {"index"}
         },
+        log_format = {type = "object"},
         auth = {
             type = "object",
             properties = {
@@ -67,7 +77,11 @@ local schema = {
             default = true
         }
     },
-    required = { "endpoint_addr", "field" },
+    encrypt_fields = {"auth.password"},
+    oneOf = {
+        {required = {"endpoint_addr", "field"}},
+        {required = {"endpoint_addrs", "field"}}
+    },
 }
 
 
@@ -97,19 +111,7 @@ end
 
 
 local function get_logger_entry(conf, ctx)
-    local entry
-    local metadata = plugin.plugin_metadata(plugin_name)
-    core.log.info("metadata: ", core.json.delay_encode(metadata))
-    if metadata and metadata.value.log_format
-        and core.table.nkeys(metadata.value.log_format) > 0
-    then
-        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
-        core.log.info("custom log format entry: ", core.json.delay_encode(entry))
-    else
-        entry = log_util.get_full_log(ngx, conf)
-        core.log.info("full log entry: ", core.json.delay_encode(entry))
-    end
-
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
     return core.json.encode({
             create = {
                 _index = conf.field.index,
@@ -126,7 +128,13 @@ local function send_to_elasticsearch(conf, entries)
         return false, str_format("create http error: %s", err)
     end
 
-    local uri = conf.endpoint_addr .. "/_bulk"
+    local selected_endpoint_addr
+    if conf.endpoint_addr then
+        selected_endpoint_addr = conf.endpoint_addr
+    else
+        selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
+    end
+    local uri = selected_endpoint_addr .. "/_bulk"
     local body = core.table.concat(entries, "")
     local headers = {["Content-Type"] = "application/x-ndjson"}
     if conf.auth then

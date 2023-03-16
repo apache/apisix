@@ -1,7 +1,7 @@
 ---
 title: sls-logger
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - SLS Logger
@@ -40,12 +40,15 @@ It might take some time to receive the log data. It will be automatically sent a
 | host              | True     | IP address or the hostname of the TCP server. See [Alibaba Cloud log service documentation](https://www.alibabacloud.com/help/en/log-service/latest/endpoints) for details. Use IP address instead of domain. |
 | port              | True     | Target upstream port. Defaults to `10009`.                                                                                                                                                                                                      |
 | timeout           | False    | Timeout for the upstream to send data.                                                                                                                                                                                                          |
+| log_format       | False    | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 | project           | True     | Project name in Alibaba Cloud log service. Create SLS before using this Plugin.                                                                                                                                                                     |
 | logstore          | True     | logstore name in Ali Cloud log service. Create SLS before using this Plugin.                                                                                                                                                                    |
 | access_key_id     | True     | AccessKey ID in Alibaba Cloud. See [Authorization](https://www.alibabacloud.com/help/en/log-service/latest/create-a-ram-user-and-authorize-the-ram-user-to-access-log-service) for more details.                                                                     |
 | access_key_secret | True     | AccessKey Secret in Alibaba Cloud. See [Authorization](https://www.alibabacloud.com/help/en/log-service/latest/create-a-ram-user-and-authorize-the-ram-user-to-access-log-service) for more details.                                                                 |
 | include_req_body  | True     | When set to `true`, includes the request body in the log.                                                                                                                                                                                       |
 | name              | False    | Unique identifier for the batch processor.                                                                                                                                                                                                      |
+
+NOTE: `encrypt_fields = {"access_key_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
