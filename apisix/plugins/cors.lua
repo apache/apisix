@@ -296,8 +296,8 @@ function _M.header_filter(conf, ctx)
     -- If allow_origins_by_regex is not nil, should be matched to it only
     local allow_origins
     if conf.allow_origins_by_regex == nil then
-        allow_origins = process_with_allow_origins(conf.allow_origins, ctx, req_origin)     
-    else 
+        allow_origins = process_with_allow_origins(conf.allow_origins, ctx, req_origin) 
+    else
         allow_origins = process_with_allow_origins_by_regex(conf, ctx, req_origin)
     end
     if not match_origins(req_origin, allow_origins) then
