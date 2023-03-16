@@ -41,7 +41,7 @@ Plugin 表示将在 HTTP 请求/响应生命周期期间执行的插件配置。
 
 ## 配置简介
 
-如果你想在现有插件的基础上新增插件，请复制 `./conf/config-default.yaml` 中的 `plugins` 参数下的插件列表到 `./conf/config.yaml` 的 `plugins` 参数中。
+如果你想在现有插件的基础上新增插件，请复制 [`./conf/config-default.yaml`](https://github.com/apache/apisix/blob/master/conf/config-default.yaml) 中的 `plugins` 参数下的插件列表到 `./conf/config.yaml` 的 `plugins` 参数中。
 
 :::tip 提示
 
