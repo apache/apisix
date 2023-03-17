@@ -140,7 +140,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
 
     更多信息，请参考[健康检查的文档](../tutorials/health-check.md)。
 
-以下是使用不同 [`hash_on`](../admin-api.md#upstream-body-request-methods) 类型的配置示例：
+以下是在Upstream 中使用不同 [`hash_on`](../admin-api.md#upstream-body-request-methods) 类型的配置示例：
 
 ### Consumer
 
