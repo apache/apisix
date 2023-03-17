@@ -435,3 +435,34 @@ apikey: auth-jack
 {"message":"Your IP address is not allowed"}
 hello world
 hello world
+
+
+
+=== TEST 10: consumer should work if the etcd connection failed during starting
+--- extra_init_by_lua
+local etcd_apisix  = require("apisix.core.etcd")
+etcd_apisix.get_etcd_syncer = function ()
+    return nil, "", "ouch"
+end
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local headers = {
+                ["Authorization"] = "Basic Zm9vOmJhbGE="
+            }
+            local res, err = httpc:request_uri(uri, {headers = headers})
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.print(res.body)
+        }
+    }
+--- response_body
+hello world
+--- error_log
+failed to fetch data from etcd
