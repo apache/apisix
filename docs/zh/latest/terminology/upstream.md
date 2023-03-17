@@ -99,7 +99,8 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
 
 ## 使用示例
 
-- 配置健康检查的示例。
+### Checks
+- 以下是在Upstream 中配置健康检查的示例。
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -140,9 +141,10 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
 
     更多信息，请参考[健康检查的文档](../tutorials/health-check.md)。
 
-以下是使用不同 [`hash_on`](../admin-api.md#upstream-body-request-methods) 类型的配置示例：
+### Hash_on
+以下是在Upstream 中使用不同 [`hash_on`](../admin-api.md#upstream-body-request-methods) 类型的配置示例：
 
-### Consumer
+#### Consumer
 
 1. 创建一个 Consumer 对象。
 
@@ -186,7 +188,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
     curl http://127.0.0.1:9080/server_port -H "apikey: auth-jack"
     ```
 
-### Cookie
+#### Cookie
 
 1. 创建路由并配置 `upstream.hash_on` 的类型为 `cookie`。
 
@@ -215,7 +217,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
     -H "Cookie: sid=3c183a30cffcda1408daf1c61d47b274"
     ```
 
-### Header
+#### Header
 
 1. 创建路由并配置 `upstream.hash_on` 的类型为 `header`，`key` 为 `content-type`。
 
