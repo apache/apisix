@@ -365,7 +365,7 @@ passed
             local decode = require("toolkit.json").decode
             ngx.log(ngx.WARN, "the mock backend is hit")
 
-            local sock, err = ngx.req.socket(true)
+            local sock, err = ngx.req.socket()
             if not sock then
                 ngx.log(ngx.ERR, "failed to get the request socket: ", err)
                 return
@@ -451,7 +451,7 @@ passed
             local decode = require("toolkit.json").decode
             ngx.log(ngx.WARN, "the mock backend is hit")
 
-            local sock, err = ngx.req.socket(true)
+            local sock, err = ngx.req.socket()
             if not sock then
                 ngx.log(ngx.ERR, "failed to get the request socket: ", err)
                 return
