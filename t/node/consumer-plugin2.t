@@ -447,7 +447,6 @@ end
 --- config
     location /t {
         content_by_lua_block {
-            local t = require("lib.test_admin").test
             local http = require "resty.http"
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
