@@ -389,5 +389,25 @@ function _M.rewrite(plugin_conf, ctx)
     end
 end
 
+local function phase_func(conf, plugin_conf)
+  -- existing code
+  local opts = ngx.ctx.opts
+  local res, err = authenticate(opts)
+
+  if err then
+    ngx.log(ngx.ERR, "OIDC authentication failed: " .. err)
+    ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. ngx.var.host .. '",error="' .. err .. '"'
+    ngx.exit(ngx.HTTP_UNAUTHORIZED)
+  end
+
+  if not res then
+    ngx.log(ngx.ERR, "OIDC authentication failed: request to the redirect_uri path but there's no session state found. Please ensure that the redirect_uri is configured correctly and that the session state is present in the request.")
+    ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. ngx.var.host .. '",error="OIDC authentication failed: request to the redirect_uri path but there\'s no session state found. Please ensure that the redirect_uri is configured correctly and that the session state is present in the request."'
+    ngx.exit(ngx.HTTP_UNAUTHORIZED)
+  end
+
+  -- existing code
+end
+
 
 return _M
