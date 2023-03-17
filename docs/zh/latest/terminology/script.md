@@ -36,7 +36,7 @@ Script 与 Plugin 不兼容，并且 Script 优先执行 Script，这意味着�
 
 理论上，在 Script 中可以编写任意 Lua 代码，你也可以直接调用已有的插件以复用已有的代码。
 
-Script 也有执行阶段概念，支持 `access`、`header_filter`、`body_filter` 和 `log` 阶段。系统会在相应阶段中自动执行 `Script` 脚本中对应阶段的代码。
+Script 也有[执行阶段](https://apisix.apache.org/docs/apisix/architecture-design/apisix/#plugin-hierarchy)概念，支持 `access`、`header_filter`、`body_filter` 和 `log` 阶段。系统会在相应阶段中自动执行 `Script` 脚本中对应阶段的代码。
 
 ```json
 {
