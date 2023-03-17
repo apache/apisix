@@ -22,13 +22,6 @@ worker_connections(256);
 no_root_location();
 no_shuffle();
 
-our $yaml_config = <<_EOC_;
-apisix:
-    node_listen: 1984
-    router:
-        http: 'radixtree_host_uri'
-_EOC_
-
 run_tests();
 
 __DATA__
@@ -133,7 +126,6 @@ GET /hello
             ngx.say(body)
         }
     }
---- yaml_config eval: $::yaml_config
 --- request
 GET /t
 --- response_body
@@ -144,7 +136,6 @@ passed
 === TEST 6: hit route
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- more_headers
 Host: foo.com
 --- response_body
@@ -172,7 +163,6 @@ hello world
             ngx.say(body)
         }
     }
---- yaml_config eval: $::yaml_config
 --- request
 GET /t
 --- response_body
@@ -183,7 +173,6 @@ passed
 === TEST 8: route not found, failed by disable
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- more_headers
 Host: foo.com
 --- error_code: 404

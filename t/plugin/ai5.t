@@ -171,11 +171,11 @@ done
 qr/route match mode: \S[^,]+/
 --- grep_error_log_out
 route match mode: ai_match
-route match mode: radixtree_uri
-route match mode: radixtree_uri
-route match mode: radixtree_uri
+route match mode: radixtree_host_uri
+route match mode: radixtree_host_uri
+route match mode: radixtree_host_uri
 route match mode: ai_match
-route match mode: radixtree_uri
+route match mode: radixtree_host_uri
 
 
 
@@ -263,8 +263,8 @@ done
 --- grep_error_log eval
 qr/route match mode: \S[^,]+/
 --- grep_error_log_out
-route match mode: radixtree_uri
-route match mode: radixtree_uri
+route match mode: radixtree_host_uri
+route match mode: radixtree_host_uri
 route match mode: ai_match
-route match mode: radixtree_uri
-route match mode: radixtree_uri
+route match mode: radixtree_host_uri
+route match mode: radixtree_host_uri
