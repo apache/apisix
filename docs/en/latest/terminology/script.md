@@ -29,7 +29,7 @@ A Script configuration can be directly bound to a [Route](./route.md).
 
 Scripts and [Plugins](./plugin.md) are mutually exclusive, and a Script is executed before a Plugin. This means that after configuring a Script, the Plugin configured on the Route will **not** be executed.
 
-Scripts also have a concept of execution phase which supports the `access`, `header_filter`, `body_filter`, and the `log` phase. The corresponding phase will be executed automatically by the system in the Script.
+Scripts also have a concept of [execution phase](https://apisix.apache.org/docs/apisix/architecture-design/apisix/#plugin-hierarchy) which supports the `access`, `header_filter`, `body_filter`, and the `log` phase. The corresponding phase will be executed automatically by the system in the Script.
 
 ```json
 {
