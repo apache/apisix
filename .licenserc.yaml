@@ -47,5 +47,6 @@ header:
     - 't/plugin/authz-casbin'
     - 't/coredns'
     - 'autodocs/'
+    - 'docs/**/*.md'
 
   comment: on-failure

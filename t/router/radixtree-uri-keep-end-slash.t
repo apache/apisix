@@ -25,8 +25,18 @@ no_shuffle();
 our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
+    router:
+        http: 'radixtree_uri'
     delete_uri_tail_slash: true
 _EOC_
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", $yaml_config);
+    }
+});
 
 run_tests();
 
@@ -56,7 +66,6 @@ __DATA__
             ngx.say(body)
         }
     }
---- yaml_config eval: $::yaml_config
 --- request
 GET /t
 --- response_body
@@ -67,7 +76,6 @@ passed
 === TEST 2: hit route
 --- request
 GET /hello
---- yaml_config eval: $::yaml_config
 --- response_body
 hello world
 
@@ -76,5 +84,4 @@ hello world
 === TEST 3: hit route
 --- request
 GET /hello/
---- yaml_config eval: $::yaml_config
 --- error_code: 404
