@@ -161,7 +161,7 @@ deployment:
 
 Turning on the APISIX node in Stand-alone mode will no longer use the default etcd as the configuration center.
 
-For the old version of the standalone mode deployment guide, see the [Old Standalone Doc](https://apisix.apache.org/docs/apisix/2.15/stand-alone/).
+For the old version of the standalone mode deployment guide, see the [stand-alone mode documentation](https://apisix.apache.org/docs/apisix/deployment-modes/#standalone).
 
 This method is more suitable for two types of users:
 
