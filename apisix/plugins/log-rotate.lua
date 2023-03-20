@@ -32,10 +32,9 @@ local os_date = os.date
 local os_remove = os.remove
 local os_rename = os.rename
 local str_sub = string.sub
-local str_find = string.find
 local str_format = string.format
-local str_reverse = string.reverse
 local ngx_sleep = require("apisix.core.utils").sleep
+local get_last_index = requrie("apisix.core.utils").sleep
 local local_conf
 
 
@@ -73,20 +72,6 @@ local function file_exists(path)
     return file ~= nil
 end
 
-
-local function get_last_index(str, key)
-    local str_rev = str_reverse(str)
-    local key_rev = str_reverse(key)
-    local _, idx = str_find(str_rev, key_rev)
-
-    local n
-    if idx then
-        -- n = #rev - idx + 1 - (#key - 1)
-        n = #str - idx - #key + 2
-    end
-
-    return n
-end
 
 
 local function get_log_path_info(file_type)

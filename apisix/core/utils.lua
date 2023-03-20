@@ -43,6 +43,8 @@ local ffi_string     = ffi.string
 local get_string_buf = base.get_string_buf
 local exiting        = ngx.worker.exiting
 local ngx_sleep      = ngx.sleep
+local str_find       = string.find
+local str_reverse    = string.reverse
 
 local hostname
 local dns_resolvers
@@ -333,6 +335,21 @@ do
 end
 -- Resolve ngx.var in the given string
 _M.resolve_var = resolve_var
+
+
+function _M.get_last_index(str, key)
+    local str_rev = str_reverse(str)
+    local key_rev = str_reverse(key)
+    local idx, _ = str_find(str_rev, key_rev)
+
+    local n
+    if idx then
+        -- n = #rev - idx + 1 - (#key - 1)
+        n = #str - idx - #key + 2
+    end
+
+    return n
+end
 
 
 return _M
