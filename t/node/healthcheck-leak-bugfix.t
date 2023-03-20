@@ -39,12 +39,7 @@ __DATA__
         return obj
     end
 
---- init_by_lua_block
-    require "resty.core"
-    apisix = require("apisix")
-    core = require("apisix.core")
-    apisix.http_init()
-
+--- extra_init_by_lua
     local utils = require("apisix.core.utils")
     local count = 0
     utils.dns_parse = function (domain)  -- mock: DNS parser
