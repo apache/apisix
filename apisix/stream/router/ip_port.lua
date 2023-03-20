@@ -78,9 +78,30 @@ do
 
             local route = item.value
             if route.protocol and route.protocol.superior_id then
-                -- subordinate route won't be matched in the entry
-                -- TODO: check the subordinate relationship in the Admin API
-                goto CONTINUE
+                local admin_api = require("apisix.admin").check_http_admin()
+                if not admin_api then
+                    ngx.log(ngx.ERR, "failed to get http admin node")
+                    goto CONTINUE
+                end
+
+                local route_id = route.id
+                local superior_id = route.protocol.superior_id
+
+                local res, err = admin_api:get("/stream/routes/" .. superior_id)
+                if not res then
+                    ngx.log(ngx.ERR, "failed to fetch superior stream route: ", err)
+                    goto CONTINUE
+                end
+
+                if res.body.data and res.body.data.protocol == route.protocol then
+                    ngx.log(ngx.INFO, "matched stream route with superior id: ", superior_id)
+                else
+                    ngx.log(ngx.ERR, "failed to match stream route with superior id: ", superior_id)
+                    goto CONTINUE
+                end
+
+                -- TODO: when deleting a stream route, check if it is referenced by another stream route
+
             end
 
             if item.value.remote_addr then
