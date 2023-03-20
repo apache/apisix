@@ -103,7 +103,7 @@ local plugin_name = "ldap-auth-advanced"
 
 local _M = {
     version = 0.1,
-    priority = 2540,
+    priority = 2541,
     type = "auth",
     name = plugin_name,
     schema = schema,
@@ -189,7 +189,7 @@ end
 function _M.rewrite(conf, ctx)
     if not ok then -- ensure rasn library loaded
         core.log.error("failed to load lua-resty-ldap lib: ", ldap_cli)
-        return 500
+        return 501
     end
 
     -- extract userinfo from Authorization header
