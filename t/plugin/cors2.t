@@ -106,7 +106,7 @@ done
                             "allow_methods": "GET,POST",
                             "allow_headers": "request-h",
                             "expose_headers": "expose-h",
-                            "max_age": 50,
+                            "max_age": 10,
                             "allow_origins_by_regex":[".*\\.domain.com"]
                         }
                     },
@@ -173,4 +173,4 @@ Vary: Via
 Access-Control-Allow-Methods: GET,POST
 Access-Control-Allow-Headers: request-h
 Access-Control-Expose-Headers: expose-h
-Access-Control-Max-Age: 50
+Access-Control-Max-Age: 10
