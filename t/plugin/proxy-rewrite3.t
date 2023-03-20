@@ -622,3 +622,152 @@ GET /test/plugin/proxy/rewrite HTTP/1.1
     }
 --- response_body
 /plugin_proxy_rewrite?a=c
+
+
+
+=== TEST 27: use variables in headers when captured by regex_uri
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                      "uri": "/test/*",
+                      "plugins": {
+                        "proxy-rewrite": {
+                            "regex_uri": ["^/test/(.*)/(.*)/(.*)", "/echo"],
+                            "headers": {
+                                "add": {
+                                    "X-Request-ID": "$1/$2/$3"
+                                }
+                            }
+                        }
+                      },
+                      "upstream": {
+                          "nodes": {
+                              "127.0.0.1:1980": 1
+                          },
+                          "type": "roundrobin"
+                      }
+                 }]]
+                 )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 28: hit
+--- request
+GET /test/plugin/proxy/rewrite HTTP/1.1
+--- response_headers
+X-Request-ID: plugin/proxy/rewrite
+
+
+
+=== TEST 29: use variables in header when not matched regex_uri
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                      "uri": "/echo*",
+                      "plugins": {
+                        "proxy-rewrite": {
+                            "regex_uri": ["^/test/(.*)/(.*)/(.*)", "/echo"],
+                            "headers": {
+                                "add": {
+                                    "X-Request-ID": "$1/$2/$3"
+                                }
+                            }
+                        }
+                      },
+                      "upstream": {
+                          "nodes": {
+                              "127.0.0.1:1980": 1
+                          },
+                          "type": "roundrobin"
+                      }
+                 }]]
+                 )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 30: hit
+--- request
+GET /echo HTTP/1.1
+--- more_headers
+X-Foo: Foo
+--- response_headers
+X-Foo: Foo
+
+
+
+=== TEST 31: use variables in headers when captured by regex_uri
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                      "uri": "/test/*",
+                      "plugins": {
+                        "proxy-rewrite": {
+                            "regex_uri": ["^/test/(not_matched)?.*", "/echo"],
+                            "headers": {
+                                "add": {
+                                    "X-Request-ID": "test1/$1/$2/test2"
+                                }
+                            }
+                        }
+                      },
+                      "upstream": {
+                          "nodes": {
+                              "127.0.0.1:1980": 1
+                          },
+                          "type": "roundrobin"
+                      }
+                 }]]
+                 )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 32: hit
+--- request
+GET /test/plugin/proxy/rewrite HTTP/1.1
+--- response_headers
+X-Request-ID: test1///test2
