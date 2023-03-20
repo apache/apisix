@@ -78,7 +78,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 
 如下示例，假如你配置了一个消费者组：
 
-```json title=“Consumer Group”
+```json title="Consumer Group"
 {
     "id": "bar",
     "plugins": {
@@ -91,7 +91,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 
 并配置了消费者：
 
-```json title=“Consumer”
+```json title="Consumer"
 {
     "username": "foo",
     "group_id": "bar",
