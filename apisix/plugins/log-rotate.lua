@@ -34,7 +34,7 @@ local os_rename = os.rename
 local str_sub = string.sub
 local str_format = string.format
 local ngx_sleep = require("apisix.core.utils").sleep
-local get_last_index = requrie("apisix.core.utils").get_last_index
+local get_last_index = require("apisix.core.utils").get_last_index
 local local_conf
 
 
