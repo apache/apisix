@@ -135,7 +135,7 @@ The Kubernetes service discovery provides a query interface in accordance with t
 
   + name: The name of the Kubernetes endpoints
 
-  + portName: The ports.name value in the Kubernetes endpoints, if there is no ports.name, use targetPort, port instead
+  + portName: The `ports.name` value in the Kubernetes endpoints, if there is no `ports.name`, use `targetPort`, `port` instead. If `ports.name` exists, then port number cannot be used.
 
 **return value:**
   if the Kubernetes endpoints value is as follows:
@@ -247,7 +247,7 @@ service_name should match pattern: _[id]/[namespace]/[name]:[portName]_
 
 + name: The name of the Kubernetes endpoints
 
-+ portName: The ports.name value in the Kubernetes endpoints, if there is no ports.name, use targetPort, port instead
++ portName: The `ports.name` value in the Kubernetes endpoints, if there is no `ports.name`, use `targetPort`, `port` instead. If `ports.name` exists, then port number cannot be used.
 
 **return value:**
 if the Kubernetes endpoints value is as follows:

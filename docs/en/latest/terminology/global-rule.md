@@ -1,7 +1,7 @@
 ---
 title: Global Rules
 keywords:
-  - API gateway
+  - API Gateway
   - Apache APISIX
   - Global Rules
 description: This article describes how to use global rules.

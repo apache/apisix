@@ -1,7 +1,8 @@
 ---
 title: proxy-rewrite
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Proxy Rewrite
   - proxy-rewrite
@@ -41,7 +42,7 @@ The `proxy-rewrite` Plugin rewrites Upstream proxy information such as `scheme`,
 | host                        | string        | False    |         |                                                                                                                                        | New Upstream host address.                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | headers                     | object        | False    |         |                                                                                                                                   |                   |
 | headers.add     | object   | false     |        |                 | Append the new headers. The format is `{"name: value",...}`. The values in the header can contain Nginx variables like $remote_addr and $balancer_ip.                                                                                              |
-| headers.set     | object  | false     |        |                 | Overwrite the headers. If header is not exist, will add it. The format is  `{"name": "value", ...}`. The values in the header can contain Nginx variables like $remote_addr and $balancer_ip.                                                                                                |
+| headers.set     | object  | false     |        |                 | Overwrite the headers. If the header does not exist, it will be added. The format is  `{"name": "value", ...}`. The values in the header can contain Nginx variables like $remote_addr and $balancer_ip.                                                                                                |
 | headers.remove  | array   | false     |        |                 | Remove the headers. The format is `["name", ...]`.
 | use_real_request_uri_unsafe | boolean       | False    | false   |                                                                                                                                        | Use real_request_uri (original $request_uri in nginx) to bypass URI normalization. **Enabling this is considered unsafe as it bypasses all URI normalization steps**.                                                                                                                                                                                                                                                                                                     |
 

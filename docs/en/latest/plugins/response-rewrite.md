@@ -1,7 +1,8 @@
 ---
 title: response-rewrite
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Response Rewrite
   - response-rewrite

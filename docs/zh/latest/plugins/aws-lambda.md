@@ -1,7 +1,7 @@
 ---
 title: aws-lambda
 keywords:
-  - APISIX
+  - Apache APISIX
   - Plugin
   - AWS Lambda
   - aws-lambda

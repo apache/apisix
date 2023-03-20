@@ -3,7 +3,7 @@ title: Configure mTLS for client to APISIX
 keywords:
   - mTLS
   - API Gateway
-  - APISIX
+  - Apache APISIX
 description: This article describes how to configure mutual authentication (mTLS) between the client and Apache APISIX.
 ---
 
