@@ -169,7 +169,7 @@ Origin: http://sub.domain.com
 resp-vary: Via
 --- response_headers
 Access-Control-Allow-Origin: http://sub.domain.com
-Vary: Via, Origin
+Vary: Via
 Access-Control-Allow-Methods: GET,POST
 Access-Control-Allow-Headers: request-h
 Access-Control-Expose-Headers: expose-h
