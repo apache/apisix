@@ -98,7 +98,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 curl -i http://127.0.0.1:9080/get
 ```
 
-请求成功后，你可以单击[模拟服务器链接](http://mockbin.org/bin/5451b7cd-af27-41b8-8df1-282ffea13a61/log)查看访问日志。
+请求成功后，你可以单击`View History` 查看访问日志。
 
 ![http-logger-plugin-test-screenshot](https://static.apiseven.com/2022/09/14/6321d1d83eb7a.png)
 
