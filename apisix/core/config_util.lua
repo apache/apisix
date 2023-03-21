@@ -96,6 +96,10 @@ end
 
 -- fire all clean handlers added by add_clean_handler.
 function _M.fire_all_clean_handlers(item)
+    -- When the key is deleted, the item will be set to false.
+    if not item then
+        return
+    end
     if not item.clean_handlers then
         return
     end
