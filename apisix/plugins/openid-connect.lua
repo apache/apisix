@@ -19,7 +19,6 @@ local core    = require("apisix.core")
 local ngx_re  = require("ngx.re")
 local openidc = require("resty.openidc")
 local random  = require("resty.random")
-local cjson = require "cjson"
 local string  = string
 local ngx     = ngx
 
@@ -313,9 +312,9 @@ function _M.rewrite(plugin_conf, ctx)
         -- request header. Otherwise, return a nil response. See below for
         -- handling of the case where the access token is stored in a session cookie.
         local access_token, userinfo
-        core.log.debug("conf to introspect:", cjson.encode(conf))
+        core.log.debug("conf to introspect:", core.json.encode(conf))
         response, err, access_token, userinfo = introspect(ctx, conf)
-        core.log.debug("introspect response:", cjson.encode(response))
+        core.log.debug("introspect response:", core.json.encode(response))
 
         if err then
             -- Error while validating token or invalid token.
@@ -327,12 +326,12 @@ function _M.rewrite(plugin_conf, ctx)
             if response.scope then
                 local scopes, err = ngx_re.split(response.scope, " ")
                 if err then
-                    core.log.error("OIDC request scope failed: ", err)
+                    core.log.error("OIDC extract scope failed: ", err)
                     return 500
                 end
-                core.log.debug("OIDC scopes:", cjson.encode(scopes))
+                core.log.debug("OIDC scopes:", core.json.encode(scopes))
                 for _, scope in ipairs(scopes) do
-                    core.log.debug("check OIDC scope:", scope)
+                    core.log.debug("Check OIDC scope:", scope)
                     if scope == conf.scope then
                         result = true
                         -- Add configured access token header, maybe.
