@@ -56,20 +56,18 @@ Consumers can be associated with various scopes: per Plugin, all APIs, or an ind
 
 ## Apache APISIX Consumer example
 
-Let's look at some examples of configuring the rate-limiting policy for a single consumer and a group of consumers with the help of [key-auth](https://apisix.apache.org/docs/apisix/plugins/key-auth/) authentication key (API Key) and [limit-count](https://apisix.apache.org/docs/apisix/plugins/limit-count/) plugins. For the demo case,  we can leverage [the sample project](https://github.com/Boburmirzo/apisix-api-consumers-management) built on [ASP.NET Core WEB API](https://learn.microsoft.com/en-us/aspnet/core/?view=aspnetcore-7.0) with a single `GET` endpoint (retrieves all products list). You can find in [README file](https://github.com/Boburmirzo/apisix-api-consumers-management#readme) all instructions on how to run the sample app.
-
 ### Enable rate-limiting for a single consumer
 
-Up to now, I assume that the sample project is up and running. To use consumer object along with the other two plugins we need to follow easy steps:
+Next I will use the `Prometheus` server interface to give a brief demonstration. To use consumer object along with the other two plugins we need to follow easy steps:
 
 - Create a new Consumer.
 - Specify the authentication plugin key-auth and limit count for the consumer.
 - Create a new Route, and set a routing rule (If necessary).
 - Enable key-auth plugin configuration for the created route.
 
-The above steps can be achieved by running simple two [curl commands](https://en.wikipedia.org/wiki/CURL) against APISIX [Admin API](https://apisix.apache.org/docs/apisix/admin-api/).
+The above steps can be achieved by running simple two curl commands against APISIX [Admin API](https://apisix.apache.org/docs/apisix/admin-api/).
 
-The first `cmd` creates a **new Consumer** with API Key based authentication enabled where the API consumer can only make 2 requests against the Product API within 60 seconds.
+The first creates a **new Consumer** with API Key based authentication enabled where the API consumer can only make 2 requests against the Product API within 60 seconds.
 
 ``` shell
 curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -90,7 +88,11 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-Then, we define our **new Route and Upstream** so that all incoming requests to the gateway endpoint `/api/products` will be forwarded to our example product backend service after a successful authentication process.
+Then, we define our **new Route and Upstream** so that all incoming requests to the gateway endpoint `/tsdb-status` will be forwarded to our example product backend service after a successful authentication process.
+
+!!! note
+
+You should replace the `127.0.0.1` address here with the actual `Prometheus` server address, otherwise `503` http return code may appear.
 
 ``` shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -106,7 +108,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
   "upstream": {
     "type": "roundrobin",
     "nodes": {
-      "productapi:80": 1
+      "127.0.0.1:9090": 1
     }
   }
 }'
