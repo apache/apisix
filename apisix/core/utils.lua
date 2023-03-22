@@ -338,7 +338,7 @@ _M.resolve_var = resolve_var
 local resolve_var_with_captures
 do
     local _captures
-    -- escape is not supported very well, like there si a redundant '\' after escape "$1"
+    -- escape is not supported very well, like there is a redundant '\' after escape "$1"
     local pat = [[ (?<! \\) \$ \{? (\d+) \}? ]]
 
     local function resolve(m)

@@ -296,7 +296,7 @@ function _M.rewrite(conf, ctx)
         if not m then
             if err then
                 core.log.error("match error in proxy-rewrite plugin, please check: ", err)
-                return
+                return 500
             end
         end
         ctx.proxy_rewrite_regex_uri_captures = m
