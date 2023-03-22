@@ -193,6 +193,13 @@ local function init(env)
         end
     end
 
+    -- check if APISIX_ALLOW_NONE_AUTHENTICATION=true
+    -- if so, allow any IP to access admin api with empty admin_key
+    local allow_none_auth = getenv("APISIX_ALLOW_NONE_AUTHENTICATION")
+    if allow_none_auth == "true" then
+        checked_admin_key = true
+    end
+
     if yaml_conf.apisix.enable_admin and not checked_admin_key then
         local help = [[
 

@@ -154,6 +154,27 @@ fi
 
 echo "pass: missing admin key and show ERROR message"
 
+# allow any IP to access admin api with empty admin_key, when APISIX_ALLOW_NONE_AUTHENTICATION=true
+
+git checkout conf/config.yaml
+
+echo '
+deployment:
+  admin:
+    admin_key: ~
+    allow_admin: ~
+' > conf/config.yaml
+
+APISIX_ALLOW_NONE_AUTHENTICATION=true make init > output.log 2>&1 | true
+
+grep -E "ERROR: missing valid Admin API token." output.log > /dev/null
+if [ ! $? -ne 0 ]; then
+    echo "failed: should show 'ERROR: missing valid Admin API token.'"
+    exit 1
+fi
+
+echo "pass: allow empty admin_key, when APISIX_ALLOW_NONE_AUTHENTICATION=true"
+
 # admin api, allow any IP but use default key
 
 echo '
