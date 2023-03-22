@@ -450,8 +450,175 @@ passed
 
 
 
-=== TEST 20: set and test priority test
+=== TEST 20: set and test priority test & deprecated calls test
 --- request
 GET /echo HTTP/1.1
 --- response_headers
 test: test_in_set
+--- no_error_log
+DEPRECATED: use add_header(ctx, header_name, header_value) instead
+DEPRECATED: use set_header(ctx, header_name, header_value) instead
+
+
+
+=== TEST 21: set route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                      "plugins": {
+                          "proxy-rewrite": {
+                              "host": "test.xxxx.com"
+                          }
+                      },
+                      "upstream": {
+                          "nodes": {
+                              "127.0.0.1:8125": 1
+                          },
+                          "type": "roundrobin"
+                      },
+                      "uri": "/hello*"
+                 }]]
+                 )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 22: hit with CRLF
+--- request
+GET /hello%3f0z=700%26a=c%20HTTP/1.1%0D%0AHost:google.com%0d%0a%0d%0a
+--- http_config
+    server {
+        listen 8125;
+        location / {
+            content_by_lua_block {
+                ngx.say(ngx.var.host)
+                ngx.say(ngx.var.request_uri)
+            }
+        }
+    }
+--- response_body
+test.xxxx.com
+/hello%3F0z=700&a=c%20HTTP/1.1%0D%0AHost:google.com%0D%0A%0D%0A
+
+
+
+=== TEST 23: set route with uri
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                      "plugins": {
+                          "proxy-rewrite": {
+                              "uri": "/$uri/remain",
+                              "host": "test.xxxx.com"
+                          }
+                      },
+                      "upstream": {
+                          "nodes": {
+                              "127.0.0.1:8125": 1
+                          },
+                          "type": "roundrobin"
+                      },
+                      "uri": "/hello*"
+                 }]]
+                 )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 24: hit with CRLF
+--- request
+GET /hello%3f0z=700%26a=c%20HTTP/1.1%0D%0AHost:google.com%0d%0a%0d%0a
+--- http_config
+    server {
+        listen 8125;
+        location / {
+            content_by_lua_block {
+                ngx.say(ngx.var.host)
+                ngx.say(ngx.var.request_uri)
+            }
+        }
+    }
+--- response_body
+test.xxxx.com
+//hello%253F0z=700&a=c%20HTTP/1.1%0D%0AHost:google.com%0D%0A%0D%0A/remain
+
+
+
+=== TEST 25: regex_uri with args
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                      "plugins": {
+                          "proxy-rewrite": {
+                              "regex_uri": ["^/test/(.*)/(.*)/(.*)", "/$1_$2_$3?a=c"]
+                          }
+                      },
+                      "upstream": {
+                          "nodes": {
+                              "127.0.0.1:8125": 1
+                          },
+                          "type": "roundrobin"
+                      },
+                      "uri": "/test/*"
+                 }]]
+                 )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 26: hit
+--- request
+GET /test/plugin/proxy/rewrite HTTP/1.1
+--- http_config
+    server {
+        listen 8125;
+        location / {
+            content_by_lua_block {
+                ngx.say(ngx.var.request_uri)
+            }
+        }
+    }
+--- response_body
+/plugin_proxy_rewrite?a=c

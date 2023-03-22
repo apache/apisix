@@ -65,6 +65,46 @@ deployment:
             port: 9180                  # Admin API 监听的 端口，必须使用与 node_listen 不同的端口。
 ```
 
+### 使用环境变量 {$using-environment-variables}
+
+要通过环境变量进行配置，可以使用 `${{VAR}}` 语法。例如：
+
+```yaml title="./conf/config.yaml"
+deployment:
+  admin:
+    admin_key:
+    - name: admin
+      key: ${{ADMIN_KEY}}
+      role: admin
+    allow_admin:
+    - 127.0.0.0/24
+    admin_listen:
+      ip: 0.0.0.0
+      port: 9180
+```
+
+然后在 `make init` 之前运行 `export ADMIN_KEY=$your_admin_key`.
+
+如果找不到配置的环境变量，将抛出错误。
+
+此外，如果要在未设置环境变量时使用默认值，请改用 `${{VAR:=default_value}}`。例如：
+
+```yaml title="./conf/config.yaml"
+deployment:
+  admin:
+    admin_key:
+    - name: admin
+      key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}}
+      role: admin
+    allow_admin:
+    - 127.0.0.0/24
+    admin_listen:
+      ip: 0.0.0.0
+      port: 9180
+```
+
+首先查找环境变量 `ADMIN_KEY`，如果该环境变量不存在，它将使用 `edd1c9f034335f136f87ad84b625c8f1` 作为默认值。
+
 ## v3 版本新功能 {#v3-new-function}
 
 在 APISIX v3 版本中，Admin API 支持了一些不向下兼容的新特性，比如支持新的响应体格式、支持分页查询、支持过滤资源等。

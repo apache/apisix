@@ -1,7 +1,8 @@
 ---
 title: inspect
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Inspect
   - Dynamic Lua Debugging

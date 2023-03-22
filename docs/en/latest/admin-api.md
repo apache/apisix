@@ -1,7 +1,7 @@
 ---
 title: Admin API
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Admin API
   - Route
@@ -62,6 +62,46 @@ deployment:
             ip: 0.0.0.0                 # Specific IP, if not set, the default value is `0.0.0.0`.
             port: 9180                  # Specific port, which must be different from node_listen's port.
 ```
+
+### Using environment variables
+
+To configure via environment variables, you can use the `${{VAR}}` syntax. For instance:
+
+```yaml title="./conf/config.yaml"
+deployment:
+  admin:
+    admin_key:
+    - name: admin
+      key: ${{ADMIN_KEY}}
+      role: admin
+    allow_admin:
+    - 127.0.0.0/24
+    admin_listen:
+      ip: 0.0.0.0
+      port: 9180
+```
+
+And then run `export ADMIN_KEY=$your_admin_key` before running `make init`.
+
+If the configured environment variable can't be found, an error will be thrown.
+
+If you want to use a default value when the environment variable is not set, use `${{VAR:=default_value}}` instead. For instance:
+
+```yaml title="./conf/config.yaml"
+deployment:
+  admin:
+    admin_key:
+    - name: admin
+      key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}}
+      role: admin
+    allow_admin:
+    - 127.0.0.0/24
+    admin_listen:
+      ip: 0.0.0.0
+      port: 9180
+```
+
+This will find the environment variable `ADMIN_KEY` first, and if it does not exist, it will use `edd1c9f034335f136f87ad84b625c8f1` as the default value.
 
 ## V3 new feature
 
@@ -1282,6 +1322,7 @@ The Plugin ({plugin_name}) of the data structure.
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/plugins/list" \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+```
 
 ```shell
 ["zipkin","request-id",...]

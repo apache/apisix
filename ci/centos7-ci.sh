@@ -23,10 +23,14 @@ install_dependencies() {
 
     # install build & runtime deps
     yum install -y wget tar gcc automake autoconf libtool make unzip \
-        git sudo openldap-devel which
+        git sudo openldap-devel which ca-certificates openssl-devel \
+        epel-release
 
-    # curl with http2
-    wget https://github.com/moparisthebest/static-curl/releases/download/v7.79.1/curl-amd64 -O /usr/bin/curl
+    # install newer curl
+    yum makecache
+    yum install -y libnghttp2-devel
+    install_curl
+
     # install openresty to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
     yum install -y openresty openresty-debug openresty-openssl111-debug-devel pcre pcre-devel
@@ -47,7 +51,7 @@ install_dependencies() {
     # add go1.15 binary to the path
     mkdir build-cache
     # centos-7 ci runs on a docker container with the centos image on top of ubuntu host. Go is required inside the container.
-    cd build-cache/ && wget https://golang.org/dl/go1.17.linux-amd64.tar.gz && tar -xf go1.17.linux-amd64.tar.gz
+    cd build-cache/ && wget -q https://golang.org/dl/go1.17.linux-amd64.tar.gz && tar -xf go1.17.linux-amd64.tar.gz
     export PATH=$PATH:$(pwd)/go/bin
     cd ..
     # install and start grpc_server_example
@@ -68,6 +72,9 @@ install_dependencies() {
 
     # install nodejs
     install_nodejs
+
+    # install rust
+    install_rust
 
     # grpc-web server && client
     cd t/plugin/grpc-web

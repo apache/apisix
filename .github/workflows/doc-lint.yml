@@ -3,13 +3,13 @@ name: Doc Lint
 on:
   push:
     paths:
-      - 'docs/**'
-      - '**/*.md'
+      - "docs/**"
+      - "**/*.md"
   pull_request:
-    branches: [master, 'release/**']
+    branches: [master, "release/**"]
     paths:
-      - 'docs/**'
-      - '**/*.md'
+      - "docs/**"
+      - "**/*.md"
 
 permissions:
   contents: read
@@ -24,7 +24,7 @@ jobs:
       - name: 🚀 Use Node.js
         uses: actions/setup-node@v3.5.1
         with:
-          node-version: '12.x'
+          node-version: "12.x"
       - run: npm install -g markdownlint-cli@0.25.0
       - run: markdownlint '**/*.md'
       - name: check category
@@ -47,11 +47,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:
-      - uses: actions/checkout@v3.2.0
-      - name: check Chinese copywriting
-        run: |
-          version=v1.5.6
-          wget -O- "https://github.com/huacnlee/autocorrect/releases/download/$version/autocorrect-linux-amd64.tar.gz" | tar -xzv
-          mv -v autocorrect /usr/local/bin/
-          autocorrect --version
-          git ls-files -- "docs/zh/latest/**.md" | xargs -t autocorrect --lint
+      - uses: actions/checkout@v3
+      - name: Check Chinese copywriting
+        uses: huacnlee/autocorrect-action@v2.6.2
+        with:
+          args: --lint --no-diff-bg-color docs/zh/latest/**.md

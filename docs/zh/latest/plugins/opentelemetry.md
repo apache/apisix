@@ -1,5 +1,11 @@
 ---
 title: opentelemetry
+keywords:
+  - Apache APISIX
+  - API 网关
+  - Plugin
+  - OpenTelemetry
+description: 本文介绍了关于 Apache APISIX `opentelemetry` 插件的基本信息及使用方法。
 ---
 
 <!--

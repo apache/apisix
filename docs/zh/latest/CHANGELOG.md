@@ -23,9 +23,11 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [3.2.0](#320)
 - [3.1.0](#310)
 - [3.0.0](#300)
 - [3.0.0-beta](#300-beta)
+- [2.15.3](#2153)
 - [2.15.2](#2152)
 - [2.15.1](#2151)
 - [2.15.0](#2150)
@@ -65,6 +67,48 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.2.0
+
+### Change
+
+- 废弃了 jwt-auth 内单独的 Vault 配置。用户能用密钥来实现同样的功能：[#8660](https://github.com/apache/apisix/pull/8660)
+
+### Core
+
+- :sunrise: 支持通过环境变量来配置密钥的 Vault token：[#8866](https://github.com/apache/apisix/pull/8866)
+- :sunrise: 支持四层上的服务发现：
+    - [#8583](https://github.com/apache/apisix/pull/8583)
+    - [#8593](https://github.com/apache/apisix/pull/8593)
+    - [#8584](https://github.com/apache/apisix/pull/8584)
+    - [#8640](https://github.com/apache/apisix/pull/8640)
+    - [#8633](https://github.com/apache/apisix/pull/8633)
+    - [#8696](https://github.com/apache/apisix/pull/8696)
+    - [#8826](https://github.com/apache/apisix/pull/8826)
+
+### Plugin
+
+- :sunrise: 新增 RESTful 请求转 graphQL 的插件：[#8959](https://github.com/apache/apisix/pull/8959)
+- :sunrise: 支持在每个日志插件上设置日志格式：
+    - [#8806](https://github.com/apache/apisix/pull/8806)
+    - [#8643](https://github.com/apache/apisix/pull/8643)
+- :sunrise: 新增请求体/响应体转换插件：[#8766](https://github.com/apache/apisix/pull/8766)
+- :sunrise: 支持发送错误日志到 Kafka：[#8693](https://github.com/apache/apisix/pull/8693)
+- :sunrise: limit-count 插件支持 X-RateLimit-Reset：[#8578](https://github.com/apache/apisix/pull/8578)
+- :sunrise: limit-count 插件支持设置 TLS 来访问 Redis 集群：[#8558](https://github.com/apache/apisix/pull/8558)
+- :sunrise: consumer-restriction 插件支持通过 consumer_group_id 来做权限控制：[#8567](https://github.com/apache/apisix/pull/8567)
+
+### Bugfix
+
+- 修复 Host 和 SNI 不匹配时，mTLS 失效的问题：[#8967](https://github.com/apache/apisix/pull/8967)
+- 如果 URI 参数部分不来自于用户配置，proxy-rewrite 插件应当对其转义：[#8888](https://github.com/apache/apisix/pull/8888)
+- Admin API PATCH 操作成功后应返回 200 状态码：[#8855](https://github.com/apache/apisix/pull/8855)
+- 修复特定条件下，etcd 同步失败之后的 reload 不生效：[#8736](https://github.com/apache/apisix/pull/8736)
+- 修复 Consul 服务发现得到的节点不全的问题：[#8651](https://github.com/apache/apisix/pull/8651)
+- 修复 grpc-transcode 插件对 Map 数据的转换问题：[#8731](https://github.com/apache/apisix/pull/8731)
+- 外部插件应当可以设置 content-type 响应头：[#8588](https://github.com/apache/apisix/pull/8588)
+- 插件热加载时，如果 request-id 插件中初始化 snowflake 生成器出错，可能遗留多余的计时器：[#8556](https://github.com/apache/apisix/pull/8556)
+- 插件热加载时，关闭 grpc-transcode 的 proto 同步器：[#8557](https://github.com/apache/apisix/pull/8557)
 
 ## 3.1.0
 
@@ -293,6 +337,10 @@ title: CHANGELOG
 - 当代理到上游之前发生 500 错误时，代理到上游之后运行的插件不应被跳过 [#7703](https://github.com/apache/apisix/pull/7703)
 - 当 consumer 上绑定了多个插件且该插件定义了 rewrite 方法时，避免抛出异常 [#7531](https://github.com/apache/apisix/pull/7531)
 - 升级 lua-resty-etcd 到 1.8.3。该版本修复了若干问题。 [#7565](https://github.com/apache/apisix/pull/7565)
+
+## 2.15.3
+
+**这是一个 LTS 维护版本，您可以在 `release/2.15` 分支中看到 CHANGELOG。**
 
 ## 2.15.2
 
@@ -1113,7 +1161,7 @@ title: CHANGELOG
 - 增加用于校验 nginx.conf 的命令。 [#1112](https://github.com/apache/incubator-apisix/pull/1112)
 - 支持「nginx 最多可以打开文件数」可配置，并增大其默认配置。[#1105](https://github.com/apache/incubator-apisix/pull/1105) [#1098](https://github.com/apache/incubator-apisix/pull/1098)
 - 优化日志模块。 [#1093](https://github.com/apache/incubator-apisix/pull/1093)
-- 支持 SO_REUSEPORT 。 [#1085](https://github.com/apache/incubator-apisix/pull/1085)
+- 支持 SO_REUSEPORT。 [#1085](https://github.com/apache/incubator-apisix/pull/1085)
 
 ### Doc
 
@@ -1125,8 +1173,8 @@ title: CHANGELOG
 - 增加文档贡献指引。 [#1086](https://github.com/apache/incubator-apisix/pull/1086)
 - 检查更新「快速上手」文档。 [#1084](https://github.com/apache/incubator-apisix/pull/1084)
 - 检查更新「插件开发指南」。 [#1078](https://github.com/apache/incubator-apisix/pull/1078)
-- 更新 admin-api-cn.md 。 [#1067](https://github.com/apache/incubator-apisix/pull/1067)
-- 更新 architecture-design-cn.md 。 [#1065](https://github.com/apache/incubator-apisix/pull/1065)
+- 更新 admin-api-cn.md。 [#1067](https://github.com/apache/incubator-apisix/pull/1067)
+- 更新 architecture-design-cn.md。 [#1065](https://github.com/apache/incubator-apisix/pull/1065)
 
 ### CI
 
@@ -1183,9 +1231,9 @@ title: CHANGELOG
 
 ### Plugins
 
-- :sunrise: **[Redirect URI](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/redirect.md)**： URI 重定向插件。 [#732](https://github.com/apache/incubator-apisix/pull/732)
+- :sunrise: **[Redirect URI](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/redirect.md)**：URI 重定向插件。 [#732](https://github.com/apache/incubator-apisix/pull/732)
 - [Proxy Rewrite](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/proxy-rewrite.md)：支持 `header` 删除功能。 [#658](https://github.com/apache/incubator-apisix/pull/658)
-- [Limit Count](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/limit-count.md)： 通过 `Redis Server` 聚合 `APISIX` 节点之间将共享流量限速结果，实现集群流量限速。[#624](https://github.com/apache/incubator-apisix/pull/624)
+- [Limit Count](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/limit-count.md)：通过 `Redis Server` 聚合 `APISIX` 节点之间将共享流量限速结果，实现集群流量限速。[#624](https://github.com/apache/incubator-apisix/pull/624)
 
 ### lua-resty-*
 

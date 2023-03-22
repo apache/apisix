@@ -27,6 +27,9 @@ local tostring = tostring
 local math_pow = math.pow
 local math_ceil = math.ceil
 local math_floor = math.floor
+local math_random = math.random
+local str_byte = string.byte
+local ffi = require "ffi"
 
 local plugin_name = "request-id"
 
@@ -40,7 +43,27 @@ local schema = {
     properties = {
         header_name = {type = "string", default = "X-Request-Id"},
         include_in_response = {type = "boolean", default = true},
-        algorithm = {type = "string", enum = {"uuid", "snowflake", "nanoid"}, default = "uuid"}
+        algorithm = {
+            type = "string",
+            enum = {"uuid", "snowflake", "nanoid", "range_id"},
+            default = "uuid"
+        },
+        range_id = {
+            type = "object",
+            properties = {
+                length = {
+                    type = "integer",
+                    minimum = 6,
+                    default = 16
+                },
+                char_set = {
+                    type = "string",
+                    -- The Length is set to 6 just avoid too short length, it may repeat
+                    minLength = 6,
+                    default = "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789"
+                }
+            }
+        }
     }
 }
 
@@ -202,14 +225,27 @@ local function next_id()
     return snowflake:next_id()
 end
 
+-- generate range_id
+local function get_range_id(range_id)
+    local res = ffi.new("unsigned char[?]", range_id.length)
+    for i = 0, range_id.length - 1 do
+        res[i] = str_byte(range_id.char_set, math_random(#range_id.char_set))
+    end
+    return ffi.string(res, range_id.length)
+end
 
-local function get_request_id(algorithm)
-    if algorithm == "uuid" then
+local function get_request_id(conf)
+    if conf.algorithm == "uuid" then
         return uuid()
     end
-    if algorithm == "nanoid" then
+    if conf.algorithm == "nanoid" then
         return nanoid.safe_simple()
     end
+
+    if conf.algorithm == "range_id" then
+        return get_range_id(conf.range_id)
+    end
+
     return next_id()
 end
 
@@ -218,7 +254,7 @@ function _M.rewrite(conf, ctx)
     local headers = ngx.req.get_headers()
     local uuid_val
     if not headers[conf.header_name] then
-        uuid_val = get_request_id(conf.algorithm)
+        uuid_val = get_request_id(conf)
         core.request.set_header(ctx, conf.header_name, uuid_val)
     else
         uuid_val = headers[conf.header_name]

@@ -1,7 +1,8 @@
 ---
 title: batch-requests
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Batch Requests
 description: 本文介绍了关于 Apache APISIX `batch-request` 插件的基本信息及使用方法。

@@ -223,9 +223,15 @@ local function parse_domain_in_route(route)
     -- don't modify the modifiedIndex to avoid plugin cache miss because of DNS resolve result
     -- has changed
 
-    -- Here we copy the whole route instead of part of it,
-    -- so that we can avoid going back from route.value to route during copying.
-    route.dns_value = core.table.deepcopy(route).value
+    local parent = route.value.upstream.parent
+    if parent then
+        route.value.upstream.parent = nil
+    end
+    route.dns_value = core.table.deepcopy(route.value)
+    if parent then
+        route.value.upstream.parent = parent
+        route.dns_value.upstream.parent = parent
+    end
     route.dns_value.upstream.nodes = new_nodes
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route, true))
@@ -296,6 +302,51 @@ local function verify_tls_client(ctx)
                 core.log.error("client certificate verification is not passed: ", res)
             end
 
+            return false
+        end
+    end
+
+    return true
+end
+
+
+local function verify_https_client(ctx)
+    local scheme = ctx.var.scheme
+    if scheme ~= "https" then
+        return true
+    end
+
+    local host = ctx.var.host
+    local matched = router.router_ssl.match_and_set(ctx, true, host)
+    if not matched then
+        return true
+    end
+
+    local matched_ssl = ctx.matched_ssl
+    if matched_ssl.value.client and apisix_ssl.support_client_verification() then
+        local verified = apisix_base_flags.client_cert_verified_in_handshake
+        if not verified then
+            -- vanilla OpenResty requires to check the verification result
+            local res = ctx.var.ssl_client_verify
+            if res ~= "SUCCESS" then
+                if res == "NONE" then
+                    core.log.error("client certificate was not present")
+                else
+                    core.log.error("client certificate verification is not passed: ", res)
+                end
+
+                return false
+            end
+        end
+
+        local sni = apisix_ssl.server_name()
+        if sni ~= host then
+            -- There is a case that the user configures a SSL object with `*.domain`,
+            -- and the client accesses with SNI `a.domain` but uses Host `b.domain`.
+            -- This case is complex and we choose to restrict the access until there
+            -- is a stronge demand in real world.
+            core.log.error("client certificate verified with SNI ", sni,
+                           ", but the host is ", host)
             return false
         end
     end
@@ -475,11 +526,11 @@ function _M.http_access_phase()
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
 
-    if not verify_tls_client(api_ctx) then
+    core.ctx.set_vars_meta(api_ctx)
+
+    if not verify_https_client(api_ctx) then
         return core.response.exit(400)
     end
-
-    core.ctx.set_vars_meta(api_ctx)
 
     debug.dynamic_debug(api_ctx)
 

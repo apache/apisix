@@ -51,6 +51,9 @@ worker_shutdown_timeout {* worker_shutdown_timeout *};
 env APISIX_PROFILE;
 env PATH; # for searching external plugin runner's binary
 
+# reserved environment variables for configuration
+env APISIX_DEPLOYMENT_ETCD_HOST;
+
 {% if envs then %}
 {% for _, name in ipairs(envs) do %}
 env {*name*};
@@ -140,6 +143,10 @@ stream {
     lua_shared_dict lrucache-lock-stream {* stream.lua_shared_dict["lrucache-lock-stream"] *};
     lua_shared_dict etcd-cluster-health-check-stream {* stream.lua_shared_dict["etcd-cluster-health-check-stream"] *};
     lua_shared_dict worker-events-stream {* stream.lua_shared_dict["worker-events-stream"] *};
+
+    {% if enabled_discoveries["tars"] then %}
+    lua_shared_dict tars-stream {* stream.lua_shared_dict["tars-stream"] *};
+    {% end %}
 
     {% if enabled_stream_plugins["limit-conn"] then %}
     lua_shared_dict plugin-limit-conn-stream {* stream.lua_shared_dict["plugin-limit-conn-stream"] *};

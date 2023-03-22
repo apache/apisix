@@ -1,7 +1,8 @@
 ---
 title: jwt-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - JWT Auth
   - jwt-auth

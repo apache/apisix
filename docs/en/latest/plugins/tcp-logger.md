@@ -1,7 +1,8 @@
 ---
 title: tcp-logger
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - TCP Logger
   - tcp-logger

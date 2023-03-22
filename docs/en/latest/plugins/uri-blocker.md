@@ -1,7 +1,7 @@
 ---
 title: uri-blocker
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - URI Blocker
 description: This document contains information about the Apache APISIX uri-blocker Plugin.

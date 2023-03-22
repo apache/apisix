@@ -69,6 +69,10 @@ jobs:
           echo "type=last" >>$GITHUB_OUTPUT
         fi
 
+    - name: Free disk space
+      run: |
+        bash ./ci/free_disk_space.sh
+
     - name: Linux launch common services
       run: |
         make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
@@ -100,16 +104,39 @@ jobs:
       env:
         TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
       run: |
-        docker run -itd -v /home/runner/work/apisix/apisix:/apisix --env TEST_FILE_SUB_DIR="$TEST_FILE_SUB_DIR" --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org docker.io/centos:7 /bin/bash
+        docker run -itd -v ${{ github.workspace }}:/apisix --env TEST_FILE_SUB_DIR="$TEST_FILE_SUB_DIR" --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org docker.io/centos:7 /bin/bash
         # docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
 
-    - name: Linux launch services
+    - name: Cache images
+      id: cache-images
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-apisix-docker-images
+      with:
+        path: docker-images-backup
+        key: ${{ runner.os }}-${{ env.cache-name }}-${{ steps.test_env.outputs.type }}-${{ hashFiles(format('./ci/pod/docker-compose.{0}.yml', steps.test_env.outputs.type )) }}
+
+    - if: ${{ steps.cache-images.outputs.cache-hit == 'true' }}
+      name: Load saved docker images
+      run: |
+        if [[ -f docker-images-backup/apisix-images.tar ]]; then
+          [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh before
+          docker load --input docker-images-backup/apisix-images.tar
+          rm docker-images-backup/apisix-images.tar
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
+          echo "loaded docker images"
+          if [[ ${{ steps.test_env.outputs.type }} != first ]]; then
+            sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
+          fi
+        fi
+    - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
+      name: Linux launch services
       run: |
         [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh before
         [[ ${{ steps.test_env.outputs.type }} == plugin ]] && ./ci/pod/openfunction/build-function-image.sh
         make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
         [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
-        echo "Linux launch services, done"
+        echo "Linux launch services, done."
 
     - name: Install dependencies
       run: |
@@ -126,3 +153,10 @@ jobs:
     - name: Run test cases
       run: |
         docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
+
+    - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
+      name: Save docker images
+      run: |
+        echo "start backing up, $(date)"
+        bash ./ci/backup-docker-images.sh ${{ steps.test_env.outputs.type }}
+        echo "backup done, $(date)"
