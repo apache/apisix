@@ -304,6 +304,12 @@ function _M.rewrite(plugin_conf, ctx)
         conf.ssl_verify = "no"
     end
 
+    if conf.scope then
+        -- include introspec_params to request to oidc introspect endpoint
+        conf.introspection_params = {}
+        conf.introspection_params.scope = conf.scope
+    end
+
     local response, err, session, result, _
 
     if conf.bearer_only or conf.introspection_endpoint or conf.public_key then
@@ -312,9 +318,7 @@ function _M.rewrite(plugin_conf, ctx)
         -- request header. Otherwise, return a nil response. See below for
         -- handling of the case where the access token is stored in a session cookie.
         local access_token, userinfo
-        core.log.debug("conf to introspect:", core.json.encode(conf))
         response, err, access_token, userinfo = introspect(ctx, conf)
-        core.log.debug("introspect response:", core.json.encode(response))
 
         if err then
             -- Error while validating token or invalid token.
@@ -323,31 +327,13 @@ function _M.rewrite(plugin_conf, ctx)
         end
 
         if response then
-            if response.scope then
-                local scopes, err = ngx_re.split(response.scope, " ")
-                if err then
-                    core.log.error("OIDC extract scope failed: ", err)
-                    return 500
-                end
-                core.log.debug("OIDC scopes:", core.json.encode(scopes))
-                for _, scope in ipairs(scopes) do
-                    core.log.debug("Check OIDC scope:", scope)
-                    if scope == conf.scope then
-                        result = true
-                        -- Add configured access token header, maybe.
-                        add_access_token_header(ctx, conf, access_token)
+            -- Add configured access token header, maybe.
+            add_access_token_header(ctx, conf, access_token)
 
-                        if userinfo and conf.set_userinfo_header then
-                            -- Set X-Userinfo header to introspection endpoint response.
-                            core.request.set_header(ctx, "X-Userinfo",
-                                    ngx_encode_base64(core.json.encode(userinfo)))
-                        end
-                        break
-                    end
-                end
-                if not result then
-                    return 401
-                end
+            if userinfo and conf.set_userinfo_header then
+                -- Set X-Userinfo header to introspection endpoint response.
+                core.request.set_header(ctx, "X-Userinfo",
+                        ngx_encode_base64(core.json.encode(userinfo)))
             end
         end
     end
