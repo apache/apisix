@@ -310,7 +310,7 @@ function _M.rewrite(plugin_conf, ctx)
         conf.introspection_params.scope = conf.scope
     end
 
-    local response, err, session, result, _
+    local response, err, session, _
 
     if conf.bearer_only or conf.introspection_endpoint or conf.public_key then
         -- An introspection endpoint or a public key has been configured. Try to
