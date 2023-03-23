@@ -163,13 +163,13 @@ deployment:
   admin:
     admin_key: ~
     allow_admin:
-      - 127.0.0.0/24
+      - 0.0.0.0/0
 ' > conf/config.yaml
 
 APISIX_ALLOW_NONE_AUTHENTICATION=true make init > output.log 2>&1 | true
 
 grep -E "ERROR: missing valid Admin API token." output.log > /dev/null
-if [ ! $? -ne 0 ]; then
+if [ $? -eq 0 ]; then
     echo "failed: should not show 'ERROR: missing valid Admin API token.'"
     exit 1
 fi
