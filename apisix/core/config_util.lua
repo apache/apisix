@@ -88,8 +88,14 @@ function _M.cancel_clean_handler(item, idx, fire)
     end
 
     core_tab.remove(item.clean_handlers, pos)
-    if fire then
+    if not fire then
+        return
+    end
+
+    if f then
         f(item)
+    else
+        log.error("The function used to clear the health checker is nil, please check")
     end
 end
 
