@@ -62,27 +62,20 @@ function _M.schema()
 end
 
 
+local healthcheck
 local function extra_checker_info(value, src_type)
-    local checker = value.checker
-    local upstream = value.checker_upstream
-    local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
-    local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
-    local nodes = upstream.nodes
-    local healthy_nodes = core.table.new(#nodes, 0)
-    for _, node in ipairs(nodes) do
-        local ok = checker:get_target_status(node.host, port or node.port, host)
-        if ok then
-            core.table.insert(healthy_nodes, node)
-        end
+    if not healthcheck then
+        healthcheck = require("resty.healthcheck")
     end
 
-    local conf = value.value
+    local name = upstream_mod.get_healthchecker_name(value)
+    local nodes, err = healthcheck.get_target_list(name, "upstream-healthcheck")
+    if err then
+        core.log.error(err)
+    end
     return {
-        name = upstream_mod.get_healthchecker_name(value),
-        src_id = conf.id,
-        src_type = src_type,
+        name = name,
         nodes = nodes,
-        healthy_nodes = healthy_nodes,
     }
 end
 
@@ -93,7 +86,8 @@ local function iter_and_add_healthcheck_info(infos, values, src_type)
     end
 
     for _, value in core.config_util.iterate_values(values) do
-        if value.checker then
+    core.log.warn(require("inspect")(value))
+        if value.value.checks or (value.value.upstream and value.value.upstream.checks) then
             core.table.insert(infos, extra_checker_info(value, src_type))
         end
     end
