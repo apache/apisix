@@ -156,8 +156,6 @@ echo "pass: missing admin key and show ERROR message"
 
 # missing admin key, only allow 127.0.0.0/24 to access admin api
 
-git checkout conf/config.yaml
-
 echo '
 deployment:
   admin:
@@ -169,7 +167,7 @@ deployment:
 make init > output.log 2>&1 | true
 
 grep -E "ERROR: missing valid Admin API token." output.log > /dev/null
-if [ ! $? -ne 0 ]; then
+if [ $? -eq 0 ]; then
     echo "failed: should not show 'ERROR: missing valid Admin API token.'"
     exit 1
 fi

@@ -187,7 +187,7 @@ local function init(env)
     local allow_admin = yaml_conf.deployment.admin and
         yaml_conf.deployment.admin.allow_admin
     if yaml_conf.apisix.enable_admin and allow_admin
-       and table.getn(allow_admin) == 1 and allow_admin[1] == "127.0.0.0/24" then
+       and #allow_admin == 1 and allow_admin[1] == "127.0.0.0/24" then
         checked_admin_key = true
     end
 
