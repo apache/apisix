@@ -54,6 +54,17 @@ local schema = {
             type = "string",
             default = "client_secret_basic"
         },
+        introspection_with_scope = {
+            type = "boolean",
+            default = false,
+            description = "include access token's scope to request to introspection endpoint"
+        },
+        introspection_verify_scope= {
+            type = "boolean",
+            default = false,
+            description = "verify access token's scope against introspection's scope response"
+        },
+
         bearer_only = {
             type = "boolean",
             default = false,
@@ -158,6 +169,13 @@ function _M.check_schema(conf)
             -- generate a secret when bearer_only = false and no secret is configured
             secret = ngx_encode_base64(random.bytes(32, true) or random.bytes(32))
         }
+    end
+
+    if conf.introspection_with_scope and conf.introspection_verify_scope then
+        -- enable both scope verification and scope checking will impact performance when there's
+        -- a lot of scope granted for access token
+        core.log.warn("do not enable introspection_with_scope and introspection_verify_scope " ..
+                        "at the same time, check document on why only one config should be enabled")
     end
 
     local ok, err = core.schema.check(schema, conf)
@@ -285,6 +303,21 @@ local function add_access_token_header(ctx, conf, token)
     end
 end
 
+local function verify_scope(conf, introspect_scope)
+    local scopes, err = ngx_re.split(introspect_scope, " ")
+
+    if err then
+        core.log.error("OIDC request scope failed: ", err)
+        return err
+    end
+    for _, scope in ipairs(scopes) do
+        core.log.debug("check OIDC scope:", scope)
+        if scope == conf.scope then
+            return nil
+        end
+    end
+    return "token scope " .. conf.scope .. "does not match granted scopes " .. introspect_scope
+end
 
 function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
@@ -304,8 +337,15 @@ function _M.rewrite(plugin_conf, ctx)
         conf.ssl_verify = "no"
     end
 
-    if conf.scope then
-        -- include introspec_params to request to oidc introspect endpoint
+    if conf.introspection_verify_scope or conf.introspection_with_scope then
+        -- we must set cache_ignore to true in order to make this check correct
+        -- otherwise resty openidc will return same response for different scope
+        -- see https://github.com/zmartzone/lua-resty-openidc/blob/master/lib/resty/openidc.lua#L1692
+        conf.introspection_cache_ignore = true
+    end
+
+    if conf.introspection_with_scope and conf.scope then
+        -- include introspect_params to request to oidc introspect endpoint
         conf.introspection_params = {}
         conf.introspection_params.scope = conf.scope
     end
@@ -327,6 +367,13 @@ function _M.rewrite(plugin_conf, ctx)
         end
 
         if response then
+            -- Verify access token scope against granted scope, maybe.
+            if conf.introspection_verify_scope and response.scope then
+                err = verify_scope(conf, response.scope)
+                if err then
+                    return 401
+                end
+            end
             -- Add configured access token header, maybe.
             add_access_token_header(ctx, conf, access_token)
 
@@ -369,7 +416,7 @@ function _M.rewrite(plugin_conf, ctx)
         if response then
             -- If the openidc module has returned a response, it may contain,
             -- respectively, the access token, the ID token, the refresh token,
-            -- and the userinfo.
+            -- the scope and the userinfo.
             -- Add respective headers to the request, if so configured.
 
             -- Add configured access token header, maybe.
