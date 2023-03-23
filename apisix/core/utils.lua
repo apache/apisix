@@ -340,7 +340,7 @@ _M.resolve_var = resolve_var
 function _M.get_last_index(str, key)
     local str_rev = str_reverse(str)
     local key_rev = str_reverse(key)
-    local idx, _ = str_find(str_rev, key_rev, 1, true)
+    local idx, _ = core_str.find(str_rev, key_rev)
 
     local n
     if idx then
