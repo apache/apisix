@@ -293,11 +293,9 @@ function _M.rewrite(conf, ctx)
         end
 
         local m, err = re_match(upstream_uri, conf.regex_uri[1], "jo")
-        if not m then
-            if err then
-                core.log.error("match error in proxy-rewrite plugin, please check: ", err)
-                return 500
-            end
+        if not m and err then
+            core.log.error("match error in proxy-rewrite plugin, please check: ", err)
+            return 500
         end
         ctx.proxy_rewrite_regex_uri_captures = m
 
