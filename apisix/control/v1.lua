@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local get_routes = require("apisix.router").http_routes
@@ -24,6 +25,7 @@ local collectgarbage = collectgarbage
 local ipairs = ipairs
 local str_format = string.format
 local ngx_var = ngx.var
+local template = require("resty.template")
 
 
 local _M = {}
@@ -62,6 +64,54 @@ function _M.schema()
 end
 
 
+local HTML_TEMPLATE = [[
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>APISIX upstream check status</title>
+</head>
+<body>
+<h1>APISIX upstream check status</h1>
+<table style="background-color:white" cellspacing="0" cellpadding="3" border="1">
+  <tr bgcolor="#C0C0C0">
+    <th>Index</th>
+    <th>Upstream</th>
+    <th>Check type</th>
+    <th>Host</th>
+    <th>Status</th>
+    <th>Success counts</th>
+    <th>TCP Failures</th>
+    <th>HTTP Failures</th>
+    <th>TIMEOUT Failures</th>
+  </tr>
+{% local i = 0 %}
+{% for _, stat in ipairs(stats) do %}
+{% for _, node in ipairs(stat.nodes) do %}
+{% i = i + 1 %}
+  {% if node.status == "healthy" then %}
+  <tr>
+  {% else %}
+  <tr bgcolor="#FF0000">
+  {% end %}
+    <td>{* i *}</td>
+    <td>{* stat.name *}</td>
+    <td>{* stat.type *}</td>
+    <td>{* node.ip .. ":" .. node.port *}</td>
+    <td>{* node.status *}</td>
+    <td>{* node.counter.success *}</td>
+    <td>{* node.counter.tcp_failure *}</td>
+    <td>{* node.counter.http_failure *}</td>
+    <td>{* node.counter.timeout_failure *}</td>
+  </tr>
+{% end %}
+{% end %}
+</table>
+</body>
+</html>
+]]
+
+local html_render = template.compile(HTML_TEMPLATE)
+
+
 local healthcheck
 local function extra_checker_info(value, src_type)
     if not healthcheck then
@@ -74,7 +124,7 @@ local function extra_checker_info(value, src_type)
         core.log.error(err)
     end
     return {
-        name = name,
+        name = value.key,
         nodes = nodes,
     }
 end
@@ -86,10 +136,31 @@ local function iter_and_add_healthcheck_info(infos, values, src_type)
     end
 
     for _, value in core.config_util.iterate_values(values) do
-    core.log.warn(require("inspect")(value))
-        if value.value.checks or (value.value.upstream and value.value.upstream.checks) then
-            core.table.insert(infos, extra_checker_info(value, src_type))
+        local checks = value.value.checks or (value.value.upstream and value.value.upstream.checks)
+        if checks then
+            local info = extra_checker_info(value, src_type)
+            if checks.active and checks.active.type then
+                info.type = checks.active.type
+            elseif checks.passive and checks.passive.type then
+                info.type = checks.passive.type
+            end
+            core.table.insert(infos, info)
         end
+    end
+end
+
+
+local function try_render_html(data)
+    local accept = ngx.var.http_accept
+    if accept and accept:find("text/html") then
+        local ok, out = pcall(html_render, data)
+        if not ok then
+            local err = str_format("HTML template rendering: %s", out)
+            core.log.error(err)
+            return 503, err
+        end
+        ngx.log(ngx.WARN, "ok:", ok, ",out: ", out)
+        return out
     end
 end
 
@@ -102,6 +173,13 @@ function _M.get_health_checkers()
     iter_and_add_healthcheck_info(infos, services, "services")
     local upstreams = get_upstreams()
     iter_and_add_healthcheck_info(infos, upstreams, "upstreams")
+
+    local out = try_render_html({stats=infos})
+    if out then
+        core.response.set_header("Content-Type", "text/html")
+        return 200, out
+    end
+
     return 200, infos
 end
 
@@ -149,6 +227,13 @@ function _M.get_health_checker()
     if not info then
         return 404, {error_msg = err}
     end
+
+    local out = try_render_html({stats={info}})
+    if out then
+        core.response.set_header("Content-Type", "text/html")
+        return 200, out
+    end
+
     return 200, info
 end
 
