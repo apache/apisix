@@ -43,7 +43,6 @@ local ffi_string     = ffi.string
 local get_string_buf = base.get_string_buf
 local exiting        = ngx.worker.exiting
 local ngx_sleep      = ngx.sleep
-local str_find       = string.find
 local str_reverse    = string.reverse
 
 local hostname
