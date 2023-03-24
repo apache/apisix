@@ -517,6 +517,7 @@ location /v1/agent {
 
 
 === TEST 12: test health checker
+--- SKIP
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:

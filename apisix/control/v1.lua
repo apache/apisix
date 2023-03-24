@@ -23,9 +23,9 @@ local upstream_mod = require("apisix.upstream")
 local get_upstreams = upstream_mod.upstreams
 local collectgarbage = collectgarbage
 local ipairs = ipairs
+local pcall = pcall
 local str_format = string.format
 local ngx_var = ngx.var
-local template = require("resty.template")
 
 
 local _M = {}
@@ -61,6 +61,44 @@ function _M.schema()
         stream_plugins = stream_plugins,
     }
     return 200, schema
+end
+
+
+local healthcheck
+local function extra_checker_info(value, src_type)
+    if not healthcheck then
+        healthcheck = require("resty.healthcheck")
+    end
+
+    local name = upstream_mod.get_healthchecker_name(value)
+    local nodes, err = healthcheck.get_target_list(name, "upstream-healthcheck")
+    if err then
+        core.log.error(err)
+    end
+    return {
+        name = value.key,
+        nodes = nodes,
+    }
+end
+
+
+local function iter_and_add_healthcheck_info(infos, values, src_type)
+    if not values then
+        return
+    end
+
+    for _, value in core.config_util.iterate_values(values) do
+        local checks = value.value.checks or (value.value.upstream and value.value.upstream.checks)
+        if checks then
+            local info = extra_checker_info(value, src_type)
+            if checks.active and checks.active.type then
+                info.type = checks.active.type
+            elseif checks.passive and checks.passive.type then
+                info.type = checks.passive.type
+            end
+            core.table.insert(infos, info)
+        end
+    end
 end
 
 
@@ -109,49 +147,14 @@ local HTML_TEMPLATE = [[
 </html>
 ]]
 
-local html_render = template.compile(HTML_TEMPLATE)
-
-
-local healthcheck
-local function extra_checker_info(value, src_type)
-    if not healthcheck then
-        healthcheck = require("resty.healthcheck")
-    end
-
-    local name = upstream_mod.get_healthchecker_name(value)
-    local nodes, err = healthcheck.get_target_list(name, "upstream-healthcheck")
-    if err then
-        core.log.error(err)
-    end
-    return {
-        name = value.key,
-        nodes = nodes,
-    }
-end
-
-
-local function iter_and_add_healthcheck_info(infos, values, src_type)
-    if not values then
-        return
-    end
-
-    for _, value in core.config_util.iterate_values(values) do
-        local checks = value.value.checks or (value.value.upstream and value.value.upstream.checks)
-        if checks then
-            local info = extra_checker_info(value, src_type)
-            if checks.active and checks.active.type then
-                info.type = checks.active.type
-            elseif checks.passive and checks.passive.type then
-                info.type = checks.passive.type
-            end
-            core.table.insert(infos, info)
-        end
-    end
-end
-
+local html_render
 
 local function try_render_html(data)
-    local accept = ngx.var.http_accept
+    if not html_render then
+        local template = require("resty.template")
+        html_render = template.compile(HTML_TEMPLATE)
+    end
+    local accept = ngx_var.http_accept
     if accept and accept:find("text/html") then
         local ok, out = pcall(html_render, data)
         if not ok then
@@ -159,7 +162,6 @@ local function try_render_html(data)
             core.log.error(err)
             return 503, err
         end
-        ngx.log(ngx.WARN, "ok:", ok, ",out: ", out)
         return out
     end
 end

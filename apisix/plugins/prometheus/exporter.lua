@@ -467,7 +467,6 @@ local function collect(ctx, stream_only)
     local stats = control.get_health_checkers()
     for _, stat in ipairs(stats) do
         for _, node in ipairs(stat.nodes) do
-            ngx.log(ngx.WARN, "node: ", require("inspect")(node))
             metrics.upstream_status:set((node.status == "healthy") and 1 or 0,
                 gen_arr(stat.name, node.ip, node.port))
         end
