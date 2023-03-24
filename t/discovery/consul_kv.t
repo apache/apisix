@@ -388,7 +388,6 @@ location /v1/kv {
 
 
 === TEST 9: test health checker
---- SKIP
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
