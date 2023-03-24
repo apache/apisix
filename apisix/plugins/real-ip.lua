@@ -96,7 +96,7 @@ local function get_addr(conf, ctx)
         end
 
         if type(addrs) == "table" then
-            addrs = addrs[#addrs]
+            addrs = addrs[1]
         end
 
         local idx = core.string.rfind_char(addrs, ",")
