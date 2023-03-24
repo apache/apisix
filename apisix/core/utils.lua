@@ -335,4 +335,45 @@ end
 _M.resolve_var = resolve_var
 
 
+local resolve_var_with_captures
+do
+    local _captures
+    -- escape is not supported very well, like there is a redundant '\' after escape "$1"
+    local pat = [[ (?<! \\) \$ \{? (\d+) \}? ]]
+
+    local function resolve(m)
+        local v = _captures[tonumber(m[1])]
+        if not v then
+            v = ""
+        end
+        return v
+    end
+
+    -- captures is the match result of regex uri in proxy-rewrite plugin
+    function resolve_var_with_captures(tpl, captures)
+        if not tpl then
+            return tpl, nil
+        end
+
+        local from = core_str.find(tpl, "$")
+        if not from then
+            return tpl, nil
+        end
+
+        captures = captures or {}
+
+        _captures = captures
+        local res, _, err = re_gsub(tpl, pat, resolve, "jox")
+        _captures = nil
+        if not res then
+            return nil, err
+        end
+
+        return res, nil
+    end
+end
+-- Resolve {$1, $2, ...} in the given string
+_M.resolve_var_with_captures = resolve_var_with_captures
+
+
 return _M
