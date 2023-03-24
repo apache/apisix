@@ -35,7 +35,6 @@ run_tests;
 __DATA__
 
 === TEST 1: upstreams
---- ONLY
 --- yaml_config
 apisix:
     node_listen: 1984
@@ -68,6 +67,7 @@ upstreams:
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local json = require("toolkit.json")
             local t = require("lib.test_admin")
             local http = require "resty.http"
@@ -76,17 +76,6 @@ upstreams:
             local res, err = httpc:request_uri(uri, {method = "GET"})
 
             ngx.sleep(2.2)
-            local check_nodes = function(nodes)
-                assert(#nodes == 2, "invalid number of nodes")
-
-                assert(nodes[1].ip == "127.0.0.1", "invalid ip")
-                assert(nodes[1].port == 1980, "invalid port")
-                assert(nodes[1].status == "healthy", "invalid status")
-
-                assert(nodes[2].ip == "127.0.0.2", "invalid ip")
-                assert(nodes[2].port == 1988, "invalid port")
-                assert(nodes[2].status == "unhealthy", "invalid status")
-            end
 
             local code, body, res = t.test('/v1/healthcheck',
                 ngx.HTTP_GET)
@@ -95,7 +84,7 @@ upstreams:
             table.sort(res[1].nodes, function(a, b)
                 return a.ip < b.ip
             end)
-            check_nodes(res[1].nodes)
+            ngx.say(core.json.stably_encode(res[1].nodes))
 
             local code, body, res = t.test('/v1/healthcheck/upstreams/1',
                 ngx.HTTP_GET)
@@ -103,8 +92,7 @@ upstreams:
             table.sort(res.nodes, function(a, b)
                 return a.ip < b.ip
             end)
-
-            check_nodes(res.nodes)
+            ngx.say(core.json.stably_encode(res.nodes))
         }
     }
 --- grep_error_log eval
@@ -112,7 +100,9 @@ qr/unhealthy TCP increment \(.+\) for '[^']+'/
 --- grep_error_log_out
 unhealthy TCP increment (1/2) for '(127.0.0.2:1988)'
 unhealthy TCP increment (2/2) for '(127.0.0.2:1988)'
-
+--- response_body
+[{"counter":{"http_failure":0,"success":0,"tcp_failure":0,"timeout_failure":0},"ip":"127.0.0.1","port":1980,"status":"healthy"},{"counter":{"http_failure":0,"success":0,"tcp_failure":2,"timeout_failure":0},"ip":"127.0.0.2","port":1988,"status":"unhealthy"}]
+[{"counter":{"http_failure":0,"success":0,"tcp_failure":0,"timeout_failure":0},"ip":"127.0.0.1","port":1980,"status":"healthy"},{"counter":{"http_failure":0,"success":0,"tcp_failure":2,"timeout_failure":0},"ip":"127.0.0.2","port":1988,"status":"unhealthy"}]
 
 
 === TEST 2: routes
@@ -180,8 +170,8 @@ qr/unhealthy TCP increment \(.+\) for '[^']+'/
 unhealthy TCP increment (1/2) for '127.0.0.1(127.0.0.1:1988)'
 unhealthy TCP increment (2/2) for '127.0.0.1(127.0.0.1:1988)'
 --- response_body
-[{"healthy_nodes":[{"host":"127.0.0.1","port":1980,"priority":0,"weight":1}],"name":"upstream#/routes/1","nodes":[{"host":"127.0.0.1","port":1980,"priority":0,"weight":1},{"host":"127.0.0.1","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"routes"}]
-{"healthy_nodes":[{"host":"127.0.0.1","port":1980,"priority":0,"weight":1}],"name":"upstream#/routes/1","nodes":[{"host":"127.0.0.1","port":1980,"priority":0,"weight":1},{"host":"127.0.0.1","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"routes"}
+[{"name":"/routes/1","nodes":[{"counter":{"http_failure":0,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1980,"status":"healthy"},{"counter":{"http_failure":0,"success":0,"tcp_failure":2,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1988,"status":"unhealthy"}],"type":"http"}]
+{"name":"/routes/1","nodes":[{"counter":{"http_failure":0,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1980,"status":"healthy"},{"counter":{"http_failure":0,"success":0,"tcp_failure":2,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1988,"status":"unhealthy"}]}
 
 
 
@@ -255,8 +245,8 @@ qr/unhealthy TCP increment \(.+\) for '[^']+'/
 unhealthy TCP increment (1/2) for '127.0.0.1(127.0.0.1:1988)'
 unhealthy TCP increment (2/2) for '127.0.0.1(127.0.0.1:1988)'
 --- response_body
-[{"healthy_nodes":{},"name":"upstream#/services/1","nodes":[{"host":"127.0.0.1","port":1980,"priority":0,"weight":1},{"host":"127.0.0.1","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"services"}]
-{"healthy_nodes":{},"name":"upstream#/services/1","nodes":[{"host":"127.0.0.1","port":1980,"priority":0,"weight":1},{"host":"127.0.0.1","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"services"}
+[{"name":"/services/1","nodes":[{"counter":{"http_failure":0,"success":0,"tcp_failure":2,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1988,"status":"unhealthy"}],"type":"http"}]
+{"name":"/services/1","nodes":[{"counter":{"http_failure":0,"success":0,"tcp_failure":2,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1988,"status":"unhealthy"}]}
 
 
 

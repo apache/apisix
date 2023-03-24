@@ -573,6 +573,6 @@ upstreams:
 --- request
 GET /thc
 --- response_body
-[{"host":"127.0.0.1","port":30513,"priority":0,"weight":1},{"host":"127.0.0.1","port":30514,"priority":0,"weight":1}]
-[{"host":"127.0.0.1","port":30513,"priority":0,"weight":1},{"host":"127.0.0.1","port":30514,"priority":0,"weight":1}]
+[{"counter":{"http_failure":0,"success":1,"tcp_failure":0,"timeout_failure":0},"ip":"127.0.0.1","port":30513,"status":"healthy"},{"counter":{"http_failure":0,"success":1,"tcp_failure":0,"timeout_failure":0},"ip":"127.0.0.1","port":30514,"status":"healthy"}]
+[{"counter":{"http_failure":0,"success":1,"tcp_failure":0,"timeout_failure":0},"ip":"127.0.0.1","port":30513,"status":"healthy"},{"counter":{"http_failure":0,"success":1,"tcp_failure":0,"timeout_failure":0},"ip":"127.0.0.1","port":30514,"status":"healthy"}]
 --- ignore_error_log
