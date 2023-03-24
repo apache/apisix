@@ -159,15 +159,14 @@ echo "pass: missing admin key and show ERROR message"
 echo '
 deployment:
   admin:
+    admin_key: ~
     allow_admin:
       - 127.0.0.0/24
-    allow_admin: ~
 ' > conf/config.yaml
 
 make init > output.log 2>&1 | true
 
-grep -E "ERROR: missing valid Admin API token." output.log > /dev/null
-if [ $? -eq 0 ]; then
+if grep -E "ERROR: missing valid Admin API token." output.log > /dev/null; then
     echo "failed: should not show 'ERROR: missing valid Admin API token.'"
     exit 1
 fi
@@ -175,16 +174,15 @@ fi
 echo '
 deployment:
   admin:
+    admin_key: ~
     allow_admin:
       - 0.0.0.0/0
       - 127.0.0.0/24
-    allow_admin: ~
 ' > conf/config.yaml
 
 make init > output.log 2>&1 | true
 
-grep -E "ERROR: missing valid Admin API token." output.log > /dev/null
-if [ ! $? -eq 0 ]; then
+if ! grep -E "ERROR: missing valid Admin API token." output.log > /dev/null; then
     echo "failed: should show 'ERROR: missing valid Admin API token.'"
     exit 1
 fi
