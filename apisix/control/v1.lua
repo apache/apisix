@@ -165,7 +165,7 @@ local function try_render_html(data)
 end
 
 
-function _M.get_health_checkers()
+local function get_health_checkers()
     local infos = {}
     local routes = get_routes()
     iter_and_add_healthcheck_info(infos, routes, "routes")
@@ -173,7 +173,12 @@ function _M.get_health_checkers()
     iter_and_add_healthcheck_info(infos, services, "services")
     local upstreams = get_upstreams()
     iter_and_add_healthcheck_info(infos, upstreams, "upstreams")
+    return infos
+end
 
+
+function _M.get_health_checkers()
+    local infos = get_health_checkers()
     local out = try_render_html({stats=infos})
     if out then
         core.response.set_header("Content-Type", "text/html")
@@ -451,5 +456,6 @@ return {
         methods = {"GET"},
         uris = {"/plugin_metadata/*"},
         handler = _M.dump_plugin_metadata,
-    }
+    },
+    get_health_checkers = get_health_checkers,
 }
