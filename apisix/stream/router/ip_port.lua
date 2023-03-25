@@ -80,7 +80,7 @@ do
             if route.protocol and route.protocol.superior_id then
                 local admin_api = require("apisix.admin").check_http_admin()
                 if not admin_api then
-                    ngx.log(ngx.ERR, "failed to get http admin node")
+                    core.log.error("failed to get http admin node")
                     goto CONTINUE
                 end
 
@@ -89,20 +89,31 @@ do
 
                 local res, err = admin_api:get("/stream/routes/" .. superior_id)
                 if not res then
-                    ngx.log(ngx.ERR, "failed to fetch superior stream route: ", err)
+                    core.log.error("failed to fetch superior stream route: ", err)
                     goto CONTINUE
                 end
 
-                if res.body.data and res.body.data.protocol == route.protocol then
-                    ngx.log(ngx.INFO, "matched stream route with superior id: ", superior_id)
+                if res.body.data and res.body.data.protocol == route.protocol.scheme then
+                    core.log.info("matched stream route with superior id: ", superior_id)
                 else
-                    ngx.log(ngx.ERR, "failed to match stream route with superior id: ", superior_id)
+                    core.log.error("failed to match stream route with superior id: ", superior_id)
                     goto CONTINUE
                 end
 
-                -- TODO: when deleting a stream route, check if it is referenced by another stream route
+                -- check if the current stream route is referenced by another stream route
+                local refs_res, refs_err = admin_api:get("/stream/routes?refer_to=" .. route_id)
+                if not refs_res then
+                    core.log.error("failed to fetch stream route references: ", refs_err)
+                    goto CONTINUE
+                end
 
+                local refs = refs_res.body.data
+                if refs and #refs > 0 then
+                    core.log.error("stream route is referenced by other stream routes")
+                    goto CONTINUE
+                end
             end
+
 
             if item.value.remote_addr then
                 item.value.remote_addr_matcher = core_ip.create_ip_matcher({item.value.remote_addr})
