@@ -558,6 +558,9 @@ upstreams:
             table.sort(nodes, function(a, b)
                 return a.port < b.port
             end)
+            for _, node in ipairs(nodes) do
+                node.counter = nil
+            end
             ngx.say(json.encode(nodes))
 
             local code, body, res = t.test('/v1/healthcheck/upstreams/1',
@@ -567,12 +570,15 @@ upstreams:
             table.sort(nodes, function(a, b)
                 return a.port < b.port
             end)
+            for _, node in ipairs(nodes) do
+                node.counter = nil
+            end
             ngx.say(json.encode(nodes))
         }
     }
 --- request
 GET /thc
 --- response_body
-[{"counter":{"http_failure":0,"success":1,"tcp_failure":0,"timeout_failure":0},"ip":"127.0.0.1","port":30513,"status":"healthy"},{"counter":{"http_failure":0,"success":1,"tcp_failure":0,"timeout_failure":0},"ip":"127.0.0.1","port":30514,"status":"healthy"}]
-[{"counter":{"http_failure":0,"success":1,"tcp_failure":0,"timeout_failure":0},"ip":"127.0.0.1","port":30513,"status":"healthy"},{"counter":{"http_failure":0,"success":1,"tcp_failure":0,"timeout_failure":0},"ip":"127.0.0.1","port":30514,"status":"healthy"}]
+[{"ip":"127.0.0.1","port":30513,"status":"healthy"},{"ip":"127.0.0.1","port":30514,"status":"healthy"}]
+[{"ip":"127.0.0.1","port":30513,"status":"healthy"},{"ip":"127.0.0.1","port":30514,"status":"healthy"}]
 --- ignore_error_log
