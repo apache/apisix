@@ -452,6 +452,7 @@ GET /thc
 --- response_body
 [{"ip":"127.0.0.1","port":30511,"status":"healthy"},{"ip":"127.0.0.2","port":1988,"status":"unhealthy"}]
 [{"ip":"127.0.0.1","port":30511,"status":"healthy"},{"ip":"127.0.0.2","port":1988,"status":"unhealthy"}]
+--- ignore_error_log
 
 
 
