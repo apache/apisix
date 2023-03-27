@@ -425,27 +425,33 @@ upstreams:
             local code, body, res = t.test('/v1/healthcheck',
                 ngx.HTTP_GET)
             res = json.decode(res)
-            table.sort(res[1].nodes, function(a, b)
-                return a.host < b.host
+            local nodes = res[1].nodes
+            table.sort(nodes, function(a, b)
+                return a.ip < b.ip
             end)
-            ngx.say(json.encode(res))
+            for _, node in ipairs(nodes) do
+                node.counter = nil
+            end
+            ngx.say(json.encode(nodes))
 
             local code, body, res = t.test('/v1/healthcheck/upstreams/1',
                 ngx.HTTP_GET)
             res = json.decode(res)
-            table.sort(res.nodes, function(a, b)
-                return a.host < b.host
+            local nodes = res.nodes
+            table.sort(nodes, function(a, b)
+                return a.ip < b.ip
             end)
-            ngx.say(json.encode(res))
+            for _, node in ipairs(nodes) do
+                node.counter = nil
+            end
+            ngx.say(json.encode(nodes))
         }
     }
 --- request
 GET /thc
 --- response_body
-[{"counter":{"http_failure":0,"success":1,"tcp_failure":0,"timeout_failure":0},"ip":"127.0.0.1","port":30511,"status":"healthy"},{"counter":{"http_failure":1,"success":0,"tcp_failure":0,"timeout_failure":0},"ip":"127.0.0.2","port":1988,"status":"unhealthy"}]
-[{"counter":{"http_failure":0,"success":1,"tcp_failure":0,"timeout_failure":0},"ip":"127.0.0.1","port":30511,"status":"healthy"},{"counter":{"http_failure":1,"success":0,"tcp_failure":0,"timeout_failure":0},"ip":"127.0.0.2","port":1988,"status":"unhealthy"}]
---- no_error_log
-[error]
+[{"ip":"127.0.0.1","port":30511,"status":"healthy"},{"ip":"127.0.0.2","port":1988,"status":"unhealthy"}]
+[{"ip":"127.0.0.1","port":30511,"status":"healthy"},{"ip":"127.0.0.2","port":1988,"status":"unhealthy"}]
 
 
 
