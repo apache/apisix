@@ -44,7 +44,12 @@ local function redis_cli(conf)
 
     red:set_timeouts(timeout, timeout, timeout)
 
-    local ok, err = red:connect(conf.redis_host, conf.redis_port or 6379)
+    local sock_opts = {
+        ssl: conf.redis_ssl,
+        ssl_verify: conf.ssl_verify
+    }
+
+    local ok, err = red:connect(conf.redis_host, conf.redis_port or 6379, sock_opts)
     if not ok then
         return false, err
     end
@@ -53,7 +58,12 @@ local function redis_cli(conf)
     count, err = red:get_reused_times()
     if 0 == count then
         if conf.redis_password and conf.redis_password ~= '' then
-            local ok, err = red:auth(conf.redis_password)
+            local ok, err
+            if conf.redis_username and conf.redis_username ~= '' then
+                ok, err = red:auth(conf.redis_username, conf.redis_password)
+            else
+                ok, err = red:auth(conf.redis_password)
+            end
             if not ok then
                 return nil, err
             end
