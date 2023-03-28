@@ -173,6 +173,11 @@ if grep -E "ERROR: missing valid Admin API token." output.log > /dev/null; then
     exit 1
 fi
 
+if ! grep -E "Warning! AdminKey is bypassed" output.log > /dev/null; then
+    echo "failed: should show 'Warning! AdminKey is bypassed'"
+    exit 1
+fi
+
 echo "pass: allow empty admin_key, when APISIX_ALLOW_NONE_AUTHENTICATION=true"
 
 # admin api, allow any IP but use default key

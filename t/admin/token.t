@@ -193,3 +193,5 @@ env APISIX_ALLOW_NONE_AUTHENTICATION=true;
 --- request
 GET /apisix/admin/routes
 --- error_code: 200
+--- error_log
+AdminKey is bypassed because of APISIX_ALLOW_NONE_AUTHENTICATION=true

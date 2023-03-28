@@ -403,6 +403,14 @@ function _M.init_worker()
     events.register(reload_plugins, reload_event, "PUT")
 
     if ngx_worker_id() == 0 then
+        -- check if APISIX_ALLOW_NONE_AUTHENTICATION=true
+        local none_auth = getenv("APISIX_ALLOW_NONE_AUTHENTICATION")
+        if none_auth == "true" then
+            core.log.warn("AdminKey is bypassed because of APISIX_ALLOW_NONE_AUTHENTICATION=true.",
+                "If you are deploying APISIX in a production environment,",
+                "please disable it and set a secure password for the adminKey!")
+        end
+
         local ok, err = ngx_timer_at(0, function(premature)
             if premature then
                 return

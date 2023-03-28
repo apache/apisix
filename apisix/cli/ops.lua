@@ -198,6 +198,9 @@ local function init(env)
     local allow_none_auth = getenv("APISIX_ALLOW_NONE_AUTHENTICATION")
     if allow_none_auth == "true" then
         checked_admin_key = true
+        print("Warning! AdminKey is bypassed because of APISIX_ALLOW_NONE_AUTHENTICATION=true.",
+            "If you are deploying APISIX in a production environment,",
+            "please disable it and set a secure password for the adminKey!")
     end
 
     if yaml_conf.apisix.enable_admin and not checked_admin_key then
