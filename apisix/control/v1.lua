@@ -73,7 +73,7 @@ local function extra_checker_info(value, src_type)
     local name = upstream_mod.get_healthchecker_name(value)
     local nodes, err = healthcheck.get_target_list(name, "upstream-healthcheck")
     if err then
-        core.log.error(err)
+        core.log.error("healthcheck.get_target_list failed: ", err)
     end
     return {
         name = value.key,
@@ -159,7 +159,7 @@ local function try_render_html(data)
         local ok, out = pcall(html_render, data)
         if not ok then
             local err = str_format("HTML template rendering: %s", out)
-            core.log.error(err)
+            core.log.error("try_render_html failed: ", err)
             return 503, err
         end
         return out
