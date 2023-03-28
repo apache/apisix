@@ -32,6 +32,7 @@ local reload_event = "/apisix/admin/plugins/reload"
 local ipairs = ipairs
 local error = error
 local type = type
+local getenv = os.getenv
 
 
 local events
@@ -66,6 +67,13 @@ local router
 
 
 local function check_token(ctx)
+    -- check if APISIX_ALLOW_NONE_AUTHENTICATION=true
+    -- if so, allow any requests to access admin api without admin_key
+    local none_auth = getenv("APISIX_ALLOW_NONE_AUTHENTICATION")
+    if none_auth == "true" then
+        return true
+    end
+
     local local_conf = core.config.local_conf()
     local admin_key = core.table.try_read_attr(local_conf, "deployment", "admin", "admin_key")
     if not admin_key then
