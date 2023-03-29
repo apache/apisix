@@ -237,10 +237,6 @@ local function process_with_allow_origins(allow_origins, ctx, req_origin,
 end
 
 local function process_with_allow_origins_by_regex(conf, ctx, req_origin)
-    if conf.allow_origins_by_regex == nil then
-        return
-    end
-
     if not conf.allow_origins_by_regex_rules_concat then
         local allow_origins_by_regex_rules = {}
         for i, re_rule in ipairs(conf.allow_origins_by_regex) do
@@ -293,13 +289,14 @@ end
 
 function _M.header_filter(conf, ctx)
     local req_origin =  ctx.original_request_origin
-    -- Try allow_origins first, if mismatched, try allow_origins_by_regex.
+    -- If allow_origins_by_regex is not nil, should be matched to it only
     local allow_origins
-    allow_origins = process_with_allow_origins(conf.allow_origins, ctx, req_origin)
-    if not match_origins(req_origin, allow_origins) then
+    if conf.allow_origins_by_regex == nil then
+        allow_origins = process_with_allow_origins(conf.allow_origins, ctx, req_origin)
+    else
         allow_origins = process_with_allow_origins_by_regex(conf, ctx, req_origin)
     end
-    if not allow_origins then
+    if not match_origins(req_origin, allow_origins) then
         allow_origins = process_with_allow_origins_by_metadata(
                 conf.allow_origins_by_metadata, ctx, req_origin
         )

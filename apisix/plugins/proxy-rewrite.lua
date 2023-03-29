@@ -21,6 +21,7 @@ local ipairs      = ipairs
 local ngx         = ngx
 local type        = type
 local re_sub      = ngx.re.sub
+local re_match    = ngx.re.match
 local sub_str     = string.sub
 local str_find    = core.string.find
 
@@ -40,6 +41,10 @@ end
 local lrucache = core.lrucache.new({
     type = "plugin",
 })
+
+core.ctx.register_var("proxy_rewrite_regex_uri_captures", function(ctx)
+    return ctx.proxy_rewrite_regex_uri_captures
+end)
 
 local schema = {
     type = "object",
@@ -257,6 +262,7 @@ do
         return re_sub(s, [[\?]], "%3F", "jo")
     end
 
+
 function _M.rewrite(conf, ctx)
     for _, name in ipairs(upstream_names) do
         if conf[name] then
@@ -278,15 +284,22 @@ function _M.rewrite(conf, ctx)
 
         local uri, _, err = re_sub(upstream_uri, conf.regex_uri[1],
                                    conf.regex_uri[2], "jo")
-        if uri then
-            upstream_uri = uri
-        else
+        if not uri then
             local msg = "failed to substitute the uri " .. ctx.var.uri ..
                         " (" .. conf.regex_uri[1] .. ") with " ..
                         conf.regex_uri[2] .. " : " .. err
             core.log.error(msg)
             return 500, {message = msg}
         end
+
+        local m, err = re_match(upstream_uri, conf.regex_uri[1], "jo")
+        if not m and err then
+            core.log.error("match error in proxy-rewrite plugin, please check: ", err)
+            return 500
+        end
+        ctx.proxy_rewrite_regex_uri_captures = m
+
+        upstream_uri = uri
     end
 
     if not conf.use_real_request_uri_unsafe then
@@ -325,14 +338,18 @@ function _M.rewrite(conf, ctx)
 
         local field_cnt = #hdr_op.add
         for i = 1, field_cnt, 2 do
-            local val = core.utils.resolve_var(hdr_op.add[i + 1], ctx.var)
+            local val = core.utils.resolve_var_with_captures(hdr_op.add[i + 1],
+                                            ctx.proxy_rewrite_regex_uri_captures)
+            val = core.utils.resolve_var(val, ctx.var)
             local header = hdr_op.add[i]
             core.request.add_header(ctx, header, val)
         end
 
         local field_cnt = #hdr_op.set
         for i = 1, field_cnt, 2 do
-            local val = core.utils.resolve_var(hdr_op.set[i + 1], ctx.var)
+            local val = core.utils.resolve_var_with_captures(hdr_op.set[i + 1],
+                                            ctx.proxy_rewrite_regex_uri_captures)
+            val = core.utils.resolve_var(val, ctx.var)
             core.request.set_header(ctx, hdr_op.set[i], val)
         end
 

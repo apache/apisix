@@ -67,8 +67,6 @@ local router
 
 
 local function check_token(ctx)
-    bypass_admin_api_auth 
-    APISIX_BYPASS_ADMIN_API_AUTH
     -- check if APISIX_BYPASS_ADMIN_API_AUTH=true
     local none_auth = getenv("APISIX_BYPASS_ADMIN_API_AUTH")
     if none_auth == "true" then
