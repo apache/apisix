@@ -92,6 +92,8 @@ Returns the JSON schema used by the APISIX instance:
 
 ### GET /v1/healthcheck
 
+Introduced in [v2.3](https://github.com/apache/apisix/releases/tag/2.3).
+
 Returns a [health check](./tutorials/health-check.md) of the APISIX instance.
 
 ```json

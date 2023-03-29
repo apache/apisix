@@ -65,7 +65,7 @@ end
 
 
 local healthcheck
-local function extra_checker_info(value, src_type)
+local function extra_checker_info(value)
     if not healthcheck then
         healthcheck = require("resty.healthcheck")
     end
@@ -82,7 +82,7 @@ local function extra_checker_info(value, src_type)
 end
 
 
-local function iter_and_add_healthcheck_info(infos, values, src_type)
+local function iter_and_add_healthcheck_info(infos, values)
     if not values then
         return
     end
@@ -90,7 +90,7 @@ local function iter_and_add_healthcheck_info(infos, values, src_type)
     for _, value in core.config_util.iterate_values(values) do
         local checks = value.value.checks or (value.value.upstream and value.value.upstream.checks)
         if checks then
-            local info = extra_checker_info(value, src_type)
+            local info = extra_checker_info(value)
             if checks.active and checks.active.type then
                 info.type = checks.active.type
             elseif checks.passive and checks.passive.type then
@@ -159,32 +159,35 @@ local function try_render_html(data)
         local ok, out = pcall(html_render, data)
         if not ok then
             local err = str_format("HTML template rendering: %s", out)
-            core.log.error("try_render_html failed: ", err)
-            return 503, err
+            core.log.error(err)
+            return nil, err
         end
         return out
     end
 end
 
 
-local function get_health_checkers()
+local function _get_health_checkers()
     local infos = {}
     local routes = get_routes()
-    iter_and_add_healthcheck_info(infos, routes, "routes")
+    iter_and_add_healthcheck_info(infos, routes)
     local services = get_services()
-    iter_and_add_healthcheck_info(infos, services, "services")
+    iter_and_add_healthcheck_info(infos, services)
     local upstreams = get_upstreams()
-    iter_and_add_healthcheck_info(infos, upstreams, "upstreams")
+    iter_and_add_healthcheck_info(infos, upstreams)
     return infos
 end
 
 
 function _M.get_health_checkers()
-    local infos = get_health_checkers()
-    local out = try_render_html({stats=infos})
+    local infos = _get_health_checkers()
+    local out, err = try_render_html({stats=infos})
     if out then
         core.response.set_header("Content-Type", "text/html")
         return 200, out
+    end
+    if err then
+        return 503, {error_msg = err}
     end
 
     return 200, infos
@@ -198,11 +201,13 @@ local function iter_and_find_healthcheck_info(values, src_type, src_id)
 
     for _, value in core.config_util.iterate_values(values) do
         if value.value.id == src_id then
-            if not value.checker then
+            local checks = value.value.checks or
+                (value.value.upstream and value.value.upstream.checks)
+            if not checks then
                 return nil, str_format("no checker for %s[%s]", src_type, src_id)
             end
 
-            return extra_checker_info(value, src_type)
+            return extra_checker_info(value)
         end
     end
 
@@ -235,10 +240,13 @@ function _M.get_health_checker()
         return 404, {error_msg = err}
     end
 
-    local out = try_render_html({stats={info}})
+    local out, err = try_render_html({stats={info}})
     if out then
         core.response.set_header("Content-Type", "text/html")
         return 200, out
+    end
+    if err then
+        return 503, {error_msg = err}
     end
 
     return 200, info
@@ -459,5 +467,5 @@ return {
         uris = {"/plugin_metadata/*"},
         handler = _M.dump_plugin_metadata,
     },
-    get_health_checkers = get_health_checkers,
+    get_health_checkers = _get_health_checkers,
 }

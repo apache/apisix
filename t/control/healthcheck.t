@@ -77,7 +77,7 @@ upstreams:
 
             ngx.sleep(2.2)
 
-            local code, body, res = t.test('/v1/healthcheck',
+            local _, _, res = t.test('/v1/healthcheck',
                 ngx.HTTP_GET)
             res = json.decode(res)
             assert(#res == 1, "invalid number of results")
@@ -86,13 +86,35 @@ upstreams:
             end)
             ngx.say(core.json.stably_encode(res[1].nodes))
 
-            local code, body, res = t.test('/v1/healthcheck/upstreams/1',
+            local _, _, res = t.test('/v1/healthcheck/upstreams/1',
                 ngx.HTTP_GET)
             res = json.decode(res)
             table.sort(res.nodes, function(a, b)
                 return a.ip < b.ip
             end)
             ngx.say(core.json.stably_encode(res.nodes))
+
+            local _, _, res = t.test('/v1/healthcheck/upstreams/1',
+                ngx.HTTP_GET, nil, nil, {["Accept"] = "text/html"})
+            local xml2lua = require("xml2lua")
+            local xmlhandler = require("xmlhandler.tree")
+            local handler = xmlhandler:new()
+            local parser = xml2lua.parser(handler)
+            parser.parse(parser, res)
+            local matches = 0
+            for _, td in ipairs(handler.root.html.body.table.tr) do
+                if td.td then
+                    if td.td[4] == "127.0.0.2:1988" then
+                        assert(td.td[5] == "unhealthy", "127.0.0.2:1988 is not unhealthy")
+                        matches = matches + 1
+                    end
+                    if td.td[4] == "127.0.0.1:1980" then
+                        assert(td.td[5] == "healthy", "127.0.0.1:1980 is not healthy")
+                        matches = matches + 1
+                    end
+                end
+            end
+            assert(matches == 2, "unexpected html")
         }
     }
 --- grep_error_log eval
