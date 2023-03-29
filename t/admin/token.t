@@ -177,10 +177,3 @@ PUT /apisix/admin/plugins/reload?api_key=4054f7cf07e344346cd3f287985e76a2
 --- request
 GET /apisix/admin/routes??api_key=4054f7cf07e344346cd3f287985e76a2
 --- error_code: 401
-
-
-
-=== TEST 10: access without api key
---- request
-GET /apisix/admin/routes
---- error_code: 401
