@@ -191,8 +191,8 @@ local function init(env)
     end
 
     -- check if APISIX_BYPASS_ADMIN_API_AUTH=true
-    local allow_none_auth = getenv("APISIX_BYPASS_ADMIN_API_AUTH")
-    if allow_none_auth == "true" then
+    local bypass_admin_api_auth = getenv("APISIX_BYPASS_ADMIN_API_AUTH")
+    if bypass_admin_api_auth == "true" then
         checked_admin_key = true
         print("Warning! AdminKey is bypassed because of APISIX_BYPASS_ADMIN_API_AUTH=true.",
             "If you are deploying APISIX in a production environment,",

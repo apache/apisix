@@ -195,3 +195,12 @@ GET /apisix/admin/routes
 --- error_code: 200
 --- error_log
 AdminKey is bypassed because of APISIX_BYPASS_ADMIN_API_AUTH=true
+
+
+
+=== TEST 12: access without api key, but APISIX_BYPASS_ADMIN_API_AUTH=non-true
+--- main_config
+env APISIX_BYPASS_ADMIN_API_AUTH=non-true;
+--- request
+GET /apisix/admin/routes
+--- error_code: 401
