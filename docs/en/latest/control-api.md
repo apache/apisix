@@ -133,7 +133,7 @@ Returns a [health check](./tutorials/health-check.md) of the APISIX instance.
 Each of the returned objects contain the following fields:
 
 * name: resource id, where the health checker is reporting from.
-* type: health check type.
+* type: health check type: `["http", "https", "tcp"]`.
 * nodes: target nodes of the health checker.
 * nodes[i].ip: ip address.
 * nodes[i].port: port number.

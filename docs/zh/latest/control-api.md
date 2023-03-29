@@ -131,11 +131,11 @@ APISIX 中一些插件添加了自己的 control API。如果你对他们感兴�
 每个 entry 包含以下字段：
 
 * name: 资源 ID，健康检查的报告对象。
-* type: 健康检查类型。
+* type: 健康检查类型，取值为 `["http", "https", "tcp"]`。
 * nodes: 检查节点列表。
 * nodes[i].ip: IP 地址。
 * nodes[i].port: 端口。
-* nodes[i].status: 状态：`["healthy", "unhealthy", "mostly_healthy", "mostly_unhealthy"]`.
+* nodes[i].status: 状态：`["healthy", "unhealthy", "mostly_healthy", "mostly_unhealthy"]`。
 * nodes[i].counter.success: 成功计数器。
 * nodes[i].counter.http_failure: HTTP 访问失败计数器。
 * nodes[i].counter.tcp_failure: TCP 连接或读写的失败计数器。

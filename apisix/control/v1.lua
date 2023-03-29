@@ -207,7 +207,13 @@ local function iter_and_find_healthcheck_info(values, src_type, src_id)
                 return nil, str_format("no checker for %s[%s]", src_type, src_id)
             end
 
-            return extra_checker_info(value)
+            local info = extra_checker_info(value)
+            if checks.active and checks.active.type then
+                info.type = checks.active.type
+            elseif checks.passive and checks.passive.type then
+                info.type = checks.passive.type
+            end
+            return info
         end
     end
 
