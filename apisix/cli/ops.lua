@@ -189,14 +189,12 @@ local function init(env)
        and #allow_admin == 1 and allow_admin[1] == "127.0.0.0/24" then
         checked_admin_key = true
     end
-
-    -- check if APISIX_BYPASS_ADMIN_API_AUTH=true
-    local bypass_admin_api_auth = getenv("APISIX_BYPASS_ADMIN_API_AUTH")
-    if bypass_admin_api_auth == "true" then
+    -- check if admin_key is required
+    if not yaml_conf.deployment.admin.admin_key_required then
         checked_admin_key = true
-        print("Warning! AdminKey is bypassed because of APISIX_BYPASS_ADMIN_API_AUTH=true.",
-            "If you are deploying APISIX in a production environment,",
-            "please disable it and set a secure password for the adminKey!")
+        print("Warning! AdminKey is bypassed. "
+                .. "If you are deploying APISIX in a production environment, "
+                .. "please disable it and set a secure password for the adminKey!")
     end
 
     if yaml_conf.apisix.enable_admin and not checked_admin_key then

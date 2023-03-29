@@ -156,3 +156,16 @@ X-API-VERSION: v2
 GET /t
 --- response_body
 passed
+
+
+
+=== TEST 10: Access without api key, but admin_key_required=false
+--- yaml_config
+deployment:
+  admin:
+    admin_key_required: false
+--- request
+GET /apisix/admin/routes
+--- error_code: 200
+--- error_log
+AdminKey is bypassed.

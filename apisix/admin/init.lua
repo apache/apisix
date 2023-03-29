@@ -32,7 +32,6 @@ local reload_event = "/apisix/admin/plugins/reload"
 local ipairs = ipairs
 local error = error
 local type = type
-local getenv = os.getenv
 
 
 local events
@@ -67,13 +66,13 @@ local router
 
 
 local function check_token(ctx)
-    -- check if APISIX_BYPASS_ADMIN_API_AUTH=true
-    local bypass_admin_api_auth = getenv("APISIX_BYPASS_ADMIN_API_AUTH")
-    if bypass_admin_api_auth == "true" then
+    local local_conf = core.config.local_conf()
+
+    -- check if admin_key is required
+    if not local_conf.deployment.admin.admin_key_required then
         return true
     end
 
-    local local_conf = core.config.local_conf()
     local admin_key = core.table.try_read_attr(local_conf, "deployment", "admin", "admin_key")
     if not admin_key then
         return true
@@ -402,10 +401,9 @@ function _M.init_worker()
     events.register(reload_plugins, reload_event, "PUT")
 
     if ngx_worker_id() == 0 then
-        -- check if APISIX_BYPASS_ADMIN_API_AUTH=true
-        local bypass_admin_api_auth = getenv("APISIX_BYPASS_ADMIN_API_AUTH")
-        if bypass_admin_api_auth == "true" then
-            core.log.warn("AdminKey is bypassed because of APISIX_BYPASS_ADMIN_API_AUTH=true.",
+        -- check if admin_key is required
+        if not local_conf.deployment.admin.admin_key_required then
+            core.log.warn("AdminKey is bypassed.",
                 "If you are deploying APISIX in a production environment,",
                 "please disable it and set a secure password for the adminKey!")
         end

@@ -51,8 +51,6 @@ worker_shutdown_timeout {* worker_shutdown_timeout *};
 env APISIX_PROFILE;
 env PATH; # for searching external plugin runner's binary
 
-env APISIX_BYPASS_ADMIN_API_AUTH; # bypass admin api auth
-
 # reserved environment variables for configuration
 env APISIX_DEPLOYMENT_ETCD_HOST;
 
