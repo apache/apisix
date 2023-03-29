@@ -67,9 +67,10 @@ local router
 
 
 local function check_token(ctx)
-    -- check if APISIX_ALLOW_NONE_AUTHENTICATION=true
-    -- if so, allow any requests to access admin api without admin_key
-    local none_auth = getenv("APISIX_ALLOW_NONE_AUTHENTICATION")
+    bypass_admin_api_auth 
+    APISIX_BYPASS_ADMIN_API_AUTH
+    -- check if APISIX_BYPASS_ADMIN_API_AUTH=true
+    local none_auth = getenv("APISIX_BYPASS_ADMIN_API_AUTH")
     if none_auth == "true" then
         return true
     end
@@ -403,10 +404,10 @@ function _M.init_worker()
     events.register(reload_plugins, reload_event, "PUT")
 
     if ngx_worker_id() == 0 then
-        -- check if APISIX_ALLOW_NONE_AUTHENTICATION=true
-        local none_auth = getenv("APISIX_ALLOW_NONE_AUTHENTICATION")
+        -- check if APISIX_BYPASS_ADMIN_API_AUTH=true
+        local none_auth = getenv("APISIX_BYPASS_ADMIN_API_AUTH")
         if none_auth == "true" then
-            core.log.warn("AdminKey is bypassed because of APISIX_ALLOW_NONE_AUTHENTICATION=true.",
+            core.log.warn("AdminKey is bypassed because of APISIX_BYPASS_ADMIN_API_AUTH=true.",
                 "If you are deploying APISIX in a production environment,",
                 "please disable it and set a secure password for the adminKey!")
         end
