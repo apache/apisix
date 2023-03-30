@@ -44,9 +44,10 @@ local function redis_cli(conf)
 
     red:set_timeouts(timeout, timeout, timeout)
 
-    local sock_opts = {}
-    sock_opts.ssl = conf.redis_ssl
-    sock_opts.ssl_verify = conf.ssl_verify
+    local sock_opts = {
+        ssl = conf.redis_ssl,
+        ssl_verify = conf.redis_ssl_verify
+    }
 
     local ok, err = red:connect(conf.redis_host, conf.redis_port or 6379, sock_opts)
     if not ok then

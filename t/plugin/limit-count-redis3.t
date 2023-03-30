@@ -186,3 +186,65 @@ passed
     }
 --- response_body
 ["1","0","0"]
+
+
+
+=== TEST 5: set route, with redis host, port and right username and password
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "policy": "redis",
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6379,
+                            "redis_timeout": 1001,
+                            "redis_username": "alice",
+                            "redis_password": "somepassword"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: up the limit
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
+--- error_code eval
+[200, 200, 503, 503]
+
+
+
+=== TEST 7: up the limit
+--- pipelined_requests eval
+["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
+--- error_code eval
+[404, 503, 404, 503, 503]
+
+
