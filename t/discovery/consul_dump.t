@@ -502,4 +502,4 @@ discovery:
 --- request
 GET /t
 --- response_body
-{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1}],"service_b":[{"host":"127.0.0.1","port":8002,"weight":1}]}
+{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1}]}
