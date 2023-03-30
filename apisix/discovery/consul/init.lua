@@ -359,7 +359,7 @@ function _M.connect(premature, consul_server, retry_delay)
                 read_timeout = consul_server.read_timeout,
             })
         end
-        local result, get_err = consul_client:get(svc_url)
+        local result, get_err = consul_client:get(svc_url, {passing = true})
         local error_info = (get_err ~= nil and get_err) or
                 ((result ~= nil and result.status ~= 200) and result.status)
         if error_info then
