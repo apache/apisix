@@ -203,7 +203,6 @@ local function watch_catalog(consul_server)
 
         return default_catalog_error_index
     end
-    log.info("<------> watch_catalog: ", json_delay_encode(watch_result, true))
     return watch_result.headers['X-Consul-Index']
 end
 
@@ -228,7 +227,6 @@ local function watch_health(consul_server)
 
         return default_health_error_index
     end
-    log.info("------> watch_health: ", json_delay_encode(watch_result, true))
     return watch_result.headers['X-Consul-Index']
 end
 
@@ -298,11 +296,11 @@ function _M.connect(premature, consul_server, retry_delay)
         return
     end
 
-    local thread_wait_ok, catalog_index, health_index = thread_wait(catalog_thread, health_thread)
+    local thread_wait_ok, wait_res = thread_wait(catalog_thread, health_thread)
     thread_kill(health_thread)
     thread_kill(catalog_thread)
     if not thread_wait_ok then
-        log.error("failed to wait thread: ", err, ", catalog_index: ", catalog_index, ", catalog_index: ", catalog_index)
+        log.error("failed to wait thread: ", err, ", wait_res: ", wait_res)
         local random_delay = math_random(default_random_seed)
         log.warn("failed to wait thread, retry connecting consul after ", random_delay, " seconds")
         core_sleep(random_delay)
@@ -411,6 +409,12 @@ function _M.connect(premature, consul_server, retry_delay)
         ngx_timer_at(0, write_dump_services)
     end
 
+    -- get health index
+    local health_res, health_err = consul_client:get(consul_server.consul_watch_health_url)
+    local health_index
+    if (health_err == nil ) and (health_res ~= nil and health_res.status == 200) then
+        health_index = health_res.headers['X-Consul-Index']
+    end
     update_index(consul_server, catalog_res.headers['X-Consul-Index'], health_index)
 
     :: ERR ::
