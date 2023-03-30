@@ -82,6 +82,15 @@ local function extra_checker_info(value)
 end
 
 
+local function get_checker_type(checks)
+    if checks.active and checks.active.type then
+        return checks.active.type
+    elseif checks.passive and checks.passive.type then
+        return checks.passive.type
+    end
+end
+
+
 local function iter_and_add_healthcheck_info(infos, values)
     if not values then
         return
@@ -91,11 +100,7 @@ local function iter_and_add_healthcheck_info(infos, values)
         local checks = value.value.checks or (value.value.upstream and value.value.upstream.checks)
         if checks then
             local info = extra_checker_info(value)
-            if checks.active and checks.active.type then
-                info.type = checks.active.type
-            elseif checks.passive and checks.passive.type then
-                info.type = checks.passive.type
-            end
+            info.type = get_checker_type(checks)
             core.table.insert(infos, info)
         end
     end
@@ -208,11 +213,7 @@ local function iter_and_find_healthcheck_info(values, src_type, src_id)
             end
 
             local info = extra_checker_info(value)
-            if checks.active and checks.active.type then
-                info.type = checks.active.type
-            elseif checks.passive and checks.passive.type then
-                info.type = checks.passive.type
-            end
+            info.type = get_checker_type(checks)
             return info
         end
     end
