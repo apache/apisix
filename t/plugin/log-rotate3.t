@@ -132,3 +132,41 @@ start xxxxxx
     }
 --- response_body
 passed
+
+
+
+=== TEST 4: max_kept effective on differently named compression files
+--- extra_yaml_config
+plugins:
+  - log-rotate
+plugin_attr:
+  log-rotate:
+    interval: 1
+    max_kept: 1
+    enable_compression: true
+--- yaml_config
+nginx_config:
+    user: root
+    error_log: /home/cc/log/service/docker_nginx_apisix_error.log
+    http:
+        access_log: /home/cc/log/service/apisix_apigateway_apisix_access.log
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(3.5)
+            local has_split_access_file = false
+            local has_split_error_file = false
+            local lfs = require("lfs")
+            local count = 0
+            for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
+                if string.match(file_name, ".tar.gz$") then
+                    count = count + 1
+                end
+            end
+            --- only two compression file
+            ngx.say(count)
+        }
+    }
+--- response_body
+2
+--- timeout: 5

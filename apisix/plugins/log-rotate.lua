@@ -85,7 +85,7 @@ local function get_last_index(str, key)
     return n
 end
 
-
+-- get the log directory path 
 local function get_log_path_info(file_type)
     local_conf = core.config.local_conf()
     local conf_path
@@ -122,7 +122,7 @@ local function tab_sort_comp(a, b)
     return a > b
 end
 
-
+-- scans the log directory and returns a sorted table of matching log files
 local function scan_log_folder(log_file_name)
     local t = {}
 
@@ -265,6 +265,22 @@ local function rotate_file(files, now_time, max_kept)
     end
 end
 
+local function get_custom_logfile_name()
+    local custom_file_name = core.config.local_conf()
+
+    local new_error_log = core.table.try_read_attr(local_conf, "nginx_config", "error_log")
+    local new_access_log = core.table.try_read_attr(local_conf, "nginx_config", "http", "access_log")
+
+    if new_access_log then
+        DEFAULT_ACCESS_LOG_FILENAME = new_access_log
+    end
+
+    if new_error_log then
+        DEFAULT_ERROR_LOG_FILENAME = new_error_log
+    end
+
+    return
+end
 
 local function rotate()
     local interval = INTERVAL
@@ -299,6 +315,7 @@ local function rotate()
     end
 
     if now_time >= rotate_time then
+        get_custom_logfile_name()
         local files = {DEFAULT_ACCESS_LOG_FILENAME, DEFAULT_ERROR_LOG_FILENAME}
         rotate_file(files, now_time, max_kept)
 
@@ -306,6 +323,7 @@ local function rotate()
         rotate_time = rotate_time + interval
 
     elseif max_size > 0 then
+        get_custom_logfile_name()
         local access_log_file_size = file_size(default_logs[DEFAULT_ACCESS_LOG_FILENAME].file)
         local error_log_file_size = file_size(default_logs[DEFAULT_ERROR_LOG_FILENAME].file)
         local files = core.table.new(2, 0)
