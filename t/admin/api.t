@@ -159,7 +159,31 @@ passed
 
 
 
-=== TEST 10: Access without api key, but admin_key_required=false
+=== TEST 10: Access with api key, and admin_key_required=true
+--- yaml_config
+deployment:
+  admin:
+    admin_key_required: true
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+--- request
+GET /apisix/admin/routes
+--- error_code: 200
+
+
+
+=== TEST 11: Access without api key, but admin_key_required=true
+--- yaml_config
+deployment:
+  admin:
+    admin_key_required: true
+--- request
+GET /apisix/admin/routes
+--- error_code: 401
+
+
+
+=== TEST 12: Access without api key, but admin_key_required=false
 --- yaml_config
 deployment:
   admin:
