@@ -190,7 +190,7 @@ local function init(env)
         checked_admin_key = true
     end
     -- check if admin_key is required
-    if not yaml_conf.deployment.admin.admin_key_required then
+    if yaml_conf.deployment.admin.admin_key_required == false then
         checked_admin_key = true
         print("Warning! Admin key is bypassed! "
                 .. "If you are deploying APISIX in a production environment, "

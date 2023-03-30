@@ -69,7 +69,7 @@ local function check_token(ctx)
     local local_conf = core.config.local_conf()
 
     -- check if admin_key is required
-    if not local_conf.deployment.admin.admin_key_required then
+    if local_conf.deployment.admin.admin_key_required == false then
         return true
     end
 
@@ -402,7 +402,7 @@ function _M.init_worker()
 
     if ngx_worker_id() == 0 then
         -- check if admin_key is required
-        if not local_conf.deployment.admin.admin_key_required then
+        if local_conf.deployment.admin.admin_key_required == false then
             core.log.warn("Admin key is bypassed! ",
                 "If you are deploying APISIX in a production environment, ",
                 "please disable it and set a secure password for the admin Key!")

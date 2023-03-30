@@ -590,7 +590,7 @@ deployment:
   admin:
     # admin_key required or not. Default value is true.
     # Bypass the Admin API authentication by modifying this value to false if needed.
-    admin_key_required: true
+    # admin_key_required: true
 
     # Default token when use API to call for Admin API.
     # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.

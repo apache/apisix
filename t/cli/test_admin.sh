@@ -239,7 +239,7 @@ deployment:
 make init > output.log 2>&1 | true
 
 if grep -E "path[deployment->admin->admin_key_required] expect: boolean, but got: string" output.log > /dev/null; then
-    echo "failed: should show 'expect: boolean, but got: string'"
+    echo "check admin_key_required value failed: should show 'expect: boolean, but got: string'"
     exit 1
 fi
 
