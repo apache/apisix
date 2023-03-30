@@ -278,7 +278,8 @@ function _M.connect(premature, consul_server, retry_delay)
     if not catalog_thread then
         log.error("failed to spawn thread watch catalog: ", spawn_catalog_err)
         local random_delay = math_random(default_random_seed)
-        log.warn("failed to spawn thread watch catalog, retry connecting consul after ", random_delay, " seconds")
+        log.warn("failed to spawn thread watch catalog, retry connecting consul after ",
+            random_delay, " seconds")
         core_sleep(random_delay)
 
         check_keepalive(consul_server, retry_delay)
@@ -289,7 +290,8 @@ function _M.connect(premature, consul_server, retry_delay)
     if not health_thread then
         log.error("failed to spawn thread watch health: ", err)
         local random_delay = math_random(default_random_seed)
-        log.warn("failed to spawn thread watch health, retry connecting consul after ", random_delay, " seconds")
+        log.warn("failed to spawn thread watch health, retry connecting consul after ",
+            random_delay, " seconds")
         core_sleep(random_delay)
 
         check_keepalive(consul_server, retry_delay)
@@ -402,7 +404,8 @@ function _M.connect(premature, consul_server, retry_delay)
     --update events
     local post_ok, post_err = events.post(events_list._source, events_list.updating, all_services)
     if not post_ok then
-        log.error("post_event failure with ", events_list._source, ", update all services error: ", post_err)
+        log.error("post_event failure with ", events_list._source,
+            ", update all services error: ", post_err)
     end
 
     if dump_params then
@@ -417,7 +420,6 @@ function _M.connect(premature, consul_server, retry_delay)
     end
     update_index(consul_server, catalog_res.headers['X-Consul-Index'], health_index)
 
-    :: ERR ::
     check_keepalive(consul_server, retry_delay)
 end
 
