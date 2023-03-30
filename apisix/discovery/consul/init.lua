@@ -53,7 +53,7 @@ local default_catalog_error_index = -1
 local default_health_error_index = -2
 
 local _M = {
-    version = 0.2,
+    version = 0.3,
 }
 
 
