@@ -171,6 +171,7 @@ APISIX 中一些插件添加了自己的 control API。如果你对他们感兴�
       "status": "unhealthy"
     }
   ],
+  "type": "http"
   "name": "/apisix/routes/1"
 }
 

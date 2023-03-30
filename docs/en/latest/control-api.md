@@ -173,6 +173,7 @@ For example, `GET /v1/healthcheck/upstreams/1` returns:
       "status": "unhealthy"
     }
   ],
+  "type": "http"
   "name": "/apisix/routes/1"
 }
 
