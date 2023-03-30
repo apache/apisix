@@ -197,9 +197,9 @@ local function watch_catalog(consul_server)
             and watch_result.status)
     if watch_error_info then
         log.error("connect consul: ", consul_server.consul_server_url,
-                " by sub url: ", consul_server.consul_watch_catalog_url,
-                ", got watch result: ", json_delay_encode(watch_result, true),
-                ", with error: ", watch_error_info)
+            " by sub url: ", consul_server.consul_watch_catalog_url,
+            ", got watch result: ", json_delay_encode(watch_result, true),
+            ", with error: ", watch_error_info)
 
         return default_catalog_error_index
     end
@@ -221,9 +221,9 @@ local function watch_health(consul_server)
             and watch_result.status)
     if watch_error_info then
         log.error("connect consul: ", consul_server.consul_server_url,
-                " by sub url: ", consul_server.consul_watch_health_url,
-                ", got watch result: ", json_delay_encode(watch_result, true),
-                ", with error: ", watch_error_info)
+            " by sub url: ", consul_server.consul_watch_health_url,
+            ", got watch result: ", json_delay_encode(watch_result, true),
+            ", with error: ", watch_error_info)
 
         return default_health_error_index
     end
@@ -288,6 +288,7 @@ function _M.connect(premature, consul_server, retry_delay)
 
     local health_thread, err = thread_spawn(watch_health, consul_server)
     if not health_thread then
+        thread_kill(catalog_thread)
         log.error("failed to spawn thread watch health: ", err)
         local random_delay = math_random(default_random_seed)
         log.warn("failed to spawn thread watch health, retry connecting consul after ",
@@ -324,9 +325,9 @@ function _M.connect(premature, consul_server, retry_delay)
             and catalog_res.status)
     if watch_error_info then
         log.error("connect consul: ", consul_server.consul_server_url,
-                " by sub url: ", consul_server.consul_watch_catalog_url,
-                ", got catalog result: ", json_delay_encode(catalog_res, true),
-                ", with error: ", watch_error_info)
+            " by sub url: ", consul_server.consul_watch_catalog_url,
+            ", got catalog result: ", json_delay_encode(catalog_res, true),
+            ", with error: ", watch_error_info)
 
         retry_delay = get_retry_delay(retry_delay)
         log.warn("get all svcs got err, retry connecting consul after ", retry_delay, " seconds")
@@ -337,10 +338,10 @@ function _M.connect(premature, consul_server, retry_delay)
     end
 
     log.info("connect consul: ", consul_server.consul_server_url,
-            ", catalog_result status: ", catalog_res.status,
-            ", catalog_result.headers.index: ", catalog_res.headers['X-Consul-Index'],
-            ", consul_server.index: ", consul_server.index,
-            ", consul_server: ", json_delay_encode(consul_server, true))
+        ", catalog_result status: ", catalog_res.status,
+        ", catalog_result.headers.index: ", catalog_res.headers['X-Consul-Index'],
+        ", consul_server.index: ", consul_server.index,
+        ", consul_server: ", json_delay_encode(consul_server, true))
 
     local up_services = core.table.new(0, #catalog_res.body)
     for service_name, _ in pairs(catalog_res.body) do
@@ -363,15 +364,15 @@ function _M.connect(premature, consul_server, retry_delay)
                 ((result ~= nil and result.status ~= 200) and result.status)
         if error_info then
             log.error("connect consul: ", consul_server.consul_server_url,
-                    ", by service url: ", svc_url, ", with error: ", error_info)
+                ", by service url: ", svc_url, ", with error: ", error_info)
             goto CONTINUE
         end
 
         -- decode body, decode json, update service, error handling
         if result.body then
             log.notice("service url: ", svc_url,
-                    ", header: ", json_delay_encode(result.headers, true),
-                    ", body: ", json_delay_encode(result.body, true))
+                ", header: ", json_delay_encode(result.headers, true),
+                ", body: ", json_delay_encode(result.body, true))
             -- add services to table
             local nodes = up_services[service_name]
             for  _, node in ipairs(result.body) do
