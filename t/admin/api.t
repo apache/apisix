@@ -192,4 +192,4 @@ deployment:
 GET /apisix/admin/routes
 --- error_code: 200
 --- error_log
-AdminKey is bypassed.
+Admin key is bypassed!

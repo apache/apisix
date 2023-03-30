@@ -225,8 +225,8 @@ if grep -E "ERROR: missing valid Admin API token." output.log > /dev/null; then
     exit 1
 fi
 
-if ! grep -E "Warning! AdminKey is bypassed" output.log > /dev/null; then
-    echo "failed: should show 'Warning! AdminKey is bypassed'"
+if ! grep -E "Warning! Admin key is bypassed" output.log > /dev/null; then
+    echo "failed: should show 'Warning! Admin key is bypassed'"
     exit 1
 fi
 
@@ -243,7 +243,7 @@ if grep -E "path[deployment->admin->admin_key_required] expect: boolean, but got
     exit 1
 fi
 
-echo "pass: allow empty admin_key, when admin_key_required=true"
+echo "pass: allow empty admin_key, when admin_key_required=false"
 
 # admin api, allow any IP but use default key
 
