@@ -193,9 +193,17 @@ Or you can goto [Grafana official](https://grafana.com/grafana/dashboards/11719)
     | consumer  | The `consumer_name` of the consumer that matches the request. If it does not match, the default value is an empty string. |
     | node      | The `ip` of the upstream node. |
 
-* `Info`: the information of APISIX node.
+- `apisix_upstream_status`: Health check result status of upstream nodes. A value of `1` represents healthy and `0` represents unhealthy.
 
-Here is the original metric data of APISIX:
+  The available attributes are:
+
+  | Name         | Description                                                                                                                   |
+  |--------------|-------------------------------------------------------------------------------------------------------------------------------|
+  | name         | resource id where the upstream node is attached to, e.g. `/apisix/routes/1`, `/apisix/upstreams/1`.                                                                            |
+  | ip        | ip address of the node.                          |
+  | port  | port number of the node.                               |
+
+Here are the original metrics from APISIX:
 
 ```shell
 $ curl http://127.0.0.1:9091/apisix/prometheus/metrics
@@ -262,6 +270,28 @@ apisix_http_latency_bucket{type="upstream",route="1",service="",consumer="",node
 # HELP apisix_node_info Info of APISIX node
 # TYPE apisix_node_info gauge
 apisix_node_info{hostname="desktop-2022q8f-wsl"} 1
+# HELP apisix_shared_dict_capacity_bytes The capacity of each nginx shared DICT since APISIX start
+# TYPE apisix_shared_dict_capacity_bytes gauge
+apisix_shared_dict_capacity_bytes{name="access-tokens"} 1048576
+apisix_shared_dict_capacity_bytes{name="balancer-ewma"} 10485760
+apisix_shared_dict_capacity_bytes{name="balancer-ewma-last-touched-at"} 10485760
+apisix_shared_dict_capacity_bytes{name="balancer-ewma-locks"} 10485760
+apisix_shared_dict_capacity_bytes{name="discovery"} 1048576
+apisix_shared_dict_capacity_bytes{name="etcd-cluster-health-check"} 10485760
+...
+# HELP apisix_shared_dict_free_space_bytes The free space of each nginx shared DICT since APISIX start
+# TYPE apisix_shared_dict_free_space_bytes gauge
+apisix_shared_dict_free_space_bytes{name="access-tokens"} 1032192
+apisix_shared_dict_free_space_bytes{name="balancer-ewma"} 10412032
+apisix_shared_dict_free_space_bytes{name="balancer-ewma-last-touched-at"} 10412032
+apisix_shared_dict_free_space_bytes{name="balancer-ewma-locks"} 10412032
+apisix_shared_dict_free_space_bytes{name="discovery"} 1032192
+apisix_shared_dict_free_space_bytes{name="etcd-cluster-health-check"} 10412032
+...
+# HELP apisix_upstream_status Upstream status from health check
+# TYPE apisix_upstream_status gauge
+apisix_upstream_status{name="/apisix/routes/1",ip="100.24.156.8",port="80"} 0
+apisix_upstream_status{name="/apisix/routes/1",ip="52.86.68.46",port="80"} 1
 ```
 
 ## Disable Plugin
