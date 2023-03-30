@@ -588,7 +588,7 @@ deployment:
   role_traditional:
     config_provider: etcd
   admin:
-    # If admin_key is required, default value is true.
+    # admin_key required or not. Default value is true.
     # Bypass the Admin API authentication by modifying this value to false if needed.
     admin_key_required: true
 
