@@ -343,83 +343,87 @@ function _M.connect(premature, consul_server, retry_delay)
         ", consul_server.index: ", consul_server.index,
         ", consul_server: ", json_delay_encode(consul_server, true))
 
-    local up_services = core.table.new(0, #catalog_res.body)
-    for service_name, _ in pairs(catalog_res.body) do
-        -- check if the service_name is 'skip service'
-        if skip_service_map[service_name] then
-            goto CONTINUE
-        end
-        -- get node from service
-        local svc_url = consul_server.consul_sub_url .. "/" .. service_name
-        if consul_client == nil then
-            consul_client = resty_consul:new({
-                host = consul_server.host,
-                port = consul_server.port,
-                connect_timeout = consul_server.connect_timeout,
-                read_timeout = consul_server.read_timeout,
-            })
-        end
-        local result, get_err = consul_client:get(svc_url, {passing = true})
-        local error_info = (get_err ~= nil and get_err) or
-                ((result ~= nil and result.status ~= 200) and result.status)
-        if error_info then
-            log.error("connect consul: ", consul_server.consul_server_url,
-                ", by service url: ", svc_url, ", with error: ", error_info)
-            goto CONTINUE
-        end
-
-        -- decode body, decode json, update service, error handling
-        if result.body then
-            log.notice("service url: ", svc_url,
-                ", header: ", json_delay_encode(result.headers, true),
-                ", body: ", json_delay_encode(result.body, true))
-            -- add services to table
-            local nodes = up_services[service_name]
-            for  _, node in ipairs(result.body) do
-                if not node.Service then
-                    goto CONTINUE
-                end
-                local svc_address, svc_port = node.Service.Address, node.Service.Port
-                if not svc_address then
-                    svc_address = node.Address
-                end
-                -- if nodes is nil, new nodes table and set to up_services
-                if not nodes then
-                    nodes = core.table.new(1, 0)
-                    up_services[service_name] = nodes
-                end
-                -- add node to nodes table
-                core.table.insert(nodes, {
-                    host = svc_address,
-                    port = tonumber(svc_port),
-                    weight = default_weight,
+    -- if current index different last index then update service
+    if consul_server.catalog_index ~= catalog_res.headers['X-Consul-Index'] then
+        local up_services = core.table.new(0, #catalog_res.body)
+        for service_name, _ in pairs(catalog_res.body) do
+            -- check if the service_name is 'skip service'
+            if skip_service_map[service_name] then
+                goto CONTINUE
+            end
+            -- get node from service
+            local svc_url = consul_server.consul_sub_url .. "/" .. service_name
+            if consul_client == nil then
+                consul_client = resty_consul:new({
+                    host = consul_server.host,
+                    port = consul_server.port,
+                    connect_timeout = consul_server.connect_timeout,
+                    read_timeout = consul_server.read_timeout,
                 })
             end
-            up_services[service_name] = nodes
+            local result, get_err = consul_client:get(svc_url, {passing = true})
+            local error_info = (get_err ~= nil and get_err) or
+                    ((result ~= nil and result.status ~= 200) and result.status)
+            if error_info then
+                log.error("connect consul: ", consul_server.consul_server_url,
+                        ", by service url: ", svc_url, ", with error: ", error_info)
+                goto CONTINUE
+            end
+
+            -- decode body, decode json, update service, error handling
+            if result.body then
+                log.notice("service url: ", svc_url,
+                        ", header: ", json_delay_encode(result.headers, true),
+                        ", body: ", json_delay_encode(result.body, true))
+                -- add services to table
+                local nodes = up_services[service_name]
+                for  _, node in ipairs(result.body) do
+                    if not node.Service then
+                        goto CONTINUE
+                    end
+                    local svc_address, svc_port = node.Service.Address, node.Service.Port
+                    if not svc_address then
+                        svc_address = node.Address
+                    end
+                    -- if nodes is nil, new nodes table and set to up_services
+                    if not nodes then
+                        nodes = core.table.new(1, 0)
+                        up_services[service_name] = nodes
+                    end
+                    -- add node to nodes table
+                    core.table.insert(nodes, {
+                        host = svc_address,
+                        port = tonumber(svc_port),
+                        weight = default_weight,
+                    })
+                end
+                up_services[service_name] = nodes
+            end
+            :: CONTINUE ::
         end
-        :: CONTINUE ::
-    end
 
-    update_all_services(consul_server.consul_server_url, up_services)
+        update_all_services(consul_server.consul_server_url, up_services)
 
-    --update events
-    local post_ok, post_err = events.post(events_list._source, events_list.updating, all_services)
-    if not post_ok then
-        log.error("post_event failure with ", events_list._source,
-            ", update all services error: ", post_err)
-    end
+        --update events
+        local post_ok, post_err = events.post(events_list._source, events_list.updating, all_services)
+        if not post_ok then
+            log.error("post_event failure with ", events_list._source,
+                    ", update all services error: ", post_err)
+        end
 
-    if dump_params then
-        ngx_timer_at(0, write_dump_services)
-    end
+        if dump_params then
+            ngx_timer_at(0, write_dump_services)
+        end
 
-    -- get health index
-    local health_res, health_err = consul_client:get(consul_server.consul_watch_health_url)
-    local health_index
-    if (health_err == nil ) and (health_res ~= nil and health_res.status == 200) then
-        health_index = health_res.headers['X-Consul-Index']
+        -- get health index
+        local health_res, health_err = consul_client:get(consul_server.consul_watch_health_url)
+        local health_index
+        if health_err == nil and (health_res ~= nil and health_res.status == 200)
+                and (consul_server.health_index ~= health_res.headers['X-Consul-Index']) then
+            health_index = health_res.headers['X-Consul-Index']
+        end
+        update_index(consul_server, catalog_res.headers['X-Consul-Index'], health_index)
     end
-    update_index(consul_server, catalog_res.headers['X-Consul-Index'], health_index)
 
     check_keepalive(consul_server, retry_delay)
 end
