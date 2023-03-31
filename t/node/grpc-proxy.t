@@ -285,3 +285,36 @@ grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plai
 qr/grpc header: "(:authority|host): [^"]+"/
 --- grep_error_log_out eval
 qr/grpc header: "(:authority|host): hello.world"/
+
+
+=== TEST 10: with service_id
+--- apisix_yaml
+services:
+  -
+    id: 1
+    hosts:
+    - foo.com
+upstreams:
+  -
+    id: 1
+    type: roundrobin
+    nodes:
+      "127.0.0.1:50051": 1
+routes:
+  -
+    id: 1
+    uris:
+        - /helloworld.Greeter/SayHello
+    methods: [
+        POST
+    ]
+    service_protocol: grpc
+    upstream_id: 1
+    service_id: 1
+#END
+--- exec
+grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plaintext -d '{"name":"apisix"}' 127.0.0.1:1984 helloworld.Greeter.SayHello
+--- response_body
+{
+  "message": "Hello apisix"
+}
