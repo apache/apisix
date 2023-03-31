@@ -353,28 +353,20 @@ function _M.connect(premature, consul_server, retry_delay)
             end
             -- get node from service
             local svc_url = consul_server.consul_sub_url .. "/" .. service_name
-            if consul_client == nil then
-                consul_client = resty_consul:new({
-                    host = consul_server.host,
-                    port = consul_server.port,
-                    connect_timeout = consul_server.connect_timeout,
-                    read_timeout = consul_server.read_timeout,
-                })
-            end
             local result, get_err = consul_client:get(svc_url, {passing = true})
             local error_info = (get_err ~= nil and get_err) or
                     ((result ~= nil and result.status ~= 200) and result.status)
             if error_info then
                 log.error("connect consul: ", consul_server.consul_server_url,
-                        ", by service url: ", svc_url, ", with error: ", error_info)
+                    ", by service url: ", svc_url, ", with error: ", error_info)
                 goto CONTINUE
             end
 
             -- decode body, decode json, update service, error handling
             if result.body then
                 log.notice("service url: ", svc_url,
-                        ", header: ", json_delay_encode(result.headers, true),
-                        ", body: ", json_delay_encode(result.body, true))
+                    ", header: ", json_delay_encode(result.headers, true),
+                    ", body: ", json_delay_encode(result.body, true))
                 -- add services to table
                 local nodes = up_services[service_name]
                 for  _, node in ipairs(result.body) do
@@ -408,7 +400,7 @@ function _M.connect(premature, consul_server, retry_delay)
         local post_ok, post_err = events.post(events_list._source, events_list.updating, all_services)
         if not post_ok then
             log.error("post_event failure with ", events_list._source,
-                    ", update all services error: ", post_err)
+                ", update all services error: ", post_err)
         end
 
         if dump_params then
