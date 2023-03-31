@@ -51,7 +51,7 @@ This Plugin moves the authentication and authorization logic to a dedicated exte
 
 ## Data definition
 
-APISIX will generate and the send the request headers listed below to the authorization service:
+APISIX will generate and send the request headers listed below to the authorization service:
 
 | Scheme            | HTTP Method        | Host             | URI             | Source IP       |
 | ----------------- | ------------------ | ---------------- | --------------- | --------------- |

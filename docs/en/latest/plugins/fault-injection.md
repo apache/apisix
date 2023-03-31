@@ -34,7 +34,7 @@ The `fault-injection` Plugin can be used to test the resiliency of your applicat
 
 The `abort` attribute will directly return the specified HTTP code to the client and skips executing the subsequent Plugins.
 
-The `delay` attribute delays a request and executes of the subsequent Plugins.
+The `delay` attribute delays a request and executes the subsequent Plugins.
 
 ## Attributes
 

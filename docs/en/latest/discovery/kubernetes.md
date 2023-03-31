@@ -42,7 +42,7 @@ use kubernetes discovery in L4 require OpenResty version >= 1.19.9.1
 
 ## How To Use
 
-Kubernetes service discovery both support single-cluster and multi-cluster mode, applicable to the case where the service is distributed in a single or multiple Kubernetes clusters.
+Kubernetes service discovery both support single-cluster and multi-cluster modes, applicable to the case where the service is distributed in single or multiple Kubernetes clusters.
 
 ### Single-Cluster Mode Configuration
 
