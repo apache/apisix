@@ -79,7 +79,7 @@ function _M.nodes(service_name)
     local resp_list = all_services[service_name]
 
     if not resp_list then
-        log.error("fetch nodes failed by ", service_name, ", return default service")
+        log.error("fetch nodes failed by ", service_name, ", return default service, all svcs: ", json_delay_encode(all_services, true))
         return default_service and {default_service}
     end
 
@@ -156,19 +156,22 @@ local function write_dump_services()
     if not succ then
         log.error("write dump into file got error: ", err)
     end
+    log.warn("_______ write dump file successfully: ", data)
 end
 
 
 local function show_dump_file()
     if not dump_params then
+        log.error("$$$$$$$$ dump_params is nil")
         return 503, "dump params is nil"
     end
 
     local data, err = util.read_file(dump_params.path)
     if not data then
+        log.error("$$$$$$$$ read dump file failed: ", err)
         return 503, err
     end
-
+    log.error("$$$$$ dump file successfully")
     return 200, data
 end
 
@@ -203,6 +206,8 @@ local function watch_catalog(consul_server)
 
         return default_catalog_error_index
     end
+
+    log.warn("CCCCCCCCCCCCCC watch_catalog: ", watch_result.headers['X-Consul-Index'])
     return watch_result.headers['X-Consul-Index']
 end
 
@@ -227,6 +232,7 @@ local function watch_health(consul_server)
 
         return default_health_error_index
     end
+    log.warn("HHHHHHHHHHHHHHHH watch_result: ", watch_result.headers['X-Consul-Index'])
     return watch_result.headers['X-Consul-Index']
 end
 
@@ -373,9 +379,6 @@ function _M.connect(premature, consul_server, retry_delay)
                     goto CONTINUE
                 end
                 local svc_address, svc_port = node.Service.Address, node.Service.Port
-                if not svc_address then
-                    svc_address = node.Address
-                end
                 -- if nodes is nil, new nodes table and set to up_services
                 if not nodes then
                     nodes = core.table.new(1, 0)
