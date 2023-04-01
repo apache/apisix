@@ -260,7 +260,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
 curl -i -X GET "http://127.0.0.1:9080/anything/get?foo1=bar1&foo2=bar2" -H "Host: httpbin.org"
 ```
 
-该请求将被 APISIX 转发到 `http://httpbin.org:80/anything/foo?arg=10`。
+该请求将被 APISIX 转发到 `http://httpbin.org:80/anything/get?foo1=bar1&foo2=bar2`。
 
 ## 使用 APISIX Dashboard
 
