@@ -227,7 +227,7 @@ This configuration means that it will forward all matching inbound requests to t
 - The request header contains the `host` field, and its value is `example.com`.
 - The request path matches `/anything/*`. `*` means any sub path. For example `/anything/foo?arg=10`.
 
-With the Route has created, we can access the Upstream service from the address exposed by APISIX:
+With the Route being created, we can access the Upstream service from the address exposed by APISIX:
 
 ```bash
 curl -i -X GET "http://127.0.0.1:9080/anything/foo?arg=10" -H "Host: example.com"
@@ -265,7 +265,7 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
 }'
 ```
 
-With the Route has created, we can access the Upstream service from the address exposed by APISIX:
+With the Route being created, we can access the Upstream service from the address exposed by APISIX:
 
 ```bash
 curl -i -X GET "http://127.0.0.1:9080/anything/foo?arg=10" -H "Host: example.com"
