@@ -425,25 +425,33 @@ upstreams:
             local code, body, res = t.test('/v1/healthcheck',
                 ngx.HTTP_GET)
             res = json.decode(res)
-            table.sort(res[1].nodes, function(a, b)
-                return a.host < b.host
+            local nodes = res[1].nodes
+            table.sort(nodes, function(a, b)
+                return a.ip < b.ip
             end)
-            ngx.say(json.encode(res))
+            for _, node in ipairs(nodes) do
+                node.counter = nil
+            end
+            ngx.say(json.encode(nodes))
 
             local code, body, res = t.test('/v1/healthcheck/upstreams/1',
                 ngx.HTTP_GET)
             res = json.decode(res)
-            table.sort(res.nodes, function(a, b)
-                return a.host < b.host
+            local nodes = res.nodes
+            table.sort(nodes, function(a, b)
+                return a.ip < b.ip
             end)
-            ngx.say(json.encode(res))
+            for _, node in ipairs(nodes) do
+                node.counter = nil
+            end
+            ngx.say(json.encode(nodes))
         }
     }
 --- request
 GET /thc
 --- response_body
-[{"healthy_nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1},{"host":"127.0.0.2","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"upstreams"}]
-{"healthy_nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1},{"host":"127.0.0.2","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"upstreams"}
+[{"ip":"127.0.0.1","port":30511,"status":"healthy"},{"ip":"127.0.0.2","port":1988,"status":"unhealthy"}]
+[{"ip":"127.0.0.1","port":30511,"status":"healthy"},{"ip":"127.0.0.2","port":1988,"status":"unhealthy"}]
 --- ignore_error_log
 
 

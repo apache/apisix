@@ -135,7 +135,7 @@ local function create_checker(upstream)
     local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
     local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
     local up_hdr = upstream.pass_host == "rewrite" and upstream.upstream_host
-    local use_node_hdr = upstream.pass_host == "node"
+    local use_node_hdr = upstream.pass_host == "node" or nil
     for _, node in ipairs(upstream.nodes) do
         local host_hdr = up_hdr or (use_node_hdr and node.domain)
         local ok, err = checker:add_target(node.host, port or node.port, host,
