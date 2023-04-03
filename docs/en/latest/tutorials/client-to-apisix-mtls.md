@@ -89,9 +89,9 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/ssls/1' \
 ```
 
 - `sni`: Specify the domain name (CN) of the certificate. When the client tries to handshake with APISIX via TLS, APISIX will match the SNI data in `ClientHello` with this field and find the corresponding server certificate for handshaking.
-- `cert`: The public key of the server certificate.
+- `cert`: The server certificate.
 - `key`: The private key of the server certificate.
-- `client.ca`: The public key of the client's certificate. For demonstration purposes, the same `CA` is used here.
+- `client.ca`: The CA (certificate authority) file to verfiy the client certificate. For demonstration purposes, the same `CA` is used here.
 
 ### Configure the route in APISIX
 
