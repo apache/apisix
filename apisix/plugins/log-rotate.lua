@@ -85,6 +85,7 @@ local function get_last_index(str, key)
     return n
 end
 
+
 -- get the log directory path 
 local function get_log_path_info(file_type)
     local_conf = core.config.local_conf()
@@ -121,6 +122,7 @@ end
 local function tab_sort_comp(a, b)
     return a > b
 end
+
 
 -- scans the log directory and returns a sorted table of matching log files
 local function scan_log_folder(log_file_name)
@@ -265,22 +267,18 @@ local function rotate_file(files, now_time, max_kept)
     end
 end
 
+
+-- get the custom log file name from local_conf, if any
 local function get_custom_logfile_name()
-    local custom_file_name = core.config.local_conf()
+    local local_conf = core.config.local_conf()
 
     local new_error_log = core.table.try_read_attr(local_conf, "nginx_config", "error_log")
     local new_access_log = core.table.try_read_attr(local_conf, "nginx_config", "http", "access_log")
+    
+    return new_access_log, new_error_log
 
-    if new_access_log then
-        DEFAULT_ACCESS_LOG_FILENAME = new_access_log
-    end
-
-    if new_error_log then
-        DEFAULT_ERROR_LOG_FILENAME = new_error_log
-    end
-
-    return
 end
+
 
 local function rotate()
     local interval = INTERVAL
@@ -315,25 +313,34 @@ local function rotate()
     end
 
     if now_time >= rotate_time then
-        get_custom_logfile_name()
-        local files = {DEFAULT_ACCESS_LOG_FILENAME, DEFAULT_ERROR_LOG_FILENAME}
+        local new_access_log, new_error_log = get_custom_logfile_name()
+        
+        local access_log_filename = new_access_log or DEFAULT_ACCESS_LOG_FILENAME 
+        local error_log_filename = new_error_log or DEFAULT_ERROR_LOG_FILENAME
+        
+        local files = {access_log_filename, error_log_filename}
+
         rotate_file(files, now_time, max_kept)
 
         -- reset rotate time
         rotate_time = rotate_time + interval
 
     elseif max_size > 0 then
-        get_custom_logfile_name()
-        local access_log_file_size = file_size(default_logs[DEFAULT_ACCESS_LOG_FILENAME].file)
-        local error_log_file_size = file_size(default_logs[DEFAULT_ERROR_LOG_FILENAME].file)
+        local new_access_log, new_error_log = get_custom_logfile_name()
+        
+        local access_log_filename = new_access_log or DEFAULT_ACCESS_LOG_FILENAME 
+        local error_log_filename = new_error_log or DEFAULT_ERROR_LOG_FILENAME
+
+        local access_log_file_size = file_size(default_logs[access_log_filename].file)
+        local error_log_file_size = file_size(default_logs[error_log_filename].file)
         local files = core.table.new(2, 0)
 
         if access_log_file_size >= max_size then
-            core.table.insert(files, DEFAULT_ACCESS_LOG_FILENAME)
+            core.table.insert(files, access_log_filename)
         end
 
         if error_log_file_size >= max_size then
-            core.table.insert(files, DEFAULT_ERROR_LOG_FILENAME)
+            core.table.insert(files, error_log_filename)
         end
 
         rotate_file(files, now_time, max_kept)
