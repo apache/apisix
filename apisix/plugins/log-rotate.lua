@@ -50,6 +50,7 @@ local enable_compression = false
 local DEFAULT_ACCESS_LOG_FILENAME = "access.log"
 local DEFAULT_ERROR_LOG_FILENAME = "error.log"
 
+
 local schema = {
     type = "object",
     properties = {},
@@ -285,6 +286,9 @@ local function rotate()
     local max_kept = MAX_KEPT
     local max_size = MAX_SIZE
     local attr = plugin.plugin_attr(plugin_name)
+    local new_access_log, new_error_log = get_custom_logfile_name()
+    local access_log_filename = new_access_log or DEFAULT_ACCESS_LOG_FILENAME 
+    local error_log_filename = new_error_log or DEFAULT_ERROR_LOG_FILENAME
     if attr then
         interval = attr.interval or interval
         max_kept = attr.max_kept or max_kept
@@ -299,8 +303,8 @@ local function rotate()
     if not default_logs then
         -- first init default log filepath and filename
         default_logs = {}
-        init_default_logs(default_logs, DEFAULT_ACCESS_LOG_FILENAME)
-        init_default_logs(default_logs, DEFAULT_ERROR_LOG_FILENAME)
+        init_default_logs(default_logs, access_log_filename)
+        init_default_logs(default_logs, error_log_filename)
     end
 
     ngx_update_time()
@@ -313,11 +317,7 @@ local function rotate()
     end
 
     if now_time >= rotate_time then
-        local new_access_log, new_error_log = get_custom_logfile_name()
-        
-        local access_log_filename = new_access_log or DEFAULT_ACCESS_LOG_FILENAME 
-        local error_log_filename = new_error_log or DEFAULT_ERROR_LOG_FILENAME
-        
+                
         local files = {access_log_filename, error_log_filename}
 
         rotate_file(files, now_time, max_kept)
@@ -326,10 +326,6 @@ local function rotate()
         rotate_time = rotate_time + interval
 
     elseif max_size > 0 then
-        local new_access_log, new_error_log = get_custom_logfile_name()
-        
-        local access_log_filename = new_access_log or DEFAULT_ACCESS_LOG_FILENAME 
-        local error_log_filename = new_error_log or DEFAULT_ERROR_LOG_FILENAME
 
         local access_log_file_size = file_size(default_logs[access_log_filename].file)
         local error_log_file_size = file_size(default_logs[error_log_filename].file)
