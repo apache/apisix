@@ -90,3 +90,53 @@ Fault Injection!
 GET /hello?name=jack&age=18
 --- response_body
 hello world
+
+
+
+=== TEST 4: inject header config
+--- config
+ location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [=[{
+                           "plugins": {
+                               "fault-injection": {
+                                   "abort": {
+                                        "http_status": 200,
+                                        "headers" : {
+                                            "h1": "v1",
+                                            "h2": 2,
+                                            "h3": "$uri"
+                                        }
+                                    }
+                               }
+                           },
+                           "upstream": {
+                               "nodes": {
+                                   "127.0.0.1:1980": 1
+                               },
+                               "type": "roundrobin"
+                           },
+                           "uri": "/hello"
+                   }]=]
+                   )
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- response_body
+passed
+
+
+
+=== TEST 5: inject header
+--- request
+GET /hello
+--- response_headers
+h1: v1
+h2: 2
+h3: /hello
