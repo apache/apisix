@@ -227,6 +227,7 @@ local function watch_health(consul_server)
 
         return default_health_error_index
     end
+
     return watch_result.headers['X-Consul-Index']
 end
 
@@ -320,14 +321,14 @@ function _M.connect(premature, consul_server, retry_delay)
     })
 
     local catalog_res, catalog_err = consul_client:get(consul_server.consul_watch_catalog_url)
-    local watch_error_info = (catalog_err ~= nil and catalog_err)
+    local catalog_error_info = (catalog_err ~= nil and catalog_err)
             or ((catalog_res ~= nil and catalog_res.status ~= 200)
             and catalog_res.status)
-    if watch_error_info then
+    if catalog_error_info then
         log.error("connect consul: ", consul_server.consul_server_url,
             " by sub url: ", consul_server.consul_watch_catalog_url,
             ", got catalog result: ", json_delay_encode(catalog_res, true),
-            ", with error: ", watch_error_info)
+            ", with error: ", catalog_error_info)
 
         retry_delay = get_retry_delay(retry_delay)
         log.warn("get all svcs got err, retry connecting consul after ", retry_delay, " seconds")
@@ -337,6 +338,24 @@ function _M.connect(premature, consul_server, retry_delay)
         return
     end
 
+    -- get health index
+    local health_res, health_err = consul_client:get(consul_server.consul_watch_health_url)
+    local health_error_info = (health_err ~= nil and health_err)
+            or ((health_res ~= nil and health_res.status ~= 200)
+            and health_res.status)
+    if health_error_info then
+        log.error("connect consul: ", consul_server.consul_server_url,
+            " by sub url: ", consul_server.consul_watch_health_url,
+            ", got health result: ", json_delay_encode(health_res, true),
+            ", with error: ", health_error_info)
+
+        retry_delay = get_retry_delay(retry_delay)
+        log.warn("get all svcs got err, retry connecting consul after ", retry_delay, " seconds")
+        core_sleep(retry_delay)
+
+        goto ERROR
+    end
+
     log.info("connect consul: ", consul_server.consul_server_url,
         ", catalog_result status: ", catalog_res.status,
         ", catalog_result.headers.index: ", catalog_res.headers['X-Consul-Index'],
@@ -344,73 +363,74 @@ function _M.connect(premature, consul_server, retry_delay)
         ", consul_server: ", json_delay_encode(consul_server, true))
 
     -- if current index different last index then update service
-    local up_services = core.table.new(0, #catalog_res.body)
-    for service_name, _ in pairs(catalog_res.body) do
-        -- check if the service_name is 'skip service'
-        if skip_service_map[service_name] then
-            goto CONTINUE
-        end
-        -- get node from service
-        local svc_url = consul_server.consul_sub_url .. "/" .. service_name
-        local result, get_err = consul_client:get(svc_url, {passing = true})
-        local error_info = (get_err ~= nil and get_err) or
-                ((result ~= nil and result.status ~= 200) and result.status)
-        if error_info then
-            log.error("connect consul: ", consul_server.consul_server_url,
-                ", by service url: ", svc_url, ", with error: ", error_info)
-            goto CONTINUE
-        end
-
-        -- decode body, decode json, update service, error handling
-        if result.body then
-            log.notice("service url: ", svc_url,
-                ", header: ", json_delay_encode(result.headers, true),
-                ", body: ", json_delay_encode(result.body, true))
-            -- add services to table
-            local nodes = up_services[service_name]
-            for  _, node in ipairs(result.body) do
-                if not node.Service then
-                    goto CONTINUE
-                end
-                local svc_address, svc_port = node.Service.Address, node.Service.Port
-                -- if nodes is nil, new nodes table and set to up_services
-                if not nodes then
-                    nodes = core.table.new(1, 0)
-                    up_services[service_name] = nodes
-                end
-                -- add node to nodes table
-                core.table.insert(nodes, {
-                    host = svc_address,
-                    port = tonumber(svc_port),
-                    weight = default_weight,
-                })
+    if (consul_server.catalog_index ~= catalog_res.headers['X-Consul-Index'])
+            or (consul_server.health_index ~= health_res.headers['X-Consul-Index']) then
+        local up_services = core.table.new(0, #catalog_res.body)
+        for service_name, _ in pairs(catalog_res.body) do
+            -- check if the service_name is 'skip service'
+            if skip_service_map[service_name] then
+                goto CONTINUE
             end
-            up_services[service_name] = nodes
+            -- get node from service
+            local svc_url = consul_server.consul_sub_url .. "/" .. service_name
+            local result, get_err = consul_client:get(svc_url, {passing = true})
+            local error_info = (get_err ~= nil and get_err) or
+                    ((result ~= nil and result.status ~= 200) and result.status)
+            if error_info then
+                log.error("connect consul: ", consul_server.consul_server_url,
+                    ", by service url: ", svc_url, ", with error: ", error_info)
+                goto CONTINUE
+            end
+
+            -- decode body, decode json, update service, error handling
+            if result.body then
+                log.notice("service url: ", svc_url,
+                    ", header: ", json_delay_encode(result.headers, true),
+                    ", body: ", json_delay_encode(result.body, true))
+                -- add services to table
+                local nodes = up_services[service_name]
+                for  _, node in ipairs(result.body) do
+                    if not node.Service then
+                        goto CONTINUE
+                    end
+                    local svc_address, svc_port = node.Service.Address, node.Service.Port
+                    -- if nodes is nil, new nodes table and set to up_services
+                    if not nodes then
+                        nodes = core.table.new(1, 0)
+                        up_services[service_name] = nodes
+                    end
+                    -- add node to nodes table
+                    core.table.insert(nodes, {
+                        host = svc_address,
+                        port = tonumber(svc_port),
+                        weight = default_weight,
+                    })
+                end
+                up_services[service_name] = nodes
+            end
+            :: CONTINUE ::
         end
-        :: CONTINUE ::
+
+        update_all_services(consul_server.consul_server_url, up_services)
+
+        --update events
+        local post_ok, post_err = events.post(events_list._source,
+                events_list.updating, all_services)
+        if not post_ok then
+            log.error("post_event failure with ", events_list._source,
+                ", update all services error: ", post_err)
+        end
+
+        if dump_params then
+            ngx_timer_at(0, write_dump_services)
+        end
+
+        update_index(consul_server,
+                catalog_res.headers['X-Consul-Index'],
+                health_res.headers['X-Consul-Index'])
     end
 
-    update_all_services(consul_server.consul_server_url, up_services)
-
-    --update events
-    local post_ok, post_err = events.post(events_list._source, events_list.updating, all_services)
-    if not post_ok then
-        log.error("post_event failure with ", events_list._source,
-            ", update all services error: ", post_err)
-    end
-
-    if dump_params then
-        ngx_timer_at(0, write_dump_services)
-    end
-
-    -- get health index
-    local health_res, health_err = consul_client:get(consul_server.consul_watch_health_url)
-    local health_index
-    if health_err == nil and (health_res ~= nil and health_res.status == 200) then
-        health_index = health_res.headers['X-Consul-Index']
-    end
-    update_index(consul_server, catalog_res.headers['X-Consul-Index'], health_index)
-
+    :: ERROR ::
     check_keepalive(consul_server, retry_delay)
 end
 
