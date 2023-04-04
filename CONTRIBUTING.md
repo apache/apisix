@@ -44,7 +44,7 @@ Once we've discussed your changes and you've got your code ready, make sure that
 * Includes tests for new functionality.
 * References the original issue in the description, e.g. "Resolves #123".
 * Has a [good commit message](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html).
-* Ensure your pull request's title starts from one of the word in the `types` section of [semantic.yml](https://github.com/apache/apisix/blob/master/.github/semantic.yml).
+* Ensure your pull request's title starts from one of the word in the `types` section of [semantic.yml](https://github.com/apache/apisix/blob/master/.github/workflows/semantic.yml).
 * Follow the [PR manners](https://raw.githubusercontent.com/apache/apisix/master/.github/PULL_REQUEST_TEMPLATE.md)
 
 ## Contribution Guidelines for Documentation
