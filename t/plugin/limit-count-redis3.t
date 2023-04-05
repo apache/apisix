@@ -246,5 +246,3 @@ passed
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
 [404, 503, 404, 503, 503]
-
-

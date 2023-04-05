@@ -159,5 +159,3 @@ GET /hello
 hello world
 --- error_log
 failed to do ssl handshake
-
-
