@@ -363,8 +363,8 @@ function _M.connect(premature, consul_server, retry_delay)
         ", consul_server: ", json_delay_encode(consul_server, true))
 
     -- if current index different last index then update service
-    if (consul_server.catalog_index ~= catalog_res.headers['X-Consul-Index'])
-            or (consul_server.health_index ~= health_res.headers['X-Consul-Index']) then
+    if (consul_server.catalog_index ~= tonumber(catalog_res.headers['X-Consul-Index']))
+            or (consul_server.health_index ~= tonumber(health_res.headers['X-Consul-Index'])) then
         local up_services = core.table.new(0, #catalog_res.body)
         for service_name, _ in pairs(catalog_res.body) do
             -- check if the service_name is 'skip service'
