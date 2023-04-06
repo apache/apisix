@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local ngx_ssl = require("ngx.ssl")
+local secret = require("apisix.secret")
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
 local aes = require("resty.aes")
@@ -253,9 +254,8 @@ function _M.check_ssl_conf(in_dp, conf)
     end
 
     -- if the certificate uses a secret reference, we only verify it when using it
-    -- ascii: $ -> 36
-    if not core.string.has_prefix(conf.cert, "$secret://") and
-        not core.string.has_prefix(conf.key, "$secret://") then
+    if not secret.check_secret_uri(conf.cert) and
+        not secret.check_secret_uri(conf.key) then
 
         local ok, err = validate(conf.cert, conf.key)
         if not ok then
@@ -274,8 +274,8 @@ function _M.check_ssl_conf(in_dp, conf)
     end
 
     for i = 1, numcerts do
-        if not core.string.has_prefix(conf.cert[i], "$secret://") and
-            not core.string.has_prefix(conf.key[i], "$secret://") then
+        if not secret.check_secret_uri(conf.cert[i]) and
+            not secret.check_secret_uri(conf.key[i]) then
 
             local ok, err = validate(conf.certs[i], conf.keys[i])
             if not ok then
