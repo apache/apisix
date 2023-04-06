@@ -725,8 +725,18 @@ _M.ssl = {
             default = "server",
             enum = {"server", "client"}
         },
-        cert = certificate_scheme,
-        key = private_key_schema,
+        cert = {
+            oneOf = {
+                { type = "string", minLength = 128, maxLength = 64*1024},
+                { type = "string", pattern = "^\\$"}
+            }
+        },
+        key = {
+            oneOf = {
+                { type = "string", minLength = 128, maxLength = 64*1024},
+                { type = "string", pattern = "^\\$"}
+            }
+        },
         sni = {
             type = "string",
             pattern = host_def_pat,

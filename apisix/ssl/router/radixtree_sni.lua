@@ -18,6 +18,7 @@ local get_request      = require("resty.core.base").get_request
 local router_new       = require("apisix.utils.router").new
 local core             = require("apisix.core")
 local apisix_ssl       = require("apisix.ssl")
+local secret           = require("apisix.secret")
 local ngx_ssl          = require("ngx.ssl")
 local config_util      = require("apisix.core.config_util")
 local ipairs           = ipairs
@@ -120,16 +121,17 @@ end
 
 -- export the set cert/key process so we can hook it in the other plugins
 function _M.set_cert_and_key(sni, value)
-    local ok, err = set_pem_ssl_key(sni, value.cert, value.key)
+    local new_ssl = secret.fetch_secrets(value) or value
+    local ok, err = set_pem_ssl_key(sni, new_ssl.cert, new_ssl.key)
     if not ok then
         return false, err
     end
 
     -- multiple certificates support.
-    if value.certs then
-        for i = 1, #value.certs do
-            local cert = value.certs[i]
-            local key = value.keys[i]
+    if new_ssl.certs then
+        for i = 1, #new_ssl.certs do
+            local cert = new_ssl.certs[i]
+            local key = new_ssl.keys[i]
 
             ok, err = set_pem_ssl_key(sni, cert, key)
             if not ok then

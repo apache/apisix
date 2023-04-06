@@ -20,6 +20,7 @@ local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
 local aes = require("resty.aes")
 local str_lower = string.lower
+local str_byte = string.byte
 local assert = assert
 local type = type
 local ipairs = ipairs
@@ -252,9 +253,13 @@ function _M.check_ssl_conf(in_dp, conf)
         end
     end
 
-    local ok, err = validate(conf.cert, conf.key)
-    if not ok then
-        return nil, err
+    -- if the certificate uses a secret reference, we only verify it when using it
+    -- ascii: $ -> 36
+    if str_byte(conf.cert, 1, 1) ~= 36 and str_byte(conf.key, 1, 1) ~= 36 then
+            local ok, err = validate(conf.cert, conf.key)
+        if not ok then
+            return nil, err
+        end
     end
 
     if conf.type == "client" then
@@ -268,9 +273,11 @@ function _M.check_ssl_conf(in_dp, conf)
     end
 
     for i = 1, numcerts do
-        local ok, err = validate(conf.certs[i], conf.keys[i])
-        if not ok then
-            return nil, "failed to handle cert-key pair[" .. i .. "]: " .. err
+        if str_byte(conf.cert[i], 1, 1) ~= 36 and str_byte(conf.key[i], 1, 1) ~= 36 then
+            local ok, err = validate(conf.certs[i], conf.keys[i])
+            if not ok then
+                return nil, "failed to handle cert-key pair[" .. i .. "]: " .. err
+            end
         end
     end
 
