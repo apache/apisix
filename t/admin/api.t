@@ -172,7 +172,20 @@ GET /apisix/admin/routes
 
 
 
-=== TEST 11: Access without api key, but admin_key_required=true
+=== TEST 11: Access with wrong api key, and admin_key_required=true
+--- yaml_config
+deployment:
+  admin:
+    admin_key_required: true
+--- more_headers
+X-API-KEY: wrong-key
+--- request
+GET /apisix/admin/routes
+--- error_code: 401
+
+
+
+=== TEST 12: Access without api key, and admin_key_required=true
 --- yaml_config
 deployment:
   admin:
@@ -183,7 +196,7 @@ GET /apisix/admin/routes
 
 
 
-=== TEST 12: Access with api key, but admin_key_required=false
+=== TEST 13: Access with api key, but admin_key_required=false
 --- yaml_config
 deployment:
   admin:
@@ -193,10 +206,27 @@ X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- request
 GET /apisix/admin/routes
 --- error_code: 200
+--- error_log
+Admin key is bypassed!
 
 
 
-=== TEST 13: Access without api key, but admin_key_required=false
+=== TEST 14: Access with wrong api key, but admin_key_required=false
+--- yaml_config
+deployment:
+  admin:
+    admin_key_required: false
+--- more_headers
+X-API-KEY: wrong-key
+--- request
+GET /apisix/admin/routes
+--- error_code: 200
+--- error_log
+Admin key is bypassed!
+
+
+
+=== TEST 15: Access without api key, but admin_key_required=false
 --- yaml_config
 deployment:
   admin:
