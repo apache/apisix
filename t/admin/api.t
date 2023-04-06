@@ -183,14 +183,16 @@ GET /apisix/admin/routes
 
 
 
-=== TEST 12: Access without api key, but admin_key_required=true
+=== TEST 12: Access with api key, but admin_key_required=false
 --- yaml_config
 deployment:
   admin:
-    admin_key_required: true
+    admin_key_required: false
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- request
 GET /apisix/admin/routes
---- error_code: 401
+--- error_code: 200
 
 
 
