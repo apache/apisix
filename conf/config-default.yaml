@@ -588,7 +588,7 @@ deployment:
   role_traditional:
     config_provider: etcd
   admin:
-    # Admin API authentication is enabled by default. 
+    # Admin API authentication is enabled by default.
     # Set it false in the production environment will cause a serious security issue.
     # admin_key_required: true
 

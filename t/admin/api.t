@@ -190,7 +190,7 @@ deployment:
     admin_key_required: true
 --- request
 GET /apisix/admin/routes
---- error_code: 200
+--- error_code: 401
 
 
 
