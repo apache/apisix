@@ -28,7 +28,7 @@ description: The Consumer Restriction Plugin allows users to configure access re
 
 ## Description
 
-The `consumer-restriction` Plugin allows users to configure access restrictions on Consumer, Route, Service, or Global Rule. 
+The `consumer-restriction` Plugin allows users to configure access restrictions on Consumer, Route, Service, or Global Rule.
 
 ## Attributes
 
@@ -203,7 +203,8 @@ HTTP/1.1 200 OK
 
 ### Restricting by `service_id`
 
-To restrict a Consumer from accessing a Service, you also need to use an Authentication Plugin. The example below uses the [key-auth](./key-auth.md) Plugin.
+To restrict a Consumer from accessing a Service, you also need to use an Authentication Plugin
+The example below uses the [key-auth](./key-auth.md) Plugin.
 
 First, you can create two services:
 
