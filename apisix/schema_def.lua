@@ -728,13 +728,14 @@ _M.ssl = {
         cert = {
             oneOf = {
                 { type = "string", minLength = 128, maxLength = 64*1024},
-                { type = "string", pattern = "^\\$"}
+                -- TODO: uniformly define the schema of secret_uri
+                { type = "string", pattern = "^\\$secret://"}
             }
         },
         key = {
             oneOf = {
                 { type = "string", minLength = 128, maxLength = 64*1024},
-                { type = "string", pattern = "^\\$"}
+                { type = "string", pattern = "^\\$secret://"}
             }
         },
         sni = {

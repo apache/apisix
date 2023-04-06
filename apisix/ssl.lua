@@ -255,8 +255,10 @@ function _M.check_ssl_conf(in_dp, conf)
 
     -- if the certificate uses a secret reference, we only verify it when using it
     -- ascii: $ -> 36
-    if str_byte(conf.cert, 1, 1) ~= 36 and str_byte(conf.key, 1, 1) ~= 36 then
-            local ok, err = validate(conf.cert, conf.key)
+    if not core.string.has_prefix(conf.cert, "$secret://") and
+        not core.string.has_prefix(conf.key, "$secret://") then
+
+        local ok, err = validate(conf.cert, conf.key)
         if not ok then
             return nil, err
         end
@@ -273,7 +275,9 @@ function _M.check_ssl_conf(in_dp, conf)
     end
 
     for i = 1, numcerts do
-        if str_byte(conf.cert[i], 1, 1) ~= 36 and str_byte(conf.key[i], 1, 1) ~= 36 then
+        if not core.string.has_prefix(conf.cert[i], "$secret://") and
+            not core.string.has_prefix(conf.key[i], "$secret://") then
+
             local ok, err = validate(conf.certs[i], conf.keys[i])
             if not ok then
                 return nil, "failed to handle cert-key pair[" .. i .. "]: " .. err
