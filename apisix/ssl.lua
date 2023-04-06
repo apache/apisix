@@ -20,7 +20,6 @@ local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
 local aes = require("resty.aes")
 local str_lower = string.lower
-local str_byte = string.byte
 local assert = assert
 local type = type
 local ipairs = ipairs
