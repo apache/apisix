@@ -36,6 +36,7 @@ local thread_spawn       = ngx.thread.spawn
 local thread_wait        = ngx.thread.wait
 local thread_kill        = ngx.thread.kill
 local math_random        = math.random
+local pcall              = pcall
 
 local all_services = core.table.new(0, 5)
 local default_service
@@ -51,6 +52,7 @@ local default_skip_services = {"consul"}
 local default_random_seed = 5
 local default_catalog_error_index = -1
 local default_health_error_index = -2
+local max_retry_time = 256
 
 local _M = {
     version = 0.3,
@@ -172,7 +174,7 @@ local function show_dump_file()
 end
 
 local function get_retry_delay(retry_delay)
-    if not retry_delay then
+    if not retry_delay or retry_delay >= max_retry_time then
         retry_delay = 1
     else
         retry_delay = retry_delay * 4
@@ -202,7 +204,6 @@ local function watch_catalog(consul_server)
 
         return default_catalog_error_index
     end
-
     return watch_result.headers['X-Consul-Index']
 end
 
@@ -227,7 +228,6 @@ local function watch_health(consul_server)
 
         return default_health_error_index
     end
-
     return watch_result.headers['X-Consul-Index']
 end
 
@@ -293,7 +293,7 @@ function _M.connect(premature, consul_server, retry_delay)
         log.error("failed to spawn thread watch health: ", err)
         local random_delay = math_random(default_random_seed)
         log.warn("failed to spawn thread watch health, retry connecting consul after ",
-            random_delay, " seconds")
+                random_delay, " seconds")
         core_sleep(random_delay)
 
         check_keepalive(consul_server, retry_delay)
@@ -301,8 +301,8 @@ function _M.connect(premature, consul_server, retry_delay)
     end
 
     local thread_wait_ok, wait_res = thread_wait(catalog_thread, health_thread)
-    thread_kill(health_thread)
     thread_kill(catalog_thread)
+    thread_kill(health_thread)
     if not thread_wait_ok then
         log.error("failed to wait thread: ", err, ", wait_res: ", wait_res)
         local random_delay = math_random(default_random_seed)
@@ -320,11 +320,20 @@ function _M.connect(premature, consul_server, retry_delay)
         read_timeout = consul_server.read_timeout,
     })
 
-    local catalog_res, catalog_err = consul_client:get(consul_server.consul_watch_catalog_url)
+    local catalog_success, catalog_res, catalog_err = pcall(function()
+        return consul_client:get(consul_server.consul_watch_catalog_url)
+    end)
+    if not catalog_success then
+        log.error("connect consul: ", consul_server.consul_server_url,
+            " by sub url: ", consul_server.consul_watch_catalog_url,
+            ", got catalog result: ", json_delay_encode(catalog_res, true))
+        check_keepalive(consul_server, retry_delay)
+        return
+    end
     local catalog_error_info = (catalog_err ~= nil and catalog_err)
             or ((catalog_res ~= nil and catalog_res.status ~= 200)
             and catalog_res.status)
-    if catalog_error_info then
+    if  catalog_error_info then
         log.error("connect consul: ", consul_server.consul_server_url,
             " by sub url: ", consul_server.consul_watch_catalog_url,
             ", got catalog result: ", json_delay_encode(catalog_res, true),
@@ -339,7 +348,16 @@ function _M.connect(premature, consul_server, retry_delay)
     end
 
     -- get health index
-    local health_res, health_err = consul_client:get(consul_server.consul_watch_health_url)
+    local success, health_res, health_err = pcall(function()
+        return consul_client:get(consul_server.consul_watch_health_url)
+    end)
+    if not success then
+        log.error("connect consul: ", consul_server.consul_server_url,
+            " by sub url: ", consul_server.consul_watch_health_url,
+            ", got health result: ", json_delay_encode(health_res, true))
+        check_keepalive(consul_server, retry_delay)
+        return
+    end
     local health_error_info = (health_err ~= nil and health_err)
             or ((health_res ~= nil and health_res.status ~= 200)
             and health_res.status)
@@ -373,10 +391,12 @@ function _M.connect(premature, consul_server, retry_delay)
             end
             -- get node from service
             local svc_url = consul_server.consul_sub_url .. "/" .. service_name
-            local result, get_err = consul_client:get(svc_url, {passing = true})
+            local svc_success, result, get_err = pcall(function()
+                return consul_client:get(svc_url, {passing = true})
+            end)
             local error_info = (get_err ~= nil and get_err) or
                     ((result ~= nil and result.status ~= 200) and result.status)
-            if error_info then
+            if not svc_success or error_info then
                 log.error("connect consul: ", consul_server.consul_server_url,
                     ", by service url: ", svc_url, ", with error: ", error_info)
                 goto CONTINUE
@@ -418,7 +438,7 @@ function _M.connect(premature, consul_server, retry_delay)
                 events_list.updating, all_services)
         if not post_ok then
             log.error("post_event failure with ", events_list._source,
-                ", update all services error: ", post_err)
+                    ", update all services error: ", post_err)
         end
 
         if dump_params then
