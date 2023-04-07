@@ -59,7 +59,7 @@ local function redis_cli(conf)
     if 0 == count then
         if conf.redis_password and conf.redis_password ~= '' then
             local ok, err
-            if conf.redis_username and conf.redis_username ~= '' then
+            if conf.redis_username then
                 ok, err = red:auth(conf.redis_username, conf.redis_password)
             else
                 ok, err = red:auth(conf.redis_password)
