@@ -47,7 +47,7 @@ jobs:
       run: |
         export VERSION=${{ steps.branch_env.outputs.version }}
         sudo gem install --no-document fpm
-        git clone https://github.com/api7/apisix-build-tools.git
+        git clone -b v2.0.0 https://github.com/api7/apisix-build-tools.git
         cd apisix-build-tools
         make package type=rpm app=apisix version=${VERSION} checkout=release/${VERSION} image_base=centos image_tag=7
         cd ..

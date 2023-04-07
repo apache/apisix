@@ -59,6 +59,7 @@ function _M.create_radixtree_uri_router(routes, uri_routes, with_parameter)
             core.log.info("insert uri route: ",
                           core.json.delay_encode(route.value, true))
             core.table.insert(uri_routes, {
+                id = route.value.id,
                 paths = route.value.uris or route.value.uri,
                 methods = route.value.methods,
                 priority = route.value.priority,
@@ -78,7 +79,7 @@ function _M.create_radixtree_uri_router(routes, uri_routes, with_parameter)
         end
     end
 
-    core.log.info("route items: ", core.json.delay_encode(uri_routes, true))
+    core.log.notice("route items size: ", #uri_routes)
 
     if with_parameter then
         return radixtree.new(uri_routes)
@@ -99,7 +100,6 @@ function _M.match_uri(uri_router, match_opts, api_ctx)
     local ok = uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx, match_opts)
     return ok
 end
-
 
 -- additional check for synced route configuration, run after schema check
 local function check_route(route)
