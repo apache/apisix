@@ -116,7 +116,7 @@ local function check_secret_uri(secret_uri)
         return false, "error secret_uri type: " .. type(secret_uri)
     end
 
-    if not string.has_prefix(upper(secret_uri), PREFIX) and
+    if not string.has_prefix(secret_uri, PREFIX) and
         not string.has_prefix(upper(secret_uri), core.env.PREFIX) then
         return false, "error secret_uri prefix: " .. secret_uri
     end
