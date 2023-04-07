@@ -9,7 +9,7 @@ description: This tutorial uses a script to quickly install Apache APISIX in you
 
 > The Getting Started tutorials are contributed by [API7.ai](https://api7.ai/).
 
-Apache APISIX is a dynamic, real-time, and high-performance API Gateway. It is a [top-level project](https://projects.apache.org/project.html?apisix) of the Apache Software Foundation.
+Developed and donated by API7.ai, Apache APISIX is an open source, dynamic, scalable, and high-performance cloud native API gateway for all your APIs and microservices. It is a [top-level project](https://projects.apache.org/project.html?apisix) of the Apache Software Foundation.
 
 You can use APISIX API Gateway as a traffic entrance to process all business data. It offers features including dynamic routing, dynamic upstream, dynamic certificates, A/B testing, canary release, blue-green deployment, limit rate, defense against malicious attacks, metrics, monitoring alarms, service observability, service governance, and more.
 
