@@ -449,7 +449,7 @@ function _M.connect(premature, consul_server, retry_delay)
                 events_list.updating, all_services)
         if not post_ok then
             log.error("post_event failure with ", events_list._source,
-                    ", update all services error: ", post_err)
+                ", update all services error: ", post_err)
         end
 
         if dump_params then
