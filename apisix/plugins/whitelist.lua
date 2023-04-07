@@ -34,7 +34,6 @@ local networks = {
     "cfx-espace",
     "arb-mainnet",
     "opt-mainnet",
-    "scroll-prealpha",
     "scroll-alpha",
     "ckb-mirana",
     "starknet-mainnet",
@@ -48,7 +47,6 @@ local networks = {
     "staging-cfx-espace",
     "staging-arb-mainnet",
     "staging-opt-mainnet",
-    "staging-scroll-prealpha",
     "staging-scroll-alpha",
     "staging-ckb-mirana",
     "staging-starknet-mainnet",
@@ -387,13 +385,12 @@ function _M.init()
     _M.paid_list = {}
     for _, network in ipairs(networks) do
         _M.network_list[network] = true
-        if network == "eth-mainnet" then
+        if network == "staging-eth-mainnet" or network == "eth-mainnet" or
+            network == "staging-scroll-alpha" or network == "scroll-alpha" then
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, trace_methods, debug_methods)
-        elseif network == "eth-sepolia" or network == "cfx-espace" or
-            network == "scroll-prealpha" or network == "staging-eth-mainnet" or network == "staging-eth-sepolia" or
-            network == "staging-cfx-espace" or network == "staging-scroll-prealpha" or
-            network == "staging-scroll-alpha" or network == "scroll-alpha" then
+        elseif network == "eth-sepolia" or network == "staging-eth-sepolia" or
+            network == "staging-cfx-espace" or network == "cfx-espace" then
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, trace_methods)
         elseif network == "arb-mainnet" or network == "opt-mainnet" or
