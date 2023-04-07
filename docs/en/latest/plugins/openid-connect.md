@@ -88,7 +88,7 @@ The image below shows an example token introspection flow via a Gateway:
 
 ![token introspection](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/oauth-1.png)
 
-The example below shows how you can enable the Plugin on Route. The Rouet below will protect the Upstream by introspecting the token provided in the request header:
+The example below shows how you can enable the Plugin on Route. The Route below will protect the Upstream by introspecting the token provided in the request header:
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
