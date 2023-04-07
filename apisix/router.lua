@@ -70,6 +70,7 @@ local function attach_http_router_common_methods(http_router)
     end
 end
 
+local uri_routes = {}
 
 function _M.http_init_worker()
     local conf = core.config.local_conf()
@@ -84,6 +85,16 @@ function _M.http_init_worker()
     local router_http = require("apisix.http.router." .. router_http_name)
     attach_http_router_common_methods(router_http)
     router_http.init_worker(filter)
+
+    --create radixtree in init worker phase
+    local uri_router = http_route.create_radixtree_uri_router(router_http.user_routes.values,
+                                                             uri_routes, false)                                                 
+
+    if not uri_router then
+        error("create radixtree in init worker phase failed.")
+    end
+
+    _M.uri_router = uri_router
     _M.router_http = router_http
 
     local router_ssl = require("apisix.ssl.router." .. router_ssl_name)

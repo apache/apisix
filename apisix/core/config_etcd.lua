@@ -43,6 +43,7 @@ local constants    = require("apisix.constants")
 local health_check = require("resty.etcd.health_check")
 
 
+
 local is_http = ngx.config.subsystem == "http"
 local err_etcd_unhealthy_all = "has no healthy etcd endpoint available"
 local health_check_shm_name = "etcd-cluster-health-check"
@@ -286,7 +287,6 @@ function _M.upgrade_version(self, new_ver)
     return
 end
 
-
 local function sync_data(self)
     if not self.key then
         return nil, "missing 'key' arguments"
@@ -352,6 +352,9 @@ local function sync_data(self)
     local res_copy = res
     -- waitdir will return [res] even for self.single_item = true
     for _, res in ipairs(res_copy) do
+        --op: update 0, delete 1, create 2
+        local op = -1
+        local pre_route = {}
         local key
         if self.single_item then
             key = self.key
@@ -399,6 +402,16 @@ local function sync_data(self)
         local pre_index = self.values_hash[key]
         if pre_index then
             local pre_val = self.values[pre_index]
+            pre_route = {
+                id = pre_val.value.id,
+                paths = pre_val.value.uris or pre_val.value.uri,
+                methods = pre_val.value.methods,
+                priority = pre_val.value.priority,
+                hosts = pre_val.value.hosts or pre_val.value.host,
+                remote_addrs = pre_val.value.remote_addrs or pre_val.value.remote_addr,
+                vars = pre_val.value.vars
+            }
+
             if pre_val and pre_val.clean_handlers then
                 for _, clean_handler in ipairs(pre_val.clean_handlers) do
                     clean_handler(pre_val)
@@ -407,6 +420,8 @@ local function sync_data(self)
             end
 
             if res.value then
+                --update route
+                op = 0
                 if not self.single_item then
                     res.value.id = key
                 end
@@ -414,15 +429,17 @@ local function sync_data(self)
                 self.values[pre_index] = res
                 res.clean_handlers = {}
                 log.info("update data by key: ", key)
-
             else
+                --delete route
+                op = 1
                 self.sync_times = self.sync_times + 1
                 self.values[pre_index] = false
                 self.values_hash[key] = nil
                 log.info("delete data by key: ", key)
             end
-
         elseif res.value then
+            --create route
+            op = 2
             res.clean_handlers = {}
             insert_tab(self.values, res)
             self.values_hash[key] = #self.values
@@ -463,6 +480,76 @@ local function sync_data(self)
         end
 
         self.conf_version = self.conf_version + 1
+
+        if self.key ~= "/apisix/routes" then
+            goto CONTINUE
+        end
+
+        local route
+        if res.value then
+            local status = table.try_read_attr(res, "value", "status")
+            if status and status == 0 then
+                goto CONTINUE
+            end
+
+            local filter_fun, err
+            if res.value.filter_func then
+                filter_fun, err = loadstring(
+                    "return " .. res.value.filter_func,
+                    "router#" .. res.value.id
+                )
+                if not filter_fun then
+                    log.error("failed to load filter function: ", err, " route id", res.value.id)
+                        goto CONTINUE
+                end
+
+                filter_fun = filter_fun()
+            end
+
+            route = {
+                id = res.value.id,
+                paths = res.value.uris or res.value.uri,
+                methods = res.value.methods,
+                priority = res.value.priority,
+                hosts = res.value.hosts or res.value.host,
+                remote_addrs = res.value.remote_addrs or res.value.remote_addr,
+                vars = res.value.vars,
+                filter_fun = filter_fun,
+                handler = function(api_ctx, match_opts)
+                    api_ctx.matched_params = nil
+                    api_ctx.matched_route = res
+                    api_ctx.curr_req_matched = match_opts.matched
+                end
+            }
+        end
+
+        local router_opts = {
+            no_param_match = true
+        }
+        local router_mod = require("apisix.router")
+        if op == 2 then
+            log.notice("create routes watched from etcd into radixtree.", json.encode(res))
+            err = router_mod.uri_router:add_route(route, router_opts)
+            if err ~= nil then
+                log.error("add routes into radixtree failed.", json.encode(res), err)
+            end
+        elseif op == 0 then
+            log.notice("update routes watched from etcd into radixtree.", json.encode(res))
+            err = router_mod.uri_router:update_route(pre_route, route, router_opts)
+            if err ~= nil then
+                log.error("update a route into radixtree failed.", json.encode(res), err)
+            end
+        elseif op == 1 then
+            log.notice("delete routes watched from etcd into radixtree.", json.encode(res))
+            err = router_mod.uri_router:delete_route(pre_route, router_opts)
+            if err ~= nil then
+                log.error("delete a route into radixtree failed.", json.encode(res), err)
+            end
+        else 
+            log.error("no operation type in this route.", json.encode(res))
+        end
+
+        ::CONTINUE::
     end
 
     return self.values
