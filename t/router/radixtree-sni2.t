@@ -578,7 +578,7 @@ GET /t
             local code, body = t('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 [[{
-                     "cert": "$secret://vault/test1/ssl/test2.com.crt",
+                    "cert": "$secret://vault/test1/ssl/test2.com.crt",
                     "key": "$secret://vault/test1/ssl/test2.com.key",
                     "sni": "test2.com"
                 }]]
