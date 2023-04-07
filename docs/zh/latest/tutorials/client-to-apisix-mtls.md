@@ -80,7 +80,7 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/ssls/1' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "sni": "test.com",
-    "cert": "<服务器证书公钥>",
+    "cert": "<服务器证书>",
     "key": "<服务器证书私钥>",
     "client": {
         "ca": "<客户端证书公钥>"
@@ -89,9 +89,9 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/ssls/1' \
 ```
 
 - `sni`：指定证书的域名（CN），当客户端尝试通过 TLS 与 APISIX 握手时，APISIX 会将 `ClientHello` 中的 SNI 数据与该字段进行匹配，找到对应的服务器证书进行握手。
-- `cert`：服务器证书的公钥。
+- `cert`：服务器证书。
 - `key`：服务器证书的私钥。
-- `client.ca`：客户端证书的公钥。为了演示方便，这里使用了同一个 `CA`。
+- `client.ca`：用来验证客户端证书的 CA 文件。为了演示方便，这里使用了同一个 `CA`。
 
 ### 配置测试路由
 
