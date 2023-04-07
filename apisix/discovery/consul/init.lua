@@ -137,7 +137,7 @@ local function read_dump_services()
     local now_time = ngx.time()
     log.info("dump file last_update: ", entity.last_update, ", dump_params.expire: ",
         dump_params.expire, ", now_time: ", now_time)
-    if dump_params.expire ~= 0  and (entity.last_update + dump_params.expire) < now_time then
+    if dump_params.expire ~= 0 and (entity.last_update + dump_params.expire) < now_time then
         log.warn("dump file: ", dump_params.path, " had expired, ignored it")
         return
     end
@@ -154,7 +154,7 @@ local function write_dump_services()
         expire = dump_params.expire, -- later need handle it
     }
     local data = core.json.encode(entity)
-    local succ, err =  util.write_file(dump_params.path, data)
+    local succ, err = util.write_file(dump_params.path, data)
     if not succ then
         log.error("write dump into file got error: ", err)
     end
@@ -270,6 +270,16 @@ local function update_index(consul_server, catalog_index, health_index)
     end
 end
 
+local function is_not_empty(value)
+    if value == nil or value == null
+            or (type(value) == "table" and not next(value))
+            or (type(value) == "string" and value == "") then
+        return false
+    end
+
+    return true
+end
+
 function _M.connect(premature, consul_server, retry_delay)
     if premature then
         return
@@ -333,7 +343,7 @@ function _M.connect(premature, consul_server, retry_delay)
     local catalog_error_info = (catalog_err ~= nil and catalog_err)
             or ((catalog_res ~= nil and catalog_res.status ~= 200)
             and catalog_res.status)
-    if  catalog_error_info then
+    if catalog_error_info then
         log.error("connect consul: ", consul_server.consul_server_url,
             " by sub url: ", consul_server.consul_watch_catalog_url,
             ", got catalog result: ", json_delay_encode(catalog_res, true),
@@ -403,13 +413,14 @@ function _M.connect(premature, consul_server, retry_delay)
             end
 
             -- decode body, decode json, update service, error handling
-            if result.body then
+            -- check result body is not nil and not empty
+            if is_not_empty(result.body) then
                 log.notice("service url: ", svc_url,
                     ", header: ", json_delay_encode(result.headers, true),
                     ", body: ", json_delay_encode(result.body, true))
                 -- add services to table
                 local nodes = up_services[service_name]
-                for  _, node in ipairs(result.body) do
+                for _, node in ipairs(result.body) do
                     if not node.Service then
                         goto CONTINUE
                     end
