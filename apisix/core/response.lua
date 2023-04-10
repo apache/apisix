@@ -177,10 +177,12 @@ end
 function _M.hold_body_chunk(ctx, hold_the_copy)
     local body_buffer
     local chunk, eof = arg[1], arg[2]
+
+    if not ctx._body_buffer then
+        ctx._body_buffer = {}
+    end
+
     if type(chunk) == "string" and chunk ~= "" then
-        if not ctx._body_buffer then
-            ctx._body_buffer = {}
-        end
         body_buffer = ctx._body_buffer[ctx._plugin_name]
         if not body_buffer then
             body_buffer = {
