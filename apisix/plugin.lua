@@ -858,10 +858,6 @@ end
 
 
 local function get_plugin_schema_for_gde(name, schema_type)
-    if not enable_gde() then
-        return nil
-    end
-
     local plugin_schema = local_plugins_hash and local_plugins_hash[name]
     if not plugin_schema then
         return nil
@@ -881,6 +877,9 @@ end
 
 
 local function decrypt_conf(name, conf, schema_type)
+    if not enable_gde() then
+        return
+    end
     local schema = get_plugin_schema_for_gde(name, schema_type)
     if not schema then
         core.log.warn("failed to get schema for plugin: ", name)
@@ -924,6 +923,9 @@ _M.decrypt_conf = decrypt_conf
 
 
 local function encrypt_conf(name, conf, schema_type)
+    if not enable_gde() then
+        return
+    end
     local schema = get_plugin_schema_for_gde(name, schema_type)
     if not schema then
         core.log.warn("failed to get schema for plugin: ", name)
