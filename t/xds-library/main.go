@@ -83,7 +83,7 @@ func write_config(config_zone unsafe.Pointer, version_zone unsafe.Pointer) {
 "create_time": 1646972532,
 "uri": "/hello1",
 "priority": 0,
-"id": "1",
+"id": "2",
 "upstream_id": "1"
 }`)
 
