@@ -85,6 +85,7 @@ local schema = {
             type = "boolean",
             default = true
         },
+        log_format = {type = "object"},
         severity_map = {
             type = "object",
             description = "upstream response code vs syslog severity mapping",
@@ -175,24 +176,15 @@ end
 
 
 local function generate_log_message(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    local entry
-
-    if metadata and metadata.value.log_format
-       and core.table.nkeys(metadata.value.log_format) > 0
-    then
-        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
-    else
-        entry = log_util.get_full_log(ngx, conf)
-    end
-
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
     local json_str, err = core.json.encode(entry)
     if not json_str then
         core.log.error('error occurred while encoding the data: ', err)
         return nil
     end
 
-    if metadata.value.protocol ~= "syslog" then
+    local metadata = plugin.plugin_metadata(plugin_name)
+    if metadata and metadata.value.protocol ~= "syslog" then
         return json_str
     end
 

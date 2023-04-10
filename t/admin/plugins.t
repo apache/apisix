@@ -88,6 +88,7 @@ consumer-restriction
 forward-auth
 opa
 authz-keycloak
+body-transformer
 proxy-mirror
 proxy-cache
 proxy-rewrite
@@ -101,6 +102,7 @@ server-info
 traffic-split
 redirect
 response-rewrite
+degraphql
 kafka-proxy
 grpc-transcode
 grpc-web

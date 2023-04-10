@@ -1,7 +1,8 @@
 ---
 title: hmac-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - HMAC Authentication
   - hmac-auth
@@ -38,7 +39,7 @@ This Plugin works with a [Consumer](../terminology/consumer.md) object and a con
 | Name                  | Type          | Required | Default       | Valid values                                | Description                                                                                                                                                                                               |
 |-----------------------|---------------|----------|---------------|---------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | access_key            | string        | True     |               |                                             | Unique key of a Consumer. If different Consumers have the same key, a request matching exception will occur.                                                                                              |
-| secret_key            | string        | True     |               |                                             | Used in pair with `access_key`.                                                                                                                                                                           |
+| secret_key            | string        | True     |               |                                             | Used in pair with `access_key`. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                                             |
 | algorithm             | string        | False    | "hmac-sha256" | ["hmac-sha1", "hmac-sha256", "hmac-sha512"] | Encryption algorithm used.                                                                                                                                                                                |
 | clock_skew            | integer       | False    | 0             |                                             | Clock skew allowed by the signature in seconds. Setting it to `0` will skip checking the date.                                                                                                            |
 | signed_headers        | array[string] | False    |               |                                             | List of headers to be used in the encryption algorithm. If specified, the client request can only contain the specified headers. When unspecified, all the headers are used in the encryption algorithm.  |

@@ -89,13 +89,19 @@ end
 
 
 local function enable_mirror(ctx, conf)
-    if conf.path and conf.path_concat_mode == "prefix" then
-        ctx.var.upstream_mirror_uri = resolver_host(conf.host) .. conf.path .. ctx.var.uri ..
-                                    ctx.var.is_args .. (ctx.var.args or '')
-    else
-        ctx.var.upstream_mirror_uri = resolver_host(conf.host) .. (conf.path or ctx.var.uri) ..
-                                    ctx.var.is_args .. (ctx.var.args or '')
+    local uri = (ctx.var.upstream_uri and ctx.var.upstream_uri ~= "") and
+                ctx.var.upstream_uri or
+                ctx.var.uri .. ctx.var.is_args .. (ctx.var.args or '')
+
+    if conf.path then
+        if conf.path_concat_mode == "prefix" then
+            uri = conf.path .. uri
+        else
+            uri = conf.path .. ctx.var.is_args .. (ctx.var.args or '')
+        end
     end
+
+    ctx.var.upstream_mirror_uri = resolver_host(conf.host) .. uri
 
     if has_mod then
         apisix_ngx_client.enable_mirror()

@@ -30,32 +30,17 @@ local mt = {
 
 
 local script = core.string.compress_script([=[
-    if redis.call('ttl', KEYS[1]) < 0 then
+    local ttl = redis.call('ttl', KEYS[1])
+    if ttl < 0 then
         redis.call('set', KEYS[1], ARGV[1] - 1, 'EX', ARGV[2])
-        return ARGV[1] - 1
+        return {ARGV[1] - 1, ARGV[2]}
     end
-    return redis.call('incrby', KEYS[1], -1)
+    return {redis.call('incrby', KEYS[1], -1), ttl}
 ]=])
 
-
-function _M.new(plugin_name, limit, window, conf)
-    assert(limit > 0 and window > 0)
-
-    local self = {
-        limit = limit,
-        window = window,
-        conf = conf,
-        plugin_name = plugin_name,
-    }
-    return setmetatable(self, mt)
-end
-
-
-function _M.incoming(self, key)
-    local conf = self.conf
+local function redis_cli(conf)
     local red = redis_new()
     local timeout = conf.redis_timeout or 1000    -- 1sec
-    core.log.info("ttl key: ", key, " timeout: ", timeout)
 
     red:set_timeouts(timeout, timeout, timeout)
 
@@ -85,27 +70,52 @@ function _M.incoming(self, key)
         -- core.log.info(" err: ", err)
         return nil, err
     end
+    return red, nil
+end
+
+function _M.new(plugin_name, limit, window, conf)
+    assert(limit > 0 and window > 0)
+
+    local self = {
+        limit = limit,
+        window = window,
+        conf = conf,
+        plugin_name = plugin_name,
+    }
+    return setmetatable(self, mt)
+end
+
+function _M.incoming(self, key)
+    local conf = self.conf
+    local red, err = redis_cli(conf)
+    if not red then
+        return red, err, 0
+    end
 
     local limit = self.limit
     local window = self.window
-    local remaining
+    local res
     key = self.plugin_name .. tostring(key)
 
-    remaining, err = red:eval(script, 1, key, limit, window)
+    local ttl = 0
+    res, err = red:eval(script, 1, key, limit, window)
 
     if err then
-        return nil, err
+        return nil, err, ttl
     end
+
+    local remaining = res[1]
+    ttl = res[2]
 
     local ok, err = red:set_keepalive(10000, 100)
     if not ok then
-        return nil, err
+        return nil, err, ttl
     end
 
     if remaining < 0 then
-        return nil, "rejected"
+        return nil, "rejected", ttl
     end
-    return 0, remaining
+    return 0, remaining, ttl
 end
 
 

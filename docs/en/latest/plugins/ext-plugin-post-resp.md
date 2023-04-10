@@ -1,7 +1,8 @@
 ---
 title: ext-plugin-post-resp
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - ext-plugin-post-resp
 description: This document contains information about the Apache APISIX ext-plugin-post-resp Plugin.

@@ -211,6 +211,42 @@ fi
 
 echo "passed: resolve variables"
 
+# support reserved environment variable APISIX_DEPLOYMENT_ETCD_HOST
+
+echo '
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2333"
+' > conf/config.yaml
+
+failed_msg="failed: failed to configure etcd host with reserved environment variable"
+
+out=$(APISIX_DEPLOYMENT_ETCD_HOST='["http://127.0.0.1:2379"]' make init 2>&1 || true)
+if echo "$out" | grep "connection refused" > /dev/null; then
+    echo $failed_msg
+    exit 1
+fi
+
+out=$(APISIX_DEPLOYMENT_ETCD_HOST='["http://127.0.0.1:2379"]' make run 2>&1 || true)
+if echo "$out" | grep "connection refused" > /dev/null; then
+    echo $failed_msg
+    exit 1
+fi
+
+if ! grep "env APISIX_DEPLOYMENT_ETCD_HOST;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'env APISIX_DEPLOYMENT_ETCD_HOST;' not in nginx.conf"
+    echo $failed_msg
+    exit 1
+fi
+
+make stop
+
+echo "passed: configure etcd host with reserved environment variable"
+
 echo '
 nginx_config:
     worker_rlimit_nofile: ${{nofile9}}

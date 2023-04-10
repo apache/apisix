@@ -19,9 +19,7 @@ local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local syslog = require("apisix.plugins.syslog.init")
-local plugin = require("apisix.plugin")
 local plugin_name = "syslog"
-local ngx = ngx
 
 local batch_processor_manager = bp_manager_mod.new("sys logger")
 local schema = {
@@ -35,6 +33,7 @@ local schema = {
         sock_type = {type = "string", default = "tcp", enum = {"tcp", "udp"}},
         pool_size = {type = "integer", minimum = 5, default = 5},
         tls = {type = "boolean", default = false},
+        log_format = {type = "object"},
         include_req_body = {type = "boolean", default = false}
     },
     required = {"host", "port"}
@@ -69,18 +68,7 @@ end
 
 
 function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    core.log.info("metadata: ", core.json.delay_encode(metadata))
-
-    local entry
-
-    if metadata and metadata.value.log_format
-        and core.table.nkeys(metadata.value.log_format) > 0
-    then
-        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
-    else
-        entry = log_util.get_full_log(ngx, conf)
-    end
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
     syslog.push_entry(conf, ctx, entry)
 end
 

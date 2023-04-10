@@ -130,6 +130,11 @@ local function strip_etcd_resp(data)
 end
 
 
+local function head()
+    core.response.exit(200)
+end
+
+
 local function run()
     local api_ctx = {}
     core.ctx.set_vars_meta(api_ctx)
@@ -198,8 +203,13 @@ local function run()
         end
     end
 
-    local code, data = resource[method](seg_id, req_body, seg_sub_path,
-                                        uri_args)
+    local code, data
+    if seg_res == "schema" or seg_res == "plugins" then
+        code, data = resource[method](seg_id, req_body, seg_sub_path, uri_args)
+    else
+        code, data = resource[method](resource, seg_id, req_body, seg_sub_path, uri_args)
+    end
+
     if code then
         if method == "get" and plugin.enable_data_encryption then
             if seg_res == "consumers" then
@@ -350,6 +360,11 @@ end
 
 
 local uri_route = {
+    {
+        paths = [[/apisix/admin]],
+        methods = {"HEAD"},
+        handler = head,
+    },
     {
         paths = [[/apisix/admin/*]],
         methods = {"GET", "PUT", "POST", "DELETE", "PATCH"},

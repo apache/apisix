@@ -1,5 +1,5 @@
 {
-  "version": "3.1.0",
+  "version": "3.2.0",
   "sidebar": [
     {
       "type": "doc",
@@ -56,9 +56,10 @@
             "plugins/gzip",
             "plugins/real-ip",
             "plugins/server-info",
-            "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-pre-req",
-            "plugins/ext-plugin-post-resp"
+            "plugins/ext-plugin-post-req",
+            "plugins/ext-plugin-post-resp",
+            "plugins/workflow"
           ]
         },
         {
@@ -178,7 +179,6 @@
             "plugins/azure-functions",
             "plugins/openwhisk",
             "plugins/aws-lambda",
-            "plugins/workflow",
             "plugins/openfunction"
           ]
         },
@@ -255,10 +255,6 @@
         {
           "type": "doc",
           "id": "router-radixtree"
-        },
-        {
-          "type": "doc",
-          "id": "stand-alone"
         },
         {
           "type": "doc",

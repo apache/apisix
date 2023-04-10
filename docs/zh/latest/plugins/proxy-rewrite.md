@@ -1,7 +1,8 @@
 ---
 title: proxy-rewrite
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Proxy Rewrite
   - proxy-rewrite
@@ -40,8 +41,8 @@ description: 本文介绍了关于 Apache APISIX `proxy-rewrite` 插件的基本
 | regex_uri | array[string] | 否    |         |                                                                                                                                        | 转发到上游的新 `uri` 地址。使用正则表达式匹配来自客户端的 `uri`，如果匹配成功，则使用模板替换转发到上游的 `uri`，如果没有匹配成功，则将客户端请求的 `uri` 转发至上游。当同时配置 `uri` 和 `regex_uri` 属性时，优先使用 `uri`。例如：["^/iresty/(.*)/(.*)/(.*)","/$1-$2-$3"] 第一个元素代表匹配来自客户端请求的 `uri` 正则表达式，第二个元素代表匹配成功后转发到上游的 `uri` 模板。但是目前 APISIX 仅支持一个 `regex_uri`，所以 `regex_uri` 数组的长度是 `2`。 |
 | host      | string        | 否    |         |                   | 转发到上游的新 `host` 地址，例如：`iresty.com`。|
 | headers   | object        | 否    |         |                   |   |
-| headers.add     | object   | 否     |        |                 | 添加新的请求头，如果头已经存在，会追加到末尾。格式为 `{"name: value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。                                                                                              |
-| headers.set     | object  | 否     |        |                 | 改写请求头，如果请求头不存在，则会添加这个请求头。格式为 `{"name": "value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。                                                                                                |
+| headers.add     | object   | 否     |        |                 | 添加新的请求头，如果头已经存在，会追加到末尾。格式为 `{"name": "value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。也支持以变量的形式引用 `regex_uri` 的匹配结果，比如 `$1-$2-$3`。                                                                                              |
+| headers.set     | object  | 否     |        |                 | 改写请求头，如果请求头不存在，则会添加这个请求头。格式为 `{"name": "value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。也支持以变量的形式引用 `regex_uri` 的匹配结果，比如 `$1-$2-$3`。                                                                                           |
 | headers.remove  | array   | 否     |        |                 | 移除响应头。格式为 `["name", ...]`。
 
 ## Header 优先级

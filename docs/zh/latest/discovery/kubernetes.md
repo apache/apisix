@@ -34,6 +34,12 @@ Kubernetes 服务发现以 [_List-Watch_](https://kubernetes.io/docs/reference/u
 
 同时遵循 [_APISIX Discovery 规范_](https://github.com/apache/apisix/blob/master/docs/zh/latest/discovery.md) 提供了节点查询接口。
 
+:::note
+
+在四层中使用 Kubernetes 服务发现要求 OpenResty 版本大于等于 1.19.9.1
+
+:::
+
 ## Kubernetes 服务发现的使用
 
 目前 Kubernetes 服务发现支持单集群和多集群模式，分别适用于待发现的服务分布在单个或多个 Kubernetes 的场景。
@@ -128,7 +134,7 @@ service_name 必须满足格式: [namespace]/[name]:[portName]
 
 + name: Endpoints 的资源名
 
-+ portName: Endpoints 定义包含的 ports.name 值，如果 Endpoints 没有定义 ports.name，请依次使用 targetPort, port 代替
++ portName: Endpoints 定义包含的 `ports.name` 值，如果 Endpoints 没有定义 `ports.name`，请依次使用 `targetPort`, `port` 代替。设置了 `ports.name` 的情况下，不能使用后两者。
 
 **返回值：**
 以如下 Endpoints 为例：
@@ -239,7 +245,7 @@ service_name 必须满足格式: [id]/[namespace]/[name]:[portName]
 
 + name: Endpoints 的资源名
 
-+ portName: Endpoints 定义包含的 ports.name 值，如果 Endpoints 没有定义 ports.name，请依次使用 targetPort, port 代替
++ portName: Endpoints 定义包含的 `ports.name` 值，如果 Endpoints 没有定义 `ports.name`，请依次使用 `targetPort`, `port` 代替。设置了 `ports.name` 的情况下，不能使用后两者。
 
 **返回值：**
 以如下 Endpoints 为例：

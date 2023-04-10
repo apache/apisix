@@ -56,10 +56,24 @@ rerun_flaky_tests() {
     FLUSH_ETCD=1 prove --timer -I./test-nginx/lib -I./ $(echo "$tests" | xargs)
 }
 
+install_curl () {
+    CURL_VERSION="7.88.0"
+    wget https://curl.se/download/curl-${CURL_VERSION}.tar.gz
+    tar -xzvf curl-${CURL_VERSION}.tar.gz
+    cd curl-${CURL_VERSION}
+    ./configure --prefix=/usr/local --with-openssl --with-nghttp2
+    make
+    sudo make install
+    sudo ldconfig
+    cd ..
+    rm -rf curl-${CURL_VERSION}
+    curl -V
+}
+
 install_grpcurl () {
     # For more versions, visit https://github.com/fullstorydev/grpcurl/releases
     GRPCURL_VERSION="1.8.5"
-    wget https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL_VERSION}/grpcurl_${GRPCURL_VERSION}_linux_x86_64.tar.gz
+    wget -q https://github.com/fullstorydev/grpcurl/releases/download/v${GRPCURL_VERSION}/grpcurl_${GRPCURL_VERSION}_linux_x86_64.tar.gz
     tar -xvf grpcurl_${GRPCURL_VERSION}_linux_x86_64.tar.gz -C /usr/local/bin
 }
 
@@ -67,14 +81,14 @@ install_vault_cli () {
     VAULT_VERSION="1.9.0"
     # the certificate can't be verified in CentOS7, see
     # https://blog.devgenius.io/lets-encrypt-change-affects-openssl-1-0-x-and-centos-7-49bd66016af3
-    wget --no-check-certificate https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip
+    wget -q --no-check-certificate https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip
     unzip vault_${VAULT_VERSION}_linux_amd64.zip && mv ./vault /usr/local/bin
 }
 
 install_nodejs () {
     NODEJS_PREFIX="/usr/local/node"
     NODEJS_VERSION="16.13.1"
-    wget https://nodejs.org/dist/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.xz
+    wget -q https://nodejs.org/dist/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.xz
     tar -xvf node-v${NODEJS_VERSION}-linux-x64.tar.xz
     rm -f /usr/local/bin/node
     rm -f /usr/local/bin/npm
@@ -83,6 +97,11 @@ install_nodejs () {
     ln -s ${NODEJS_PREFIX}/bin/npm /usr/local/bin/npm
 
     npm config set registry https://registry.npmjs.org/
+}
+
+install_rust () {
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo sh -s -- -y
+    source "$HOME/.cargo/env"
 }
 
 set_coredns() {
@@ -115,7 +134,7 @@ set_coredns() {
     mkdir -p build-cache
 
     if [ ! -f "build-cache/coredns_1_8_1" ]; then
-        wget https://github.com/coredns/coredns/releases/download/v1.8.1/coredns_1.8.1_linux_amd64.tgz
+        wget -q https://github.com/coredns/coredns/releases/download/v1.8.1/coredns_1.8.1_linux_amd64.tgz
         tar -xvf coredns_1.8.1_linux_amd64.tgz
         mv coredns build-cache/
 
