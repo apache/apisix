@@ -105,7 +105,7 @@ Users are encouraged to add themselves to this page, [issue](https://github.com/
 
 ## NASA JPL
 
-Using Apache APISIX as a API gateway to deal with north-south and east-west traffic between microservices.
+Using Apache APISIX as an API gateway to deal with north-south and east-west traffic between microservices.
 
 ## ke.com
 
