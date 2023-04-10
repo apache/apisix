@@ -1,7 +1,7 @@
 ---
 title: tencent-cloud-cls
 keywords:
-  - APISIX
+  - Apache APISIX
   - API 网关
   - Plugin
   - CLS

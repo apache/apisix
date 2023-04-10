@@ -1,7 +1,8 @@
 ---
 title: basic-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Basic Auth
   - basic-auth

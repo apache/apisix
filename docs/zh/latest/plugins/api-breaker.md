@@ -1,7 +1,7 @@
 ---
 title: api-breaker
 keywords:
-  - APISIX
+  - Apache APISIX
   - API 网关
   - API Breaker
 description: 本文介绍了 Apache APISIX api-breaker 插件的相关操作，你可以使用此插件的 API 熔断机制来保护上游业务服务。

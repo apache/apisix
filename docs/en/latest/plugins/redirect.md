@@ -1,7 +1,8 @@
 ---
 title: redirect
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Redirect
 description: This document contains information about the Apache APISIX redirect Plugin.

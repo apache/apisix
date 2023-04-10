@@ -1,7 +1,7 @@
 ---
 title: clickhouse-logger
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - ClickHouse Logger

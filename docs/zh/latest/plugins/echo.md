@@ -1,7 +1,8 @@
 ---
 title: echo
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Echo
 description: 本文介绍了关于 Apache APISIX `echo` 插件的基本信息及使用方法。

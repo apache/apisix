@@ -17,6 +17,7 @@
 local base_prometheus = require("prometheus")
 local core      = require("apisix.core")
 local plugin    = require("apisix.plugin")
+local control   = require("apisix.control.v1")
 local ipairs    = ipairs
 local pairs     = pairs
 local ngx       = ngx
@@ -157,6 +158,10 @@ function _M.http_init(prometheus_enabled_in_stream)
     metrics.shared_dict_free_space_bytes = prometheus:gauge("shared_dict_free_space_bytes",
             "The free space of each nginx shared DICT since APISIX start",
             {"name"})
+
+    metrics.upstream_status = prometheus:gauge("upstream_status",
+            "Upstream status from health check",
+            {"name", "ip", "port"})
 
     -- per service
 
@@ -457,6 +462,15 @@ local function collect(ctx, stream_only)
     end
 
     metrics.node_info:set(1, gen_arr(hostname))
+
+    -- update upstream_status metrics
+    local stats = control.get_health_checkers()
+    for _, stat in ipairs(stats) do
+        for _, node in ipairs(stat.nodes) do
+            metrics.upstream_status:set((node.status == "healthy") and 1 or 0,
+                gen_arr(stat.name, node.ip, node.port))
+        end
+    end
 
     core.response.set_header("content_type", "text/plain")
     return 200, core.table.concat(prometheus:metric_data())

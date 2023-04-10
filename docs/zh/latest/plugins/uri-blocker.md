@@ -1,8 +1,8 @@
 ---
 title: uri-blocker
 keywords:
-  - APISIX
-  - API Gateway
+  - Apache APISIX
+  - API 网关
   - URI Blocker
 description: 本文介绍了 Apache APISIX uri-blocker 插件的基本信息及使用方法。
 ---
