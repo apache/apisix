@@ -34,7 +34,6 @@ import "C"
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"strconv"
 	"time"
 	"unsafe"
@@ -108,7 +107,7 @@ func update_conf_version(zone unsafe.Pointer) {
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(time.Second * time.Duration(rand.Intn(10))):
+			case <-time.After(time.Second):
 				write_shdict(key, get_version(), zone)
 			}
 		}
