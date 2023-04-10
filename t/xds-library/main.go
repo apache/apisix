@@ -105,7 +105,7 @@ func update_conf_version(zone unsafe.Pointer) {
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(time.Second):
+			case <-time.After(time.Second * 2):
 				write_shdict("version", get_version(), zone)
 			}
 		}
