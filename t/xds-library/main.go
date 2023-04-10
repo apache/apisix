@@ -100,15 +100,13 @@ func get_version() string {
 
 func update_conf_version(zone unsafe.Pointer) {
 	ctx := context.Background()
-	key := "version"
-	write_shdict(key, get_version(), zone)
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
 				return
 			case <-time.After(time.Second):
-				write_shdict(key, get_version(), zone)
+				write_shdict("version", get_version(), zone)
 			}
 		}
 	}()
