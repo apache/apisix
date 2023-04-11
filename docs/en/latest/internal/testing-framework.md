@@ -116,7 +116,7 @@ no valid upstream node
 To test the code, we need to provide a mock upstream.
 
 For HTTP request, the upstream code is put in `t/lib/server.lua`. HTTP request with
-a given `path` will trigger the method in same name. For example, a call to `/server_port`
+a given `path` will trigger the method in the same name. For example, a call to `/server_port`
 will call the `_M.server_port`.
 
 For TCP request, a dummy upstream is used:
