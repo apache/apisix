@@ -121,17 +121,16 @@ end
 
 -- export the set cert/key process so we can hook it in the other plugins
 function _M.set_cert_and_key(sni, value)
-    local new_ssl = secret.fetch_secrets(value) or value
-    local ok, err = set_pem_ssl_key(sni, new_ssl.cert, new_ssl.key)
+    local ok, err = set_pem_ssl_key(sni, value.cert, value.key)
     if not ok then
         return false, err
     end
 
     -- multiple certificates support.
-    if new_ssl.certs then
-        for i = 1, #new_ssl.certs do
-            local cert = new_ssl.certs[i]
-            local key = new_ssl.keys[i]
+    if value.certs then
+        for i = 1, #value.certs do
+            local cert = value.certs[i]
+            local key = value.keys[i]
 
             ok, err = set_pem_ssl_key(sni, cert, key)
             if not ok then
@@ -214,7 +213,9 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
 
     ngx_ssl.clear_certs()
 
-    ok, err = _M.set_cert_and_key(sni, matched_ssl.value)
+    local new_ssl_value = secret.fetch_secrets(matched_ssl.value) or matched_ssl.value
+    core.log.warn(require("inspect")(new_ssl_value))
+    ok, err = _M.set_cert_and_key(sni, new_ssl_value)
     if not ok then
         return false, err
     end

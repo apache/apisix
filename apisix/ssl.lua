@@ -253,8 +253,8 @@ function _M.check_ssl_conf(in_dp, conf)
         end
     end
 
-    -- if the certificate or key uses a secret reference, we only verify it when using it
-    if not secret.check_secret_uri(conf.cert) or
+    -- when cert or key is referenced by secret, avoid dynamic verification of it
+    if not secret.check_secret_uri(conf.cert) and
         not secret.check_secret_uri(conf.key) then
 
         local ok, err = validate(conf.cert, conf.key)
@@ -274,7 +274,7 @@ function _M.check_ssl_conf(in_dp, conf)
     end
 
     for i = 1, numcerts do
-        if not secret.check_secret_uri(conf.cert[i]) or
+        if not secret.check_secret_uri(conf.cert[i]) and
             not secret.check_secret_uri(conf.key[i]) then
 
             local ok, err = validate(conf.certs[i], conf.keys[i])
