@@ -194,10 +194,6 @@ location /t {
         local core = require("apisix.core")
         local t = require("lib.test_admin")
 
-        local f = assert(io.open("t/certs/server_enc.crt"))
-        local cert_enc = f:read("*a")
-        f:close()
-
         local f = assert(io.open("t/certs/server_sign.crt"))
         local cert_sign = f:read("*a")
         f:close()
