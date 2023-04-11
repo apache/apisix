@@ -49,6 +49,8 @@ local default_logs
 local enable_compression = false
 local DEFAULT_ACCESS_LOG_FILENAME = "access.log"
 local DEFAULT_ERROR_LOG_FILENAME = "error.log"
+local new_access_log
+local new_error_log
 
 
 local schema = {
@@ -286,7 +288,6 @@ local function rotate()
     local max_kept = MAX_KEPT
     local max_size = MAX_SIZE
     local attr = plugin.plugin_attr(plugin_name)
-    local new_access_log, new_error_log = get_custom_logfile_name()
     local access_log_filename = new_access_log or DEFAULT_ACCESS_LOG_FILENAME 
     local error_log_filename = new_error_log or DEFAULT_ERROR_LOG_FILENAME
     if attr then
@@ -346,6 +347,7 @@ end
 
 function _M.init()
     timers.register_timer("plugin#log-rotate", rotate, true)
+    new_access_log, new_error_log = get_custom_logfile_name()
 end
 
 
