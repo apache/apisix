@@ -171,3 +171,64 @@ passed
     }
 --- response_body
 ["1","0","0"]
+
+
+
+=== TEST 5: modified limit-count.incoming, cost == 2
+--- http_config eval: $::HttpConfig
+--- config
+    location = /t {
+        content_by_lua_block {
+            local limit_count_local = require "apisix.plugins.limit-count.limit-count-local"
+            ngx.shared.store:flush_all()
+            local lim = limit_count_local.new("limit-count", 10, 60)
+            local uri = ngx.var.uri
+            for i = 1, 7 do
+                local delay, err = lim.limt_count:handle_incoming(uri, 2, true)
+                if not delay then
+                    ngx.say(err)
+                else
+                    local remaining = err
+                    ngx.say("remaining: ", remaining)
+                end
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body
+remaining: 8
+remaining: 6
+remaining: 4
+remaining: 2
+remaining: 0
+rejected
+rejected
+--- no_error_log
+[error]
+[lua]
+
+
+
+=== TEST 6: modified limit-count.incoming, cost < 1
+--- http_config eval: $::HttpConfig
+--- config
+    location = /t {
+        content_by_lua_block {
+            local limit_count_local = require "apisix.plugins.limit-count.limit-count-local"
+            ngx.shared.store:flush_all()
+            local lim = limit_count_local.new("limit-count", 3, 60)
+            local uri = ngx.var.uri
+            local delay, err = lim.limt_count:handle_incoming(uri, -2, true)
+            if not delay then
+                ngx.say(err)
+            else
+                local remaining = err
+                ngx.say("remaining: ", remaining)
+            end
+        }
+    }
+--- request
+    GET /t
+--- response_body
+cost must be atleast 1
