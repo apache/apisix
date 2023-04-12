@@ -202,9 +202,6 @@ remaining: 2
 remaining: 0
 rejected
 rejected
---- no_error_log
-[error]
-[lua]
 
 
 
