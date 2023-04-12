@@ -248,7 +248,7 @@ local function gen_limit_obj(conf, ctx, plugin_name)
     return core.lrucache.plugin_ctx(lrucache, ctx, extra_key, create_limit_obj, conf, plugin_name)
 end
 
-function _M.rate_limit(conf, ctx, name)
+function _M.rate_limit(conf, ctx, name, cost)
     core.log.info("ver: ", ctx.conf_version)
 
     local lim, err = gen_limit_obj(conf, ctx, name)
@@ -288,7 +288,7 @@ function _M.rate_limit(conf, ctx, name)
     key = gen_limit_key(conf, ctx, key)
     core.log.info("limit key: ", key)
 
-    local delay, remaining, reset = lim:incoming(key, true, conf)
+    local delay, remaining, reset = lim:incoming(key, cost, true, conf)
     if not delay then
         local err = remaining
         if err == "rejected" then

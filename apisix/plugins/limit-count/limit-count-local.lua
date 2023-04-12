@@ -14,7 +14,32 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local limit_local_new = require("resty.limit.count").new
+local limit_count = require("resty.limit.count")
+local core = require("apisix.core")
+
+limit_count.handle_incoming = function (self, key, cost, commit)
+  local dict = self.dict
+  local limit = self.limit
+  local window = self.window
+
+  local remaining, err
+
+  if commit then
+      remaining, err = dict:incr(key, 0 - cost, limit, window)
+      if not remaining then
+          return nil, err
+      end
+  else
+      remaining = (dict:get(key) or limit) - cost
+  end
+
+  if remaining < 0 then
+      return nil, "rejected"
+  end
+
+  return 0, remaining
+end
+
 local ngx = ngx
 local ngx_time = ngx.time
 local assert = assert
@@ -55,21 +80,21 @@ function _M.new(plugin_name, limit, window)
     assert(limit > 0 and window > 0)
 
     local self = {
-        limit_count = limit_local_new(plugin_name, limit, window),
-        dict = ngx.shared["plugin-limit-count-reset-header"]
+        limit_count = limit_count.new(plugin_name, limit, window),
+        dict = ngx.shared[plugin_name .. "-reset-header"]
     }
 
     return setmetatable(self, mt)
 end
 
-function _M.incoming(self, key, commit, conf)
-    local delay, remaining = self.limit_count:incoming(key, commit)
+function _M.incoming(self, key, cost, commit, conf)
+    local delay, remaining = self.limit_count:handle_incoming(key, cost, commit)
     local reset = 0
     if not delay then
         return delay, remaining, reset
     end
 
-    if remaining == conf.count - 1 then
+    if remaining == conf.count - cost then
         reset = set_endtime(self, key, conf.time_window)
     else
         reset = read_reset(self, key)

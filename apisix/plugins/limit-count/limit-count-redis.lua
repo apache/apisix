@@ -32,10 +32,10 @@ local mt = {
 local script = core.string.compress_script([=[
     local ttl = redis.call('ttl', KEYS[1])
     if ttl < 0 then
-        redis.call('set', KEYS[1], ARGV[1] - 1, 'EX', ARGV[2])
-        return {ARGV[1] - 1, ARGV[2]}
+        redis.call('set', KEYS[1], ARGV[1] - ARGV[3], 'EX', ARGV[2])
+        return {ARGV[1] - ARGV[3], ARGV[2]}
     end
-    return {redis.call('incrby', KEYS[1], -1), ttl}
+    return {redis.call('incrby', KEYS[1], 0 - ARGV[3]), ttl}
 ]=])
 
 local function redis_cli(conf)
@@ -85,7 +85,7 @@ function _M.new(plugin_name, limit, window, conf)
     return setmetatable(self, mt)
 end
 
-function _M.incoming(self, key)
+function _M.incoming(self, key, cost)
     local conf = self.conf
     local red, err = redis_cli(conf)
     if not red then
@@ -98,7 +98,7 @@ function _M.incoming(self, key)
     key = self.plugin_name .. tostring(key)
 
     local ttl = 0
-    res, err = red:eval(script, 1, key, limit, window)
+    res, err = red:eval(script, 1, key, limit, window, cost)
 
     if err then
         return nil, err, ttl
