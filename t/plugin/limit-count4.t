@@ -179,10 +179,10 @@ passed
     location = /t {
         content_by_lua_block {
             local limit_count_local = require "apisix.plugins.limit-count.limit-count-local"
-            local lim = limit_count_local.new("limit-count", 10, 60)
+            local lim = limit_count_local.new("plugin-limit-count", 10, 60)
             local uri = ngx.var.uri
             for i = 1, 7 do
-                local delay, err = lim.limt_count:handle_incoming(uri, 2, true)
+                local delay, err = lim.limit_count:handle_incoming(uri, 2, true)
                 if not delay then
                     ngx.say(err)
                 else
@@ -213,9 +213,9 @@ rejected
     location = /t {
         content_by_lua_block {
             local limit_count_local = require "apisix.plugins.limit-count.limit-count-local"
-            local lim = limit_count_local.new("limit-count", 3, 60)
+            local lim = limit_count_local.new("plugin-limit-count", 3, 60)
             local uri = ngx.var.uri
-            local delay, err = lim.limt_count:handle_incoming(uri, -2, true)
+            local delay, err = lim.limit_count:handle_incoming(uri, -2, true)
             if not delay then
                 ngx.say(err)
             else
