@@ -37,6 +37,7 @@ local thread_wait        = ngx.thread.wait
 local thread_kill        = ngx.thread.kill
 local math_random        = math.random
 local pcall              = pcall
+local null               = ngx.null
 
 local all_services = core.table.new(0, 5)
 local default_service
@@ -52,6 +53,8 @@ local default_skip_services = {"consul"}
 local default_random_seed = 5
 local default_catalog_error_index = -1
 local default_health_error_index = -2
+local watch_type_catalog = 1
+local watch_type_health = 2
 local max_retry_time = 256
 
 local _M = {
@@ -184,15 +187,30 @@ local function get_retry_delay(retry_delay)
 end
 
 local function watch_catalog(consul_server)
-    local c = resty_consul:new({
-        host = consul_server.host,
-        port = consul_server.port,
-        connect_timeout = consul_server.connect_timeout,
-        read_timeout = consul_server.read_timeout,
-        default_args = consul_server.default_catalog_args,
-    })
+    local opts
+    if consul_server.keepalive then
+        opts = {
+            host = consul_server.host,
+            port = consul_server.port,
+            connect_timeout = consul_server.connect_timeout,
+            read_timeout = consul_server.read_timeout,
+            default_args = {
+                wait = consul_server.wait_timeout, --blocked wait!=0; unblocked by wait=0
+                index = consul_server.catalog_index,
+            },
+        }
+    else
+        opts = {
+            host = consul_server.host,
+            port = consul_server.port,
+            connect_timeout = consul_server.connect_timeout,
+            read_timeout = consul_server.read_timeout,
+        }
+    end
+    local client = resty_consul:new(opts)
 
-    local watch_result, watch_err = c:get(consul_server.consul_watch_catalog_url)
+    ::RETRY::
+    local watch_result, watch_err = client:get(consul_server.consul_watch_catalog_url)
     local watch_error_info = (watch_err ~= nil and watch_err)
             or ((watch_result ~= nil and watch_result.status ~= 200)
             and watch_result.status)
@@ -202,21 +220,43 @@ local function watch_catalog(consul_server)
             ", got watch result: ", json_delay_encode(watch_result, true),
             ", with error: ", watch_error_info)
 
-        return default_catalog_error_index
+        return watch_type_catalog, default_catalog_error_index
     end
-    return watch_result.headers['X-Consul-Index']
+    if consul_server.catalog_index > 0
+            and consul_server.catalog_index == tonumber(watch_result.headers['X-Consul-Index']) then
+        local random_delay = math_random(default_random_seed)
+        log.warn("watch catalog has no change, retry call consul after ", random_delay, " seconds")
+        core_sleep(random_delay)
+        goto RETRY
+    end
+    return watch_type_catalog, watch_result.headers['X-Consul-Index']
 end
 
 local function watch_health(consul_server)
-    local c = resty_consul:new({
-        host = consul_server.host,
-        port = consul_server.port,
-        connect_timeout = consul_server.connect_timeout,
-        read_timeout = consul_server.read_timeout,
-        default_args = consul_server.default_health_args,
-    })
+    local opts
+    if consul_server.keepalive then
+        opts = {
+            host = consul_server.host,
+            port = consul_server.port,
+            connect_timeout = consul_server.connect_timeout,
+            read_timeout = consul_server.read_timeout,
+            default_args = {
+                wait = consul_server.wait_timeout, --blocked wait!=0; unblocked by wait=0
+                index = consul_server.health_index,
+            },
+        }
+    else
+        opts = {
+            host = consul_server.host,
+            port = consul_server.port,
+            connect_timeout = consul_server.connect_timeout,
+            read_timeout = consul_server.read_timeout,
+        }
+    end
+    local client = resty_consul:new(opts)
 
-    local watch_result, watch_err = c:get(consul_server.consul_watch_health_url)
+    ::RETRY::
+    local watch_result, watch_err = client:get(consul_server.consul_watch_health_url)
     local watch_error_info = (watch_err ~= nil and watch_err)
             or ((watch_result ~= nil and watch_result.status ~= 200)
             and watch_result.status)
@@ -226,9 +266,16 @@ local function watch_health(consul_server)
             ", got watch result: ", json_delay_encode(watch_result, true),
             ", with error: ", watch_error_info)
 
-        return default_health_error_index
+        return watch_type_health, default_health_error_index
     end
-    return watch_result.headers['X-Consul-Index']
+    if consul_server.health_index > 0
+            and consul_server.health_index == tonumber(watch_result.headers['X-Consul-Index']) then
+        local random_delay = math_random(default_random_seed)
+        log.warn("watch health has no change, retry call consul after ", random_delay, " seconds")
+        core_sleep(random_delay)
+        goto RETRY
+    end
+    return watch_type_health, watch_result.headers['X-Consul-Index']
 end
 
 local function check_keepalive(consul_server, retry_delay)
@@ -240,7 +287,6 @@ local function check_keepalive(consul_server, retry_delay)
         end
     end
 end
-
 
 local function update_index(consul_server, catalog_index, health_index)
     local c_index = 0
@@ -255,18 +301,10 @@ local function update_index(consul_server, catalog_index, health_index)
 
     if c_index > 0 then
         consul_server.catalog_index = c_index
-        -- only long connect type use index
-        if consul_server.keepalive then
-            consul_server.default_catalog_args.index = c_index
-        end
     end
 
     if h_index > 0 then
         consul_server.health_index = h_index
-        -- only long connect type use index
-        if consul_server.keepalive then
-            consul_server.default_health_args.index = h_index
-        end
     end
 end
 
@@ -275,6 +313,24 @@ local function is_not_empty(value)
             or (type(value) == "table" and not next(value))
             or (type(value) == "string" and value == "") then
         return false
+    end
+
+    return true
+end
+
+local function watch_result_is_valid(watch_type, index, catalog_index, health_index)
+    if index <= 0 then
+        return false
+    end
+
+    if watch_type == watch_type_catalog then
+        if index == catalog_index then
+            return false
+        end
+    else
+        if index == health_index then
+            return false
+        end
     end
 
     return true
@@ -310,15 +366,22 @@ function _M.connect(premature, consul_server, retry_delay)
         return
     end
 
-    local thread_wait_ok, wait_res = thread_wait(catalog_thread, health_thread)
+    local thread_wait_ok, watch_type, index = thread_wait(catalog_thread, health_thread)
     thread_kill(catalog_thread)
     thread_kill(health_thread)
     if not thread_wait_ok then
-        log.error("failed to wait thread: ", err, ", wait_res: ", wait_res)
+        log.error("failed to wait thread: ", watch_type)
         local random_delay = math_random(default_random_seed)
         log.warn("failed to wait thread, retry connecting consul after ", random_delay, " seconds")
         core_sleep(random_delay)
 
+        check_keepalive(consul_server, retry_delay)
+        return
+    end
+
+    -- double check index has changed
+    if not watch_result_is_valid(tonumber(watch_type),
+            tonumber(index), consul_server.catalog_index, consul_server.health_index) then
         check_keepalive(consul_server, retry_delay)
         return
     end
@@ -329,7 +392,6 @@ function _M.connect(premature, consul_server, retry_delay)
         connect_timeout = consul_server.connect_timeout,
         read_timeout = consul_server.read_timeout,
     })
-
     local catalog_success, catalog_res, catalog_err = pcall(function()
         return consul_client:get(consul_server.consul_watch_catalog_url)
     end)
@@ -415,9 +477,6 @@ function _M.connect(premature, consul_server, retry_delay)
             -- decode body, decode json, update service, error handling
             -- check result body is not nil and not empty
             if is_not_empty(result.body) then
-                log.notice("service url: ", svc_url,
-                    ", header: ", json_delay_encode(result.headers, true),
-                    ", body: ", json_delay_encode(result.body, true))
                 -- add services to table
                 local nodes = up_services[service_name]
                 for _, node in ipairs(result.body) do
@@ -468,21 +527,6 @@ end
 
 local function format_consul_params(consul_conf)
     local consul_server_list = core.table.new(0, #consul_conf.servers)
-    local catalog_args, health_args
-
-    if consul_conf.keepalive == false then
-        catalog_args = {}
-        health_args = {}
-    elseif consul_conf.keepalive then
-        catalog_args = {
-            wait = consul_conf.timeout.wait, --blocked wait!=0; unblocked by wait=0
-            index = 0,
-        }
-        health_args = {
-            wait = consul_conf.timeout.wait, --blocked wait!=0; unblocked by wait=0
-            index = 0,
-        }
-    end
 
     for _, v in pairs(consul_conf.servers) do
         local scheme, host, port, path = unpack(http.parse_uri(nil, v))
@@ -491,26 +535,23 @@ local function format_consul_params(consul_conf)
         elseif path ~= "/" or core.string.has_suffix(v, '/') then
             return nil, "invalid consul server address, the valid format: http://address:port"
         end
-
         core.table.insert(consul_server_list, {
             host = host,
             port = port,
             connect_timeout = consul_conf.timeout.connect,
             read_timeout = consul_conf.timeout.read,
+            wait_timeout = consul_conf.timeout.wait,
             consul_watch_catalog_url = "/catalog/services",
             consul_sub_url = "/health/service",
             consul_watch_health_url = "/health/state/any",
             consul_server_url = v .. "/v1",
             weight = consul_conf.weight,
             keepalive = consul_conf.keepalive,
-            default_catalog_args = catalog_args,
-            default_health_args = health_args,
             health_index = 0,
             catalog_index = 0,
             fetch_interval = consul_conf.fetch_interval -- fetch interval to next connect consul
         })
     end
-
     return consul_server_list, nil
 end
 
