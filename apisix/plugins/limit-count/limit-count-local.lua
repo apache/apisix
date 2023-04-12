@@ -15,7 +15,6 @@
 -- limitations under the License.
 --
 local limit_count = require("resty.limit.count")
-local core = require("apisix.core")
 
 limit_count.handle_incoming = function (self, key, cost, commit)
   local dict = self.dict
