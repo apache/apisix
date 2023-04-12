@@ -231,4 +231,4 @@ rejected
 --- request
     GET /t
 --- response_body
-cost must be atleast 1
+cost must be at least 1
