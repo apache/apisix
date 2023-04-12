@@ -253,7 +253,6 @@ function _M.check_ssl_conf(in_dp, conf)
         end
     end
 
-    -- when cert or key is referenced by secret, avoid dynamic verification of it
     if not secret.check_secret_uri(conf.cert) and
         not secret.check_secret_uri(conf.key) then
 
