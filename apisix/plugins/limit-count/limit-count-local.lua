@@ -17,6 +17,9 @@
 local limit_count = require("resty.limit.count")
 
 limit_count.handle_incoming = function (self, key, cost, commit)
+  if cost < 1 then
+    return nil, "cost must be atleast 1"
+  end
   local dict = self.dict
   local limit = self.limit
   local window = self.window
