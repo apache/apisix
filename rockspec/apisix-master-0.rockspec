@@ -34,12 +34,12 @@ dependencies = {
     "lua-resty-ctxdump = 0.1-0",
     "api7-lua-resty-dns-client = 7.0.1",
     "lua-resty-template = 2.0",
-    "lua-resty-etcd = 1.10.3",
+    "lua-resty-etcd = 1.10.4",
     "api7-lua-resty-http = 0.2.0",
     "lua-resty-balancer = 0.04",
     "lua-resty-ngxvar = 0.5.2",
     "lua-resty-jit-uuid = 0.0.7",
-    "lua-resty-healthcheck-api7 = 2.2.2",
+    "lua-resty-healthcheck-api7 = 2.2.3",
     "api7-lua-resty-jwt = 0.2.4",
     "lua-resty-hmac-ffi = 0.05",
     "lua-resty-cookie = 0.1.0",
@@ -78,7 +78,7 @@ dependencies = {
     "xml2lua = 1.5-2",
     "nanoid = 0.1-1",
     "lua-resty-mediador = 0.1.2-1",
-    "lua-resty-ldap = 0.2.0-0"
+    "lua-resty-ldap = 0.2.2-0"
 }
 
 build = {

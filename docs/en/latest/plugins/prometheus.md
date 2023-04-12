@@ -235,6 +235,16 @@ The following metrics are exported by the `prometheus` Plugin:
 - Info: Information about the APISIX node.
 - Shared dict: The capacity and free space of all nginx.shared.DICT in APISIX.
 
+- `apisix_upstream_status`: Health check result status of upstream nodes. A value of `1` represents healthy and `0` represents unhealthy.
+
+  The available attributes are:
+
+  | Name         | Description                                                                                                                   |
+  |--------------|-------------------------------------------------------------------------------------------------------------------------------|
+  | name         | resource id where the upstream node is attached to, e.g. `/apisix/routes/1`, `/apisix/upstreams/1`.                                                                            |
+  | ip        | ip address of the node.                          |
+  | port  | port number of the node.                               |
+
 Here are the original metrics from APISIX:
 
 ```shell
@@ -323,6 +333,10 @@ apisix_shared_dict_free_space_bytes{name="balancer-ewma-locks"} 10412032
 apisix_shared_dict_free_space_bytes{name="discovery"} 1032192
 apisix_shared_dict_free_space_bytes{name="etcd-cluster-health-check"} 10412032
 ...
+# HELP apisix_upstream_status Upstream status from health check
+# TYPE apisix_upstream_status gauge
+apisix_upstream_status{name="/apisix/routes/1",ip="100.24.156.8",port="80"} 0
+apisix_upstream_status{name="/apisix/routes/1",ip="52.86.68.46",port="80"} 1
 ```
 
 ## Disable Plugin
