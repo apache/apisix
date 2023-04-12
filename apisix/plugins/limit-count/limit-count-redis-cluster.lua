@@ -112,5 +112,5 @@ function _M.incoming(self, key, cost)
     return 0, remaining, ttl
 end
 
-
+_M.script = script
 return _M
