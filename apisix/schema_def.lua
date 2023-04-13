@@ -82,7 +82,7 @@ local label_value_def = {
     description = "value of label",
     type = "string",
     pattern = [[^\S+$]],
-    maxLength = 64,
+    maxLength = 256,
     minLength = 1
 }
 _M.label_value_def = label_value_def
