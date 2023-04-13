@@ -664,6 +664,7 @@ foobar:
     }
 
 
+
 === TEST 10: cooperation of proxy-cache plugin
 --- config
 location /websamples.countryinfo/CountryInfoService.wso {
