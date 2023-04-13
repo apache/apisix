@@ -353,6 +353,9 @@ local admin_schema = {
         https_admin = {
             type = "boolean",
         },
+        admin_key_required = {
+            type = "boolean",
+        },
     }
 }
 

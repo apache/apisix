@@ -588,6 +588,10 @@ deployment:
   role_traditional:
     config_provider: etcd
   admin:
+    # Admin API authentication is enabled by default.
+    # Set it false in the production environment will cause a serious security issue.
+    # admin_key_required: true
+
     # Default token when use API to call for Admin API.
     # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
     # Disabling this configuration item means that the Admin API does not

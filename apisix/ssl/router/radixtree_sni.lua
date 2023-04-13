@@ -18,6 +18,7 @@ local get_request      = require("resty.core.base").get_request
 local router_new       = require("apisix.utils.router").new
 local core             = require("apisix.core")
 local apisix_ssl       = require("apisix.ssl")
+local secret           = require("apisix.secret")
 local ngx_ssl          = require("ngx.ssl")
 local config_util      = require("apisix.core.config_util")
 local ipairs           = ipairs
@@ -212,7 +213,9 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
 
     ngx_ssl.clear_certs()
 
-    ok, err = _M.set_cert_and_key(sni, matched_ssl.value)
+    local new_ssl_value = secret.fetch_secrets(matched_ssl.value) or matched_ssl.value
+
+    ok, err = _M.set_cert_and_key(sni, new_ssl_value)
     if not ok then
         return false, err
     end
