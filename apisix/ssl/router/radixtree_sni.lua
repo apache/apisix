@@ -229,7 +229,11 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
                 return false, "failed to parse client cert: " .. err
             end
 
-            local ok, err = ngx_ssl.verify_client(parsed_cert, depth)
+            local reject_in_handshake =
+                (ngx.config.subsystem == "stream") or
+                (matched_ssl.value.client.skip_mtls_uri_regex == nil)
+            local ok, err = ngx_ssl.verify_client(parsed_cert, depth,
+                reject_in_handshake)
             if not ok then
                 return false, err
             end

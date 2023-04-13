@@ -59,6 +59,7 @@ local str_sub         = string.sub
 local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
+local ngx_re_match    = ngx.re.match
 local control_api_router
 
 local is_http = false
@@ -179,6 +180,8 @@ function _M.http_ssl_phase()
 
     local ok, err = router.router_ssl.match_and_set(api_ctx)
 
+    ngx_ctx.matched_ssl = api_ctx.matched_ssl
+    ngx.log(ngx.WARN, require("inspect")(api_ctx.matched_ssl))
     core.tablepool.release("api_ctx", api_ctx)
     ngx_ctx.api_ctx = nil
 
@@ -310,10 +313,36 @@ local function verify_tls_client(ctx)
 end
 
 
+local function uri_matches_skip_mtls_route_patterns(ssl, uri)
+    for _, pat in ipairs(ssl.value.client.skip_mtls_uri_regex) do
+        if ngx_re_match(uri, pat,  "jo") then
+            return true
+        end
+    end
+end
+
+
 local function verify_https_client(ctx)
     local scheme = ctx.var.scheme
     if scheme ~= "https" then
         return true
+    end
+
+    local matched_ssl = ngx.ctx.matched_ssl
+    if matched_ssl.value.client
+        and matched_ssl.value.client.skip_mtls_uri_regex
+        and apisix_ssl.support_client_verification()
+        and (not uri_matches_skip_mtls_route_patterns(matched_ssl, ngx.var.uri)) then
+        local res = ctx.var.ssl_client_verify
+        if res ~= "SUCCESS" then
+            if res == "NONE" then
+                core.log.error("client certificate was not present")
+            else
+                core.log.error("client certificate verification is not passed: ", res)
+            end
+
+            return false
+        end
     end
 
     local host = ctx.var.host
