@@ -38,6 +38,8 @@ local thread_kill        = ngx.thread.kill
 local math_random        = math.random
 local pcall              = pcall
 local null               = ngx.null
+local type               = type
+local next               = next
 
 local all_services = core.table.new(0, 5)
 local default_service
