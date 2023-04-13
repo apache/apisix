@@ -25,16 +25,7 @@ add_block_preprocessor(sub {
 
     my $http_config = $block->http_config // <<_EOC_;
 
-    # for proxy cache
-    proxy_cache_path /tmp/disk_cache_one levels=1:2 keys_zone=disk_cache_one:50m inactive=1d max_size=1G;
-    proxy_cache_path /tmp/disk_cache_two levels=1:2 keys_zone=disk_cache_two:50m inactive=1d max_size=1G;
     lua_shared_dict memory_cache 50m;
-
-    # for proxy cache
-    map \$upstream_cache_zone \$upstream_cache_zone_info {
-        disk_cache_one /tmp/disk_cache_one,1:2;
-        disk_cache_two /tmp/disk_cache_two,1:2;
-    }
 
     server {
         listen 1986;
@@ -673,7 +664,7 @@ foobar:
     }
 
 
-=== TEST 10: cooperation of cache-proxy plugin
+=== TEST 10: cooperation of proxy-cache plugin
 --- config
 location /websamples.countryinfo/CountryInfoService.wso {
     content_by_lua_block {
