@@ -178,11 +178,21 @@ passed
 --- config
     location = /t {
         content_by_lua_block {
+            local conf = {
+                time_window = 60,
+                count = 10,
+                allow_degradation = false,
+                key_type = "var",
+                policy = "local",
+                rejected_code = 503,
+                show_limit_quota_header = true,
+                key = "remote_addr"
+            }
             local limit_count_local = require "apisix.plugins.limit-count.limit-count-local"
             local lim = limit_count_local.new("plugin-limit-count", 10, 60)
             local uri = ngx.var.uri
             for i = 1, 7 do
-                local delay, err = lim.limit_count:handle_incoming(uri, 2, true)
+                local delay, err = lim:incoming(uri, 2, true, conf)
                 if not delay then
                     ngx.say(err)
                 else
@@ -209,10 +219,20 @@ rejected
 --- config
     location = /t {
         content_by_lua_block {
+            local conf = {
+                time_window = 60,
+                count = 3,
+                allow_degradation = false,
+                key_type = "var",
+                policy = "local",
+                rejected_code = 503,
+                show_limit_quota_header = true,
+                key = "remote_addr"
+            }
             local limit_count_local = require "apisix.plugins.limit-count.limit-count-local"
             local lim = limit_count_local.new("plugin-limit-count", 3, 60)
             local uri = ngx.var.uri
-            local delay, err = lim.limit_count:handle_incoming(uri, -2, true)
+            local delay, err = lim:incoming(uri, -2, true, conf)
             if not delay then
                 ngx.say(err)
             else
