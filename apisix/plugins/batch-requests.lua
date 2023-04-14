@@ -279,8 +279,8 @@ local function batch_requests(ctx)
             sub_resp.body, err = resp:read_body()
             if err then
                 sub_resp.read_body_err = err
-                core.log.error("read_body: ", err)
-            elseif resp.read_trailers then
+                core.log.error("read pipeline response body failed: ", err)
+            else
                 resp:read_trailers()
             end
         end
