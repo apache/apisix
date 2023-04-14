@@ -287,7 +287,8 @@ qr/grpc header: "(:authority|host): [^"]+"/
 qr/grpc header: "(:authority|host): hello.world"/
 
 
-=== TEST 10: with service_id
+
+=== TEST 10: set service protocol with service
 --- apisix_yaml
 services:
   -
