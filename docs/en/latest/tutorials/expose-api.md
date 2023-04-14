@@ -111,10 +111,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" \
 After creating the Route, you can test the Service with the following command:
 
 ```
-curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: example.com"
+curl -i -X GET "http://127.0.0.1:9080/anything/get?foo1=bar1&foo2=bar2" -H "Host: example.com"
 ```
 
-APISIX will forward the request to `http://httpbin.org:80/anything/foo?arg=10`.
+APISIX will forward the request to `http://httpbin.org:80/anything/get?foo1=bar1&foo2=bar2`.
 
 ## More Tutorials
 
