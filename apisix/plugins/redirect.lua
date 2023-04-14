@@ -75,6 +75,31 @@ local _M = {
 }
 
 
+function _M.check_schema(conf)
+    local ok, err = core.schema.check(schema, conf)
+
+    if not ok then
+        return false, err
+    end
+
+    if conf.regex_uri and #conf.regex_uri > 0 then
+        local _, _, err = re_sub("/fake_uri", conf.regex_uri[1],
+                conf.regex_uri[2], "jo")
+        if err then
+            local msg = string_format("invalid regex_uri (%s, %s), err:%s",
+                    conf.regex_uri[1], conf.regex_uri[2], err)
+            return false, msg
+        end
+    end
+
+    if conf.http_to_https and conf.append_query_string then
+        return false, "only one of `http_to_https` and `append_query_string` can be configured."
+    end
+
+    return true
+end
+
+
 local function parse_uri(uri)
     local iterator, err = re_gmatch(uri, reg, "jiox")
     if not iterator then
@@ -99,39 +124,12 @@ local function parse_uri(uri)
 end
 
 
-function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-
-    if not ok then
-        return false, err
-    end
-
-    if conf.regex_uri and #conf.regex_uri > 0 then
-        local _, _, err = re_sub("/fake_uri", conf.regex_uri[1],
-                                 conf.regex_uri[2], "jo")
-        if err then
-            local msg = string_format("invalid regex_uri (%s, %s), err:%s",
-                                      conf.regex_uri[1], conf.regex_uri[2], err)
-            return false, msg
-        end
-    end
-
-    if conf.http_to_https and conf.append_query_string then
-        return false, "only one of `http_to_https` and `append_query_string` can be configured."
-    end
-
-    return true
-end
-
-
-    local tmp = {}
 local function concat_new_uri(uri, ctx)
+    local tmp = {}
     local passed_uri_segs, err = lrucache(uri, nil, parse_uri, uri)
     if not passed_uri_segs then
         return nil, err
     end
-
-    core.table.clear(tmp)
 
     for _, uri_segs in ipairs(passed_uri_segs) do
         local pat1 = uri_segs[1]    -- \$host
