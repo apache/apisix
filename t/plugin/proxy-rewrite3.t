@@ -771,3 +771,99 @@ passed
 GET /test/plugin/proxy/rewrite HTTP/1.1
 --- response_headers
 X-Request-ID: test1///test2
+
+
+
+=== TEST 33: set route (test if X-Forwarded-Port can be set before proxy)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "headers": {
+                                    "X-Forwarded-Port": "9882"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/echo"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 34: test if X-Forwarded-Port can be set before proxy
+--- request
+GET /echo HTTP/1.1
+--- more_headers
+X-Forwarded-Port: 9881
+--- response_headers
+X-Forwarded-Port: 9882
+
+
+
+=== TEST 35: set route (test if X-Forwarded-For can be set before proxy)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "proxy-rewrite": {
+                                "headers": {
+                                    "X-Forwarded-For": "22.22.22.22"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/echo"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 36: test if X-Forwarded-For can be set before proxy
+--- request
+GET /echo HTTP/1.1
+--- more_headers
+X-Forwarded-For: 11.11.11.11
+--- response_headers
+X-Forwarded-For: 22.22.22.22, 127.0.0.1
