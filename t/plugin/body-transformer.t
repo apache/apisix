@@ -667,7 +667,7 @@ foobar:
 
 === TEST 10: cooperation of proxy-cache plugin
 --- config
-location /websamples.countryinfo/CountryInfoService.wso {
+location /demo {
     content_by_lua_block {
         ngx.say([[
     <SOAP-ENV:Envelope
@@ -713,7 +713,7 @@ location /websamples.countryinfo/CountryInfoService.wso {
                                 "Accept-Encoding": "identity",
                                 "Content-Type": "text/xml"
                             },
-                            "uri": "/websamples.countryinfo/CountryInfoService.wso"
+                            "uri": "/demo"
                         },
                         "proxy-cache":{
                             "cache_strategy": "memory",
