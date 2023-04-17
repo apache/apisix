@@ -30,6 +30,7 @@ local mt = {
 
 
 local script = core.string.compress_script([=[
+    assert(tonumber(ARGV[3]) >= 1, "cost must be at least 1")
     local ttl = redis.call('ttl', KEYS[1])
     if ttl < 0 then
         redis.call('set', KEYS[1], ARGV[1] - ARGV[3], 'EX', ARGV[2])
