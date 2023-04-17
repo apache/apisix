@@ -22,19 +22,6 @@ no_root_location();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
-
-    my $http_config = $block->http_config // <<_EOC_;
-
-    lua_shared_dict memory_cache 50m;
-
-    server {
-        listen 1986;
-        server_tokens off;
-
-    }
-_EOC_
-
-    $block->set_value("http_config", $http_config);
     $block->set_value("request", "GET /t");
 });
 
@@ -666,6 +653,8 @@ foobar:
 
 
 === TEST 10: cooperation of proxy-cache plugin
+--- http_config
+lua_shared_dict memory_cache 50m;
 --- config
 location /demo {
     content_by_lua_block {
