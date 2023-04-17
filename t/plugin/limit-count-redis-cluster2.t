@@ -95,7 +95,7 @@ Done
     location /t {
         content_by_lua_block {
             local conf = {
-                redis_cluster_nodes = {"127.0.0.1:7000", "127.0.0.1:7001"},
+                redis_cluster_nodes = {"127.0.0.1:5000", "127.0.0.1:5001"},
                 redis_cluster_name = "redis-cluster-1",
                 redis_cluster_ssl = false,
                 redis_timeout = 1000,
@@ -128,7 +128,7 @@ remaining: 1
     location /t {
         content_by_lua_block {
             local conf = {
-                redis_cluster_nodes = {"127.0.0.1:7000", "127.0.0.1:7001"},
+                redis_cluster_nodes = {"127.0.0.1:5000", "127.0.0.1:5001"},
                 redis_cluster_name = "redis-cluster-1",
                 redis_cluster_ssl = false,
                 redis_timeout = 1000,
