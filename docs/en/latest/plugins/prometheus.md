@@ -75,6 +75,7 @@ plugin_attr:
             extra_labels:
                 - upstream_addr: $upstream_addr
                 - upstream_status: $upstream_status
+```
 
 ## API
 
