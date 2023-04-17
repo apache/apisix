@@ -205,6 +205,7 @@ $grpc_location .= <<_EOC_;
             grpc_set_header   Content-Type application/grpc;
             grpc_socket_keepalive on;
             grpc_pass         \$upstream_scheme://apisix_backend;
+            mirror              /proxy_mirror_grpc;
 
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
@@ -736,6 +737,8 @@ _EOC_
         }
 
         location / {
+            set \$upstream_mirror_scheme      '';
+            set \$upstream_mirror_host        '';
             set \$upstream_mirror_uri         '';
             set \$upstream_upgrade            '';
             set \$upstream_connection         '';
@@ -820,6 +823,22 @@ _EOC_
             proxy_http_version 1.1;
             proxy_set_header Host \$upstream_host;
             proxy_pass \$upstream_mirror_uri;
+        }
+
+        location = /proxy_mirror_grpc {
+            internal;
+_EOC_
+
+    if ($version !~ m/\/apisix-nginx-module/) {
+        $config .= <<_EOC_;
+            if (\$upstream_mirror_uri = "") {
+                return 200;
+            }
+_EOC_
+    }
+
+    $config .= <<_EOC_;
+            grpc_pass \$upstream_mirror_host;
         }
 _EOC_
 

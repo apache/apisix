@@ -27,7 +27,7 @@ local schema = {
     properties = {
         host = {
             type = "string",
-            pattern = [=[^http(s)?:\/\/([\da-zA-Z.-]+|\[[\da-fA-F:]+\])(:\d+)?$]=],
+            pattern = [=[^(http(s)?|grpc(s)?):\/\/([\da-zA-Z.-]+|\[[\da-fA-F:]+\])(:\d+)?$]=],
         },
         path = {
             type = "string",
@@ -76,15 +76,15 @@ local function resolver_host(prop_host)
         if not ip then
             core.log.error("dns resolver resolves domain: ", decoded_host," error: ", err,
                             " will continue to use the host: ", decoded_host)
-            return prop_host
+            return url_decoded.scheme, prop_host
         end
 
         local host = url_decoded.scheme .. '://' .. ip ..
             (url_decoded.port and ':' .. url_decoded.port or '')
         core.log.info(prop_host, " is resolved to: ", host)
-        return host
+        return url_decoded.scheme, host
     end
-    return prop_host
+    return url_decoded.scheme, prop_host
 end
 
 
@@ -101,7 +101,10 @@ local function enable_mirror(ctx, conf)
         end
     end
 
-    ctx.var.upstream_mirror_uri = resolver_host(conf.host) .. uri
+    local mirror_scheme, mirror_host = resolver_host(conf.host)
+    ctx.var.upstream_mirror_scheme = mirror_scheme
+    ctx.var.upstream_mirror_host = mirror_host
+    ctx.var.upstream_mirror_uri = mirror_host .. uri
 
     if has_mod then
         apisix_ngx_client.enable_mirror()
