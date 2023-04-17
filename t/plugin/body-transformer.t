@@ -22,7 +22,10 @@ no_root_location();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
-    $block->set_value("request", "GET /t");
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
 });
 
 run_tests;
