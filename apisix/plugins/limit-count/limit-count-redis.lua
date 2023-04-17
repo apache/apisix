@@ -28,7 +28,14 @@ local mt = {
 }
 
 
-local script = require("apisix.plugins.limit-count.limit-count-redis-cluster").script
+local script = core.string.compress_script([=[
+    local ttl = redis.call('ttl', KEYS[1])
+    if ttl < 0 then
+        redis.call('set', KEYS[1], ARGV[1] - ARGV[3], 'EX', ARGV[2])
+        return {ARGV[1] - ARGV[3], ARGV[2]}
+    end
+    return {redis.call('incrby', KEYS[1], 0 - ARGV[3]), ttl}
+]=])
 
 local function redis_cli(conf)
     local red = redis_new()
