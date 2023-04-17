@@ -384,6 +384,11 @@ function _M.connect(premature, consul_server, retry_delay)
     -- double check index has changed
     if not watch_result_is_valid(tonumber(watch_type),
             tonumber(index), consul_server.catalog_index, consul_server.health_index) then
+
+        retry_delay = get_retry_delay(retry_delay)
+        log.warn("get all svcs got err, retry connecting consul after ", retry_delay, " seconds")
+        core_sleep(retry_delay)
+
         check_keepalive(consul_server, retry_delay)
         return
     end
