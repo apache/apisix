@@ -189,7 +189,7 @@ passed
 
 
 
-=== TEST 5: set route, with redis host, port and right username and password
+=== TEST 5: set route, with redis host, port and SSL
 --- config
     location /t {
         content_by_lua_block {
@@ -207,10 +207,10 @@ passed
                             "key": "remote_addr",
                             "policy": "redis",
                             "redis_host": "127.0.0.1",
-                            "redis_port": 6379,
+                            "redis_port": 6380,
                             "redis_timeout": 1001,
-                            "redis_username": "alice",
-                            "redis_password": "somepassword"
+                            "redis_ssl": true,
+                            "redis_ssl_verify": false
                         }
                     },
                     "upstream": {
@@ -246,3 +246,58 @@ passed
 ["GET /hello1", "GET /hello", "GET /hello2", "GET /hello", "GET /hello"]
 --- error_code eval
 [404, 503, 404, 503, 503]
+
+
+
+=== TEST 8: set route, with redis host, port, SSL and SSL verify is true(will cause ssl handshake err), with enable degradation switch
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "allow_degradation": true,
+                            "policy": "redis",
+                            "redis_host": "127.0.0.1",
+                            "redis_port": 6380,
+                            "redis_timeout": 1001,
+                            "redis_ssl": true,
+                            "redis_ssl_verify": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: enable degradation switch for TEST 8
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log
+failed to do ssl handshake
