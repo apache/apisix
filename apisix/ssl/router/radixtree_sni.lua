@@ -21,6 +21,7 @@ local apisix_ssl       = require("apisix.ssl")
 local secret           = require("apisix.secret")
 local ngx_ssl          = require("ngx.ssl")
 local config_util      = require("apisix.core.config_util")
+local ngx              = ngx
 local ipairs           = ipairs
 local type             = type
 local error            = error
