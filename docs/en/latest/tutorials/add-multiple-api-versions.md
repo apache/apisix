@@ -142,12 +142,16 @@ In the previous step, we created a route that wrapped an upstream inside its con
 Let's create the shared upstream by running below curl cmd:
 
 ```shell
-curl http://apisix:9080/apisix/admin/upstreams/1 -H 'X-API-KEY: xyz' -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d'
 {
-  "name": "Old API",
-  "type": "roundrobin",
-  "nodes": {
-    "oldapi:8081": 1
+  "name": "Direct Route to Old API",
+  "methods": ["GET"],
+  "uris": ["/hello", "/hello/", "/hello/*"],
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "oldapi:8081": 1
+    }
   }
 }'
 ```
@@ -161,7 +165,7 @@ In the scope of this tutorial, we will use _URI path-based versioning_ because i
 Before introducing the new version, we also need to rewrite the query that comes to the API gateway before forwarding it to the upstream. Because both the old and new versions should point to the same upstream and the upstream exposes endpoint `/hello`, not `/v1/hello`. Let’s create a plugin configuration to rewrite the path:
 
 ```shell
-curl http://apisix:9080/apisix/admin/plugin_configs/1 -H 'X-API-KEY: xyz' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "plugins": {
     "proxy-rewrite": {
@@ -176,7 +180,7 @@ We can now create the second versioned route that references the existing  upstr
 > Note that we can create routes for different API versions.
 
 ```shell
-curl http://apisix:9080/apisix/admin/routes/2 -H 'X-API-KEY: xyz' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "name": "Versioned Route to Old API",
   "methods": ["GET"],
@@ -189,7 +193,7 @@ curl http://apisix:9080/apisix/admin/routes/2 -H 'X-API-KEY: xyz' -X PUT -d '
 At this stage, we have configured two routes, one versioned and the other non-versioned:
 
 ```shell
-curl http://apisix.org/hello
+curl http://127.0.0.1:9080/hello
 ```
 
 ```shell title="output"
@@ -197,7 +201,7 @@ Hello world
 ```
 
 ```shell
-curl http://apisix.org/v1/hello
+curl http://127.0.0.1:9080/v1/hello
 ```
 
 ```shell title="output"
@@ -206,10 +210,10 @@ Hello world
 
 ## Route API requests from the old version to the new one
 
-We have versioned our API, but our API consumers probably still use the legacy non-versioned API. We want them to migrate, but we cannot just delete the legacy route as our users are unaware of it. Fortunately, the `301 HTTP` status code is our friend: we can let users know that the resource has moved from `http://apisix.org/hello` to `http://apisix.org/v1/hello`. It requires configuring the [redirect plugin](https://apisix.apache.org/docs/apisix/plugins/redirect/) on the initial route:
+We have versioned our API, but our API consumers probably still use the legacy non-versioned API. We want them to migrate, but we cannot just delete the legacy route as our users are unaware of it. Fortunately, the `301 HTTP` status code is our friend: we can let users know that the resource has moved from `http://127.0.0.1:9080/hello` to `http://127.0.0.1:9080/v1/hello`. It requires configuring the [redirect plugin](https://apisix.apache.org/docs/apisix/plugins/redirect/) on the initial route:
 
 ```shell
-curl http://apisix:9080/apisix/admin/routes/1 -H 'X-API-KEY: xyz' -X PATCH -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -d '
 {
   "plugins": {
     "redirect": {
@@ -225,7 +229,7 @@ curl http://apisix:9080/apisix/admin/routes/1 -H 'X-API-KEY: xyz' -X PATCH -d '
 Now when we try to request the first non-versioned API endpoint, you will get an expected output:
 
 ```shell
-curl http://apisix.org/hello
+curl http://127.0.0.1:9080/hello
 
 <html>
 <head><title>301 Moved Permanently</title></head>
