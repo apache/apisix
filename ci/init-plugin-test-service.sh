@@ -42,8 +42,8 @@ after() {
 
     # wait for keycloak ready
     bash -c 'while true; do curl -s localhost:8080 &>/dev/null; ret=$?; [[ $ret -eq 0 ]] && break; sleep 3; done'
-    docker cp ci/kcadm_configure_cas.sh apisix_keycloak_new:/tmp/
-    docker exec apisix_keycloak_new bash /tmp/kcadm_configure_cas.sh
+    docker cp ci/kcadm_configure_cas.sh apisix_keycloak:/tmp/
+    docker exec apisix_keycloak bash /tmp/kcadm_configure_cas.sh
 }
 
 before() {

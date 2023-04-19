@@ -28,31 +28,9 @@ services:
     networks:
       apisix_net:
 
-
   ## keycloak
   apisix_keycloak:
-    image: sshniro/keycloak-apisix:1.0.0
-    environment:
-      KEYCLOAK_USER: admin
-      KEYCLOAK_PASSWORD: 123456
-    restart: unless-stopped
-    ports:
-      - "8090:8080"
-      - "8443:8443"
-    networks:
-      apisix_net:
-
-  ## keycloak
-  # The keycloak official has two types of docker images:
-  # * legacy WildFly distribution
-  # * new Quarkus based distribution
-  # Here we choose new version, because it's mainstream and
-  # supports kcadm.sh to init the container for test.
-  # The original keycloak service `apisix_keycloak` is
-  # third-party personal customized image and for OIDC test only.
-  # We should unify both containers in future.
-  apisix_keycloak_new:
-    container_name: apisix_keycloak_new
+    container_name: apisix_keycloak
     image: quay.io/keycloak/keycloak:18.0.2
     # use host network because in CAS auth,
     # keycloak needs to send back-channel POST to apisix.
@@ -60,10 +38,15 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/conf/server.crt.pem
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/conf/server.key.pem
     restart: unless-stopped
-    command: ["start-dev", "--http-port 8080"]
+    command: ["start-dev", "--import-realm"]
     volumes:
       - /opt/keycloak-protocol-cas-18.0.2.jar:/opt/keycloak/providers/keycloak-protocol-cas-18.0.2.jar
+      - ./ci/pod/keycloak/server.crt.pem:/opt/keycloak/conf/server.crt.pem
+      - ./ci/pod/keycloak/server.key.pem:/opt/keycloak/conf/server.key.pem
+      - ./ci/pod/keycloak/realm-university.json:/opt/keycloak/data/import/realm-university.json
 
   ## kafka-cluster
   zookeeper-server1:
