@@ -22,31 +22,132 @@ local plugin_checker = require("apisix.plugin").plugin_checker
 local str_lower = string.lower
 local error   = error
 local ipairs  = ipairs
-
+local sub_str      = string.sub
+local table        = require("apisix.core.table")
+local json         = require("apisix.core.json")
 
 local _M = {version = 0.3}
 
+local function short_key(self, str)
+    return sub_str(str, #self.key + 2)
+end
 
-local function filter(route)
+local function filter(route, pre_route, is_sync)
     route.orig_modifiedIndex = route.modifiedIndex
     route.update_count = 0
 
     route.has_domain = false
-    if not route.value then
+    if route.value then
+        if route.value.host then
+            route.value.host = str_lower(route.value.host)
+        elseif route.value.hosts then
+            for i, v in ipairs(route.value.hosts) do
+                route.value.hosts[i] = str_lower(v)
+            end
+        end
+
+        apisix_upstream.filter_upstream(route.value.upstream, route)
+    end
+
+    core.log.info("filter route: ", core.json.delay_encode(route, true))
+
+    --avoid calling by load_full_data()
+    if not is_sync then
         return
     end
 
-    if route.value.host then
-        route.value.host = str_lower(route.value.host)
-    elseif route.value.hosts then
-        for i, v in ipairs(route.value.hosts) do
-            route.value.hosts[i] = str_lower(v)
-        end
+    local router_module = require("apisix.router")
+    local routes_obj = router_module.router_http.user_routes
+    local radixtree_obj = router_module.uri_router
+    local key = ""
+    if routes_obj.single_item then
+        key = routes_obj.key
+    else
+        key = short_key(routes_obj, route.key)
     end
 
-    apisix_upstream.filter_upstream(route.value.upstream, route)
+    local cur_route
+    if route.value then
+        local status = table.try_read_attr(route, "value", "status")
+        if status and status == 0 then
+            return
+        end
 
-    core.log.info("filter route: ", core.json.delay_encode(route, true))
+        local filter_fun, err
+        if route.value.filter_func then
+            filter_fun, err = loadstring(
+                "return " .. route.value.filter_func,
+                "router#" .. route.value.id
+            )
+            if not filter_fun then
+                core.log.error("failed to load filter function: ", err, " route id", route.value.id)
+                return
+            end
+
+            filter_fun = filter_fun()
+        end
+
+        cur_route = {
+            id = route.value.id,
+            paths = route.value.uris or route.value.uri,
+            methods = route.value.methods,
+            priority = route.value.priority,
+            hosts = route.value.hosts or route.value.host,
+            remote_addrs = route.value.remote_addrs or route.value.remote_addr,
+            vars = route.value.vars,
+            filter_fun = filter_fun,
+            handler = function(api_ctx, match_opts)
+                api_ctx.matched_params = nil
+                api_ctx.matched_route = route
+                api_ctx.curr_req_matched = match_opts.matched
+            end
+        }
+    end
+
+    local router_opts = {
+        no_param_match = true
+    }
+    local err
+    if pre_route then
+        local last_route = {
+            id = pre_route.value.id,
+            paths = pre_route.value.uris or pre_route.value.uri,
+            methods = pre_route.value.methods,
+            priority = pre_route.value.priority,
+            hosts = pre_route.value.hosts or pre_route.value.host,
+            remote_addrs = pre_route.value.remote_addrs or pre_route.value.remote_addr,
+            vars = pre_route.value.vars
+        }
+    
+        if route.value then
+            --update route
+            core.log.notice("update routes watched from etcd into radixtree.", json.encode(route))
+            err = radixtree_obj:update_route(last_route, cur_route, router_opts)
+            if err ~= nil then
+                core.log.error("update a route into radixtree failed.", json.encode(route), err)
+                return
+            end
+        else
+            --delete route
+            core.log.notice("delete routes watched from etcd into radixtree.", json.encode(route))
+            err = radixtree_obj:delete_route(last_route, router_opts)
+            if err ~= nil then
+                core.log.error("delete a route into radixtree failed.", json.encode(route), err)
+                return
+            end
+        end
+    elseif route.value then
+        --create route
+        core.log.notice("create routes watched from etcd into radixtree.", json.encode(route))
+        err = radixtree_obj:add_route(cur_route, router_opts)
+        if err ~= nil then
+            core.log.error("add routes into radixtree failed.", json.encode(route), err)
+            return
+        end
+    else
+        core.log.error("invalid operation type for a route.", route.key)
+        return
+    end
 end
 
 
@@ -70,6 +171,7 @@ local function attach_http_router_common_methods(http_router)
     end
 end
 
+local uri_routes = {}
 
 function _M.http_init_worker()
     local conf = core.config.local_conf()
@@ -84,6 +186,16 @@ function _M.http_init_worker()
     local router_http = require("apisix.http.router." .. router_http_name)
     attach_http_router_common_methods(router_http)
     router_http.init_worker(filter)
+
+    --create radixtree in init worker phase
+    local uri_router = http_route.create_radixtree_uri_router(router_http.user_routes.values,
+                                                             uri_routes, false)                                                 
+
+    if not uri_router then
+        error("create radixtree in init worker phase failed.")
+    end
+
+    _M.uri_router = uri_router
     _M.router_http = router_http
 
     local router_ssl = require("apisix.ssl.router." .. router_ssl_name)
