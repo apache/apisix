@@ -50,6 +50,9 @@ local policy_to_additional_properties = {
             redis_port = {
                 type = "integer", minimum = 1, default = 6379,
             },
+            redis_username = {
+                type = "string", minLength = 1,
+            },
             redis_password = {
                 type = "string", minLength = 0,
             },
@@ -58,6 +61,12 @@ local policy_to_additional_properties = {
             },
             redis_timeout = {
                 type = "integer", minimum = 1, default = 1000,
+            },
+            redis_ssl = {
+                type = "boolean", default = false,
+            },
+            redis_ssl_verify = {
+                type = "boolean", default = false,
             },
         },
         required = {"redis_host"},
