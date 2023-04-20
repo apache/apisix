@@ -99,7 +99,7 @@ function _M.incoming(self, key, commit, conf, cost)
     key = self.plugin_name .. tostring(key)
 
     local ttl = 0
-    res, err = red:eval(script, 1, key, limit, window, cost)
+    res, err = red:eval(script, 1, key, limit, window, cost or 1)
 
     if err then
         return nil, err, ttl
