@@ -206,6 +206,42 @@ property "request_method" validation failed: matches none of the enum values
                         "uri": "/ping"
                     }]],
                 },
+                {
+                    url = "/apisix/admin/routes/4",
+                    data = [[{
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.0.0.1:1964/auth",
+                                "request_headers": ["Authorization"],
+                                "upstream_headers": ["X-User-ID"],
+                                "client_headers": ["Location"]
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/nodegr"
+                    }]],
+                },
+                {
+                    url = "/apisix/admin/routes/5",
+                    data = [[{
+                        "uri": "/get",
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.0.0.1:2080/auth",
+                                "request_headers": ["Authorization"],
+                                "upstream_headers": ["X-User-ID"],
+                                "client_headers": ["Location"],
+                                "allow_degradation": true
+                        }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "httpbin.org:80": 1
+                            },
+                            "type": "roundrobin"
+                        }
+                    }]],
+                }
             }
 
             local t = require("lib.test_admin").test
@@ -305,3 +341,23 @@ POST /ping
 --- error_code: 403
 --- response_headers
 Location: http://example.com/auth
+
+
+
+=== TEST 11: hit route (unavailable auth server, expect failure)
+--- request
+GET /nodegr
+--- more_headers
+Authorization: 111
+--- error_code: 403
+--- error_log
+failed to process forward auth, err: connection refused
+
+
+
+=== TEST 12: hit route (unavailable auth server, allow degradation)
+--- request
+GET /get
+--- more_headers
+Authorization: 111
+--- error_code: 200
