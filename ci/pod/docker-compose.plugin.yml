@@ -41,12 +41,11 @@ services:
       KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/conf/server.crt.pem
       KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/conf/server.key.pem
     restart: unless-stopped
-    command: ["start-dev", "--import-realm"]
+    command: ["start-dev"]
     volumes:
       - /opt/keycloak-protocol-cas-18.0.2.jar:/opt/keycloak/providers/keycloak-protocol-cas-18.0.2.jar
       - ./ci/pod/keycloak/server.crt.pem:/opt/keycloak/conf/server.crt.pem
       - ./ci/pod/keycloak/server.key.pem:/opt/keycloak/conf/server.key.pem
-      - ./ci/pod/keycloak/realm-university.json:/opt/keycloak/data/import/realm-university.json
 
   ## kafka-cluster
   zookeeper-server1:
