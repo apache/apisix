@@ -69,7 +69,7 @@ __DATA__
             local lim = limit_count_local.new("plugin-limit-count", 10, 60)
             local uri = ngx.var.uri
             for i = 1, 7 do
-                local delay, err = lim:incoming(uri, 2, true, conf)
+                local delay, err = lim:incoming(uri, true, conf, 2)
                 if not delay then
                     ngx.say(err)
                 else
