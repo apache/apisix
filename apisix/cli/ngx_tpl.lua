@@ -740,7 +740,6 @@ http {
             mirror          /proxy_mirror;
             {% end %}
 
-
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
             }
@@ -854,13 +853,13 @@ http {
 
             {% if proxy_mirror_timeouts then %}
                 {% if proxy_mirror_timeouts.connect then %}
-            proxy_connect_timeout {* proxy_mirror_timeouts.connect *};
+            grpc_connect_timeout {* proxy_mirror_timeouts.connect *};
                 {% end %}
                 {% if proxy_mirror_timeouts.read then %}
-            proxy_read_timeout {* proxy_mirror_timeouts.read *};
+            grpc_read_timeout {* proxy_mirror_timeouts.read *};
                 {% end %}
                 {% if proxy_mirror_timeouts.send then %}
-            proxy_send_timeout {* proxy_mirror_timeouts.send *};
+            grpc_send_timeout {* proxy_mirror_timeouts.send *};
                 {% end %}
             {% end %}
             grpc_pass $upstream_mirror_host;
