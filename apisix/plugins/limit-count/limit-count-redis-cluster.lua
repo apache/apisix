@@ -91,7 +91,7 @@ function _M.new(plugin_name, limit, window, conf)
 end
 
 
-function _M.incoming(self, key, cost)
+function _M.incoming(self, key, commit, conf, cost)
     local red = self.red_cli
     local limit = self.limit
     local window = self.window
