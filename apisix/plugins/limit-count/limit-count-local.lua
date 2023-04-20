@@ -16,32 +16,6 @@
 --
 local limit_count = require("resty.limit.count")
 
-limit_count.handle_incoming = function (self, key, cost, commit)
-  if cost < 1 then
-    return nil, "cost must be at least 1"
-  end
-  local dict = self.dict
-  local limit = self.limit
-  local window = self.window
-
-  local remaining, err
-
-  if commit then
-      remaining, err = dict:incr(key, 0 - cost, limit, window)
-      if not remaining then
-          return nil, err
-      end
-  else
-      remaining = (dict:get(key) or limit) - cost
-  end
-
-  if remaining < 0 then
-      return nil, "rejected"
-  end
-
-  return 0, remaining
-end
-
 local ngx = ngx
 local ngx_time = ngx.time
 local assert = assert
@@ -89,8 +63,8 @@ function _M.new(plugin_name, limit, window)
     return setmetatable(self, mt)
 end
 
-function _M.incoming(self, key, cost, commit, conf)
-    local delay, remaining = self.limit_count:handle_incoming(key, cost, commit)
+function _M.incoming(self, key, commit, conf, cost)
+    local delay, remaining = self.limit_count:incoming(key, commit, cost)
     local reset = 0
     if not delay then
         return delay, remaining, reset
