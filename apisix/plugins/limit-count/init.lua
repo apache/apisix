@@ -288,7 +288,7 @@ function _M.rate_limit(conf, ctx, name, cost)
     key = gen_limit_key(conf, ctx, key)
     core.log.info("limit key: ", key)
 
-    local delay, remaining, reset = lim:incoming(key, cost, true, conf)
+    local delay, remaining, reset = lim:incoming(key, true, conf, cost)
     if not delay then
         local err = remaining
         if err == "rejected" then
