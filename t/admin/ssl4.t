@@ -16,7 +16,7 @@
 #
 use t::APISIX 'no_plan';
 
-log_level('debug');
+log_level('info');
 no_root_location();
 
 add_block_preprocessor( sub{
@@ -381,17 +381,19 @@ location /t {
         local ssl_cert = t.read_file("t/certs/apisix.crt")
         local ssl_key =  t.read_file("t/certs/apisix.key")
         local data = {cert = ssl_cert, key = ssl_key, sni = "www.test.com",
-         labels = {"secret-name": "js-design-test-bigdata-data-app-service-router-my-secret-number-123456"}}
+                      labels = {secret = "js-design-test-bigdata-data-app-service-router-my-secret-number-123456"}}
 
-        local code, body = t.test('/apisix/admin/ssls/2',
+        local code, body = t.test('/apisix/admin/ssls/1',
             ngx.HTTP_PUT,
             core.json.encode(data),
             [[{
                 "value": {
                     "sni": "www.test.com",
-                    "labels": {"secret-name": "js-design-test-bigdata-data-app-service-router-my-secret-number-123456"}
+                    "labels": {
+                        "secret": "js-design-test-bigdata-data-app-service-router-my-secret-number-123456"
+                    },
                 },
-                "key": "/apisix/ssls/2"
+                "key": "/apisix/ssls/1"
             }]]
             )
 
