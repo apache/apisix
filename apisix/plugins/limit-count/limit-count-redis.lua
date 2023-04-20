@@ -86,7 +86,7 @@ function _M.new(plugin_name, limit, window, conf)
     return setmetatable(self, mt)
 end
 
-function _M.incoming(self, key, commit, conf, cost)
+function _M.incoming(self, key, cost)
     local conf = self.conf
     local red, err = redis_cli(conf)
     if not red then

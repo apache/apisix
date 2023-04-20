@@ -288,7 +288,13 @@ function _M.rate_limit(conf, ctx, name, cost)
     key = gen_limit_key(conf, ctx, key)
     core.log.info("limit key: ", key)
 
-    local delay, remaining, reset = lim:incoming(key, true, conf, cost)
+    local delay, remaining, reset
+    if not conf.policy or conf.policy == "local" then
+        delay, remaining, reset = lim:incoming(key, true, conf, cost)
+    else
+        delay, remaining, reset = lim:incoming(key, cost)
+    end
+
     if not delay then
         local err = remaining
         if err == "rejected" then
