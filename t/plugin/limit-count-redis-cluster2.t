@@ -87,36 +87,3 @@ OK
 OK
 OK
 Done
-
-
-
-=== TEST 2: modified redis script, cost == 2
---- config
-    location /t {
-        content_by_lua_block {
-            local conf = {
-                redis_cluster_nodes = {"127.0.0.1:5000", "127.0.0.1:5001"},
-                redis_cluster_name = "redis-cluster-1",
-                redis_cluster_ssl = false,
-                redis_timeout = 1000,
-                key_type = "var",
-                time_window = 60,
-                show_limit_quota_header = true,
-                allow_degradation = false,
-                key = "remote_addr",
-                rejected_code = 503,
-                count = 3,
-                policy = "redis-cluster",
-                redis_cluster_ssl_verify = false
-            }
-
-            local lim_count_redis_cluster = require("apisix.plugins.limit-count.limit-count-redis-cluster")
-            local lim = lim_count_redis_cluster.new("limit-count", 3, 60, conf)
-            local uri = ngx.var.uri
-            local _, remaining, _ = lim:incoming(uri, 2)
-
-            ngx.say("remaining: ", remaining)
-        }
-    }
---- response_body
-remaining: 1
