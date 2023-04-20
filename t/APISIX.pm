@@ -203,6 +203,7 @@ _EOC_
 
 $grpc_location .= <<_EOC_;
             grpc_set_header   Content-Type application/grpc;
+            grpc_set_header   Te trailers;
             grpc_socket_keepalive on;
             grpc_pass         \$upstream_scheme://apisix_backend;
 
