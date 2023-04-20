@@ -46,6 +46,8 @@ services:
       - /opt/keycloak-protocol-cas-18.0.2.jar:/opt/keycloak/providers/keycloak-protocol-cas-18.0.2.jar
       - ./ci/pod/keycloak/server.crt.pem:/opt/keycloak/conf/server.crt.pem
       - ./ci/pod/keycloak/server.key.pem:/opt/keycloak/conf/server.key.pem
+      - ./ci/pod/keycloak/kcadm_configure_cas.sh:/tmp/kcadm_configure_cas.sh
+      - ./ci/pod/keycloak/kcadm_configure_university.sh:/tmp/kcadm_configure_university.sh
 
   ## kafka-cluster
   zookeeper-server1:

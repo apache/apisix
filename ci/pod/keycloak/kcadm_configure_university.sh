@@ -51,7 +51,7 @@ student_id=$(kcadm.sh get roles -r University --fields id,name 2>/dev/null | jq 
 kcadm.sh update clients/${client_id} -r University -s protocol=openid-connect -s standardFlowEnabled=true \
   -s implicitFlowEnabled=true -s directAccessGrantsEnabled=true -s serviceAccountsEnabled=true \
   -s authorizationServicesEnabled=true -s 'redirectUris=["*"]' -s 'webOrigins=["*"]'
-  
+
 kcadm.sh update clients/${client_id}/authz/resource-server -r University -s allowRemoteResourceManagement=false -s policyEnforcementMode="ENFORCING"
 
 # create authz-resource with name `course_resource`, uri `/course/*`, scope `DELETE, delete, view, GET`

@@ -42,15 +42,15 @@ after() {
 
     # wait for keycloak ready
     bash -c 'while true; do curl -s localhost:8080 &>/dev/null; ret=$?; [[ $ret -eq 0 ]] && break; sleep 3; done'
-    docker cp ci/kcadm_configure_cas.sh apisix_keycloak:/tmp/
-    docker exec apisix_keycloak bash /tmp/kcadm_configure_cas.sh
-    
-    # configure keycloak
+
+    # install jq
     wget https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -O jq
     chmod +x jq
     docker cp jq apisix_keycloak:/usr/bin/
-    docker cp ci/pod/keycloak/kcadm_configure.sh apisix_keycloak:/tmp/
-    docker exec apisix_keycloak bash /tmp/kcadm_configure.sh
+
+    # configure keycloak
+    docker exec apisix_keycloak bash /tmp/kcadm_configure_cas.sh
+    docker exec apisix_keycloak bash /tmp/kcadm_configure_university.sh
 }
 
 before() {
