@@ -20,7 +20,6 @@ local tab_insert = table.insert
 local ipairs = ipairs
 local pairs = pairs
 
-local plugin_name = "limit-count"
 local limit_redis_cluster_new
 local limit_redis_new
 local limit_local_new
@@ -200,8 +199,8 @@ function _M.check_schema(conf)
 end
 
 
-local function create_limit_obj(conf)
-    core.log.info("create new limit-count plugin instance")
+local function create_limit_obj(conf, plugin_name)
+    core.log.info("create new " .. plugin_name .. " plugin instance")
 
     if not conf.policy or conf.policy == "local" then
         return limit_local_new("plugin-" .. plugin_name, conf.count,
@@ -243,9 +242,9 @@ local function gen_limit_key(conf, ctx, key)
 end
 
 
-local function gen_limit_obj(conf, ctx)
+local function gen_limit_obj(conf, ctx, plugin_name)
     if conf.group then
-        return lrucache(conf.group, "", create_limit_obj, conf)
+        return lrucache(conf.group, "", create_limit_obj, conf, plugin_name)
     end
 
     local extra_key
@@ -255,13 +254,13 @@ local function gen_limit_obj(conf, ctx)
         extra_key = conf.policy
     end
 
-    return core.lrucache.plugin_ctx(lrucache, ctx, extra_key, create_limit_obj, conf)
+    return core.lrucache.plugin_ctx(lrucache, ctx, extra_key, create_limit_obj, conf, plugin_name)
 end
 
-function _M.rate_limit(conf, ctx)
+function _M.rate_limit(conf, ctx, name, cost)
     core.log.info("ver: ", ctx.conf_version)
 
-    local lim, err = gen_limit_obj(conf, ctx)
+    local lim, err = gen_limit_obj(conf, ctx, name)
 
     if not lim then
         core.log.error("failed to fetch limit.count object: ", err)
@@ -298,7 +297,13 @@ function _M.rate_limit(conf, ctx)
     key = gen_limit_key(conf, ctx, key)
     core.log.info("limit key: ", key)
 
-    local delay, remaining, reset = lim:incoming(key, true, conf)
+    local delay, remaining, reset
+    if not conf.policy or conf.policy == "local" then
+        delay, remaining, reset = lim:incoming(key, true, conf, cost)
+    else
+        delay, remaining, reset = lim:incoming(key, cost)
+    end
+
     if not delay then
         local err = remaining
         if err == "rejected" then
