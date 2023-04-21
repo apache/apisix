@@ -197,11 +197,11 @@ curl --resolve "test.com:9443:127.0.0.1" https://test.com:9443/anything -k --cer
 
 APISIX 允许配置 URI 白名单以便绕过 MTLS。如果请求的 URI 在白名单内，客户端证书将不被检查。注意，如果针对白名单外的 URI 发请求，而该请求缺乏客户端证书或者提供了非法客户端证书，会得到 HTTP 400 响应，而不是在 SSL 握手阶段被拒绝。
 
-### Timing diagram
+### 时序图
 
 ![skip mtls](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/skip-mtls.png)
 
-### Example
+### 例子
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
