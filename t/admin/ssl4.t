@@ -366,6 +366,7 @@ location /t {
 }
 
 
+
 === TEST 11: set ssl(sni: www.test.com) with long label
 --- yaml_config
 apisix:
