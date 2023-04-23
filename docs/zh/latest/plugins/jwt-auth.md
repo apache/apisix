@@ -127,7 +127,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:1980": 1
+            "127.0.0.1:9081": 1
         }
     }
 }'
@@ -266,7 +266,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:1980": 1
+            "127.0.0.1:9081": 1
         }
     }
 }'
