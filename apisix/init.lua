@@ -76,6 +76,7 @@ local load_balancer
 local local_conf
 local ver_header = "APISIX/" .. core.version.VERSION
 
+local has_mod, apisix_ngx_client = pcall(require, "resty.apisix.client")
 
 local _M = {version = 0.4}
 
@@ -687,6 +688,13 @@ function _M.grpc_access_phase()
     if code then
         core.log.error("failed to set grpcs upstream param: ", err)
         core.response.exit(code)
+    end
+
+    if api_ctx.var.upstream_mirror_scheme == "grpc" or
+        api_ctx.var.upstream_mirror_scheme == "grpcs" then
+        if has_mod then
+            apisix_ngx_client.enable_mirror()
+        end
     end
 end
 
