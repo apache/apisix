@@ -76,7 +76,6 @@ script() {
         echo "require openssl 3.x to test"
         exit 2
     fi
-    exit 3
 
     set_coredns
 
