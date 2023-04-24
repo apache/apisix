@@ -15,8 +15,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-
 export OPENRESTY_VERSION=source
-export TEST_CI_USE_GRPC=true
+export SSL_LIB_VERSION=tongsuo
+
+
+before_install() {
+    if [ -n "$COMPILE_TONGSUO" ]; then
+        git clone https://github.com/api7/tongsuo --depth 1
+        pushd tongsuo
+        # build binary
+        ./config enable-ntls -static
+        make -j2
+        mv apps/openssl apps/static-openssl
+        ./config shared enable-ntls -g --prefix=/usr/local/tongsuo
+        make -j2
+        popd
+    fi
+
+    pushd tongsuo
+    sudo make install_sw
+    sudo cp apps/static-openssl /usr/local/tongsuo/bin/openssl
+    export PATH=/usr/local/tongsuo/bin:$PATH
+    openssl version
+    popd
+}
+
+
+case_opt=$1
+
+case ${case_opt} in
+before_install)
+    before_install
+    ;;
+esac
+
 . ./ci/linux_openresty_common_runner.sh

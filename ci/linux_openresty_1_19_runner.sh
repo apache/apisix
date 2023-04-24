@@ -17,6 +17,5 @@
 #
 
 
-export OPENRESTY_VERSION=source
-export TEST_CI_USE_GRPC=true
+export OPENRESTY_VERSION=1.19.3.2
 . ./ci/linux_openresty_common_runner.sh

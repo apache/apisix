@@ -1,0 +1,320 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+version: "3.8"
+
+services:
+  ## Redis
+  apisix_redis:
+    # The latest image is the latest stable version
+    image: redis:latest
+    restart: unless-stopped
+    volumes:
+      - ./t/certs:/certs
+    command: "--tls-port 6380 \
+            --tls-cert-file /certs/mtls_server.crt \
+            --tls-key-file /certs/mtls_server.key \
+            --tls-ca-cert-file /certs/mtls_ca.crt \
+            --tls-auth-clients no \
+            --user alice on +@all ~* \\&* \\>somepassword"
+    ports:
+      - "6379:6379"
+      - "6380:6380"
+    networks:
+      apisix_net:
+
+  ## keycloak
+  apisix_keycloak:
+    container_name: apisix_keycloak
+    image: quay.io/keycloak/keycloak:18.0.2
+    # use host network because in CAS auth,
+    # keycloak needs to send back-channel POST to apisix.
+    network_mode: host
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/conf/server.crt.pem
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/conf/server.key.pem
+    restart: unless-stopped
+    command: ["start-dev"]
+    volumes:
+      - /opt/keycloak-protocol-cas-18.0.2.jar:/opt/keycloak/providers/keycloak-protocol-cas-18.0.2.jar
+      - ./ci/pod/keycloak/server.crt.pem:/opt/keycloak/conf/server.crt.pem
+      - ./ci/pod/keycloak/server.key.pem:/opt/keycloak/conf/server.key.pem
+      - ./ci/pod/keycloak/kcadm_configure_cas.sh:/tmp/kcadm_configure_cas.sh
+      - ./ci/pod/keycloak/kcadm_configure_university.sh:/tmp/kcadm_configure_university.sh
+
+  ## kafka-cluster
+  zookeeper-server1:
+    image: bitnami/zookeeper:3.6.0
+    env_file:
+      - ci/pod/kafka/zookeeper-server/env/common.env
+    restart: unless-stopped
+    ports:
+      - "2181:2181"
+    networks:
+      kafka_net:
+
+  zookeeper-server2:
+    image: bitnami/zookeeper:3.6.0
+    env_file:
+      - ci/pod/kafka/zookeeper-server/env/common.env
+    restart: unless-stopped
+    ports:
+      - "12181:12181"
+    networks:
+      kafka_net:
+
+  kafka-server1:
+    image: bitnami/kafka:2.8.1
+    env_file:
+      - ci/pod/kafka/kafka-server/env/common.env
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper-server1:2181
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper-server1
+      - zookeeper-server2
+    networks:
+      kafka_net:
+
+  kafka-server2:
+    image: bitnami/kafka:2.8.1
+    env_file:
+      - ci/pod/kafka/kafka-server/env/common2.env
+    environment:
+      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper-server2:2181
+    restart: unless-stopped
+    ports:
+      - "19092:19092"
+      - "19094:19094"
+    depends_on:
+      - zookeeper-server1
+      - zookeeper-server2
+    networks:
+      kafka_net:
+    volumes:
+      - ./ci/pod/kafka/kafka-server/kafka_jaas.conf:/opt/bitnami/kafka/config/kafka_jaas.conf:ro
+
+  ## SkyWalking
+  skywalking:
+    image: apache/skywalking-oap-server:8.7.0-es6
+    restart: unless-stopped
+    ports:
+      - "1234:1234"
+      - "11800:11800"
+      - "12800:12800"
+    networks:
+      skywalk_net:
+
+
+  ## OpenLDAP
+  openldap:
+    image: bitnami/openldap:2.5.8
+    environment:
+      - LDAP_ADMIN_USERNAME=amdin
+      - LDAP_ADMIN_PASSWORD=adminpassword
+      - LDAP_USERS=user01,user02
+      - LDAP_PASSWORDS=password1,password2
+      - LDAP_ENABLE_TLS=yes
+      - LDAP_TLS_CERT_FILE=/certs/localhost_slapd_cert.pem
+      - LDAP_TLS_KEY_FILE=/certs/localhost_slapd_key.pem
+      - LDAP_TLS_CA_FILE=/certs/apisix.crt
+    ports:
+      - "1389:1389"
+      - "1636:1636"
+    volumes:
+      - ./t/certs:/certs
+
+
+  rocketmq_namesrv:
+    image: apacherocketmq/rocketmq:4.6.0
+    container_name: rmqnamesrv
+    restart: unless-stopped
+    ports:
+      - "9876:9876"
+    command: sh mqnamesrv
+    networks:
+      rocketmq_net:
+
+  rocketmq_broker:
+    image: apacherocketmq/rocketmq:4.6.0
+    container_name: rmqbroker
+    restart: unless-stopped
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+      - "10912:10912"
+    depends_on:
+      - rocketmq_namesrv
+    command: sh mqbroker -n rocketmq_namesrv:9876 -c ../conf/broker.conf
+    networks:
+      rocketmq_net:
+
+  # Open Policy Agent
+  opa:
+    image: openpolicyagent/opa:0.35.0
+    restart: unless-stopped
+    ports:
+      - 8181:8181
+    command: run -s /example.rego /echo.rego /data.json
+    volumes:
+      - type: bind
+        source: ./ci/pod/opa/example.rego
+        target: /example.rego
+      - type: bind
+        source: ./ci/pod/opa/echo.rego
+        target: /echo.rego
+      - type: bind
+        source: ./ci/pod/opa/data.json
+        target: /data.json
+    networks:
+      opa_net:
+
+  # Splunk HEC Logging Service
+  splunk:
+    image: splunk/splunk:8.2.3
+    restart: unless-stopped
+    ports:
+      - "18088:8088"
+    environment:
+      SPLUNK_PASSWORD: "ApacheAPISIX@666"
+      SPLUNK_START_ARGS: "--accept-license"
+      SPLUNK_HEC_TOKEN: "BD274822-96AA-4DA6-90EC-18940FB2414C"
+      SPLUNK_HEC_SSL: "False"
+
+  # Elasticsearch Logger Service
+  elasticsearch-noauth:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.1
+    restart: unless-stopped
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      discovery.type: single-node
+      xpack.security.enabled: 'false'
+
+  elasticsearch-auth:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.1
+    restart: unless-stopped
+    ports:
+      - "9201:9201"
+      - "9301:9301"
+    environment:
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      discovery.type: single-node
+      ELASTIC_USERNAME: elastic
+      ELASTIC_PASSWORD: 123456
+      http.port: 9201
+      transport.tcp.port: 9301
+      xpack.security.enabled: 'true'
+
+
+  # The function services of OpenFunction
+  test-header:
+    image: test-header-image:latest
+    restart: unless-stopped
+    ports:
+      - "30583:8080"
+    environment:
+      CONTEXT_MODE: "self-host"
+      FUNC_CONTEXT: "{\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}"
+
+  test-uri:
+    image: test-uri-image:latest
+    restart: unless-stopped
+    ports:
+      - "30584:8080"
+    environment:
+      CONTEXT_MODE: "self-host"
+      FUNC_CONTEXT: "{\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}"
+
+  test-body:
+    image: test-body-image:latest
+    restart: unless-stopped
+    ports:
+      - "30585:8080"
+    environment:
+      CONTEXT_MODE: "self-host"
+      FUNC_CONTEXT: "{\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}"
+
+  ## RedisCluster Enable TLS
+  redis-node-0:
+    image: docker.io/bitnami/redis-cluster:7.0
+    volumes:
+      - ./t/certs:/certs
+    environment:
+      - 'ALLOW_EMPTY_PASSWORD=yes'
+      - 'REDIS_NODES=redis-node-0 redis-node-1 redis-node-2'
+      - 'REDIS_TLS_ENABLED=yes'
+      - 'REDIS_TLS_CERT_FILE=/certs/mtls_server.crt'
+      - 'REDIS_TLS_KEY_FILE=/certs/mtls_server.key'
+      - 'REDIS_TLS_CA_FILE=/certs/mtls_ca.crt'
+      - 'REDIS_TLS_AUTH_CLIENTS=no'
+    ports:
+      - '7000:6379'
+
+  redis-node-1:
+    image: docker.io/bitnami/redis-cluster:7.0
+    volumes:
+      - ./t/certs:/certs
+    environment:
+      - 'ALLOW_EMPTY_PASSWORD=yes'
+      - 'REDIS_NODES=redis-node-0 redis-node-1 redis-node-2'
+      - 'REDIS_TLS_ENABLED=yes'
+      - 'REDIS_TLS_CERT_FILE=/certs/mtls_server.crt'
+      - 'REDIS_TLS_KEY_FILE=/certs/mtls_server.key'
+      - 'REDIS_TLS_CA_FILE=/certs/mtls_ca.crt'
+      - 'REDIS_TLS_AUTH_CLIENTS=no'
+    ports:
+      - '7001:6379'
+
+  redis-node-2:
+    image: docker.io/bitnami/redis-cluster:7.0
+    volumes:
+      - ./t/certs:/certs
+    depends_on:
+      - redis-node-0
+      - redis-node-1
+    environment:
+      - 'ALLOW_EMPTY_PASSWORD=yes'
+      - 'REDIS_CLUSTER_REPLICAS=0'
+      - 'REDIS_NODES=redis-node-0 redis-node-1 redis-node-2'
+      - 'REDIS_CLUSTER_CREATOR=yes'
+      - 'REDIS_TLS_ENABLED=yes'
+      - 'REDIS_TLS_CERT_FILE=/certs/mtls_server.crt'
+      - 'REDIS_TLS_KEY_FILE=/certs/mtls_server.key'
+      - 'REDIS_TLS_CA_FILE=/certs/mtls_ca.crt'
+      - 'REDIS_TLS_AUTH_CLIENTS=no'
+    ports:
+      - '7002:6379'
+
+  graphql-demo:
+    # the owner doesn't provide a semver tag
+    image: npalm/graphql-java-demo:latest
+    ports:
+      - '8888:8080'
+
+networks:
+  apisix_net:
+  kafka_net:
+  skywalk_net:
+  rocketmq_net:
+  opa_net:

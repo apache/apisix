@@ -16,7 +16,18 @@
 # limitations under the License.
 #
 
+. ./ci/common.sh
 
-export OPENRESTY_VERSION=source
-export TEST_CI_USE_GRPC=true
-. ./ci/linux_openresty_common_runner.sh
+run_case() {
+    export_or_prefix
+    export PERL5LIB=.:$PERL5LIB
+    prove -Itest-nginx/lib -I./ -r t/tars | tee test-result
+    rerun_flaky_tests test-result
+}
+
+case_opt=$1
+case $case_opt in
+    (run_case)
+        run_case
+        ;;
+esac

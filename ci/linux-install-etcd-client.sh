@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -16,7 +17,15 @@
 # limitations under the License.
 #
 
+ETCD_ARCH="amd64"
+ETCD_VERSION=${ETCD_VERSION:-'3.5.4'}
+ARCH=${ARCH:-`(uname -m | tr '[:upper:]' '[:lower:]')`}
 
-export OPENRESTY_VERSION=source
-export TEST_CI_USE_GRPC=true
-. ./ci/linux_openresty_common_runner.sh
+if [[ $ARCH == "arm64" ]] || [[ $ARCH == "aarch64" ]]; then
+    ETCD_ARCH="arm64"
+fi
+
+wget -q https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-${ETCD_ARCH}.tar.gz
+tar xf etcd-v${ETCD_VERSION}-linux-${ETCD_ARCH}.tar.gz
+sudo cp etcd-v${ETCD_VERSION}-linux-${ETCD_ARCH}/etcdctl /usr/local/bin/
+rm -rf etcd-v${ETCD_VERSION}-linux-${ETCD_ARCH}

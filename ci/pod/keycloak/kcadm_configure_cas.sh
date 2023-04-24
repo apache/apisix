@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -16,7 +17,21 @@
 # limitations under the License.
 #
 
+set -ex
 
-export OPENRESTY_VERSION=source
-export TEST_CI_USE_GRPC=true
-. ./ci/linux_openresty_common_runner.sh
+export PATH=/opt/keycloak/bin:$PATH
+
+kcadm.sh config credentials --server http://localhost:8080 --realm master --user admin --password admin
+
+kcadm.sh create realms -s realm=test -s enabled=true
+
+kcadm.sh create users -r test -s username=test -s enabled=true
+kcadm.sh set-password -r test --username test --new-password test
+
+clients=("cas1" "cas2")
+rootUrls=("http://127.0.0.1:1984" "http://127.0.0.2:1984")
+
+for i in ${!clients[@]}; do
+    kcadm.sh create clients -r test -s clientId=${clients[$i]} -s enabled=true \
+        -s protocol=cas -s frontchannelLogout=false -s rootUrl=${rootUrls[$i]} -s 'redirectUris=["/*"]'
+done
