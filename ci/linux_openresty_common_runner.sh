@@ -71,6 +71,13 @@ script() {
     export_or_prefix
     openresty -V
 
+    openresty -V 2>&1 | tee | grep -i "openssl 3"
+    if [[ $? != 0 && "$OPENSSL_FIPS" == "yes" ]]; then
+        echo "require openssl 3.x to test"
+        exit 2
+    fi
+    exit 3
+
     set_coredns
 
     ./t/grpc_server_example/grpc_server_example \
