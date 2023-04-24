@@ -47,9 +47,7 @@ local function gen_log_format(format)
     local log_format = {}
     for k, var_name in pairs(format) do
         if var_name:byte(1, 1) == str_byte("$") then
-            -- splite the var_name by $, eg: $remote_addr$upstream_addr
-            local var_names = ngx_re.split(var_name:sub(2), "\\$")
-            log_format[k] = { true, var_names }
+            log_format[k] = { true, var_name:sub(2) }
         else
             log_format[k] = { false, var_name }
         end
@@ -63,15 +61,14 @@ local function get_custom_format_log(ctx, format)
     local entry = core.table.new(0, core.table.nkeys(log_format))
     for k, var_attr in pairs(log_format) do
         if var_attr[1] then
-            local var_names = var_attr[2]
-            local var_value_parts = {}
-            for _, var_name in ipairs(var_names) do
-                table.insert(var_value_parts, ctx.var[var_name])
-            end
-            if k == "network" then
-                entry[k] = var_value_parts[#var_value_parts]
+            -- if k is subdomain, strip route_id prefix to get the real subdomain
+            -- format: route_id.subdomain
+            if k == "subdomain" then
+                local subdomain = ctx.var[var_attr[2]]
+                local _, _, subdomain = ngx_re.find(subdomain, "^[^.]+.(.+)$")
+                entry[k] = subdomain
             else
-                entry[k] = table.concat(var_value_parts, "")
+                entry[k] = ctx.var[var_attr[2]]
             end
         else
             entry[k] = var_attr[2]
