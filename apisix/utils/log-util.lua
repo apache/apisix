@@ -14,24 +14,25 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
-local plugin = require("apisix.plugin")
-local expr = require("resty.expr.v1")
-local ngx  = ngx
-local pairs = pairs
-local ngx_now = ngx.now
-local os_date = os.date
-local str_byte = string.byte
-local math_floor = math.floor
-local ngx_update_time = ngx.update_time
-local req_get_body_data = ngx.req.get_body_data
-local is_http = ngx.config.subsystem == "http"
+local core                    = require("apisix.core")
+local plugin                  = require("apisix.plugin")
+local expr                    = require("resty.expr.v1")
+local ngx_re                  = require("ngx.re")
+local ngx                     = ngx
+local pairs                   = pairs
+local ngx_now                 = ngx.now
+local os_date                 = os.date
+local str_byte                = string.byte
+local math_floor              = math.floor
+local ngx_update_time         = ngx.update_time
+local req_get_body_data       = ngx.req.get_body_data
+local is_http                 = ngx.config.subsystem == "http"
 
-local lru_log_format = core.lrucache.new({
+local lru_log_format          = core.lrucache.new({
     ttl = 300, count = 512
 })
 
-local _M = {}
+local _M                      = {}
 _M.metadata_schema_log_format = {
     type = "object",
     default = {
@@ -46,7 +47,9 @@ local function gen_log_format(format)
     local log_format = {}
     for k, var_name in pairs(format) do
         if var_name:byte(1, 1) == str_byte("$") then
-            log_format[k] = { true, var_name:sub(2) }
+            -- splite the var_name by $, eg: $remote_addr$upstream_addr
+            local var_names = ngx_re.split(var_name:sub(2), "\\$")
+            log_format[k] = { true, var_names }
         else
             log_format[k] = { false, var_name }
         end
@@ -60,11 +63,18 @@ local function get_custom_format_log(ctx, format)
     local entry = core.table.new(0, core.table.nkeys(log_format))
     for k, var_attr in pairs(log_format) do
         if var_attr[1] then
-            entry[k] = ctx.var[var_attr[2]]
+            local var_names = var_attr[2]
+            local var_value_parts = {}
+            for _, var_name in ipairs(var_names) do
+                table.insert(var_value_parts, ctx.var[var_name])
+            end
+            entry[k] = ctx.var[table.concat(var_value_parts, "")]
         else
             entry[k] = var_attr[2]
         end
     end
+
+    core.log.info("entry: ", core.json.delay_encode(entry))
 
     local matched_route = ctx.matched_route and ctx.matched_route.value
     if matched_route then
@@ -82,7 +92,6 @@ function _M.inject_get_custom_format_log(f)
     get_custom_format_log = f
     _M.get_custom_format_log = f
 end
-
 
 local function latency_details_in_ms(ctx)
     local latency = (ngx_now() - ngx.req.start_time()) * 1000
@@ -165,11 +174,9 @@ local function get_full_log(ngx, conf)
     end
 
     if conf.include_req_body then
-
         local log_request_body = true
 
         if conf.include_req_body_expr then
-
             if not conf.request_expr then
                 local request_expr, err = expr.new(conf.include_req_body_expr)
                 if not request_expr then
@@ -211,7 +218,6 @@ function _M.inject_get_full_log(f)
     _M.get_full_log = f
 end
 
-
 function _M.get_log_entry(plugin_name, conf, ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
     core.log.info("metadata: ", core.json.delay_encode(metadata))
@@ -235,7 +241,6 @@ function _M.get_log_entry(plugin_name, conf, ctx)
 
     return entry, customized
 end
-
 
 function _M.get_req_original(ctx, conf)
     local headers = {
