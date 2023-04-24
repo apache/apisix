@@ -69,7 +69,6 @@ jobs:
       - name: Toggle openssl compile
         id: test_ssl_env
         shell: bash
-        if: steps.cache-openssl.outputs.cache-hit != 'true'
         run: |
           echo "openssl3=yes" >>$GITHUB_OUTPUT
           echo "openssl3_prefix=$HOME" >>$GITHUB_OUTPUT
