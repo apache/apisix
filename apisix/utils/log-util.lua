@@ -68,13 +68,15 @@ local function get_custom_format_log(ctx, format)
             for _, var_name in ipairs(var_names) do
                 table.insert(var_value_parts, ctx.var[var_name])
             end
-            entry[k] = ctx.var[table.concat(var_value_parts, "")]
+            if k == "network" then
+                entry[k] = var_value_parts[#var_value_parts]
+            else
+                entry[k] = table.concat(var_value_parts, "")
+            end
         else
             entry[k] = var_attr[2]
         end
     end
-
-    core.log.info("entry: ", core.json.delay_encode(entry))
 
     local matched_route = ctx.matched_route and ctx.matched_route.value
     if matched_route then
