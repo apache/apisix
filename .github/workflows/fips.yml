@@ -2,12 +2,12 @@ name: CI FIPS
 
 on:
   push:
-    branches: [master]
+    branches: [release/2.13]
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
   pull_request:
-    branches: [master]
+    branches: [release/2.13]
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
