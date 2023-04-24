@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 
-local require = require
+local global_require = require
 local pcall = pcall
 local open = io.open
 local popen = io.popen
@@ -94,7 +94,7 @@ end
 
 
 function _M.is_32bit_arch()
-    local ok, ffi = pcall(require, "ffi")
+    local ok, ffi = pcall(global_require, "ffi")
     if ok then
         -- LuaJIT
         return ffi.abi("32bit")
