@@ -24,13 +24,9 @@ function _M.check_schema(conf)
     return true
 end
 
-function _M.access(conf)
-    local route_id = core.ctx.route_id
-    core.log.info("route_id: ", route_id)
-
+function _M.access(conf, ctx)
     for k, v in pairs(conf) do
-        local var_name = route_id .. k
-        core.ctx.register_var(var_name, function() return v end)
+        core.ctx.register_var(k, function() return v end)
     end
 end
 
