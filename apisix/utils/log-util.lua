@@ -61,11 +61,12 @@ local function get_custom_format_log(ctx, format)
     local entry = core.table.new(0, core.table.nkeys(log_format))
     for k, var_attr in pairs(log_format) do
         if var_attr[1] then
-            -- if k is subdomain, strip route_id prefix to get the real subdomain
+            -- if var_name is subdomain, strip route_id prefix to get the real subdomain
             -- format: route_id.subdomain
-            if k == "subdomain" then
-                local subdomain = ctx.var[var_attr[2]]
-                local _, _, subdomain = ngx_re.find(subdomain, "^[^.]+.(.+)$")
+            local var_name = var_attr[2]
+            if var_name == "subdomain" then
+                local val = ctx.var[var_name]
+                local _, _, subdomain = ngx_re.find(val, "^[^.]+.(.+)$")
                 entry[k] = subdomain
             else
                 entry[k] = ctx.var[var_attr[2]]
