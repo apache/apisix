@@ -63,7 +63,7 @@ local function get_custom_format_log(ctx, format)
         if var_attr[1] then
             local var_name = var_attr[2]
             if var_name:find("route.") == 1 then
-                -- special var_name from(plugin: custom-ctx-var): route.$route_id.subdomain
+                -- special var_name from(plugin: custom-ctx-var): route.$route_id.k
                 local route_id = ctx.var.route_id
                 if route_id then
                     var_name = var_name:gsub("route.$route_id", "route." .. route_id)

@@ -27,13 +27,9 @@ end
 function _M.access(conf, ctx)
     for k, v in pairs(conf) do
         -- if k is subdomain, add route.route_id prefix to k to avoid conflicts
-        -- format: route.route_id.subdomain
+        -- format: route.route_id.k
         local route_id = ctx.var.route_id
-        if k == "subdomain" then
-            core.ctx.register_var("route." .. route_id .. ".subdomain", function() return v end)
-        else
-            core.ctx.register_var(k, function() return v end)
-        end
+        core.ctx.register_var("route." .. route_id .. "." .. k, function() return v end)
     end
 end
 
