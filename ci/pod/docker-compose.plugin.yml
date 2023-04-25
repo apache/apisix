@@ -312,6 +312,17 @@ services:
     ports:
       - '8888:8080'
 
+  vector:
+    image: timberio/vector:0.29.1-debian
+    container_name: vector
+    volumes:
+      - ./ci/pod/vector:/etc/vector/
+      - /tmp/vector:/tmp/vector
+    ports:
+      - '3000:3000/tcp'
+      - '3000:3000/udp'
+      - '43000:43000/tcp'
+
 networks:
   apisix_net:
   kafka_net:
