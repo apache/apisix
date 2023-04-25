@@ -482,3 +482,119 @@ hello world
 the mock backend is hit
 --- no_error_log
 [error]
+
+
+
+=== TEST 13: true tcp log without tls
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body1 = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "tcp-logger": {
+                                "host": "127.0.0.1",
+                                "port": 3000,
+                                "tls": false,
+                                "batch_max_size": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            local code, _, body2 = t("/opentracing", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.print(body2)
+        }
+    }
+--- request
+GET /t
+--- wait: 0.5
+--- response_body
+opentracing
+
+
+
+=== TEST 14: true tcp log with tls
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body1 = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "tcp-logger": {
+                                "host": "127.0.0.1",
+                                "port": 43000,
+                                "tls": true,
+                                "batch_max_size": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            local code, _, body2 = t("/opentracing", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.print(body2)
+        }
+    }
+--- request
+GET /t
+--- wait: 0.5
+--- response_body
+opentracing
+
+
+
+=== TEST 15: check tcp log
+--- exec
+tail -n 1 ci/pod/vector/tcp.log
+--- response_body eval
+qr/.*route_id.*1.*/
+
+
+
+=== TEST 16: check tls log
+--- exec
+tail -n 1 ci/pod/vector/tls-datas.log
+--- response_body eval
+qr/.*route_id.*1.*/
