@@ -21,9 +21,9 @@ title: Stream Proxy
 #
 -->
 
-A stream proxy is a type of network proxy that operates at L4, handling data streams rather than discrete packets. It sits between a client and a server and acts as an intermediary, forwarding network traffic in both directions. 
+A stream proxy is a type of network proxy that operates at L4, handling data streams rather than discrete packets. It sits between a client and a server and acts as an intermediary, forwarding network traffic in both directions.
 
-APISIX can serve as a stream proxy. 
+APISIX can serve as a stream proxy.
 
 ## How to enable stream proxy?
 
