@@ -61,20 +61,21 @@ local function get_custom_format_log(ctx, format)
     local entry = core.table.new(0, core.table.nkeys(log_format))
     for k, var_attr in pairs(log_format) do
         if var_attr[1] then
-            -- if var_name is subdomain, strip route_id prefix to get the real subdomain
-            -- format: route_id.subdomain
             local var_name = var_attr[2]
-            if var_name == "subdomain" then
-                local val = ctx.var[var_name]
-                local _, _, subdomain = ngx_re.find(val, "^[^.]+.(.+)$")
-                entry[k] = subdomain
-            else
-                entry[k] = ctx.var[var_attr[2]]
+            if var_name:find("route.") == 1 then
+                -- special var_name from(plugin: custom-ctx-var): route.$route_id.subdomain
+                local route_id = ctx.var.route_id
+                if route_id then
+                    var_name = var_name:gsub("route.$route_id", "route." .. route_id)
+                end
             end
+            entry[k] = ctx.var[var_name]
         else
             entry[k] = var_attr[2]
         end
     end
+
+    core.log.error("entry: ", core.json.delay_encode(entry))
 
     local matched_route = ctx.matched_route and ctx.matched_route.value
     if matched_route then
