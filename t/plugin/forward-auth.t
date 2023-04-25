@@ -210,8 +210,21 @@ property "request_method" validation failed: matches none of the enum values
                     url = "/apisix/admin/routes/4",
                     data = [[{
                         "plugins": {
+                            "serverless-pre-function": {
+                                "phase": "rewrite",
+                                "functions" : ["return function() require(\"apisix.core\").response.exit(444); end"]
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/crashed-auth"
+                    }]],
+                },
+                {
+                    url = "/apisix/admin/routes/5",
+                    data = [[{
+                        "plugins": {
                             "forward-auth": {
-                                "uri": "http://127.0.0.1:1964/auth",
+                                "uri": "http://127.0.0.1:1984/crashed-auth",
                                 "request_headers": ["Authorization"],
                                 "upstream_headers": ["X-User-ID"],
                                 "client_headers": ["Location"]
@@ -222,17 +235,17 @@ property "request_method" validation failed: matches none of the enum values
                     }]],
                 },
                 {
-                    url = "/apisix/admin/routes/5",
+                    url = "/apisix/admin/routes/6",
                     data = [[{
                         "uri": "/get",
                         "plugins": {
                             "forward-auth": {
-                                "uri": "http://127.0.0.1:2080/auth",
+                                "uri": "http://127.0.0.1:1984/crashed-auth",
                                 "request_headers": ["Authorization"],
                                 "upstream_headers": ["X-User-ID"],
                                 "client_headers": ["Location"],
                                 "allow_degradation": true
-                        }
+                            }
                         },
                         "upstream": {
                             "nodes": {
@@ -253,7 +266,7 @@ property "request_method" validation failed: matches none of the enum values
         }
     }
 --- response_body eval
-"201passed\n" x 8
+"201passed\n" x 9
 
 
 
@@ -351,7 +364,7 @@ GET /nodegr
 Authorization: 111
 --- error_code: 403
 --- error_log
-failed to process forward auth, err: connection refused
+failed to process forward auth, err: closed
 
 
 
