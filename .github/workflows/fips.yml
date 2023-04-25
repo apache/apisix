@@ -1,0 +1,146 @@
+name: CI FIPS
+
+on:
+  push:
+    branches: [master, 'release/**']
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  pull_request:
+    branches: [master, 'release/**']
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - ubuntu-18.04
+        os_name:
+          - linux_openresty
+          - linux_openresty_1_17
+        test_dir:
+          - t/plugin
+          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc
+          - t/node t/router t/script t/stream-node t/utils t/wasm
+
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 90
+    env:
+      SERVER_NAME: ${{ matrix.os_name }}
+      OPENRESTY_VERSION: default
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: "1.17"
+
+      - name: Cache deps
+        uses: actions/cache@v2.1.7
+        env:
+          cache-name: cache-deps
+        with:
+          path: deps
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
+
+      - name: Cache openssl-3.0 compilation
+        id: cache-openssl
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-openssl
+        with:
+          path: ~/openssl-3.0
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}
+
+      - name: set openssl prefix
+        id: set_openssl_prefix
+        shell: bash
+        run: |
+          echo "openssl3_prefix=$HOME" >>$GITHUB_OUTPUT
+
+      - name: Toggle openssl compile
+        id: test_ssl_env
+        shell: bash
+        if: steps.cache-openssl.outputs.cache-hit != 'true'
+        run: |
+          echo "openssl3=yes" >>$GITHUB_OUTPUT
+
+      - name: Extract branch name
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
+        id: branch_env
+        shell: bash
+        run: |
+          echo "##[set-output name=version;]$(echo ${GITHUB_REF##*/})"
+          echo "##[set-output name=fullname;]$(echo apache-apisix-${GITHUB_REF##*/}-src.tgz)"
+
+      - name: Linux launch common services
+        run: |
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
+
+      - name: Create tarball
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
+        run: |
+          make compress-tar VERSION=${{ steps.branch_env.outputs.version }}
+
+      - name: Remove source code
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
+        run: |
+          rm -rf $(ls -1 --ignore=*.tgz --ignore=ci --ignore=t --ignore=utils --ignore=.github)
+          tar zxvf ${{ steps.branch_env.outputs.fullname }}
+
+      - name: Build wasm code
+        if: matrix.os_name == 'linux_openresty'
+        run: |
+          export TINYGO_VER=0.20.0
+          wget https://github.com/tinygo-org/tinygo/releases/download/v${TINYGO_VER}/tinygo_${TINYGO_VER}_amd64.deb 2>/dev/null
+          sudo dpkg -i tinygo_${TINYGO_VER}_amd64.deb
+          cd t/wasm && find . -type f -name "*.go" | xargs -Ip tinygo build -o p.wasm -scheduler=none -target=wasi p
+
+      - name: Linux Before install
+        run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
+
+      - name: Start CI env
+        run: |
+          # launch deps env
+          make ci-env-up
+          sudo ./ci/linux-ci-init-service.sh
+
+      - name: Start Dubbo Backend
+        if: matrix.os_name == 'linux_openresty'
+        run: |
+          sudo apt install -y maven
+          cd t/lib/dubbo-backend
+          mvn package
+          cd dubbo-backend-provider/target
+          java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java.log &
+
+      - name: Linux Install
+        env:
+          COMPILE_OPENSSL3: ${{ steps.test_ssl_env.outputs.openssl3 }}
+          OPENSSL3_PREFIX: ${{ steps.set_openssl_prefix.outputs.openssl3_prefix }}
+          USE_OPENSSL3: yes
+        run: |
+          sudo --preserve-env=OPENRESTY_VERSION \
+          --preserve-env=COMPILE_OPENSSL3 \
+          --preserve-env=OPENSSL3_PREFIX \
+          --preserve-env=USE_OPENSSL3 \
+          ./ci/${{ matrix.os_name }}_runner.sh do_install
+
+      - name: Linux Script
+        env:
+          OPENSSL_FIPS: yes
+          TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
+        run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
