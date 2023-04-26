@@ -21,25 +21,23 @@ title: Stream Proxy
 #
 -->
 
-A stream proxy operates at the transport layer, handling stream-oriented traffic based on TCP and UDP protocols. 
+A stream proxy operates at the transport layer, handling stream-oriented traffic based on TCP and UDP protocols. TCP is used for many applications and services, such as LDAP, MySQL, and RTMP. UDP is used for many popular non-transactional applications, such as DNS, syslog, and RADIUS.
 
-TCP is used for many applications and services, such as LDAP, MySQL, and RTMP. UDP is used for many popular non-transactional applications, such as DNS, syslog, and RADIUS.
-
-APISIX can serve as a stream proxy, in addition to its application layer support. 
+APISIX can serve as a stream proxy, in addition to being an application layer proxy.
 
 ## How to enable stream proxy?
 
-Set the `stream_proxy` option in `conf/config.yaml` and specify a list of addresses for which APISIX should act as stream proxy.
+By default, stream proxy is disabled. 
 
-By default, stream proxy is disabled.
+To enable the option, add the `stream_proxy` option in `conf/config.yaml` and specify a list of destination addresses for which APISIX should act as stream proxy.
 
 ```yaml
 apisix:
-  stream_proxy: # TCP/UDP proxy
-    tcp: # TCP proxy address list
+  stream_proxy:   # TCP/UDP proxy
+    tcp:
       - 9100
       - "127.0.0.1:9101"
-    udp: # UDP proxy address list
+    udp:
       - 9200
       - "127.0.0.1:9211"
 ```
