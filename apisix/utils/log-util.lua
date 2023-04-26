@@ -61,11 +61,7 @@ local function get_custom_format_log(ctx, format)
     local entry = core.table.new(0, core.table.nkeys(log_format))
     for k, var_attr in pairs(log_format) do
         if var_attr[1] then
-	    if ctx.var[var_attr[2]] then
-                entry[k] = ctx.var[var_attr[2]]
-            else
-                entry[k] = ngx.ctx[var_attr[2]]
-            end 
+            entry[k] = ctx.var[var_attr[2]]
         else
             entry[k] = var_attr[2]
         end

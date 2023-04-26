@@ -39,8 +39,8 @@ function _M.check_schema(conf)
 end
 
 function _M.access(conf, ctx)
-    local monthly_quota = tonumber(ngx.ctx[conf.monthly_quota:sub(2)])
-    local monthly_used = tonumber(ngx.ctx[conf.monthly_used:sub(2)])
+    local monthly_quota = tonumber(ctx.var[conf.monthly_quota:sub(2)])
+    local monthly_used = tonumber(ctx.var[conf.monthly_used:sub(2)])
 
     if monthly_quota <= monthly_used then
         return 429, { error_msg = "quota exceeded" }

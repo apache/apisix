@@ -26,7 +26,7 @@ end
 
 function _M.access(conf, ctx)
     for k, v in pairs(conf) do
-        ngx.ctx[k] = v
+        ctx.var[k] = v
     end
 end
 
