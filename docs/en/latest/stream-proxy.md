@@ -55,28 +55,28 @@ apisix:
       - 9100
 ```
 
-## How to set route?
+## How to set a route?
 
-Here is a mini example:
+You can create a stream route using the Admin API `/stream_routes` endpoint. For example:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "remote_addr": "127.0.0.1",
+    "remote_addr": "192.168.5.3",
     "upstream": {
         "nodes": {
-            "127.0.0.1:1995": 1
+            "192.168.4.10:1995": 1
         },
         "type": "roundrobin"
     }
 }'
 ```
 
-It means APISIX will proxy the request to `127.0.0.1:1995` which the client remote address is `127.0.0.1`.
+With this configuration, APISIX would only forward the request to the upstream service at `192.168.4.10:1995` if and only if the request is sent from `192.168.5.3`. See the next section to learn more about matching options.
 
-For more use cases, please take a look at [test case](https://github.com/apache/apisix/blob/master/t/stream-node/sanity.t).
+More examples can be found in [test cases](https://github.com/apache/apisix/blob/master/t/stream-node/sanity.t).
 
-## More route match options
+## More route matching options
 
 And we can add more options to match a route. Currently stream route configuration supports 3 fields for filtering:
 
