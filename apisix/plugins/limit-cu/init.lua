@@ -190,7 +190,7 @@ end
 
 local function create_limit_obj(conf, ctx)
     core.log.info("create new limit-cu plugin instance")
-    local count = tonumber(ctx.var[conf.count:sub(2)])
+    local count = tonumber(ngx.ctx[conf.count:sub(2)])
 
     if not conf.policy or conf.policy == "local" then
         return limit_local_new("plugin-" .. plugin_name, count,
