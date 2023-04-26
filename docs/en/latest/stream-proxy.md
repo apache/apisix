@@ -21,14 +21,17 @@ title: Stream Proxy
 #
 -->
 
-A stream proxy is a type of network proxy that operates at L4, handling data streams rather than discrete packets. It sits between a client and a server and acts as an intermediary, forwarding network traffic in both directions.
+A stream proxy operates at the transport layer, handling stream-oriented traffic based on TCP and UDP protocols. 
 
-APISIX can serve as a stream proxy.
+TCP is used for many applications and services, such as LDAP, MySQL, and RTMP. UDP is used for many popular non-transactional applications, such as DNS, syslog, and RADIUS.
+
+APISIX can serve as a stream proxy, in addition to its application layer support. 
 
 ## How to enable stream proxy?
 
-Setting the `stream_proxy` option in `conf/config.yaml`, specify a list of addresses that require dynamic proxy.
-By default, no stream proxy is enabled.
+Set the `stream_proxy` option in `conf/config.yaml` and specify a list of addresses for which APISIX should act as stream proxy.
+
+By default, stream proxy is disabled.
 
 ```yaml
 apisix:
