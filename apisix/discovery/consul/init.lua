@@ -232,7 +232,7 @@ local function watch_catalog(consul_server)
     if consul_server.catalog_index > 0
             and consul_server.catalog_index == tonumber(watch_result.headers['X-Consul-Index']) then
         local random_delay = math_random(default_random_seed)
-        log.warn("watch catalog has no change, retry call consul after ", random_delay, " seconds")
+        log.info("watch catalog has no change, re-watch consul after ", random_delay, " seconds")
         core_sleep(random_delay)
         goto RETRY
     end
@@ -259,7 +259,7 @@ local function watch_health(consul_server)
     if consul_server.health_index > 0
             and consul_server.health_index == tonumber(watch_result.headers['X-Consul-Index']) then
         local random_delay = math_random(default_random_seed)
-        log.warn("watch health has no change, retry call consul after ", random_delay, " seconds")
+        log.info("watch health has no change, re-watch consul after ", random_delay, " seconds")
         core_sleep(random_delay)
         goto RETRY
     end
