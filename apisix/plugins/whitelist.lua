@@ -420,7 +420,7 @@ function _M.access(conf, ctx)
     local network = string.match(ctx.var.host, "^(.*)%.unifra%.io$")
     local method = ctx.var.jsonrpc_method
     local methods = ctx.var.jsonrpc_methods
-    local monthly_quota = tonumber(ctx.var.monthly_quota)
+    local monthly_quota = tonumber(ngx.ctx.monthly_quota)
     local default_paid_quota = conf.default_paid_quota
 
     if method == "batch" then
