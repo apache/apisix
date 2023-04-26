@@ -72,17 +72,17 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 }'
 ```
 
-With this configuration, APISIX would only forward the request to the upstream service at `192.168.4.10:1995` if and only if the request is sent from `192.168.5.3`. See the next section to learn more about matching options.
+With this configuration, APISIX would only forward the request to the upstream service at `192.168.4.10:1995` if and only if the request is sent from `192.168.5.3`. See the next section to learn more about filtering options.
 
 More examples can be found in [test cases](https://github.com/apache/apisix/blob/master/t/stream-node/sanity.t).
 
-## More route matching options
+## More stream route filtering options
 
-And we can add more options to match a route. Currently stream route configuration supports 3 fields for filtering:
+Currently there are three attributes in stream routes that can be used for filtering requests:
 
-- server_addr: The address of the APISIX server that accepts the L4 stream connection.
-- server_port: The port of the APISIX server that accepts the L4 stream connection.
-- remote_addr: The address of client from which the request has been made.
+- `server_addr`: The address of the APISIX server that accepts the L4 stream connection.
+- `server_port`: The port of the APISIX server that accepts the L4 stream connection.
+- `remote_addr`: The address of client from which the request has been made.
 
 Here is an example:
 
@@ -102,7 +102,7 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 
 It means APISIX will proxy the request to `127.0.0.1:1995` when the server address is `127.0.0.1` and the server port is equal to `2000`.
 
-Let's take another real world example:
+Here is an example with MySQL:
 
 1. Put this config inside `config.yaml`
 
