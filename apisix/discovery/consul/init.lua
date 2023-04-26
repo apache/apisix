@@ -188,28 +188,33 @@ local function get_retry_delay(retry_delay)
     return retry_delay
 end
 
-local function watch_catalog(consul_server)
-    local opts
+local function get_opts(consul_server, is_catalog)
+    local opts = {
+        host = consul_server.host,
+        port = consul_server.port,
+        connect_timeout = consul_server.connect_timeout,
+        read_timeout = consul_server.read_timeout,
+    }
     if consul_server.keepalive then
-        opts = {
-            host = consul_server.host,
-            port = consul_server.port,
-            connect_timeout = consul_server.connect_timeout,
-            read_timeout = consul_server.read_timeout,
-            default_args = {
+        if is_catalog then
+            opts.default_args = {
                 wait = consul_server.wait_timeout, --blocked wait!=0; unblocked by wait=0
                 index = consul_server.catalog_index,
             },
-        }
-    else
-        opts = {
-            host = consul_server.host,
-            port = consul_server.port,
-            connect_timeout = consul_server.connect_timeout,
-            read_timeout = consul_server.read_timeout,
-        }
+        else
+            opts.default_args = {
+                wait = consul_server.wait_timeout, --blocked wait!=0; unblocked by wait=0
+                index = consul_server.health_index,
+            },
+        end
     end
-    local client = resty_consul:new(opts)
+
+    return opts
+end
+
+local function watch_catalog(consul_server)
+    
+    local client = resty_consul:new(get_opts(consul_server, true))
 
     ::RETRY::
     local watch_result, watch_err = client:get(consul_server.consul_watch_catalog_url)
@@ -235,27 +240,8 @@ local function watch_catalog(consul_server)
 end
 
 local function watch_health(consul_server)
-    local opts
-    if consul_server.keepalive then
-        opts = {
-            host = consul_server.host,
-            port = consul_server.port,
-            connect_timeout = consul_server.connect_timeout,
-            read_timeout = consul_server.read_timeout,
-            default_args = {
-                wait = consul_server.wait_timeout, --blocked wait!=0; unblocked by wait=0
-                index = consul_server.health_index,
-            },
-        }
-    else
-        opts = {
-            host = consul_server.host,
-            port = consul_server.port,
-            connect_timeout = consul_server.connect_timeout,
-            read_timeout = consul_server.read_timeout,
-        }
-    end
-    local client = resty_consul:new(opts)
+
+    local client = resty_consul:new(get_opts(consul_server, false))
 
     ::RETRY::
     local watch_result, watch_err = client:get(consul_server.consul_watch_health_url)
@@ -345,9 +331,8 @@ function _M.connect(premature, consul_server, retry_delay)
 
     local catalog_thread, spawn_catalog_err = thread_spawn(watch_catalog, consul_server)
     if not catalog_thread then
-        log.error("failed to spawn thread watch catalog: ", spawn_catalog_err)
         local random_delay = math_random(default_random_seed)
-        log.warn("failed to spawn thread watch catalog, retry connecting consul after ",
+        log.error("failed to spawn thread watch catalog: ", spawn_catalog_err, ", retry connecting consul after ",
             random_delay, " seconds")
         core_sleep(random_delay)
 
@@ -358,10 +343,9 @@ function _M.connect(premature, consul_server, retry_delay)
     local health_thread, err = thread_spawn(watch_health, consul_server)
     if not health_thread then
         thread_kill(catalog_thread)
-        log.error("failed to spawn thread watch health: ", err)
         local random_delay = math_random(default_random_seed)
-        log.warn("failed to spawn thread watch health, retry connecting consul after ",
-                random_delay, " seconds")
+        log.error("failed to spawn thread watch health: ", err, ", retry connecting consul after ",
+            random_delay, " seconds")
         core_sleep(random_delay)
 
         check_keepalive(consul_server, retry_delay)
