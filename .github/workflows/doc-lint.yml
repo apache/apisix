@@ -53,4 +53,4 @@ jobs:
       - name: Check Chinese copywriting
         uses: ./.github/actions/autocorrect
         with:
-          args: ls
+          args: autocorrect --lint --no-diff-bg-color ./docs/zh/latest/control-api.md
