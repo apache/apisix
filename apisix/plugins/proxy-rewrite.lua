@@ -22,6 +22,7 @@ local ngx         = ngx
 local type        = type
 local re_sub      = ngx.re.sub
 local re_match    = ngx.re.match
+local req_set_uri = ngx.req.set_uri
 local sub_str     = string.sub
 local str_find    = core.string.find
 
@@ -316,6 +317,8 @@ function _M.rewrite(conf, ctx)
             -- via regex_uri
             upstream_uri = core.utils.uri_safe_encode(upstream_uri)
         end
+
+        req_set_uri(upstream_uri)
 
         if ctx.var.is_args == "?" then
             if index then

@@ -47,6 +47,7 @@ description: 本文介绍了关于 Apache APISIX `forward-auth` 插件的基本�
 | keepalive         | boolean       | 否    | true    | [true, false]  | HTTP 长连接。                                                                                                         |
 | keepalive_timeout | integer       | 否    | 60000ms | [1000, ...]ms  | 长连接超时时间。                                                                                                      |
 | keepalive_pool    | integer       | 否    | 5       | [1, ...]ms     | 长连接池大小。                                                                                                        |
+| allow_degradation | boolean       | 否    | false   |                | 当设置为 `true` 时，允许在身份验证服务器不可用时跳过身份验证。 |
 
 ## 数据定义
 
