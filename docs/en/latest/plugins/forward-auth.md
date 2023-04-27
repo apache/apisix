@@ -50,7 +50,6 @@ This Plugin moves the authentication and authorization logic to a dedicated exte
 | keepalive_pool    | integer       | False    | 5       | [1, ...]ms     | Connection pool limit.                                                                                                                           |
 | allow_degradation | boolean       | False    | false   |                | When set to `true`, allows authentication to be skipped when authentication server is unavailable. |
 
-
 ## Data definition
 
 APISIX will generate and send the request headers listed below to the authorization service:

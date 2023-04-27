@@ -44,8 +44,10 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
 You will receive an `HTTP/1.1 201 OK` response if the route was created successfully.
 
 :::info
+
 1. The `pass_host` field is set to `node` to pass the host header to the upstream.
 2. The `scheme` field is set to `https` to enable TLS when sending requests to the upstream.
+
 :::
 
 ## Validate
