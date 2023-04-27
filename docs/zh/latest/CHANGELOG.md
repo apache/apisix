@@ -78,7 +78,7 @@ title: CHANGELOG
 
 ### Core
 
-- :sunrise: 支持在 secrets manager 中存储路由证书: [#9247](https://github.com/apache/apisix/pull/9247)
+- :sunrise: 支持将路由证书存储在 secrets manager 中: [#9247](https://github.com/apache/apisix/pull/9247)
 - :sunrise: 支持通过配置绕过 Admin API 身份验证: [#9147](https://github.com/apache/apisix/pull/9147)
 
 ### Plugins
@@ -91,7 +91,7 @@ title: CHANGELOG
 
 - 修复 etcd 数据同步异常: [#8493](https://github.com/apache/apisix/pull/8493)
 - 修复在 `core.request.add_header` 中的无效缓存: [#8824](https://github.com/apache/apisix/pull/8824)
-- 修复由健康检查实现引起的高 CPU 和内存占用: [#9015](https://github.com/apache/apisix/pull/9015)
+- 修复由健康检查引起的高 CPU 和内存占用: [#9015](https://github.com/apache/apisix/pull/9015)
 - 仅当 `allow_origins_by_regex` 不为 `nil` 时生效: [#9028](https://github.com/apache/apisix/pull/9028)
 - 在删除 upstream 时，检查 `traffic-split` 插件中的引用: [#9044](https://github.com/apache/apisix/pull/9044)
 - 修复启动时无法连接到 etcd 的问题: [#9077](https://github.com/apache/apisix/pull/9077)
