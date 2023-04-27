@@ -23,6 +23,7 @@ local schema = {
     type = "object",
     properties = {
         uri = {type = "string"},
+        allow_degradation = {type = "boolean", default = false},
         ssl_verify = {
             type = "boolean",
             default = true,
@@ -118,9 +119,9 @@ function _M.access(conf, ctx)
     httpc:set_timeout(conf.timeout)
 
     local res, err = httpc:request_uri(conf.uri, params)
-
-    -- block by default when authorization service is unavailable
-    if not res then
+    if not res and conf.allow_degradation then
+        return
+    elseif not res then
         core.log.error("failed to process forward auth, err: ", err)
         return 403
     end
