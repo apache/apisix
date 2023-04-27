@@ -1385,8 +1385,8 @@ Plugin 资源请求地址：/apisix/admin/stream_routes/{id}
 | ---------------- | ------| -------- | ------------------------------------------------------------------------------| ------  |
 | upstream         | 否    | Upstream | Upstream 配置，详细信息请参考 [Upstream](terminology/upstream.md)。             |         |
 | upstream_id      | 否    | Upstream | 需要使用的 Upstream id，详细信息请 [Upstream](terminology/upstream.md)。       |         |
-| remote_addr      | 否    | IP/CIDR  | 过滤选项：如果客户端 IP 匹配，则转发到上游                                      | "127.0.0.1/32" 或 "127.0.0.1" |
-| server_addr      | 否    | IP/CIDR  | 过滤选项：如果 APISIX 服务器的 IP 与 `server_addr` 匹配，则转发到上游。         | "127.0.0.1/32" 或 "127.0.0.1" |
+| remote_addr      | 否    | IP/CIDR  | 过滤选项：如果客户端 IP 匹配，则转发到上游                                      | "127.0.0.1/32" 或 "127.0.0.1" 或 "::ffff:7f00:1" |
+| server_addr      | 否    | IP/CIDR  | 过滤选项：如果 APISIX 服务器的 IP 与 `server_addr` 匹配，则转发到上游。         | "127.0.0.1/32" 或 "127.0.0.1" 或 "::ffff:7f00:1" |
 | server_port      | 否    | 整数     | 过滤选项：如果 APISIX 服务器的端口 与 `server_port` 匹配，则转发到上游。        | 9090  |
 | sni              | 否    | Host     | 服务器名称。                                                                   | "test.com"     |
 | protocol.name    | 否    | 字符串   | xRPC 框架代理的协议的名称。                                                    | "redis"        |
