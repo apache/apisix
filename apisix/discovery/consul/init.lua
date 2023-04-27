@@ -200,12 +200,12 @@ local function get_opts(consul_server, is_catalog)
             opts.default_args = {
                 wait = consul_server.wait_timeout, --blocked wait!=0; unblocked by wait=0
                 index = consul_server.catalog_index,
-            },
+            }
         else
             opts.default_args = {
                 wait = consul_server.wait_timeout, --blocked wait!=0; unblocked by wait=0
                 index = consul_server.health_index,
-            },
+            }
         end
     end
 
@@ -213,7 +213,7 @@ local function get_opts(consul_server, is_catalog)
 end
 
 local function watch_catalog(consul_server)
-    
+
     local client = resty_consul:new(get_opts(consul_server, true))
 
     ::RETRY::
@@ -332,8 +332,8 @@ function _M.connect(premature, consul_server, retry_delay)
     local catalog_thread, spawn_catalog_err = thread_spawn(watch_catalog, consul_server)
     if not catalog_thread then
         local random_delay = math_random(default_random_seed)
-        log.error("failed to spawn thread watch catalog: ", spawn_catalog_err, ", retry connecting consul after ",
-            random_delay, " seconds")
+        log.error("failed to spawn thread watch catalog: ", spawn_catalog_err,
+            ", retry connecting consul after ", random_delay, " seconds")
         core_sleep(random_delay)
 
         check_keepalive(consul_server, retry_delay)
