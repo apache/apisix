@@ -32,9 +32,9 @@ local function short_key(self, str)
     return sub_str(str, #self.key + 2)
 end
 
-local function filter(route, pre_route, is_sync)
+local function filter(route, pre_route_obj, size)
     route.orig_modifiedIndex = route.modifiedIndex
-    route.update_count = 0
+    route.update_count = 0 
 
     route.has_domain = false
     if route.value then
@@ -43,19 +43,32 @@ local function filter(route, pre_route, is_sync)
         elseif route.value.hosts then
             for i, v in ipairs(route.value.hosts) do
                 route.value.hosts[i] = str_lower(v)
-            end
-        end
+            end 
+        end 
 
         apisix_upstream.filter_upstream(route.value.upstream, route)
-    end
+    end 
 
     core.log.info("filter route: ", core.json.delay_encode(route, true))
 
-    --avoid calling by load_full_data()
-    if not is_sync then
-        return
-    end
+    --load_full_data()'s filter() goes here. create radixtree while etcd compacts
+    
+    if size then
+        if size == #pre_route_obj.values then
+            local uri_routes = {}
+            local uri_router = http_route.create_radixtree_uri_router(pre_route_obj.values, uri_routes, false)
+            if not uri_router then
+                error("create radixtree in init worker phase failed.", #pre_route_obj.values)
+                return
+            end 
 
+            _M.uri_router = uri_router
+        end 
+
+        return
+    end 
+
+    --only sync_data()'s filter() goes here
     local router_module = require("apisix.router")
     local routes_obj = router_module.router_http.user_routes
     local radixtree_obj = router_module.uri_router
@@ -108,17 +121,17 @@ local function filter(route, pre_route, is_sync)
         no_param_match = true
     }
     local err
-    if pre_route then
+    if pre_route_obj then
         local last_route = {
-            id = pre_route.value.id,
-            paths = pre_route.value.uris or pre_route.value.uri,
-            methods = pre_route.value.methods,
-            priority = pre_route.value.priority,
-            hosts = pre_route.value.hosts or pre_route.value.host,
-            remote_addrs = pre_route.value.remote_addrs or pre_route.value.remote_addr,
-            vars = pre_route.value.vars
+            id = pre_route_obj.value.id,
+            paths = pre_route_obj.value.uris or pre_route_obj.value.uri,
+            methods = pre_route_obj.value.methods,
+            priority = pre_route_obj.value.priority,
+            hosts = pre_route_obj.value.hosts or pre_route_obj.value.host,
+            remote_addrs = pre_route_obj.value.remote_addrs or pre_route_obj.value.remote_addr,
+            vars = pre_route_obj.value.vars
         }
-    
+
         if route.value then
             --update route
             core.log.notice("update routes watched from etcd into radixtree.", json.encode(route))
@@ -149,7 +162,6 @@ local function filter(route, pre_route, is_sync)
         return
     end
 end
-
 
 -- attach common methods if the router doesn't provide its custom implementation
 local function attach_http_router_common_methods(http_router)
@@ -187,15 +199,6 @@ function _M.http_init_worker()
     attach_http_router_common_methods(router_http)
     router_http.init_worker(filter)
 
-    --create radixtree in init worker phase
-    local uri_router = http_route.create_radixtree_uri_router(router_http.user_routes.values,
-                                                             uri_routes, false)                                                 
-
-    if not uri_router then
-        error("create radixtree in init worker phase failed.")
-    end
-
-    _M.uri_router = uri_router
     _M.router_http = router_http
 
     local router_ssl = require("apisix.ssl.router." .. router_ssl_name)

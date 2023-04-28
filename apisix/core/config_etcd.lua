@@ -265,7 +265,7 @@ local function load_full_data(self, dir_res, headers)
             item.clean_handlers = {}
 
             if self.filter then
-                self.filter(item)
+                self.filter(item, self, 1)
             end
         end
 
@@ -317,7 +317,7 @@ local function load_full_data(self, dir_res, headers)
                 item.clean_handlers = {}
 
                 if self.filter then
-                    self.filter(item)
+                    self.filter(item, self, #dir_res.nodes)
                 end
             end
 
@@ -518,7 +518,7 @@ local function sync_data(self)
         -- /plugins' filter need to known self.values when it is called
         -- so the filter should be called after self.values set.
         if self.filter then
-            self.filter(res, pre_val, true)
+            self.filter(res, pre_val)
         end
 
         self.conf_version = self.conf_version + 1
