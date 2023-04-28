@@ -43,7 +43,6 @@ You will see the following message once APISIX is ready:
 ✔ APISIX is ready!
 ```
 
-
 ## Validate
 
 Once APISIX is running, you can use curl to interact with it. Send a simple HTTP request to validate if APISIX is working properly:
@@ -68,4 +67,3 @@ The following tutorial is based on the working APISIX, please keep everything ru
 * [Load Balancing](load-balancing.md)
 * [Rate Limiting](rate-limiting.md)
 * [Key Authentication](key-authentication.md)
-
