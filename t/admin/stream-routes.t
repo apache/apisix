@@ -618,8 +618,8 @@ passed
             local code, body = t('/apisix/admin/stream_routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "remote_addr": "::ffff:7f00:1",
-                    "server_addr": "::ffff:7f00:1",
+                    "remote_addr": "::1",
+                    "server_addr": "::1",
                     "server_port": 1982,
                     "plugins": {
                         "mqtt-proxy": {
