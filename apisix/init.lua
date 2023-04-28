@@ -575,6 +575,7 @@ function _M.http_access_phase()
                     {error_msg = "404 Route Not Found"})
     end
 
+    ngx_var.route_name = api_ctx.matched_route.value.name
     core.log.info("matched route: ",
                   core.json.delay_encode(api_ctx.matched_route, true))
 

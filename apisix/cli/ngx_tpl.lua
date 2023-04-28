@@ -673,6 +673,8 @@ http {
             set $upstream_uri                '';
             set $ctx_ref                     '';
 
+            set $route_name                   '';
+
             {% if wasm then %}
             set $wasm_process_req_body       '';
             set $wasm_process_resp_body      '';
