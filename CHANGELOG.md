@@ -71,10 +71,12 @@ title: Changelog
 
 ## 3.3.0
 
+**The changes marked with :warning: are not backward compatible.**
+
 ### Change
 
-- Change the default router from `radixtree_uri` to `radixtree_host_uri`: [#9047](https://github.com/apache/apisix/pull/9047)
-- CORS plugin will add `Vary: Origin` header when `allow_origin` is not `*`: [#9010](https://github.com/apache/apisix/pull/9010)
+- :warning: Change the default router from `radixtree_uri` to `radixtree_host_uri`: [#9047](https://github.com/apache/apisix/pull/9047)
+- :warning: CORS plugin will add `Vary: Origin` header when `allow_origin` is not `*`: [#9010](https://github.com/apache/apisix/pull/9010)
 
 ### Core
 
