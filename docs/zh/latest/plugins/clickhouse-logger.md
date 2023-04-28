@@ -40,7 +40,7 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 clickhouse-lo
 | database         | string  | 是     |                     |              | 使用的数据库。                                            |
 | logtable         | string  | 是     |                     |              | 写入的表名。                                              |
 | user             | string  | 是     |                     |              | ClickHouse 的用户。                                       |
-| password         | string  | 是     |                     |              | ClickHouse 的密码 。                                      |
+| password         | string  | 是     |                     |              | ClickHouse 的密码。                                      |
 | timeout          | integer | 否     | 3                   | [1,...]      | 发送请求后保持连接活动的时间。                             |
 | name             | string  | 否     | "clickhouse logger" |              | 标识 logger 的唯一标识符。                                |
 | ssl_verify       | boolean | 否     | true                | [true,false] | 当设置为 `true` 时，验证证书。                                                |

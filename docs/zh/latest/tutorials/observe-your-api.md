@@ -172,7 +172,7 @@ apisix_etcd_modify_indexes{key="routes"} 20028
 
 **链路追踪**就是将一次请求还原成调用链路，并将该请求的调用情况使用拓扑的方式展现，比如展示各个微服务节点上的耗时，请求具体经过了哪些服务器以及每个服务节点的请求状态等内容。
 
-[Zipkin](https://zipkin.io/) 一个开源的分布式追踪系统。 APISIX 的 [zipkin 插件](../plugins/zipkin.md) 支持根据 [Zipkin API 规范](https://zipkin.io/pages/instrumenting.html) 收集链路信息并报告给 Zipkin Collector。
+[Zipkin](https://zipkin.io/) 一个开源的分布式追踪系统。APISIX 的[zipkin 插件](../plugins/zipkin.md) 支持根据 [Zipkin API 规范](https://zipkin.io/pages/instrumenting.html) 收集链路信息并报告给 Zipkin Collector。
 
 :::tip 提示
 
@@ -222,7 +222,6 @@ curl -i http://127.0.0.1:9080/get
 你可以通过访问 `http://127.0.0.1:9411/zipkin`，在 Zinkin 的 Web UI 上添加过滤条件 `serviceName=apisix` 即可看到请求链路。
 
 ![image](https://user-images.githubusercontent.com/71524776/226507995-0dab1382-5dbc-402c-8339-de6a66c2015a.png)
-
 
 ![Zipkin plugin output 2](https://static.apiseven.com/2022/09/14/6321dc284049c.png)
 

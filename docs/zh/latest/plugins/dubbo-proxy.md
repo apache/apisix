@@ -132,7 +132,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335
 }'
 ```
 
-现在 `dubbo-proxy` 插件就已经被禁用了。 此方法同样适用于其他插件。
+现在 `dubbo-proxy` 插件就已经被禁用了。此方法同样适用于其他插件。
 
 如果你想彻底禁用 `dubbo-proxy` 插件，
 你需要在 `config.yaml` 中注释掉以下内容：

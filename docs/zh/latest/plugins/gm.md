@@ -78,7 +78,7 @@ apisix:
   ...
   ssl:
     ...
-    # 可按实际情况调整。错误的 cipher 会导致 “no shared cipher” 或 “no ciphers available” 报错。
+    # 可按实际情况调整。错误的 cipher 会导致“no shared cipher”或“no ciphers available”报错。
     ssl_ciphers: HIGH:!aNULL:!MD5
 
 ```
