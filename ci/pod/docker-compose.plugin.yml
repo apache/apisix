@@ -143,6 +143,15 @@ services:
       - ./t/certs:/certs
 
 
+  ## Grafana Loki
+  loki:
+    image: grafana/loki:2.8.0
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    networks:
+      - loki_net
+
   rocketmq_namesrv:
     image: apacherocketmq/rocketmq:4.6.0
     container_name: rmqnamesrv
@@ -331,3 +340,4 @@ networks:
   rocketmq_net:
   opa_net:
   vector_net:
+  loki_net:
