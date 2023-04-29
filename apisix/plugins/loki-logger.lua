@@ -108,7 +108,7 @@ local metadata_schema = {
 
 local _M = {
     version = 0.1,
-    priority = 410,
+    priority = 414,
     name = plugin_name,
     schema = batch_processor_manager:wrap_schema(schema),
     metadata_schema = metadata_schema,
