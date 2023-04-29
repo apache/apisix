@@ -21,9 +21,12 @@ local core            = require("apisix.core")
 local http            = require("resty.http")
 local new_tab         = require("table.new")
 
+local pairs        = pairs
 local ipairs       = ipairs
+local tostring     = tostring
 local math_random  = math.random
 local table_insert = table.insert
+local ngx          = ngx
 local str_format   = core.string.format
 
 local plugin_name = "loki-logger"
