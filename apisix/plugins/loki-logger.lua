@@ -46,7 +46,7 @@ local schema = {
             minLength = 1,
             default = "/loki/api/v1/push"
         },
-        tenant_id = {type = "string", default = nil},
+        tenant_id = {type = "string", default = "fake"},
         log_labels = {
             type = "object",
             patternProperties = {
