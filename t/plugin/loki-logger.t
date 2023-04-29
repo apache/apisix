@@ -119,7 +119,7 @@ hello world
     location /t {
         content_by_lua_block {
             local cjson = require("cjson")
-            local httpc = require("resty.http").new()            
+            local httpc = require("resty.http").new()
             local now = ngx.now() * 1000
             local res, err = httpc:request_uri("http://127.0.0.1:3100/loki/api/v1/query_range", {
                 query = {
@@ -136,7 +136,7 @@ hello world
 
             assert(res ~= nil, "request error: " .. (err or ""))
             assert(res.status == 200, "loki error: " .. res.status .. " " .. res.body)
-            
+
             local data = cjson.decode(res.body)
             assert(data ~= nil, "loki response error: " .. res.body)
             assert(data.status == "success", "loki response error: " .. res.body)
@@ -205,7 +205,7 @@ hello world
     location /t {
         content_by_lua_block {
             local cjson = require("cjson")
-            local httpc = require("resty.http").new()            
+            local httpc = require("resty.http").new()
             local now = ngx.now() * 1000
             local res, err = httpc:request_uri("http://127.0.0.1:3100/loki/api/v1/query_range", {
                 query = {
@@ -222,7 +222,7 @@ hello world
 
             assert(res ~= nil, "request error: " .. (err or ""))
             assert(res.status == 200, "loki error: " .. res.status .. " " .. res.body)
-            
+
             local data = cjson.decode(res.body)
             assert(data ~= nil, "loki response error: " .. res.body)
             assert(data.status == "success", "loki response error: " .. res.body)
@@ -288,7 +288,7 @@ hello world
     location /t {
         content_by_lua_block {
             local cjson = require("cjson")
-            local httpc = require("resty.http").new()            
+            local httpc = require("resty.http").new()
             local now = ngx.now() * 1000
             local res, err = httpc:request_uri("http://127.0.0.1:3100/loki/api/v1/query_range", {
                 query = {
@@ -305,7 +305,7 @@ hello world
 
             assert(res ~= nil, "request error: " .. (err or ""))
             assert(res.status == 200, "loki error: " .. res.status .. " " .. res.body)
-            
+
             local data = cjson.decode(res.body)
             assert(data ~= nil, "loki response error: " .. res.body)
             assert(data.status == "success", "loki response error: " .. res.body)
@@ -325,7 +325,7 @@ hello world
     location /t {
         content_by_lua_block {
             local cjson = require("cjson")
-            local httpc = require("resty.http").new()            
+            local httpc = require("resty.http").new()
             local now = ngx.now() * 1000
             local res, err = httpc:request_uri("http://127.0.0.1:3100/loki/api/v1/query_range", {
                 query = {
@@ -342,7 +342,7 @@ hello world
 
             assert(res ~= nil, "request error: " .. (err or ""))
             assert(res.status == 200, "loki error: " .. res.status .. " " .. res.body)
-            
+
             local data = cjson.decode(res.body)
             assert(data ~= nil, "loki response error: " .. res.body)
             assert(data.status == "success", "loki response error: " .. res.body)
