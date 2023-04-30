@@ -124,7 +124,7 @@ hello world
             local res, err = httpc:request_uri("http://127.0.0.1:3100/loki/api/v1/query_range", {
                 query = {
                     direction = "backward",
-                    start = tostring(now - 1000).."000000",
+                    start = tostring(now - 3000).."000000",
                     ["end"] = tostring(now).."000000",
                     limit = "10",
                     query = [[{job="apisix"} | json]],
@@ -210,7 +210,7 @@ hello world
             local res, err = httpc:request_uri("http://127.0.0.1:3100/loki/api/v1/query_range", {
                 query = {
                     direction = "backward",
-                    start = tostring(now - 1000).."000000",
+                    start = tostring(now - 3000).."000000",
                     ["end"] = tostring(now).."000000",
                     limit = "10",
                     query = [[{custom_label="custom_label_value"} | json]],
@@ -293,7 +293,7 @@ hello world
             local res, err = httpc:request_uri("http://127.0.0.1:3100/loki/api/v1/query_range", {
                 query = {
                     direction = "backward",
-                    start = tostring(now - 5000).."000000",
+                    start = tostring(now - 3000).."000000",
                     ["end"] = tostring(now).."000000",
                     limit = "10",
                     query = [[{job="apisix"} | json]],
@@ -330,7 +330,7 @@ hello world
             local res, err = httpc:request_uri("http://127.0.0.1:3100/loki/api/v1/query_range", {
                 query = {
                     direction = "backward",
-                    start = tostring(now - 1000).."000000",
+                    start = tostring(now - 3000).."000000",
                     ["end"] = tostring(now).."000000",
                     limit = "10",
                     query = [[{job="apisix"} | json]],
