@@ -150,7 +150,7 @@ local function send_http_data(conf, log)
 
     local httpc, err = http.new()
     if not httpc then
-        return false, str_format("create http error: %s", err)
+        return false, str_format("create http client error: %s", err)
     end
     httpc:set_timeout(conf.timeout)
 
