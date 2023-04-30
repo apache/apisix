@@ -213,7 +213,6 @@ local function get_opts(consul_server, is_catalog)
 end
 
 local function watch_catalog(consul_server)
-
     local client = resty_consul:new(get_opts(consul_server, true))
 
     ::RETRY::
@@ -240,7 +239,6 @@ local function watch_catalog(consul_server)
 end
 
 local function watch_health(consul_server)
-
     local client = resty_consul:new(get_opts(consul_server, false))
 
     ::RETRY::
