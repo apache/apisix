@@ -293,7 +293,7 @@ hello world
             local res, err = httpc:request_uri("http://127.0.0.1:3100/loki/api/v1/query_range", {
                 query = {
                     direction = "backward",
-                    start = tostring(now - 3000).."000000",
+                    start = tostring(now - 10000).."000000",
                     ["end"] = tostring(now).."000000",
                     limit = "10",
                     query = [[{job="apisix"} | json]],
