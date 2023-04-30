@@ -154,7 +154,7 @@ The error can be diagnosed based on the error code in the `failed to process ent
 
 - Make sure to `keepalive` related configuration is set properly. See [Attributes](#attributes) for more information.
 - Check the logs in `error.log`, look for such a log.
-  
+
     ```text
     2023/04/30 13:49:34 [error] 19381#19381: *1082680 [lua] batch-processor.lua:95: Batch Processor[loki logger] failed to process entries: loki server returned status: 429, body: Ingestion rate limit exceeded for user tenant_1 (limit: 4194304 bytes/sec) while attempting to ingest '1000' lines totaling '616307' bytes, reduce log volume or contact your Loki administrator to see if the limit can be increased, context: ngx.timer, client: 127.0.0.1, server: 0.0.0.0:9081
     ```
