@@ -178,6 +178,7 @@ local function show_dump_file()
     return 200, data
 end
 
+
 local function get_retry_delay(retry_delay)
     if not retry_delay or retry_delay >= max_retry_time then
         retry_delay = 1
@@ -187,6 +188,7 @@ local function get_retry_delay(retry_delay)
 
     return retry_delay
 end
+
 
 local function get_opts(consul_server, is_catalog)
     local opts = {
@@ -212,6 +214,7 @@ local function get_opts(consul_server, is_catalog)
     return opts
 end
 
+
 local function watch_catalog(consul_server)
     local client = resty_consul:new(get_opts(consul_server, true))
 
@@ -228,6 +231,7 @@ local function watch_catalog(consul_server)
 
         return watch_type_catalog, default_catalog_error_index
     end
+
     if consul_server.catalog_index > 0
             and consul_server.catalog_index == tonumber(watch_result.headers['X-Consul-Index']) then
         local random_delay = math_random(default_random_seed)
@@ -235,8 +239,10 @@ local function watch_catalog(consul_server)
         core_sleep(random_delay)
         goto RETRY
     end
+
     return watch_type_catalog, watch_result.headers['X-Consul-Index']
 end
+
 
 local function watch_health(consul_server)
     local client = resty_consul:new(get_opts(consul_server, false))
@@ -254,6 +260,7 @@ local function watch_health(consul_server)
 
         return watch_type_health, default_health_error_index
     end
+
     if consul_server.health_index > 0
             and consul_server.health_index == tonumber(watch_result.headers['X-Consul-Index']) then
         local random_delay = math_random(default_random_seed)
@@ -261,8 +268,10 @@ local function watch_health(consul_server)
         core_sleep(random_delay)
         goto RETRY
     end
+
     return watch_type_health, watch_result.headers['X-Consul-Index']
 end
+
 
 local function check_keepalive(consul_server, retry_delay)
     if consul_server.keepalive then
@@ -273,6 +282,7 @@ local function check_keepalive(consul_server, retry_delay)
         end
     end
 end
+
 
 local function update_index(consul_server, catalog_index, health_index)
     local c_index = 0
@@ -294,6 +304,7 @@ local function update_index(consul_server, catalog_index, health_index)
     end
 end
 
+
 local function is_not_empty(value)
     if value == nil or value == null
             or (type(value) == "table" and not next(value))
@@ -303,6 +314,7 @@ local function is_not_empty(value)
 
     return true
 end
+
 
 local function watch_result_is_valid(watch_type, index, catalog_index, health_index)
     if index <= 0 then
@@ -321,6 +333,7 @@ local function watch_result_is_valid(watch_type, index, catalog_index, health_in
 
     return true
 end
+
 
 function _M.connect(premature, consul_server, retry_delay)
     if premature then
@@ -354,9 +367,9 @@ function _M.connect(premature, consul_server, retry_delay)
     thread_kill(catalog_thread)
     thread_kill(health_thread)
     if not thread_wait_ok then
-        log.error("failed to wait thread: ", watch_type)
         local random_delay = math_random(default_random_seed)
-        log.warn("failed to wait thread, retry connecting consul after ", random_delay, " seconds")
+        log.error("failed to wait thread: ", watch_type, ", retry connecting consul after ",
+                random_delay, " seconds")
         core_sleep(random_delay)
 
         check_keepalive(consul_server, retry_delay)
@@ -366,7 +379,6 @@ function _M.connect(premature, consul_server, retry_delay)
     -- double check index has changed
     if not watch_result_is_valid(tonumber(watch_type),
             tonumber(index), consul_server.catalog_index, consul_server.health_index) then
-
         retry_delay = get_retry_delay(retry_delay)
         log.warn("get all svcs got err, retry connecting consul after ", retry_delay, " seconds")
         core_sleep(retry_delay)
@@ -432,7 +444,8 @@ function _M.connect(premature, consul_server, retry_delay)
         log.warn("get all svcs got err, retry connecting consul after ", retry_delay, " seconds")
         core_sleep(retry_delay)
 
-        goto ERROR
+        check_keepalive(consul_server, retry_delay)
+        return
     end
 
     log.info("connect consul: ", consul_server.consul_server_url,
@@ -441,7 +454,7 @@ function _M.connect(premature, consul_server, retry_delay)
         ", consul_server.index: ", consul_server.index,
         ", consul_server: ", json_delay_encode(consul_server, true))
 
-    -- if current index different last index then update service
+    -- if the current index is different from the last index, then update the service
     if (consul_server.catalog_index ~= tonumber(catalog_res.headers['X-Consul-Index']))
             or (consul_server.health_index ~= tonumber(health_res.headers['X-Consul-Index'])) then
         local up_services = core.table.new(0, #catalog_res.body)
@@ -450,6 +463,7 @@ function _M.connect(premature, consul_server, retry_delay)
             if skip_service_map[service_name] then
                 goto CONTINUE
             end
+
             -- get node from service
             local svc_url = consul_server.consul_sub_url .. "/" .. service_name
             local svc_success, result, get_err = pcall(function()
@@ -472,6 +486,7 @@ function _M.connect(premature, consul_server, retry_delay)
                     if not node.Service then
                         goto CONTINUE
                     end
+
                     local svc_address, svc_port = node.Service.Address, node.Service.Port
                     -- if nodes is nil, new nodes table and set to up_services
                     if not nodes then
@@ -509,7 +524,6 @@ function _M.connect(premature, consul_server, retry_delay)
                 health_res.headers['X-Consul-Index'])
     end
 
-    :: ERROR ::
     check_keepalive(consul_server, retry_delay)
 end
 
