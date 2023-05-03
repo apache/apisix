@@ -82,18 +82,11 @@ function _M.push_entry(conf, ctx, entry)
     -- Generate a function to be executed by the batch processor
     local cp_ctx = core.table.clone(ctx)
     local func = function(entries, batch_max_size)
-        local data, err
         if batch_max_size == 1 then
-            data, err = core.json.encode(entries[1]) -- encode as single {}
+            return send_syslog_data(conf, entries[1], cp_ctx)
         else
-            data, err = core.json.encode(entries) -- encode as array [{}]
+            return send_syslog_data(conf, entries, cp_ctx)
         end
-
-        if not data then
-            return false, 'error occurred while encoding the data: ' .. err
-        end
-
-        return send_syslog_data(conf, data, cp_ctx)
     end
 
     batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
