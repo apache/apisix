@@ -16,7 +16,7 @@
 #
 use t::APISIX 'no_plan';
 
-log_level('info');
+log_level('debug');
 no_root_location();
 
 add_block_preprocessor( sub{
