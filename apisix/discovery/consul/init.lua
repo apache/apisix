@@ -52,7 +52,7 @@ local events_list
 local consul_services
 
 local default_skip_services = {"consul"}
-local default_random_seed = 5
+local default_random_range = 5
 local default_catalog_error_index = -1
 local default_health_error_index = -2
 local watch_type_catalog = 1
@@ -237,7 +237,7 @@ local function watch_catalog(consul_server)
 
     if consul_server.catalog_index > 0
             and consul_server.catalog_index == tonumber(watch_result.headers['X-Consul-Index']) then
-        local random_delay = math_random(default_random_seed)
+        local random_delay = math_random(default_random_range)
         log.info("watch catalog has no change, re-watch consul after ", random_delay, " seconds")
         core_sleep(random_delay)
         goto RETRY
@@ -266,7 +266,7 @@ local function watch_health(consul_server)
 
     if consul_server.health_index > 0
             and consul_server.health_index == tonumber(watch_result.headers['X-Consul-Index']) then
-        local random_delay = math_random(default_random_seed)
+        local random_delay = math_random(default_random_range)
         log.info("watch health has no change, re-watch consul after ", random_delay, " seconds")
         core_sleep(random_delay)
         goto RETRY
@@ -346,7 +346,7 @@ function _M.connect(premature, consul_server, retry_delay)
 
     local catalog_thread, spawn_catalog_err = thread_spawn(watch_catalog, consul_server)
     if not catalog_thread then
-        local random_delay = math_random(default_random_seed)
+        local random_delay = math_random(default_random_range)
         log.error("failed to spawn thread watch catalog: ", spawn_catalog_err,
             ", retry connecting consul after ", random_delay, " seconds")
         core_sleep(random_delay)
@@ -358,7 +358,7 @@ function _M.connect(premature, consul_server, retry_delay)
     local health_thread, err = thread_spawn(watch_health, consul_server)
     if not health_thread then
         thread_kill(catalog_thread)
-        local random_delay = math_random(default_random_seed)
+        local random_delay = math_random(default_random_range)
         log.error("failed to spawn thread watch health: ", err, ", retry connecting consul after ",
             random_delay, " seconds")
         core_sleep(random_delay)
@@ -371,7 +371,7 @@ function _M.connect(premature, consul_server, retry_delay)
     thread_kill(catalog_thread)
     thread_kill(health_thread)
     if not thread_wait_ok then
-        local random_delay = math_random(default_random_seed)
+        local random_delay = math_random(default_random_range)
         log.error("failed to wait thread: ", watch_type, ", retry connecting consul after ",
                 random_delay, " seconds")
         core_sleep(random_delay)
