@@ -40,6 +40,7 @@ In APISIX, a Consumer requires a unique _username_ and an authentication _plugin
 ## What is Key Authentication
 
 Key authentication is a relatively simple but widely used authentication approach. The idea is as follows:
+
 1. Administrator adds an authentication key (API key) to the Route.
 2. API consumers add the key to the query string or headers for authentication when sending requests.
 

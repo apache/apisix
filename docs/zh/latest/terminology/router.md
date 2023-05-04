@@ -48,10 +48,9 @@ Router 具有以下配置：
 
 ::: 注意
 
-在3.2及之前版本，APISIX 使用 `radixtree_uri` 作为默认路由，`radixtree_uri` 比 `radixtree_host_uri` 拥有更好的性能，如果你对性能有更高的要求，并且能够接受 `radixtree_uri` 只使用 `uri` 作为主索引的特点，可以考虑继续使用 `radixtree_uri` 作为默认路由
+在 3.2 及之前版本，APISIX 使用 `radixtree_uri` 作为默认路由，`radixtree_uri` 比 `radixtree_host_uri` 拥有更好的性能，如果你对性能有更高的要求，并且能够接受 `radixtree_uri` 只使用 `uri` 作为主索引的特点，可以考虑继续使用 `radixtree_uri` 作为默认路由
 
 :::
-
 
 - `apisix.router.ssl`：SSL 加载匹配路由。
   - `radixtree_sni`：（默认）使用 `SNI` (Server Name Indication) 作为主索引（基于 radixtree 引擎）。
