@@ -31,9 +31,9 @@ mode = "tcp"
 port_key = "port"
 tls.enabled = true
 tls.verify = true
-tls.ca_file = "/etc/vector/vector_logs_ca.crt"
-tls.crt_file = "/etc/vector/vector_logs_server.crt"
-tls.key_file = "/etc/vector/vector_logs_server.key"
+tls.ca_file = "/certs/vector_logs_ca.crt"
+tls.crt_file = "/certs/vector_logs_server.crt"
+tls.key_file = "/certs/vector_logs_server.key"
 
 [sinks.log-2-console]
 inputs = [ "log-from-tcp",  "log-from-tls" ]

@@ -317,6 +317,7 @@ services:
     container_name: vector
     volumes:
       - ./ci/pod/vector:/etc/vector/
+      - ./t/certs:/certs
     ports:
       - '3000:3000'
       - '43000:43000'
