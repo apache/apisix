@@ -709,7 +709,7 @@ passed
 
 
 
-=== TEST 19: domain name resolved successfully
+=== TEST 19: domain name resolved always successfully
 --- pipelined_requests eval
 ["GET /", "GET /"]
 --- error_code eval
