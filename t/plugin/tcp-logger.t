@@ -535,7 +535,15 @@ opentracing
 
 
 
-=== TEST 14: true tcp log with tls
+=== TEST 14: check tcp log
+--- exec
+tail -n 1 ci/pod/vector/tcp.log
+--- response_body eval
+qr/.*route_id.*1.*/
+
+
+
+=== TEST 15: true tcp log with tls
 --- config
     location /t {
         content_by_lua_block {
@@ -582,14 +590,6 @@ GET /t
 --- wait: 0.5
 --- response_body
 opentracing
-
-
-
-=== TEST 15: check tcp log
---- exec
-tail -n 1 ci/pod/vector/tcp.log
---- response_body eval
-qr/.*route_id.*1.*/
 
 
 
