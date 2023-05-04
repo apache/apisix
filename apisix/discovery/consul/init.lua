@@ -175,6 +175,7 @@ local function show_dump_file()
     if not data then
         return 503, err
     end
+
     return 200, data
 end
 
@@ -197,18 +198,20 @@ local function get_opts(consul_server, is_catalog)
         connect_timeout = consul_server.connect_timeout,
         read_timeout = consul_server.read_timeout,
     }
-    if consul_server.keepalive then
-        if is_catalog then
-            opts.default_args = {
-                wait = consul_server.wait_timeout, --blocked wait!=0; unblocked by wait=0
-                index = consul_server.catalog_index,
-            }
-        else
-            opts.default_args = {
-                wait = consul_server.wait_timeout, --blocked wait!=0; unblocked by wait=0
-                index = consul_server.health_index,
-            }
-        end
+    if not consul_server.keepalive then
+        return opts
+    end
+
+    if is_catalog then
+        opts.default_args = {
+            wait = consul_server.wait_timeout, --blocked wait!=0; unblocked by wait=0
+            index = consul_server.catalog_index,
+        }
+    else
+        opts.default_args = {
+            wait = consul_server.wait_timeout, --blocked wait!=0; unblocked by wait=0
+            index = consul_server.health_index,
+        }
     end
 
     return opts
@@ -221,12 +224,12 @@ local function watch_catalog(consul_server)
     ::RETRY::
     local watch_result, watch_err = client:get(consul_server.consul_watch_catalog_url)
     local watch_error_info = (watch_err ~= nil and watch_err)
-            or ((watch_result ~= nil and watch_result.status ~= 200)
-            and watch_result.status)
+                             or ((watch_result ~= nil and watch_result.status ~= 200)
+                             and watch_result.status)
     if watch_error_info then
         log.error("connect consul: ", consul_server.consul_server_url,
             " by sub url: ", consul_server.consul_watch_catalog_url,
-            ", got watch result: ", json_delay_encode(watch_result, true),
+            ", got watch result: ", json_delay_encode(watch_result),
             ", with error: ", watch_error_info)
 
         return watch_type_catalog, default_catalog_error_index
@@ -255,7 +258,7 @@ local function watch_health(consul_server)
     if watch_error_info then
         log.error("connect consul: ", consul_server.consul_server_url,
             " by sub url: ", consul_server.consul_watch_health_url,
-            ", got watch result: ", json_delay_encode(watch_result, true),
+            ", got watch result: ", json_delay_encode(watch_result),
             ", with error: ", watch_error_info)
 
         return watch_type_health, default_health_error_index
@@ -308,7 +311,8 @@ end
 local function is_not_empty(value)
     if value == nil or value == null
             or (type(value) == "table" and not next(value))
-            or (type(value) == "string" and value == "") then
+            or (type(value) == "string" and value == "")
+    then
         return false
     end
 
@@ -399,7 +403,7 @@ function _M.connect(premature, consul_server, retry_delay)
     if not catalog_success then
         log.error("connect consul: ", consul_server.consul_server_url,
             " by sub url: ", consul_server.consul_watch_catalog_url,
-            ", got catalog result: ", json_delay_encode(catalog_res, true))
+            ", got catalog result: ", json_delay_encode(catalog_res))
         check_keepalive(consul_server, retry_delay)
         return
     end
@@ -409,7 +413,7 @@ function _M.connect(premature, consul_server, retry_delay)
     if catalog_error_info then
         log.error("connect consul: ", consul_server.consul_server_url,
             " by sub url: ", consul_server.consul_watch_catalog_url,
-            ", got catalog result: ", json_delay_encode(catalog_res, true),
+            ", got catalog result: ", json_delay_encode(catalog_res),
             ", with error: ", catalog_error_info)
 
         retry_delay = get_retry_delay(retry_delay)
@@ -427,7 +431,7 @@ function _M.connect(premature, consul_server, retry_delay)
     if not success then
         log.error("connect consul: ", consul_server.consul_server_url,
             " by sub url: ", consul_server.consul_watch_health_url,
-            ", got health result: ", json_delay_encode(health_res, true))
+            ", got health result: ", json_delay_encode(health_res))
         check_keepalive(consul_server, retry_delay)
         return
     end
@@ -437,7 +441,7 @@ function _M.connect(premature, consul_server, retry_delay)
     if health_error_info then
         log.error("connect consul: ", consul_server.consul_server_url,
             " by sub url: ", consul_server.consul_watch_health_url,
-            ", got health result: ", json_delay_encode(health_res, true),
+            ", got health result: ", json_delay_encode(health_res),
             ", with error: ", health_error_info)
 
         retry_delay = get_retry_delay(retry_delay)
@@ -452,7 +456,7 @@ function _M.connect(premature, consul_server, retry_delay)
         ", catalog_result status: ", catalog_res.status,
         ", catalog_result.headers.index: ", catalog_res.headers['X-Consul-Index'],
         ", consul_server.index: ", consul_server.index,
-        ", consul_server: ", json_delay_encode(consul_server, true))
+        ", consul_server: ", json_delay_encode(consul_server))
 
     -- if the current index is different from the last index, then update the service
     if (consul_server.catalog_index ~= tonumber(catalog_res.headers['X-Consul-Index']))
