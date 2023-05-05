@@ -696,3 +696,40 @@ passed
 --- request
 GET /hello
 --- response_body
+
+
+
+=== TEST 27: test add header with one word
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "response-rewrite": {
+                            "headers": {
+                                "add": [
+                                    "X-Server-test:a"
+                                ]
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uris": ["/hello"]
+                }]]
+                )
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
