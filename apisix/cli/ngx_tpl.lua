@@ -768,6 +768,7 @@ http {
             grpc_set_header   "Host" $upstream_host;
             {% end %}
             grpc_set_header   Content-Type application/grpc;
+            grpc_set_header   TE trailers;
             grpc_socket_keepalive on;
             grpc_pass         $upstream_scheme://apisix_backend;
 

@@ -31,7 +31,7 @@ description: 本文将介绍 API 网关 Apache APISIX 如何通过 skywalking �
 
 `skywalking` 插件用于与 [Apache SkyWalking](https://github.com/apache/skywalking) 集成。
 
-SkyWalking 使用其原生的 NGINX Lua tracer 从服务和 URI 角度提供了分布式追踪、拓扑分析以及 metrics 。
+SkyWalking 使用其原生的 NGINX Lua tracer 从服务和 URI 角度提供了分布式追踪、拓扑分析以及 metrics。
 
 服务端目前支持 HTTP 和 gRPC 两种协议，在 APISIX 中目前只支持 HTTP 协议。
 
