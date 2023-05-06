@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core        = require("apisix.core")
+local expr        = require("resty.expr.v1")
 local plugin_name = "proxy-rewrite"
 local pairs       = pairs
 local ipairs      = ipairs
@@ -61,6 +62,9 @@ local schema = {
             description = "proxy route method",
             type        = "string",
             enum        = schema_method_enum
+        },
+        vars = {
+            type = "array",
         },
         regex_uri = {
             description = "new uri that substitute from client uri " ..
@@ -233,6 +237,21 @@ do
         core.table.insert(upstream_names, name)
     end
 
+    local function vars_matched(conf, ctx)
+        if not conf.vars then
+            return true
+        end
+
+        if not conf.proxy_expr then
+            local proxy_expr, _ = expr.new(conf.vars)
+            conf.proxy_expr = proxy_expr
+        end
+
+        local match_result = conf.proxy_expr:eval(ctx.var)
+        core.log.error(match_result)
+        return match_result
+    end
+
     local function create_header_operation(hdr_conf)
         local set = {}
         local add = {}
@@ -269,6 +288,10 @@ do
 
 
 function _M.rewrite(conf, ctx)
+    if not vars_matched(conf, ctx) then
+        return
+    end
+
     for _, name in ipairs(upstream_names) do
         if conf[name] then
             ctx.var[upstream_vars[name]] = conf[name]

@@ -44,6 +44,7 @@ description: 本文介绍了关于 Apache APISIX `proxy-rewrite` 插件的基本
 | headers.add     | object   | 否     |        |                 | 添加新的请求头，如果头已经存在，会追加到末尾。格式为 `{"name": "value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。也支持以变量的形式引用 `regex_uri` 的匹配结果，比如 `$1-$2-$3`。                                                                                              |
 | headers.set     | object  | 否     |        |                 | 改写请求头，如果请求头不存在，则会添加这个请求头。格式为 `{"name": "value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。也支持以变量的形式引用 `regex_uri` 的匹配结果，比如 `$1-$2-$3`。                                                                                           |
 | headers.remove  | array   | 否     |        |                 | 移除响应头。格式为 `["name", ...]`。
+| vars            | array   | 否     |        |                 | `vars` 是一个表达式列表，只有满足条件的请求才会使插件生效，来自 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)。如果 `vars` 字段为空，那么所有的重写动作都会被无条件的执行。   |
 
 ## Header 优先级
 
