@@ -165,7 +165,7 @@ apisix_etcd_modify_indexes{key="routes"} 20028
 
 目前，APISIX 还提供了其他两个关于指标的插件：
 
-- [Node status 插件](../plugins/node-status.md)(https://apisix.apache.org/docs/apisix/plugins/node-status/)
+- [Node status 插件](../plugins/node-status.md)
 - [Datadog 插件](../plugins/datadog.md)
 
 ## 链路追踪
