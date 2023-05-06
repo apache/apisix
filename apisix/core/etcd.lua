@@ -349,9 +349,7 @@ do
                     return nil, nil, err
                 end
 
-                if tmp_etcd_cli.use_grpc then
-                    etcd_cli_init_phase = tmp_etcd_cli
-                end
+                etcd_cli_init_phase = tmp_etcd_cli
 
                 return tmp_etcd_cli, prefix
             end
@@ -372,9 +370,7 @@ do
                 return nil, nil, err
             end
 
-            if tmp_etcd_cli.use_grpc then
-                etcd_cli = tmp_etcd_cli
-            end
+            etcd_cli = tmp_etcd_cli
 
             return tmp_etcd_cli, prefix
         end
