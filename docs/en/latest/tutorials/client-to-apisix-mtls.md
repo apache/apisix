@@ -238,7 +238,6 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 }'
 ```
 
-
 2. If the client certificate is missing and the URI is not in the whitelist,
 then you'll get HTTP 400 response.
 
