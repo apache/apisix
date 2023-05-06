@@ -867,3 +867,78 @@ GET /echo HTTP/1.1
 X-Forwarded-For: 11.11.11.11
 --- response_headers
 X-Forwarded-For: 22.22.22.22, 127.0.0.1
+
+
+
+=== TEST 37: setting multiple regex_uris
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                      "plugins": {
+                          "proxy-rewrite": {
+                              "regex_uri": [
+                                  "^/test/(.*)/(.*)/(.*)/hello",
+                                  "/hello/$1_$2_$3",
+                                  "^/test/(.*)/(.*)/(.*)/world",
+                                  "/world/$1_$2_$3"
+                              ]
+                          }
+                      },
+                      "upstream": {
+                          "nodes": {
+                              "127.0.0.1:8125": 1
+                          },
+                          "type": "roundrobin"
+                      },
+                      "uri": "/test/*"
+                 }]]
+                 )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 38: hit
+--- request
+GET /test/plugin/proxy/rewrite/hello HTTP/1.1
+--- http_config
+    server {
+        listen 8125;
+        location / {
+            content_by_lua_block {
+                ngx.say(ngx.var.request_uri)
+            }
+        }
+    }
+--- response_body
+/hello/plugin_proxy_rewrite
+
+
+
+=== TEST 39: hit
+--- request
+GET /test/plugin/proxy/rewrite/world HTTP/1.1
+--- http_config
+    server {
+        listen 8125;
+        location / {
+            content_by_lua_block {
+                ngx.say(ngx.var.request_uri)
+            }
+        }
+    }
+--- response_body
+/world/plugin_proxy_rewrite
