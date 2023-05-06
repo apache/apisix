@@ -181,7 +181,6 @@ function _M.http_ssl_phase()
     local ok, err = router.router_ssl.match_and_set(api_ctx)
 
     ngx_ctx.matched_ssl = api_ctx.matched_ssl
-    ngx.log(ngx.WARN, require("inspect")(api_ctx.matched_ssl))
     core.tablepool.release("api_ctx", api_ctx)
     ngx_ctx.api_ctx = nil
 

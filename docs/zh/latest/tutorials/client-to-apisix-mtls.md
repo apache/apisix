@@ -199,9 +199,11 @@ APISIX 允许配置 URI 白名单以便绕过 MTLS。如果请求的 URI 在白�
 
 ### 时序图
 
-![skip mtls](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/skip-mtls.png)
+![skip mtls](../../../assets/images/skip-mtls.png)
 
 ### 例子
+
+1. 配置路由和证书
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -232,9 +234,10 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
     }
 }'
 
-#
-# 如果没提供客户端证书，而 URI 又不在白名单内，会得到 HTTP 400 响应。
-#
+
+2. 如果没提供客户端证书，而 URI 又不在白名单内，会得到 HTTP 400 响应。
+
+```bash
 curl https://admin.apisix.dev:9443/uuid -v \
 --resolve 'admin.apisix.dev:9443:127.0.0.1' --cacert t/certs/mtls_ca.crt
 * Added admin.apisix.dev:9443:127.0.0.1 to DNS cache
@@ -294,9 +297,10 @@ curl https://admin.apisix.dev:9443/uuid -v \
 </html>
 * Connection #0 to host admin.apisix.dev left intact
 
-#
-# 虽然没提供客户端证书，但是 URI 在白名单内，请求会被成功处理和响应。
-#
+
+3. 虽然没提供客户端证书，但是 URI 在白名单内，请求会被成功处理和响应。
+
+```bash
 curl https://admin.apisix.dev:9443/anything/foobar -i \
 --resolve 'admin.apisix.dev:9443:127.0.0.1' --cacert t/certs/mtls_ca.crt
 HTTP/2 200
