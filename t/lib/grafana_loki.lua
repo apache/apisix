@@ -24,7 +24,6 @@ local _M = {}
 function _M.fetch_logs_from_loki(from, to, options)
     options = options or {}
 
-    local now = ngx.now() * 1000
     local direction = options.direction or "backward"
     local limit = options.limit or "10"
     local query = options.query or [[{job="apisix"} | json]]
