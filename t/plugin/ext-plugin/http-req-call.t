@@ -514,8 +514,8 @@ GET /hello
             ext.go({rewrite_bad_path = true})
         }
     }
---- access_log
-GET /plugin_proxy_rewrite_args%3Fa=2
+--- error_log
+undefined path in test server, uri: /plugin_proxy_rewrite_args%3Fa=2
 --- error_code: 404
 
 
