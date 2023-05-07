@@ -685,3 +685,53 @@ passed
             ngx.status = code
         }
     }
+
+
+
+=== TEST 36: add consumer with echo plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "wolf_rbac_with_other_plugins",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "wolf-rbac-app",
+                            "server": "http://127.0.0.1:1982"
+                        },
+                        "echo": {
+                            "body": "consumer merge echo plugins\n"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 37: verify echo plugin in consumer
+--- request
+GET /hello
+--- more_headers
+Authorization: V1#wolf-rbac-app#wolf-rbac-token
+--- response_headers
+X-UserId: 100
+X-Username: admin
+X-Nickname: administrator
+--- response_body
+consumer merge echo plugins
+--- no_error_log
+[error]
