@@ -118,27 +118,13 @@ hello world
 --- config
     location /t {
         content_by_lua_block {
-            local cjson = require("cjson")
-            local httpc = require("resty.http").new()
-            local now = ngx.now() * 1000
-            local res, err = httpc:request_uri("http://127.0.0.1:3100/loki/api/v1/query_range", {
-                query = {
-                    direction = "backward",
-                    start = tostring(now - 3000).."000000",
-                    ["end"] = tostring(now).."000000",
-                    limit = "10",
-                    query = [[{job="apisix"} | json]],
-                },
-                headers = {
-                    ["X-Scope-OrgID"] = "tenant_1"
-                }
-            })
+            local data, err = require("lib.grafana_loki").fetch_logs_from_loki(
+                tostring(now - 3000) .. "000000", -- from
+                tostring(now) .. "000000",        -- to
+            )
 
-            assert(res ~= nil, "request error: " .. (err or ""))
-            assert(res.status == 200, "loki error: " .. res.status .. " " .. res.body)
-
-            local data = cjson.decode(res.body)
-            assert(data ~= nil, "loki response error: " .. res.body)
+            assert(err == nil, "fetch logs error: " .. err)
+            assert(data ~= nil, "loki response decode error: " .. res.body)
             assert(data.status == "success", "loki response error: " .. res.body)
             assert(#data.data.result > 0, "loki log empty: " .. res.body)
 
@@ -204,27 +190,14 @@ hello world
 --- config
     location /t {
         content_by_lua_block {
-            local cjson = require("cjson")
-            local httpc = require("resty.http").new()
-            local now = ngx.now() * 1000
-            local res, err = httpc:request_uri("http://127.0.0.1:3100/loki/api/v1/query_range", {
-                query = {
-                    direction = "backward",
-                    start = tostring(now - 3000).."000000",
-                    ["end"] = tostring(now).."000000",
-                    limit = "10",
-                    query = [[{custom_label="custom_label_value"} | json]],
-                },
-                headers = {
-                    ["X-Scope-OrgID"] = "tenant_1"
-                }
-            })
+            local data, err = require("lib.grafana_loki").fetch_logs_from_loki(
+                tostring(now - 3000) .. "000000", -- from
+                tostring(now) .. "000000",        -- to
+                { query = [[{custom_label="custom_label_value"} | json]] }
+            )
 
-            assert(res ~= nil, "request error: " .. (err or ""))
-            assert(res.status == 200, "loki error: " .. res.status .. " " .. res.body)
-
-            local data = cjson.decode(res.body)
-            assert(data ~= nil, "loki response error: " .. res.body)
+            assert(err == nil, "fetch logs error: " .. err)
+            assert(data ~= nil, "loki response decode error: " .. res.body)
             assert(data.status == "success", "loki response error: " .. res.body)
             assert(#data.data.result > 0, "loki log empty: " .. res.body)
 
@@ -287,27 +260,13 @@ hello world
 --- config
     location /t {
         content_by_lua_block {
-            local cjson = require("cjson")
-            local httpc = require("resty.http").new()
-            local now = ngx.now() * 1000
-            local res, err = httpc:request_uri("http://127.0.0.1:3100/loki/api/v1/query_range", {
-                query = {
-                    direction = "backward",
-                    start = tostring(now - 10000).."000000",
-                    ["end"] = tostring(now).."000000",
-                    limit = "10",
-                    query = [[{job="apisix"} | json]],
-                },
-                headers = {
-                    ["X-Scope-OrgID"] = "tenant_1"
-                }
-            })
+            local data, err = require("lib.grafana_loki").fetch_logs_from_loki(
+                tostring(now - 10000) .. "000000", -- from
+                tostring(now) .. "000000",        -- to
+            )
 
-            assert(res ~= nil, "request error: " .. (err or ""))
-            assert(res.status == 200, "loki error: " .. res.status .. " " .. res.body)
-
-            local data = cjson.decode(res.body)
-            assert(data ~= nil, "loki response error: " .. res.body)
+            assert(err == nil, "fetch logs error: " .. err)
+            assert(data ~= nil, "loki response decode error: " .. res.body)
             assert(data.status == "success", "loki response error: " .. res.body)
             assert(#data.data.result > 0, "loki log empty: " .. res.body)
 
@@ -324,27 +283,16 @@ hello world
 --- config
     location /t {
         content_by_lua_block {
-            local cjson = require("cjson")
-            local httpc = require("resty.http").new()
-            local now = ngx.now() * 1000
-            local res, err = httpc:request_uri("http://127.0.0.1:3100/loki/api/v1/query_range", {
-                query = {
-                    direction = "backward",
-                    start = tostring(now - 3000).."000000",
-                    ["end"] = tostring(now).."000000",
-                    limit = "10",
-                    query = [[{job="apisix"} | json]],
-                },
-                headers = {
-                    ["X-Scope-OrgID"] = "tenant_2"
-                }
-            })
+            local data, err = require("lib.grafana_loki").fetch_logs_from_loki(
+                tostring(now - 3000) .. "000000", -- from
+                tostring(now) .. "000000",        -- to
+                { headers = {
+                        ["X-Scope-OrgID"] = "tenant_2"
+                } }
+            )
 
-            assert(res ~= nil, "request error: " .. (err or ""))
-            assert(res.status == 200, "loki error: " .. res.status .. " " .. res.body)
-
-            local data = cjson.decode(res.body)
-            assert(data ~= nil, "loki response error: " .. res.body)
+            assert(err == nil, "fetch logs error: " .. err)
+            assert(data ~= nil, "loki response decode error: " .. res.body)
             assert(data.status == "success", "loki response error: " .. res.body)
             assert(#data.data.result > 0, "loki log empty: " .. res.body)
 
