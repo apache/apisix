@@ -89,9 +89,9 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/ssls/1' \
 ```
 
 - `sni`: Specify the domain name (CN) of the certificate. When the client tries to handshake with APISIX via TLS, APISIX will match the SNI data in `ClientHello` with this field and find the corresponding server certificate for handshaking.
-- `cert`: The public key of the server certificate.
+- `cert`: The server certificate.
 - `key`: The private key of the server certificate.
-- `client.ca`: The public key of the client's certificate. For demonstration purposes, the same `CA` is used here.
+- `client.ca`: The CA (certificate authority) file to verfiy the client certificate. For demonstration purposes, the same `CA` is used here.
 
 ### Configure the route in APISIX
 
@@ -192,6 +192,131 @@ curl --resolve "test.com:9443:127.0.0.1" https://test.com:9443/anything -k --cer
   ```
 
 Since we configured the [proxy-rewrite](../plugins/proxy-rewrite.md) plugin in the example, we can see that the response body contains the request body received upstream, containing the correct data.
+
+## MTLS bypass based on regular expression matching against URI
+
+APISIX allows configuring an URI whitelist to bypass MTLS.
+If the URI of a request is in the whitelist, then the client certificate will not be checked.
+Note that other URIs of the associated SNI will get HTTP 400 response
+instead of alert error in the SSL handshake phase, if the client certificate is missing or invalid.
+
+### Timing diagram
+
+![skip mtls](../../../assets/images/skip-mtls.png)
+
+### Example
+
+1. Configure route and ssl via admin API
+
+```bash
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/*",
+    "upstream": {
+        "nodes": {
+            "httpbin.org": 1
+        }
+    }
+}'
+
+curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "cert": "'"$(<t/certs/mtls_server.crt)"'",
+    "key": "'"$(<t/certs/mtls_server.key)"'",
+    "snis": [
+        "*.apisix.dev"
+    ],
+    "client": {
+        "ca": "'"$(<t/certs/mtls_ca.crt)"'",
+        "depth": 10,
+        "skip_mtls_uri_regex": [
+            "/anything.*"
+        ]
+    }
+}'
+```
+
+2. If the client certificate is missing and the URI is not in the whitelist,
+then you'll get HTTP 400 response.
+
+```bash
+curl https://admin.apisix.dev:9443/uuid -v \
+--resolve 'admin.apisix.dev:9443:127.0.0.1' --cacert t/certs/mtls_ca.crt
+* Added admin.apisix.dev:9443:127.0.0.1 to DNS cache
+* Hostname admin.apisix.dev was found in DNS cache
+*   Trying 127.0.0.1:9443...
+* TCP_NODELAY set
+* Connected to admin.apisix.dev (127.0.0.1) port 9443 (#0)
+* ALPN, offering h2
+* ALPN, offering http/1.1
+* successfully set certificate verify locations:
+*   CAfile: t/certs/mtls_ca.crt
+  CApath: /etc/ssl/certs
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+* TLSv1.3 (IN), TLS handshake, Request CERT (13):
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+* TLSv1.3 (OUT), TLS handshake, Certificate (11):
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN, server accepted to use h2
+* Server certificate:
+*  subject: C=cn; ST=GuangDong; L=ZhuHai; CN=admin.apisix.dev; OU=ops
+*  start date: Dec  1 10:17:24 2022 GMT
+*  expire date: Aug 18 10:17:24 2042 GMT
+*  subjectAltName: host "admin.apisix.dev" matched cert's "admin.apisix.dev"
+*  issuer: C=cn; ST=GuangDong; L=ZhuHai; CN=ca.apisix.dev; OU=ops
+*  SSL certificate verify ok.
+* Using HTTP2, server supports multi-use
+* Connection state changed (HTTP/2 confirmed)
+* Copying HTTP/2 data in stream buffer to connection buffer after upgrade: len=0
+* Using Stream ID: 1 (easy handle 0x56246de24e30)
+> GET /uuid HTTP/2
+> Host: admin.apisix.dev:9443
+> user-agent: curl/7.68.0
+> accept: */*
+>
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+* old SSL session ID is stale, removing
+* Connection state changed (MAX_CONCURRENT_STREAMS == 128)!
+< HTTP/2 400
+< date: Fri, 21 Apr 2023 07:53:23 GMT
+< content-type: text/html; charset=utf-8
+< content-length: 229
+< server: APISIX/3.2.0
+<
+<html>
+<head><title>400 Bad Request</title></head>
+<body>
+<center><h1>400 Bad Request</h1></center>
+<hr><center>openresty</center>
+<p><em>Powered by <a href="https://apisix.apache.org/">APISIX</a>.</em></p></body>
+</html>
+* Connection #0 to host admin.apisix.dev left intact
+```
+
+3. Although the client certificate is missing, but the URI is in the whitelist,
+you get successful response.
+
+```bash
+curl https://admin.apisix.dev:9443/anything/foobar -i \
+--resolve 'admin.apisix.dev:9443:127.0.0.1' --cacert t/certs/mtls_ca.crt
+HTTP/2 200
+content-type: application/json
+content-length: 416
+date: Fri, 21 Apr 2023 07:58:28 GMT
+access-control-allow-origin: *
+access-control-allow-credentials: true
+server: APISIX/3.2.0
+...
+```
 
 ## Conclusion
 

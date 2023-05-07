@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local ngx_ssl = require("ngx.ssl")
+local secret = require("apisix.secret")
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
 local aes = require("resty.aes")
@@ -252,9 +253,13 @@ function _M.check_ssl_conf(in_dp, conf)
         end
     end
 
-    local ok, err = validate(conf.cert, conf.key)
-    if not ok then
-        return nil, err
+    if not secret.check_secret_uri(conf.cert) and
+        not secret.check_secret_uri(conf.key) then
+
+        local ok, err = validate(conf.cert, conf.key)
+        if not ok then
+            return nil, err
+        end
     end
 
     if conf.type == "client" then
@@ -268,9 +273,13 @@ function _M.check_ssl_conf(in_dp, conf)
     end
 
     for i = 1, numcerts do
-        local ok, err = validate(conf.certs[i], conf.keys[i])
-        if not ok then
-            return nil, "failed to handle cert-key pair[" .. i .. "]: " .. err
+        if not secret.check_secret_uri(conf.cert[i]) and
+            not secret.check_secret_uri(conf.key[i]) then
+
+            local ok, err = validate(conf.certs[i], conf.keys[i])
+            if not ok then
+                return nil, "failed to handle cert-key pair[" .. i .. "]: " .. err
+            end
         end
     end
 

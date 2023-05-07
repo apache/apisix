@@ -143,7 +143,7 @@ curl -X PUT 'http://127.0.0.1:8500/v1/agent/service/register' \
 }'
 ```
 
-In some case, same service name exist in different consul servers.
+In some cases, same service name might exist in different consul servers.
 To avoid confusion, use the full consul key url path as service name in practice.
 
 ### Upstream setting

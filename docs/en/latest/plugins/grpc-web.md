@@ -55,7 +55,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 :::info IMPORTANT
 
-While using the `grpc-web` Plugin, always using a prefix matching pattern (`/*`, `/grpc/example/*`) for matching Routes. This is because the gRPC Web client passes the package name, the service interface name, the method name and other information in the proto in the URI. For example, `/path/a6.RouteService/Insert`.
+While using the `grpc-web` Plugin, always use a prefix matching pattern (`/*`, `/grpc/example/*`) for matching Routes. This is because the gRPC Web client passes the package name, the service interface name, the method name and other information in the proto in the URI. For example, `/path/a6.RouteService/Insert`.
 
 So, when absolute matching is used, the Plugin would not be hit and the information from the proto would not be extracted.
 

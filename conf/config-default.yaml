@@ -75,7 +75,7 @@ apisix:
   # Turn this option on if you want to be compatible with servlet when matching URI path.
   normalize_uri_like_servlet: false
   router:
-    http: radixtree_uri         # radixtree_uri: match route by uri(base on radixtree)
+    http: radixtree_host_uri      # radixtree_uri: match route by uri(base on radixtree)
                                   # radixtree_host_uri: match route by host + uri(base on radixtree)
                                   # radixtree_uri_with_parameter: like radixtree_uri but match uri with parameters,
                                   #   see https://github.com/api7/lua-resty-radixtree/#parameters-in-path for
@@ -444,9 +444,9 @@ plugins:                          # plugin list (sorted by priority)
   - opa                            # priority: 2001
   - authz-keycloak                 # priority: 2000
   #- error-log-logger              # priority: 1091
+  - proxy-cache                    # priority: 1085
   - body-transformer               # priority: 1080
   - proxy-mirror                   # priority: 1010
-  - proxy-cache                    # priority: 1009
   - proxy-rewrite                  # priority: 1008
   - workflow                       # priority: 1006
   - api-breaker                    # priority: 1005
@@ -588,6 +588,10 @@ deployment:
   role_traditional:
     config_provider: etcd
   admin:
+    # Admin API authentication is enabled by default.
+    # Set it false in the production environment will cause a serious security issue.
+    # admin_key_required: true
+
     # Default token when use API to call for Admin API.
     # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
     # Disabling this configuration item means that the Admin API does not

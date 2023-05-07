@@ -45,7 +45,7 @@ description: 本篇文档介绍了 Apache APISIX auth-casdoor 插件的相关信
 
 :::info IMPORTANT
 
-指定 `endpoint_addr` 和 `callback_url` 属性时不要以 “/” 来结尾。
+指定 `endpoint_addr` 和 `callback_url` 属性时不要以“/”来结尾。
 
 `callback_url` 必须是路由的 URI。具体细节可查看下方示例内容，了解相关配置。
 

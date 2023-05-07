@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [3.3.0](#330)
 - [3.2.0](#320)
 - [3.1.0](#310)
 - [3.0.0](#300)
@@ -67,6 +68,38 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.3.0
+
+### Change
+
+- 默认路由从 `radixtree_uri` 修改为 `radixtree_host_uri`: [#9047](https://github.com/apache/apisix/pull/9047)
+- CORS 插件将会在 `allow_origin` 不为 `*` 时默认添加 `Vary: Origin` 响应头：[#9010](https://github.com/apache/apisix/pull/9010)
+
+### Core
+
+- :sunrise: 支持将路由证书存储在 secrets manager 中：[#9247](https://github.com/apache/apisix/pull/9247)
+- :sunrise: 支持通过配置绕过 Admin API 身份验证：[#9147](https://github.com/apache/apisix/pull/9147)
+
+### Plugins
+
+- :sunrise: fault-injection 插件支持请求头注入：[#9039](https://github.com/apache/apisix/pull/9039)
+- :sunrise: 提供在其他插件中引用 proxy-rewrite 插件中路由改写捕捉到的变量支持：[#9112](https://github.com/apache/apisix/pull/9112)
+- :sunrise: limit-count 插件提供 `username` 与 `ssl` redis 认证方式：[#9185](https://github.com/apache/apisix/pull/9185)
+
+### Bugfixes
+
+- 修复 etcd 数据同步异常：[#8493](https://github.com/apache/apisix/pull/8493)
+- 修复在 `core.request.add_header` 中的无效缓存：[#8824](https://github.com/apache/apisix/pull/8824)
+- 修复由健康检查引起的高 CPU 和内存占用：[#9015](https://github.com/apache/apisix/pull/9015)
+- 仅当 `allow_origins_by_regex` 不为 `nil` 时生效：[#9028](https://github.com/apache/apisix/pull/9028)
+- 在删除 upstream 时，检查 `traffic-split` 插件中的引用：[#9044](https://github.com/apache/apisix/pull/9044)
+- 修复启动时无法连接到 etcd 的问题：[#9077](https://github.com/apache/apisix/pull/9077)
+- 修复域节点的健康检查泄漏问题：[#9090](https://github.com/apache/apisix/pull/9090)
+- 禁止非 `127.0.0.0/24` 的用户在没有 admin_key 的情况下访问 Admin API: [#9146](https://github.com/apache/apisix/pull/9146)
+- 确保 hold_body_chunk 函数对每个插件设置独立缓冲区，避免数据污染：[#9266](https://github.com/apache/apisix/pull/9266)
+- 确保 batch-requests 插件能够在尾部响应头存在时能够正确读取：[#9289](https://github.com/apache/apisix/pull/9289)
+- 确保 `proxy-rewrite` 改写 `ngx.var.uri`: [#9309](https://github.com/apache/apisix/pull/9309)
 
 ## 3.2.0
 

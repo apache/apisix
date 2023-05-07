@@ -40,6 +40,14 @@ function _M.init_worker()
 end
 
 
+function _M.plugin_configs()
+    if not plugin_configs then
+        return nil, nil
+    end
+    return plugin_configs.values, plugin_configs.conf_version
+end
+
+
 function _M.get(id)
     return plugin_configs:get(id)
 end

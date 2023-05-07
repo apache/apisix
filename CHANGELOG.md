@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.3.0](#330)
 - [3.2.0](#320)
 - [3.1.0](#310)
 - [3.0.0](#300)
@@ -67,6 +68,40 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.3.0
+
+**The changes marked with :warning: are not backward compatible.**
+
+### Change
+
+- :warning: Change the default router from `radixtree_uri` to `radixtree_host_uri`: [#9047](https://github.com/apache/apisix/pull/9047)
+- :warning: CORS plugin will add `Vary: Origin` header when `allow_origin` is not `*`: [#9010](https://github.com/apache/apisix/pull/9010)
+
+### Core
+
+- :sunrise: Support store route's cert in secrets manager: [#9247](https://github.com/apache/apisix/pull/9247)
+- :sunrise: Support bypassing Admin API Auth by configuration: [#9147](https://github.com/apache/apisix/pull/9147)
+
+### Plugins
+
+- :sunrise: Support header injection for `fault-injection` plugin: [#9039](https://github.com/apache/apisix/pull/9039)
+- :sunrise: Support variable when rewrite header in `proxy-rewrite` plugin: [#9112](https://github.com/apache/apisix/pull/9112)
+- :sunrise: `limit-count` plugin supports `username` and `ssl` for redis policy: [#9185](https://github.com/apache/apisix/pull/9185)
+
+### Bugfixes
+
+- Fix etcd data sync exception: [#8493](https://github.com/apache/apisix/pull/8493)
+- Fix invalidate cache in `core.request.add_header` and fix some calls: [#8824](https://github.com/apache/apisix/pull/8824)
+- Fix the high CPU and memory usage cause by healthcheck impl: [#9015](https://github.com/apache/apisix/pull/9015)
+- Consider using `allow_origins_by_regex` only when it is not `nil`: [#9028](https://github.com/apache/apisix/pull/9028)
+- Check upstream reference in `traffic-split` plugin when delete upstream: [#9044](https://github.com/apache/apisix/pull/9044)
+- Fix failing to connect to etcd at startup: [#9077](https://github.com/apache/apisix/pull/9077)
+- Fix health checker leak for domain nodes: [#9090](https://github.com/apache/apisix/pull/9090)
+- Prevent non `127.0.0.0/24` to access admin api with empty admin_key: [#9146](https://github.com/apache/apisix/pull/9146)
+- Ensure `hold_body_chunk` should use separate buffer for each plugin in case of pollution: [#9266](https://github.com/apache/apisix/pull/9266)
+- Ensure `batch-requests` plugin read trailer headers if existed: [#9289](https://github.com/apache/apisix/pull/9289)
+- Ensure `proxy-rewrite` should set `ngx.var.uri`: [#9309](https://github.com/apache/apisix/pull/9309)
 
 ## 3.2.0
 
