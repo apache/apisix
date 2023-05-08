@@ -136,6 +136,10 @@ jobs:
           make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
           [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
           echo "Linux launch services, done."
+      - name: Prepare clickhouse
+        run: |
+          echo "CREATE TABLE default.test (   \`host\` String,   \`client_ip\` String,   \`route_id\` String,   \`service_id\` String,   \`@timestamp\` String,    PRIMARY KEY(\`@timestamp\`) ) ENGINE = MergeTree()" | curl 'http://localhost:8123/'
+
       - name: Start Dubbo Backend
         if: matrix.os_name == 'linux_openresty' && steps.test_env.outputs.type == 'plugin'
         run: |

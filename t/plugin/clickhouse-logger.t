@@ -281,3 +281,51 @@ hello world
 --- wait: 1.5
 --- error_log eval
 qr/clickhouse body: INSERT INTO t FORMAT JSONEachRow \{.*"vip":"127.0.0.1".*\}/
+
+
+
+=== TEST 9: real clickhouse server
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "clickhouse-logger": {
+                                "user": "default",
+                                "password": "",
+                                "database": "default",
+                                "logtable": "test",
+                                "endpoint_addr": "http://127.0.0.1:8123"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+--- wait: 1
+
+
+=== TEST 10: access log
+--- request
+GET /opentracing
+--- exec
+curl 'http://localhost:8123/?query=select%20*%20from%20default.test'
+--- response_body_like
+127.0.0.1.*127.0.0.1.*1.*[\d]{4}-[\d]{2}-[\d]{2}T[\d]{2}:[\d]{2}:[\d]{2}\+[\d]{2}:[\d]{2}

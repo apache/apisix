@@ -324,6 +324,16 @@ services:
     networks:
       vector_net:
 
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.4.2-alpine
+    container_name: clickhouse
+    ports:
+      - '8123:8123'
+      - '9000:9000'
+      - '9009:9009'
+    networks:
+      clickhouse_net:
+
 networks:
   apisix_net:
   kafka_net:
