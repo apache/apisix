@@ -94,11 +94,11 @@ function _M.push_entry(conf, ctx, entry)
 
     -- Generate a function to be executed by the batch processor
     local cp_ctx = core.table.clone(ctx)
-    local func = function(entries, batch_max_size)
+    local func = function(entries)
         local items = {}
         for _, e in ipairs(entries) do
             table.insert(items, e)
-            core.log.info("buffered logs:", e)
+            core.log.debug("buffered logs:", e)
         end
 
         return send_syslog_data(conf, table.concat(items), cp_ctx)

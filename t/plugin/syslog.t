@@ -31,7 +31,7 @@ __DATA__
             local plugin = require("apisix.plugins.syslog")
             local ok, err = plugin.check_schema({
                  host = "127.0.0.1",
-                 port = 3000,
+                 port = 5140,
             })
             if not ok then
                 ngx.say(err)
@@ -73,7 +73,7 @@ done
             local plugin = require("apisix.plugins.syslog")
             local ok, err = plugin.check_schema({
                  host = "127.0.0.1",
-                 port = "3000",
+                 port = "5140",
             })
             if not ok then
                 ngx.say(err)
@@ -100,7 +100,7 @@ done
                         "plugins": {
                             "syslog": {
                                 "host" : "127.0.0.1",
-                                "port" : 5044
+                                "port" : 5140
                             }
                         },
                         "upstream": {
@@ -142,7 +142,7 @@ hello world
             local logger_socket = require("resty.logger.socket")
             local logger, err = logger_socket:new({
                     host = "127.0.0.1",
-                    port = 5044,
+                    port = 5140,
                     flush_limit = 100,
             })
 
@@ -183,7 +183,7 @@ done
                     "plugins": {
                         "syslog": {
                                 "host" : "127.0.0.1",
-                                "port" : 5044,
+                                "port" : 5140,
                                 "flush_limit" : 1,
                                 "inactive_timeout": 1
                             }
@@ -236,7 +236,15 @@ unlock with key route#1
 
 
 
-=== TEST 8: check plugin configuration updating
+=== TEST 8: check log
+--- exec
+tail -n 1 ci/pod/vector/syslog-tcp.log
+--- response_body eval
+qr/.*apisix_latency.*/
+
+
+
+=== TEST 9: check plugin configuration updating
 --- config
     location /t {
         content_by_lua_block {
@@ -327,7 +335,7 @@ sending a batch logs to 127.0.0.1:5045
 
 
 
-=== TEST 9: add log format
+=== TEST 10: add log format
 --- config
     location /t {
         content_by_lua_block {
@@ -355,7 +363,7 @@ passed
 
 
 
-=== TEST 10: Add route and Enable Syslog Plugin, batch_max_size=1
+=== TEST 11: Add route and Enable Syslog Plugin, batch_max_size=1
 --- config
     location /t {
         content_by_lua_block {
@@ -369,7 +377,7 @@ passed
                                 "disable": false,
                                 "flush_limit": 1,
                                 "host" : "127.0.0.1",
-                                "port" : 5050
+                                "port" : 5140
                             }
                         },
                         "upstream": {
@@ -394,7 +402,7 @@ passed
 
 
 
-=== TEST 11: hit route and report sys logger
+=== TEST 12: hit route and report sys logger
 --- extra_init_by_lua
     local syslog = require("apisix.plugins.syslog.init")
     local json = require("apisix.core.json")
@@ -416,7 +424,15 @@ qr/syslog-log-format.*\{.*"upstream":"127.0.0.1:\d+"/
 
 
 
-=== TEST 12: log format in plugin
+=== TEST 13: check log
+--- exec
+tail -n 1 ci/pod/vector/syslog-tcp.log
+--- response_body eval
+qr/.*\"host\":\"localhost\".*/
+
+
+
+=== TEST 14: log format in plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -432,7 +448,7 @@ qr/syslog-log-format.*\{.*"upstream":"127.0.0.1:\d+"/
                                     "vip": "$remote_addr"
                                 },
                                 "host" : "127.0.0.1",
-                                "port" : 5050
+                                "port" : 5140
                             }
                         },
                         "upstream": {
@@ -461,7 +477,7 @@ passed
 
 
 
-=== TEST 13: access
+=== TEST 15: access
 --- extra_init_by_lua
     local syslog = require("apisix.plugins.syslog.init")
     local json = require("apisix.core.json")
@@ -481,3 +497,65 @@ hello world
 [error]
 --- error_log
 push_entry is called with data
+
+
+
+=== TEST 16: check log
+--- exec
+tail -n 1 ci/pod/vector/syslog-tcp.log
+--- response_body eval
+qr/.*vip.*/
+
+
+
+=== TEST 17: test udp mode
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "syslog": {
+                                "batch_max_size": 1,
+                                "disable": false,
+                                "flush_limit": 1,
+                                "host" : "127.0.0.1",
+                                "port" : 5150,
+                                "sock_type": "udp"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 18: hit
+--- request
+GET /hello
+
+
+
+=== TEST 19: check log
+--- exec
+tail -n 1 ci/pod/vector/syslog-udp.log
+--- response_body eval
+qr/.*upstream.*/

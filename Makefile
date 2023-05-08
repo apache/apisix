@@ -373,7 +373,7 @@ install: runtime
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/stream/xrpc/protocols/redis
 	$(ENV_INSTALL) apisix/stream/xrpc/protocols/redis/*.lua $(ENV_INST_LUADIR)/apisix/stream/xrpc/protocols/redis/
-	
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/syslog
 	$(ENV_INSTALL) apisix/syslog/*.lua $(ENV_INST_LUADIR)/apisix/syslog/
 
