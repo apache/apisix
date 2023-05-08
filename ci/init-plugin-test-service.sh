@@ -51,6 +51,8 @@ after() {
     # configure keycloak
     docker exec apisix_keycloak bash /tmp/kcadm_configure_cas.sh
     docker exec apisix_keycloak bash /tmp/kcadm_configure_university.sh
+
+    
 }
 
 before() {
