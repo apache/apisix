@@ -614,7 +614,6 @@ client certificate verification is not passed: FAILED
 
 
 === TEST 20: mtls failed, at handshake phase
---- SKIP
 --- exec
 curl -k -v --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello
 --- error_log
