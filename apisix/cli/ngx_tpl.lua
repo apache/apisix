@@ -703,16 +703,11 @@ http {
 
             ### the following x-forwarded-* headers is to send to upstream server
 
-            set $var_x_forwarded_for        $remote_addr;
             set $var_x_forwarded_proto      $scheme;
             set $var_x_forwarded_host       $host;
             set $var_x_forwarded_port       $server_port;
 
-            if ($http_x_forwarded_for != "") {
-                set $var_x_forwarded_for "${http_x_forwarded_for}, ${realip_remote_addr}";
-            }
-
-            proxy_set_header   X-Forwarded-For      $var_x_forwarded_for;
+            proxy_set_header   X-Forwarded-For      $proxy_add_x_forwarded_for;
             proxy_set_header   X-Forwarded-Proto    $var_x_forwarded_proto;
             proxy_set_header   X-Forwarded-Host     $var_x_forwarded_host;
             proxy_set_header   X-Forwarded-Port     $var_x_forwarded_port;
@@ -771,6 +766,7 @@ http {
             grpc_set_header   "Host" $upstream_host;
             {% end %}
             grpc_set_header   Content-Type application/grpc;
+            grpc_set_header   TE trailers;
             grpc_socket_keepalive on;
             grpc_pass         $upstream_scheme://apisix_backend;
 

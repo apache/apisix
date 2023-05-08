@@ -208,6 +208,13 @@ scrape_configs:
 
 - Info: 当前 APISIX 节点信息。
 - Shared dict: APISIX 中所有共享内存的容量以及剩余可用空间。
+- `apisix_upstream_status`: 上游健康检查的节点状态，`1` 表示健康，`0` 表示不健康。属性如下所示：
+
+  | 名称         | 描述                                                                                                                   |
+  |--------------|-------------------------------------------------------------------------------------------------------------------------------|
+  | name         | 上游所依附的资源 ID，例如 `/apisix/routes/1`, `/apisix/upstreams/1`.                                                                            |
+  | ip        | 上游节点的 IP 地址。                          |
+  | port  | 上游节点的端口号。                               |
 
 以下是 APISIX 的原始的指标数据集：
 
@@ -297,6 +304,10 @@ apisix_shared_dict_free_space_bytes{name="balancer-ewma-locks"} 10412032
 apisix_shared_dict_free_space_bytes{name="discovery"} 1032192
 apisix_shared_dict_free_space_bytes{name="etcd-cluster-health-check"} 10412032
 ...
+# HELP apisix_upstream_status Upstream status from health check
+# TYPE apisix_upstream_status gauge
+apisix_upstream_status{name="/apisix/routes/1",ip="100.24.156.8",port="80"} 0
+apisix_upstream_status{name="/apisix/routes/1",ip="52.86.68.46",port="80"} 1
 ```
 
 ## 禁用插件

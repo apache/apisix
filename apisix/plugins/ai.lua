@@ -163,6 +163,7 @@ local function routes_analyze(routes)
 
     local route_flags = core.table.new(0, 16)
     local route_up_flags = core.table.new(0, 12)
+
     for _, route in ipairs(routes) do
         if type(route) == "table" then
             for key, value in pairs(route.value) do

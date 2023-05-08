@@ -101,7 +101,7 @@ helm install apisix apisix/apisix --create-namespace  --namespace apisix
 
 <TabItem value="rpm">
 
-该安装方法适用于 CentOS 7 和 CentOS 8。如果你选择该方法安装 APISIX，需要先安装 etcd。具体安装方法请参考[安装 etcd](#安装-etcd)。
+该安装方法适用于 CentOS 7 和 CentOS 8。如果你选择该方法安装 APISIX，需要先安装 etcd。具体安装方法请参考 [安装 etcd](#安装-etcd)。
 
 ### 通过 RPM 仓库安装
 
@@ -197,7 +197,7 @@ apisix start
 
 <TabItem value="source code">
 
-如果你想要使用源码构建 APISIX，请参考[源码安装 APISIX](./building-apisix.md)。
+如果你想要使用源码构建 APISIX，请参考 [源码安装 APISIX](./building-apisix.md)。
 
 </TabItem>
 </Tabs>
@@ -246,14 +246,14 @@ brew services start etcd
 
 比如将 APISIX 默认监听端口修改为 8000，其他配置保持默认，在 `./conf/config.yaml` 中只需这样配置：
 
-```yaml title=“./conf/config.yaml”
+```yaml title="./conf/config.yaml"
 apisix:
   node_listen: 8000 # APISIX listening port
 ```
 
 比如指定 APISIX 默认监听端口为 8000，并且设置 etcd 地址为 `http://foo:2379`，其他配置保持默认。在 `./conf/config.yaml` 中只需这样配置：
 
-```yaml title=“./conf/config.yaml”
+```yaml title="./conf/config.yaml"
 apisix:
   node_listen: 8000 # APISIX listening port
 

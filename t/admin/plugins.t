@@ -88,9 +88,9 @@ consumer-restriction
 forward-auth
 opa
 authz-keycloak
+proxy-cache
 body-transformer
 proxy-mirror
-proxy-cache
 proxy-rewrite
 workflow
 api-breaker

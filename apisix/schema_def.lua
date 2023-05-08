@@ -82,7 +82,7 @@ local label_value_def = {
     description = "value of label",
     type = "string",
     pattern = [[^\S+$]],
-    maxLength = 64,
+    maxLength = 256,
     minLength = 1
 }
 _M.label_value_def = label_value_def
@@ -725,8 +725,19 @@ _M.ssl = {
             default = "server",
             enum = {"server", "client"}
         },
-        cert = certificate_scheme,
-        key = private_key_schema,
+        cert = {
+            oneOf = {
+                certificate_scheme,
+                -- TODO: uniformly define the schema of secret_uri
+                { type = "string", pattern = "^\\$(secret|env)://"}
+            }
+        },
+        key = {
+            oneOf = {
+                private_key_schema,
+                { type = "string", pattern = "^\\$(secret|env)://"}
+            }
+        },
         sni = {
             type = "string",
             pattern = host_def_pat,
@@ -755,6 +766,15 @@ _M.ssl = {
                     type = "integer",
                     minimum = 0,
                     default = 1,
+                },
+                skip_mtls_uri_regex = {
+                    type = "array",
+                    minItems = 1,
+                    uniqueItems = true,
+                    items = {
+                        description = "uri regular expression to skip mtls",
+                        type = "string",
+                    }
                 },
             },
             required = {"ca"},

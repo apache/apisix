@@ -1,9 +1,16 @@
 {
-  "version": "3.2.0",
+  "version": "3.3.0",
   "sidebar": [
     {
-      "type": "doc",
-      "id": "getting-started"
+      "type": "category",
+      "label": "Getting Started",
+      "items": [
+        "getting-started/README",
+        "getting-started/configure-routes",
+        "getting-started/load-balancing",
+        "getting-started/key-authentication",
+        "getting-started/rate-limiting"
+      ]
     },
     {
       "type": "doc",
@@ -24,7 +31,8 @@
         "tutorials/cache-api-responses",
         "tutorials/add-multiple-api-versions",
         "tutorials/health-check",
-        "tutorials/client-to-apisix-mtls"
+        "tutorials/client-to-apisix-mtls",
+        "tutorials/websocket-authentication"
       ]
     },
     {

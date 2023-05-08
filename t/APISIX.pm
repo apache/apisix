@@ -203,6 +203,7 @@ _EOC_
 
 $grpc_location .= <<_EOC_;
             grpc_set_header   Content-Type application/grpc;
+            grpc_set_header   TE trailers;
             grpc_socket_keepalive on;
             grpc_pass         \$upstream_scheme://apisix_backend;
 
@@ -647,6 +648,8 @@ _EOC_
         $ipv6_fake_server
         server_tokens off;
 
+        access_log logs/fake-server-access.log main;
+
         location / {
             content_by_lua_block {
                 require("lib.server").go()
@@ -671,6 +674,8 @@ _EOC_
 
     $http_config .= <<_EOC_;
         server_tokens off;
+
+        access_log logs/fake-server-access.log main;
 
         ssl_certificate_by_lua_block {
             local ngx_ssl = require "ngx.ssl"
@@ -708,6 +713,8 @@ _EOC_
         ssl_certificate_by_lua_block {
             apisix.http_ssl_phase()
         }
+
+        access_log logs/access.log main;
 
         set \$dubbo_service_name          '';
         set \$dubbo_service_version       '';
@@ -776,16 +783,11 @@ _EOC_
 
             ### the following x-forwarded-* headers is to send to upstream server
 
-            set \$var_x_forwarded_for        \$remote_addr;
             set \$var_x_forwarded_proto      \$scheme;
             set \$var_x_forwarded_host       \$host;
             set \$var_x_forwarded_port       \$server_port;
 
-            if (\$http_x_forwarded_for != "") {
-                set \$var_x_forwarded_for "\${http_x_forwarded_for}, \${realip_remote_addr}";
-            }
-
-            proxy_set_header   X-Forwarded-For      \$var_x_forwarded_for;
+            proxy_set_header   X-Forwarded-For      \$proxy_add_x_forwarded_for;
             proxy_set_header   X-Forwarded-Proto    \$var_x_forwarded_proto;
             proxy_set_header   X-Forwarded-Host     \$var_x_forwarded_host;
             proxy_set_header   X-Forwarded-Port     \$var_x_forwarded_port;

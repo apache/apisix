@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3.2.0
       - name: 🚀 Use Node.js
-        uses: actions/setup-node@v3.5.1
+        uses: actions/setup-node@v3.6.0
         with:
           node-version: "12.x"
       - run: npm install -g markdownlint-cli@0.25.0
@@ -48,7 +48,9 @@ jobs:
     timeout-minutes: 1
     steps:
       - uses: actions/checkout@v3
-      - name: Check Chinese copywriting
-        uses: huacnlee/autocorrect-action@v2.6.2
         with:
-          args: --lint --no-diff-bg-color docs/zh/latest/**.md
+          submodules: recursive
+      - name: Check Chinese copywriting
+        uses: ./.github/actions/autocorrect
+        with:
+          args: autocorrect --lint --no-diff-bg-color ./docs/zh/latest/
