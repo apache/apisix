@@ -176,11 +176,13 @@ local function run()
 
     local resource = resources[seg_res]
     if not resource then
+        core.log.error("================== levy no resource: ", seg_res)
         core.response.exit(404, {error_msg = "not found"})
     end
 
     local method = str_lower(get_method())
     if not resource[method] then
+        core.log.error("================== levy method not found")
         core.response.exit(404, {error_msg = "not found"})
     end
 
@@ -319,6 +321,7 @@ local function sync_local_conf_to_etcd(reset)
         end
 
         if res.status == 404 then
+            core.log.error("================== levy no plugins")
             -- nothing need to be reset
             return
         end
