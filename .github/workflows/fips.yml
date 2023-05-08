@@ -137,7 +137,7 @@ jobs:
       - name: Linux Install
         env:
           COMPILE_OPENSSL3: ${{ steps.test_ssl_env.outputs.openssl3 }}
-          OPENSSL3_PREFIX: ${{ steps.test_ssl_env.outputs.openssl3_prefix }}
+          OPENSSL3_PREFIX: ${{ steps.set_openssl_prefix.outputs.openssl3_prefix }}
           USE_OPENSSL3: yes
         run: |
           sudo --preserve-env=OPENRESTY_VERSION \
