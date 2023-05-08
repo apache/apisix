@@ -836,7 +836,7 @@ _M.global_rule = {
         create_time = timestamp_def,
         update_time = timestamp_def
     },
-    required = {"plugins"},
+    required = {"id", "plugins"},
 }
 
 
