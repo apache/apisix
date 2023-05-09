@@ -32,7 +32,7 @@ description: This document contains information about the Apache APISIX loki-log
 
 The `loki-logger` plugin is used to forward logs to [Grafana Loki](https://grafana.com/oss/loki/) for analysis and storage.
 
-When the Plugin is enabled, APISIX will serialize the request context information to [Log entries in JSON](https://grafana.com/docs/loki/latest/api/#push-log-entries-to-loki) and submit it to the batch queue. When the maximum batch size is exceeded, the data in the queue is pushed to Elasticsearch. See [batch processor](../batch-processor.md) for more details.
+When the Plugin is enabled, APISIX will serialize the request context information to [Log entries in JSON](https://grafana.com/docs/loki/latest/api/#push-log-entries-to-loki) and submit it to the batch queue. When the maximum batch size is exceeded, the data in the queue is pushed to Grafana Loki. See [batch processor](../batch-processor.md) for more details.
 
 ## Attributes
 
