@@ -125,7 +125,7 @@ end
 
 
 local function parse_domain_for_node(node)
-    local host = node.host
+    local host = node.domain or node.host
     if not ipmatcher.parse_ipv4(host)
        and not ipmatcher.parse_ipv6(host)
     then
