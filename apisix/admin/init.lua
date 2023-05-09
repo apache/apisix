@@ -169,7 +169,7 @@ local function run()
         if not local_conf.apisix.stream_proxy then
             core.log.warn("stream mode is disabled, can not add any stream ",
                           "routes")
-            core.response.exit(402, {error_msg = "stream mode is disabled, " ..
+            core.response.exit(400, {error_msg = "stream mode is disabled, " ..
                                "can not add stream routes"})
         end
     end
@@ -177,7 +177,7 @@ local function run()
     local resource = resources[seg_res]
     if not resource then
         core.log.error("================== levy no resource: ", seg_res)
-        core.response.exit(403, {error_msg = "not found"})
+        core.response.exit(404, {error_msg = "not found"})
     end
 
     local method = str_lower(get_method())
@@ -189,14 +189,14 @@ local function run()
     local req_body, err = core.request.get_body(MAX_REQ_BODY)
     if err then
         core.log.error("failed to read request body: ", err)
-        core.response.exit(405, {error_msg = "invalid request body: " .. err})
+        core.response.exit(400, {error_msg = "invalid request body: " .. err})
     end
 
     if req_body then
         local data, err = core.json.decode(req_body)
         if err then
             core.log.error("invalid request body: ", req_body, " err: ", err)
-            core.response.exit(406, {error_msg = "invalid request body: " .. err,
+            core.response.exit(400, {error_msg = "invalid request body: " .. err,
                                      req_body = req_body})
         end
 
@@ -206,7 +206,7 @@ local function run()
     local uri_args = ngx.req.get_uri_args() or {}
     if uri_args.ttl then
         if not tonumber(uri_args.ttl) then
-            core.response.exit(407, {error_msg = "invalid argument ttl: "
+            core.response.exit(400, {error_msg = "invalid argument ttl: "
                                                  .. "should be a number"})
         end
     end
@@ -240,7 +240,7 @@ local function run()
 
         data = strip_etcd_resp(data)
 
-        core.response.exit(408, data)
+        core.response.exit(code, data)
     end
 end
 
