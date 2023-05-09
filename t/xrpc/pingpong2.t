@@ -500,6 +500,7 @@ passed
 qr/message received:.*\"client_ip\"\:\"127.0.0.1\"/
 
 
+
 === TEST 16: set loggger filter
 --- config
     location /t {
@@ -556,6 +557,7 @@ passed
 --- wait: 0.5
 --- error_log eval
 qr/message received:.*\"client_ip\"\:\"127.0.0.1\"/
+
 
 
 === TEST 18: small flush_limit, instant flush
