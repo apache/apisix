@@ -684,17 +684,15 @@ function _M.grpc_access_phase()
         return
     end
 
+
     local code, err = apisix_upstream.set_grpcs_upstream_param(api_ctx)
     if code then
         core.log.error("failed to set grpcs upstream param: ", err)
         core.response.exit(code)
     end
 
-    if api_ctx.var.upstream_mirror_scheme == "grpc" or
-        api_ctx.var.upstream_mirror_scheme == "grpcs" then
-        if has_mod then
-            apisix_ngx_client.enable_mirror()
-        end
+    if api_ctx.enable_mirror == 1 and has_mod then
+        apisix_ngx_client.enable_mirror()
     end
 end
 
