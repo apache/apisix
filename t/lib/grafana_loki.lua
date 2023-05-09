@@ -52,7 +52,11 @@ function _M.fetch_logs_from_loki(from, to, options)
         return nil, "HTTP status code: " .. res.status .. ", body: " .. res.body
     end
 
-    return cjson.decode(res.body)
+    local data = cjson.decode(res.body)
+    if not data then
+        return nil, "failed to decode response body: " .. res.body
+    end
+    return data, nil
 end
 
 

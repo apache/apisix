@@ -118,16 +118,16 @@ hello world
 --- config
     location /t {
         content_by_lua_block {
+            local cjson = require("cjson")
             local now = ngx.now() * 1000
             local data, err = require("lib.grafana_loki").fetch_logs_from_loki(
                 tostring(now - 3000) .. "000000", -- from
                 tostring(now) .. "000000"         -- to
             )
 
-            assert(err == nil, "fetch logs error: " .. err or "")
-            assert(data ~= nil, "loki response decode error: " .. res.body)
-            assert(data.status == "success", "loki response error: " .. res.body)
-            assert(#data.data.result > 0, "loki log empty: " .. res.body)
+            assert(err == nil, "fetch logs error: " .. (err or ""))
+            assert(data.status == "success", "loki response error: " .. cjson.encode(data))
+            assert(#data.data.result > 0, "loki log empty: " .. cjson.encode(data))
 
             local entry = data.data.result[1]
             assert(entry.stream.request_headers_test_header == "only-for-test#1",
@@ -191,6 +191,7 @@ hello world
 --- config
     location /t {
         content_by_lua_block {
+            local cjson = require("cjson")
             local now = ngx.now() * 1000
             local data, err = require("lib.grafana_loki").fetch_logs_from_loki(
                 tostring(now - 3000) .. "000000", -- from
@@ -198,10 +199,9 @@ hello world
                 { query = [[{custom_label="custom_label_value"} | json]] }
             )
 
-            assert(err == nil, "fetch logs error: " .. err or "")
-            assert(data ~= nil, "loki response decode error: " .. res.body)
-            assert(data.status == "success", "loki response error: " .. res.body)
-            assert(#data.data.result > 0, "loki log empty: " .. res.body)
+            assert(err == nil, "fetch logs error: " .. (err or ""))
+            assert(data.status == "success", "loki response error: " .. cjson.encode(data))
+            assert(#data.data.result > 0, "loki log empty: " .. cjson.encode(data))
 
             local entry = data.data.result[1]
             assert(entry.stream.request_headers_test_header == "only-for-test#2",
@@ -262,16 +262,16 @@ hello world
 --- config
     location /t {
         content_by_lua_block {
+            local cjson = require("cjson")
             local now = ngx.now() * 1000
             local data, err = require("lib.grafana_loki").fetch_logs_from_loki(
                 tostring(now - 10000) .. "000000", -- from
-                tostring(now) .. "000000",        -- to
+                tostring(now) .. "000000"          -- to
             )
 
-            assert(err == nil, "fetch logs error: " .. err or "")
-            assert(data ~= nil, "loki response decode error: " .. res.body)
-            assert(data.status == "success", "loki response error: " .. res.body)
-            assert(#data.data.result > 0, "loki log empty: " .. res.body)
+            assert(err == nil, "fetch logs error: " .. (err or ""))
+            assert(data.status == "success", "loki response error: " .. cjson.encode(data))
+            assert(#data.data.result > 0, "loki log empty: " .. cjson.encode(data))
 
             local entry = data.data.result[1]
             assert(entry.stream.request_headers_test_header ~= "only-for-test#3",
@@ -286,6 +286,7 @@ hello world
 --- config
     location /t {
         content_by_lua_block {
+            local cjson = require("cjson")
             local now = ngx.now() * 1000
             local data, err = require("lib.grafana_loki").fetch_logs_from_loki(
                 tostring(now - 3000) .. "000000", -- from
@@ -295,10 +296,9 @@ hello world
                 } }
             )
 
-            assert(err == nil, "fetch logs error: " .. err or "")
-            assert(data ~= nil, "loki response decode error: " .. res.body)
-            assert(data.status == "success", "loki response error: " .. res.body)
-            assert(#data.data.result > 0, "loki log empty: " .. res.body)
+            assert(err == nil, "fetch logs error: " .. (err or ""))
+            assert(data.status == "success", "loki response error: " .. cjson.encode(data))
+            assert(#data.data.result > 0, "loki log empty: " .. cjson.encode(data))
 
             local entry = data.data.result[1]
             assert(entry.stream.request_headers_test_header == "only-for-test#3",
