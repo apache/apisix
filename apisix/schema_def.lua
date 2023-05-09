@@ -508,8 +508,7 @@ local upstream_schema = {
 _M.upstream_hash_vars_schema = {
     type = "string",
     pattern = [[^((uri|server_name|server_addr|request_uri|remote_port]]
-               .. [[|remote_addr|query_string|host|hostname)]]
-               .. [[|mqtt_client_id]]
+               .. [[|remote_addr|query_string|host|hostname|mqtt_client_id)]]
                .. [[|arg_[0-9a-zA-z_-]+)$]],
 }
 
