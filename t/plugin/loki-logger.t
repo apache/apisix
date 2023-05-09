@@ -118,6 +118,7 @@ hello world
 --- config
     location /t {
         content_by_lua_block {
+            local now = ngx.now() * 1000
             local data, err = require("lib.grafana_loki").fetch_logs_from_loki(
                 tostring(now - 3000) .. "000000", -- from
                 tostring(now) .. "000000"         -- to
@@ -190,6 +191,7 @@ hello world
 --- config
     location /t {
         content_by_lua_block {
+            local now = ngx.now() * 1000
             local data, err = require("lib.grafana_loki").fetch_logs_from_loki(
                 tostring(now - 3000) .. "000000", -- from
                 tostring(now) .. "000000",        -- to
@@ -260,6 +262,7 @@ hello world
 --- config
     location /t {
         content_by_lua_block {
+            local now = ngx.now() * 1000
             local data, err = require("lib.grafana_loki").fetch_logs_from_loki(
                 tostring(now - 10000) .. "000000", -- from
                 tostring(now) .. "000000",        -- to
@@ -283,6 +286,7 @@ hello world
 --- config
     location /t {
         content_by_lua_block {
+            local now = ngx.now() * 1000
             local data, err = require("lib.grafana_loki").fetch_logs_from_loki(
                 tostring(now - 3000) .. "000000", -- from
                 tostring(now) .. "000000",        -- to
