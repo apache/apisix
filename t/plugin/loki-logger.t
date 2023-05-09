@@ -124,7 +124,7 @@ hello world
                 tostring(now) .. "000000"         -- to
             )
 
-            assert(err == nil, "fetch logs error: " .. err)
+            assert(err == nil, "fetch logs error: " .. err or "")
             assert(data ~= nil, "loki response decode error: " .. res.body)
             assert(data.status == "success", "loki response error: " .. res.body)
             assert(#data.data.result > 0, "loki log empty: " .. res.body)
@@ -198,7 +198,7 @@ hello world
                 { query = [[{custom_label="custom_label_value"} | json]] }
             )
 
-            assert(err == nil, "fetch logs error: " .. err)
+            assert(err == nil, "fetch logs error: " .. err or "")
             assert(data ~= nil, "loki response decode error: " .. res.body)
             assert(data.status == "success", "loki response error: " .. res.body)
             assert(#data.data.result > 0, "loki log empty: " .. res.body)
@@ -268,7 +268,7 @@ hello world
                 tostring(now) .. "000000",        -- to
             )
 
-            assert(err == nil, "fetch logs error: " .. err)
+            assert(err == nil, "fetch logs error: " .. err or "")
             assert(data ~= nil, "loki response decode error: " .. res.body)
             assert(data.status == "success", "loki response error: " .. res.body)
             assert(#data.data.result > 0, "loki log empty: " .. res.body)
@@ -295,7 +295,7 @@ hello world
                 } }
             )
 
-            assert(err == nil, "fetch logs error: " .. err)
+            assert(err == nil, "fetch logs error: " .. err or "")
             assert(data ~= nil, "loki response decode error: " .. res.body)
             assert(data.status == "success", "loki response error: " .. res.body)
             assert(#data.data.result > 0, "loki log empty: " .. res.body)
