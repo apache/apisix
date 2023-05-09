@@ -79,7 +79,6 @@ failed to parse domain: loc, error:
 
 
 === TEST 3: set upstream(id: 1)
---- FIRST
 --- config
     location /t {
         content_by_lua_block {
@@ -174,7 +173,6 @@ proxy request to 0.0.0.0:1995
 
 
 === TEST 7: hit route with different client id, part 2
---- LAST
 --- stream_request eval
 "\x10\x0e\x00\x04\x4d\x51\x54\x54\x05\x02\x00\x3c\x00\x00\x01\x67"
 --- stream_response
