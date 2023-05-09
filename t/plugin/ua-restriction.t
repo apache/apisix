@@ -302,9 +302,9 @@ hello world
 GET /hello
 --- more_headers
 User-Agent:foo/bar
---- error_code: 200
+--- error_code: 403
 --- response_body
-hello world
+{"message":"Not allowed"}
 
 
 

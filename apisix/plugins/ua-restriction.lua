@@ -142,7 +142,7 @@ function _M.access(conf, ctx)
         match = lrucache_useragent(user_agent, conf, match_user_agent, user_agent, conf)
     end
 
-    if match > MATCH_ALLOW then
+    if match > MATCH_ALLOW or (match == MATCH_NONE and conf.allowlist and not conf.denylist) then
         return 403, { message = conf.message }
     end
 end
