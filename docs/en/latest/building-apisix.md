@@ -31,9 +31,9 @@ description: Guide for building and running APISIX locally for development.
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-If you are looking to contribute to APISIX or setup a development environment, this guide is for you.
+If you are looking to setup a development environment or contribute to APISIX, this guide is for you.
 
-If you are looking to install and run APISIX, check out the [Installation](./installation-guide.md) docs.
+If you are looking to quickly get started with APISIX, check out the other [installation methods](./installation-guide.md).
 
 :::note
 
@@ -43,20 +43,19 @@ If you want to build and package APISIX for a specific platform, see [apisix-bui
 
 ## Building APISIX from source
 
-To start, you have to install some dependencies. APISIX provides a handy script to get these installed:
+Install dependencies using the script provided by APISIX:
 
 ```shell
 curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-dependencies.sh -sL | bash -
 ```
 
-Then, create a directory and set the environment variable `APISIX_VERSION`:
+Save the APISIX version to an environment variable to be used next:
 
 ```shell
 APISIX_VERSION='3.3.0'
-mkdir apisix-${APISIX_VERSION}
 ```
 
-You can now clone the APISIX source code from Github by running the command below:
+Clone the APISIX source code of this version into a new directory `apisix-APISIX_VERSION`:
 
 ```shell
 git clone --depth 1 --branch ${APISIX_VERSION} https://github.com/apache/apisix.git apisix-${APISIX_VERSION}
