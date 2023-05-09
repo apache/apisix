@@ -44,7 +44,7 @@ A common scenario is to set crawler rules. `User-Agent` is the identity of the c
 :::note
 
 1.Both `allowlist` and `denylist` can be used on their own. If they are used together, the `allowlist` matches before the `denylist`.
-2.If only `allowlist` is set and the `User-Agent` is not in the allowlist, the request will be rejected.
+2.If only `allowlist` is set and the `User-Agent` is not in the `allowlist`, the request will be rejected.
 
 :::
 
