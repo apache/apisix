@@ -120,7 +120,7 @@ hello world
         content_by_lua_block {
             local data, err = require("lib.grafana_loki").fetch_logs_from_loki(
                 tostring(now - 3000) .. "000000", -- from
-                tostring(now) .. "000000",        -- to
+                tostring(now) .. "000000"         -- to
             )
 
             assert(err == nil, "fetch logs error: " .. err)
