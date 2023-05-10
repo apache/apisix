@@ -278,7 +278,7 @@ invoked/
 
 
 
-=== TEST 7: proxy-rewrite cooperation
+=== TEST 7: proxy-rewrite cooperation with default user-agent
 --- config
     location /t {
         content_by_lua_block {
@@ -340,4 +340,70 @@ ngx.print("invoked")
 --- response_body eval
 qr/passed
 User-Agent - lua-resty-http.*
+invoked/
+
+
+
+=== TEST 8: proxy-rewrite cooperation without user-agent
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- passing the iam access and secret keys
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "aws-lambda": {
+                                "use_default_user_agent": false,
+                                "function_uri": "http://localhost:8765/generic",
+                                "authorization": {
+                                    "apikey": "test_key"
+                                }
+                            },
+                            "proxy-rewrite": {
+                                "headers": {
+                                    "remove":["User-Agent", "X-Customer-1"]
+                                }
+                            }
+                        },
+                        "uri": "/aws"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.say(body)
+
+            local header = {
+                ["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+                ["X-Customer-1"] = "customer1",
+            }
+
+            local code, _, body, headers = t("/aws", "GET", nil, nil, header)
+             if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.print(body)
+        }
+    }
+--- inside_lua_block
+local headers = ngx.req.get_headers() or {}
+if headers["User-Agent"] then
+    ngx.say("User-Agent - " .. headers["User-Agent"])
+end
+if headers["X-Customer-1"] then
+    ngx.say("X-Customer - " .. headers["X-Customer-1"])
+end
+ngx.print("invoked")
+
+--- response_body eval
+qr/passed
 invoked/

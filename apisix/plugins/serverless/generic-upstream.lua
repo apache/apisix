@@ -35,6 +35,7 @@ return function(plugin_name, version, priority, request_processor, authz_schema,
             function_uri = {type = "string"},
             authorization = authz_schema,
             timeout = {type = "integer", minimum = 100, default = 3000},
+            use_default_user_agent = {type = "boolean", default = true},
             ssl_verify = {type = "boolean", default = true},
             keepalive = {type = "boolean", default = true},
             keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
@@ -92,7 +93,8 @@ return function(plugin_name, version, priority, request_processor, authz_schema,
             headers = headers,
             path = path,
             keepalive = conf.keepalive,
-            ssl_verify = conf.ssl_verify
+            ssl_verify = conf.ssl_verify,
+            use_default_user_agent = conf.use_default_user_agent
         }
 
         -- Keepalive options
@@ -100,6 +102,7 @@ return function(plugin_name, version, priority, request_processor, authz_schema,
             params.keepalive_timeout = conf.keepalive_timeout
             params.keepalive_pool = conf.keepalive_pool
         end
+
 
         -- modify request info (if required)
         request_processor(conf, ctx, params)
