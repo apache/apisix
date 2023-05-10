@@ -122,19 +122,22 @@ done
                 ngx.HTTP_PUT,
                 [[{
                     "methods": ["GET"],
-                    "uri": "/echo",
+                    "uri": "/anything/*",
                     "plugins": {
                         "authz-casdoor": {
                             "callback_url":"]] .. callback_url .. [[",
                             "endpoint_addr":"]] .. fake_uri .. [[",
                             "client_id":"7ceb9b7fda4a9061ec1c",
                             "client_secret":"3416238e1edf915eac08b8fe345b2b95cdba7e04"
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/echo"
                         }
                     },
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                        "test.com:1980": 1
+                            "test.com:1980": 1
                         }
                     }
                 }]]
@@ -158,7 +161,7 @@ done
             local plugin = require("apisix.plugins.authz-casdoor")
             local t = require("lib.test_admin").test
 
-            local code, body = t('/echo?param1=foo&param2=bar', ngx.HTTP_GET, [[]])
+            local code, body = t('/anything/d?param1=foo&param2=bar', ngx.HTTP_GET, [[]])
             if code ~= 302 then
                 ngx.say("should have redirected")
             end
@@ -459,19 +462,22 @@ apisix:
                 ngx.HTTP_PUT,
                 [[{
                     "methods": ["GET"],
-                    "uri": "/echo",
+                    "uri": "/anything/*",
                     "plugins": {
                         "authz-casdoor": {
                             "callback_url":"]] .. callback_url .. [[",
                             "endpoint_addr": "http://127.0.0.1:10420",
                             "client_id":"7ceb9b7fda4a9061ec1c",
                             "client_secret":"3416238e1edf915eac08b8fe345b2b95cdba7e04"
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/echo"
                         }
                     },
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                        "test.com:1980": 1
+                            "test.com:1980": 1
                         }
                     }
                 }]]
