@@ -764,3 +764,60 @@ location /demo {
             assert(res2.headers["Apisix-Cache-Status"] == "HIT")
         }
     }
+
+
+
+=== TEST 11: return raw body with _body anytime
+--- http_config
+--- config
+    location /demo {
+        content_by_lua_block {
+            ngx.header.content_type = "application/json"
+            ngx.print('{"result": "hello world"}')
+        }
+    }
+
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+
+            local rsp_template = ngx.encode_base64[[
+                {"raw_body": {*_escape_json(_body)*}, "result": {*_escape_json(result)*}}
+                ]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format([[{
+                    "uri": "/capital",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/demo"
+                        },
+                        "body-transformer": {
+                            "response": {
+                                "template": "%s"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:%d": 1
+                        }
+                    }
+                }]], rsp_template, ngx.var.server_port)
+            )
+
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/capital"
+            local opt = {method = "GET", headers = {["Content-Type"] = "application/json"}}
+            local httpc = http.new()
+
+            local res = httpc:request_uri(uri, opt)
+            assert(res.status == 200)
+            local data = core.json.decode(res.body)
+            assert(data.result == "hello world")
+            assert(data.raw_body == '{"result": "hello world"}')
+        }
+    }
