@@ -36,6 +36,7 @@ local setmetatable = setmetatable
 local ngx_sleep    = require("apisix.core.utils").sleep
 local ngx_timer_at = ngx.timer.at
 local ngx_time     = ngx.time
+local ngx_sleep    = ngx.sleep
 local sub_str      = string.sub
 local tostring     = tostring
 local tonumber     = tonumber
@@ -43,6 +44,9 @@ local xpcall       = xpcall
 local debug        = debug
 local string       = string
 local error        = error
+local pairs        = pairs
+local next         = next
+local assert       = assert
 local rand         = math.random
 local constants    = require("apisix.constants")
 local health_check = require("resty.etcd.health_check")
@@ -111,7 +115,7 @@ local function handle_compacted(err)
             local res, err2 = watch_ctx.cli:get(watch_ctx.prefix)
             if not res then
                 log.error(err2)
-                ngx.sleep(3)
+                ngx_sleep(3)
             else
                 watch_ctx.rev = res.body.header.revision
                 break
@@ -124,7 +128,7 @@ end
 local function produce_res(res, err)
     -- append res and notify pending watchers
     --log.warn("append res, res: ", require("inspect")(res), ", err: ", require("inspect")(err))
-    table.insert(watch_ctx.res, {res=res, err=err})
+    insert_tab(watch_ctx.res, {res=res, err=err})
     for _, sema in pairs(watch_ctx.sema) do
         sema:post()
     end
@@ -151,8 +155,10 @@ local function run_watch(premature)
     local rev = 0
     if loaded_configuration then
         local _, res = next(loaded_configuration)
-        rev = tonumber(res.headers["X-Etcd-Index"])
-        assert(rev > 0, 'invalid res.headers["X-Etcd-Index"]')
+        if res then
+            rev = tonumber(res.headers["X-Etcd-Index"])
+            assert(rev > 0, 'invalid res.headers["X-Etcd-Index"]')
+        end
     end
 
     if rev == 0 then
@@ -187,7 +193,7 @@ local function run_watch(premature)
             log.error("watchdir: ", func_err)
             handle_compacted(func_err)
             produce_res(nil, func_err)
-            ngx.sleep(3)
+            ngx_sleep(3)
             goto restart_watch
         end
 
@@ -409,7 +415,7 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
             table.clear(res2.result.events)
             for _, evt in ipairs(res.result.events) do
                 if evt.kv.key:find(key) == 1 then
-                    table.insert(res2.result.events, evt)
+                    insert_tab(res2.result.events, evt)
                 end
             end
             --log.warn("res2: ", require("inspect")(res2))
@@ -597,7 +603,7 @@ local function sync_data(self)
         return nil, "missing 'key' arguments"
     end
 
-    if not self.use_grpc then
+    if not self.etcd_cli.use_grpc then
         init_watch_ctx(self.key)
     end
 
@@ -741,7 +747,7 @@ local function sync_data(self)
             for i = 1, #values_original do
                 local val = values_original[i]
                 if val then
-                    table.insert(self.values, val)
+                    insert_tab(self.values, val)
                 end
             end
 
@@ -1045,7 +1051,7 @@ local function create_formatter(prefix)
         for _, item in ipairs(res.body.kvs) do
             if curr_dir_data then
                 if core_str.has_prefix(item.key, curr_key) then
-                    table.insert(curr_dir_data, etcd_apisix.kvs_to_node(item))
+                    insert_tab(curr_dir_data, etcd_apisix.kvs_to_node(item))
                     goto CONTINUE
                 end
 
