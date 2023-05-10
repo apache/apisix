@@ -61,11 +61,9 @@ Clone the APISIX source code of this version into a new directory `apisix-APISIX
 git clone --depth 1 --branch ${APISIX_VERSION} https://github.com/apache/apisix.git apisix-${APISIX_VERSION}
 ```
 
-You can also download the source package from the [Downloads page](https://apisix.apache.org/downloads/). But the source package missing the test case. This may affect subsequent operations.
+Alternatively, you can also download the source package from the [Downloads](https://apisix.apache.org/downloads/) page. Note that source packages here are not distributed with test cases.
 
-And you will also find source packages for APISIX Dashboard and APISIX Ingress Controller from [Downloads page](https://apisix.apache.org/downloads/).
-
-Now, navigate to the directory, create dependencies, and install APISIX as shown below:
+Next, navigate to the directory, install dependencies, and build APISIX:
 
 ```shell
 cd apisix-${APISIX_VERSION}
@@ -73,7 +71,7 @@ make deps
 make install
 ```
 
-This will install the runtime dependent Lua libraries and the `apisix` command.
+This will install the runtime dependency Lua libraries and the `apisix` CLI tool.
 
 :::note
 
