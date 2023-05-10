@@ -80,6 +80,7 @@ local Severity = {
 
 local log_util = require("apisix.utils.log-util")
 local ipairs = ipairs
+local str_format = string.format
 
 local _M = { version = 0.1 }
 
@@ -106,9 +107,8 @@ function _M.encode(facility, severity, hostname, appname, pid, msg, structured_d
         structured_data_str = structured_data_str .. "]"
     end
 
-    return "<" .. pri .. ">1 " .. t .. " " .. hostname .. " "
-           .. appname .. " " .. pid .. " - " .. structured_data_str .. " "
-           .. msg .. "\n"
+    return str_format("<%d>1 %s %s %s %d - %s %s\n", pri, t, hostname,
+                    appname, pid, structured_data_str, msg)
 end
 
 return _M

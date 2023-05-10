@@ -20,7 +20,8 @@ local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local logger_socket = require("resty.logger.socket")
 local rfc5424 = require("apisix.syslog.rfc5424")
 local ipairs = ipairs
-local table = table
+local table_insert = core.table.insert
+local table_concat = core.table.concat
 
 local batch_processor_manager = bp_manager_mod.new("sys logger")
 
@@ -97,11 +98,11 @@ function _M.push_entry(conf, ctx, entry)
     local func = function(entries)
         local items = {}
         for _, e in ipairs(entries) do
-            table.insert(items, e)
+            table_insert(items, e)
             core.log.debug("buffered logs:", e)
         end
 
-        return send_syslog_data(conf, table.concat(items), cp_ctx)
+        return send_syslog_data(conf, table_concat(items), cp_ctx)
     end
 
     batch_processor_manager:add_entry_to_new_processor(conf, rfc5424_data, ctx, func)
