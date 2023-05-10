@@ -648,6 +648,8 @@ _EOC_
         $ipv6_fake_server
         server_tokens off;
 
+        access_log logs/fake-server-access.log main;
+
         location / {
             content_by_lua_block {
                 require("lib.server").go()
@@ -672,6 +674,8 @@ _EOC_
 
     $http_config .= <<_EOC_;
         server_tokens off;
+
+        access_log logs/fake-server-access.log main;
 
         ssl_certificate_by_lua_block {
             local ngx_ssl = require "ngx.ssl"
@@ -709,6 +713,8 @@ _EOC_
         ssl_certificate_by_lua_block {
             apisix.http_ssl_phase()
         }
+
+        access_log logs/access.log main;
 
         set \$dubbo_service_name          '';
         set \$dubbo_service_version       '';
