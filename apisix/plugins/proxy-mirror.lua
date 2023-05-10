@@ -123,7 +123,7 @@ function _M.rewrite(conf, ctx)
                                 ", random value: ", val)
         if val < conf.sample_ratio then
             enable_mirror(ctx, conf)
-            ctx.enable_mirror = ture
+            ctx.enable_mirror = true
         end
     end
 
