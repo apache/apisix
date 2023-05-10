@@ -597,7 +597,7 @@ local function sync_data(self)
         return nil, "missing 'key' arguments"
     end
 
-    if not local_conf.etcd.use_grpc then
+    if not self.use_grpc then
         init_watch_ctx(self.key)
     end
 
