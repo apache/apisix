@@ -101,8 +101,7 @@ local function enable_mirror(ctx, conf)
         end
     end
 
-    local mirror_scheme, mirror_host = resolver_host(conf.host)
-    ctx.var.upstream_mirror_scheme = mirror_scheme
+    local _, mirror_host = resolver_host(conf.host)
     ctx.var.upstream_mirror_host = mirror_host
     ctx.var.upstream_mirror_uri = mirror_host .. uri
 
@@ -117,14 +116,14 @@ function _M.rewrite(conf, ctx)
 
     if conf.sample_ratio == 1 then
         enable_mirror(ctx, conf)
-        ctx.enable_mirror = 1
+        ctx.enable_mirror = true
     else
         local val = math_random()
         core.log.info("mirror request sample_ratio conf: ", conf.sample_ratio,
                                 ", random value: ", val)
         if val < conf.sample_ratio then
             enable_mirror(ctx, conf)
-            ctx.enable_mirror = 1
+            ctx.enable_mirror = ture
         end
     end
 

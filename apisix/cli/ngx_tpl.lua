@@ -664,7 +664,6 @@ http {
         {% end %}
 
         location / {
-            set $upstream_mirror_scheme      '';
             set $upstream_mirror_host        '';
             set $upstream_mirror_uri         '';
             set $upstream_upgrade            '';
