@@ -147,7 +147,7 @@ help:
 	fi
 	@echo
 
-### check-rust: check if Rust is installed in the environment
+### check-rust : check if Rust is installed in the environment
 .PHONY: check-rust
 check-rust:
 	@if ! which rustc >/dev/null; then \
