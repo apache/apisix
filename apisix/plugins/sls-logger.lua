@@ -142,7 +142,7 @@ function _M.log(conf, ctx)
         {name = "project", value = conf.project},
         {name = "logstore", value = conf.logstore},
         {name = "access-key-id", value = conf.access_key_id},
-        {name = "access-key-secret", value = conf.access_key_secret}
+        {name = "access-key-secret", value = conf.access_key_secret},
     }
     local rf5424_data = rf5424.encode("SYSLOG", "INFO", ctx.var.host, "apisix",
                                       ctx.var.pid, json_str, structured_data)
