@@ -705,7 +705,7 @@ passed
                     [[{
                         "plugins": {
                             "proxy-mirror": {
-                               "host": "http://test.com",
+                               "host": "http://test.com:1980",
                                "path": "/hello"
                             }
                         },
