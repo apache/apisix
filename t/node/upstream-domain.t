@@ -110,7 +110,7 @@ qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
                 ngx.HTTP_PUT,
                 [[{
                     "nodes": {
-                        "httpbin.orgx:80": 0
+                        "test.comx:80": 0
                     },
                     "type": "roundrobin",
                     "desc": "new upstream"
@@ -150,8 +150,8 @@ GET /t
 status: 503
 status: 503
 --- error_log
-failed to parse domain: httpbin.orgx
-failed to parse domain: httpbin.orgx
+failed to parse domain: test.comx
+failed to parse domain: test.comx
 --- timeout: 10
 
 

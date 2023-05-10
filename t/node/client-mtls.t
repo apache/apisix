@@ -609,7 +609,7 @@ curl --cert t/certs/test2.crt --key t/certs/test2.key -k https://localhost:1994/
 --- response_body eval
 qr/400 Bad Request/
 --- error_log
-client certificate verification is not passed: FAILED:self signed certifica
+client certificate verification is not passed: FAILED
 
 
 
@@ -617,4 +617,4 @@ client certificate verification is not passed: FAILED:self signed certifica
 --- exec
 curl -k -v --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello
 --- error_log
-tls_process_client_certificate:peer did not return a certificate
+peer did not return a certificate

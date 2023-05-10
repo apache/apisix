@@ -235,10 +235,10 @@ qr/merge_service_route.*"time_window":60/]
                 ngx.HTTP_PUT,
                 [[{
                     "upstream": {
-                        "scheme": "https",
+                        "scheme": "http",
                         "type": "roundrobin",
                         "nodes": {
-                            "httpbin.org:443": 1
+                            "test.com:1980": 1
                         }
                     }
                 }]]
@@ -266,10 +266,10 @@ passed
                 ngx.HTTP_PUT,
                 [[{
                     "uri": "/fake",
-                    "host": "httpbin.org",
+                    "host": "test.com",
                     "plugins": {
                         "proxy-rewrite": {
-                            "uri": "/get"
+                            "uri": "/echo"
                         }
                     },
                     "service_id": "1"
@@ -293,10 +293,9 @@ passed
 --- request
 GET /fake
 --- more_headers
-host: httpbin.org
---- response_body eval
-qr/"Host": "httpbin.org"/
---- timeout: 5
+host: test.com
+--- response_headers
+host: test.com
 
 
 
@@ -304,7 +303,7 @@ qr/"Host": "httpbin.org"/
 --- request
 GET /fake
 --- more_headers
-host: httpbin.orgxxx
+host: test.comxxx
 --- error_code: 404
 
 
