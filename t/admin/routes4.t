@@ -611,7 +611,7 @@ failed to read request body: request size 1678025 is greater than the maximum si
                         "methods": ["GET", "GET"],
                         "upstream": {
                             "nodes": {
-                                "httpbin.org:8080": 1,
+                                "apisix.com:8080": 1,
                                 "test.com:8080": 1
                             },
                             "type": "roundrobin",
