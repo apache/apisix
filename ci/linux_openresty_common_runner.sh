@@ -71,6 +71,8 @@ script() {
     export_or_prefix
     openresty -V
 
+    make init
+
     set_coredns
 
     ./t/grpc_server_example/grpc_server_example \

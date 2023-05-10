@@ -112,7 +112,7 @@ end
 
 
 local function transform(conf, body, typ, ctx)
-    local out = {_body = body}
+    local out = {}
     if body then
         local err
         local format = conf[typ].input_format
@@ -137,6 +137,7 @@ local function transform(conf, body, typ, ctx)
     end
 
     out._ctx = ctx
+    out._body = body
     out._escape_xml = escape_xml
     out._escape_json = escape_json
     local ok, render_out = pcall(render, out)
