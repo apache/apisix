@@ -205,7 +205,7 @@ passed
                 ngx.HTTP_PUT,
                 [[{
                     "nodes": {
-                        "httpbin.org:8080": 1,
+                        "apisix.com:8080": 1,
                         "test.com:8080": 1
                     },
                     "type": "roundrobin",

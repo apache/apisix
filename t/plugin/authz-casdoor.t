@@ -122,7 +122,7 @@ done
                 ngx.HTTP_PUT,
                 [[{
                     "methods": ["GET"],
-                    "uri": "/anything/*",
+                    "uri": "/echo",
                     "plugins": {
                         "authz-casdoor": {
                             "callback_url":"]] .. callback_url .. [[",
@@ -134,7 +134,7 @@ done
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                        "httpbin.org:80": 1
+                        "test.com:1980": 1
                         }
                     }
                 }]]
@@ -158,7 +158,7 @@ done
             local plugin = require("apisix.plugins.authz-casdoor")
             local t = require("lib.test_admin").test
 
-            local code, body = t('/anything/d?param1=foo&param2=bar', ngx.HTTP_GET, [[]])
+            local code, body = t('/echo?param1=foo&param2=bar', ngx.HTTP_GET, [[]])
             if code ~= 302 then
                 ngx.say("should have redirected")
             end
@@ -459,7 +459,7 @@ apisix:
                 ngx.HTTP_PUT,
                 [[{
                     "methods": ["GET"],
-                    "uri": "/anything/*",
+                    "uri": "/echo",
                     "plugins": {
                         "authz-casdoor": {
                             "callback_url":"]] .. callback_url .. [[",
@@ -471,7 +471,7 @@ apisix:
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                        "httpbin.org:80": 1
+                        "test.com:1980": 1
                         }
                     }
                 }]]
