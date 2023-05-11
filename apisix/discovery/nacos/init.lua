@@ -32,6 +32,7 @@ local string_sub         = string.sub
 local str_byte           = string.byte
 local str_find           = core.string.find
 local log                = core.log
+local math_floor         = math.floor
 
 local default_weight
 local applications
@@ -314,7 +315,7 @@ local function fetch_full_registry(premature)
             local node = {
                 host = host.ip,
                 port = host.port,
-                weight = host.weight or default_weight,
+                weight = math_floor(host.weight or default_weight),
             }
 
             -- docs: https://github.com/yidongnan/grpc-spring-boot-starter/pull/496
