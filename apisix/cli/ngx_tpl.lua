@@ -664,6 +664,7 @@ http {
         {% end %}
 
         location / {
+            set $upstream_mirror_host        '';
             set $upstream_mirror_uri         '';
             set $upstream_upgrade            '';
             set $upstream_connection         '';
@@ -770,6 +771,10 @@ http {
             grpc_socket_keepalive on;
             grpc_pass         $upstream_scheme://apisix_backend;
 
+            {% if enabled_plugins["proxy-mirror"] then %}
+            mirror           /proxy_mirror_grpc;
+            {% end %}
+
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
             }
@@ -832,6 +837,32 @@ http {
             proxy_http_version 1.1;
             proxy_set_header Host $upstream_host;
             proxy_pass $upstream_mirror_uri;
+        }
+        {% end %}
+
+        {% if enabled_plugins["proxy-mirror"] then %}
+        location = /proxy_mirror_grpc {
+            internal;
+
+            {% if not use_apisix_base then %}
+            if ($upstream_mirror_uri = "") {
+                return 200;
+            }
+            {% end %}
+
+
+            {% if proxy_mirror_timeouts then %}
+                {% if proxy_mirror_timeouts.connect then %}
+            grpc_connect_timeout {* proxy_mirror_timeouts.connect *};
+                {% end %}
+                {% if proxy_mirror_timeouts.read then %}
+            grpc_read_timeout {* proxy_mirror_timeouts.read *};
+                {% end %}
+                {% if proxy_mirror_timeouts.send then %}
+            grpc_send_timeout {* proxy_mirror_timeouts.send *};
+                {% end %}
+            {% end %}
+            grpc_pass $upstream_mirror_host;
         }
         {% end %}
     }
