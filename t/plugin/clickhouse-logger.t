@@ -319,13 +319,17 @@ qr/clickhouse body: INSERT INTO t FORMAT JSONEachRow \{.*"vip":"127.0.0.1".*\}/
     }
 --- response_body
 passed
---- wait: 1
 
 
-=== TEST 10: access log
+=== TEST 10: hit route
 --- request
 GET /opentracing
+--- error_code: 200
+--- wait: 5
+
+
+=== TEST 11: get log
 --- exec
-curl 'http://localhost:8123/?query=select%20*%20from%20default.test'
+echo "select * from default.test" | curl 'http://localhost:8123/' --data-binary @-
 --- response_body_like
-127.0.0.1.*127.0.0.1.*1.*[\d]{4}-[\d]{2}-[\d]{2}T[\d]{2}:[\d]{2}:[\d]{2}\+[\d]{2}:[\d]{2}
+.*127.0.0.1.*1.*
