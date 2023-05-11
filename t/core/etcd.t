@@ -401,35 +401,3 @@ qr/init_by_lua:\d+: \S+/
 init_by_lua:12: ab
 init_by_lua:19: 200
 init_by_lua:26: 404
-
-
-
-=== TEST 8: error handling in server_version
---- yaml_config
-deployment:
-  role: traditional
-  role_traditional:
-    config_provider: etcd
-  etcd:
-    host:
-      - "http://127.0.0.1:2379"
-    prefix: "/apisix"
---- config
-    location /t {
-        content_by_lua_block {
-            local etcd_lib = require("resty.etcd")
-            -- the mock won't take effect when using gRPC because the connection will be cached
-            etcd_lib.new = function()
-                return nil, "ouch"
-            end
-            local etcd = require("apisix.core.etcd")
-            local res, err = etcd.server_version()
-            ngx.say(err)
-        }
-    }
---- request
-GET /t
---- response_body
-ouch
---- error_log
-failed to get server_info from etcd

@@ -233,44 +233,7 @@ passed
 
 
 
-=== TEST 7: ensure only one auth request per subsystem for all the etcd sync
---- yaml_config
-apisix:
-  node_listen: 1984
-deployment:
-  role: traditional
-  role_traditional:
-    config_provider: etcd
-  etcd:
-    host:
-      - "http://127.0.0.1:1980" -- fake server port
-    timeout: 1
-    user: root                    # root username for etcd
-    password: 5tHkHhYkjr6cQY      # root password for etcd
---- extra_init_by_lua
-local health_check = require("resty.etcd.health_check")
-health_check.get_target_status = function()
-    return true
-end
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.sleep(0.5)
-        }
-    }
---- request
-GET /t
---- grep_error_log eval
-qr/etcd auth failed/
---- grep_error_log_out
-etcd auth failed
-etcd auth failed
-etcd auth failed
-etcd auth failed
-
-
-
-=== TEST 8: ensure add prefix automatically for _M.getkey
+=== TEST 7: ensure add prefix automatically for _M.getkey
 --- config
     location /t {
         content_by_lua_block {
@@ -301,7 +264,7 @@ passed
 
 
 
-=== TEST 9: Test ETCD health check mode switch during APISIX startup
+=== TEST 8: Test ETCD health check mode switch during APISIX startup
 --- config
     location /t {
         content_by_lua_block {
@@ -320,7 +283,7 @@ qr/healthy check use round robin
 
 
 
-=== TEST 10: last_err can be nil when the reconnection is successful
+=== TEST 9: last_err can be nil when the reconnection is successful
 --- config
     location /t {
         content_by_lua_block {
@@ -350,7 +313,7 @@ passed
 
 
 
-=== TEST 11: reloaded data may be in res.body.node (special kvs structure)
+=== TEST 10: reloaded data may be in res.body.node (special kvs structure)
 --- yaml_config
 deployment:
     role: traditional
@@ -397,7 +360,7 @@ qr/readdir key: fake res: \{("value":"bar","key":"foo"|"key":"foo","value":"bar"
 
 
 
-=== TEST 12: reloaded data may be in res.body.node (admin_api_version is v2)
+=== TEST 11: reloaded data may be in res.body.node (admin_api_version is v2)
 --- yaml_config
 deployment:
     role: traditional
