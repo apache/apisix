@@ -36,7 +36,6 @@ local setmetatable = setmetatable
 local ngx_sleep    = require("apisix.core.utils").sleep
 local ngx_timer_at = ngx.timer.at
 local ngx_time     = ngx.time
-local ngx_sleep    = ngx.sleep
 local sub_str      = string.sub
 local tostring     = tostring
 local tonumber     = tonumber
