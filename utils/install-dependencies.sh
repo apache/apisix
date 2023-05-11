@@ -54,7 +54,7 @@ function install_dependencies_with_yum() {
 
         # install apisix-base and some compilation tools
         # shellcheck disable=SC2086
-        sudo yum install -y apisix-base $common_dep
+        sudo yum install -y apisix-base cargo $common_dep
     else
         # add OpenResty source
         sudo yum-config-manager --add-repo "https://openresty.org/package/${1}/openresty.repo"
