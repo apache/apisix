@@ -321,11 +321,13 @@ qr/clickhouse body: INSERT INTO t FORMAT JSONEachRow \{.*"vip":"127.0.0.1".*\}/
 passed
 
 
+
 === TEST 10: hit route
 --- request
 GET /opentracing
 --- error_code: 200
 --- wait: 5
+
 
 
 === TEST 11: get log
