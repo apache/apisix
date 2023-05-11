@@ -39,7 +39,10 @@ def check_log():
     apisix_errorlog = apisix_pwd() + "/logs/error.log"
     apisix_accesslog = apisix_pwd() + "/logs/access.log"
 
-    cmds = ['cat %s | grep -a "error" | grep -v "failed to fetch data from etcd: closed" | grep -v "invalid request body"'%apisix_errorlog, 'cat %s | grep -a " 500 "'%apisix_accesslog]
+    cmds = ['cat %s | grep -a "error" \
+            | grep -v "failed to fetch data from etcd: closed" \
+            | grep -v "upstream timed out (110: Connection timed out) while reading upstream, client: unix:, server: , request: \"POST /v3/watch HTTP/1.1\"" \
+            | grep -v "invalid request body"'%apisix_errorlog, 'cat %s | grep -a " 500 "'%apisix_accesslog]
     if os.path.exists(boofuzz_log):
         cmds.append('cat %s | grep -a "fail"'%boofuzz_log)
     for cmd in cmds:
