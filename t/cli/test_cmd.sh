@@ -147,7 +147,7 @@ deployment:
         key: edd1c9f034335f136f87ad84b625c8f1  # using fixed API token has security risk, please update it when you deploy to production environment
         role: admin
   etcd:
-    host: 
+    host:
     - "http://127.0.0.1:22336"
 " > conf/customized_config.yaml
 
