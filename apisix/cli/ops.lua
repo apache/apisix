@@ -807,17 +807,19 @@ local function start(env, ...)
         local local_conf_path = profile:yaml_path("config")
         local local_conf_path_bak = local_conf_path .. ".bak"
 
-        local ok, err = os_rename(local_conf_path, local_conf_path_bak)
-        if not ok then
-            util.die("failed to backup config, error: ", err)
-        end
-        local ok, err1 = lfs.link(customized_yaml, local_conf_path)
-        if not ok then
-            ok, err = os_rename(local_conf_path_bak,  local_conf_path)
+        if not pl_path.exists(local_conf_path_bak) then
+            local ok, err = os_rename(local_conf_path, local_conf_path_bak)
             if not ok then
-                util.die("failed to recover original config file, error: ", err)
+                util.die("failed to backup config, error: ", err)
             end
-            util.die("failed to link customized config, error: ", err1)
+            local ok, err1 = lfs.link(customized_yaml, local_conf_path)
+            if not ok then
+                ok, err = os_rename(local_conf_path_bak,  local_conf_path)
+                if not ok then
+                    util.die("failed to recover original config file, error: ", err)
+                end
+                util.die("failed to link customized config, error: ", err1)
+            end
         end
 
         print("Use customized yaml: ", customized_yaml)

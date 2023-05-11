@@ -135,3 +135,32 @@ fi
 
 rm conf/config_original.yaml conf/customized_config.yaml
 echo "passed: customized config.yaml copied and reverted succeeded"
+
+echo "
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key:
+      - name: admin
+        key: edd1c9f034335f136f87ad84b625c8f1  # using fixed API token has security risk, please update it when you deploy to production environment
+        role: admin
+  etcd:
+    host: 
+    - "http://127.0.0.1:22336"
+" > conf/customized_config.yaml
+
+./bin/apisix start -c conf/customized_config.yaml || true
+./bin/apisix start -c conf/customized_config.yaml || true
+
+out=$(./bin/apisix start -c conf/customized_config.yaml 2>&1 || true)
+
+if echo $out | grep 'failed to link customized config, error: File exists'; then
+    echo "failed: should work normally no matter how many times start error"
+    exit 1
+fi
+
+rm conf/customized_config.yaml
+
+echo "passed: should work normally no matter how many times start error"
