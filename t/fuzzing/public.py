@@ -39,9 +39,9 @@ def check_log():
     apisix_errorlog = apisix_pwd() + "/logs/error.log"
     apisix_accesslog = apisix_pwd() + "/logs/access.log"
 
-    cmds = ['cat %s | grep -a "error" | grep -v "invalid request body"'%apisix_errorlog, 'cat %s | grep -a " 500 "'%apisix_accesslog]
+    cmds = ['cat %s | grep -a "error" | grep -v "failed to fetch data from etcd: closed" | grep -v "invalid request body"'%apisix_errorlog, 'cat %s | grep -a " 500 "'%apisix_accesslog]
     if os.path.exists(boofuzz_log):
-        cmds.append('cat %s | grep -v "failed to fetch data from etcd: closed" | grep -a "fail"'%boofuzz_log)
+        cmds.append('cat %s | grep -a "fail"'%boofuzz_log)
     for cmd in cmds:
         r = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
         err = r.stdout.read().strip()
