@@ -139,7 +139,6 @@ local function send_to_splunk(conf, entries)
         ssl_verify = conf.ssl_verify,
         method = "POST",
         body = table_concat(t),
-        -- body = core.json.encode(entries),
         headers = request_headers,
     })
 
