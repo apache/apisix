@@ -533,6 +533,9 @@ stream_plugins: # sorted by priority
     #- name: pingpong
 
 plugin_attr:
+  cmd-args-to-ctx:
+    region: "${{APISIX_REGION}}"
+    zone: "${{APISIX_ZONE}}"
   log-rotate:
     interval: 3600    # rotate interval (unit: second)
     max_kept: 168     # max number of log files will be kept

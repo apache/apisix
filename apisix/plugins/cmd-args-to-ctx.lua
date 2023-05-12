@@ -1,3 +1,4 @@
+local core = require("apisix.core")
 local plugin_name = "cmd-args-to-ctx"
 
 local schema = {
@@ -5,14 +6,14 @@ local schema = {
     properties = {
         args = {
             type = "object",
-            description = "specify args need to parse from command line"
+            description = "specify args need to parse"
         }
     }
 }
 
 local _M = {
     version = 0.1,
-    priority = 23001,   -- higher than traffic-split
+    priority = 1001,   
     name = plugin_name,
     schema = schema
 }
@@ -26,12 +27,10 @@ function _M.access(conf, ctx)
         return
     end
 
-    for arg_name, arg_key in pairs(conf.args) do
-        local arg_value = core.cmd_var.get(arg_name)
-        if arg_value then
-            ctx.var[arg_key] = arg_value
-        end
-    end 
+    for arg_name, arg_value in pairs(conf.args) do 
+        ctx.var[arg_name] = arg_value
+	core.log.error("-----", arg_name, "----", arg_value)
+    end
 end
 
 return _M
