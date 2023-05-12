@@ -1,4 +1,5 @@
 local core = require("apisix.core")
+
 local plugin_name = "cmd-args-to-ctx"
 
 local schema = {
