@@ -642,7 +642,7 @@ deployment:
 
   etcd:
     host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
-      - "http://${{ETCD_HOST}}:2379"     # multiple etcd address, if your etcd cluster enables TLS, please use https scheme,
+      - "http://10.2.0.18:2379"     # multiple etcd address, if your etcd cluster enables TLS, please use https scheme,
                                     # e.g. https://127.0.0.1:2379.
     prefix: /apisix                 # configuration prefix in etcd
     use_grpc: false                 # enable the experimental configuration sync via gRPC
