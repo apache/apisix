@@ -147,10 +147,18 @@ help:
 	fi
 	@echo
 
+### check-rust : check if Rust is installed in the environment
+.PHONY: check-rust
+check-rust:
+	@if ! [ $(shell command -v rustc) ]; then \
+		echo "ERROR: Rust is not installed. Please install Rust before continuing." >&2; \
+		exit 1; \
+	fi;
 
-### deps : Installation dependencies
+
+### deps : Installing dependencies
 .PHONY: deps
-deps: runtime
+deps: check-rust runtime
 	$(eval ENV_LUAROCKS_VER := $(shell $(ENV_LUAROCKS) --version | grep -E -o "luarocks [0-9]+."))
 	@if [ '$(ENV_LUAROCKS_VER)' = 'luarocks 3.' ]; then \
 		mkdir -p ~/.luarocks; \
@@ -164,7 +172,7 @@ deps: runtime
 	fi
 
 
-### undeps : Uninstallation dependencies
+### undeps : Uninstalling dependencies
 .PHONY: undeps
 undeps:
 	@$(call func_echo_status, "$@ -> [ Start ]")
