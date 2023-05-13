@@ -27,6 +27,7 @@ local json         = require("apisix.core.json")
 local etcd_apisix  = require("apisix.core.etcd")
 local core_str     = require("apisix.core.string")
 local new_tab      = require("table.new")
+local inspect      = require("inspect")
 local check_schema = require("apisix.core.schema").check
 local exiting      = ngx.worker.exiting
 local insert_tab   = table.insert
@@ -107,26 +108,9 @@ local function cancel_watch(http_cli)
 end
 
 
-local function handle_compacted(err)
-    if err == "compacted" then
-        -- update current etcd revision
-        while true do
-            local res, err2 = watch_ctx.cli:get(watch_ctx.prefix)
-            if not res then
-                log.error(err2)
-                ngx_sleep(3)
-            else
-                watch_ctx.rev = res.body.header.revision
-                break
-            end
-        end
-    end
-end
-
-
+-- append res to the queue and notify pending watchers
 local function produce_res(res, err)
-    -- append res and notify pending watchers
-    --log.warn("append res, res: ", require("inspect")(res), ", err: ", require("inspect")(err))
+    log.info("append res: ", inspect(res), ", err: ", inspect(err))
     insert_tab(watch_ctx.res, {res=res, err=err})
     for _, sema in pairs(watch_ctx.sema) do
         sema:post()
@@ -144,10 +128,10 @@ local function run_watch(premature)
     if not local_conf then
         error("no local conf: " .. err)
     end
-    local prefix = local_conf.etcd.prefix
+    watch_ctx.prefix = local_conf.etcd.prefix .. "/"
 
-    local cli, err = get_etcd()
-    if not cli then
+    watch_ctx.cli, err = get_etcd()
+    if not watch_ctx.cli then
         error("failed to create etcd instance: " .. string(err))
     end
 
@@ -161,82 +145,75 @@ local function run_watch(premature)
     end
 
     if rev == 0 then
-        local res, err = cli:get(prefix)
-        if err then
-            error(err)
+        while true do
+            local res, err = watch_ctx.cli:get(watch_ctx.prefix)
+            if not res then
+                log.error("etcd get: ", err)
+                ngx_sleep(3)
+            else
+                watch_ctx.rev = tonumber(res.body.header.revision)
+                break
+            end
         end
-        rev = tonumber(res.body.header.revision)
-        assert(rev > 0, 'invalid res.body.header.revision')
     end
 
-    log.warn("main watcher started, revision=", rev)
+    watch_ctx.rev = rev + 1
     watch_ctx.started = true
-    watch_ctx.prefix = prefix
-    watch_ctx.cli = cli
-    watch_ctx.rev = rev
 
+    log.warn("main etcd watcher started, revision=", watch_ctx.rev)
     for _, sema in pairs(watch_ctx.wait_init) do
         sema:post()
     end
     watch_ctx.wait_init = nil
 
     local opts = {}
-    opts.timeout = 60 -- second
+    opts.timeout = 50 -- second
     opts.need_cancel = true
 
     ::restart_watch::
     while true do
-        opts.start_revision = watch_ctx.rev + 1
-        local res_func, func_err, http_cli = watch_ctx.cli:watchdir(watch_ctx.prefix, opts)
+        opts.start_revision = watch_ctx.rev
+        log.info("restart watchdir: start_revision=", opts.start_revision)
+        local res_func, err, http_cli = watch_ctx.cli:watchdir(watch_ctx.prefix, opts)
         if not res_func then
-            log.error("watchdir: ", func_err)
-            handle_compacted(func_err)
-            produce_res(nil, func_err)
+            log.error("watchdir: ", err)
             ngx_sleep(3)
             goto restart_watch
         end
 
+        ::watch_event::
         while true do
             local res, err = res_func()
-            --log.warn("res_func: ", require("inspect")(res))
-            --if err then log.warn("res_func_err: ", require("inspect")(err)) end
-
-            if err == "closed" then
-                break
-            end
+            log.info("res_func: ", inspect(res))
 
             if not res then
-                cancel_watch(http_cli)
-                handle_compacted(err)
-                produce_res(nil, err)
-                break
-            end
-
-            -- in etcd v3, the 1st res of watch is watch info, useless to us.
-            -- try twice to skip create info
-            if not res.result or not res.result.events then
-                res, err = res_func()
-            end
-
-            if err == "closed" then
-                break
-            end
-
-            if not res then
-                cancel_watch(http_cli)
-                handle_compacted(err)
-                produce_res(nil, err)
-                break
-            end
-
-            if type(res.result) ~= "table" then
-                cancel_watch(http_cli)
-                err = "failed to wait etcd dir"
-                if res.error and res.error.message then
-                    err = err .. ": " .. res.error.message
+                if err ~= "closed" and
+                    err ~= "timeout" and
+                    err ~= "broken pipe" then
+                    log.error("wait watch event: ", err)
                 end
-                handle_compacted(err)
-                produce_res(nil, err)
+                cancel_watch(http_cli)
+                break
+            end
+
+            if res.error then
+                log.error("wait watch event: ", inspect(res.error))
+                cancel_watch(http_cli)
+                break
+            end
+
+            if res.result.created then
+                goto watch_event
+            end
+
+            if res.result.canceled then
+                log.warn("watch canceled by etcd, res: ", inspect(res))
+                if res.result.compact_revision then
+                    watch_ctx.rev = tonumber(res.result.compact_revision)
+                    log.warn("etcd compacted, compact_revision=", watch_ctx.rev)
+                    produce_res(nil, "compacted")
+                end
+                cancel_watch(http_cli)
                 break
             end
 
@@ -247,19 +224,24 @@ local function run_watch(premature)
                     min_idx = idx
                 end
             end
-            if min_idx > 10 then
+
+            for i = 1,min_idx-1 do
+                watch_ctx.res[i] = false
+            end
+
+            if min_idx > 100 then
                 for k, idx in pairs(watch_ctx.idx) do
-                    watch_ctx[k] = idx-min_idx+1
+                    watch_ctx.idx[k] = idx-min_idx+1
                 end
                 -- trim the res table
                 for i = 1,min_idx-1 do
-                    table.remove(watch_ctx.res, i)
+                    table.remove(watch_ctx.res, 1)
                 end
             end
 
             local rev = tonumber(res.result.header.revision)
             if rev > watch_ctx.rev then
-                watch_ctx.rev = rev
+                watch_ctx.rev = rev + 1
             end
             produce_res(res)
         end
@@ -274,11 +256,8 @@ local function init_watch_ctx(key)
             res = {},
             sema = {},
             wait_init = {},
+            started = false,
         }
-    end
-
-    if watch_ctx.started == nil then
-        watch_ctx.started = false
         ngx_timer_at(0, run_watch)
     end
 
@@ -294,7 +273,7 @@ local function init_watch_ctx(key)
             if ok then
                 break
             end
-            log.error("sema wait, key: ", key, ", err: ", err)
+            log.error("wait main watcher to start, key: ", key, ", err: ", err)
         end
     end
 end
@@ -389,10 +368,15 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
 
     ::iterate_events::
     for i = watch_ctx.idx[key],#watch_ctx.res do
+        watch_ctx.idx[key] = i+1
+
         local item = watch_ctx.res[i]
+        if item == false then
+            goto iterate_events
+        end
+
         local res, err = item.res, item.err
         if err then
-            watch_ctx.idx[key] = i+1
             return res, err
         end
 
@@ -408,8 +392,6 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
         end
 
         if found then
-            watch_ctx.idx[key] = i+1
-
             local res2 = tablex.deepcopy(res)
             table.clear(res2.result.events)
             for _, evt in ipairs(res.result.events) do
@@ -417,7 +399,7 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
                     insert_tab(res2.result.events, evt)
                 end
             end
-            --log.warn("res2: ", require("inspect")(res2))
+            log.info("http_waitdir: ", inspect(res2))
             return res2
         end
     end
@@ -432,12 +414,15 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
     end
 
     watch_ctx.sema[key] = self.watch_sema
-    local ok, err = self.watch_sema:wait(60)
+    local ok, err = self.watch_sema:wait(timeout or 60)
     watch_ctx.sema[key] = nil
-    if ok or err == "timeout" then
+    if ok then
         goto iterate_events
     else
-        log.error(err)
+        if err ~= "timeout" then
+            log.error("wait watch event, key=", key, ", err: ", err)
+        end
+        return nil, err
     end
 end
 
@@ -746,7 +731,7 @@ local function sync_data(self)
             for i = 1, #values_original do
                 local val = values_original[i]
                 if val then
-                    insert_tab(self.values, val)
+                    table.insert(self.values, val)
                 end
             end
 
@@ -1050,7 +1035,7 @@ local function create_formatter(prefix)
         for _, item in ipairs(res.body.kvs) do
             if curr_dir_data then
                 if core_str.has_prefix(item.key, curr_key) then
-                    insert_tab(curr_dir_data, etcd_apisix.kvs_to_node(item))
+                    table.insert(curr_dir_data, etcd_apisix.kvs_to_node(item))
                     goto CONTINUE
                 end
 
