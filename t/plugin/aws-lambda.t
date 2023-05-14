@@ -290,6 +290,7 @@ invoked/
                  [[{
                         "plugins": {
                             "aws-lambda": {
+                                "use_default_user_agent": true,
                                 "function_uri": "http://localhost:8765/generic",
                                 "authorization": {
                                     "apikey": "test_key"
@@ -356,7 +357,6 @@ invoked/
                  [[{
                         "plugins": {
                             "aws-lambda": {
-                                "use_default_user_agent": false,
                                 "function_uri": "http://localhost:8765/generic",
                                 "authorization": {
                                     "apikey": "test_key"
