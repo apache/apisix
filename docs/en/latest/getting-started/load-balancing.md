@@ -17,8 +17,8 @@ In this tutorial, you will create a route with two upstream services and enable 
 
 ## Prerequisite(s)
 
-1. Complete [Get APISIX](./) to install APISIX.
-2. Understand APISIX [Route and Upstream](./configure-routes#whats-a-route).
+1. Complete [Get APISIX](./README.md) to install APISIX.
+2. Understand APISIX [Route and Upstream](./configure-routes.md).
 
 ## Enable Load Balancing
 
