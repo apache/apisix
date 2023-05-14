@@ -37,17 +37,18 @@ This Plugin supports authorization via AWS API key and AWS IAM secrets.
 
 ## Attributes
 
-| Name                 | Type    | Required | Default | Valid values | Description                                                                                                                                |
-|----------------------|---------|----------|---------|--------------|--------------------------------------------------------------------------------------------------------------------------------------------|
-| function_uri         | string  | True     |         |              | AWS API Gateway endpoint which triggers the lambda serverless function.                                                                    |
-| authorization        | object  | False    |         |              | Authorization credentials to access the cloud function.                                                                                    |
-| authorization.apikey | string  | False    |         |              | Generated API Key to authorize requests to the AWS Gateway endpoint.                                                                       |
-| authorization.iam    | object  | False    |         |              | Used for AWS IAM role based authorization performed via AWS v4 request signing. See [IAM authorization schema](#iam-authorization-schema). |
-| timeout              | integer | False    | 3000    | [100,...]    | Proxy request timeout in milliseconds.                                                                                                     |
-| ssl_verify           | boolean | False    | true    | true/false   | When set to `true` performs SSL verification.                                                                                              |
-| keepalive            | boolean | False    | true    | true/false   | When set to `true` keeps the connection alive for reuse.                                                                                   |
-| keepalive_pool       | integer | False    | 5       | [1,...]      | Maximum number of requests that can be sent on this connection before closing it.                                                          |
-| keepalive_timeout    | integer | False    | 60000   | [1000,...]   | Time is ms for connection to remain idle without closing.                                                          |
+| Name                    | Type    | Required | Default | Valid values | Description                                                                                                                                |
+|-------------------------|---------|----------|---------|--------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| function_uri            | string  | True     |         |              | AWS API Gateway endpoint which triggers the lambda serverless function.                                                                    |
+| authorization           | object  | False    |         |              | Authorization credentials to access the cloud function.                                                                                    |
+| authorization.apikey    | string  | False    |         |              | Generated API Key to authorize requests to the AWS Gateway endpoint.                                                                       |
+| authorization.iam       | object  | False    |         |              | Used for AWS IAM role based authorization performed via AWS v4 request signing. See [IAM authorization schema](#iam-authorization-schema). |
+| timeout                 | integer | False    | 3000    | [100,...]    | Proxy request timeout in milliseconds.                                                                                                     |
+| ssl_verify              | boolean | False    | true    | true/false   | When set to `true` performs SSL verification.                                                                                              |
+| keepalive               | boolean | False    | true    | true/false   | When set to `true` keeps the connection alive for reuse.                                                                                   |
+| keepalive_pool          | integer | False    | 5       | [1,...]      | Maximum number of requests that can be sent on this connection before closing it.                                                          |
+| keepalive_timeout       | integer | False    | 60000   | [1000,...]   | Time is ms for connection to remain idle without closing.                                                                                  |
+| use_default_user_agent  | boolean | False    | false   | true/false   | set the user-agent header as default value if this field is `true`                                                                         |
 
 ### IAM Authorization Schema
 

@@ -35,8 +35,8 @@ description: 本文介绍了 API 网关 Apache APISIX 的 openfunction 插件的
 
 ## 属性
 
-| 名称                         | 类型    | 必选项 | 默认值  | 有效值       | 描述                                                         |
-| --------------------------- | ------- | ------ | ------- | ------------ | ------------------------------------------------------------ |
+| 名称                          | 类型    | 必选项 | 默认值  | 有效值       | 描述                                                         |
+|-----------------------------| ------- | ------ | ------- | ------------ | ------------------------------------------------------------ |
 | function_uri                | string  | 是     |         |              | OpenFunction function uri，例如 `https://localhost:30858/default/function-sample`。     |
 | ssl_verify                  | boolean | 否     | true    |              | 当设置为 `true` 时执行 SSL 验证。                            |
 | authorization               | object  | 否     |         |              | 访问 OpenFunction 的函数的授权凭证。|
@@ -45,6 +45,7 @@ description: 本文介绍了 API 网关 Apache APISIX 的 openfunction 插件的
 | keepalive                   | boolean | 否     | true    |              | 当设置为 `true` 时，保持连接的活动状态以便重复使用。         |
 | keepalive_timeout           | integer | 否     | 60000 ms| [1000,...] ms| 当连接空闲时，保持该连接处于活动状态的时间，以毫秒为单位。               |
 | keepalive_pool              | integer | 否     | 5       | [1,...]      | 连接断开之前，可接收的最大请求数。                           |
+| use_default_user_agent      | boolean | 否     | false   | true/false   | 当设置为 `true` 时且用户没有设置 user-agent 时候使用默认值。 |
 
 :::note 注意
 

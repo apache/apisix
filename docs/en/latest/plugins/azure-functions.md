@@ -35,18 +35,18 @@ When enabled, the Plugin terminates the ongoing request to the configured URI an
 
 ## Attributes
 
-| Name                   | Type    | Required | Default | Valid values | Description                                                                                                                           |
-|------------------------|---------|----------|---------|--------------|---------------------------------------------------------------------------------------------------------------------------------------|
-| function_uri           | string  | True     |         |              | Azure FunctionS endpoint which triggers the serverless function. For example, `http://test-apisix.azurewebsites.net/api/HttpTrigger`. |
-| authorization          | object  | False    |         |              | Authorization credentials to access Azure Functions.                                                                                  |
-| authorization.apikey   | string  | False    |         |              | Generated API key to authorize requests.                                                                                              |
-| authorization.clientid | string  | False    |         |              | Azure AD client ID to authorize requests.                                                                                             |
-| timeout                | integer | False    | 3000    | [100,...]    | Proxy request timeout in milliseconds.                                                                                                |
-| ssl_verify             | boolean | False    | true    | true/false   | When set to `true` performs SSL verification.                                                                                         |
-| keepalive              | boolean | False    | true    | true/false   | When set to `true` keeps the connection alive for reuse.                                                                              |
-| keepalive_pool         | integer | False    | 5       | [1,...]      | Maximum number of requests that can be sent on this connection before closing it.                                                     |
-| keepalive_timeout      | integer | False    | 60000   | [1000,...]   | Time is ms for connection to remain idle without closing.                                                                             |
-
+| Name                    | Type    | Required | Default | Valid values | Description                                                                                                                           |
+|-------------------------|---------|----------|---------|--------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| function_uri            | string  | True     |         |              | Azure FunctionS endpoint which triggers the serverless function. For example, `http://test-apisix.azurewebsites.net/api/HttpTrigger`. |
+| authorization           | object  | False    |         |              | Authorization credentials to access Azure Functions.                                                                                  |
+| authorization.apikey    | string  | False    |         |              | Generated API key to authorize requests.                                                                                              |
+| authorization.clientid  | string  | False    |         |              | Azure AD client ID to authorize requests.                                                                                             |
+| timeout                 | integer | False    | 3000    | [100,...]    | Proxy request timeout in milliseconds.                                                                                                |
+| ssl_verify              | boolean | False    | true    | true/false   | When set to `true` performs SSL verification.                                                                                         |
+| keepalive               | boolean | False    | true    | true/false   | When set to `true` keeps the connection alive for reuse.                                                                              |
+| keepalive_pool          | integer | False    | 5       | [1,...]      | Maximum number of requests that can be sent on this connection before closing it.                                                     |
+| keepalive_timeout       | integer | False    | 60000   | [1000,...]   | Time is ms for connection to remain idle without closing.                                                                             |
+| use_default_user_agent  | boolean | False    | false   | true/false   | set the user-agent header as default value if this field is `true`                                                                    |
 ## Metadata
 
 | Name            | Type   | Required | Default | Description                                                          |

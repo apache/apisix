@@ -35,17 +35,18 @@ description: 本文介绍了关于 API 网关 Apache APISIX azure-functions 插�
 
 ## 属性
 
-| 名称                   | 类型    | 必选项 | 默认值 | 有效值     | 描述                                                         |
-| ---------------------- | ------- | ------ | ------ | ---------- | ------------------------------------------------------------ |
-| function_uri           | string  | 是     |        |            | 触发 Serverless Functions 的 Azure Functions 端点。例如 `http://test-apisix.azurewebsites.net/api/HttpTrigger`。 |
-| authorization          | object  | 否     |        |            | 访问 Azure Functions 的授权凭证。                            |
-| authorization.apikey   | string  | 否     |        |            | 授权凭证内的字段。生成 API 密钥来授权对端点的请求。          |
-| authorization.clientid | string  | 否     |        |            | 授权凭证内的字段。生成客户端 ID（Azure Active Directory）来授权对端点的请求。 |
-| timeout                | integer | 否     | 3000   | [100,...]  | 代理请求超时（以毫秒为单位）。                               |
-| ssl_verify             | boolean | 否     | true   | true/false | 当设置为 `true` 时执行 SSL 验证。                            |
-| keepalive              | boolean | 否     | true   | true/false | 当设置为 `true` 时，保持连接的活动状态以便重复使用。         |
-| keepalive_pool         | integer | 否     | 5      | [1,...]    | 连接断开之前，可接收的最大请求数。                           |
-| keepalive_timeout      | integer | 否     | 60000  | [1000,...] | 当连接空闲时，保持该连接处于活动状态的时间（以毫秒为单位）。 |
+| 名称                       | 类型    | 必选项 | 默认值 | 有效值     | 描述                                                         |
+|--------------------------| ------- | ------ | ------ | ---------- | ------------------------------------------------------------ |
+| function_uri             | string  | 是     |        |            | 触发 Serverless Functions 的 Azure Functions 端点。例如 `http://test-apisix.azurewebsites.net/api/HttpTrigger`。 |
+| authorization            | object  | 否     |        |            | 访问 Azure Functions 的授权凭证。                            |
+| authorization.apikey     | string  | 否     |        |            | 授权凭证内的字段。生成 API 密钥来授权对端点的请求。          |
+| authorization.clientid   | string  | 否     |        |            | 授权凭证内的字段。生成客户端 ID（Azure Active Directory）来授权对端点的请求。 |
+| timeout                  | integer | 否     | 3000   | [100,...]  | 代理请求超时（以毫秒为单位）。                               |
+| ssl_verify               | boolean | 否     | true   | true/false | 当设置为 `true` 时执行 SSL 验证。                            |
+| keepalive                | boolean | 否     | true   | true/false | 当设置为 `true` 时，保持连接的活动状态以便重复使用。         |
+| keepalive_pool           | integer | 否     | 5      | [1,...]    | 连接断开之前，可接收的最大请求数。                           |
+| keepalive_timeout        | integer | 否     | 60000  | [1000,...] | 当连接空闲时，保持该连接处于活动状态的时间（以毫秒为单位）。 |
+| use_default_user_agent   | boolean | 否     | false   | true/false   | 当设置为 `true` 时且用户没有设置 user-agent 时候使用默认值。 |
 
 ## 元数据
 
