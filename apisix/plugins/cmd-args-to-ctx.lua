@@ -1,14 +1,11 @@
 local core = require("apisix.core")
-
-local plugin_name = "cmd-args-to-ctx"
+local plugin_name = "env-to-ctx"
 
 local schema = {
     type = "object",
-    properties = {
-        args = {
-            type = "object",
-            description = "specify args need to parse"
-        }
+    args = {
+        type = "object",
+        description = "specify args need to parse"
     }
 }
 
@@ -29,8 +26,7 @@ function _M.access(conf, ctx)
     end
 
     for arg_name, arg_value in pairs(conf.args) do 
-        ctx.var[arg_name] = arg_value
-	core.log.error("-----", arg_name, "----", arg_value)
+        ctx.var[arg_name] =  os.getenv(arg_value)
     end
 end
 
