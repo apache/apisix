@@ -47,6 +47,7 @@ When enabled, the Plugin terminates the ongoing request to the configured URI an
 | keepalive_pool          | integer | False    | 5       | [1,...]      | Maximum number of requests that can be sent on this connection before closing it.                                                     |
 | keepalive_timeout       | integer | False    | 60000   | [1000,...]   | Time is ms for connection to remain idle without closing.                                                                             |
 | use_default_user_agent  | boolean | False    | false   | true/false   | set the user-agent header as default value if this field is `true`                                                                    |
+
 ## Metadata
 
 | Name            | Type   | Required | Default | Description                                                          |

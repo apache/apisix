@@ -103,7 +103,6 @@ return function(plugin_name, version, priority, request_processor, authz_schema,
             params.keepalive_pool = conf.keepalive_pool
         end
 
-
         -- modify request info (if required)
         request_processor(conf, ctx, params)
 
