@@ -48,7 +48,7 @@ This Plugin supports authorization via AWS API key and AWS IAM secrets.
 | keepalive               | boolean | False    | true    | true/false   | When set to `true` keeps the connection alive for reuse.                                                                                   |
 | keepalive_pool          | integer | False    | 5       | [1,...]      | Maximum number of requests that can be sent on this connection before closing it.                                                          |
 | keepalive_timeout       | integer | False    | 60000   | [1000,...]   | Time is ms for connection to remain idle without closing.                                                                                  |
-| use_default_user_agent  | boolean | False    | false   | true/false   | set the user-agent header as default value if this field is `true`                                                                         |
+| use_default_user_agent  | boolean | False    | true    | true/false   | set the user-agent header as default value if this field is `true`                                                                         |
 
 ### IAM Authorization Schema
 

@@ -35,17 +35,17 @@ This Plugin can be configured on a Route and requests will be sent to the config
 
 ## Attributes
 
-| Name                        | Type    | Required | Default | Valid values | Description                                                                       |
-|-----------------------------| ------- |----------| ------- | ------------ |-----------------------------------------------------------------------------------|
-| function_uri                | string  | True     |         |              | function uri. For example, `https://localhost:30858/default/function-sample`.     |
-| ssl_verify                  | boolean | False    | true    |              | When set to `true` verifies the SSL certificate.                                  |
-| authorization               | object  | False    |         |              | Authorization credentials to access functions of OpenFunction.                    |
-| authorization.service_token | string  | False    |         |              | The token format is 'xx:xx' which supports basic auth for function entry points.  |
-| timeout                     | integer | False    | 3000 ms | [100, ...] ms| OpenFunction action and HTTP call timeout in ms.                                  |
-| keepalive                   | boolean | False    | true    |              | When set to `true` keeps the connection alive for reuse.                          |
-| keepalive_timeout           | integer | False    | 60000 ms| [1000,...] ms| Time is ms for connection to remain idle without closing.                         |
-| keepalive_pool              | integer | False    | 5       | [1,...]      | Maximum number of requests that can be sent on this connection before closing it. |
-| use_default_user_agent      | boolean | False    | false   | true/false   | set the user-agent header as default value if this field is `true`                |
+| Name                        | Type    | Required | Default  | Valid values | Description                                                                       |
+|-----------------------------| ------- |----------|----------| ------------ |-----------------------------------------------------------------------------------|
+| function_uri                | string  | True     |          |              | function uri. For example, `https://localhost:30858/default/function-sample`.     |
+| ssl_verify                  | boolean | False    | true     |              | When set to `true` verifies the SSL certificate.                                  |
+| authorization               | object  | False    |          |              | Authorization credentials to access functions of OpenFunction.                    |
+| authorization.service_token | string  | False    |          |              | The token format is 'xx:xx' which supports basic auth for function entry points.  |
+| timeout                     | integer | False    | 3000 ms  | [100, ...] ms| OpenFunction action and HTTP call timeout in ms.                                  |
+| keepalive                   | boolean | False    | true     |              | When set to `true` keeps the connection alive for reuse.                          |
+| keepalive_timeout           | integer | False    | 60000 ms | [1000,...] ms| Time is ms for connection to remain idle without closing.                         |
+| keepalive_pool              | integer | False    | 5        | [1,...]      | Maximum number of requests that can be sent on this connection before closing it. |
+| use_default_user_agent      | boolean | False    | true     | true/false   | set the user-agent header as default value if this field is `true`                |
 :::note
 
 The `timeout` attribute sets the time taken by the OpenFunction to execute, and the timeout for the HTTP client in APISIX. OpenFunction calls may take time to pull the runtime image and start the container. So, if the value is set too small, it may cause a large number of requests to fail.
