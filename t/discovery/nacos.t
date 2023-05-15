@@ -927,3 +927,67 @@ GET /t
 --- response_body
 server 1
 server 4
+
+
+
+=== TEST 27: register a node with a weight of type double
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("cjson")
+            local http = require("resty.http")
+
+            local httpc = http.new()
+            local nacos_host = "http://127.0.0.1:8858"
+            local res, err = httpc:request_uri(nacos_host .. "/nacos/v1/ns/instance?port=1984&healthy=true&ip=0.0.0.0&
+            weight=1.1&serviceName=APISIX-NACOS&ephemeral=false", {
+                    method = "POST",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded",
+                    },
+                })
+
+            if res.status ~= 200 then
+                ngx.say("register node failed")
+                ngx.exit(200)
+            end
+
+            ngx.say(res.body)
+        }
+    }
+--- response_body
+ok
+
+
+
+=== TEST 28: test apisix works normal when registering a node with a weight of type double in nacos
+--- extra_yaml_config
+discovery:
+  nacos:
+      host:
+        - "http://127.0.0.1:8858"
+      fetch_interval: 1
+apisix:
+  node_listen: 1984
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+
+#END
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
+--- no_error_log
+[error, error]
