@@ -1,7 +1,7 @@
 ---
 title: limit-req
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Limit Request
   - limit-req

@@ -47,12 +47,15 @@ description: 本文介绍了 Apache APISIX limit-count 插件的相关操作，�
 | group               | string | 否         |               | 非空                                    | 配置相同 group 的路由将共享相同的限流计数器。 |
 | redis_host          | string  | 否        |               |                                         | 当使用 `redis` 限速策略时，Redis 服务节点的地址。**当 `policy` 属性设置为 `redis` 时必选。**|
 | redis_port          | integer | 否        | 6379          | [1,...]                                 | 当使用 `redis` 限速策略时，Redis 服务节点的端口。|
+| redis_username      | string  | 否        |               |                                         | Redis 服务器的用户名。当 `policy` 设置为 `redis` 时使用。|
 | redis_password      | string  | 否        |               |                                         | 当使用 `redis`  或者 `redis-cluster`  限速策略时，Redis 服务节点的密码。|
+| redis_ssl           | boolean | 否        | false         |                                         | 当使用 `redis` 限速策略时，如果设置为 true，则使用 SSL 连接到 `redis` |
+| redis_ssl_verify    | boolean | 否        | false         |                                         | 当使用 `redis` 限速策略时，如果设置为 true，则验证服务器 SSL 证书的有效性，具体请参考 [tcpsock:sslhandshake](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake). |
 | redis_database      | integer | 否        | 0             | redis_database >= 0                     | 当使用 `redis` 限速策略时，Redis 服务节点中使用的 `database`，并且只针对非 Redis 集群模式（单实例模式或者提供单入口的 Redis 公有云服务）生效。|
 | redis_timeout       | integer | 否        | 1000          | [1,...]                                 | 当 `policy` 设置为 `redis` 或 `redis-cluster` 时，Redis 服务节点的超时时间（以毫秒为单位）。|
 | redis_cluster_nodes | array   | 否        |               |                                         | 当使用 `redis-cluster` 限速策略时，Redis 集群服务节点的地址列表（至少需要两个地址）。**当 `policy` 属性设置为 `redis-cluster` 时必选。**|
 | redis_cluster_name  | string  | 否        |               |                                         | 当使用 `redis-cluster` 限速策略时，Redis 集群服务节点的名称。**当 `policy` 设置为 `redis-cluster` 时必选。**|
-| redis_cluster_ssl  | boolean  | 否        |     false    |                                         | 当使用 `redis-cluster` 限速策略时， 如果设置为 true，则使用 SSL 连接到 `redis-cluster` |
+| redis_cluster_ssl  | boolean  | 否        |     false    |                                         | 当使用 `redis-cluster` 限速策略时，如果设置为 true，则使用 SSL 连接到 `redis-cluster` |
 | redis_cluster_ssl_verify  | boolean  | 否        |     false        |                                         | 当使用 `redis-cluster` 限速策略时，如果设置为 true，则验证服务器 SSL 证书的有效性 |
 
 ## 启用插件

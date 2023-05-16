@@ -128,13 +128,13 @@ discovery:
 nodes(service_name)
 
 **说明：**
-service_name 必须满足格式: [namespace]/[name]:[portName]
+service_name 必须满足格式：[namespace]/[name]:[portName]
 
 + namespace: Endpoints 所在的命名空间
 
 + name: Endpoints 的资源名
 
-+ portName: Endpoints 定义包含的 ports.name 值，如果 Endpoints 没有定义 ports.name，请依次使用 targetPort, port 代替
++ portName: Endpoints 定义包含的 `ports.name` 值，如果 Endpoints 没有定义 `ports.name`，请依次使用 `targetPort`, `port` 代替。设置了 `ports.name` 的情况下，不能使用后两者。
 
 **返回值：**
 以如下 Endpoints 为例：
@@ -237,7 +237,7 @@ discovery:
 nodes(service_name)
 
 **说明：**
-service_name 必须满足格式: [id]/[namespace]/[name]:[portName]
+service_name 必须满足格式：[id]/[namespace]/[name]:[portName]
 
 + id: Kubernetes 服务发现配置中定义的集群 id 值
 
@@ -245,7 +245,7 @@ service_name 必须满足格式: [id]/[namespace]/[name]:[portName]
 
 + name: Endpoints 的资源名
 
-+ portName: Endpoints 定义包含的 ports.name 值，如果 Endpoints 没有定义 ports.name，请依次使用 targetPort, port 代替
++ portName: Endpoints 定义包含的 `ports.name` 值，如果 Endpoints 没有定义 `ports.name`，请依次使用 `targetPort`, `port` 代替。设置了 `ports.name` 的情况下，不能使用后两者。
 
 **返回值：**
 以如下 Endpoints 为例：
@@ -336,7 +336,7 @@ subjects:
 
 **Q: 怎样获取指定 [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 的 Token 值？**
 
-A: 假定你指定的 [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 资源名为 “kubernetes-discovery“, 命名空间为 “apisix”, 请按如下步骤获取其 Token 值。
+A: 假定你指定的 [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 资源名为“kubernetes-discovery“, 命名空间为“apisix”, 请按如下步骤获取其 Token 值。
 
  1. 获取 _Secret_ 资源名。执行以下命令，输出的第一列内容就是目标 _Secret_ 资源名：
 

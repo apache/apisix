@@ -1,7 +1,8 @@
 ---
 title: authz-casdoor
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Authz Casdoor
   - authz-casdoor

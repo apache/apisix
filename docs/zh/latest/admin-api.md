@@ -65,6 +65,46 @@ deployment:
             port: 9180                  # Admin API 监听的 端口，必须使用与 node_listen 不同的端口。
 ```
 
+### 使用环境变量 {$using-environment-variables}
+
+要通过环境变量进行配置，可以使用 `${{VAR}}` 语法。例如：
+
+```yaml title="./conf/config.yaml"
+deployment:
+  admin:
+    admin_key:
+    - name: admin
+      key: ${{ADMIN_KEY}}
+      role: admin
+    allow_admin:
+    - 127.0.0.0/24
+    admin_listen:
+      ip: 0.0.0.0
+      port: 9180
+```
+
+然后在 `make init` 之前运行 `export ADMIN_KEY=$your_admin_key`.
+
+如果找不到配置的环境变量，将抛出错误。
+
+此外，如果要在未设置环境变量时使用默认值，请改用 `${{VAR:=default_value}}`。例如：
+
+```yaml title="./conf/config.yaml"
+deployment:
+  admin:
+    admin_key:
+    - name: admin
+      key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}}
+      role: admin
+    allow_admin:
+    - 127.0.0.0/24
+    admin_listen:
+      ip: 0.0.0.0
+      port: 9180
+```
+
+首先查找环境变量 `ADMIN_KEY`，如果该环境变量不存在，它将使用 `edd1c9f034335f136f87ad84b625c8f1` 作为默认值。
+
 ## v3 版本新功能 {#v3-new-function}
 
 在 APISIX v3 版本中，Admin API 支持了一些不向下兼容的新特性，比如支持新的响应体格式、支持分页查询、支持过滤资源等。
@@ -1122,12 +1162,13 @@ SSL 资源请求地址：/apisix/admin/ssls/{id}
 
 | 名称        | 必选项 | 类型           | 描述                                                                                                   | 示例                                             |
 | ----------- | ------ | -------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| cert        | 是     | 证书           | HTTP 证书。                                                                                             |                                                  |
-| key         | 是     | 私钥           | HTTPS 证书私钥                                                                                         |                                                  |
+| cert        | 是     | 证书           | HTTP 证书。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                                                             |                                                  |
+| key         | 是     | 私钥           | HTTPS 证书私钥。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                                                         |                                                  |
 | certs       | 否   | 证书字符串数组 | 当你想给同一个域名配置多个证书时，除了第一个证书需要通过 `cert` 传递外，剩下的证书可以通过该参数传递上来。 |                                                  |
 | keys        | 否   | 私钥字符串数组 | `certs` 对应的证书私钥，需要与 `certs` 一一对应。                                                          |                                                  |
 | client.ca   | 否   | 证书 |  设置将用于客户端证书校验的 `CA` 证书。该特性需要 OpenResty 为 1.19 及以上版本。  |                                                  |
 | client.depth | 否   | 辅助 |  设置客户端证书校验的深度，默认为 1。该特性需要 OpenResty 为 1.19 及以上版本。 |                                             |
+| client.skip_mtls_uri_regex | 否   | PCRE 正则表达式数组 |  用来匹配请求的 URI，如果匹配，则该请求将绕过客户端证书的检查，也就是跳过 MTLS。 | ["/hello[0-9]+", "/foobar"]                                            |
 | snis        | 是   | 匹配规则       | 非空数组形式，可以匹配多个 SNI。                                                                         |                                                  |
 | labels      | 否   | 匹配规则       | 标识附加属性的键值对。                                                                                   | {"version":"v2","build":"16","env":"production"} |
 | create_time | 否   | 辅助           | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                          | 1602883670                                       |

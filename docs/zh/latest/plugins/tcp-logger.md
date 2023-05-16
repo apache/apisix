@@ -1,7 +1,7 @@
 ---
 title: tcp-logger
 keywords:
-  - APISIX
+  - Apache APISIX
   - API 网关
   - Plugin
   - TCP Logger
@@ -40,6 +40,7 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 tcp-logger �
 | host             | string  | 是     |        |         | TCP 服务器的 IP 地址或主机名。                     |
 | port             | integer | 是     |        | [0,...] | 目标端口。                                        |
 | timeout          | integer | 否     | 1000   | [1,...] | 发送数据超时间。                                   |
+| log_format       | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | tls              | boolean | 否     | false  |         | 用于控制是否执行 SSL 验证。                        |
 | tls_options      | string  | 否     |        |         | TLS 选项。                                        |
 | include_req_body | boolean | 否     |        |         | 当设置为 `true` 时，日志中将包含请求体。           |

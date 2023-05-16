@@ -353,6 +353,9 @@ local admin_schema = {
         https_admin = {
             type = "boolean",
         },
+        admin_key_required = {
+            type = "boolean",
+        },
     }
 }
 
@@ -375,6 +378,7 @@ local deployment_schema = {
     control_plane = {
         properties = {
             etcd = etcd_schema,
+            admin = admin_schema,
             role_control_plane = {
                 properties = {
                     config_provider = {

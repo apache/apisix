@@ -1,7 +1,7 @@
 ---
 title: Admin API
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Admin API
   - Route
@@ -62,6 +62,46 @@ deployment:
             ip: 0.0.0.0                 # Specific IP, if not set, the default value is `0.0.0.0`.
             port: 9180                  # Specific port, which must be different from node_listen's port.
 ```
+
+### Using environment variables
+
+To configure via environment variables, you can use the `${{VAR}}` syntax. For instance:
+
+```yaml title="./conf/config.yaml"
+deployment:
+  admin:
+    admin_key:
+    - name: admin
+      key: ${{ADMIN_KEY}}
+      role: admin
+    allow_admin:
+    - 127.0.0.0/24
+    admin_listen:
+      ip: 0.0.0.0
+      port: 9180
+```
+
+And then run `export ADMIN_KEY=$your_admin_key` before running `make init`.
+
+If the configured environment variable can't be found, an error will be thrown.
+
+If you want to use a default value when the environment variable is not set, use `${{VAR:=default_value}}` instead. For instance:
+
+```yaml title="./conf/config.yaml"
+deployment:
+  admin:
+    admin_key:
+    - name: admin
+      key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}}
+      role: admin
+    allow_admin:
+    - 127.0.0.0/24
+    admin_listen:
+      ip: 0.0.0.0
+      port: 9180
+```
+
+This will find the environment variable `ADMIN_KEY` first, and if it does not exist, it will use `edd1c9f034335f136f87ad84b625c8f1` as the default value.
 
 ## V3 new feature
 
@@ -230,7 +270,7 @@ Route resource request address: /apisix/admin/routes/{id}?ttl=0
 | methods          | False                                    | Match Rules | Matches with the specified methods. Matches all methods if empty or unspecified.                                                                                                                                                                                                               | ["GET", "POST"]                                      |
 | priority         | False                                    | Match Rules | If different Routes matches to the same `uri`, then the Route is matched based on its `priority`. A higher value corresponds to higher priority. It is set to `0` by default.                                                                                                                  | priority = 10                                        |
 | vars             | False                                    | Match Rules | Matches based on the specified variables consistent with variables in Nginx. Takes the form `[[var, operator, val], [var, operator, val], ...]]`. Note that this is case sensitive when matching a cookie name. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more details. | [["arg_name", "==", "json"], ["arg_age", ">", 18]]   |
-| filter_func      | False                                    | Match Rules | Matches based on a user-defined filtering function. Used in scenarios requiring complex matching. These functions can accept an input parameter `vars` which can be used to access the Nginx variables.                                                                                        | function(vars) return vars["arg_name"] == "json" end |
+| filter_func      | False                                    | Match Rules | Matches using a user-defined function in Lua. Used in scenarios where `vars` is not sufficient. Functions accept an argument `vars` which provides access to built-in variables (including Nginx variables).                                                                                        | function(vars) return tonumber(vars.arg_userid) % 4 > 2; end |
 | plugins          | False                                    | Plugin      | Plugins that are executed during the request/response cycle. See [Plugin](terminology/plugin.md) for more.                                                                                                                                                                             |                                                      |
 | script           | False                                    | Script      | Used for writing arbitrary Lua code or directly calling existing plugins to be executed. See [Script](terminology/script.md) for more.                                                                                                                                                 |                                                      |
 | upstream         | False                                    | Upstream    | Configuration of the [Upstream](./terminology/upstream.md).                                                                                                                                                                                                                            |                                                      |
@@ -1114,13 +1154,14 @@ SSL resource request address: /apisix/admin/ssls/{id}
 
 | Parameter    | Required | Type                     | Description                                                                                                    | Example                                          |
 | ------------ | -------- | ------------------------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| cert         | True     | Certificate              | HTTPS certificate.                                                                                             |                                                  |
-| key          | True     | Private key              | HTTPS private key.                                                                                             |                                                  |
+| cert         | True     | Certificate              | HTTPS certificate. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                                                                                             |                                                  |
+| key          | True     | Private key              | HTTPS private key. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                                                                                             |                                                  |
 | certs        | False    | An array of certificates | Used for configuring multiple certificates for the same domain excluding the one provided in the `cert` field. |                                                  |
 | keys         | False    | An array of private keys | Private keys to pair with the `certs`.                                                                         |                                                  |
 | client.ca    | False    | Certificate              | Sets the CA certificate that verifies the client. Requires OpenResty 1.19+.                                    |                                                  |
 | client.depth | False    | Certificate              | Sets the verification depth in client certificate chains. Defaults to 1. Requires OpenResty 1.19+.             |                                                  |
-| snis         | True     | Match Rules              | A non-empty array of HTTPS SNI                                                                                 |                                                  |
+| client.skip_mtls_uri_regex | False    | An array of regular expressions, in PCRE format              | Used to match URI, if matched, this request bypasses the client certificate checking, i.e. skip the MTLS.             | ["/hello[0-9]+", "/foobar"]                                                |
+| snis         | True, only if `type` is `server`     | Match Rules              | A non-empty array of HTTPS SNI                                                                                 |                                                  |
 | labels       | False    | Match Rules              | Attributes of the resource specified as key-value pairs.                                                       | {"version":"v2","build":"16","env":"production"} |
 | create_time  | False    | Auxiliary                | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.         | 1602883670                                       |
 | update_time  | False    | Auxiliary                | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.         | 1602883670                                       |
@@ -1282,6 +1323,7 @@ The Plugin ({plugin_name}) of the data structure.
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/plugins/list" \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+```
 
 ```shell
 ["zipkin","request-id",...]

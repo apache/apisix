@@ -435,3 +435,93 @@ failed to call pb.decode to decode details in grpc-status-details-bin
 --- error_log
 transform response error: failed to call pb.decode to decode details in grpc-status-details-bin, err:
 --- error_code: 503
+
+
+
+=== TEST 11: set binary rule for EchoStruct
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+
+            local content = t.read_file("t/grpc_server_example/echo.pb")
+            local data = {content = ngx.encode_base64(content)}
+            local code, body = t.test('/apisix/admin/protos/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/grpctest",
+                    "plugins": {
+                        "grpc-transcode": {
+                            "proto_id": "1",
+                            "service": "echo.Echo",
+                            "method": "EchoStruct"
+                        }
+                    },
+                    "upstream": {
+                        "scheme": "grpc",
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:50051": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 12: hit route to test EchoStruct
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require "apisix.core"
+        local http = require "resty.http"
+        local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/grpctest"
+        local body = [[{"data":{"fields":{"foo":{"string_value":"xxx"},"bar":{"number_value":666}}}}]]
+        local opt = {method = "POST", body = body, headers = {["Content-Type"] = "application/json"}, keepalive = false}
+        local httpc = http.new()
+        local res, err = httpc:request_uri(uri, opt)
+        if not res then
+            ngx.log(ngx.ERR, err)
+            return ngx.exit(500)
+        end
+        if res.status > 300 then
+            return ngx.exit(res.status)
+        else
+            local req = core.json.decode(body)
+            local rsp = core.json.decode(res.body)
+            for k, v in pairs(req.data.fields) do
+                if rsp.data.fields[k] == nil then
+                    ngx.log(ngx.ERR, "rsp missing field=", k, ", rsp: ", res.body)
+                else
+                    for k1, v1 in pairs(v) do
+                        if v1 ~= rsp.data.fields[k][k1] then
+                            ngx.log(ngx.ERR, "rsp mismatch: k=", k1,
+                                ", req=", v1, ", rsp=", rsp.data.fields[k][k1])
+                        end
+                    end
+                end
+            end
+        end
+    }
+}

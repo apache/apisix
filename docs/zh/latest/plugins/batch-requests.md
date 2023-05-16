@@ -1,7 +1,8 @@
 ---
 title: batch-requests
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Batch Requests
 description: 本文介绍了关于 Apache APISIX `batch-request` 插件的基本信息及使用方法。
@@ -66,7 +67,7 @@ plugins:
 
 ## 配置插件
 
-默认情况下，可以发送到 `/apisix/batch-requests` 的最大请求体不能大于 1 MiB。 你可以通过 `apisix/admin/plugin_metadata/batch-requests` 更改插件的此配置：
+默认情况下，可以发送到 `/apisix/batch-requests` 的最大请求体不能大于 1 MiB。你可以通过 `apisix/admin/plugin_metadata/batch-requests` 更改插件的此配置：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/batch-requests \

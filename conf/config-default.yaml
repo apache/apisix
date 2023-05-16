@@ -75,7 +75,7 @@ apisix:
   # Turn this option on if you want to be compatible with servlet when matching URI path.
   normalize_uri_like_servlet: false
   router:
-    http: radixtree_uri         # radixtree_uri: match route by uri(base on radixtree)
+    http: radixtree_host_uri      # radixtree_uri: match route by uri(base on radixtree)
                                   # radixtree_host_uri: match route by host + uri(base on radixtree)
                                   # radixtree_uri_with_parameter: like radixtree_uri but match uri with parameters,
                                   #   see https://github.com/api7/lua-resty-radixtree/#parameters-in-path for
@@ -165,6 +165,7 @@ nginx_config:                     # config for render the template to generate n
       lrucache-lock-stream: 10m
       plugin-limit-conn-stream: 10m
       worker-events-stream: 10m
+      tars-stream: 1m
 
   # As user can add arbitrary configurations in the snippet,
   # it is user's responsibility to check the configurations
@@ -250,19 +251,6 @@ nginx_config:                     # config for render the template to generate n
       tars: 1m
       cas-auth: 10m
 
-# HashiCorp Vault storage backend for sensitive data retrieval. The config shows an example of what APISIX expects if you
-# wish to integrate Vault for secret (sensetive string, public private keys etc.) retrieval. APISIX communicates with Vault
-# server HTTP APIs. By default, APISIX doesn't need this configuration.
-# vault:
-#   host: "http://0.0.0.0:8200"   # The host address where the vault server is running.
-#   timeout: 10                   # request timeout 30 seconds
-#   token: root                   # Authentication token to access Vault HTTP APIs
-#   prefix: kv/apisix             # APISIX supports vault kv engine v1, where sensitive data are being stored
-                                  # and retrieved through vault HTTP APIs. enabling a prefix allows you to better enforcement of
-                                  # policies, generate limited scoped tokens and tightly control the data that can be accessed
-                                  # from APISIX.
-
-
 #discovery:                       # service discovery center
 #  dns:
 #    servers:
@@ -318,11 +306,11 @@ nginx_config:                     # config for render the template to generate n
 #       path: "logs/consul_kv.dump"
 #       expire: 2592000            # unit sec, here is 30 day
 #  consul:
-#    servers:
-#      - "http://127.0.0.1:8500"
+#    servers:                          # make sure service name is unique in these consul servers
+#      - "http://127.0.0.1:8500"       # `http://127.0.0.1:8500` and `http://127.0.0.1:8600` are different clusters
 #      - "http://127.0.0.1:8600"
 #    skip_services:                    # if you need to skip special services
-#      - "service_a"
+#      - "service_a"                   # `consul` service is default skip service
 #    timeout:
 #      connect: 2000               # default 2000 ms
 #      read: 2000                  # default 2000 ms
@@ -340,6 +328,7 @@ nginx_config:                     # config for render the template to generate n
 #    dump:                         # if you need, when registered nodes updated can dump into file
 #       path: "logs/consul.dump"
 #       expire: 2592000            # unit sec, here is 30 day
+#       load_on_init: true         # default true, load the consul dump file on init
 #  kubernetes:
 #    ### kubernetes service discovery both support single-cluster and multi-cluster mode
 #    ### applicable to the case where the service is distributed in a single or multiple kubernetes clusters.
@@ -455,8 +444,9 @@ plugins:                          # plugin list (sorted by priority)
   - opa                            # priority: 2001
   - authz-keycloak                 # priority: 2000
   #- error-log-logger              # priority: 1091
+  - proxy-cache                    # priority: 1085
+  - body-transformer               # priority: 1080
   - proxy-mirror                   # priority: 1010
-  - proxy-cache                    # priority: 1009
   - proxy-rewrite                  # priority: 1008
   - workflow                       # priority: 1006
   - api-breaker                    # priority: 1005
@@ -469,6 +459,7 @@ plugins:                          # plugin list (sorted by priority)
   - traffic-split                  # priority: 966
   - redirect                       # priority: 900
   - response-rewrite               # priority: 899
+  - degraphql                      # priority: 509
   - kafka-proxy                    # priority: 508
   #- dubbo-proxy                   # priority: 507
   - grpc-transcode                 # priority: 506
@@ -597,6 +588,10 @@ deployment:
   role_traditional:
     config_provider: etcd
   admin:
+    # Admin API authentication is enabled by default.
+    # Set it false in the production environment will cause a serious security issue.
+    # admin_key_required: true
+
     # Default token when use API to call for Admin API.
     # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
     # Disabling this configuration item means that the Admin API does not

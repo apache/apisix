@@ -40,6 +40,7 @@ _EOC_
 local client = require("opentelemetry.trace.exporter.http_client")
 client.do_request = function()
     ngx.log(ngx.INFO, "opentelemetry export span")
+    return "ok"
 end
 _EOC_
 

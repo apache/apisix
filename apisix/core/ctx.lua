@@ -190,6 +190,7 @@ do
         upstream_connection        = true,
         upstream_uri               = true,
 
+        upstream_mirror_host       = true,
         upstream_mirror_uri        = true,
 
         upstream_cache_zone        = true,
@@ -198,9 +199,9 @@ do
         upstream_cache_key         = true,
         upstream_cache_bypass      = true,
 
-        var_x_forwarded_proto = true,
-        var_x_forwarded_port  = true,
-        var_x_forwarded_host  = true,
+        var_x_forwarded_proto      = true,
+        var_x_forwarded_port       = true,
+        var_x_forwarded_host       = true,
     }
 
     -- sort in alphabetical
@@ -209,6 +210,10 @@ do
         balancer_port = true,
         consumer_group_id = true,
         consumer_name = true,
+        resp_body = function(ctx)
+            -- only for logger and requires the logger to have a special configuration
+            return ctx.resp_body or ''
+        end,
         route_id = true,
         route_name = true,
         service_id = true,

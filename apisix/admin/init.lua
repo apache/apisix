@@ -67,6 +67,12 @@ local router
 
 local function check_token(ctx)
     local local_conf = core.config.local_conf()
+
+    -- check if admin_key is required
+    if local_conf.deployment.admin.admin_key_required == false then
+        return true
+    end
+
     local admin_key = core.table.try_read_attr(local_conf, "deployment", "admin", "admin_key")
     if not admin_key then
         return true
@@ -127,6 +133,11 @@ local function strip_etcd_resp(data)
     end
 
     return data
+end
+
+
+local function head()
+    core.response.exit(200)
 end
 
 
@@ -199,10 +210,10 @@ local function run()
     end
 
     local code, data
-    if seg_res == "routes" then
-        code, data = resource[method](resource, seg_id, req_body, seg_sub_path, uri_args)
-    else
+    if seg_res == "schema" or seg_res == "plugins" then
         code, data = resource[method](seg_id, req_body, seg_sub_path, uri_args)
+    else
+        code, data = resource[method](resource, seg_id, req_body, seg_sub_path, uri_args)
     end
 
     if code then
@@ -356,6 +367,11 @@ end
 
 local uri_route = {
     {
+        paths = [[/apisix/admin]],
+        methods = {"HEAD"},
+        handler = head,
+    },
+    {
         paths = [[/apisix/admin/*]],
         methods = {"GET", "PUT", "POST", "DELETE", "PATCH"},
         handler = run,
@@ -385,6 +401,13 @@ function _M.init_worker()
     events.register(reload_plugins, reload_event, "PUT")
 
     if ngx_worker_id() == 0 then
+        -- check if admin_key is required
+        if local_conf.deployment.admin.admin_key_required == false then
+            core.log.warn("Admin key is bypassed! ",
+                "If you are deploying APISIX in a production environment, ",
+                "please disable `admin_key_required` and set a secure admin key!")
+        end
+
         local ok, err = ngx_timer_at(0, function(premature)
             if premature then
                 return

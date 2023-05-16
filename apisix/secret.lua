@@ -110,14 +110,27 @@ function _M.init_worker()
 end
 
 
-local function parse_secret_uri(secret_uri)
+local function check_secret_uri(secret_uri)
     -- Avoid the error caused by has_prefix to cause a crash.
     if type(secret_uri) ~= "string" then
-        return nil, "error secret_uri type: " .. type(secret_uri)
+        return false, "error secret_uri type: " .. type(secret_uri)
     end
 
-    if not string.has_prefix(secret_uri, PREFIX) then
-        return nil, "error secret_uri prefix: " .. secret_uri
+    if not string.has_prefix(secret_uri, PREFIX) and
+        not string.has_prefix(upper(secret_uri), core.env.PREFIX) then
+        return false, "error secret_uri prefix: " .. secret_uri
+    end
+
+    return true
+end
+
+_M.check_secret_uri = check_secret_uri
+
+
+local function parse_secret_uri(secret_uri)
+    local is_secret_uri, err = check_secret_uri(secret_uri)
+    if not is_secret_uri then
+        return is_secret_uri, err
     end
 
     local path = sub(secret_uri, #PREFIX + 1)

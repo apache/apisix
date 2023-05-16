@@ -17,6 +17,7 @@
 local require = require
 local router = require("apisix.utils.router")
 local core = require("apisix.core")
+local event = require("apisix.core.event")
 local get_services = require("apisix.http.service").services
 local service_fetch = require("apisix.http.service").get
 local ipairs = ipairs
@@ -104,8 +105,9 @@ local function create_radixtree_router(routes)
     local host_routes = {}
     local only_uri_routes = {}
     host_router = nil
+    routes = routes or {}
 
-    for _, route in ipairs(routes or {}) do
+    for _, route in ipairs(routes) do
         local status = core.table.try_read_attr(route, "value", "status")
         -- check the status
         if not status or status == 1 then
@@ -128,6 +130,9 @@ local function create_radixtree_router(routes)
             end
         })
     end
+
+    event.push(event.CONST.BUILD_ROUTER, routes)
+
     if #host_router_routes > 0 then
         host_router = router.new(host_router_routes)
     end

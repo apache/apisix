@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local get_routes = require("apisix.router").http_routes
@@ -22,6 +23,7 @@ local upstream_mod = require("apisix.upstream")
 local get_upstreams = upstream_mod.upstreams
 local collectgarbage = collectgarbage
 local ipairs = ipairs
+local pcall = pcall
 local str_format = string.format
 local ngx_var = ngx.var
 
@@ -62,52 +64,137 @@ function _M.schema()
 end
 
 
-local function extra_checker_info(value, src_type)
-    local checker = value.checker
-    local upstream = value.checker_upstream
-    local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
-    local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
-    local nodes = upstream.nodes
-    local healthy_nodes = core.table.new(#nodes, 0)
-    for _, node in ipairs(nodes) do
-        local ok = checker:get_target_status(node.host, port or node.port, host)
-        if ok then
-            core.table.insert(healthy_nodes, node)
-        end
+local healthcheck
+local function extra_checker_info(value)
+    if not healthcheck then
+        healthcheck = require("resty.healthcheck")
     end
 
-    local conf = value.value
+    local name = upstream_mod.get_healthchecker_name(value)
+    local nodes, err = healthcheck.get_target_list(name, "upstream-healthcheck")
+    if err then
+        core.log.error("healthcheck.get_target_list failed: ", err)
+    end
     return {
-        name = upstream_mod.get_healthchecker_name(value),
-        src_id = conf.id,
-        src_type = src_type,
+        name = value.key,
         nodes = nodes,
-        healthy_nodes = healthy_nodes,
     }
 end
 
 
-local function iter_and_add_healthcheck_info(infos, values, src_type)
+local function get_checker_type(checks)
+    if checks.active and checks.active.type then
+        return checks.active.type
+    elseif checks.passive and checks.passive.type then
+        return checks.passive.type
+    end
+end
+
+
+local function iter_and_add_healthcheck_info(infos, values)
     if not values then
         return
     end
 
     for _, value in core.config_util.iterate_values(values) do
-        if value.checker then
-            core.table.insert(infos, extra_checker_info(value, src_type))
+        local checks = value.value.checks or (value.value.upstream and value.value.upstream.checks)
+        if checks then
+            local info = extra_checker_info(value)
+            info.type = get_checker_type(checks)
+            core.table.insert(infos, info)
         end
     end
 end
 
 
-function _M.get_health_checkers()
+local HTML_TEMPLATE = [[
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>APISIX upstream check status</title>
+</head>
+<body>
+<h1>APISIX upstream check status</h1>
+<table style="background-color:white" cellspacing="0" cellpadding="3" border="1">
+  <tr bgcolor="#C0C0C0">
+    <th>Index</th>
+    <th>Upstream</th>
+    <th>Check type</th>
+    <th>Host</th>
+    <th>Status</th>
+    <th>Success counts</th>
+    <th>TCP Failures</th>
+    <th>HTTP Failures</th>
+    <th>TIMEOUT Failures</th>
+  </tr>
+{% local i = 0 %}
+{% for _, stat in ipairs(stats) do %}
+{% for _, node in ipairs(stat.nodes) do %}
+{% i = i + 1 %}
+  {% if node.status == "healthy" then %}
+  <tr>
+  {% else %}
+  <tr bgcolor="#FF0000">
+  {% end %}
+    <td>{* i *}</td>
+    <td>{* stat.name *}</td>
+    <td>{* stat.type *}</td>
+    <td>{* node.ip .. ":" .. node.port *}</td>
+    <td>{* node.status *}</td>
+    <td>{* node.counter.success *}</td>
+    <td>{* node.counter.tcp_failure *}</td>
+    <td>{* node.counter.http_failure *}</td>
+    <td>{* node.counter.timeout_failure *}</td>
+  </tr>
+{% end %}
+{% end %}
+</table>
+</body>
+</html>
+]]
+
+local html_render
+
+local function try_render_html(data)
+    if not html_render then
+        local template = require("resty.template")
+        html_render = template.compile(HTML_TEMPLATE)
+    end
+    local accept = ngx_var.http_accept
+    if accept and accept:find("text/html") then
+        local ok, out = pcall(html_render, data)
+        if not ok then
+            local err = str_format("HTML template rendering: %s", out)
+            core.log.error(err)
+            return nil, err
+        end
+        return out
+    end
+end
+
+
+local function _get_health_checkers()
     local infos = {}
     local routes = get_routes()
-    iter_and_add_healthcheck_info(infos, routes, "routes")
+    iter_and_add_healthcheck_info(infos, routes)
     local services = get_services()
-    iter_and_add_healthcheck_info(infos, services, "services")
+    iter_and_add_healthcheck_info(infos, services)
     local upstreams = get_upstreams()
-    iter_and_add_healthcheck_info(infos, upstreams, "upstreams")
+    iter_and_add_healthcheck_info(infos, upstreams)
+    return infos
+end
+
+
+function _M.get_health_checkers()
+    local infos = _get_health_checkers()
+    local out, err = try_render_html({stats=infos})
+    if out then
+        core.response.set_header("Content-Type", "text/html")
+        return 200, out
+    end
+    if err then
+        return 503, {error_msg = err}
+    end
+
     return 200, infos
 end
 
@@ -119,11 +206,15 @@ local function iter_and_find_healthcheck_info(values, src_type, src_id)
 
     for _, value in core.config_util.iterate_values(values) do
         if value.value.id == src_id then
-            if not value.checker then
+            local checks = value.value.checks or
+                (value.value.upstream and value.value.upstream.checks)
+            if not checks then
                 return nil, str_format("no checker for %s[%s]", src_type, src_id)
             end
 
-            return extra_checker_info(value, src_type)
+            local info = extra_checker_info(value)
+            info.type = get_checker_type(checks)
+            return info
         end
     end
 
@@ -155,6 +246,16 @@ function _M.get_health_checker()
     if not info then
         return 404, {error_msg = err}
     end
+
+    local out, err = try_render_html({stats={info}})
+    if out then
+        core.response.set_header("Content-Type", "text/html")
+        return 200, out
+    end
+    if err then
+        return 503, {error_msg = err}
+    end
+
     return 200, info
 end
 
@@ -372,5 +473,6 @@ return {
         methods = {"GET"},
         uris = {"/plugin_metadata/*"},
         handler = _M.dump_plugin_metadata,
-    }
+    },
+    get_health_checkers = _get_health_checkers,
 }

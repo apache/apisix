@@ -42,7 +42,9 @@ description: 本文介绍了 Apache APISIX request-id 插件的相关操作，�
 | ------------------- | ------- | -------- | -------------- | ------ | ------------------------------ |
 | header_name         | string  | 否 | "X-Request-Id" |                       | unique ID 的请求头的名称。         |
 | include_in_response | boolean | 否 | true          |                       | 当设置为 `true` 时，将 unique ID 加入返回头。 |
-| algorithm           | string  | 否 | "uuid"         | ["uuid", "snowflake", "nanoid"] | 指定的 unique ID 生成算法。 |
+| algorithm           | string  | 否 | "uuid"         | ["uuid", "snowflake", "nanoid", "range_id"] | 指定的 unique ID 生成算法。 |
+| range_id.char_set      | string | 否 | "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789| 字符串长度最小为 6 | range_id 算法的字符集 |
+| range_id.length    | integer | 否 | 16             | 最小值为 6 | range_id 算法的 id 长度 |
 
 ### 使用 snowflake 算法生成 unique ID
 
@@ -57,10 +59,10 @@ description: 本文介绍了 Apache APISIX request-id 插件的相关操作，�
 
 | 名称                | 类型    | 必选项   | 默认值         | 描述                           |
 | ------------------- | ------- | -------- | -------------- | ------------------------------ |
-| enable                     | boolean  | 否 | false          | 当设置为 `true` 时， 启用 `snowflake` 算法。      |
+| enable                     | boolean  | 否 | false          | 当设置为 `true` 时，启用 `snowflake` 算法。      |
 | snowflake_epoc             | integer  | 否 | 1609459200000  | 起始时间戳，以毫秒为单位。默认为 `2021-01-01T00:00:00Z`, 可以支持 `69 年`到 `2090-09-07 15:47:35Z`。 |
-| data_machine_bits          | integer  | 否 | 12             | 最多支持的机器（进程）数量。 与 `snowflake` 定义中 `workerIDs` 和 `datacenterIDs` 的集合对应，插件会为每一个进程分配一个 unique ID。最大支持进程数为 `pow(2, data_machine_bits)`。即对于默认值 `12 bits`，最多支持的进程数为 `4096`。|
-| sequence_bits              | integer  | 否 | 10             | 每个节点每毫秒内最多产生的 ID 数量。 每个进程每毫秒最多产生 `1024` 个 ID。 |
+| data_machine_bits          | integer  | 否 | 12             | 最多支持的机器（进程）数量。与 `snowflake` 定义中 `workerIDs` 和 `datacenterIDs` 的集合对应，插件会为每一个进程分配一个 unique ID。最大支持进程数为 `pow(2, data_machine_bits)`。即对于默认值 `12 bits`，最多支持的进程数为 `4096`。|
+| sequence_bits              | integer  | 否 | 10             | 每个节点每毫秒内最多产生的 ID 数量。每个进程每毫秒最多产生 `1024` 个 ID。 |
 | data_machine_ttl           | integer  | 否 | 30             | etcd 中 `data_machine` 注册有效时间，以秒为单位。 |
 | data_machine_interval      | integer  | 否 | 10             | etcd 中 `data_machine` 续约间隔时间，以秒为单位。 |
 
