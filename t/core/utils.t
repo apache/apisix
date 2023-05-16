@@ -368,7 +368,7 @@ failed to parse domain: ipv6.local
 --- config
     location /t {
         content_by_lua_block {
-            local get_last_index = require("apisix.core.utils").get_last_index
+            local string_rfind = require("pl.stringx").rfind
             local cases = {
                 {"you are welcome", "co"},
                 {"nice to meet you", "meet"},
@@ -379,7 +379,7 @@ failed to parse domain: ipv6.local
             }
 
             for _, case in ipairs(cases) do
-                local res = get_last_index(case[1], case[2])
+                local res = string_rfind(case[1], case[2])
                 ngx.say("res:", res)
             end
         }

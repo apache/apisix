@@ -336,21 +336,6 @@ end
 _M.resolve_var = resolve_var
 
 
-function _M.get_last_index(str, key)
-    local str_rev = str_reverse(str)
-    local key_rev = str_reverse(key)
-    local idx = core_str.find(str_rev, key_rev)
-
-    local n
-    if idx then
-        -- n = #rev - idx + 1 - (#key - 1)
-        n = #str - idx - #key + 2
-    end
-
-    return n
-end
-
-
 local resolve_var_with_captures
 do
     local _captures
