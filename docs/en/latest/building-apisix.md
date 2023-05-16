@@ -71,7 +71,7 @@ make deps
 make install
 ```
 
-This will install the runtime dependency Lua libraries and the `apisix` CLI tool.
+This will install the runtime-dependent Lua libraries and the `apisix` CLI tool.
 
 :::note
 
