@@ -73,7 +73,6 @@ local function file_exists(path)
 end
 
 
-
 local function get_log_path_info(file_type)
     local_conf = core.config.local_conf()
     local conf_path
