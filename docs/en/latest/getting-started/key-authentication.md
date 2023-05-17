@@ -40,6 +40,7 @@ In APISIX, a Consumer requires a unique _username_ and an authentication _plugin
 ## What is Key Authentication
 
 Key authentication is a relatively simple but widely used authentication approach. The idea is as follows:
+
 1. Administrator adds an authentication key (API key) to the Route.
 2. API consumers add the key to the query string or headers for authentication when sending requests.
 
@@ -47,8 +48,8 @@ Key authentication is a relatively simple but widely used authentication approac
 
 ### Prerequisite(s)
 
-1. Complete [Get APISIX](./) to install APISIX.
-2. Complete [Configure Routes](./configure-routes#whats-a-route).
+1. Complete [Get APISIX](../README) to install APISIX.
+2. Complete [Configure Routes](../configure-routes#what-is-a-route).
 
 ### Create a Consumer
 
@@ -76,7 +77,7 @@ You will receive an `HTTP/1.1 201 OK` response if the consumer was created succe
 
 ### Enable Authentication
 
-Inheriting the route `getting-started-ip` from [Configure Routes](./configure-routes), we only need to use the `PATCH` method to add the `key-auth` plugin to the route:
+Inheriting the route `getting-started-ip` from [Configure Routes](../configure-routes), we only need to use the `PATCH` method to add the `key-auth` plugin to the route:
 
 ```shell
 curl -i "http://127.0.0.1:9180/apisix/admin/routes/getting-started-ip" -X PATCH -d '

@@ -50,7 +50,7 @@ Router 端：
 | ----------------- | ------ | ----- | ------ |----------------------------------------------------------------------------------------------------------------------------------------------------------|
 | header            | string | 否    | apikey | 设置我们从哪个 header 获取 key。                                                                                                                                   |
 | query             | string | 否    | apikey | 设置我们从哪个 query string 获取 key，优先级低于 `header`。                                                                                                              |
-| hide_credentials  | bool   | 否    | false  | 当设置为 `false` 时将含有认证信息的 header 或 query string 传递给 Upstream。 如果为 `true` 时将删除对应的 header 或 query string，具体删除哪一个取决于是从 header 获取 key 还是从 query string  获取 key。 |
+| hide_credentials  | bool   | 否    | false  | 当设置为 `false` 时将含有认证信息的 header 或 query string 传递给 Upstream。如果为 `true` 时将删除对应的 header 或 query string，具体删除哪一个取决于是从 header 获取 key 还是从 query string  获取 key。 |
 
 ## 启用插件
 

@@ -62,13 +62,18 @@ jobs:
           path: ~/openssl-3.0
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}
 
+      - name: set openssl prefix
+        id: set_openssl_prefix
+        shell: bash
+        run: |
+          echo "openssl3_prefix=$HOME" >>$GITHUB_OUTPUT
+
       - name: Toggle openssl compile
         id: test_ssl_env
         shell: bash
         if: steps.cache-openssl.outputs.cache-hit != 'true'
         run: |
           echo "openssl3=yes" >>$GITHUB_OUTPUT
-          echo "openssl3_prefix=$HOME" >>$GITHUB_OUTPUT
 
       - name: Extract test type
         shell: bash
@@ -92,6 +97,7 @@ jobs:
       - name: Linux launch common services
         run: |
           make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
+          sudo ./ci/init-common-test-service.sh
 
       - name: Cache images
         id: cache-images
@@ -131,7 +137,7 @@ jobs:
       - name: Linux Install
         env:
           COMPILE_OPENSSL3: ${{ steps.test_ssl_env.outputs.openssl3 }}
-          OPENSSL3_PREFIX: ${{ steps.test_ssl_env.outputs.openssl3_prefix }}
+          OPENSSL3_PREFIX: ${{ steps.set_openssl_prefix.outputs.openssl3_prefix }}
           USE_OPENSSL3: yes
         run: |
           sudo --preserve-env=OPENRESTY_VERSION \

@@ -67,6 +67,12 @@ local router
 
 local function check_token(ctx)
     local local_conf = core.config.local_conf()
+
+    -- check if admin_key is required
+    if local_conf.deployment.admin.admin_key_required == false then
+        return true
+    end
+
     local admin_key = core.table.try_read_attr(local_conf, "deployment", "admin", "admin_key")
     if not admin_key then
         return true
@@ -395,6 +401,13 @@ function _M.init_worker()
     events.register(reload_plugins, reload_event, "PUT")
 
     if ngx_worker_id() == 0 then
+        -- check if admin_key is required
+        if local_conf.deployment.admin.admin_key_required == false then
+            core.log.warn("Admin key is bypassed! ",
+                "If you are deploying APISIX in a production environment, ",
+                "please disable `admin_key_required` and set a secure admin key!")
+        end
+
         local ok, err = ngx_timer_at(0, function(premature)
             if premature then
                 return

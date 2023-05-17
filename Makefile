@@ -80,6 +80,9 @@ ifeq ($(ENV_OS_NAME), darwin)
 	ifeq ($(shell test -d $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl111 && echo -n yes), yes)
 		ENV_OPENSSL_PREFIX := $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl111
 	endif
+	ifeq ($(shell test -d $(ENV_HOMEBREW_PREFIX)/opt/pcre && echo -n yes), yes)
+		ENV_PCRE_PREFIX := $(ENV_HOMEBREW_PREFIX)/opt/pcre
+	endif
 endif
 
 
@@ -144,15 +147,24 @@ help:
 	fi
 	@echo
 
+### check-rust : check if Rust is installed in the environment
+.PHONY: check-rust
+check-rust:
+	@if ! [ $(shell command -v rustc) ]; then \
+		echo "ERROR: Rust is not installed. Please install Rust before continuing." >&2; \
+		exit 1; \
+	fi;
 
-### deps : Installation dependencies
+
+### deps : Installing dependencies
 .PHONY: deps
-deps: runtime
+deps: check-rust runtime
 	$(eval ENV_LUAROCKS_VER := $(shell $(ENV_LUAROCKS) --version | grep -E -o "luarocks [0-9]+."))
 	@if [ '$(ENV_LUAROCKS_VER)' = 'luarocks 3.' ]; then \
 		mkdir -p ~/.luarocks; \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include); \
+		[ '$(ENV_OS_NAME)' == 'darwin' ] && $(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.PCRE_INCDIR $(addprefix $(ENV_PCRE_PREFIX), /include); \
 		$(ENV_LUAROCKS) install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local $(ENV_LUAROCKS_SERVER_OPT); \
 	else \
 		$(call func_echo_warn_status, "WARNING: You're not using LuaRocks 3.x; please remove the luarocks and reinstall it via https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh"); \
@@ -160,7 +172,7 @@ deps: runtime
 	fi
 
 
-### undeps : Uninstallation dependencies
+### undeps : Uninstalling dependencies
 .PHONY: undeps
 undeps:
 	@$(call func_echo_status, "$@ -> [ Start ]")

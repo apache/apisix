@@ -125,9 +125,9 @@ $secret://$manager/$id/$secret_name/$key
 ```
 
 - manager: 密钥管理服务，可以是 Vault、AWS 等
-- APISIX Secret 资源 ID， 需要与添加 APISIX Secret 资源时指定的 ID 保持一致
+- APISIX Secret 资源 ID，需要与添加 APISIX Secret 资源时指定的 ID 保持一致
 - secret_name: 密钥管理服务中的密钥名称
-- key： 密钥管理服务中密钥对应的 key
+- key：密钥管理服务中密钥对应的 key
 
 ### 示例：在 key-auth 插件中使用
 

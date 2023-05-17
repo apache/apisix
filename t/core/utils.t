@@ -361,3 +361,35 @@ apisix:
 GET /t
 --- error_log
 failed to parse domain: ipv6.local
+
+
+
+=== TEST 12: get_last_index
+--- config
+    location /t {
+        content_by_lua_block {
+            local string_rfind = require("pl.stringx").rfind
+            local cases = {
+                {"you are welcome", "co"},
+                {"nice to meet you", "meet"},
+                {"chicken run", "cc"},
+                {"day day up", "day"},
+                {"happy new year", "e"},
+                {"apisix__1928", "__"}
+            }
+
+            for _, case in ipairs(cases) do
+                local res = string_rfind(case[1], case[2])
+                ngx.say("res:", res)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+res:12
+res:9
+res:nil
+res:5
+res:12
+res:7

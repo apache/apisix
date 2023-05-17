@@ -652,3 +652,172 @@ foobar:
             assert(res.status == 200)
         }
     }
+
+
+
+=== TEST 10: cooperation of proxy-cache plugin
+--- http_config
+lua_shared_dict memory_cache 50m;
+--- config
+location /demo {
+    content_by_lua_block {
+        ngx.say([[
+    <SOAP-ENV:Envelope
+        xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+    <SOAP-ENV:Header/>
+        <SOAP-ENV:Body>
+            <ns2:CapitalCityResponse
+                xmlns:ns2="http://spring.io/guides/gs-producing-web-service">
+                <ns2:CapitalCityResult>hello</ns2:CapitalCityResult>
+            </ns2:CapitalCityResponse>
+        </SOAP-ENV:Body>
+    </SOAP-ENV:Envelope>
+        ]])
+    }
+}
+
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+
+            local req_template = ngx.encode_base64[[
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:web="http://www.oorsprong.org/websamples.countryinfo">
+                <soapenv:Header/>
+                <soapenv:Body>
+                    <web:CapitalCity>
+                    <web:sCountryISOCode>{{_escape_xml(country)}}</web:sCountryISOCode>
+                    </web:CapitalCity>
+                </soapenv:Body>
+                </soapenv:Envelope>
+            ]]
+
+            local rsp_template = ngx.encode_base64[[
+                {"result": {*_escape_json(Envelope.Body.CapitalCityResponse.CapitalCityResult)*}}
+                ]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format([[{
+                    "uri": "/capital",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "set": {
+                                "Accept-Encoding": "identity",
+                                "Content-Type": "text/xml"
+                            },
+                            "uri": "/demo"
+                        },
+                        "proxy-cache":{
+                            "cache_strategy": "memory",
+                            "cache_bypass": ["$arg_bypass"],
+                            "cache_http_status": [200],
+                            "cache_key": ["$uri", "-cache-id"],
+                            "cache_method": ["POST"],
+                            "hide_cache_headers": true,
+                            "no_cache": ["$arg_test"],
+                            "cache_zone": "memory_cache"
+                        },
+                        "body-transformer": {
+                            "request": {
+                                "input_format": "json",
+                                "template": "%s"
+                            },
+                            "response": {
+                                "input_format": "xml",
+                                "template": "%s"
+                            }
+                        },
+                        "response-rewrite":{
+                            "headers": {
+                                "set": {
+                                    "Content-Type": "application/json"
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:%d": 1
+                        }
+                    }
+                }]], req_template, rsp_template, ngx.var.server_port)
+            )
+
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/capital"
+            local body = [[{"country": "foo"}]]
+            local opt = {method = "POST", body = body}
+            local httpc = http.new()
+
+            local res = httpc:request_uri(uri, opt)
+            assert(res.status == 200)
+            local data = core.json.decode(res.body)
+            assert(data.result == "hello")
+            assert(res.headers["Apisix-Cache-Status"] == "MISS")
+
+            local res2 = httpc:request_uri(uri, opt)
+            assert(res2.status == 200)
+            local data2 = core.json.decode(res2.body)
+            assert(data2.result == "hello")
+            assert(res2.headers["Apisix-Cache-Status"] == "HIT")
+        }
+    }
+
+
+
+=== TEST 11: return raw body with _body anytime
+--- http_config
+--- config
+    location /demo {
+        content_by_lua_block {
+            ngx.header.content_type = "application/json"
+            ngx.print('{"result": "hello world"}')
+        }
+    }
+
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+
+            local rsp_template = ngx.encode_base64[[
+                {"raw_body": {*_escape_json(_body)*}, "result": {*_escape_json(result)*}}
+                ]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format([[{
+                    "uri": "/capital",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/demo"
+                        },
+                        "body-transformer": {
+                            "response": {
+                                "template": "%s"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:%d": 1
+                        }
+                    }
+                }]], rsp_template, ngx.var.server_port)
+            )
+
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/capital"
+            local opt = {method = "GET", headers = {["Content-Type"] = "application/json"}}
+            local httpc = http.new()
+
+            local res = httpc:request_uri(uri, opt)
+            assert(res.status == 200)
+            local data = core.json.decode(res.body)
+            assert(data.result == "hello world")
+            assert(data.raw_body == '{"result": "hello world"}')
+        }
+    }
