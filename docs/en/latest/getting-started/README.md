@@ -57,11 +57,7 @@ If everything is ok, you will get the following response:
 Server: APISIX/Version
 ```
 
-`Version` refers to the version of APISIX that you have installed. For example, APISIX 3.3.0.
-
-```text
-Server: APISIX/3.3.0
-```
+`Version` refers to the version of APISIX that you have installed. For example, `APISIX/3.3.0`.
 
 You now have APISIX installed and running successfully!​
 
