@@ -146,6 +146,12 @@ curl "http://127.0.0.1:9080" --head | grep Server
 如果一切顺利，将输出如下信息。
 
 ```text
+Server: APISIX/Version
+```
+
+这里的 Version 是你安装的 APISIX 的版本。例如，APISIX 3.3.0
+
+```text
 Server: APISIX/3.3.0
 ```
 

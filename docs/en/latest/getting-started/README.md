@@ -54,6 +54,12 @@ curl "http://127.0.0.1:9080" --head | grep Server
 If everything is ok, you will get the following response:
 
 ```text
+Server: APISIX/Version
+```
+
+Version is the version number of the version of APISIX you are using. For example, APISIX 3.3.0
+
+```text
 Server: APISIX/3.3.0
 ```
 
