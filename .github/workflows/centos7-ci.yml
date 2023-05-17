@@ -31,7 +31,7 @@ jobs:
           - t/plugin/[a-k]*
           - t/plugin/[l-z]*
           - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/deployment t/discovery t/error_page t/misc
-          - t/node t/pubsub t/router t/script t/secret t/stream-node t/syslog t/utils t/wasm t/xds-library
+          - t/node t/pubsub t/router t/script t/secret t/stream-node t/utils t/wasm t/xds-library
 
     steps:
     - name: Check out code
