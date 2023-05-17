@@ -350,6 +350,7 @@ passed
 
 
 === TEST 10: hit
+--- ONLY
 --- extra_init_by_lua
     local core = require("apisix.core")
     local decode = require("toolkit.json").decode
@@ -361,9 +362,9 @@ passed
         local data = ngx.req.get_body_data()
         ngx.log(ngx.WARN, data)
         data = decode(data)
-        assert(data[1].event.vip == "127.0.0.1")
-        assert(data[1].source == "apache-apisix-splunk-hec-logging")
-        assert(data[1].host == core.utils.gethostname())
+        assert(data.event.vip == "127.0.0.1")
+        assert(data.source == "apache-apisix-splunk-hec-logging")
+        assert(data.host == core.utils.gethostname())
         ngx.say('{}')
     end
 --- request
