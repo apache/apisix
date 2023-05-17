@@ -350,7 +350,6 @@ passed
 
 
 === TEST 10: hit
---- ONLY
 --- extra_init_by_lua
     local core = require("apisix.core")
     local decode = require("toolkit.json").decode
