@@ -54,7 +54,7 @@ curl "http://127.0.0.1:9080" --head | grep Server
 If everything is ok, you will get the following response:
 
 ```text
-Server: APISIX/3.1.0
+Server: APISIX/3.3.0
 ```
 
 You now have APISIX installed and running successfully!​
