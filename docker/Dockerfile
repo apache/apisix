@@ -53,7 +53,7 @@ RUN chmod +x /docker-entrypoint.sh \
     && ln -sf /dev/stderr /usr/local/apisix/logs/error.log \
     && useradd -u 1001 apisix && chown -R apisix:apisix /usr/local/apisix
 
-USER apisix
+USER root
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
