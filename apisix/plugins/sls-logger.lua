@@ -21,7 +21,7 @@ local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 
 local plugin_name = "sls-logger"
 local ngx = ngx
-local rf5424 = require("apisix.syslog.rfc5424")
+local rf5424 = require("apisix.utils.rfc5424")
 local tcp = ngx.socket.tcp
 local tostring = tostring
 local ipairs = ipairs

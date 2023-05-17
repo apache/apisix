@@ -173,7 +173,7 @@ hello world
             end
 
             math.randomseed(os.time())
-            local rfc5424 = require("apisix.syslog.rfc5424")
+            local rfc5424 = require("apisix.utils.rfc5424")
             local m = 0
             -- because the millisecond value obtained by `ngx.now` may be `0`
             -- it is executed multiple times to ensure the accuracy of the test
@@ -230,7 +230,7 @@ passed
 === TEST 9: access
 --- extra_init_by_lua
     local json = require("toolkit.json")
-    local rfc5424 = require("apisix.syslog.rfc5424")
+    local rfc5424 = require("apisix.utils.rfc5424")
     local old_f = rfc5424.encode
     rfc5424.encode = function(facility, severity, hostname, appname, pid, msg, structured_data)
         local r = json.decode(msg)
@@ -374,7 +374,7 @@ passed
 === TEST 13: access
 --- extra_init_by_lua
     local json = require("toolkit.json")
-    local rfc5424 = require("apisix.syslog.rfc5424")
+    local rfc5424 = require("apisix.utils.rfc5424")
     local old_f = rfc5424.encode
     rfc5424.encode = function(facility, severity, hostname, appname, pid, msg, structured_data)
         local r = json.decode(msg)

@@ -37,7 +37,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local rfc5424 = require("apisix.syslog.rfc5424")
+            local rfc5424 = require("apisix.utils.rfc5424")
             local structured_data = {
                 {name = "project", value = "apisix.apache.org"},
                 {name = "logstore", value = "apisix.apache.org"},
@@ -58,7 +58,7 @@ qr/<46>1.*localhost apisix 123456 - \[logservice project=\"apisix\.apache\.org\"
 --- config
     location /t {
         content_by_lua_block {
-            local rfc5424 = require("apisix.syslog.rfc5424")
+            local rfc5424 = require("apisix.utils.rfc5424")
             local data = rfc5424.encode("SYSLOG", "INFO", "localhost", "apisix",
                                                 123456, "hello world")
             ngx.say(data)
@@ -73,7 +73,7 @@ qr/<46>1.*localhost apisix 123456 - - hello world/
 --- config
     location /t {
         content_by_lua_block {
-            local rfc5424 = require("apisix.syslog.rfc5424")
+            local rfc5424 = require("apisix.utils.rfc5424")
             local data = rfc5424.encode("SYSLOG", "INFO", nil, nil,
                                                 123456, "hello world")
             ngx.say(data)
