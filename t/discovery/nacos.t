@@ -955,6 +955,8 @@ server 4
             ngx.say(res.body)
         }
     }
+--- request
+GET /t
 --- response_body
 ok
 
