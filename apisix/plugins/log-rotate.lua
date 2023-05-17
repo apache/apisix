@@ -49,8 +49,8 @@ local default_logs
 local enable_compression = false
 local DEFAULT_ACCESS_LOG_FILENAME = "access.log"
 local DEFAULT_ERROR_LOG_FILENAME = "error.log"
-local new_access_log
-local new_error_log
+local custom_access_log_filename
+local custom_error_log_filename
 
 
 local schema = {
@@ -89,7 +89,7 @@ local function get_last_index(str, key)
 end
 
 
--- get the log directory path 
+-- get the log directory path
 local function get_log_path_info(file_type)
     local_conf = core.config.local_conf()
     local conf_path
@@ -275,10 +275,12 @@ end
 local function get_custom_logfile_name()
     local local_conf = core.config.local_conf()
 
-    local new_error_log = core.table.try_read_attr(local_conf, "nginx_config", "error_log")
-    local new_access_log = core.table.try_read_attr(local_conf, "nginx_config", "http", "access_log")
-    
-    return new_access_log, new_error_log
+    local custom_error_log_filename =
+        core.table.try_read_attr(local_conf, "nginx_config", "error_log")
+    local custom_access_log_filename =
+        core.table.try_read_attr(local_conf, "nginx_config", "http", "access_log")
+
+    return custom_access_log_filename, custom_error_log_filename
 
 end
 
@@ -288,8 +290,8 @@ local function rotate()
     local max_kept = MAX_KEPT
     local max_size = MAX_SIZE
     local attr = plugin.plugin_attr(plugin_name)
-    local access_log_filename = new_access_log or DEFAULT_ACCESS_LOG_FILENAME 
-    local error_log_filename = new_error_log or DEFAULT_ERROR_LOG_FILENAME
+    local access_log_filename = custom_access_log_filename or DEFAULT_ACCESS_LOG_FILENAME
+    local error_log_filename = custom_error_log_filename or DEFAULT_ERROR_LOG_FILENAME
     if attr then
         interval = attr.interval or interval
         max_kept = attr.max_kept or max_kept
@@ -318,7 +320,7 @@ local function rotate()
     end
 
     if now_time >= rotate_time then
-                
+
         local files = {access_log_filename, error_log_filename}
 
         rotate_file(files, now_time, max_kept)
@@ -347,7 +349,8 @@ end
 
 function _M.init()
     timers.register_timer("plugin#log-rotate", rotate, true)
-    new_access_log, new_error_log = get_custom_logfile_name()
+    custom_access_log_filename, custom_error_log_filename = get_custom_logfile_name()
+    timers.register_timer("plugin#log-rotate", rotate, true)
 end
 
 
