@@ -30,6 +30,11 @@ function detect_aur_helper() {
     fi
 }
 
+function install_rust() {
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo sh -s -- -y
+    source "$HOME/.cargo/env"
+}
+
 function install_dependencies_with_aur() {
     detect_aur_helper
     $AUR_HELPER -S openresty --noconfirm
@@ -63,6 +68,8 @@ function install_dependencies_with_yum() {
         # shellcheck disable=SC2086
         sudo yum install -y openresty $common_dep
     fi
+
+    install_rust
 }
 
 # Install dependencies on ubuntu and debian
@@ -85,6 +92,8 @@ function install_dependencies_with_apt() {
 
     # install OpenResty and some compilation tools
     sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc libpcre3 libpcre3-dev libldap2-dev unzip
+
+    install_rust
 }
 
 # Install dependencies on mac osx
