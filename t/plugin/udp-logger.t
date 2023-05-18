@@ -310,7 +310,7 @@ GET /t
                             "udp-logger": {
                                 "host": "127.0.0.1",
                                 "port": 8125,
-                                "tls": false
+                                "tls": false,
                                 "batch_max_size": 1,
                                 "inactive_timeout": 1
                             }
@@ -382,10 +382,8 @@ qr/.*plugin_metadata.*/
                                 "host": "127.0.0.1",
                                 "port": 8125,
                                 "tls": false,
-                                "log_format": {
-                                    "case name": "logger format in plugin",
-                                    "vip": "$remote_addr"
-                                }
+                                "batch_max_size": 1,
+                                "inactive_timeout": 1
                             }
                         },
                         "upstream": {
@@ -403,7 +401,22 @@ qr/.*plugin_metadata.*/
                 ngx.say(body)
                 return
             end
-
+            local code, body = t('/apisix/admin/plugin_metadata/udp-logger',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "log_format": {
+                            "host": "$host",
+                            "case name": "logger format in plugin",
+                            "@timestamp": "$time_iso8601",
+                            "client_ip": "$remote_addr"
+                        }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
             ngx.say(body)
             local code, _, _ = t("/hello", "GET")
             if code >= 300 then
