@@ -349,9 +349,6 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/serverless
 	$(ENV_INSTALL) apisix/plugins/serverless/*.lua $(ENV_INST_LUADIR)/apisix/plugins/serverless/
 
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/slslog
-	$(ENV_INSTALL) apisix/plugins/slslog/*.lua $(ENV_INST_LUADIR)/apisix/plugins/slslog/
-
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/syslog
 	$(ENV_INSTALL) apisix/plugins/syslog/*.lua $(ENV_INST_LUADIR)/apisix/plugins/syslog/
 
