@@ -223,7 +223,7 @@ failed to connect to UDP server: host[312.0.0.1] port[2000]
                         "plugins": {
                             "udp-logger": {
                                 "host": "127.0.0.1",
-                                "port": 2001,
+                                "port": 2002,
                                 "tls": false,
                                 "batch_max_size": 1
                             }
@@ -267,7 +267,7 @@ passedopentracing
 qr/sending a batch logs to 127.0.0.1:(\d+)/
 --- grep_error_log_out
 sending a batch logs to 127.0.0.1:2000
-sending a batch logs to 127.0.0.1:2001
+sending a batch logs to 127.0.0.1:2002
 
 
 
@@ -310,9 +310,7 @@ GET /t
                             "udp-logger": {
                                 "host": "127.0.0.1",
                                 "port": 8125,
-                                "tls": false,
-                                "batch_max_size": 1,
-                                "inactive_timeout": 1
+                                "tls": false
                             }
                         },
                         "upstream": {
@@ -336,6 +334,7 @@ GET /t
                  [[{
                         "log_format": {
                             "host": "$host",
+                            "case name": "plugin_metadata",
                             "@timestamp": "$time_iso8601",
                             "client_ip": "$remote_addr"
                         }
@@ -356,43 +355,15 @@ passed
 
 
 
-=== TEST 10: access
---- stream_conf_enable
---- extra_stream_config
-    server {
-        listen 8125 udp;
-        content_by_lua_block {
-            local decode = require("toolkit.json").decode
-            ngx.log(ngx.WARN, "the mock backend is hit")
+=== TEST 10: log format in plugin_metadata
+--- exec
+tail -n 1 ci/pod/vector/udp.log
+--- response_body eval
+qr/.*plugin_metadata.*/
 
-            local sock, err = ngx.req.socket()
-            if not sock then
-                ngx.log(ngx.ERR, "failed to get the request socket: ", err)
-                return
-            end
 
-            local data, err = sock:receive()
 
-            if not data then
-                if err and err ~= "no more data" then
-                    ngx.log(ngx.ERR, "socket error, returning: ", err)
-                end
-                return
-            end
 
-            data = decode(data)
-            assert(data.client_ip == "127.0.0.1")
-        }
-    }
---- request
-GET /hello
---- response_body
-hello world
---- wait: 2
---- error_log
-the mock backend is hit
---- no_error_log
-[error]
 
 
 
@@ -410,10 +381,9 @@ the mock backend is hit
                                 "port": 8125,
                                 "tls": false,
                                 "log_format": {
+                                    "case name": "logger format in plugin",
                                     "vip": "$remote_addr"
-                                },
-                                "batch_max_size": 1,
-                                "inactive_timeout": 1
+                                }
                             }
                         },
                         "upstream": {
@@ -441,41 +411,9 @@ GET /t
 passed
 
 
+=== TEST 12: log format in plugin_metadata
+--- exec
+tail -n 1 ci/pod/vector/udp.log
+--- response_body eval
+qr/.*logger format in plugin.*/
 
-=== TEST 12: access
---- stream_conf_enable
---- extra_stream_config
-    server {
-        listen 8125 udp;
-        content_by_lua_block {
-            local decode = require("toolkit.json").decode
-            ngx.log(ngx.WARN, "the mock backend is hit")
-
-            local sock, err = ngx.req.socket()
-            if not sock then
-                ngx.log(ngx.ERR, "failed to get the request socket: ", err)
-                return
-            end
-
-            local data, err = sock:receive()
-
-            if not data then
-                if err and err ~= "no more data" then
-                    ngx.log(ngx.ERR, "socket error, returning: ", err)
-                end
-                return
-            end
-
-            data = decode(data)
-            assert(data.vip == "127.0.0.1")
-        }
-    }
---- request
-GET /hello
---- response_body
-hello world
---- wait: 2
---- error_log
-the mock backend is hit
---- no_error_log
-[error]
