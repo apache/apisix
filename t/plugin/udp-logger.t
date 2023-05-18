@@ -309,7 +309,7 @@ GET /t
                         "plugins": {
                             "udp-logger": {
                                 "host": "127.0.0.1",
-                                "port": 8125,
+                                "port": 8127,
                                 "tls": false,
                                 "batch_max_size": 1,
                                 "inactive_timeout": 1
@@ -380,7 +380,7 @@ qr/.*plugin_metadata.*/
                         "plugins": {
                             "udp-logger": {
                                 "host": "127.0.0.1",
-                                "port": 8125,
+                                "port": 8127,
                                 "tls": false,
                                 "batch_max_size": 1,
                                 "inactive_timeout": 1

@@ -25,7 +25,7 @@ socket_file_mode = 511
 
 [sources.log-from-udp]
 type = "socket"
-address = "0.0.0.0:8125"
+address = "0.0.0.0:8127"
 host_key = "host"
 mode = "udp"
 port_key = "port"
