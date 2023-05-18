@@ -23,15 +23,12 @@ port_key = "port"
 shutdown_timeout_secs = 30
 socket_file_mode = 511
 
-
 [sources.log-from-udp]
 type = "socket"
 address = "0.0.0.0:8125"
 host_key = "host"
 mode = "udp"
 port_key = "port"
-
-
 
 [sources.log-from-tls]
 type = "socket"

@@ -311,6 +311,8 @@ GET /t
                                 "host": "127.0.0.1",
                                 "port": 8125,
                                 "tls": false
+                                "batch_max_size": 1,
+                                "inactive_timeout": 1
                             }
                         },
                         "upstream": {
@@ -346,6 +348,12 @@ GET /t
                 return
             end
             ngx.say(body)
+            local code, _, _ = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
         }
     }
 --- request
@@ -354,17 +362,11 @@ GET /t
 passed
 
 
-
 === TEST 10: log format in plugin_metadata
 --- exec
 tail -n 1 ci/pod/vector/udp.log
 --- response_body eval
 qr/.*plugin_metadata.*/
-
-
-
-
-
 
 
 === TEST 11: log format in plugin
@@ -403,6 +405,12 @@ qr/.*plugin_metadata.*/
             end
 
             ngx.say(body)
+            local code, _, _ = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
         }
     }
 --- request
