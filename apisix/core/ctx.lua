@@ -188,12 +188,10 @@ local fetch_jsonrpc_data = {
             -- Return nil and an error message if reading the body fails
             return nil, "failed to read jsonrpc data, " .. (read_error or "request body has zero size")
         end
-	log.error("body",request_body)
 
         if string.match(request.header(request_context, "Content-Type"),JSONRPC_REQ_MIME_JSON) then
             -- Try to decode the request body as a JSON object
             local decoded_request
-	    log.error("body",request_body)
             decoded_request, read_error = json.decode(request_body)
             if not decoded_request then
                 -- Return nil and an error message if decoding the body fails
