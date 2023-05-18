@@ -26,7 +26,7 @@ jobs:
       matrix:
         job_name:
           - linux_apisix_master_luarocks
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       OPENRESTY_VERSION: default

@@ -13,7 +13,7 @@ permissions:
 jobs:
   performance:
     if: ${{ startsWith(github.event.pull_request.title, 'perf:') }}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     timeout-minutes: 45
 
     steps:
