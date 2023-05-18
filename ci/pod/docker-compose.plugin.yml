@@ -321,6 +321,8 @@ services:
     ports:
       - '3000:3000'
       - '43000:43000'
+      - '5140:5140'
+      - '5150:5150/udp'
     networks:
       vector_net:
 
