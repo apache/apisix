@@ -30,7 +30,7 @@ description: This document contains information about the Apache APISIX opa Plug
 
 ## Description
 
-The `opa` Plugin can be used to integrate with [Open Policy Agent](https://www.openpolicyagent.org). This can help you decouple functions such as authentication and access to services and reduce the complexity of your system.
+The `opa` Plugin can be used to integrate with [Open Policy Agent (OPA)](https://www.openpolicyagent.org). OPA is a policy engine that helps defininig and enforcing authorization policies, which determines whether a user or application has the necessary permissions to perform a particular action or access a particular resource. Using OPA with APISIX decouples authorization logics from APISIX.
 
 ## Attributes
 
