@@ -190,4 +190,4 @@ passed
 --- stream_conf_enable
 --- wait: 0.5
 --- error_log eval
-qr/message received:.*\"rpc_time\\"\:(0.\d+|0)\}\"/
+qr/message received:.*\"rpc_time\"\:(0.\d+|0)\}/

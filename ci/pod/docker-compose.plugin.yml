@@ -319,6 +319,20 @@ services:
     ports:
       - '8888:8080'
 
+  vector:
+    image: timberio/vector:0.29.1-debian
+    container_name: vector
+    volumes:
+      - ./ci/pod/vector:/etc/vector/
+      - ./t/certs:/certs
+    ports:
+      - '3000:3000'
+      - '43000:43000'
+      - '5140:5140'
+      - '5150:5150/udp'
+    networks:
+      vector_net:
+
 networks:
   apisix_net:
   kafka_net:

@@ -497,7 +497,7 @@ passed
 --- stream_conf_enable
 --- wait: 0.5
 --- error_log eval
-qr/message received:.*\"client_ip\\"\:\\"127.0.0.1\\"/
+qr/message received:.*\"client_ip\"\:\"127.0.0.1\"/
 
 
 
@@ -556,7 +556,7 @@ passed
 --- stream_conf_enable
 --- wait: 0.5
 --- error_log eval
-qr/message received:.*\"client_ip\\"\:\\"127.0.0.1\\"/
+qr/message received:.*\"client_ip\"\:\"127.0.0.1\"/
 
 
 
