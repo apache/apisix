@@ -35,8 +35,18 @@ tls.ca_file = "/certs/vector_logs_ca.crt"
 tls.crt_file = "/certs/vector_logs_server.crt"
 tls.key_file = "/certs/vector_logs_server.key"
 
+[sources.log-from-syslog-tcp]
+type = "syslog"
+address = "0.0.0.0:5140"
+mode = "tcp"
+
+[sources.log-from-syslog-udp]
+type = "syslog"
+address = "0.0.0.0:5150"
+mode = "udp"
+
 [sinks.log-2-console]
-inputs = [ "log-from-tcp",  "log-from-tls" ]
+inputs = [ "log-from-tcp",  "log-from-tls", "log-from-syslog-tcp", "log-from-syslog-udp" ]
 type = "console"
 encoding.codec = "json"
 
@@ -51,3 +61,15 @@ inputs = [ "log-from-tls" ]
 type = "file"
 encoding.codec = "json"
 path = "/etc/vector/tls-datas.log"
+
+[sinks.log-2-syslog-tcp-file]
+inputs = [ "log-from-syslog-tcp" ]
+type = "file"
+encoding.codec = "text"
+path = "/etc/vector/syslog-tcp.log"
+
+[sinks.log-2-syslog-udp-file]
+inputs = [ "log-from-syslog-udp" ]
+type = "file"
+encoding.codec = "text"
+path = "/etc/vector/syslog-udp.log"
