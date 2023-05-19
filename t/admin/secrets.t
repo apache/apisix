@@ -131,7 +131,7 @@ passed
 
 
 
-=== TEST 4: PATCH
+=== TEST 4: PATCH on path
 --- config
     location /t {
         content_by_lua_block {
@@ -169,7 +169,7 @@ passed
 
 
 
-=== TEST 5: PATCH on path 
+=== TEST 5: PATCH
 --- config
     location /t {
         content_by_lua_block {
@@ -211,7 +211,27 @@ passed
 
 
 
-=== TEST 6: DELETE
+=== TEST 6: PATCH without id
+--- config
+    location /t {
+        content_by_lua_block {
+	    local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/secrets/vault',
+                ngx.HTTP_PATCH,
+                [[{}]],
+                [[{}]]
+                )
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"no secret id"}
+
+
+
+=== TEST 7: DELETE
 --- config
     location /t {
         content_by_lua_block {
@@ -227,7 +247,7 @@ passed
 
 
 
-=== TEST 7: PUT with invalid format
+=== TEST 8: PUT with invalid format
 --- config
     location /t {
         content_by_lua_block {
