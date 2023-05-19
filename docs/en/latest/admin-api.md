@@ -1454,7 +1454,6 @@ HTTP/1.1 200 OK
 
 Currently, the response is returned from etcd.
 
-
 ## Proto
 
 Proto is used to store protocol buffers so that APISIX can communicate in gRPC.
