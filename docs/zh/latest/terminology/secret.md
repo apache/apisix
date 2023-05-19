@@ -42,7 +42,7 @@ APISIX 目前支持通过以下方式存储密钥：
 
 你可以在以下插件的 consumer 配置中通过指定格式的变量来使用 APISIX Secret 功能，比如 `key-auth` 插件。
 
-::: note
+:::note
 
 如果某个配置项为：`key: "$ENV://ABC"`，当 APISIX Secret 中没有检索到 $ENV://ABC 对应的真实值，那么 key 的值将是 "$ENV://ABC" 而不是 `nil`。
 
