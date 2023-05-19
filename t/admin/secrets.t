@@ -189,7 +189,7 @@ passed
                     "prefix" : "apisix",
                     "token" : "apisix"
                 }]],
-		[[{
+                [[{
                     "value": {
                         "uri": "http://127.0.0.1:12800/get",
                         "prefix" : "apisix",
@@ -215,7 +215,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-	    local t = require("lib.test_admin").test
+            local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/secrets/vault',
                 ngx.HTTP_PATCH,
                 [[{}]],
