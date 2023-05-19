@@ -102,51 +102,7 @@ property "endpoint" validation failed: property "uri" validation failed.*
 
 
 
-=== TEST 2: set route (failed auth)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
-                uri = "/hello",
-                upstream = {
-                    type = "roundrobin",
-                    nodes = {
-                        ["127.0.0.1:1980"] = 1
-                    }
-                },
-                plugins = {
-                    ["splunk-hec-logging"] = {
-                        endpoint = {
-                            uri = "http://127.0.0.1:18088/services/collector",
-                            token = "BD274822-96AA-4DA6-90EC-18940FB24444"
-                        },
-                        batch_max_size = 1,
-                        inactive_timeout = 1
-                    }
-                }
-            })
 
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 3: test route (failed auth)
---- request
-GET /hello
---- wait: 2
---- response_body
-hello world
---- error_log
-Batch Processor[splunk-hec-logging] failed to process entries: failed to send splunk, Invalid token
-Batch Processor[splunk-hec-logging] exceeded the max_retry_count
 
 
 
@@ -229,15 +185,21 @@ hello world
                 upstream = {
                     type = "roundrobin",
                     nodes = {
-                        ["127.0.0.1:1980"] = 1
+                        ["127.0.0.1:1982"] = 1
                     }
                 },
                 plugins = {
                     ["splunk-hec-logging"] = {
                         endpoint = {
-                            uri = "http://127.0.0.1:1980/splunk_hec_logging",
+                            uri = "http://127.0.0.1:18088/splunk_hec_logging",
                             token = "BD274822-96AA-4DA6-90EC-18940FB2414C"
                         },
+                        "log_format": {
+                            "host": "$host",
+                            "@timestamp": "$time_iso8601",
+                            "case name": "test custom log format in plugin",
+                            "client_ip": "$remote_addr"
+                        }
                         batch_max_size = 1,
                         inactive_timeout = 1
                     }
@@ -245,62 +207,33 @@ hello world
             }
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
-
             if code >= 300 then
                 ngx.status = code
                 ngx.say(body)
                 return
             end
-
-            local code, body = t('/apisix/admin/plugin_metadata/splunk-hec-logging',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "log_format": {
-                            "host": "$host",
-                            "@timestamp": "$time_iso8601",
-                            "client_ip": "$remote_addr"
-                        }
-                }]]
-                )
+            local code, _, body2 = t("/hello", "GET")
             if code >= 300 then
                 ngx.status = code
-                ngx.say(body)
+                ngx.say("fail")
                 return
             end
-            ngx.say(body)
+            ngx.say(passed)
         }
     }
+--- request
+GET /t
+--- wait: 0.5
 --- response_body
 passed
 
 
 
-=== TEST 8: hit
---- extra_init_by_lua
-    local core = require("apisix.core")
-    local decode = require("toolkit.json").decode
-    local up = require("lib.server")
-    up.splunk_hec_logging = function()
-        ngx.log(ngx.WARN, "the mock backend is hit")
-
-        ngx.req.read_body()
-        local data = ngx.req.get_body_data()
-        ngx.log(ngx.WARN, data)
-        data = decode(data)
-        assert(data.event.client_ip == "127.0.0.1")
-        assert(data.source == "apache-apisix-splunk-hec-logging")
-        assert(data.host == core.utils.gethostname())
-        ngx.say('{}')
-    end
---- request
-GET /hello
---- wait: 2
---- response_body
-hello world
---- error_log
-the mock backend is hit
---- no_error_log
-[error]
+=== TEST 8: check splunk log
+--- exec
+tail -n 1 ci/pod/vector/splunk.log
+--- response_body eval
+qr/.*test custom log format in plugin.*/
 
 
 
@@ -313,17 +246,18 @@ the mock backend is hit
                 upstream = {
                     type = "roundrobin",
                     nodes = {
-                        ["127.0.0.1:1980"] = 1
+                        ["127.0.0.1:1982"] = 1
                     }
                 },
                 plugins = {
                     ["splunk-hec-logging"] = {
                         endpoint = {
-                            uri = "http://127.0.0.1:1980/splunk_hec_logging",
+                            uri = "http://127.0.0.1:18088/splunk_hec_logging",
                             token = "BD274822-96AA-4DA6-90EC-18940FB2414C"
                         },
                         log_format = {
                             host = "$host",
+                            "case name": "logger format in plugin",
                             ["@timestamp"] = "$time_iso8601",
                             vip = "$remote_addr"
                         },
@@ -340,41 +274,28 @@ the mock backend is hit
                 ngx.say(body)
                 return
             end
-
-            ngx.say(body)
+            local code, _, body2 = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.say(passed)
         }
     }
+--- request
+GET /t
+--- wait: 0.5
 --- response_body
 passed
 
 
 
-=== TEST 10: hit
---- extra_init_by_lua
-    local core = require("apisix.core")
-    local decode = require("toolkit.json").decode
-    local up = require("lib.server")
-    up.splunk_hec_logging = function()
-        ngx.log(ngx.WARN, "the mock backend is hit")
-
-        ngx.req.read_body()
-        local data = ngx.req.get_body_data()
-        ngx.log(ngx.WARN, data)
-        data = decode(data)
-        assert(data.event.vip == "127.0.0.1")
-        assert(data.source == "apache-apisix-splunk-hec-logging")
-        assert(data.host == core.utils.gethostname())
-        ngx.say('{}')
-    end
---- request
-GET /hello
---- wait: 2
---- response_body
-hello world
---- error_log
-the mock backend is hit
---- no_error_log
-[error]
+=== TEST 10: check splunk log
+--- exec
+tail -n 1 ci/pod/vector/splunk.log
+--- response_body eval
+qr/.*logger format in plugin.*/
 
 
 
@@ -388,7 +309,7 @@ the mock backend is hit
                 upstream = {
                     type = "roundrobin",
                     nodes = {
-                        ["127.0.0.1:1980"] = 1
+                        ["127.0.0.1:1982"] = 1
                     }
                 },
                 plugins = {
@@ -396,6 +317,12 @@ the mock backend is hit
                         endpoint = {
                             uri = "http://127.0.0.1:18088/services/collector",
                             token = "BD274822-96AA-4DA6-90EC-18940FB2414C"
+                        },
+                        log_format = {
+                            host = "$host",
+                            "case name": "test batched data",
+                            ["@timestamp"] = "$time_iso8601",
+                            vip = "$remote_addr"
                         },
                         batch_max_size = 3,
                         inactive_timeout = 1
@@ -406,7 +333,13 @@ the mock backend is hit
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.say(body)
+            local code, _, body2 = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.say(passed)
         }
     }
 --- response_body
@@ -414,11 +347,8 @@ passed
 
 
 
-=== TEST 12: hit
---- pipelined_requests eval
-["GET /hello", "GET /hello", "GET /hello"]
---- wait: 2
+=== TEST 12: check splunk log
+--- exec
+tail -n 1 ci/pod/vector/splunk.log
 --- response_body eval
-["hello world\n", "hello world\n", "hello world\n"]
---- no_error_log
-[error]
+qr/.*test batched data.*/
