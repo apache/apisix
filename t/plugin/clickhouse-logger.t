@@ -212,7 +212,7 @@ passed
 
 
 
-=== TEST 10: hit route
+=== TEST 6: hit route
 --- request
 GET /opentracing
 --- error_code: 200
@@ -220,7 +220,7 @@ GET /opentracing
 
 
 
-=== TEST 11: get log
+=== TEST 7: get log
 --- exec
 echo "select * from default.test" | curl 'http://localhost:8123/' --data-binary @-
 echo "select * from default.test" | curl 'http://localhost:8124/' --data-binary @-
@@ -229,7 +229,7 @@ echo "select * from default.test" | curl 'http://localhost:8124/' --data-binary 
 
 
 
-=== TEST 9: use single clickhouse server
+=== TEST 8: use single clickhouse server
 --- config
     location /t {
         content_by_lua_block {
@@ -267,7 +267,7 @@ passed
 
 
 
-=== TEST 10: hit route
+=== TEST 9: hit route
 --- request
 GET /opentracing
 --- error_code: 200
@@ -275,7 +275,7 @@ GET /opentracing
 
 
 
-=== TEST 11: get log
+=== TEST 10: get log
 --- exec
 echo "select * from default.test" | curl 'http://localhost:8123/' --data-binary @-
 --- response_body_like
