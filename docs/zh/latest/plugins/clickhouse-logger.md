@@ -84,6 +84,7 @@ docker run -d -p 8123:8123 -p 9000:9000 -p 9009:9009 --name some-clickhouse-serv
 
 ```shell
 echo "CREATE TABLE default.test (\`host\` String, \`client_ip\` String, \`route_id\` String, \`service_id\` String, \`@timestamp\` String, PRIMARY KEY(\`@timestamp\`)) ENGINE = MergeTree()" | curl 'http://localhost:8123/'
+```
 
 ## 启用插件
 
