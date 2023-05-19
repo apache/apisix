@@ -1479,6 +1479,6 @@ Proto resource request address: /apisix/admin/protos/{id}
 
 | Parameter   | Required | Type     | Description                                                         | Example                       |
 | ----------- | -------- | -------- | ------------------------------------------------------------------- | ----------------------------- |
-| content   | True    | String | content of .proto or .pb files | See [here](./plugins/grpc-transcode.md#enabling-the-plugin)         |
+| content   | True    | String | content of `.proto` or `.pb` files | See [here](./plugins/grpc-transcode.md#enabling-the-plugin)         |
 | create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
 | update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
