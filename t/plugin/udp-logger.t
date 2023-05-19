@@ -362,11 +362,13 @@ GET /t
 passed
 
 
+
 === TEST 10: log format in plugin_metadata
 --- exec
 tail -n 1 ci/pod/vector/udp.log
 --- response_body eval
 qr/.*plugin_metadata.*/
+
 
 
 === TEST 11: log format in plugin
@@ -430,6 +432,7 @@ qr/.*plugin_metadata.*/
 GET /t
 --- response_body
 passed
+
 
 
 === TEST 12: log format in plugin_metadata
