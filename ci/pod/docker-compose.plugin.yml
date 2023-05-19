@@ -332,6 +332,14 @@ services:
     networks:
       clickhouse_net:
 
+  clickhouse2:
+    image: clickhouse/clickhouse-server:23.4.2-alpine
+    container_name: clickhouse2
+    ports:
+      - '8124:8123'
+    networks:
+      clickhouse_net:
+
 networks:
   apisix_net:
   kafka_net:
