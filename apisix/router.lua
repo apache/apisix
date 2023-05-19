@@ -34,7 +34,7 @@ end
 
 local function filter(route, pre_route_obj, size)
     route.orig_modifiedIndex = route.modifiedIndex
-    route.update_count = 0 
+    route.update_count = 0
 
     route.has_domain = false
     if route.value then
@@ -43,11 +43,11 @@ local function filter(route, pre_route_obj, size)
         elseif route.value.hosts then
             for i, v in ipairs(route.value.hosts) do
                 route.value.hosts[i] = str_lower(v)
-            end 
-        end 
+            end
+        end
 
         apisix_upstream.filter_upstream(route.value.upstream, route)
-    end 
+    end
 
     core.log.info("filter route: ", core.json.delay_encode(route, true))
 
@@ -60,13 +60,13 @@ local function filter(route, pre_route_obj, size)
             if not uri_router then
                 error("create radixtree in init worker phase failed.", #pre_route_obj.values)
                 return
-            end 
+            end
 
             _M.uri_router = uri_router
-        end 
+        end
 
         return
-    end 
+    end
 
     --only sync_data()'s filter() goes here
     local router_module = require("apisix.router")
@@ -131,7 +131,7 @@ local function filter(route, pre_route_obj, size)
             remote_addrs = pre_route_obj.value.remote_addrs or pre_route_obj.value.remote_addr,
             vars = pre_route_obj.value.vars
         }
-
+    
         if route.value then
             --update route
             core.log.notice("update routes watched from etcd into radixtree.", json.encode(route))
@@ -163,6 +163,7 @@ local function filter(route, pre_route_obj, size)
     end
 end
 
+
 -- attach common methods if the router doesn't provide its custom implementation
 local function attach_http_router_common_methods(http_router)
     if http_router.routes == nil then
@@ -183,8 +184,6 @@ local function attach_http_router_common_methods(http_router)
     end
 end
 
-local uri_routes = {}
-
 function _M.http_init_worker()
     local conf = core.config.local_conf()
     local router_http_name = "radixtree_uri"
@@ -198,7 +197,6 @@ function _M.http_init_worker()
     local router_http = require("apisix.http.router." .. router_http_name)
     attach_http_router_common_methods(router_http)
     router_http.init_worker(filter)
-
     _M.router_http = router_http
 
     local router_ssl = require("apisix.ssl.router." .. router_ssl_name)

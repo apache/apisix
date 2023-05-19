@@ -19,21 +19,10 @@ local core = require("apisix.core")
 local base_router = require("apisix.http.route")
 local router = require("apisix.router")
 
-
 local _M = {version = 0.2}
-
 
     local match_opts = {}
 function _M.match(api_ctx)
-    local user_routes = _M.user_routes
-
-    return _M.matching(api_ctx)
-end
-
-
-function _M.matching(api_ctx)
-    core.log.info("route match mode: radixtree_uri")
-
     return base_router.match_uri(router.uri_router, match_opts, api_ctx)
 end
 
