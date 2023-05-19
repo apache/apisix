@@ -21,6 +21,9 @@ local ngx_now         = ngx.now
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
+local table_insert    = core.table.insert
+local table_concat    = core.table.concat
+local ipairs          = ipairs
 
 
 local DEFAULT_SPLUNK_HEC_ENTRY_SOURCE = "apache-apisix-splunk-hec-logging"
@@ -127,10 +130,15 @@ local function send_to_splunk(conf, entries)
 
     local http_new = http.new()
     http_new:set_timeout(conf.endpoint.timeout * 1000)
+    local t = {}
+    for _, e in ipairs(entries) do
+        table_insert(t, core.json.encode(e))
+    end
+
     local res, err = http_new:request_uri(conf.endpoint.uri, {
         ssl_verify = conf.ssl_verify,
         method = "POST",
-        body = core.json.encode(entries),
+        body = table_concat(t),
         headers = request_headers,
     })
 

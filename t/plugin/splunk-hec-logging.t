@@ -287,9 +287,9 @@ passed
         local data = ngx.req.get_body_data()
         ngx.log(ngx.WARN, data)
         data = decode(data)
-        assert(data[1].event.client_ip == "127.0.0.1")
-        assert(data[1].source == "apache-apisix-splunk-hec-logging")
-        assert(data[1].host == core.utils.gethostname())
+        assert(data.event.client_ip == "127.0.0.1")
+        assert(data.source == "apache-apisix-splunk-hec-logging")
+        assert(data.host == core.utils.gethostname())
         ngx.say('{}')
     end
 --- request
@@ -361,9 +361,9 @@ passed
         local data = ngx.req.get_body_data()
         ngx.log(ngx.WARN, data)
         data = decode(data)
-        assert(data[1].event.vip == "127.0.0.1")
-        assert(data[1].source == "apache-apisix-splunk-hec-logging")
-        assert(data[1].host == core.utils.gethostname())
+        assert(data.event.vip == "127.0.0.1")
+        assert(data.source == "apache-apisix-splunk-hec-logging")
+        assert(data.host == core.utils.gethostname())
         ngx.say('{}')
     end
 --- request
@@ -373,5 +373,52 @@ GET /hello
 hello world
 --- error_log
 the mock backend is hit
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: set route test batched data
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["splunk-hec-logging"] = {
+                        endpoint = {
+                            uri = "http://127.0.0.1:18088/services/collector",
+                            token = "BD274822-96AA-4DA6-90EC-18940FB2414C"
+                        },
+                        batch_max_size = 3,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 12: hit
+--- pipelined_requests eval
+["GET /hello", "GET /hello", "GET /hello"]
+--- wait: 2
+--- response_body eval
+["hello world\n", "hello world\n", "hello world\n"]
 --- no_error_log
 [error]
