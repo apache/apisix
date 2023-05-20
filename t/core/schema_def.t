@@ -82,3 +82,60 @@ __DATA__
     }
 --- response_body
 passed
+
+
+
+=== TEST 2: Missing required fields of global_rule.
+--- config
+    location /t {
+        content_by_lua_block {
+            local schema_def = require("apisix.schema_def")
+            local core = require("apisix.core")
+
+            local cases = {
+                {},
+                { id = "ADfwefq12D9s" },
+                { id = 1 },
+                {
+                    plugins = {
+                        foo = "bar",
+                    },
+                },
+            }
+            for _, c in ipairs(cases) do
+                local ok, err = core.schema.check(schema_def.global_rule, c)
+                assert(not ok)
+                assert(err ~= nil)
+                ngx.say("ok: ", ok, " err: ", err)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+qr/ok: false err: property "(id|plugins)" is required/
+
+
+
+=== TEST 3: Sanity check with minimal valid configuration.
+--- config
+    location /t {
+        content_by_lua_block {
+            local schema_def = require("apisix.schema_def")
+            local core = require("apisix.core")
+
+            local case = {
+                id = 1,
+                plugins = {},
+            }
+
+            local ok, err = core.schema.check(schema_def.global_rule, case)
+            assert(ok)
+            assert(err == nil)
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
