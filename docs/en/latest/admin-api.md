@@ -1453,3 +1453,31 @@ HTTP/1.1 200 OK
 ### Response Parameters
 
 Currently, the response is returned from etcd.
+
+## Proto
+
+Proto is used to store protocol buffers so that APISIX can communicate in gRPC.
+
+See [grpc-transcode plugin](./plugins/grpc-transcode.md#enabling-the-plugin) doc for more examples.
+
+### Proto API
+
+Proto resource request address: /apisix/admin/protos/{id}
+
+### Request Methods
+
+| Method | Request URI                      | Request Body | Description                                     |
+| ------ | -------------------------------- | ------------ | ----------------------------------------------- |
+| GET    | /apisix/admin/protos      | NULL         | List all Protos.  |
+| GET    | /apisix/admin/protos/{id} | NULL         | Get a Proto by id.     |
+| PUT    | /apisix/admin/protos/{id} | {...}        | Create or update a Proto with the given id.        |
+| POST   | /apisix/admin/protos      | {...}        | Create a Proto with a random id.         |
+| DELETE | /apisix/admin/protos/{id} | NULL         | Delete Proto by id.                 |
+
+### Request Body Parameters
+
+| Parameter   | Required | Type     | Description                                                         | Example                       |
+| ----------- | -------- | -------- | ------------------------------------------------------------------- | ----------------------------- |
+| content   | True    | String | content of `.proto` or `.pb` files | See [here](./plugins/grpc-transcode.md#enabling-the-plugin)         |
+| create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
+| update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
