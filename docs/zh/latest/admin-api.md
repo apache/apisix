@@ -1397,7 +1397,7 @@ Plugin 资源请求地址：/apisix/admin/stream_routes/{id}
 
 ## Secret
 
-安全密钥 (Secret) 表示表示 `密钥管理(Secrets Management)`, 可以使用任何受支持的密钥管理器，例如 `vault`。
+安全密钥 (Secret) 表示表示 `密钥管理(Secrets Management)`，可以使用任何受支持的密钥管理器，例如 `vault`。
 
 ### 安全密钥 API {#secret-config-uri}
 
@@ -1411,7 +1411,7 @@ Plugin 资源请求地址：/apisix/admin/stream_routes/{id}
 | GET  | /apisix/admin/secrets/{manager}/{id} | NULL  | 按 ID 获取指定的密钥。           |
 | PUT  | /apisix/admin/secrets/{manager}            | {...} | 创建新密钥配置。                              |
 | DELETE | /apisix/admin/secrets/{manager}/{id} | NULL   | 删除指定 ID 的密钥。 |
-| PATCH  | /apisix/admin/secrets/{manager}/{id}        | {...} | 更新指定存在密钥的选定属性。要删除属性,将属性的值设置为 null。|
+| PATCH  | /apisix/admin/secrets/{manager}/{id}        | {...} | 更新指定存在密钥的选定属性。要删除属性，将属性的值设置为 null。|
 | PATCH  | /apisix/admin/secrets/{manager}/{id}/{path} | {...} | 更新路径中指定的属性。其他属性的值保持不变。
 
 ### body 请求参数 {#secret-config-body-requset-parameters}
@@ -1457,4 +1457,4 @@ HTTP/1.1 200 OK
 
 ### 响应参数 {#secret-config-response-parameters}
 
-当前,响应是从 etcd 返回的。
+当前，响应是从 etcd 返回的。
