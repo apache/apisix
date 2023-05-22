@@ -84,6 +84,9 @@ jobs:
           if [[ $test_dir =~ 't/plugin' ]]; then
             echo "type=plugin" >>$GITHUB_OUTPUT
           fi
+          if [[ $test_dir =~ 't/fips' ]]; then
+            echo "type=plugin" >>$GITHUB_OUTPUT
+          fi
           if [[ $test_dir =~ 't/admin' ]]; then
             echo "type=first" >>$GITHUB_OUTPUT
           fi
