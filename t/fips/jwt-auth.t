@@ -142,10 +142,9 @@ passed
             )
 
             ngx.status = code
-            ngx.print(res)
         }
     }
---- error_code: 500
+--- error_code: 401
 --- error_log
 JWT token invalid: invalid jwt string
 
@@ -233,10 +232,9 @@ passed
             )
 
             ngx.status = code
-            ngx.print(res)
         }
     }
---- error_code: 500
+--- error_code: 401
 --- error_log
 JWT token invalid: invalid jwt string
 
@@ -262,9 +260,8 @@ JWT token invalid: invalid jwt string
             )
 
             ngx.status = code
-            ngx.print(res)
         }
     }
---- error_code: 500
+--- error_code: 401
 --- error_log
 JWT token invalid: invalid jwt string

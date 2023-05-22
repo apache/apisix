@@ -33,31 +33,6 @@ __DATA__
             local json = require("toolkit.json")
             local ssl_cert = t.read_file("t/certs/server_1024.crt")
             local ssl_key = t.read_file("t/certs/server_1024.key")
-            local data = {
-                upstream = {
-                    scheme = "https",
-                    type = "roundrobin",
-                    nodes = {
-                        ["127.0.0.1:1994"] = 1,
-                    },
-                },
-                plugins = {
-                    ["proxy-rewrite"] = {
-                        uri = "/hello"
-                    }
-                },
-                uri = "/fips"
-            }
-            local code, body = t.test('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                json.encode(data)
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
 
             local data = {
                 upstream = {
@@ -68,7 +43,7 @@ __DATA__
                 },
                 uri = "/hello"
             }
-            assert(t.test('/apisix/admin/routes/2',
+            assert(t.test('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 json.encode(data)
             ))
@@ -78,7 +53,7 @@ __DATA__
                 key = ssl_key,
                 sni = "localhost",
             }
-            local code, body = t.test('/apisix/admin/ssls/1',
+            local code = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 json.encode(data)
             )
@@ -86,7 +61,6 @@ __DATA__
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.print(body)
         }
     }
 --- request
@@ -94,11 +68,8 @@ GET /t
 
 
 
-=== TEST 2: failed expected
---- request
-GET /fips
---- more_headers
-Host: localhost
---- error_code: 502
+=== TEST 2: curl failed
+--- exec
+curl -k https://localhost:1994/hello -H "Host: localhost"
 --- error_log
 failed to set PEM cert: SSL_use_certificate() failed
