@@ -189,7 +189,8 @@ local function run_watch(premature)
             if not res then
                 if err ~= "closed" and
                     err ~= "timeout" and
-                    err ~= "broken pipe" then
+                    err ~= "broken pipe"
+                then
                     log.error("wait watch event: ", err)
                 end
                 cancel_watch(http_cli)
@@ -225,16 +226,16 @@ local function run_watch(premature)
                 end
             end
 
-            for i = 1,min_idx-1 do
+            for i = 1, min_idx - 1 do
                 watch_ctx.res[i] = false
             end
 
             if min_idx > 100 then
                 for k, idx in pairs(watch_ctx.idx) do
-                    watch_ctx.idx[k] = idx-min_idx+1
+                    watch_ctx.idx[k] = idx - min_idx + 1
                 end
                 -- trim the res table
-                for i = 1,min_idx-1 do
+                for i = 1, min_idx - 1 do
                     table.remove(watch_ctx.res, 1)
                 end
             end
@@ -367,8 +368,8 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
     end
 
     ::iterate_events::
-    for i = watch_ctx.idx[key],#watch_ctx.res do
-        watch_ctx.idx[key] = i+1
+    for i = watch_ctx.idx[key], #watch_ctx.res do
+        watch_ctx.idx[key] = i + 1
 
         local item = watch_ctx.res[i]
         if item == false then
