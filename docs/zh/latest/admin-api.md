@@ -1397,7 +1397,7 @@ Plugin 资源请求地址：/apisix/admin/stream_routes/{id}
 
 ## Secret
 
-安全密钥(Secret)表示`密钥管理(Secrets Management)`),可以使用任何受支持的密钥管理器,例如`vault`。
+安全密钥(Secret)表示 `密钥管理(Secrets Management)`, 可以使用任何受支持的密钥管理器,例如 `vault`。
 
 ### 安全密钥 API {#secret-config-uri}
 
@@ -1418,11 +1418,11 @@ Plugin 资源请求地址：/apisix/admin/stream_routes/{id}
 
 当 `{secretmanager}` 是 vault 时:
 
-| Parameter   | Required | Type        | Description                                                                                                        | Example                                          |
+| 名称  | 必选项 | 类型        | 描述                                                                                                        | 例子                                          |
 | ----------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| uri    | True     | URI        |  vault 服务器的URI                                                 |                                                  |
-| prefix    | True    | string        | 密钥前缀
-| token     | True    | string      | vault 令牌 |                                                  | 
+| uri    | 是     | URI        |  vault 服务器的URI                                                 |                                                  |
+| prefix    | 是    | 字符串       | 密钥前缀
+| token     | 是    | 字符串     | vault 令牌 |                                                  | 
 
 
 示例配置:
