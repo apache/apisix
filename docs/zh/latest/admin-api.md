@@ -1397,35 +1397,35 @@ Plugin 资源请求地址：/apisix/admin/stream_routes/{id}
 
 ## Secret
 
-安全密钥(Secret)表示 `密钥管理(Secrets Management)`, 可以使用任何受支持的密钥管理器,例如 `vault`。
+安全密钥 (Secret) 表示表示 `密钥管理(Secrets Management)`, 可以使用任何受支持的密钥管理器，例如 `vault`。
 
 ### 安全密钥 API {#secret-config-uri}
 
-安全密钥资源请求地址: /apisix/admin/secrets/{secretmanager}/{id}
+安全密钥资源请求地址：/apisix/admin/secrets/{secretmanager}/{id}
 
 ### 请求方法 {#secret-config-request-methods}
 
 | 名称 | 请求 URI                        | 请求 body | 描述                                       | 
 | :--: | :----------------------------: | :---: | :---------------------------------------: |
 | GET  | /apisix/admin/secrets            | NULL  | 获取所有密钥的列表。                  |
-| GET  | /apisix/admin/secrets/{manager}/{id} | NULL  | 按ID获取指定的密钥。           |
+| GET  | /apisix/admin/secrets/{manager}/{id} | NULL  | 按 ID 获取指定的密钥。           |
 | PUT  | /apisix/admin/secrets/{manager}            | {...} | 创建新密钥配置。                              |
-| DELETE | /apisix/admin/secrets/{manager}/{id} | NULL   | 删除指定ID的密钥。 |
-| PATCH  | /apisix/admin/secrets/{manager}/{id}        | {...} | 更新指定存在密钥的选定属性。要删除属性,将属性的值设置为null。|
+| DELETE | /apisix/admin/secrets/{manager}/{id} | NULL   | 删除指定 ID 的密钥。 |
+| PATCH  | /apisix/admin/secrets/{manager}/{id}        | {...} | 更新指定存在密钥的选定属性。要删除属性,将属性的值设置为 null。|
 | PATCH  | /apisix/admin/secrets/{manager}/{id}/{path} | {...} | 更新路径中指定的属性。其他属性的值保持不变。
 
 ### body 请求参数 {#secret-config-body-requset-parameters}
 
-当 `{secretmanager}` 是 vault 时:
+当 `{secretmanager}` 是 vault 时：
 
 | 名称  | 必选项 | 类型        | 描述                                                                                                        | 例子                                          |
 | ----------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| uri    | 是     | URI        |  vault 服务器的URI                                                 |                                                  |
+| uri    | 是     | URI        |  vault 服务器的 URI                                                 |                                                  |
 | prefix    | 是    | 字符串       | 密钥前缀
 | token     | 是    | 字符串     | vault 令牌 |                                                  | 
 
 
-示例配置:
+示例配置：
 
 ```shell
 {
@@ -1436,7 +1436,7 @@ Plugin 资源请求地址：/apisix/admin/stream_routes/{id}
 
 ```
 
-示例API使用:
+示例 API 使用:
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/secrets/vault/test2 \
@@ -1457,4 +1457,4 @@ HTTP/1.1 200 OK
 
 ### 响应参数 {#secret-config-response-parameters}
 
-当前,响应是从etcd返回的。
+当前,响应是从 etcd 返回的。
