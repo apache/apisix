@@ -28,6 +28,8 @@ local etcd_apisix  = require("apisix.core.etcd")
 local core_str     = require("apisix.core.string")
 local new_tab      = require("table.new")
 local inspect      = require("inspect")
+local errlog       = require("ngx.errlog")
+local log_level    = errlog.get_sys_filter_level()
 local check_schema = require("apisix.core.schema").check
 local exiting      = ngx.worker.exiting
 local insert_tab   = table.insert
@@ -110,7 +112,9 @@ end
 
 -- append res to the queue and notify pending watchers
 local function produce_res(res, err)
-    log.info("append res: ", inspect(res), ", err: ", inspect(err))
+    if log_level >= ngx.INFO then
+        log.info("append res: ", inspect(res), ", err: ", inspect(err))
+    end
     insert_tab(watch_ctx.res, {res=res, err=err})
     for _, sema in pairs(watch_ctx.sema) do
         sema:post()
@@ -184,7 +188,9 @@ local function run_watch(premature)
         ::watch_event::
         while true do
             local res, err = res_func()
-            log.info("res_func: ", inspect(res))
+            if log_level >= ngx.INFO then
+                log.info("res_func: ", inspect(res))
+            end
 
             if not res then
                 if err ~= "closed" and
@@ -400,7 +406,9 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
                     insert_tab(res2.result.events, evt)
                 end
             end
-            log.info("http_waitdir: ", inspect(res2))
+            if log_level >= ngx.INFO then
+                log.info("http_waitdir: ", inspect(res2))
+            end
             return res2
         end
     end
