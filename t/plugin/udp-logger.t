@@ -440,4 +440,3 @@ passed
 tail -n 1 ci/pod/vector/udp.log
 --- response_body eval
 qr/.*logger format in plugin.*/
-
