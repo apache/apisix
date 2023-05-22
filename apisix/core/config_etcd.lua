@@ -30,6 +30,7 @@ local new_tab      = require("table.new")
 local inspect      = require("inspect")
 local errlog       = require("ngx.errlog")
 local log_level    = errlog.get_sys_filter_level()
+local NGX_INFO     = ngx.INFO
 local check_schema = require("apisix.core.schema").check
 local exiting      = ngx.worker.exiting
 local insert_tab   = table.insert
@@ -112,7 +113,7 @@ end
 
 -- append res to the queue and notify pending watchers
 local function produce_res(res, err)
-    if log_level >= ngx.INFO then
+    if log_level >= NGX_INFO then
         log.info("append res: ", inspect(res), ", err: ", inspect(err))
     end
     insert_tab(watch_ctx.res, {res=res, err=err})
@@ -188,7 +189,7 @@ local function run_watch(premature)
         ::watch_event::
         while true do
             local res, err = res_func()
-            if log_level >= ngx.INFO then
+            if log_level >= NGX_INFO then
                 log.info("res_func: ", inspect(res))
             end
 
@@ -406,7 +407,7 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
                     insert_tab(res2.result.events, evt)
                 end
             end
-            if log_level >= ngx.INFO then
+            if log_level >= NGX_INFO then
                 log.info("http_waitdir: ", inspect(res2))
             end
             return res2
