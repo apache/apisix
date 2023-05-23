@@ -53,7 +53,7 @@ address = "0.0.0.0:5150"
 mode = "udp"
 
 [sinks.log-2-console]
-inputs = [ "log-from-tcp",  "log-from-tls", "log-from-syslog-tcp", "log-from-syslog-udp" ,"log-from-udp"]
+inputs = [ "log-from-tcp",  "log-from-tls", "log-from-syslog-tcp", "log-from-syslog-udp", "log-from-udp"]
 type = "console"
 encoding.codec = "json"
 
