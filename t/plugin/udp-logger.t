@@ -405,6 +405,7 @@ qr/.*plugin_metadata.*/
                 ngx.say(body)
                 return
             end
+
             local code, body = t('/apisix/admin/plugin_metadata/udp-logger',
                  ngx.HTTP_PUT,
                  [[{
@@ -416,11 +417,13 @@ qr/.*plugin_metadata.*/
                         }
                 }]]
                 )
+
             if code >= 300 then
                 ngx.status = code
                 ngx.say(body)
                 return
             end
+            
             ngx.say(body)
             local code, _, _ = t("/hello", "GET")
             if code >= 300 then
