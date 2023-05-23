@@ -32,6 +32,7 @@ jobs:
           # all SSL related core tests are covered by below two lists.
           - t/admin/ssl* t/admin/schema.t t/admin/upstream.t t/config-center-yaml/ssl.t t/core/etcd-mtls.t t/core/config_etcd.t t/deployment/conf_server.t t/misc/patch.t
           - t/node/grpc-proxy-unary.t t/node/upstream-keepalive-pool.t t/node/upstream-websocket.t t/node/client-mtls.t t/node/upstream-mtls.t t/pubsub/kafka.t t/router/radixtree-sni2.t t/router/multi-ssl-certs.t t/router/radixtree-sni.t t/stream-node/mtls.t t/stream-node/tls.t t/stream-node/upstream-tls.t t/stream-node/sni.t
+          - t/fips
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 90
@@ -81,6 +82,9 @@ jobs:
         run: |
           test_dir="${{ matrix.test_dir }}"
           if [[ $test_dir =~ 't/plugin' ]]; then
+            echo "type=plugin" >>$GITHUB_OUTPUT
+          fi
+          if [[ $test_dir =~ 't/fips' ]]; then
             echo "type=plugin" >>$GITHUB_OUTPUT
           fi
           if [[ $test_dir =~ 't/admin' ]]; then
