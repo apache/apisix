@@ -102,7 +102,55 @@ property "endpoint" validation failed: property "uri" validation failed.*
 
 
 
-=== TEST 2: set route (success write)
+=== TEST 2: set route (failed auth)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["splunk-hec-logging"] = {
+                        endpoint = {
+                            uri = "http://127.0.0.1:18088/services/collector",
+                            token = "BD274822-96AA-4DA6-90EC-18940FB24444"
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 3: test route (failed auth)
+--- request
+GET /hello
+--- wait: 2
+--- response_body
+hello world
+--- error_log
+Batch Processor[splunk-hec-logging] failed to process entries: failed to send splunk, Invalid token
+Batch Processor[splunk-hec-logging] exceeded the max_retry_count
+
+
+
+=== TEST 4: set route (success write)
 --- config
     location /t {
         content_by_lua_block {
@@ -138,7 +186,7 @@ passed
 
 
 
-=== TEST 3: test route (success write)
+=== TEST 5: test route (success write)
 --- request
 GET /hello
 --- wait: 2
@@ -147,7 +195,7 @@ hello world
 
 
 
-=== TEST 4: bad custom log format
+=== TEST 6: bad custom log format
 --- config
     location /t {
         content_by_lua_block {
@@ -172,7 +220,7 @@ hello world
 
 
 
-=== TEST 5: set route to test custom log format
+=== TEST 7: set route to test custom log format
 --- config
     location /t {
         content_by_lua_block {
@@ -228,7 +276,7 @@ passed
 
 
 
-=== TEST 6: check splunk log
+=== TEST 8: check splunk log
 --- exec
 tail -n 1 ci/pod/vector/splunk.log
 --- response_body eval
@@ -236,7 +284,7 @@ qr/.*test custom log format in plugin.*/
 
 
 
-=== TEST 7: set route to test custom log format in route
+=== TEST 9: set route to test custom log format in route
 --- config
     location /t {
         content_by_lua_block {
@@ -292,7 +340,7 @@ passed
 
 
 
-=== TEST 8: check splunk log
+=== TEST 10: check splunk log
 --- exec
 tail -n 1 ci/pod/vector/splunk.log
 --- response_body eval
@@ -300,7 +348,7 @@ qr/.*logger format in plugin.*/
 
 
 
-=== TEST 9: set route test batched data
+=== TEST 11: set route test batched data
 --- config
     location /t {
         content_by_lua_block {
@@ -359,7 +407,7 @@ passed
 
 
 
-=== TEST 10: check splunk log
+=== TEST 12: check splunk log
 --- exec
 tail -n 1 ci/pod/vector/splunk.log
 --- response_body eval
