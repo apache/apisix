@@ -51,6 +51,9 @@ after() {
     # configure keycloak
     docker exec apisix_keycloak bash /tmp/kcadm_configure_cas.sh
     docker exec apisix_keycloak bash /tmp/kcadm_configure_university.sh
+
+    echo 'CREATE TABLE default.test (`host` String, `client_ip` String, `route_id` String, `service_id` String, `@timestamp` String, PRIMARY KEY(`@timestamp`)) ENGINE = MergeTree()' | curl 'http://localhost:8123/' --data-binary @-
+    echo 'CREATE TABLE default.test (`host` String, `client_ip` String, `route_id` String, `service_id` String, `@timestamp` String, PRIMARY KEY(`@timestamp`)) ENGINE = MergeTree()' | curl 'http://localhost:8124/' --data-binary @-
 }
 
 before() {
