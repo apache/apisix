@@ -145,7 +145,7 @@ GET /hello
 --- response_body
 hello world
 --- error_log
-Batch Processor[splunk-hec-logging] failed to process entries: failed to send splunk, Invalid token
+Batch Processor[splunk-hec-logging] failed to process entries: failed to send splunk, Invalid authorization
 Batch Processor[splunk-hec-logging] exceeded the max_retry_count
 
 
