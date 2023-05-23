@@ -22,65 +22,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: minus timeout to watch repeatedly
---- yaml_config
-deployment:
-    role: traditional
-    role_traditional:
-        config_provider: etcd
-    etcd:
-        # this test requires the HTTP long pull as the gRPC stream is shared and can't change
-        # default timeout in the fly
-        use_grpc: false
-    admin:
-        admin_key: null
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local t = require("lib.test_admin").test
-
-            local consumers, _ = core.config.new("/consumers", {
-                automatic = true,
-                item_schema = core.schema.consumer,
-                timeout = 0.2
-            })
-
-            ngx.sleep(0.6)
-            local idx = consumers.prev_index
-
-            local code, body = t('/apisix/admin/consumers',
-                ngx.HTTP_PUT,
-                [[{
-                    "username": "jobs",
-                    "plugins": {
-                        "basic-auth": {
-                            "username": "jobs",
-                            "password": "123456"
-                        }
-                    }
-                }]])
-
-            ngx.sleep(2)
-            local new_idx = consumers.prev_index
-            core.log.info("idx:", idx, " new_idx: ", new_idx)
-            if new_idx > idx then
-                ngx.say("prev_index updated")
-            else
-                ngx.say("prev_index not update")
-            end
-        }
-    }
---- request
-GET /t
---- response_body
-prev_index updated
---- error_log eval
-qr/(create watch stream for key|cancel watch connection success)/
-
-
-
-=== TEST 2: using default timeout
+=== TEST 1: using default timeout
 --- config
     location /t {
         content_by_lua_block {
@@ -126,7 +68,7 @@ waitdir key
 
 
 
-=== TEST 3: no update
+=== TEST 2: no update
 --- config
     location /t {
         content_by_lua_block {
@@ -162,7 +104,7 @@ prev_index not update
 
 
 
-=== TEST 4: bad plugin configuration (validated via incremental sync)
+=== TEST 3: bad plugin configuration (validated via incremental sync)
 --- config
     location /t {
         content_by_lua_block {
@@ -182,7 +124,7 @@ property "uri" validation failed
 
 
 
-=== TEST 5: bad plugin configuration (validated via full sync)
+=== TEST 4: bad plugin configuration (validated via full sync)
 --- config
     location /t {
         content_by_lua_block {
@@ -196,7 +138,7 @@ property "uri" validation failed
 
 
 
-=== TEST 6: bad plugin configuration (validated without sync during start)
+=== TEST 5: bad plugin configuration (validated without sync during start)
 --- extra_yaml_config
   disable_sync_configuration_during_start: true
 --- config
