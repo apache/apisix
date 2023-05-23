@@ -1407,11 +1407,11 @@ Secret 资源请求地址：/apisix/admin/secrets/{secretmanager}/{id}
 
 | 名称 | 请求 URI                          | 请求 body | 描述                                        |
 | :--: | :----------------------------: | :---: | :---------------------------------------: |
-| GET  | /apisix/admin/secrets            | NULL  | 获取所有密钥的列表。                  |
-| GET  | /apisix/admin/secrets/{manager}/{id} | NULL  | 按 ID 获取指定的密钥。           |
-| PUT  | /apisix/admin/secrets/{manager}            | {...} | 创建新密钥配置。                              |
-| DELETE | /apisix/admin/secrets/{manager}/{id} | NULL   | 删除指定 ID 的密钥。 |
-| PATCH  | /apisix/admin/secrets/{manager}/{id}        | {...} | 更新指定存在密钥的选定属性。要删除属性，将属性的值设置为 null。|
+| GET  | /apisix/admin/secrets            | NULL  | 获取资源列表。                  |
+| GET  | /apisix/admin/secrets/{manager}/{id} | NULL  | 获取资源           |
+| PUT  | /apisix/admin/secrets/{manager}            | {...} | 创建资源。                              |
+| DELETE | /apisix/admin/secrets/{manager}/{id} | NULL   | 删除资源。 |
+| PATCH  | /apisix/admin/secrets/{manager}/{id}        | {...} | 更新指定资源的属性。要删除属性，将属性的值设置为 null。|
 | PATCH  | /apisix/admin/secrets/{manager}/{id}/{path} | {...} | 更新路径中指定的属性。其他属性的值保持不变。
 
 ### body 请求参数 {#secret-config-body-requset-parameters}
