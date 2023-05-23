@@ -1405,7 +1405,7 @@ Plugin 资源请求地址：/apisix/admin/stream_routes/{id}
 
 ### 请求方法 {#secret-config-request-methods}
 
-| 名称 | 请求 URI                        | 请求 body | 描述                                       | 
+| 名称 | 请求 URI                         | 请求 body | 描述                                       |
 | :--: | :----------------------------: | :---: | :---------------------------------------: |
 | GET  | /apisix/admin/secrets            | NULL  | 获取所有密钥的列表。                  |
 | GET  | /apisix/admin/secrets/{manager}/{id} | NULL  | 按 ID 获取指定的密钥。           |
@@ -1422,8 +1422,7 @@ Plugin 资源请求地址：/apisix/admin/stream_routes/{id}
 | ----------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
 | uri    | 是     | URI        |  vault 服务器的 URI                                                 |                                                  |
 | prefix    | 是    | 字符串       | 密钥前缀
-| token     | 是    | 字符串     | vault 令牌 |                                                  | 
-
+| token     | 是    | 字符串       | vault 令牌 |                                                  |
 
 示例配置：
 
@@ -1431,12 +1430,12 @@ Plugin 资源请求地址：/apisix/admin/stream_routes/{id}
 {
     "uri": "https://localhost/vault",
     "prefix": "/apisix/kv",
-    "token": "343effad" 
+    "token": "343effad"
 }
 
 ```
 
-示例 API 使用:
+示例 API 使用：
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/secrets/vault/test2 \
