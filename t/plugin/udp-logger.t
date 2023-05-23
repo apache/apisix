@@ -298,7 +298,7 @@ GET /t
 
 
 
-=== TEST 9: add plugin
+=== TEST 9: configure plugin and access route /hello
 --- config
     location /t {
         content_by_lua_block {
@@ -342,11 +342,13 @@ GET /t
                         }
                 }]]
                 )
+
             if code >= 300 then
                 ngx.status = code
                 ngx.say(body)
                 return
             end
+
             ngx.say(body)
             local code, _, _ = t("/hello", "GET")
             if code >= 300 then
@@ -363,7 +365,7 @@ passed
 
 
 
-=== TEST 10: log format in plugin_metadata
+=== TEST 10: check if log exists to confirm if logging server was hit
 --- exec
 tail -n 1 ci/pod/vector/udp.log
 --- response_body eval
@@ -371,7 +373,7 @@ qr/.*plugin_metadata.*/
 
 
 
-=== TEST 11: log format in plugin
+=== TEST 11: configure plugin and access route /hello
 --- config
     location /t {
         content_by_lua_block {
@@ -435,7 +437,7 @@ passed
 
 
 
-=== TEST 12: log format in plugin_metadata
+=== TEST 12: check log format from logging server
 --- exec
 tail -n 1 ci/pod/vector/udp.log
 --- response_body eval
