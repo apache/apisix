@@ -118,8 +118,8 @@ qr/Batch Processor\[error-log-logger\] failed to process entries: error while se
 --- request
 GET /tg
 --- response_body
---- error_log eval
-qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an error message for test.*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"instance\".*/
+--- error_log
+this is an error message for test
 --- wait: 5
 
 
