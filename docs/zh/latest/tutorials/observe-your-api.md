@@ -219,7 +219,7 @@ curl -i http://127.0.0.1:9080/get
 "X-B3-Traceid": "e18985df47dab632d62083fd96626692",
 ```
 
-你可以通过访问 `http://127.0.0.1:9411/zipkin`，在 Zinkin 的 Web UI 上看到请求链路。
+你可以通过访问 `http://127.0.0.1:9411/zipkin`，在 Zipkin 的 Web UI 上看到请求链路。
 
 ![Zipkin plugin output 1](https://static.apiseven.com/2022/09/14/6321dc27f3d33.png)
 
