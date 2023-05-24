@@ -370,7 +370,7 @@ passed
 
 
 === TEST 10: log format in plugin_metadata
---- execprove
+--- exec
 tail -n 1 ci/pod/vector/tcp.log
 --- response_body eval
 qr/.*plugin_metadata.*/
