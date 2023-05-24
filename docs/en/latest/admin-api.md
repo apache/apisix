@@ -586,6 +586,7 @@ Service resource request address: /apisix/admin/services/{id}
 | labels           | False    | Match Rules | Attributes of the Service specified as key-value pairs.                                                            | {"version":"v2","build":"16","env":"production"} |
 | enable_websocket | False    | Auxiliary   | Enables a websocket. Set to `false` by default.                                                                    |                                                  |
 | path_prefix | False    | String   | Add prefix to uri.                                                                    |                                                  |
+| strip_path_prefix | False    | String   | Remove prefix from uri.                                                                    |                                                  |
 | hosts            | False    | Match Rules | Matches with any one of the multiple `host`s specified in the form of a non-empty list.                            | ["foo.com", "*.bar.com"]                         |
 | create_time      | False    | Auxiliary   | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
 | update_time      | False    | Auxiliary   | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |

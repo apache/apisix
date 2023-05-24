@@ -695,6 +695,13 @@ _M.service = {
             maxLength   = 4096,
             pattern     = [[^\/.*]],
         },
+        strip_path_prefix = {
+            description = "remove prefix from uri",
+            type        = "string",
+            minLength   = 1,
+            maxLength   = 4096,
+            pattern     = [[^\/.*]],
+        },
     },
 }
 
