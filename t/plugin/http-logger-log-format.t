@@ -167,7 +167,6 @@ qr/"\@timestamp":"20/
 
 
 
-
 === TEST 6: sanity, batch_max_size=1 and concat_method is json
 --- config
     location /t {
@@ -289,7 +288,6 @@ qr/\[\{.*?\},\{.*?\}\]/
 
 
 
-
 === TEST 10: remove plugin metadata
 --- config
     location /t {
@@ -401,6 +399,7 @@ tail -n 1 ci/pod/vector/http.log
 --- response_body eval
 qr/"consumer":\{"username":"jack"\}/
 --- wait: 0.5
+
 
 
 === TEST 14: multi level nested expr conditions
