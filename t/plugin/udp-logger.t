@@ -425,7 +425,7 @@ qr/.*plugin_metadata.*/
             end
 
             ngx.say(body)
-            
+
             local code, _, _ = t("/hello", "GET")
             if code >= 300 then
                 ngx.status = code
