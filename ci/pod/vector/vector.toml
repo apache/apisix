@@ -23,6 +23,13 @@ port_key = "port"
 shutdown_timeout_secs = 30
 socket_file_mode = 511
 
+[sources.log-from-udp]
+type = "socket"
+address = "0.0.0.0:8127"
+host_key = "host"
+mode = "udp"
+port_key = "port"
+
 [sources.log-from-tls]
 type = "socket"
 address = "0.0.0.0:43000"
@@ -46,7 +53,7 @@ address = "0.0.0.0:5150"
 mode = "udp"
 
 [sinks.log-2-console]
-inputs = [ "log-from-tcp",  "log-from-tls", "log-from-syslog-tcp", "log-from-syslog-udp" ]
+inputs = [ "log-from-tcp",  "log-from-tls", "log-from-syslog-tcp", "log-from-syslog-udp", "log-from-udp"]
 type = "console"
 encoding.codec = "json"
 
@@ -55,6 +62,12 @@ inputs = [ "log-from-tcp" ]
 type = "file"
 encoding.codec = "text"
 path = "/etc/vector/tcp.log"
+
+[sinks.log-2-udp-file]
+inputs = [ "log-from-udp" ]
+type = "file"
+encoding.codec = "json"
+path = "/etc/vector/udp.log"
 
 [sinks.tls-log-2-file]
 inputs = [ "log-from-tls" ]
