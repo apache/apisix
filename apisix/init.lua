@@ -60,6 +60,7 @@ local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
 local ngx_re_match    = ngx.re.match
+local ngx_req_set_uri = ngx.req.set_uri
 local control_api_router
 
 local is_http = false
@@ -640,6 +641,11 @@ function _M.http_access_phase()
             enable_websocket = service.value.enable_websocket
         end
 
+        if service.value.path_prefix then
+            local uri = service.value.path_prefix .. api_ctx.var.uri
+            api_ctx.var.uri = uri
+            ngx_req_set_uri(uri)
+        end
     else
         api_ctx.conf_type = "route"
         api_ctx.conf_version = route.modifiedIndex

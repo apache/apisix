@@ -688,6 +688,13 @@ _M.service = {
             minItems = 1,
             uniqueItems = true,
         },
+        path_prefix = {
+            description = "add prefix to uri",
+            type        = "string",
+            minLength   = 1,
+            maxLength   = 4096,
+            pattern     = [[^\/.*]],
+        },
     },
 }
 
