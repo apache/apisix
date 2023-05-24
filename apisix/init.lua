@@ -641,19 +641,13 @@ function _M.http_access_phase()
             enable_websocket = service.value.enable_websocket
         end
 
-        local new_uri
-        if service.value.path_prefix then
-            new_uri = service.value.path_prefix .. api_ctx.var.uri
-        elseif service.value.strip_path_prefix then
-            new_uri = api_ctx.var.uri
-            if new_uri:find(service.value.strip_path_prefix) == 1 then
-                new_uri = new_uri:sub(#service.value.strip_path_prefix + 1)
+        if route.value.strip_path_prefix and service.value.path_prefix then
+            local uri = api_ctx.var.uri
+            if uri:find(service.value.path_prefix) == 1 then
+                uri = uri:sub(#service.value.path_prefix + 1)
+                api_ctx.var.uri = uri
+                ngx_req_set_uri(uri)
             end
-        end
-
-        if new_uri then
-            api_ctx.var.uri = new_uri
-            ngx_req_set_uri(new_uri)
         end
     else
         api_ctx.conf_type = "route"

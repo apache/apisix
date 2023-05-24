@@ -31,6 +31,23 @@ local loadstring = loadstring
 local _M = {}
 
 
+function _M.prefix_uris(route, service)
+    if service.value.path_prefix then
+        local uri, uris
+        if route.value.uris then
+            uris = core.table.new(#route.value.uris)
+            for _, uri in ipairs(route.value.uris) do
+                core.table.insert(uris, service.value.path_prefix .. uri)
+            end
+        end
+        if route.value.uri then
+            uri = service.value.path_prefix .. route.value.uri
+        end
+        return uri, uris
+    end
+end
+
+
 function _M.create_radixtree_uri_router(routes, uri_routes, with_parameter)
     routes = routes or {}
 
@@ -58,6 +75,7 @@ function _M.create_radixtree_uri_router(routes, uri_routes, with_parameter)
                 filter_fun = filter_fun()
             end
 
+            local uri, uris
             local hosts = route.value.hosts or route.value.host
             if not hosts and route.value.service_id then
                 local service = service_fetch(route.value.service_id)
@@ -67,13 +85,14 @@ function _M.create_radixtree_uri_router(routes, uri_routes, with_parameter)
                     -- we keep the behavior that missing service won't affect the route matching
                 else
                     hosts = service.value.hosts
+                    uri, uris = _M.prefix_uris(route, service)
                 end
             end
 
             core.log.info("insert uri route: ",
                           core.json.delay_encode(route.value, true))
             core.table.insert(uri_routes, {
-                paths = route.value.uris or route.value.uri,
+                paths = (uris or route.value.uris) or (uri or route.value.uri),
                 methods = route.value.methods,
                 priority = route.value.priority,
                 hosts = hosts,

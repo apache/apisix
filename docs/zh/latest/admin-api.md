@@ -596,8 +596,6 @@ Service 是某类 API 的抽象（也可以理解为一组 Route 的抽象）。
 | desc             | 否                     | 辅助     | 服务描述。                                                          |                                                  |
 | labels           | 否                     | 匹配规则 | 标识附加属性的键值对。                                                 | {"version":"v2","build":"16","env":"production"} |
 | enable_websocket | 否                     | 辅助     | `websocket`(boolean) 配置，默认值为 `false`。                       |                                                  |
-| path_prefix | 否                     | 字符串     | 添加 URI 前缀。                       |                                                  |
-| strip_path_prefix | 否                     | 字符串     | 移除 URI 前缀。                       |                                                  |
 | hosts            | 否                     | 匹配规则 | 非空列表形态的 `host`，表示允许有多个不同 `host`，匹配其中任意一个即可。| ["foo.com", "\*.bar.com"]                        |
 | create_time      | 否                     | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                         | 1602883670                                       |
 | update_time      | 否                     | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                           | 1602883670                                       |

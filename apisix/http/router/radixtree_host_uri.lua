@@ -18,6 +18,7 @@ local require = require
 local router = require("apisix.utils.router")
 local core = require("apisix.core")
 local event = require("apisix.core.event")
+local base_router = require("apisix.http.route")
 local get_services = require("apisix.http.service").services
 local service_fetch = require("apisix.http.service").get
 local ipairs = ipairs
@@ -53,6 +54,7 @@ local function push_host_router(route, host_routes, only_uri_routes)
         filter_fun = filter_fun()
     end
 
+    local uri, uris
     local hosts = route.value.hosts
     if not hosts then
         if route.value.host then
@@ -66,11 +68,12 @@ local function push_host_router(route, host_routes, only_uri_routes)
             else
                 hosts = service.value.hosts
             end
+            uri, uris = base_router.prefix_uris(route, service)
         end
     end
 
     local radixtree_route = {
-        paths = route.value.uris or route.value.uri,
+        paths = (uris or route.value.uris) or (uri or route.value.uri),
         methods = route.value.methods,
         priority = route.value.priority,
         remote_addrs = route.value.remote_addrs

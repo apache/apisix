@@ -596,6 +596,9 @@ _M.route = {
         labels = labels_def,
 
         service_id = id_schema,
+
+        strip_path_prefix = {type = "boolean", default = false},
+
         upstream_id = id_schema,
 
         enable_websocket = {
@@ -690,13 +693,6 @@ _M.service = {
         },
         path_prefix = {
             description = "add prefix to uri",
-            type        = "string",
-            minLength   = 1,
-            maxLength   = 4096,
-            pattern     = [[^\/.*]],
-        },
-        strip_path_prefix = {
-            description = "remove prefix from uri",
             type        = "string",
             minLength   = 1,
             maxLength   = 4096,

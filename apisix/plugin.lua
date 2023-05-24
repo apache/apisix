@@ -620,6 +620,10 @@ local function merge_service_route(service_conf, route_conf)
         new_conf.value.labels = route_conf.value.labels
     end
 
+    if route_conf.value.strip_path_prefix then
+        new_conf.value.strip_path_prefix = route_conf.value.strip_path_prefix
+    end
+
     -- core.log.info("merged conf : ", core.json.delay_encode(new_conf))
     return new_conf
 end
