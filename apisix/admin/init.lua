@@ -104,9 +104,10 @@ local function check_token(ctx)
     return true
 end
 
--- Set the `apictx` variable and check admin api token, when the check fails, an error
--- response will be returned. This is a higher wrapper for `check_token` function.
--- @returns A boolean value indicates whether the check passed.
+-- Set the `apictx` variable and check admin api token, if the check fails, the current
+-- request will be interrupted and an error response will be returned.
+--
+-- NOTE: This is a higher wrapper for `check_token` function.
 local function set_ctx_and_check_token()
     local api_ctx = {}
     core.ctx.set_vars_meta(api_ctx)
@@ -116,13 +117,8 @@ local function set_ctx_and_check_token()
     if not ok then
         core.log.warn("failed to check token: ", err)
         core.response.exit(401, { error_msg = "failed to check token" })
-        return false
-    else
-        return true
     end
 end
-
-
 
 
 local function strip_etcd_resp(data)
@@ -162,9 +158,7 @@ end
 
 
 local function run()
-    if not set_ctx_and_check_token() then
-        return
-    end
+    set_ctx_and_check_token()
 
     local uri_segs = core.utils.split_uri(ngx.var.uri)
     core.log.info("uri: ", core.json.delay_encode(uri_segs))
@@ -258,9 +252,7 @@ end
 
 
 local function get_plugins_list()
-    if not set_ctx_and_check_token() then
-        return
-    end
+    set_ctx_and_check_token()
 
     local plugins = resources.plugins.get_plugins_list()
     core.response.exit(200, plugins)
@@ -268,9 +260,7 @@ end
 
 -- Handle unsupported request methods for the virtual "reload" plugin
 local function unsupported_methods_reload_plugin()
-    if not set_ctx_and_check_token() then
-        return
-    end
+    set_ctx_and_check_token()
 
     core.response.exit(405, {
         error_msg = "please use PUT method to reload the plugins, "
@@ -280,9 +270,7 @@ end
 
 
 local function post_reload_plugins()
-    if not set_ctx_and_check_token() then
-        return
-    end
+    set_ctx_and_check_token()
 
     local success, err = events.post(reload_event, get_method(), ngx_time())
     if not success then
