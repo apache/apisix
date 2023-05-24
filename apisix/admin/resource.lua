@@ -279,8 +279,8 @@ function _M:patch(id, conf, sub_path, args)
     local typ = nil
     if self.name == "secrets" then
         local uri_segs = core.utils.split_uri(sub_path)
-        if #uri_segs < 2 then
-            return 400, {error_msg = "no secret id and/or sub path in uri"}
+        if #uri_segs < 1 then
+            return 400, {error_msg = "no secret id"}
         end
         typ = id
         id = uri_segs[1]
