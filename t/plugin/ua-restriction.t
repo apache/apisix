@@ -795,3 +795,63 @@ done
 --- response_body
 property "denylist" validation failed: wrong type: expected array, got table
 done
+
+
+
+=== TEST 35: set config: user-agent only in allowlist
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "ua-restriction": {
+                                 "allowlist": [
+                                     "foo/bar"
+                                 ]
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 36: hit route
+--- request
+GET /hello
+--- more_headers
+User-Agent:foo/bar
+User-Agent:test1
+--- error_code: 200
+--- response_body
+hello world
+
+
+
+=== TEST 37: test header in reverse order
+--- request
+GET /hello
+--- more_headers
+User-Agent:test1
+User-Agent:foo/bar
+--- error_code: 200
+--- response_body
+hello world

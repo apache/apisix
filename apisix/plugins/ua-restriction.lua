@@ -135,6 +135,8 @@ function _M.access(conf, ctx)
                 match = lrucache_useragent(v, conf, match_user_agent, v, conf)
                 if match > MATCH_ALLOW then
                     break
+                elseif match == MATCH_ALLOW and conf.allowlist and not conf.denylist then
+                    return
                 end
             end
         end
