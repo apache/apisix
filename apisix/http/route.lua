@@ -32,7 +32,7 @@ local _M = {}
 
 
 function _M.prefix_uris(route, service)
-    if service.value.path_prefix then
+    if service and service.value.path_prefix then
         local uri, uris
         if route.value.uris then
             uris = core.table.new(#route.value.uris)
