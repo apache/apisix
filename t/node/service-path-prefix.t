@@ -50,7 +50,7 @@ __DATA__
                     }
                 ]]
             ))
-			ngx.sleep(0.5)
+            ngx.sleep(0.5)
 
             assert(t.test('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -61,7 +61,7 @@ __DATA__
                     }
                 ]]
             ))
-			ngx.sleep(0.5)
+            ngx.sleep(0.5)
 
             local http = require "resty.http"
             local httpc = http.new()
