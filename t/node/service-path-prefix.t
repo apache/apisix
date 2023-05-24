@@ -68,7 +68,6 @@ __DATA__
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local res, err = httpc:request_uri(uri)
             ngx.status = res.status
-            ngx.log(ngx.WARN, require("inspect")(res))
             ngx.print(res.body)
         }
     }
