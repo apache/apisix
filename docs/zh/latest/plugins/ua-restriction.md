@@ -43,9 +43,9 @@ description: 本文介绍了 Apache APISIX ua-restriction 插件的使用方法�
 
 :::note
 
-1.`allowlist` 和 `denylist` 可以单独启用。
-2.如果同时启用，插件会根据 `User-Agent` 先检查 `allowlist`，再检查 `denylist`。
-3.如果只启用了 `allowlist` 并且 `User-Agent` 不在 `allowlist` 中，请求将会被拒绝。
+1. `allowlist` 和 `denylist` 可以单独启用。
+2. 如果同时启用，插件会根据 `User-Agent` 先检查 `allowlist`，再检查 `denylist`。
+3. 如果只启用了 `allowlist` 并且 `User-Agent` 不在 `allowlist` 中，请求将会被拒绝。
 
 :::
 
