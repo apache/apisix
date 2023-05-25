@@ -138,7 +138,6 @@ function _M.create_radixtree_router(routes)
     -- create router: only_uri_router
     _M.only_uri_router = router.new(only_uri_routes)
     
-    core.log.error("@@@@@@@", #host_router_routes)
     return true
 end
 
