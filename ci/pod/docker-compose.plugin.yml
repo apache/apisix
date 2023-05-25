@@ -340,4 +340,5 @@ networks:
   rocketmq_net:
   opa_net:
   vector_net:
+  clickhouse_net:
   loki_net:
