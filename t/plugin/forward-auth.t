@@ -237,7 +237,7 @@ property "request_method" validation failed: matches none of the enum values
                 {
                     url = "/apisix/admin/routes/6",
                     data = [[{
-                        "uri": "/get",
+                        "uri": "/hello",
                         "plugins": {
                             "forward-auth": {
                                 "uri": "http://127.0.0.1:1984/crashed-auth",
@@ -249,7 +249,7 @@ property "request_method" validation failed: matches none of the enum values
                         },
                         "upstream": {
                             "nodes": {
-                                "httpbin.org:80": 1
+                                "test.com:1980": 1
                             },
                             "type": "roundrobin"
                         }
@@ -370,7 +370,7 @@ failed to process forward auth, err: closed
 
 === TEST 12: hit route (unavailable auth server, allow degradation)
 --- request
-GET /get
+GET /hello
 --- more_headers
 Authorization: 111
 --- error_code: 200

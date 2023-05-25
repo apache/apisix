@@ -146,8 +146,10 @@ curl "http://127.0.0.1:9080" --head | grep Server
 如果一切顺利，将输出如下信息。
 
 ```text
-Server: APISIX/3.1.0
+Server: APISIX/Version
 ```
+
+`Version` 是指您已经安装的 APISIX 的版本。例如，`APISIX/3.3.0`。
 
 现在，你已经成功安装并运行了 APISIX！
 
@@ -207,8 +209,9 @@ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -X PUT -d '
 ```bash
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT -d '
 {
-  "uri": "/get",
-  "host": "httpbin.org",
+  "methods": ["GET"],
+  "host": "example.com",
+  "uri": "/anything/*",
   "upstream_id": "1"
 }'
 ```
@@ -216,7 +219,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT -d '
 我们已经创建了路由与上游服务，现在可以通过以下命令访问上游服务：
 
 ```bash
-curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin.org"
+curl -i -X GET "http://127.0.0.1:9080/anything/foo?arg=10" -H "Host: example.com"
 ```
 
 该请求将被 APISIX 转发到 `http://httpbin.org:80/anything/foo?arg=10`。

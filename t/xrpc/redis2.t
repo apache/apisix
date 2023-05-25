@@ -193,8 +193,8 @@ ping: pong
 --- stream_conf_enable
 --- wait: 1
 --- grep_error_log eval
-qr/message received:.*\"redis_cmd_line\\"\:[^,]+/
+qr/message received:.*\"redis_cmd_line\":[^,]+/
 --- grep_error_log_out eval
-[qr/message received:.*\"redis_cmd_line\\"\:\\\"hmset animals dog bark cat meow\\\"/,
-qr/message received:.*\"redis_cmd_line\\"\:\\\"hmget animals dog cat\\\"/,
-qr/message received:.*\"redis_cmd_line\\"\:\\\"ping\\\"/]
+[qr/message received:.*\"redis_cmd_line\":\"hmset animals dog bark cat meow\"/,
+qr/message received:.*\"redis_cmd_line\":\"hmget animals dog cat\"/,
+qr/message received:.*\"redis_cmd_line\":\"ping\"/]
