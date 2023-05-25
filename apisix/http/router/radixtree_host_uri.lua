@@ -27,8 +27,6 @@ local loadstring = loadstring
 local pairs = pairs
 local cached_router_version
 local cached_service_version
-local host_router
-local only_uri_router
 
 
 local _M = {version = 0.1}
@@ -70,6 +68,7 @@ local function push_host_router(route, host_routes, only_uri_routes)
     end
 
     local radixtree_route = {
+        id = route.value.id,
         paths = route.value.uris or route.value.uri,
         methods = route.value.methods,
         priority = route.value.priority,
@@ -101,10 +100,9 @@ local function push_host_router(route, host_routes, only_uri_routes)
 end
 
 
-local function create_radixtree_router(routes)
+function _M.create_radixtree_router(routes)
     local host_routes = {}
     local only_uri_routes = {}
-    host_router = nil
     routes = routes or {}
 
     for _, route in ipairs(routes) do
@@ -134,32 +132,27 @@ local function create_radixtree_router(routes)
     event.push(event.CONST.BUILD_ROUTER, routes)
 
     if #host_router_routes > 0 then
-        host_router = router.new(host_router_routes)
+        _M.host_router = router.new(host_router_routes)
     end
 
     -- create router: only_uri_router
-    only_uri_router = router.new(only_uri_routes)
+    _M.only_uri_router = router.new(only_uri_routes)
+    
+    core.log.error("@@@@@@@", #host_router_routes)
     return true
 end
 
 
     local match_opts = {}
 function _M.match(api_ctx)
-    local user_routes = _M.user_routes
-    local _, service_version = get_services()
-    if not cached_router_version or cached_router_version ~= user_routes.conf_version
-        or not cached_service_version or cached_service_version ~= service_version
-    then
-        create_radixtree_router(user_routes.values)
-        cached_router_version = user_routes.conf_version
-        cached_service_version = service_version
-    end
-
     return _M.matching(api_ctx)
 end
 
 
 function _M.matching(api_ctx)
+    local host_router = _M.host_router
+    local only_uri_router = _M.only_uri_router
+    local ok = nil
     core.log.info("route match mode: radixtree_host_uri")
 
     core.table.clear(match_opts)
@@ -185,7 +178,10 @@ function _M.matching(api_ctx)
         end
     end
 
-    local ok = only_uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx, match_opts)
+    if only_uri_router then
+        ok = only_uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx, match_opts)
+    end
+    
     return ok
 end
 
