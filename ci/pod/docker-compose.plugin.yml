@@ -308,12 +308,29 @@ services:
       - ./t/certs:/certs
     ports:
       - '3000:3000'
+      - '8127:8127/udp'
       - '43000:43000'
       - '5140:5140'
       - "18088:18088" # For splunk logging tests
       - '5150:5150/udp'
     networks:
       vector_net:
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.4.2-alpine
+    container_name: clickhouse
+    ports:
+      - '8123:8123'
+    networks:
+      clickhouse_net:
+
+  clickhouse2:
+    image: clickhouse/clickhouse-server:23.4.2-alpine
+    container_name: clickhouse2
+    ports:
+      - '8124:8123'
+    networks:
+      clickhouse_net:
 
 networks:
   apisix_net:
@@ -322,3 +339,4 @@ networks:
   rocketmq_net:
   opa_net:
   vector_net:
+  clickhouse_net:
