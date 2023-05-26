@@ -232,7 +232,7 @@ hello world
                             "host": "$host",
                             "@timestamp": "$time_iso8601",
                             "client_ip": "$remote_addr",
-                            "message":"test custom log format in plugin"
+                            "message_1":"test custom log format in plugin"
                         }
                 }]]
                 )
@@ -241,30 +241,34 @@ hello world
                 ngx.say(body)
                 return
             end
-            local config = {
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
                 uri = "/hello",
                 upstream = {
                     type = "roundrobin",
                     nodes = {
-                        ["127.0.0.1:1980"] = 1
+                        ["127.0.0.1:1982"] = 1
                     }
                 },
                 plugins = {
                     ["splunk-hec-logging"] = {
                         endpoint = {
-                            uri = "http://127.0.0.1:18088/splunk_hec_logging",
+                            uri = "http://127.0.0.1:18088/services/collector",
                             token = "BD274822-96AA-4DA6-90EC-18940FB2414C"
                         },
-                        batch_max_size = 1,
+                        batch_max_size = 3,
                         inactive_timeout = 1
                     }
                 }
-            }
-            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
-
+            })
             if code >= 300 then
                 ngx.status = code
                 ngx.say(body)
+                return
+            end
+            local code, _, body2 = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
                 return
             end
             ngx.say(body)
@@ -296,7 +300,7 @@ qr/.*test custom log format in plugin.*/
                             "host": "$host",
                             "@timestamp": "$time_iso8601",
                             "vip": "$remote_addr",
-                            "message":"logger format in plugin"
+                            "message_2":"logger format in plugin"
                         }
                 }]]
                 )
@@ -305,32 +309,36 @@ qr/.*test custom log format in plugin.*/
                 ngx.say(body)
                 return
             end
-            local config = {
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
                 uri = "/hello",
                 upstream = {
                     type = "roundrobin",
                     nodes = {
-                        ["127.0.0.1:1980"] = 1
+                        ["127.0.0.1:1982"] = 1
                     }
                 },
                 plugins = {
                     ["splunk-hec-logging"] = {
                         endpoint = {
-                            uri = "http://127.0.0.1:1980/splunk_hec_logging",
+                            uri = "http://127.0.0.1:18088/services/collector",
                             token = "BD274822-96AA-4DA6-90EC-18940FB2414C"
                         },
-                        batch_max_size = 1,
+                        batch_max_size = 3,
                         inactive_timeout = 1
                     }
                 }
-            }
-            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, config)
+            })
             if code >= 300 then
                 ngx.status = code
                 ngx.say(body)
                 return
             end
-
+            local code, _, body2 = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
             ngx.say(body)
         }
     }
@@ -360,7 +368,7 @@ qr/.*logger format in plugin.*/
                             "host": "$host",
                             "@timestamp": "$time_iso8601",
                             "vip": "$remote_addr",
-                            "message":"test batched data"
+                            "message_3":"test batched data"
                         }
                 }]]
                 )
