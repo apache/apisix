@@ -37,7 +37,7 @@ __DATA__
                         "upstream": {
                             "nodes": {
                                 "127.0.0.1:1980": 1,
-                                "www.apiseven.com:80": 0
+                                "test.com:1980": 0
                             },
                             "type": "roundrobin"
                         },
@@ -73,7 +73,7 @@ GET /hello
 --- response_body
 hello world
 --- error_log eval
-qr/dns resolver domain: www.apiseven.com to \d+.\d+.\d+.\d+/
+qr/dns resolver domain: test.com to \d+.\d+.\d+.\d+/
 --- timeout: 10
 
 
@@ -92,9 +92,9 @@ qr/dns resolver domain: www.apiseven.com to \d+.\d+.\d+.\d+/
                             },
                             "type": "roundrobin",
                             "pass_host": "rewrite",
-                            "upstream_host": "httpbin.org"
+                            "upstream_host": "test.com"
                         },
-                        "uri": "/uri"
+                        "uri": "/echo"
                 }]]
                 )
 
@@ -113,9 +113,9 @@ passed
 
 === TEST 5: hit route
 --- request
-GET /uri
---- response_body eval
-qr/host: httpbin.org/
+GET /echo
+--- response_headers
+Host: test.com
 --- timeout: 10
 
 
@@ -130,13 +130,13 @@ qr/host: httpbin.org/
                  [[{
                         "upstream": {
                             "nodes": {
-                                "httpbin.org:80": 1
+                                "test.com:1980": 1
                             },
                             "type": "roundrobin",
                             "desc": "new upstream",
                             "pass_host": "node"
                         },
-                        "uri": "/get"
+                        "uri": "/echo"
                 }]]
                 )
 
@@ -155,9 +155,9 @@ passed
 
 === TEST 7: hit route
 --- request
-GET /get
---- response_body eval
-qr/"Host": "httpbin.org"/
+GET /echo
+--- response_headers
+Host: test.com:1980
 --- timeout: 10
 
 
