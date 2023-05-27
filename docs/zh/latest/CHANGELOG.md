@@ -24,6 +24,7 @@ title: CHANGELOG
 ## Table of Contents
 
 - [3.3.0](#330)
+- [3.2.1](#321)
 - [3.2.0](#320)
 - [3.1.0](#310)
 - [3.0.0](#300)
@@ -100,6 +101,10 @@ title: CHANGELOG
 - 确保 hold_body_chunk 函数对每个插件设置独立缓冲区，避免数据污染：[#9266](https://github.com/apache/apisix/pull/9266)
 - 确保 batch-requests 插件能够在尾部响应头存在时能够正确读取：[#9289](https://github.com/apache/apisix/pull/9289)
 - 确保 `proxy-rewrite` 改写 `ngx.var.uri`: [#9309](https://github.com/apache/apisix/pull/9309)
+
+## 3.2.1
+
+**这是一个 LTS 维护版本，您可以在 `release/3.2` 分支中看到 CHANGELOG。**
 
 ## 3.2.0
 
