@@ -204,11 +204,13 @@ local function get_opts(consul_server, is_catalog)
 
     if is_catalog then
         opts.default_args = {
+            token = consul_server.token,
             wait = consul_server.wait_timeout, --blocked wait!=0; unblocked by wait=0
             index = consul_server.catalog_index,
         }
     else
         opts.default_args = {
+            token = consul_server.token,
             wait = consul_server.wait_timeout, --blocked wait!=0; unblocked by wait=0
             index = consul_server.health_index,
         }
@@ -396,6 +398,9 @@ function _M.connect(premature, consul_server, retry_delay)
         port = consul_server.port,
         connect_timeout = consul_server.connect_timeout,
         read_timeout = consul_server.read_timeout,
+        default_args = {
+            token = consul_server.token,
+        },
     })
     local catalog_success, catalog_res, catalog_err = pcall(function()
         return consul_client:get(consul_server.consul_watch_catalog_url)
@@ -545,6 +550,7 @@ local function format_consul_params(consul_conf)
         core.table.insert(consul_server_list, {
             host = host,
             port = port,
+            token = consul_conf.token,
             connect_timeout = consul_conf.timeout.connect,
             read_timeout = consul_conf.timeout.read,
             wait_timeout = consul_conf.timeout.wait,
