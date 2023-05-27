@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.2.1](#321)
 - [3.2.0](#320)
 - [3.1.0](#310)
 - [3.0.0](#300)
@@ -66,6 +67,16 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.2.1
+
+### Bugfix
+
+- Fix invalidate cache in core.request.add_header and fix some calls [#8824](https://github.com/apache/apisix/pull/8824)
+- Fix etcd data sync exception [#8493](https://github.com/apache/apisix/pull/8493)
+- Fix high cpu and memory usage cause by healthcheck [#9016](https://github.com/apache/apisix/pull/9016)
+- Prevent non-`127.0.0.0/24` to access admin api with empty admin_key [#9146](https://github.com/apache/apisix/pull/9146)
+- Fix(batch-requests): read trailer headers if exist [#9289](https://github.com/apache/apisix/pull/9289)
 
 ## 3.2.0
 

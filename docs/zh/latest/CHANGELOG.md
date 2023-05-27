@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [3.2.1](#321)
 - [3.2.0](#320)
 - [3.1.0](#310)
 - [3.0.0](#300)
@@ -66,6 +67,16 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.2.1
+
+### Bugfix
+
+- 修复 `core.request.add_header` 中的无效缓存 [#8824](https://github.com/apache/apisix/pull/8824)
+- 修复 etcd 数据同步异常 [#8493](https://github.com/apache/apisix/pull/8493)
+- 修复由 healthcheck 引起的高 cpu 和内存使用 [#9016](https://github.com/apache/apisix/pull/9016)
+- 防止非 `127.0.0.0/24` 的请求用空的 admin_key 访问 Admin API [#9146](https://github.com/apache/apisix/pull/9146)
+- 修复 batch-requests 不读取 trailer headers 的情况 [#9289](https://github.com/apache/apisix/pull/9289)
 
 ## 3.2.0
 
