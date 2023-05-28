@@ -132,7 +132,7 @@ ip-restriction exits with http status code 403
 
 ### 自定义插件优先级
 
-所有插件都有默认优先级，但是你仍然可以通过 `priority` 配置项来自定义插件优先级，从而改变插件执行顺序。
+所有插件都有默认优先级，但是你仍然可以通过 `priority` 配置项来自定义[插件优先级](https://apisix.apache.org/docs/apisix/plugin-develop/#name-priority-and-the-others)，从而改变插件执行顺序。
 
 ```json
  {
