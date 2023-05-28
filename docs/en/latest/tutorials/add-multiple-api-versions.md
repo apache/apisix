@@ -72,29 +72,13 @@ The primary goal of versioning is to provide users of an API with the most funct
 
 ## Prerequisites
 
-For the demo case, we will leverage the sample repository [Evolve APIs](https://github.com/nfrankel/evolve-apis) on GitHub built on the Spring boot that demonstrates our API. You can see the complete source code there.
+For the demo case, we will leverage the sample repository [Evolve APIs](https://github.com/nfrankel/evolve-apis) on GitHub built on the Spring boot that demonstrates our API. You can see the complete source code there. 
 
-To execute and customize the example project per your need shown in this tutorial, here are the minimum requirements you need to install in your system:
-
-- [Docker](https://docs.docker.com/desktop/windows/install/) - you need [Docker](https://www.docker.com/products/docker-desktop/) installed locally to complete this tutorial. It is available for [Windows](https://desktop.docker.com/win/edge/Docker%20Desktop%20Installer.exe) or [macOS](https://desktop.docker.com/mac/edge/Docker.dmg).
-
-Also, complete the following steps to run the sample project with Docker.
-
-Use [git](https://git-scm.com/downloads) to clone the repository:
+You can start our application with the `docker-compose` tool:
 
 ``` shell
-git clone 'https://github.com/nfrankel/evolve-apis'
-```
-
-Go to root directory of _evolve-apis_
-
-``` shell
+git clone https://github.com/nfrankel/evolve-apis.git
 cd evolve-apis
-```
-
-Now we can start our application by running `docker compose up` command from the root folder of the project:
-
-``` shell
 docker compose up -d
 ```
 
