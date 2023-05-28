@@ -325,12 +325,14 @@ local function format_consul_params(consul_conf)
     if consul_conf.keepalive == false then
         args = {
             recurse = true,
+            token = consul_conf.token,
         }
     elseif consul_conf.keepalive then
         args = {
             recurse = true,
             wait = consul_conf.timeout.wait, --blocked wait!=0; unblocked by wait=0
             index = 0,
+            token = consul_conf.token,
         }
     end
 
