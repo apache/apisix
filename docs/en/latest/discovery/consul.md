@@ -39,6 +39,7 @@ discovery:
       - "http://127.0.0.1:8600"   # `consul` service is default skip service
     skip_services:                # if you need to skip special services
       - "service_a"
+    token: ""                     # if your consul cluster has enabled acl access control, you can specify token
     timeout:
       connect: 1000               # default 2000 ms
       read: 1000                  # default 2000 ms
