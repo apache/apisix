@@ -73,7 +73,7 @@ description: Plugin Config 对象，可以用于创建一组通用的插件配�
     }'
     ```
 
-如果找不到对应的 Plugin Config，该路由上的请求会报 `503` 错误。
+如果找不到对应的 Plugin Config，该路由上的请求会报 `404` 错误。
 
 ## 注意事项
 
