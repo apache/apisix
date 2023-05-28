@@ -117,7 +117,7 @@ description: Plugin Config 对象，可以用于创建一组通用的插件配�
             "nodes": {
                 "127.0.0.1:1980": 1
             }
-        }
+        }.
         "plugins": {
             "proxy-rewrite": {
                 "uri": "/test/add",
@@ -145,7 +145,7 @@ description: Plugin Config 对象，可以用于创建一组通用的插件配�
             "nodes": {
                 "127.0.0.1:1980": 1
             }
-        }
+        },
         "plugins": {
             "ip-restriction": {
                 "whitelist": [

@@ -112,7 +112,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
         "nodes": {
             "127.0.0.1:1980": 1
         }
-    }
+    },
     "plugins": {
         "proxy-rewrite": {
             "uri": "/test/add",
@@ -140,7 +140,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
         "nodes": {
             "127.0.0.1:1980": 1
         }
-    }
+    },
     "plugins": {
         "ip-restriction": {
             "whitelist": [
