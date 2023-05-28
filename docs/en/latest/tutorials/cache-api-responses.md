@@ -192,17 +192,38 @@ Excellent! We enabled caching for our API endpoint.
 
 ### Additional test case
 
-Optionally, you can also add some delay in the Product controller code and measure response time properly with and without cache:
+Optionally, You can also modify the [`Product controller code`](https://github.com/Boburmirzo/apisix-dotnet-docker/blob/main/ProductApi/Controllers/ProductsController.cs)  to add some delay and correctly measure response times with and without caching:
 
 ``` c#
- [HttpGet]
- public IActionResult GetAll()
- {
- Console.Write("The delay starts.\n");
- System.Threading.Thread.Sleep(5000);
- Console.Write("The delay ends.");
- return Ok(_productsService.GetAll());
- }
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using ProductApi.Services;
+using Microsoft.AspNetCore.Mvc;
+
+namespace ProductApi.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ProductsController : ControllerBase
+    {
+        private IProductsService _productsService;
+        public ProductsController(IProductsService productsService)
+        {
+            _productsService = productsService;
+        }
+
+        [HttpGet]
+        public IActionResult GetAll()
+        {
+            Console.Write("The delay starts.\n");
+            System.Threading.Thread.Sleep(5000);
+            Console.Write("The delay ends.");
+            return Ok(_productsService.GetAll());
+        }
+    }
+}
 ```
 
 The `curl` command to check response time would be:
