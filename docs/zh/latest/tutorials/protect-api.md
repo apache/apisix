@@ -71,7 +71,7 @@ description: 本文介绍了如何通过 Apache APISIX 发布服务和路由。
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "uri": "/index.html",
+    "uri": "/*",
     "plugins": {
         "limit-count": {
             "count": 2,
