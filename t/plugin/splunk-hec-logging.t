@@ -309,6 +309,7 @@ qr/.*test custom log format in plugin.*/
                 ngx.say(body)
                 return
             end
+
             local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
                 uri = "/hello",
                 upstream = {
@@ -333,6 +334,7 @@ qr/.*test custom log format in plugin.*/
                 ngx.say(body)
                 return
             end
+
             local code, _, body2 = t("/hello", "GET")
             if code >= 300 then
                 ngx.status = code
@@ -377,6 +379,7 @@ qr/.*logger format in plugin.*/
                 ngx.say(body)
                 return
             end
+
             local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
                 uri = "/hello",
                 upstream = {
@@ -400,6 +403,7 @@ qr/.*logger format in plugin.*/
             if code >= 300 then
                 ngx.status = code
             end
+
             local code, _, body2 = t("/hello", "GET")
             if code >= 300 then
                 ngx.status = code
