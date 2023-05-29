@@ -429,6 +429,16 @@ done
 
 
 === TEST 15: use custom variable in the logger
+--- extra_init_by_lua
+    local core = require "apisix.core"
+
+    core.ctx.register_var("a6_route_labels", function(ctx)
+        local route = ctx.matched_route and ctx.matched_route.value
+        if route and route.labels then
+            return route.labels
+        end
+        return nil
+    end)
 --- config
     location /t {
         content_by_lua_block {
@@ -439,7 +449,7 @@ done
                 [[{
                     "log_format": {
                         "host": "$host",
-                        "labels": "custom variable check",
+                        "labels": "$a6_route_labels",
                         "client_ip": "$remote_addr"
                     }
                 }]]
@@ -458,6 +468,9 @@ done
                                 "batch_max_size": 1,
                                 "concat_method": "json"
                             }
+                        },
+                        "labels":{
+                            "key":"testvalue"
                         },
                         "upstream": {
                             "nodes": {
@@ -493,7 +506,7 @@ passed
 --- exec
 tail -n 1 ci/pod/vector/http.log
 --- response_body eval
-qr/.*custom variable check.*/
+qr/.*testvalue.*/
 
 
 
