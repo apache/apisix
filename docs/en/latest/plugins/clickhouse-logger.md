@@ -81,25 +81,16 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/clickhouse-logger -H 'X-
 }'
 ```
 
-You have to then create a table in your ClickHouse database to store the logs:
+You can use the clickhouse docker image to create a container like so:
 
-```sql
-CREATE TABLE default.test (
-  `host` String,
-  `client_ip` String,
-  `route_id` String,
-  `service_id` String,
-  `@timestamp` String,
-   PRIMARY KEY(`@timestamp`)
-) ENGINE = MergeTree()
+```shell
+docker run -d -p 8123:8123 -p 9000:9000 -p 9009:9009 --name some-clickhouse-server --ulimit nofile=262144:262144 clickhouse/clickhouse-server
 ```
 
-Now, if you run `select * from default.test;`, you will get the following row:
+Then create a table in your ClickHouse database to store the logs.
 
-```
-┌─host──────┬─client_ip─┬─route_id─┬─@timestamp────────────────┐
-│ 127.0.0.1 │ 127.0.0.1 │ 1        │ 2022-01-17T10:03:10+08:00 │
-└───────────┴───────────┴──────────┴───────────────────────────┘
+```shell
+echo "CREATE TABLE default.test (\`host\` String, \`client_ip\` String, \`route_id\` String, \`service_id\` String, \`@timestamp\` String, PRIMARY KEY(\`@timestamp\`)) ENGINE = MergeTree()" | curl 'http://localhost:8123/'
 ```
 
 ## Enabling the Plugin
@@ -135,6 +126,13 @@ Now, if you make a request to APISIX, it will be logged in your ClickHouse datab
 
 ```shell
 curl -i http://127.0.0.1:9080/hello
+```
+
+Now, if you check for the rows in the table, you will get the following output:
+
+```shell
+curl 'http://localhost:8123/?query=select%20*%20from%20default.test'
+127.0.0.1	127.0.0.1	1		2023-05-08T19:15:53+05:30
 ```
 
 ## Disable Plugin
