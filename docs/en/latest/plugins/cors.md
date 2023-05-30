@@ -52,6 +52,18 @@ The `cors` Plugins lets you enable [CORS](https://developer.mozilla.org/en-US/do
 
 :::
 
+:::note
+
+The Timing-Allow-Origin header is defined in the Resource Timing API, but it is related to the CORS concept.
+
+Suppose you have 2 domains, `domain-A.com` and `domain-B.com`.
+You are on a page on `domain-A.com`, you have an XHR call to a resource on `domain-B.com` and you need its timing information.
+You can allow the browser to show this timing information only if you have cross-origin permissions on `domain-B.com`. 
+So, you have to set the CORS headers first, then access the `domain-B.com` URL, and if you set [Timing-Allow-Origin](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Timing-Allow-Origin), the browser will show the requested timing information.
+
+:::
+
+
 ## Metadata
 
 | Name          | Type   | Required | Description                                                                                                                                                                                             |
