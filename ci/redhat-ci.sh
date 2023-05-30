@@ -17,7 +17,6 @@
 #
 
 . ./ci/common.sh
-
 install_dependencies() {
     export_or_prefix
 
@@ -27,14 +26,17 @@ install_dependencies() {
     which ca-certificates openssl-devel
 
     # install newer curl
-    yum makecache
-    yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms libnghttp2-devel
+    yum makecache 
     install_curl
 
     # install openresty to make apisix's rpm test work
-    yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms yum-utils
-    yum-config-manager --add-repo https://openresty.org/package/redhat/openresty.repo
-    yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms openresty openresty-debug openresty-openssl111-debug-devel pcre pcre-devel
+    cp ./ci/redhat-yum/apache-apisix.repo /etc/yum.repos.d/apache-apisix.repo 
+    cp ./ci/redhat-yum/openresty.repo /etc/yum.repos.d/openresty.repo
+    yum update -y
+    yum install -y openresty-debug openresty-openssl111-debug-devel pcre pcre-devel xz
+    yum install -y apisix-$APISIX_VERSION
+
+    
 
     # install luarocks
     ./utils/linux-install-luarocks.sh
@@ -50,7 +52,7 @@ install_dependencies() {
     cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
 
     # add go1.15 binary to the path
-    mkdir build-cache
+    mkdir build-cache 
     # centos-7 ci runs on a docker container with the centos image on top of ubuntu host. Go is required inside the container.
     pushd build-cache/
     wget -q https://golang.org/dl/go1.17.linux-amd64.tar.gz && tar -xf go1.17.linux-amd64.tar.gz

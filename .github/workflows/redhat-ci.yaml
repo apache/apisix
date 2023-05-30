@@ -135,7 +135,8 @@ jobs:
 
     - name: Install dependencies
       run: |
-        docker exec ubiInstance bash -c "cd apisix && chmod +x ./ci/redhat-ci.sh && ./ci/redhat-ci.sh install_dependencies"
+        APISIX_VERSION=${{ steps.branch_env.outputs.version }}
+        docker exec ubiInstance bash -c "export APISIX_VERSION=$APISIX_VERSION;cd apisix && chmod +x ./ci/redhat-ci.sh && ./ci/redhat-ci.sh install_dependencies"
 
     - name: Install rpm package
       if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
@@ -147,7 +148,8 @@ jobs:
 
     - name: Run test cases
       run: |
-        docker exec ubiInstance bash -c "cd apisix && chmod +x ./ci/redhat-ci.sh && ./ci/redhat-ci.sh run_case"
+        APISIX_VERSION=${{ steps.branch_env.outputs.version }}
+        docker exec ubiInstance bash -c "export APISIX_VERSION=$APISIX_VERSION;cd apisix && chmod +x ./ci/redhat-ci.sh && ./ci/redhat-ci.sh run_case"
 
     - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
       name: Save docker images
