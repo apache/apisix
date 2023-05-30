@@ -23,8 +23,7 @@ install_dependencies() {
 
     # install build & runtime deps
     yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms wget tar gcc automake autoconf libtool make unzip \
-        git sudo openldap-devel which ca-certificates openssl-devel \
-        epel-release
+        git sudo openldap-devel which ca-certificates openssl-devel 
 
     # install newer curl
     yum makecache
@@ -32,7 +31,7 @@ install_dependencies() {
     install_curl
 
     # install openresty to make apisix's rpm test work
-    yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
+    yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms yum-utils && yum-config-manager --add-repo https://openresty.org/package/redhat/openresty.repo
     yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms openresty openresty-debug openresty-openssl111-debug-devel pcre pcre-devel
 
     # install luarocks
