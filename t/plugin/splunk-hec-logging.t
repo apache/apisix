@@ -241,6 +241,7 @@ hello world
                 ngx.say(body)
                 return
             end
+
             local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
                 uri = "/hello",
                 upstream = {
@@ -265,6 +266,7 @@ hello world
                 ngx.say(body)
                 return
             end
+
             local code, _, body2 = t("/hello", "GET")
             if code >= 300 then
                 ngx.status = code
@@ -274,9 +276,9 @@ hello world
             ngx.say(body)
         }
     }
---- wait: 0.5
 --- response_body
 passed
+--- wait: 5
 
 
 
@@ -344,9 +346,9 @@ qr/.*test custom log format in plugin.*/
             ngx.say(body)
         }
     }
---- wait: 0.5
 --- response_body
 passed
+--- wait: 5
 
 
 
@@ -410,12 +412,12 @@ qr/.*logger format in plugin.*/
                 ngx.say("fail")
                 return
             end
-            ngx.say(passed)
+            ngx.say(body)
         }
     }
---- wait: 0.5
 --- response_body
 passed
+--- wait: 5
 
 
 
