@@ -54,7 +54,7 @@ install_dependencies() {
     export PATH=$PATH:$(pwd)/go/bin
     cd ..
     # install and start grpc_server_example
-    cd t/grpc_server_example
+    pushd t/grpc_server_example
 
     CGO_ENABLED=0 go build
     ./grpc_server_example \
@@ -62,7 +62,7 @@ install_dependencies() {
         -crt ../certs/apisix.crt -key ../certs/apisix.key -ca ../certs/mtls_ca.crt \
         > grpc_server_example.log 2>&1 || (cat grpc_server_example.log && exit 1)&
 
-    cd ../../
+    popd
     # wait for grpc_server_example to fully start
     sleep 3
 
