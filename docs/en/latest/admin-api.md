@@ -1343,7 +1343,7 @@ You can use the `/apisix/admin/plugins?all=true` API to get all properties of al
 
 Each Plugin has the attributes `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`.
 
-Defaults to only HTTP Plugins. If you need to get attributes from stream Plugins, use `/apisix/admin/plugins?all=true&subsystem=stream`.
+Defaults to only L7 Plugins. If you need to get attributes of L4 (Stream) Plugins, use `/apisix/admin/plugins?all=true&subsystem=stream`.
 
 :::
 
