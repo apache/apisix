@@ -22,8 +22,9 @@ install_dependencies() {
     export_or_prefix
 
     # install build & runtime deps
-    yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms wget tar gcc automake autoconf libtool make unzip \
-        git sudo openldap-devel which ca-certificates openssl-devel 
+    yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms \
+                   wget tar gcc automake autoconf libtool make unzip git sudo openldap-devel \
+                   which ca-certificates openssl-devel 
 
     # install newer curl
     yum makecache
