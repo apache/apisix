@@ -176,7 +176,7 @@ local function run()
 
     local resource = resources[seg_res]
     if not resource then
-        core.response.exit(404, {error_msg = "not found"})
+        core.response.exit(404, {error_msg = "invalid resource: '" .. seg_res .. "' is not supported"})
     end
 
     local method = str_lower(get_method())
