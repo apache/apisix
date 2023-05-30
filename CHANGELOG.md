@@ -110,7 +110,6 @@ title: Changelog
 
 [https://github.com/apache/apisix/blob/release/3.2/CHANGELOG.md#321](https://github.com/apache/apisix/blob/release/3.2/CHANGELOG.md#321)
 
-
 ## 3.2.0
 
 ### Change
