@@ -76,10 +76,10 @@ install_dependencies() {
     install_rust
 
     # grpc-web server && client
-    cd t/plugin/grpc-web
+    pushd t/plugin/grpc-web
     ./setup.sh
     # back to home directory
-    cd ../../../
+    popd
 
     # install dependencies
     git clone https://github.com/openresty/test-nginx.git test-nginx
