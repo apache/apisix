@@ -23,8 +23,8 @@ install_dependencies() {
 
     # install build & runtime deps
     yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms \
-                   wget tar gcc automake autoconf libtool make unzip git sudo openldap-devel \
-                   which ca-certificates openssl-devel 
+    wget tar gcc automake autoconf libtool make unzip git sudo openldap-devel \
+    which ca-certificates openssl-devel
 
     # install newer curl
     yum makecache
@@ -32,7 +32,7 @@ install_dependencies() {
     install_curl
 
     # install openresty to make apisix's rpm test work
-    yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms yum-utils 
+    yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms yum-utils
     yum-config-manager --add-repo https://openresty.org/package/redhat/openresty.repo
     yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms openresty openresty-debug openresty-openssl111-debug-devel pcre pcre-devel
 
@@ -52,7 +52,7 @@ install_dependencies() {
     # add go1.15 binary to the path
     mkdir build-cache
     # centos-7 ci runs on a docker container with the centos image on top of ubuntu host. Go is required inside the container.
-    pushd build-cache/ 
+    pushd build-cache/
     wget -q https://golang.org/dl/go1.17.linux-amd64.tar.gz && tar -xf go1.17.linux-amd64.tar.gz
     export PATH=$PATH:$(pwd)/go/bin
     popd
