@@ -52,9 +52,10 @@ install_dependencies() {
     # add go1.15 binary to the path
     mkdir build-cache
     # centos-7 ci runs on a docker container with the centos image on top of ubuntu host. Go is required inside the container.
-    cd build-cache/ && wget -q https://golang.org/dl/go1.17.linux-amd64.tar.gz && tar -xf go1.17.linux-amd64.tar.gz
+    pushd build-cache/ 
+    wget -q https://golang.org/dl/go1.17.linux-amd64.tar.gz && tar -xf go1.17.linux-amd64.tar.gz
     export PATH=$PATH:$(pwd)/go/bin
-    cd ..
+    popd
     # install and start grpc_server_example
     pushd t/grpc_server_example
 
