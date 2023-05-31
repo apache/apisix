@@ -25,7 +25,6 @@ local get_uri_args = ngx.req.get_uri_args
 local plugin_get_all = require("apisix.plugin").get_all
 local encrypt_conf = require("apisix.plugin").encrypt_conf
 local pairs = pairs
-
 local _M = {}
 
 
@@ -44,7 +43,7 @@ function _M.get(name)
     local arg = get_uri_args()
     -- If subsystem is passed inside args then it should be oneOf: http / stream.
     local subsystem = arg["subsystem"]
-    if subsystem~="" and subsystem~="http" and subsystem ~= "stream" then
+    if subsystem and subsystem~="" and subsystem~="http" and subsystem ~= "stream" then
         return 400, {error_msg = "no plugin found for subsystem: "..subsystem}
     end
     if arg and arg["all"] == "true" then
@@ -65,13 +64,13 @@ function _M.get(name)
             return 200, http_plugins
         end
         local allPlugins = {}
-        for i = 1, #http_plugins do
-            allPlugins[#allPlugins + 1] = http_plugins[i]
+        for k, v in pairs(http_plugins) do
+            allPlugins[k] = v
         end
-        for i = 1, #stream_plugins do
-            allPlugins[#allPlugins + 1] = stream_plugins[i]
+        for k, v in pairs(stream_plugins) do
+            allPlugins[k] = v
         end
-
+        
         return 200, allPlugins
     end
 
