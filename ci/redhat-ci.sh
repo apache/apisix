@@ -30,11 +30,10 @@ install_dependencies() {
     install_curl
 
     # install openresty to make apisix's rpm test work
-    cp ./ci/redhat-yum/apache-apisix.repo /etc/yum.repos.d/apache-apisix.repo
-    cp ./ci/redhat-yum/openresty.repo /etc/yum.repos.d/openresty.repo
-    yum update -y
-    yum install -y openresty-debug openresty-openssl111-debug-devel pcre pcre-devel xz
-    yum install -y apisix-$APISIX_VERSION
+    yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
+    yum install -y openresty openresty-debug openresty-openssl111-debug-devel pcre pcre-devel
+
+
 
 
 

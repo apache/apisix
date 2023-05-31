@@ -135,10 +135,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        APISIX_VERSION=${{ steps.branch_env.outputs.version }}
-        #If the workflow is not called on release then the env variable won't be set so here we set a version for tests to run
-        if [[ "$APISIX_VERSION" == "" ]];then APISIX_VERSION=3.3.0 fi
-        docker exec ubiInstance bash -c "export APISIX_VERSION=$APISIX_VERSION;cd apisix && chmod +x ./ci/redhat-ci.sh && ./ci/redhat-ci.sh install_dependencies"
+        docker exec ubiInstance bash -c "cd apisix && chmod +x ./ci/redhat-ci.sh && ./ci/redhat-ci.sh install_dependencies"
 
     - name: Install rpm package
       if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
@@ -150,10 +147,7 @@ jobs:
 
     - name: Run test cases
       run: |
-        APISIX_VERSION=${{ steps.branch_env.outputs.version }}
-        #If the workflow is not called on release then the env variable won't be set
-        if [[ "$APISIX_VERSION" == "" ]];then APISIX_VERSION=3.3.0 fi
-        docker exec ubiInstance bash -c "export APISIX_VERSION=$APISIX_VERSION;cd apisix && chmod +x ./ci/redhat-ci.sh && ./ci/redhat-ci.sh run_case"
+        docker exec ubiInstance bash -c "cd apisix && chmod +x ./ci/redhat-ci.sh && ./ci/redhat-ci.sh run_case"
 
     - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
       name: Save docker images
