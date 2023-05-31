@@ -520,7 +520,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(apisix_bandwidth{instance=~\"$instance\"}[30s])) by (type)",
+          "expr": "sum(rate(apisix_bandwidth{instance=~\"$instance\"}[$__rate_interval])) by (type)",
           "legendFormat": "{{type}}",
           "refId": "A"
         }
@@ -620,12 +620,12 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(irate(apisix_bandwidth{type=\"ingress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (service)",
+          "expr": "sum(irate(apisix_bandwidth{type=\"ingress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (service)",
           "legendFormat": "service:{{service}}",
           "refId": "A"
         },
         {
-          "expr": "sum(irate(apisix_bandwidth{type=\"ingress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (route)",
+          "expr": "sum(irate(apisix_bandwidth{type=\"ingress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (route)",
           "legendFormat": "route:{{route}}",
           "refId": "B"
         }
@@ -725,13 +725,13 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(apisix_bandwidth{type=\"egress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (service)",
+          "expr": "sum(rate(apisix_bandwidth{type=\"egress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (service)",
           "interval": "",
           "legendFormat": "service:{{service}}",
           "refId": "A"
         },
         {
-          "expr": "sum(rate(apisix_bandwidth{type=\"egress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (route)",
+          "expr": "sum(rate(apisix_bandwidth{type=\"egress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (route)",
           "legendFormat": "route:{{route}}",
           "refId": "B"
         }
@@ -853,7 +853,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(apisix_http_status{service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (code)",
+          "expr": "sum(rate(apisix_http_status{service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (code)",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
@@ -965,7 +965,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(apisix_http_status{service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (service)",
+          "expr": "sum(rate(apisix_http_status{service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (service)",
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
@@ -973,7 +973,7 @@
           "refId": "A"
         },
         {
-          "expr": "sum(rate(apisix_http_status{service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (route)",
+          "expr": "sum(rate(apisix_http_status{service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (route)",
           "interval": "",
           "legendFormat": "route:{{route}}",
           "refId": "D"
