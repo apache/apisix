@@ -31,7 +31,7 @@ install_dependencies() {
 
     # install openresty to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
-    yum install -y openresty openresty-debug openresty-openssl111-debug-devel pcre pcre-devel
+    yum install -y openresty openresty-debug openresty-openssl111-debug-devel pcre pcre-devel xz 
 
 
 
@@ -51,9 +51,8 @@ install_dependencies() {
     cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
 
     # add go1.15 binary to the path
-    mkdir build-cache
-    # centos-7 ci runs on a docker container with the centos image on top of ubuntu host. Go is required inside the container.
     pushd build-cache/
+    # centos-7 ci runs on a docker container with the centos image on top of ubuntu host. Go is required inside the container.
     wget -q https://golang.org/dl/go1.17.linux-amd64.tar.gz && tar -xf go1.17.linux-amd64.tar.gz
     export PATH=$PATH:$(pwd)/go/bin
     popd
