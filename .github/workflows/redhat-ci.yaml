@@ -151,7 +151,7 @@ jobs:
     - name: Run test cases
       run: |
         APISIX_VERSION=${{ steps.branch_env.outputs.version }}
-        #If the workflow is not called on release then the env variable won't be set 
+        #If the workflow is not called on release then the env variable won't be set
         if [[ "$APISIX_VERSION" == "" ]];then APISIX_VERSION=3.3.0 fi
         docker exec ubiInstance bash -c "export APISIX_VERSION=$APISIX_VERSION;cd apisix && chmod +x ./ci/redhat-ci.sh && ./ci/redhat-ci.sh run_case"
 
