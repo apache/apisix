@@ -51,8 +51,9 @@ install_dependencies() {
     cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
 
     # add go1.15 binary to the path
+    mkdir build-cache
     pushd build-cache/
-    # centos-7 ci runs on a docker container with the centos image on top of ubuntu host. Go is required inside the container.
+    # Go is required inside the container.
     wget -q https://golang.org/dl/go1.17.linux-amd64.tar.gz && tar -xf go1.17.linux-amd64.tar.gz
     export PATH=$PATH:$(pwd)/go/bin
     popd
