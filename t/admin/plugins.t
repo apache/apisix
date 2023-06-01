@@ -412,3 +412,21 @@ plugins:
     }
 --- response_body
 {"batch-requests":"global","error-log-logger":"global","node-status":"global","server-info":"global"}
+
+
+
+=== Test 13: check with wrong plugin subsystem
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local _, message, _ = t('/apisix/admin/plugins?all=true&subsystem=asdf',
+                ngx.HTTP_GET
+            )
+            ngx.say(message)
+        }
+    }
+--- response_body eval
+qr/\{"error_msg":"no plugin found for subsystem: asdf"\}/
+
