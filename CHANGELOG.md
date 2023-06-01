@@ -24,6 +24,7 @@ title: Changelog
 ## Table of Contents
 
 - [3.3.0](#330)
+- [3.2.1](#321)
 - [3.2.0](#320)
 - [3.1.0](#310)
 - [3.0.0](#300)
@@ -102,6 +103,12 @@ title: Changelog
 - Ensure `hold_body_chunk` should use separate buffer for each plugin in case of pollution: [#9266](https://github.com/apache/apisix/pull/9266)
 - Ensure `batch-requests` plugin read trailer headers if existed: [#9289](https://github.com/apache/apisix/pull/9289)
 - Ensure `proxy-rewrite` should set `ngx.var.uri`: [#9309](https://github.com/apache/apisix/pull/9309)
+
+## 3.2.1
+
+**This is an LTS maintenance release and you can see the CHANGELOG in `release/3.2` branch.**
+
+[https://github.com/apache/apisix/blob/release/3.2/CHANGELOG.md#321](https://github.com/apache/apisix/blob/release/3.2/CHANGELOG.md#321)
 
 ## 3.2.0
 
