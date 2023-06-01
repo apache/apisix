@@ -415,7 +415,7 @@ plugins:
 
 
 
-=== Test 13: check with wrong plugin subsystem
+=== TEST 13: check with wrong plugin subsystem
 --- config
     location /t {
         content_by_lua_block {
@@ -429,4 +429,3 @@ plugins:
     }
 --- response_body eval
 qr/\{"error_msg":"no plugin found for subsystem: asdf"\}/
-
