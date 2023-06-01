@@ -70,7 +70,6 @@ function _M.get(name)
         for k, v in pairs(stream_plugins) do
             allPlugins[k] = v
         end
-        
         return 200, allPlugins
     end
 
