@@ -25,6 +25,7 @@ local get_uri_args = ngx.req.get_uri_args
 local plugin_get_all = require("apisix.plugin").get_all
 local encrypt_conf = require("apisix.plugin").encrypt_conf
 local pairs = pairs
+
 local _M = {}
 
 
