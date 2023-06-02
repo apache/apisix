@@ -56,8 +56,15 @@ type = "syslog"
 address = "0.0.0.0:5150"
 mode = "udp"
 
+[sources.log-from-splunk]
+type = "splunk_hec"
+address = "0.0.0.0:18088"
+valid_tokens = [
+  "BD274822-96AA-4DA6-90EC-18940FB2414C"
+]
+
 [sinks.log-2-console]
-inputs = [ "log-from-tcp",  "log-from-tls", "log-from-syslog-tcp", "log-from-syslog-udp", "log-from-udp", "log-from-http"]
+inputs = [ "log-from-tcp",  "log-from-tls", "log-from-syslog-tcp", "log-from-syslog-udp", "log-from-udp", "log-from-splunk", , "log-from-http"]
 type = "console"
 encoding.codec = "json"
 
@@ -90,6 +97,12 @@ inputs = [ "log-from-syslog-tcp" ]
 type = "file"
 encoding.codec = "text"
 path = "/etc/vector/syslog-tcp.log"
+
+[sinks.log-2-splunk-file]
+inputs = [ "log-from-splunk" ]
+type = "file"
+encoding.codec = "json"
+path = "/etc/vector/splunk.log"
 
 [sinks.log-2-syslog-udp-file]
 inputs = [ "log-from-syslog-udp" ]
