@@ -27,6 +27,7 @@ install_dependencies() {
 
     # install newer curl
     yum makecache
+    yum install -y libnghttp2-devel
     install_curl
 
     # install openresty to make apisix's rpm test work
