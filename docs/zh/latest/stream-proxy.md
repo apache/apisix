@@ -42,6 +42,17 @@ apisix:
 
 如果 `apisix.enable_admin` 为 true，上面的配置会同时启用 HTTP 和 stream 代理。
 
+如果你设置 `enable_admin` 为 false，且需要同时启用 HTTP 和 stream 代理，设置 `only` 为 false：
+
+```yaml
+apisix:
+  enable_admin: false
+  stream_proxy: # TCP/UDP proxy
+    only: false
+    tcp: # TCP proxy address list
+      - 9100
+```
+
 ## 如何设置 route
 
 简例如下：
