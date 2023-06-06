@@ -99,7 +99,10 @@ return function(ctx, proto, service, method, pb_option, show_status_in_body, sta
 
     -- handle error response after the last response chunk
     if ngx.status >= 300 and show_status_in_body then
-        return handle_error_response(status_detail_type)
+        local pb_old_state = pb.state(proto.pb_state)
+        local ret = handle_error_response(status_detail_type)
+        pb.state(pb_old_state)
+        return ret
     end
 
     -- when body has already been read by other plugin
@@ -118,10 +121,10 @@ return function(ctx, proto, service, method, pb_option, show_status_in_body, sta
         buffer = string.sub(buffer, 6)
     end
 
+    local pb_old_state = pb.state(proto.pb_state)
     util.set_options(proto, pb_option)
 
     local err_msg
-    local pb_old_state = pb.state(proto.pb_state)
     local decoded = pb.decode(m.output_type, buffer)
     pb.state(pb_old_state)
     if not decoded then
