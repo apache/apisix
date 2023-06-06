@@ -70,7 +70,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 3: set additional_attributes with match
+=== TEST 1: set additional_attributes with match
 --- config
     location /t {
         content_by_lua_block {
@@ -110,7 +110,7 @@ passed
 
 
 
-=== TEST 4: opentelemetry expands headers
+=== TEST 2: opentelemetry expands headers
 --- extra_init_by_lua
     local otlp = require("opentelemetry.trace.exporter.otlp")
     local orig_export_spans = otlp.export_spans
