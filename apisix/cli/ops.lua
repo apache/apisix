@@ -269,11 +269,21 @@ Please modify "admin_key" in conf/config.yaml .
                  "your openresty, please check it out.\n")
     end
 
+    --- http is enabled by default
     local enable_http = true
-    if not yaml_conf.apisix.enable_admin and yaml_conf.apisix.stream_proxy and
-        yaml_conf.apisix.stream_proxy.only ~= false
-    then
-        enable_http = false
+    --- stream is disabled by default
+    local enable_stream = false
+    local http = "http"
+    local stream = "stream"
+    if yaml_conf.apisix.proxy_mode then
+        -- check for "http" as prefix 
+        if string.sub(yaml_conf.apisix.proxy_mode,1,#http) ~= http then
+            enable_http = false
+        end
+        -- check for "stream" as suffix
+        if string.sub(yaml_conf.apisix.proxy_mode, -#stream) == stream then
+            enable_stream = true
+        end
     end
 
     local enabled_discoveries = {}
@@ -488,7 +498,7 @@ Please modify "admin_key" in conf/config.yaml .
 
     local tcp_enable_ssl
     -- compatible with the original style which only has the addr
-    if yaml_conf.apisix.stream_proxy and yaml_conf.apisix.stream_proxy.tcp then
+    if enable_stream and yaml_conf.apisix.stream_proxy and yaml_conf.apisix.stream_proxy.tcp then
         local tcp = yaml_conf.apisix.stream_proxy.tcp
         for i, item in ipairs(tcp) do
             if type(item) ~= "table" then
