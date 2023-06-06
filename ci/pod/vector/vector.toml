@@ -23,6 +23,10 @@ port_key = "port"
 shutdown_timeout_secs = 30
 socket_file_mode = 511
 
+[sources.log-from-http]
+type = "http_server"
+address = "0.0.0.0:3001"
+
 [sources.log-from-udp]
 type = "socket"
 address = "0.0.0.0:8127"
@@ -60,7 +64,7 @@ valid_tokens = [
 ]
 
 [sinks.log-2-console]
-inputs = [ "log-from-tcp",  "log-from-tls", "log-from-syslog-tcp", "log-from-syslog-udp", "log-from-udp", "log-from-splunk"]
+inputs = [ "log-from-tcp",  "log-from-tls", "log-from-syslog-tcp", "log-from-syslog-udp", "log-from-udp", "log-from-splunk", "log-from-http"]
 type = "console"
 encoding.codec = "json"
 
@@ -69,6 +73,12 @@ inputs = [ "log-from-tcp" ]
 type = "file"
 encoding.codec = "text"
 path = "/etc/vector/tcp.log"
+
+[sinks.log-2-http-file]
+inputs = [ "log-from-http" ]
+type = "file"
+encoding.codec = "text"
+path = "/etc/vector/http.log"
 
 [sinks.log-2-udp-file]
 inputs = [ "log-from-udp" ]
