@@ -37,6 +37,7 @@ You can enable the basic debug mode by adding this line to your debug configurat
 basic:
   enable: true
 ```
+APISIX syncs the configuration passed in debug.yaml on startup and then checks if the file was modified on an interval of 1 second. If the file is changed, then it resyncs the debug configuration so that users don't have to reload for the debug configuration to take effect. 
 
 :::note
 
