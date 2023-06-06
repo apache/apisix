@@ -29,7 +29,7 @@ APISIX can serve as a stream proxy, in addition to being an application layer pr
 
 By default, stream proxy is disabled.
 
-To enable the option, add the `apisix.stream_proxy` option in `conf/config.yaml` and specify a list of addresses which APISIX should act as a stream proxy and listen for incoming requests.
+To enable this option, set `apisix.proxy_mode` to `stream` or `http&stream`, depending on whether you want stream proxy only or http and stream. Then add the apisix.stream_proxy option in conf/config.yaml and specify the list of addresses where APISIX should act as a stream proxy and listen for incoming requests.
 
 ```yaml
 apisix:
@@ -42,18 +42,6 @@ apisix:
       - "127.0.0.1:9211"
 ```
 
-If `apisix.enable_admin` is true, both HTTP and stream proxy are enabled with the configuration above.
-
-If you have set the `enable_admin` to false, and need to enable both HTTP and stream proxy, set the `only` to false:
-
-```yaml
-apisix:
-  enable_admin: false
-  stream_proxy:
-    only: false
-    tcp:
-      - 9100
-```
 
 If `apisix.stream_proxy` is undefined in `conf/config.yaml`, you will encounter an error similar to the following and not be able to add a stream route:
 

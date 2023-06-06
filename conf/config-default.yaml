@@ -69,6 +69,11 @@ apisix:
         memory_size: 50m
 
   delete_uri_tail_slash: false    # delete the '/' at the end of the URI
+
+
+  #http is the default proxy mode. proxy_mode can be oneOf http or stream or http&stream
+  proxy_mode: http
+
   # The URI normalization in servlet is a little different from the RFC's.
   # See https://github.com/jakartaee/servlet/blob/master/spec/src/main/asciidoc/servlet-spec-body.adoc#352-uri-path-canonicalization,
   # which is used under Tomcat.
@@ -82,7 +87,6 @@ apisix:
                                   #   more details.
     ssl: radixtree_sni          # radixtree_sni: match route by SNI(base on radixtree)
   #stream_proxy:                  # TCP/UDP proxy
-  #  only: true                   # use stream proxy only, don't enable HTTP stuff
   #  tcp:                         # TCP proxy port list
   #    - addr: 9100
   #      tls: true
