@@ -38,6 +38,8 @@ basic:
   enable: true
 ```
 
+APISIX loads the configurations of `debug.yaml` on startup and then checks if the file is modified on an interval of 1 second. If the file is changed, APISIX automatically applies the configuration changes.
+
 :::note
 
 For APISIX releases prior to v2.10, basic debug mode is enabled by setting `apisix.enable_debug = true` in your configuration file (`conf/config.yaml`).
