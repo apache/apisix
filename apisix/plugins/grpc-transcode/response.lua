@@ -121,7 +121,9 @@ return function(ctx, proto, service, method, pb_option, show_status_in_body, sta
     util.set_options(proto, pb_option)
 
     local err_msg
+    local pb_old_state = pb.state(proto.pb_state)
     local decoded = pb.decode(m.output_type, buffer)
+    pb.state(pb_old_state)
     if not decoded then
         err_msg = "failed to decode response data by protobuf"
         ngx.arg[1] = err_msg

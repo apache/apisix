@@ -99,7 +99,7 @@ end
 
 local function compile_proto(content)
     -- clear pb state
-    pb.state(nil)
+    local old_pb_state = pb.state(nil)
 
     local compiled, err = compile_proto_text(content)
     if not compiled then
@@ -110,7 +110,7 @@ local function compile_proto(content)
     end
 
     -- fetch pb state
-    compiled.pb_state = pb.state(nil)
+    compiled.pb_state = pb.state(old_pb_state)
     return compiled
 end
 

@@ -39,7 +39,9 @@ return function (proto, service, method, pb_option, deadline, default_values)
     util.set_options(proto, pb_option)
 
     local map_message = util.map_message(m.input_type, default_values or {})
+    local pb_old_state = pb.state(proto.pb_state)
     local ok, encoded = pcall(pb.encode, m.input_type, map_message)
+    pb.state(pb_old_state)
 
     if not ok or not encoded then
         return false, "failed to encode request data to protobuf", 400
