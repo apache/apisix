@@ -52,4 +52,4 @@ __DATA__
 --- request
 GET /t
 --- response_body_like
-{"error_msg":"resource: 'routs' is not supported"}
+{"error_msg":"Unsupported resource type: routs"}
