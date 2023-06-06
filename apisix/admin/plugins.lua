@@ -47,7 +47,7 @@ function _M.get(name)
     if subsystem and subsystem ~= "http" and subsystem ~= "stream" then
         return 400, {error_msg = "unsupported subsystem: "..subsystem}
     end
-    
+
     if arg and arg["all"] == "true" then
         local http_plugins, stream_plugins = plugin_get_all({
             version = true,
@@ -66,7 +66,7 @@ function _M.get(name)
         if subsystem == "http" then
             return 200, http_plugins
         end
-        
+
         local all_plugins = http_plugins
         for k, v in pairs(stream_plugins) do
             all_plugins[k] = v
