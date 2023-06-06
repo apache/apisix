@@ -44,9 +44,10 @@ function _M.get(name)
     local arg = get_uri_args()
     -- If subsystem is passed inside args then it should be oneOf: http / stream.
     local subsystem = arg["subsystem"]
-    if subsystem and subsystem~="" and subsystem~="http" and subsystem ~= "stream" then
-        return 400, {error_msg = "no plugin found for subsystem: "..subsystem}
+    if subsystem and subsystem ~= "http" and subsystem ~= "stream" then
+        return 400, {error_msg = "unsupported subsystem: "..subsystem}
     end
+    
     if arg and arg["all"] == "true" then
         local http_plugins, stream_plugins = plugin_get_all({
             version = true,
@@ -61,17 +62,16 @@ function _M.get(name)
         if subsystem == "stream" then
             return 200, stream_plugins
         end
+
         if subsystem == "http" then
             return 200, http_plugins
         end
-        local allPlugins = {}
-        for k, v in pairs(http_plugins) do
-            allPlugins[k] = v
-        end
+        
+        local all_plugins = http_plugins
         for k, v in pairs(stream_plugins) do
-            allPlugins[k] = v
+            all_plugins[k] = v
         end
-        return 200, allPlugins
+        return 200, all_plugins
     end
 
     if not name then

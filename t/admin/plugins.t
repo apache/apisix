@@ -428,4 +428,4 @@ plugins:
         }
     }
 --- response_body eval
-qr/\{"error_msg":"no plugin found for subsystem: asdf"\}/
+qr/\{"error_msg":"unsupported subsystem: asdf"\}/
