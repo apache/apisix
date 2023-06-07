@@ -140,7 +140,7 @@ plugins:
   - log-rotate
 plugin_attr:
   log-rotate:
-    interval: 1
+    interval: 2
     max_kept: 1
     enable_compression: true
 --- yaml_config
@@ -152,7 +152,7 @@ nginx_config:
 --- config
     location /t {
         content_by_lua_block {
-            ngx.sleep(3.5)
+            ngx.sleep(2.5)
             local has_split_access_file = false
             local has_split_error_file = false
             local lfs = require("lfs")
@@ -167,5 +167,5 @@ nginx_config:
         }
     }
 --- response_body
-4
+2
 --- timeout: 5

@@ -181,7 +181,7 @@ plugins:
   - log-rotate
 plugin_attr:
   log-rotate:
-    interval: 1
+    interval: 2
     max_kept: 1
     enable_compression: true
 --- config
