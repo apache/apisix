@@ -46,8 +46,8 @@ local COMPRESSION_FILE_SUFFIX = ".tar.gz" -- compression file suffix
 local rotate_time
 local default_logs
 local enable_compression = false
-local DEFAULT_ACCESS_LOG_FILENAME = "access.log"
-local DEFAULT_ERROR_LOG_FILENAME = "error.log"
+local DEFAULT_ACCESS_LOG_FILENAME = "logs/access.log"
+local DEFAULT_ERROR_LOG_FILENAME = "logs/error.log"
 local custom_access_log_filename
 local custom_error_log_filename
 
@@ -78,7 +78,7 @@ end
 local function get_log_path_info(file_type)
     local_conf = core.config.local_conf()
     local conf_path
-    if file_type == "error.log" then
+    if file_type == custom_error_log_filename or file_type == DEFAULT_ERROR_LOG_FILENAME then
         conf_path = local_conf and local_conf.nginx_config and
         local_conf.nginx_config.error_log
     else
@@ -103,7 +103,7 @@ local function get_log_path_info(file_type)
         end
     end
 
-    return prefix .. "logs/", file_type
+    return prefix , file_type
 end
 
 
@@ -157,10 +157,18 @@ local function rename_file(log, date_str)
         core.log.info("file exist: ", new_file)
         return new_file
     end
-
-    local ok, err = os_rename(log.file, new_file)
+    local filename = log.file
+    -- create the file if it does not exist
+    local exists = lfs.attributes(filename, "mode") == "file"
+    if not exists then
+        local file = io.open(filename, "w")
+        if file then
+            file:close()
+        end
+    end
+    local ok, err = os_rename(filename, new_file)
     if not ok then
-        core.log.error("move file from ", log.file, " to ", new_file,
+        core.log.error("move file from ", filename, " to ", new_file,
                        " res:", ok, " msg:", err)
         return
     end

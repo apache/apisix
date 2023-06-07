@@ -146,9 +146,9 @@ plugin_attr:
 --- yaml_config
 nginx_config:
     user: root
-    error_log: err1.log
+    error_log: logs/err1.log
     http:
-        access_log: acc1.log
+        access_log: logs/acc1.log
 --- config
     location /t {
         content_by_lua_block {
@@ -167,5 +167,5 @@ nginx_config:
         }
     }
 --- response_body
-2
+4
 --- timeout: 5
