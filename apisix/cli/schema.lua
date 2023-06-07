@@ -139,7 +139,7 @@ local config_schema = {
                 proxy_mode = {
                     type = "string",
                     enum = {"http", "stream", "http&stream"},
-                 },
+                },
                 stream_proxy = {
                     type = "object",
                     properties = {

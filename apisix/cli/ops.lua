@@ -273,16 +273,19 @@ Please modify "admin_key" in conf/config.yaml .
     local enable_http = true
     --- stream is disabled by default
     local enable_stream = false
-    local http = "http"
-    local stream = "stream"
     if yaml_conf.apisix.proxy_mode then
-        -- check for "http" as prefix 
-        if string.sub(yaml_conf.apisix.proxy_mode,1,#http) ~= http then
-            enable_http = false
-        end
-        -- check for "stream" as suffix
-        if string.sub(yaml_conf.apisix.proxy_mode, -#stream) == stream then
+        --- check for "http"
+        if yaml_conf.apisix.proxy_mode == "http" then
+            enable_http = true
+            enable_stream = false
+        --- check for "stream"
+        elseif yaml_conf.apisix.proxy_mode == "stream" then
             enable_stream = true
+            enable_http = false
+        --- check for "http&stream"
+        elseif yaml_conf.apisix.proxy_mode == "http&stream" then
+            enable_stream = true
+            enable_http = true
         end
     end
 
