@@ -52,6 +52,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
+            local io = require("io")
             ngx.log(ngx.ERR, "start xxxxxx")
             ngx.sleep(2.5)
             local has_split_access_file = false
@@ -105,6 +106,7 @@ start xxxxxx
 --- config
     location /t {
         content_by_lua_block {
+            local io = require("io")
             ngx.sleep(0.5)
             local t = require("lib.test_admin").test
             local code, _, org_body = t('/apisix/admin/plugins/reload',

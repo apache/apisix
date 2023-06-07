@@ -134,6 +134,7 @@ start xxxxxx
 passed
 
 
+
 === TEST 4: max_kept effective on differently named compression files
 --- extra_yaml_config
 plugins:
@@ -168,4 +169,42 @@ nginx_config:
     }
 --- response_body
 2
+--- timeout: 5
+
+
+
+=== TEST 5: check whether new log files were created
+--- extra_yaml_config
+plugins:
+  - log-rotate
+plugin_attr:
+  log-rotate:
+    interval: 2
+    max_kept: 1
+    enable_compression: false
+--- yaml_config
+nginx_config:
+    user: root
+    error_log: logs/test-error.log
+    http:
+        access_log: logs/test-access.log
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(2.5)
+            local has_split_access_file = false
+            local has_split_error_file = false
+            local lfs = require("lfs")
+            local count = 0
+            for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
+                if string.match(file_name, "error.log$") or string.match(file_name, "access.log$") then
+                    count = count + 1
+                end
+            end
+            --- 5 files: 2 older log files and 2 newer + fake-server-access.log
+            ngx.say(count)
+        }
+    }
+--- response_body
+5
 --- timeout: 5
