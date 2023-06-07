@@ -19,8 +19,8 @@
 #
 
 apisix:
-  # node_listen: 9080               # APISIX listening port (single)
-  node_listen:                      # APISIX listening ports (multiple)
+  # node_listen: 9080               # APISIX listening port, if single
+  node_listen:                      # APISIX listening ports, if multiple
     - 9080
   #   - port: 9081
   #     enable_http2: true          # If not set, default to `false`
@@ -28,7 +28,7 @@ apisix:
   #     port: 9082
   #     enable_http2: true
   enable_admin: true
-  enable_dev_mode: false            # Set nginx worker_processes to 1 if set to true
+  enable_dev_mode: false            # Set nginx worker_processes to 1 if true
   enable_reuseport: true            # Enable nginx SO_REUSEPORT switch if set to true.
   show_upstream_status_in_response_header: false # when true all upstream status write to `X-APISIX-Upstream-Status` otherwise only 5xx code
   enable_ipv6: true
