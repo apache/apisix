@@ -25,7 +25,7 @@ local ipairs = ipairs
 local pcall  = pcall
 
 
-local function handle_error_response(status_detail_type)
+local function handle_error_response(status_detail_type, proto)
     local err_msg
 
     local grpc_status = ngx.header["grpc-status-details-bin"]
@@ -58,7 +58,9 @@ local function handle_error_response(status_detail_type)
         if status_detail_type and details then
             local decoded_details = {}
             for _, detail in ipairs(details) do
+                local pb_old_state = pb.state(proto.pb_state)
                 local ok, err_or_value = pcall(pb.decode, status_detail_type, detail.value)
+                pb.state(pb_old_state)
                 if not ok then
                     err_msg = "failed to call pb.decode to decode details in "
                            .. "grpc-status-details-bin"
@@ -99,10 +101,7 @@ return function(ctx, proto, service, method, pb_option, show_status_in_body, sta
 
     -- handle error response after the last response chunk
     if ngx.status >= 300 and show_status_in_body then
-        local pb_old_state = pb.state(proto.pb_state)
-        local ret = handle_error_response(status_detail_type)
-        pb.state(pb_old_state)
-        return ret
+        return handle_error_response(status_detail_type, proto)
     end
 
     -- when body has already been read by other plugin
