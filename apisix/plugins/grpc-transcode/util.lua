@@ -48,8 +48,6 @@ function _M.find_method(proto, service, method)
         return nil
     end
 
-    -- restore pb state
-    pb.state(proto.pb_state)
     return res
 end
 
