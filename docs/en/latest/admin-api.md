@@ -270,7 +270,7 @@ Route resource request address: /apisix/admin/routes/{id}?ttl=0
 | methods          | False                                    | Match Rules | Matches with the specified methods. Matches all methods if empty or unspecified.                                                                                                                                                                                                               | ["GET", "POST"]                                      |
 | priority         | False                                    | Match Rules | If different Routes matches to the same `uri`, then the Route is matched based on its `priority`. A higher value corresponds to higher priority. It is set to `0` by default.                                                                                                                  | priority = 10                                        |
 | vars             | False                                    | Match Rules | Matches based on the specified variables consistent with variables in Nginx. Takes the form `[[var, operator, val], [var, operator, val], ...]]`. Note that this is case sensitive when matching a cookie name. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more details. | [["arg_name", "==", "json"], ["arg_age", ">", 18]]   |
-| filter_func      | False                                    | Match Rules | Matches based on a user-defined filtering function. Used in scenarios requiring complex matching. These functions can accept an input parameter `vars` which can be used to access the Nginx variables.                                                                                        | function(vars) return vars["arg_name"] == "json" end |
+| filter_func      | False                                    | Match Rules | Matches using a user-defined function in Lua. Used in scenarios where `vars` is not sufficient. Functions accept an argument `vars` which provides access to built-in variables (including Nginx variables).                                                                                        | function(vars) return tonumber(vars.arg_userid) % 4 > 2; end |
 | plugins          | False                                    | Plugin      | Plugins that are executed during the request/response cycle. See [Plugin](terminology/plugin.md) for more.                                                                                                                                                                             |                                                      |
 | script           | False                                    | Script      | Used for writing arbitrary Lua code or directly calling existing plugins to be executed. See [Script](terminology/script.md) for more.                                                                                                                                                 |                                                      |
 | upstream         | False                                    | Upstream    | Configuration of the [Upstream](./terminology/upstream.md).                                                                                                                                                                                                                            |                                                      |
@@ -1160,6 +1160,7 @@ SSL resource request address: /apisix/admin/ssls/{id}
 | keys         | False    | An array of private keys | Private keys to pair with the `certs`.                                                                         |                                                  |
 | client.ca    | False    | Certificate              | Sets the CA certificate that verifies the client. Requires OpenResty 1.19+.                                    |                                                  |
 | client.depth | False    | Certificate              | Sets the verification depth in client certificate chains. Defaults to 1. Requires OpenResty 1.19+.             |                                                  |
+| client.skip_mtls_uri_regex | False    | An array of regular expressions, in PCRE format              | Used to match URI, if matched, this request bypasses the client certificate checking, i.e. skip the MTLS.             | ["/hello[0-9]+", "/foobar"]                                                |
 | snis         | True, only if `type` is `server`     | Match Rules              | A non-empty array of HTTPS SNI                                                                                 |                                                  |
 | labels       | False    | Match Rules              | Attributes of the resource specified as key-value pairs.                                                       | {"version":"v2","build":"16","env":"production"} |
 | create_time  | False    | Auxiliary                | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.         | 1602883670                                       |
@@ -1342,7 +1343,7 @@ You can use the `/apisix/admin/plugins?all=true` API to get all properties of al
 
 Each Plugin has the attributes `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`.
 
-Defaults to only HTTP Plugins. If you need to get attributes from stream Plugins, use `/apisix/admin/plugins?all=true&subsystem=stream`.
+Defaults to only L7 Plugins. If you need to get attributes of L4 / Stream Plugins, use `/apisix/admin/plugins?all=true&subsystem=stream`.
 
 :::
 
@@ -1382,8 +1383,8 @@ Stream Route resource request address:  /apisix/admin/stream_routes/{id}
 | ----------- | -------- | -------- | ------------------------------------------------------------------- | ----------------------------- |
 | upstream    | False    | Upstream | Configuration of the [Upstream](./terminology/upstream.md). |                               |
 | upstream_id | False    | Upstream | Id of the [Upstream](terminology/upstream.md) service.      |                               |
-| remote_addr | False    | IP/CIDR  | Filters Upstream forwards by matching with client IP.               | "127.0.0.1/32" or "127.0.0.1" |
-| server_addr | False    | IP/CIDR  | Filters Upstream forwards by matching with APISIX Server IP.        | "127.0.0.1/32" or "127.0.0.1" |
+| remote_addr | False    | IPv4, IPv4 CIDR, IPv6  | Filters Upstream forwards by matching with client IP.               | "127.0.0.1" or "127.0.0.1/32" or "::1" |
+| server_addr | False    | IPv4, IPv4 CIDR, IPv6  | Filters Upstream forwards by matching with APISIX Server IP.        | "127.0.0.1" or "127.0.0.1/32" or "::1" |
 | server_port | False    | Integer  | Filters Upstream forwards by matching with APISIX Server port.      | 9090                          |
 | sni         | False    | Host     | Server Name Indication.                                             | "test.com"                    |
 | protocol.name | False    | String | Name of the protocol proxyed by xRPC framework.                     | "redis"                    |
@@ -1452,3 +1453,31 @@ HTTP/1.1 200 OK
 ### Response Parameters
 
 Currently, the response is returned from etcd.
+
+## Proto
+
+Proto is used to store protocol buffers so that APISIX can communicate in gRPC.
+
+See [grpc-transcode plugin](./plugins/grpc-transcode.md#enabling-the-plugin) doc for more examples.
+
+### Proto API
+
+Proto resource request address: /apisix/admin/protos/{id}
+
+### Request Methods
+
+| Method | Request URI                      | Request Body | Description                                     |
+| ------ | -------------------------------- | ------------ | ----------------------------------------------- |
+| GET    | /apisix/admin/protos      | NULL         | List all Protos.  |
+| GET    | /apisix/admin/protos/{id} | NULL         | Get a Proto by id.     |
+| PUT    | /apisix/admin/protos/{id} | {...}        | Create or update a Proto with the given id.        |
+| POST   | /apisix/admin/protos      | {...}        | Create a Proto with a random id.         |
+| DELETE | /apisix/admin/protos/{id} | NULL         | Delete Proto by id.                 |
+
+### Request Body Parameters
+
+| Parameter   | Required | Type     | Description                                                         | Example                       |
+| ----------- | -------- | -------- | ------------------------------------------------------------------- | ----------------------------- |
+| content   | True    | String | content of `.proto` or `.pb` files | See [here](./plugins/grpc-transcode.md#enabling-the-plugin)         |
+| create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
+| update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |

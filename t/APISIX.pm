@@ -203,8 +203,10 @@ _EOC_
 
 $grpc_location .= <<_EOC_;
             grpc_set_header   Content-Type application/grpc;
+            grpc_set_header   TE trailers;
             grpc_socket_keepalive on;
             grpc_pass         \$upstream_scheme://apisix_backend;
+            mirror              /proxy_mirror_grpc;
 
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
@@ -647,6 +649,8 @@ _EOC_
         $ipv6_fake_server
         server_tokens off;
 
+        access_log logs/fake-server-access.log main;
+
         location / {
             content_by_lua_block {
                 require("lib.server").go()
@@ -671,6 +675,8 @@ _EOC_
 
     $http_config .= <<_EOC_;
         server_tokens off;
+
+        access_log logs/fake-server-access.log main;
 
         ssl_certificate_by_lua_block {
             local ngx_ssl = require "ngx.ssl"
@@ -709,6 +715,8 @@ _EOC_
             apisix.http_ssl_phase()
         }
 
+        access_log logs/access.log main;
+
         set \$dubbo_service_name          '';
         set \$dubbo_service_version       '';
         set \$dubbo_method                '';
@@ -736,6 +744,7 @@ _EOC_
         }
 
         location / {
+            set \$upstream_mirror_host        '';
             set \$upstream_mirror_uri         '';
             set \$upstream_upgrade            '';
             set \$upstream_connection         '';
@@ -820,6 +829,22 @@ _EOC_
             proxy_http_version 1.1;
             proxy_set_header Host \$upstream_host;
             proxy_pass \$upstream_mirror_uri;
+        }
+
+        location = /proxy_mirror_grpc {
+            internal;
+_EOC_
+
+    if ($version !~ m/\/apisix-nginx-module/) {
+        $config .= <<_EOC_;
+            if (\$upstream_mirror_uri = "") {
+                return 200;
+            }
+_EOC_
+    }
+
+    $config .= <<_EOC_;
+            grpc_pass \$upstream_mirror_host;
         }
 _EOC_
 

@@ -40,7 +40,7 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 clickhouse-lo
 | database         | string  | 是     |                     |              | 使用的数据库。                                            |
 | logtable         | string  | 是     |                     |              | 写入的表名。                                              |
 | user             | string  | 是     |                     |              | ClickHouse 的用户。                                       |
-| password         | string  | 是     |                     |              | ClickHouse 的密码 。                                      |
+| password         | string  | 是     |                     |              | ClickHouse 的密码。                                      |
 | timeout          | integer | 否     | 3                   | [1,...]      | 发送请求后保持连接活动的时间。                             |
 | name             | string  | 否     | "clickhouse logger" |              | 标识 logger 的唯一标识符。                                |
 | ssl_verify       | boolean | 否     | true                | [true,false] | 当设置为 `true` 时，验证证书。                                                |
@@ -74,25 +74,16 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/clickhouse-logger \
 }'
 ```
 
-首先，你需要在 ClickHouse 数据库中创建一个表来存储日志：
+您可以使用 Clickhouse docker 镜像来创建一个容器，如下所示：
 
-```sql
-CREATE TABLE default.test (
-  `host` String,
-  `client_ip` String,
-  `route_id` String,
-  `service_id` String,
-  `@timestamp` String,
-   PRIMARY KEY(`@timestamp`)
-) ENGINE = MergeTree()
+```shell
+docker run -d -p 8123:8123 -p 9000:9000 -p 9009:9009 --name some-clickhouse-server --ulimit nofile=262144:262144 clickhouse/clickhouse-server
 ```
 
-在 ClickHouse 中执行`select * from default.test;`，将得到类似下面的数据：
+然后在您的 ClickHouse 数据库中创建一个表来存储日志。
 
-```
-┌─host──────┬─client_ip─┬─route_id─┬─@timestamp────────────────┐
-│ 127.0.0.1 │ 127.0.0.1 │ 1        │ 2022-01-17T10:03:10+08:00 │
-└───────────┴───────────┴──────────┴───────────────────────────┘
+```shell
+echo "CREATE TABLE default.test (\`host\` String, \`client_ip\` String, \`route_id\` String, \`service_id\` String, \`@timestamp\` String, PRIMARY KEY(\`@timestamp\`)) ENGINE = MergeTree()" | curl 'http://localhost:8123/'
 ```
 
 ## 启用插件
@@ -134,6 +125,13 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl -i http://127.0.0.1:9080/hello
+```
+
+现在，如果您检查表中的行，您将获得以下输出：
+
+```shell
+curl 'http://localhost:8123/?query=select%20*%20from%20default.test'
+127.0.0.1	127.0.0.1	1		2023-05-08T19:15:53+05:30
 ```
 
 ## 禁用插件

@@ -101,7 +101,7 @@ helm install apisix apisix/apisix --create-namespace  --namespace apisix
 
 <TabItem value="rpm">
 
-该安装方法适用于 CentOS 7 和 CentOS 8。如果你选择该方法安装 APISIX，需要先安装 etcd。具体安装方法请参考[安装 etcd](#安装-etcd)。
+该安装方法适用于 CentOS 7 和 CentOS 8。如果你选择该方法安装 APISIX，需要先安装 etcd。具体安装方法请参考 [安装 etcd](#安装-etcd)。
 
 ### 通过 RPM 仓库安装
 
@@ -197,7 +197,7 @@ apisix start
 
 <TabItem value="source code">
 
-如果你想要使用源码构建 APISIX，请参考[源码安装 APISIX](./building-apisix.md)。
+如果你想要使用源码构建 APISIX，请参考 [源码安装 APISIX](./building-apisix.md)。
 
 </TabItem>
 </Tabs>

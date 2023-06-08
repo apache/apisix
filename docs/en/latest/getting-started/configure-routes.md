@@ -28,7 +28,7 @@ An upstream is a set of target nodes with the same work. It defines a virtual ho
 
 ## Prerequisite(s)
 
-1. Complete [Get APISIX](./) to install APISIX.
+1. Complete [Get APISIX](../README) to install APISIX.
 
 ## Create a Route
 

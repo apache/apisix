@@ -173,16 +173,20 @@ hello world
             end
 
             math.randomseed(os.time())
-            local rfc5424 = require("apisix.plugins.slslog.rfc5424")
+            local rfc5424 = require("apisix.utils.rfc5424")
             local m = 0
             -- because the millisecond value obtained by `ngx.now` may be `0`
             -- it is executed multiple times to ensure the accuracy of the test
             for i = 1, 5 do
                 ngx.sleep(string.format("%0.3f", math.random()))
+                local structured_data = {
+                    {name = "project", value = "apisix.apache.org"},
+                    {name = "logstore", value = "apisix.apache.org"},
+                    {name = "access-key-id", value = "apisix.sls.logger"},
+                    {name = "access-key-secret", value = "BD274822-96AA-4DA6-90EC-15940FB24444"}
+                }
                 local log_entry = rfc5424.encode("SYSLOG", "INFO", "localhost", "apisix",
-                                                 123456, "apisix.apache.org", "apisix.apache.log",
-                                                 "apisix.sls.logger", "BD274822-96AA-4DA6-90EC-15940FB24444",
-                                                 "hello world")
+                                                 123456, "hello world", structured_data)
                 m = get_syslog_timestamp_millisecond(log_entry) + m
             end
 
@@ -226,15 +230,13 @@ passed
 === TEST 9: access
 --- extra_init_by_lua
     local json = require("toolkit.json")
-    local rfc5424 = require("apisix.plugins.slslog.rfc5424")
+    local rfc5424 = require("apisix.utils.rfc5424")
     local old_f = rfc5424.encode
-    rfc5424.encode = function(facility, severity, hostname, appname, pid, project,
-                   logstore, access_key_id, access_key_secret, msg)
+    rfc5424.encode = function(facility, severity, hostname, appname, pid, msg, structured_data)
         local r = json.decode(msg)
         assert(r.client_ip == "127.0.0.1", r.client_ip)
         assert(r.host == "localhost", r.host)
-        return old_f(facility, severity, hostname, appname, pid, project,
-                     logstore, access_key_id, access_key_secret, msg)
+        return old_f(facility, severity, hostname, appname, pid, msg, structured_data)
     end
 --- request
 GET /hello
@@ -372,14 +374,12 @@ passed
 === TEST 13: access
 --- extra_init_by_lua
     local json = require("toolkit.json")
-    local rfc5424 = require("apisix.plugins.slslog.rfc5424")
+    local rfc5424 = require("apisix.utils.rfc5424")
     local old_f = rfc5424.encode
-    rfc5424.encode = function(facility, severity, hostname, appname, pid, project,
-                   logstore, access_key_id, access_key_secret, msg)
+    rfc5424.encode = function(facility, severity, hostname, appname, pid, msg, structured_data)
         local r = json.decode(msg)
         assert(r.vip == "127.0.0.1", r.vip)
-        return old_f(facility, severity, hostname, appname, pid, project,
-                     logstore, access_key_id, access_key_secret, msg)
+        return old_f(facility, severity, hostname, appname, pid, msg, structured_data)
     end
 --- request
 GET /hello

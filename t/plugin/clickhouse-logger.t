@@ -183,13 +183,11 @@ passed
                         "plugins": {
                             "clickhouse-logger": {
                                 "user": "default",
-                                "password": "a",
+                                "password": "",
                                 "database": "default",
-                                "logtable": "t",
-                                "endpoint_addrs": ["http://127.0.0.1:1980/clickhouse_logger_server",
-                                                  "http://127.0.0.1:10420/clickhouse-logger/test1"],
-                                "batch_max_size":1,
-                                "inactive_timeout":1
+                                "logtable": "test",
+                                "endpoint_addrs": ["http://127.0.0.1:8123",
+                                                  "http://127.0.0.1:8124"]
                             }
                         },
                         "upstream": {
@@ -214,21 +212,24 @@ passed
 
 
 
-=== TEST 6: access local server
+=== TEST 6: hit route
 --- request
 GET /opentracing
---- response_body
-opentracing
---- error_log
-clickhouse body: INSERT INTO t FORMAT JSONEachRow
-clickhouse headers: x-clickhouse-key:a
-clickhouse headers: x-clickhouse-user:default
-clickhouse headers: x-clickhouse-database:default
+--- error_code: 200
 --- wait: 5
 
 
 
-=== TEST 7: log format in plugin
+=== TEST 7: get log
+--- exec
+echo "select * from default.test" | curl 'http://localhost:8123/' --data-binary @-
+echo "select * from default.test" | curl 'http://localhost:8124/' --data-binary @-
+--- response_body_like
+.*127.0.0.1.*1.*
+
+
+
+=== TEST 8: use single clickhouse server
 --- config
     location /t {
         content_by_lua_block {
@@ -239,24 +240,19 @@ clickhouse headers: x-clickhouse-database:default
                         "plugins": {
                             "clickhouse-logger": {
                                 "user": "default",
-                                "password": "a",
+                                "password": "",
                                 "database": "default",
-                                "logtable": "t",
-                                "endpoint_addrs": ["http://127.0.0.1:10420/clickhouse-logger/test1"],
-                                "log_format": {
-                                    "vip": "$remote_addr"
-                                },
-                                "batch_max_size":1,
-                                "inactive_timeout":1
+                                "logtable": "test",
+                                "endpoint_addr": "http://127.0.0.1:8123"
                             }
                         },
                         "upstream": {
                             "nodes": {
-                                "127.0.0.1:1980": 1
+                                "127.0.0.1:1982": 1
                             },
                             "type": "roundrobin"
                         },
-                        "uri": "/hello"
+                        "uri": "/opentracing"
                 }]]
                 )
 
@@ -266,18 +262,21 @@ clickhouse headers: x-clickhouse-database:default
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
 
 
-=== TEST 8: hit route and report logger
+=== TEST 9: hit route
 --- request
-GET /hello
---- response_body
-hello world
---- wait: 1.5
---- error_log eval
-qr/clickhouse body: INSERT INTO t FORMAT JSONEachRow \{.*"vip":"127.0.0.1".*\}/
+GET /opentracing
+--- error_code: 200
+--- wait: 5
+
+
+
+=== TEST 10: get log
+--- exec
+echo "select * from default.test" | curl 'http://localhost:8123/' --data-binary @-
+--- response_body_like
+.*127.0.0.1.*1.*

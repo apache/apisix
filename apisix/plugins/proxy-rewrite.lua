@@ -22,6 +22,7 @@ local ngx         = ngx
 local type        = type
 local re_sub      = ngx.re.sub
 local re_match    = ngx.re.match
+local req_set_uri = ngx.req.set_uri
 local sub_str     = string.sub
 local str_find    = core.string.find
 
@@ -65,7 +66,6 @@ local schema = {
             description = "new uri that substitute from client uri " ..
                           "for upstream, lower priority than uri property",
             type        = "array",
-            maxItems    = 2,
             minItems    = 2,
             items       = {
                 description = "regex uri",
@@ -191,11 +191,16 @@ function _M.check_schema(conf)
     end
 
     if conf.regex_uri and #conf.regex_uri > 0 then
-        local _, _, err = re_sub("/fake_uri", conf.regex_uri[1],
-                                   conf.regex_uri[2], "jo")
-        if err then
-            return false, "invalid regex_uri(" .. conf.regex_uri[1] ..
-                            ", " .. conf.regex_uri[2] .. "): " .. err
+        if (#conf.regex_uri % 2 ~= 0) then
+            return false, "The length of regex_uri should be an even number"
+        end
+        for i = 1, #conf.regex_uri, 2 do
+            local _, _, err = re_sub("/fake_uri", conf.regex_uri[i],
+                conf.regex_uri[i + 1], "jo")
+            if err then
+                return false, "invalid regex_uri(" .. conf.regex_uri[i] ..
+                    ", " .. conf.regex_uri[i + 1] .. "): " .. err
+            end
         end
     end
 
@@ -282,24 +287,36 @@ function _M.rewrite(conf, ctx)
             separator_escaped = true
         end
 
-        local uri, _, err = re_sub(upstream_uri, conf.regex_uri[1],
-                                   conf.regex_uri[2], "jo")
-        if not uri then
-            local msg = "failed to substitute the uri " .. ctx.var.uri ..
-                        " (" .. conf.regex_uri[1] .. ") with " ..
-                        conf.regex_uri[2] .. " : " .. err
-            core.log.error(msg)
-            return 500, {message = msg}
+        local error_msg
+        for i = 1, #conf.regex_uri, 2 do
+            local captures, err = re_match(upstream_uri, conf.regex_uri[i], "jo")
+            if err then
+                error_msg = "failed to match the uri " .. ctx.var.uri ..
+                    " (" .. conf.regex_uri[i] .. ") " .. " : " .. err
+                break
+            end
+
+            if captures then
+                ctx.proxy_rewrite_regex_uri_captures = captures
+
+                local uri, _, err = re_sub(upstream_uri,
+                    conf.regex_uri[i], conf.regex_uri[i + 1], "jo")
+                if uri then
+                    upstream_uri = uri
+                else
+                    error_msg = "failed to substitute the uri " .. ngx.var.uri ..
+                        " (" .. conf.regex_uri[i] .. ") with " ..
+                        conf.regex_uri[i + 1] .. " : " .. err
+                end
+
+                break
+            end
         end
 
-        local m, err = re_match(upstream_uri, conf.regex_uri[1], "jo")
-        if not m and err then
-            core.log.error("match error in proxy-rewrite plugin, please check: ", err)
-            return 500
+        if error_msg ~= nil then
+            core.log.error(error_msg)
+            return 500, { error_msg = error_msg }
         end
-        ctx.proxy_rewrite_regex_uri_captures = m
-
-        upstream_uri = uri
     end
 
     if not conf.use_real_request_uri_unsafe then
@@ -316,6 +333,8 @@ function _M.rewrite(conf, ctx)
             -- via regex_uri
             upstream_uri = core.utils.uri_safe_encode(upstream_uri)
         end
+
+        req_set_uri(upstream_uri)
 
         if ctx.var.is_args == "?" then
             if index then

@@ -79,12 +79,13 @@ local Severity = {
 }
 
 local log_util = require("apisix.utils.log-util")
-
+local ipairs = ipairs
+local str_format = string.format
 
 local _M = { version = 0.1 }
 
-function _M.encode(facility, severity, hostname, appname, pid, project,
-                   logstore, access_key_id, access_key_secret, msg)
+
+function _M.encode(facility, severity, hostname, appname, pid, msg, structured_data)
     local pri = (Facility[facility] * 8 + Severity[severity])
     local t = log_util.get_rfc3339_zulu_timestamp()
     if not hostname then
@@ -95,10 +96,19 @@ function _M.encode(facility, severity, hostname, appname, pid, project,
         appname = "-"
     end
 
-    return "<" .. pri .. ">1 " .. t .. " " .. hostname .. " " .. appname .. " " .. pid
-           .. " - [logservice project=\"" .. project .. "\" logstore=\"" .. logstore
-           .. "\" access-key-id=\"" .. access_key_id .. "\" access-key-secret=\""
-           .. access_key_secret .. "\"] " .. msg .. "\n"
+    local structured_data_str = "-"
+
+    if structured_data then
+        structured_data_str = "[logservice"
+        for _, sd_param in ipairs(structured_data) do
+            structured_data_str = structured_data_str .. " " .. sd_param.name
+                                  .. "=\"" .. sd_param.value .. "\""
+        end
+        structured_data_str = structured_data_str .. "]"
+    end
+
+    return str_format("<%d>1 %s %s %s %d - %s %s\n", pri, t, hostname,
+                    appname, pid, structured_data_str, msg)
 end
 
 return _M

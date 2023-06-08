@@ -118,7 +118,7 @@ APISIX 在 v3 版本对响应体做了以下调整：
 
 返回单个资源：
 
-    ```json
+```json
     {
     "modifiedIndex": 2685183,
     "value": {
@@ -128,11 +128,11 @@ APISIX 在 v3 版本对响应体做了以下调整：
     "key": "/apisix/routes/1",
     "createdIndex": 2684956
     }
-    ```
+```
 
 返回多个资源：
 
-    ```json
+```json
     {
     "list": [
         {
@@ -156,7 +156,7 @@ APISIX 在 v3 版本对响应体做了以下调整：
     ],
     "total": 2
     }
-    ```
+```
 
 ### 支持分页查询 {#support-paging-query}
 
@@ -1168,6 +1168,7 @@ SSL 资源请求地址：/apisix/admin/ssls/{id}
 | keys        | 否   | 私钥字符串数组 | `certs` 对应的证书私钥，需要与 `certs` 一一对应。                                                          |                                                  |
 | client.ca   | 否   | 证书 |  设置将用于客户端证书校验的 `CA` 证书。该特性需要 OpenResty 为 1.19 及以上版本。  |                                                  |
 | client.depth | 否   | 辅助 |  设置客户端证书校验的深度，默认为 1。该特性需要 OpenResty 为 1.19 及以上版本。 |                                             |
+| client.skip_mtls_uri_regex | 否   | PCRE 正则表达式数组 |  用来匹配请求的 URI，如果匹配，则该请求将绕过客户端证书的检查，也就是跳过 MTLS。 | ["/hello[0-9]+", "/foobar"]                                            |
 | snis        | 是   | 匹配规则       | 非空数组形式，可以匹配多个 SNI。                                                                         |                                                  |
 | labels      | 否   | 匹配规则       | 标识附加属性的键值对。                                                                                   | {"version":"v2","build":"16","env":"production"} |
 | create_time | 否   | 辅助           | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                          | 1602883670                                       |
@@ -1357,7 +1358,7 @@ Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 
 你可以使用 `/apisix/admin/plugins?all=true` 接口获取所有插件的所有属性，每个插件包括 `name`，`priority`，`type`，`schema`，`consumer_schema` 和 `version`。
 
-默认情况下，该接口只返回 HTTP 插件。如果你需要获取 Stream 插件，需要使用 `/apisix/admin/plugins?all=true&subsystem=stream`。
+默认情况下，该接口只返回 L7 插件。如果你需要获取 L4 / Stream 插件，需要使用 `/apisix/admin/plugins?all=true&subsystem=stream`。
 
 :::
 
@@ -1385,8 +1386,8 @@ Plugin 资源请求地址：/apisix/admin/stream_routes/{id}
 | ---------------- | ------| -------- | ------------------------------------------------------------------------------| ------  |
 | upstream         | 否    | Upstream | Upstream 配置，详细信息请参考 [Upstream](terminology/upstream.md)。             |         |
 | upstream_id      | 否    | Upstream | 需要使用的 Upstream id，详细信息请 [Upstream](terminology/upstream.md)。       |         |
-| remote_addr      | 否    | IP/CIDR  | 过滤选项：如果客户端 IP 匹配，则转发到上游                                      | "127.0.0.1/32" 或 "127.0.0.1" |
-| server_addr      | 否    | IP/CIDR  | 过滤选项：如果 APISIX 服务器的 IP 与 `server_addr` 匹配，则转发到上游。         | "127.0.0.1/32" 或 "127.0.0.1" |
+| remote_addr      | 否    | IPv4, IPv4 CIDR, IPv6  | 过滤选项：如果客户端 IP 匹配，则转发到上游                                      | "127.0.0.1" 或 "127.0.0.1/32" 或 "::1" |
+| server_addr      | 否    | IPv4, IPv4 CIDR, IPv6  | 过滤选项：如果 APISIX 服务器的 IP 与 `server_addr` 匹配，则转发到上游。         | "127.0.0.1" 或 "127.0.0.1/32" 或 "::1" |
 | server_port      | 否    | 整数     | 过滤选项：如果 APISIX 服务器的端口 与 `server_port` 匹配，则转发到上游。        | 9090  |
 | sni              | 否    | Host     | 服务器名称。                                                                   | "test.com"     |
 | protocol.name    | 否    | 字符串   | xRPC 框架代理的协议的名称。                                                    | "redis"        |
