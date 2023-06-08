@@ -774,6 +774,9 @@ function _M.get(name)
     return local_plugins_hash and local_plugins_hash[name]
 end
 
+function _M.get_stream(name)
+    return stream_local_plugins_hash and stream_local_plugins_hash[name]
+end
 
 function _M.get_all(attrs)
     local http_plugins = {}

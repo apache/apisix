@@ -138,12 +138,12 @@ ext-plugin-post-resp
 
 
 
-=== TEST 2: wrong path
+=== TEST 2: invalid plugin
 --- request
-GET /apisix/admin/plugins
+GET /apisix/admin/plugins/asdf
 --- error_code: 400
 --- response_body
-{"error_msg":"not found plugin name"}
+{"error_msg":"failed to load plugin asdf"}
 
 
 
@@ -252,7 +252,7 @@ plugins:
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
 
-            local code, message, res = t('/apisix/admin/plugins?all=true',
+            local code, message, res = t('/apisix/admin/plugins',
                 ngx.HTTP_GET
             )
 
@@ -282,7 +282,7 @@ qr/\{"metadata_schema":\{"properties":\{"ikey":\{"minimum":0,"type":"number"\},"
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
 
-            local code, message, res = t('/apisix/admin/plugins?all=true',
+            local code, message, res = t('/apisix/admin/plugins',
                 ngx.HTTP_GET
             )
 
@@ -321,7 +321,7 @@ qr/\[\{"name":"wolf-rbac","priority":2555\},\{"name":"ldap-auth","priority":2540
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
 
-            local code, message, res = t('/apisix/admin/plugins?all=true',
+            local code, message, res = t('/apisix/admin/plugins',
                 ngx.HTTP_GET
             )
 
@@ -353,7 +353,7 @@ qr/\{"encrypt_fields":\["password"\],"properties":\{"password":\{"type":"string"
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
 
-            local code, message, res = t('/apisix/admin/plugins?all=true&subsystem=stream',
+            local code, message, res = t('/apisix/admin/plugins?subsystem=stream',
                 ngx.HTTP_GET
             )
 
@@ -390,7 +390,7 @@ plugins:
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
 
-            local code, message, res = t('/apisix/admin/plugins?all=true',
+            local code, message, res = t('/apisix/admin/plugins',
                 ngx.HTTP_GET
             )
 
@@ -421,7 +421,7 @@ plugins:
         content_by_lua_block {
             local t = require("lib.test_admin").test
 
-            local _, message, _ = t('/apisix/admin/plugins?all=true&subsystem=asdf',
+            local _, message, _ = t('/apisix/admin/plugins?subsystem=asdf',
                 ngx.HTTP_GET
             )
             ngx.say(message)
@@ -429,3 +429,37 @@ plugins:
     }
 --- response_body eval
 qr/\{"error_msg":"unsupported subsystem: asdf"\}/
+
+
+
+=== TEST 14: check with right plugin in wrong subsystem
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local _, message, _ = t('/apisix/admin/plugins/http-logger?subsystem=stream',
+                ngx.HTTP_GET
+            )
+            ngx.say(message)
+        }
+    }
+--- response_body eval
+qr/\{"error_msg":"failed to load plugin http-logger in subsystem stream"\}/
+
+
+
+=== TEST 14: check with right plugin in right subsystem
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local _, _ , message = t('/apisix/admin/plugins/http-logger?subsystem=http',
+                ngx.HTTP_GET
+            )
+            ngx.say(message)
+        }
+    }
+--- response_body eval
+qr/this is a mark for our injected plugin schema/

@@ -23,6 +23,8 @@ local table_sort = table.sort
 local table_insert = table.insert
 local get_uri_args = ngx.req.get_uri_args
 local plugin_get_all = require("apisix.plugin").get_all
+local plugin_get_http = require("apisix.plugin").get
+local plugin_get_stream = require("apisix.plugin").get_stream
 local encrypt_conf = require("apisix.plugin").encrypt_conf
 local pairs = pairs
 
@@ -48,7 +50,8 @@ function _M.get(name)
         return 400, {error_msg = "unsupported subsystem: "..subsystem}
     end
 
-    if arg and arg["all"] == "true" then
+    -- When name is unspecified, return all plugins for the given subsystem
+    if not name then
         local http_plugins, stream_plugins = plugin_get_all({
             version = true,
             priority = true,
@@ -74,16 +77,30 @@ function _M.get(name)
         return 200, all_plugins
     end
 
-    if not name then
-        return 400, {error_msg = "not found plugin name"}
+    local plugin 
+    -- By default search through all subsystems
+    local all_subsystem = true
+    if subsystem then
+        all_subsystem = false
     end
 
-    local plugin_name = "apisix.plugins." .. name
-
-    local ok, plugin = pcall(require, plugin_name)
-    if not ok then
+    -- When subsystem is passed as http or not passed at all(searching through all)
+    if all_subsystem or subsystem == "http"  then
+        plugin = plugin_get_http(name)
+    end
+    
+    -- When subsystem is passed as stream or not passed at all(searching through all)
+    if (not plugin) and (all_subsystem or subsystem == "stream") then
+        plugin = plugin_get_stream(name)
+    end
+    
+    if not plugin then
+        local err = "failed to load plugin " .. name 
+        if subsystem then
+            err = err .. " in subsystem ".. subsystem
+        end
         core.log.warn("failed to load plugin [", name, "] err: ", plugin)
-        return 400, {error_msg = "failed to load plugin " .. name}
+        return 400, {error_msg = err }
     end
 
     local json_schema = plugin.schema
