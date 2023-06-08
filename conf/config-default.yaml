@@ -19,30 +19,29 @@
 #
 
 apisix:
-  # node_listen: 9080               # Single APISIX listening port
-  node_listen:                      # Multiple APISIX listening ports
+  # node_listen: 9080               # Use this if APISIX listens on a single port.
+  node_listen:                      # Use this if APISIX listens on multiple ports.
     - 9080
   #   - port: 9081
-  #     enable_http2: true          # If not set, default to `false`
-  #   - ip: 127.0.0.2               # If not set, default to `0.0.0.0`
+  #     enable_http2: true          # If not set, default to `false`.
+  #   - ip: 127.0.0.2               # If not set, default to `0.0.0.0`/
   #     port: 9082
   #     enable_http2: true
   enable_admin: true
-  enable_dev_mode: false            # If true, nginx worker_processes will be set to 1
-  enable_reuseport: true            # If true, nginx SO_REUSEPORT option will be enabled
-  show_upstream_status_in_response_header: false   # If true, show upstream HTTP status code in the response header `X-APISIX-Upstream-Status`
+  enable_dev_mode: false            # If true, nginx worker_processes will be set to 1.
+  enable_reuseport: true            # If true, nginx SO_REUSEPORT option will be enabled.
+  show_upstream_status_in_response_header: false  # If true, include the upstream HTTP status code in
+                                                  # the response header `X-APISIX-Upstream-Status`.
+                                                  # If false, show `X-APISIX-Upstream-Status` only if
+                                                  # the upstream response code is 5xx.
   enable_ipv6: true
-
-  #proxy_protocol:                  # Proxy Protocol configuration
-  #  listen_http_port: 9181         # The port with proxy protocol for http, it differs from node_listen and admin_listen.
-                                    # This port can only receive http request with proxy protocol, but node_listen & admin_listen
-                                    # can only receive http request. If you enable proxy protocol, you must use this port to
-                                    # receive http request with proxy protocol
-  #  listen_https_port: 9182        # The port with proxy protocol for https
-  #  enable_tcp_pp: true            # Enable the proxy protocol for tcp proxy, it works for stream_proxy.tcp option
-  #  enable_tcp_pp_to_upstream: true # Enable the proxy protocol to the upstream server
-  enable_server_tokens: true        # Whether the APISIX version number should be shown in Server header.
-                                    # True by default.
+  
+  #proxy_protocol:                    # PROXY Protocol Configuration
+  #  listen_http_port: 9181           # APISIX listening port for HTTP traffic with PROXY protocol.
+  #  listen_https_port: 9182          # APISIX listening port for HTTPS traffic with PROXY protocol.
+  #  enable_tcp_pp: true              # Enable the PROXY protocol for TCP proxy when stream_proxy.tcp is set.
+  #  enable_tcp_pp_to_upstream: true  # Enable the PROXY protocol.
+  enable_server_tokens: true          # If ture, show APISIX version in the `Server` response header.
 
   # configurations to load third party code and/or override the builtin one.
   extra_lua_path: ""                # extend lua_package_path to load third party code
