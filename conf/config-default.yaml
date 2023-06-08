@@ -63,34 +63,33 @@ apisix:
       - name: memory_cache
         memory_size: 50m
 
-  delete_uri_tail_slash: false    # delete the '/' at the end of the URI
-  # The URI normalization in servlet is a little different from the RFC's.
-  # See https://github.com/jakartaee/servlet/blob/master/spec/src/main/asciidoc/servlet-spec-body.adoc#352-uri-path-canonicalization,
-  # which is used under Tomcat.
-  # Turn this option on if you want to be compatible with servlet when matching URI path.
-  normalize_uri_like_servlet: false
+  delete_uri_tail_slash: false        # Delete the '/' at the end of the URI
+  normalize_uri_like_servlet: false   # If true, use the same path normalization rules as the Java 
+                                      # servlet specification. See https://github.com/jakartaee/servlet/blob/master/spec/src/main/asciidoc/servlet-spec-body.adoc#352-uri-path-canonicalization, which is used in Tomcat.
+  
   router:
-    http: radixtree_host_uri      # radixtree_uri: match route by uri(base on radixtree)
-                                  # radixtree_host_uri: match route by host + uri(base on radixtree)
-                                  # radixtree_uri_with_parameter: like radixtree_uri but match uri with parameters,
-                                  #   see https://github.com/api7/lua-resty-radixtree/#parameters-in-path for
-                                  #   more details.
-    ssl: radixtree_sni          # radixtree_sni: match route by SNI(base on radixtree)
-  #stream_proxy:                  # TCP/UDP proxy
-  #  only: true                   # use stream proxy only, don't enable HTTP stuff
-  #  tcp:                         # TCP proxy port list
-  #    - addr: 9100
-  #      tls: true
-  #    - addr: "127.0.0.1:9101"
-  #  udp:                         # UDP proxy port list
-  #    - 9200
-  #    - "127.0.0.1:9201"
-  #dns_resolver:                  # If not set, read from `/etc/resolv.conf`
-  #  - 1.1.1.1
-  #  - 8.8.8.8
-  #dns_resolver_valid: 30         # if given, override the TTL of the valid records. The unit is second.
-  resolver_timeout: 5             # resolver timeout
-  enable_resolv_search_opt: true  # enable search option in resolv.conf
+    http: radixtree_host_uri    # radixtree_host_uri: match route by host and URI
+                                # radixtree_uri: match route by URI
+                                # radixtree_uri_with_parameter: similar to radixtree_uri but match URI with parameters. See https://github.com/api7/lua-resty-radixtree/#parameters-in-path for more details.
+    ssl: radixtree_sni          # radixtree_sni: match route by SNI
+
+  # stream_proxy:                 # TCP/UDP L4 proxy
+  #   only: true                  # Enable L4 proxy only without L7 proxy.
+  #   tcp:
+  #     - addr: 9100              # TCP proxy listening ports 
+  #       tls: true
+  #     - addr: "127.0.0.1:9101"
+  #   udp:                        # UDP proxy listening ports 
+  #     - 9200
+  #     - "127.0.0.1:9201"
+  # dns_resolver:                 # If not set, read from `/etc/resolv.conf`
+  #   - 1.1.1.1
+  #   - 8.8.8.8
+  # dns_resolver_valid: 30        # Override the default TTL of the DNS records.
+  resolver_timeout: 5             # Time that the server will wait for a response from the DNS resolver 
+                                  # before timing out.
+  enable_resolv_search_opt: true  # If true, use search option in the resolv.conf file in DNS lookups.
+  
   ssl:
     enable: true
     listen:                       # APISIX listening port in https.
@@ -209,18 +208,18 @@ nginx_config:                     # config for render the template to generate n
     #custom_lua_shared_dict:       # add custom shared cache to nginx.conf
     #  ipc_shared_dict: 100m       # custom shared cache, format: `cache-key: cache-size`
 
-    # Enable or disable passing of the server name through TLS Server Name Indication extension (SNI, RFC 6066)
+    # Enables or disables passing of the server name through TLS Server Name Indication extension (SNI, RFC 6066)
     # when establishing a connection with the proxied HTTPS server.
     proxy_ssl_server_name: true
     upstream:
-      keepalive: 320                # Set the maximum number of idle keepalive connections to upstream servers that are preserved in the cache of each worker process.
+      keepalive: 320                # Sets the maximum number of idle keepalive connections to upstream servers that are preserved in the cache of each worker process.
                                     # When this number is exceeded, the least recently used connections are closed.
-      keepalive_requests: 1000      # Set the maximum number of requests that can be served through one keepalive connection.
+      keepalive_requests: 1000      # Sets the maximum number of requests that can be served through one keepalive connection.
                                     # After the maximum number of requests is made, the connection is closed.
-      keepalive_timeout: 60s        # Set a timeout during which an idle keepalive connection to an upstream server will stay open.
+      keepalive_timeout: 60s        # Sets a timeout during which an idle keepalive connection to an upstream server will stay open.
     charset: utf-8                  # Adds the specified charset to the "Content-Type" response header field, see
                                     # http://nginx.org/en/docs/http/ngx_http_charset_module.html#charset
-    variables_hash_max_size: 2048   # Set the maximum size of the variables hash table.
+    variables_hash_max_size: 2048   # Sets the maximum size of the variables hash table.
 
     lua_shared_dict:
       internal-status: 10m
