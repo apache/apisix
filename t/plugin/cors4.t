@@ -301,7 +301,7 @@ Access-Control-Allow-Headers:
 Access-Control-Expose-Headers:
 Access-Control-Max-Age:
 Access-Control-Allow-Credentials:
-Timing-Allow-Origin:
+Timing-Allow-Origin: http://another.domain.com
 
 
 
@@ -485,7 +485,7 @@ Access-Control-Allow-Headers:
 Access-Control-Expose-Headers:
 Access-Control-Max-Age:
 Access-Control-Allow-Credentials:
-Timing-Allow-Origin:
+Timing-Allow-Origin: http://three.domain.com
 
 === TEST 20: origin not matching 
 --- request

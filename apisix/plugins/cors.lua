@@ -125,7 +125,7 @@ local schema = {
             description =
                 "you can use '*' to allow all origins which can view timing information " ..
                 "when no credentials," ..
-                "'**' to allow forcefully(it will bring some security risks, be carefully)," ..
+                "'**' to allow forcefully (it will bring some security risks, be carefully)," ..
                 "multiple origin use ',' to split. default: nil",
             type = "string",
             pattern = origins_pattern
@@ -204,14 +204,6 @@ function _M.check_schema(conf, schema_type)
         end
     end
 
-    if not conf.allow_origins then
-        if conf.timing_allow_origins or conf.timing_allow_origins_by_regex then
-            return false, "you can not set 'timing_allow_origin' " ..
-                          "or 'timing_allow_origin_by_regex' " ..
-                          "when 'allow_origins' is not set"
-        end
-    end
-
     if conf.timing_allow_origins_by_regex then
         for i, re_rule in ipairs(conf.timing_allow_origins_by_regex) do
             local ok, err = re_compile(re_rule, "j")
@@ -244,10 +236,18 @@ local function set_cors_headers(conf, ctx)
     if conf.allow_credential then
         core.response.set_header("Access-Control-Allow-Credentials", true)
     end
+
     if ctx.timing_allow_origin then
         core.response.set_header("Timing-Allow-Origin", ctx.timing_allow_origin)
     end
 end
+
+local function set_timing_headers(conf, ctx)
+    if ctx.timing_allow_origin then
+        core.response.set_header("Timing-Allow-Origin", ctx.timing_allow_origin)
+    end
+end
+
 
 local function process_with_allow_origins(allow_origin_type, allow_origins, ctx, req_origin,
                                           cache_key, cache_version)
@@ -363,27 +363,25 @@ function _M.header_filter(conf, ctx)
     if conf.allow_origins ~= "*" then
         core.response.add_header("Vary", "Origin")
     end
-
-    -- calculate timing_allow_origins only if the access-control-allow-origin is set
-    local timing_allow_origins
-    if allow_origins then
-        if conf.timing_allow_origins_by_regex == nil and conf.timing_allow_origins then
-            timing_allow_origins = process_with_allow_origins(
-                TYPE_TIMING_ALLOW_ORIGIN, conf.timing_allow_origins, ctx, req_origin
-            )
-        elseif conf.timing_allow_origins_by_regex then
-            timing_allow_origins = process_with_allow_origins_by_regex(
-                TYPE_TIMING_ALLOW_ORIGIN, conf.timing_allow_origins_by_regex,
-                conf, ctx, req_origin
-            )
-        end
-
-        if match_origins(req_origin, timing_allow_origins) then
-            ctx.timing_allow_origin = timing_allow_origins
-        end
-
+    if allow_origins then   
         ctx.cors_allow_origins = allow_origins
         set_cors_headers(conf, ctx)
+    end
+
+    local timing_allow_origins
+    if conf.timing_allow_origins_by_regex == nil and conf.timing_allow_origins then
+        timing_allow_origins = process_with_allow_origins(
+            TYPE_TIMING_ALLOW_ORIGIN, conf.timing_allow_origins, ctx, req_origin
+        )
+    elseif conf.timing_allow_origins_by_regex then
+        timing_allow_origins = process_with_allow_origins_by_regex(
+            TYPE_TIMING_ALLOW_ORIGIN, conf.timing_allow_origins_by_regex,
+            conf, ctx, req_origin
+        )
+    end
+    if timing_allow_origins and match_origins(req_origin, timing_allow_origins) then
+        ctx.timing_allow_origin = timing_allow_origins
+        set_timing_headers(conf, ctx)
     end
 
 end
