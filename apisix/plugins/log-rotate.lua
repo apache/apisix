@@ -162,7 +162,7 @@ local function rename_file(log, date_str)
     local exists = lfs.attributes(filename, "mode") == "file"
     if not exists then
         local io = require("io")
-        local file = io.open(filename, "w")
+        local file = io_open(filename, "w")
         if file then
             file:close()
         end
