@@ -42,7 +42,7 @@ apisix:
   #   enable_tcp_pp: true              # Enable the PROXY protocol when stream_proxy.tcp is set.
   #   enable_tcp_pp_to_upstream: true  # Enable the PROXY protocol.
   
-  enable_server_tokens: true           # If ture, show APISIX version in the `Server` response header.
+  enable_server_tokens: true           # If true, show APISIX version in the `Server` response header.
   extra_lua_path: ""                   # Extend lua_package_path to load third-party code.
   extra_lua_cpath: ""                  # Extend lua_package_cpath to load third-party code.
   # lua_module_hook: "my_project.my_hook"  # Hook module used to inject third-party code into APISIX.
