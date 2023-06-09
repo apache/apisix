@@ -25,8 +25,6 @@ title: TCP/UDP 动态代理
 
 APISIX 可以对 TCP/UDP 协议进行代理并实现动态负载均衡。在 nginx 世界，称 TCP/UDP 代理为 stream 代理，在 APISIX 这里我们也遵循了这个声明。
 
-
-
 ## 如何开启 Stream 代理
 
 要启用该选项，请将 `apisix.proxy_mode` 设置为 `stream` 或 `http&stream`，具体取决于您是只需要流代理还是需要 http 和流。然后在 conf/config.yaml 中添加 apisix.stream_proxy 选项并指定 APISIX 应充当流代理并侦听传入请求的地址列表。
