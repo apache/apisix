@@ -329,6 +329,7 @@ function _M.header_filter(conf, ctx)
 
     if conf.status_code then
         ngx.status = conf.status_code
+        ctx.var.status = conf.status_code
     end
 
     -- if filters have no any match, response body won't be modified.

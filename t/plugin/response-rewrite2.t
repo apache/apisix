@@ -691,3 +691,72 @@ GET /hello
 --- response_headers
 Cache-Control:
 Set-Cookie:
+
+
+
+=== TEST 26: rewrite the status
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "clickhouse-logger": {
+                                "user": "default",
+                                "password": "a",
+                                "database": "default",
+                                "logtable": "t",
+                                "endpoint_addrs": ["http://127.0.0.1:10420/clickhouse-logger/test1"],
+                                "log_format": {
+                                    "vip": "$remote_addr",
+                                    "host": "$host",
+                                    "status": "$status"
+                                },
+                                "batch_max_size":1,
+                                "inactive_timeout":1
+                            },
+                            "response-rewrite": {
+                                "vars": [
+                                    [
+                                    "status",
+                                    "==",
+                                    200
+                                    ]
+                                ],
+                                "status_code":399
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 27: hit route and rewrite the status
+--- request
+GET /hello
+--- error_code: 399
+--- response_body
+hello world
+--- wait: 1.5
+--- error_log eval
+qr/clickhouse body: .*"status":"399".*
