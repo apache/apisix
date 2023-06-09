@@ -14,8 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# CAUTION: DO NOT MODIFY DEFAULT CONFIGURATIONS IN THIS FILE
-# You should keep custom configurations in conf/config.yaml.
+# CAUTION: DO NOT MODIFY DEFAULT CONFIGURATIONS IN THIS FILE.
+# Keep the custom configurations in conf/config.yaml.
 #
 
 apisix:
