@@ -106,29 +106,29 @@ apisix:
                                 # Disabled by default because it renders Perfect Forward Secrecy (FPS) 
                                 # useless. See https://github.com/mozilla/server-side-tls/issues/135.
 
-    key_encrypt_salt:           # Salt SSL key before saving to etcd.
-      - edd1c9f0985e76a2        # If this is set, the key_encrypt_salt should be an array of 16-byte
-                                # strings. SSL keys will be encrypted using AES-128-CBC with the 
-                                # specified salt value before being stored in etcd.
-                                # CAUTION: DO NOT CHANGE THE SALT VALUE AFTER SAVING THE SSL KEYS. 
-                                # OTHERWISE THE ENCRYPTED KEY CANNOT BE DECRYPTED.
-                                # Only use the first key to encrypt, and decrypt in the order of the array.
+    key_encrypt_salt:           # Salt for SSL/TLS private key used with AES-128-CBC.
+      - edd1c9f0985e76a2        # Each salt value should be a hexadecimal string of length 16.
+                                # Support multiple salt values for rotation.
+                                # CAUTION: DO NOT MODIFY SALT VALUE AFTER KEY IS WRITTEN TO ETCD. 
+                                # VALUES CANNOT BE DECRYPTED OTHERWISE.
 
     # fallback_sni: "my.default.domain"      # Fallback SNI to use if client does not send SNI during 
                                              # the handshake.
     
-  enable_control: true    # Enable Control API
+  enable_control: true  # Control API
   # control:
   #  ip: 127.0.0.1
   #  port: 9090
-  disable_sync_configuration_during_start: false  # safe exit. Remove this once the feature is stable
-  data_encryption:                # add `encrypt_fields = { $field },` in plugin schema to enable encryption
-    enable: false                 # if not set, the default value is `false`.
+
+  disable_sync_configuration_during_start: false  # Safe exit. TO BE REMOVED.
+
+  data_encryption:                # Encrypt fields specified in `encrypt_fields` in plugin schema.
+    enable: false
     keyring:
-      - qeddd145sfvddff3          # If not set, will save origin value into etcd.
-                                  # If set this, the keyring should be an array whose elements are string, and the size is also 16, and it will encrypt fields with AES-128-CBC
-                                  # !!! So do not change it after encryption, it can't decrypt the fields have be saved if you change !!
-                                  # Only use the first key to encrypt, and decrypt in the order of the array.
+      - qeddd145sfvddff3          # Salt for other fields encrypted with AES-128-CBC.
+                                  # Each salt value should be a hexadecimal string of length 16.
+                                  # Support multiple salt values for rotation.
+                                  # CAUTION: DO NOT MODIFY SALT VALUE AFTER CONFIGURATIONS ARE WRITTEN INTO ETCD. VALUES CANNOT BE DECRYPTED OTHERWISE.
 
 nginx_config:                     # config for render the template to generate nginx.conf
   #user: root                     # specifies the execution user of the worker process.
