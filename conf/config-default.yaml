@@ -71,7 +71,7 @@ apisix:
   delete_uri_tail_slash: false    # delete the '/' at the end of the URI
 
 
-  #http is the default proxy mode. proxy_mode can be one of `http` or `stream` or `http&stream`
+  # http is the default proxy mode. proxy_mode can be one of `http`, `stream`, or `http&stream`
   proxy_mode: http
 
   # The URI normalization in servlet is a little different from the RFC's.
