@@ -281,5 +281,5 @@ If a configured Plugin is disabled, then its execution will be skipped.
 <<<<<<< HEAD
 For hot-reloading in standalone mode, see the plugin related section in [stand alone mode](../deployment-modes.md#standalone).
 =======
-For hot-reloading in standalone mode, see the plugin related section in [stand alone mode](../deployment-modes.md#stand-alone).
+For hot-reloading in standalone mode, see the plugin related section in [stand alone mode](../deployment-modes.md#standalone).
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143

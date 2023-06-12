@@ -1335,7 +1335,7 @@ and support for ARM platform, and proxy rewrite plugin.
 <<<<<<< HEAD
 - :sunrise: **[support standalone mode](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/standalone-cn.md)**: using yaml to update configurations of APISIX, more friendly to kubernetes. [#464](https://github.com/apache/incubator-apisix/pull/464)
 =======
-- :sunrise: **[support stand-alone mode](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/stand-alone-cn.md)**: using yaml to update configurations of APISIX, more friendly to kubernetes. [#464](https://github.com/apache/incubator-apisix/pull/464)
+- :sunrise: **[support standalone mode](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/standalone-cn.md)**: using yaml to update configurations of APISIX, more friendly to kubernetes. [#464](https://github.com/apache/incubator-apisix/pull/464)
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
 - :sunrise: **[support stream proxy](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/stream-proxy.md)**. [#513](https://github.com/apache/incubator-apisix/pull/513)
 - :sunrise: support consumer bind plugins. [#544](https://github.com/apache/incubator-apisix/pull/544)

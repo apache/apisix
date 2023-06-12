@@ -133,7 +133,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 <<<<<<< HEAD
   - [standalone](docs/en/latest/deployment-modes.md#standalone): Supports to load route rules from local YAML file, it is more friendly such as under the kubernetes(k8s).
 =======
-  - [Stand-Alone](docs/en/latest/deployment-modes.md#stand-alone): Supports to load route rules from local YAML file, it is more friendly such as under the kubernetes(k8s).
+  - [standalone](docs/en/latest/deployment-modes.md#standalone): Supports to load route rules from local YAML file, it is more friendly such as under the kubernetes(k8s).
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
   - [Global Rule](docs/en/latest/terminology/global-rule.md): Allows to run any plugin for all request, eg: limit rate, IP filter etc.
   - High performance: The single-core QPS reaches 18k with an average delay of fewer than 0.2 milliseconds.
