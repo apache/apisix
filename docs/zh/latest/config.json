@@ -1,0 +1,314 @@
+{
+  "version": "3.3.0",
+  "sidebar": [
+    {
+      "type": "doc",
+      "id": "getting-started"
+    },
+    {
+      "type": "doc",
+      "id": "installation-guide"
+    },
+    {
+      "type": "doc",
+      "id": "architecture-design/apisix"
+    },
+    {
+      "type": "category",
+      "label": "Tutorials",
+      "items": [
+        "tutorials/expose-api",
+        "tutorials/protect-api",
+        "tutorials/observe-your-api",
+        "tutorials/health-check",
+        "tutorials/client-to-apisix-mtls"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Terminology",
+      "items": [
+        "terminology/api-gateway",
+        "terminology/consumer",
+        "terminology/consumer-group",
+        "terminology/global-rule",
+        "terminology/plugin",
+        "terminology/plugin-config",
+        "terminology/route",
+        "terminology/router",
+        "terminology/script",
+        "terminology/service",
+        "terminology/upstream",
+        "terminology/secret"
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Plugins",
+      "items": [
+        {
+          "type": "category",
+          "label": "General",
+          "items": [
+            "plugins/batch-requests",
+            "plugins/redirect",
+            "plugins/echo",
+            "plugins/gzip",
+            "plugins/real-ip",
+            "plugins/server-info",
+            "plugins/ext-plugin-pre-req",
+            "plugins/ext-plugin-post-req",
+            "plugins/ext-plugin-post-resp",
+            "plugins/workflow"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Transformation",
+          "items": [
+            "plugins/response-rewrite",
+            "plugins/proxy-rewrite",
+            "plugins/grpc-transcode",
+            "plugins/grpc-web",
+            "plugins/fault-injection",
+            "plugins/mocking"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Authentication",
+          "items": [
+            "plugins/authz-keycloak",
+            "plugins/authz-casdoor",
+            "plugins/wolf-rbac",
+            "plugins/key-auth",
+            "plugins/jwt-auth",
+            "plugins/basic-auth",
+            "plugins/openid-connect",
+            "plugins/hmac-auth",
+            "plugins/authz-casbin",
+            "plugins/ldap-auth",
+            "plugins/opa",
+            "plugins/forward-auth"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Security",
+          "items": [
+            "plugins/cors",
+            "plugins/uri-blocker",
+            "plugins/ip-restriction",
+            "plugins/ua-restriction",
+            "plugins/referer-restriction",
+            "plugins/consumer-restriction",
+            "plugins/csrf",
+            "plugins/public-api",
+            "plugins/gm"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Traffic",
+          "items": [
+            "plugins/limit-req",
+            "plugins/limit-conn",
+            "plugins/limit-count",
+            "plugins/proxy-cache",
+            "plugins/request-validation",
+            "plugins/proxy-mirror",
+            "plugins/api-breaker",
+            "plugins/traffic-split",
+            "plugins/request-id",
+            "plugins/proxy-control",
+            "plugins/client-control"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Observability",
+          "items": [
+            {
+              "type": "category",
+              "label": "Tracers",
+              "items": [
+                "plugins/zipkin",
+                "plugins/skywalking",
+                "plugins/opentelemetry"
+              ]
+            },
+            {
+              "type": "category",
+              "label": "Metrics",
+              "items": [
+                "plugins/prometheus",
+                "plugins/node-status",
+                "plugins/datadog"
+              ]
+            },
+            {
+              "type": "category",
+              "label": "Loggers",
+              "items": [
+                "plugins/http-logger",
+                "plugins/skywalking-logger",
+                "plugins/tcp-logger",
+                "plugins/kafka-logger",
+                "plugins/rocketmq-logger",
+                "plugins/udp-logger",
+                "plugins/clickhouse-logger",
+                "plugins/syslog",
+                "plugins/log-rotate",
+                "plugins/error-log-logger",
+                "plugins/sls-logger",
+                "plugins/google-cloud-logging",
+                "plugins/splunk-hec-logging",
+                "plugins/file-logger",
+                "plugins/loggly",
+                "plugins/elasticsearch-logger",
+                "plugins/tencent-cloud-cls"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Serverless",
+          "items": [
+            "plugins/serverless",
+            "plugins/azure-functions",
+            "plugins/openwhisk",
+            "plugins/aws-lambda",
+            "plugins/openfunction"
+          ]
+        },
+        {
+          "type": "category",
+          "label": "Other protocols",
+          "items": [
+            "plugins/dubbo-proxy",
+            "plugins/mqtt-proxy"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "API",
+      "items": [
+        {
+          "type": "doc",
+          "id": "admin-api"
+        },
+        {
+          "type": "doc",
+          "id": "control-api"
+        }
+      ]
+    },
+    {
+      "type": "category",
+      "label": "Development",
+      "items": [
+        {
+          "type": "doc",
+          "id": "building-apisix"
+        },
+        {
+          "type": "doc",
+          "id": "external-plugin"
+        },
+        {
+          "type": "doc",
+          "id": "CODE_STYLE"
+        },
+        {
+          "type": "doc",
+          "id": "plugin-develop"
+        },
+        {
+          "type": "doc",
+          "id": "debug-mode"
+        }
+      ]
+    },
+    {
+      "type": "doc",
+      "id": "FAQ"
+    },
+    {
+      "type": "category",
+      "label": "Others",
+      "items": [
+        {
+          "type": "category",
+          "label": "Discovery",
+          "items": [
+            "discovery",
+            "discovery/dns",
+            "discovery/nacos",
+            "discovery/eureka",
+            "discovery/control-plane-service-discovery",
+            "discovery/kubernetes"
+          ]
+        },
+        {
+          "type": "doc",
+          "id": "router-radixtree"
+        },
+        {
+          "type": "doc",
+          "id": "stream-proxy"
+        },
+        {
+          "type": "doc",
+          "id": "grpc-proxy"
+        },
+        {
+          "type": "doc",
+          "id": "customize-nginx-configuration"
+        },
+        {
+          "type": "doc",
+          "id": "certificate"
+        },
+        {
+          "type": "doc",
+          "id": "apisix-variable"
+        },
+        {
+          "type": "doc",
+          "id": "batch-processor"
+        },
+        {
+          "type": "doc",
+          "id": "benchmark"
+        },
+        {
+          "type": "doc",
+          "id": "install-dependencies"
+        },
+        {
+          "type": "doc",
+          "id": "mtls"
+        },
+        {
+          "type": "doc",
+          "id": "debug-function"
+        },
+        {
+          "type": "doc",
+          "id": "profile"
+        }
+      ]
+    },
+    {
+      "type": "doc",
+      "id": "CHANGELOG"
+    },
+    {
+      "type": "doc",
+      "id": "upgrade-guide-from-2.15.x-to-3.0.0"
+    }
+  ]
+}

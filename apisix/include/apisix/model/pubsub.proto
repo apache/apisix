@@ -1,0 +1,143 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+option java_package = "org.apache.apisix.api.pubsub";
+option java_outer_classname = "PubSubProto";
+option java_multiple_files = true;
+option go_package = "github.com/apache/apisix/api/pubsub;pubsub";
+
+/**
+ * Ping command, used to keep the websocket connection alive
+ *
+ * The state field is used to pass some non-specific information,
+ * which will be returned in the pong response as is.
+ */
+message CmdPing {
+    bytes state = 1;
+}
+
+/**
+ * An empty command, a placeholder for testing purposes only
+ */
+message CmdEmpty {}
+
+/**
+ * Get the offset of the specified topic partition from Apache Kafka.
+ */
+message CmdKafkaListOffset {
+    string topic = 1;
+    int32 partition = 2;
+    int64 timestamp = 3;
+}
+
+/**
+ * Fetch messages of the specified topic partition from Apache Kafka.
+ */
+message CmdKafkaFetch {
+    string topic = 1;
+    int32 partition = 2;
+    int64 offset = 3;
+}
+
+/**
+ * Client request definition for pubsub scenarios
+ *
+ * The sequence field is used to associate requests and responses.
+ * Apache APISIX will set a consistent sequence for the associated
+ * requests and responses, and the client can explicitly know the
+ * response corresponding to any of the requests.
+ *
+ * The req field is the command data sent by the client, and its
+ * type will be chosen from any of the lists in the definition.
+ *
+ * Field numbers 1 to 30 in the definition are used to define basic
+ * information and future extensions, and numbers after 30 are used
+ * to define commands.
+ */
+message PubSubReq {
+    int64 sequence = 1;
+    oneof req {
+        CmdEmpty           cmd_empty             = 31;
+        CmdPing            cmd_ping              = 32;
+        CmdKafkaFetch      cmd_kafka_fetch       = 33;
+        CmdKafkaListOffset cmd_kafka_list_offset = 34;
+    };
+}
+
+/**
+ * The response body of the service when an error occurs,
+ * containing the error code and the error message.
+ */
+message ErrorResp {
+    int32 code = 1;
+    string message = 2;
+}
+
+/**
+ * Pong response, the state field will pass through the
+ * value in the Ping command field.
+ */
+message PongResp {
+    bytes state = 1;
+}
+
+/**
+ * The definition of a message in Kafka with the current message
+ * offset, production timestamp, Key, and message content.
+ */
+message KafkaMessage {
+    int64 offset = 1;
+    int64 timestamp = 2;
+    bytes key = 3;
+    bytes value = 4;
+}
+
+/**
+ * The response of Fetch messages from Apache Kafka.
+ */
+message KafkaFetchResp {
+    repeated KafkaMessage messages = 1;
+}
+
+/**
+ * The response of list offset from Apache Kafka.
+ */
+message KafkaListOffsetResp {
+    int64 offset = 1;
+}
+
+/**
+ * Server response definition for pubsub scenarios
+ *
+ * The sequence field will be the same as the value in the
+ * request, which is used to associate the associated request
+ * and response.
+ *
+ * The resp field is the response data sent by the server, and
+ * its type will be chosen from any of the lists in the definition.
+ */
+message PubSubResp {
+    int64 sequence = 1;
+    oneof resp {
+        ErrorResp           error_resp             = 31;
+        PongResp            pong_resp              = 32;
+        KafkaFetchResp      kafka_fetch_resp       = 33;
+        KafkaListOffsetResp kafka_list_offset_resp = 34;
+    };
+}

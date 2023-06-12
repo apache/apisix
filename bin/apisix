@@ -1,0 +1,48 @@
+#!/bin/bash
+
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+if [ -s './apisix/cli/apisix.lua' ]; then
+    # install via source
+    APISIX_LUA=./apisix/cli/apisix.lua
+elif [ -s '/usr/local/share/lua/5.1/apisix/cli/apisix.lua' ]; then
+    # install via luarock
+    APISIX_LUA=/usr/local/share/lua/5.1/apisix/cli/apisix.lua
+else
+    # install via official rpm or docker
+    APISIX_LUA=/usr/local/apisix/apisix/cli/apisix.lua
+fi
+
+# find the openresty
+OR_BIN=$(command -v openresty || exit 1)
+OR_EXEC=${OR_BIN:-'/usr/local/openresty-debug/bin/openresty'}
+OR_VER=$(openresty -v 2>&1 | awk -F '/' '{print $2}' | awk -F '.' '{print $1 * 100 + $2}')
+LUA_VERSION=$(lua -v 2>&1| grep -E -o  "Lua [0-9]+.[0-9]+")
+
+if [[ -e $OR_EXEC && "$OR_VER" -ge 119 ]]; then
+    # OpenResty version is >= 1.19, use luajit by default
+    ROOT=$(${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*)/nginx\s+--' | grep -Eo '/.*/')
+    # find the luajit binary of openresty
+    LUAJIT_BIN="$ROOT"/luajit/bin/luajit
+
+    # use the luajit of openresty
+    echo "$LUAJIT_BIN $APISIX_LUA $*"
+    exec $LUAJIT_BIN $APISIX_LUA $*
+else
+    echo "ERROR: Please check the version of OpenResty and Lua, OpenResty 1.19+ + LuaJIT is required for Apache APISIX."
+fi
