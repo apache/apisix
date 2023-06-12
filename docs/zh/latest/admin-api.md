@@ -65,7 +65,11 @@ deployment:
             port: 9180                  # Admin API 监听的 端口，必须使用与 node_listen 不同的端口。
 ```
 
+<<<<<<< HEAD
 ### 使用环境变量 {#using-environment-variables}
+=======
+### 使用环境变量 {$using-environment-variables}
+>>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
 
 要通过环境变量进行配置，可以使用 `${{VAR}}` 语法。例如：
 

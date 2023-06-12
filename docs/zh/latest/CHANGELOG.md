@@ -1302,7 +1302,11 @@ title: CHANGELOG
 
 ### Core
 
+<<<<<<< HEAD
 - :sunrise: **[增加单机模式](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//standalone-cn.md)**: 使用 yaml 配置文件来更新 APISIX 的配置，这对于 kubernetes 更加友好。 [#464](https://github.com/apache/incubator-apisix/pull/464)
+=======
+- :sunrise: **[增加单机模式](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//stand-alone-cn.md)**: 使用 yaml 配置文件来更新 APISIX 的配置，这对于 kubernetes 更加友好。 [#464](https://github.com/apache/incubator-apisix/pull/464)
+>>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
 - :sunrise: **[支持 stream 代理](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//stream-proxy-cn.md)**. [#513](https://github.com/apache/incubator-apisix/pull/513)
 - :sunrise: 支持[在 consumer 上绑定插件](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//architecture-design-cn.md#consumer). [#544](https://github.com/apache/incubator-apisix/pull/544)
 - 上游增加对域名的支持，而不仅是 IP。[#522](https://github.com/apache/incubator-apisix/pull/522)

@@ -185,10 +185,16 @@ function _M.wait(self)
         end
 
         -- recovery of stored pb_store
+<<<<<<< HEAD
         local pb_old_state = pb.state(pb_state)
 
         local data, err = pb.decode("PubSubReq", raw_data)
         pb.state(pb_old_state)
+=======
+        pb.state(pb_state)
+
+        local data, err = pb.decode("PubSubReq", raw_data)
+>>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
         if not data then
             log.error("pubsub server receives undecodable data, err: ", err)
             send_error(ws, 0, "wrong command")

@@ -36,12 +36,18 @@ return function (proto, service, method, pb_option, deadline, default_values)
 
     req_read_body()
 
+<<<<<<< HEAD
     local pb_old_state = pb.state(proto.pb_state)
+=======
+>>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
     util.set_options(proto, pb_option)
 
     local map_message = util.map_message(m.input_type, default_values or {})
     local ok, encoded = pcall(pb.encode, m.input_type, map_message)
+<<<<<<< HEAD
     pb.state(pb_old_state)
+=======
+>>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
 
     if not ok or not encoded then
         return false, "failed to encode request data to protobuf", 400

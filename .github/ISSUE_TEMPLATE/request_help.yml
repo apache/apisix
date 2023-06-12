@@ -1,0 +1,36 @@
+name: "Request Help"
+description: Stuck? Ask for help!
+title: "help request: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        _The more information you share, the faster we can help you._
+
+        Prior to opening the issue, please make sure that you:
+
+        - Use English to communicate.
+        - Search the [open issues](https://github.com/apache/apisix/issues) and [discussion forum](https://github.com/apache/apisix/discussions) to avoid duplicating the issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the issue you are facing and what you need help with.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Share your environment details. Reports without proper environment details will likely be closed.
+      value: |
+        - APISIX version (run `apisix version`):
+        - Operating system (run `uname -a`):
+        - OpenResty / Nginx version (run `openresty -V` or `nginx -V`):
+        - etcd version, if relevant (run `curl http://127.0.0.1:9090/v1/server_info`):
+        - APISIX Dashboard version, if relevant:
+        - Plugin runner version, for issues related to plugin runners:
+        - LuaRocks version, for installation issues (run `luarocks --version`):
+    validations:
+      required: true

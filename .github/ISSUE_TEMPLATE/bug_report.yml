@@ -1,0 +1,68 @@
+name: "Bug Report"
+description: Report a bug to help improve the project.
+title: "bug: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to report this bug!
+
+        _The more information you share, the faster we can identify and fix the bug._
+
+        Prior to opening the issue, please make sure that you:
+
+        - Use English to communicate.
+        - Search the [open issues](https://github.com/apache/apisix/issues) and [discussion forum](https://github.com/apache/apisix/discussions) to avoid duplicating the issue.
+
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: Current Behavior
+      description: Describe the issue you are facing.
+      placeholder: |
+        What is the issue with the current behavior?
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: Describe what you expected to happen.
+      placeholder: |
+        What did you expect to happen instead?
+    validations:
+      required: false
+  - type: textarea
+    id: error
+    attributes:
+      label: Error Logs
+      description: Paste the error logs if any. You can change the [log level](https://github.com/apache/apisix/blob/617c325628f33961be67f61f0fa8002afc370e42/docs/en/latest/FAQ.md#how-to-change-the-log-level) to get a verbose error log.
+    validations:
+      required: false
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Share the steps you took so that we can reproduce the issue. Reports without proper steps details will likely be closed.
+      placeholder: |
+        1. Run APISIX via the Docker image.
+        2. Create a Route with the Admin API.
+        3. Try configuring ...
+        4. ...
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Share your environment details. Reports without proper environment details will likely be closed.
+      value: |
+        - APISIX version (run `apisix version`):
+        - Operating system (run `uname -a`):
+        - OpenResty / Nginx version (run `openresty -V` or `nginx -V`):
+        - etcd version, if relevant (run `curl http://127.0.0.1:9090/v1/server_info`):
+        - APISIX Dashboard version, if relevant:
+        - Plugin runner version, for issues related to plugin runners:
+        - LuaRocks version, for installation issues (run `luarocks --version`):
+    validations:
+      required: true

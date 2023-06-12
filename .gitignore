@@ -1,0 +1,90 @@
+# Compiled Lua sources
+luac.out
+
+# luarocks build files
+*.src.rock
+*.zip
+*.tar.gz
+
+# Object files
+*.o
+*.os
+*.ko
+*.obj
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+*.def
+*.exp
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# develop
+*.log
+*.pid
+*.orig
+*.rej
+t/servroot
+t/certs/*.csr
+t/certs/*.srl
+t/xds-library/libxds.h
+conf/apisix.uid
+conf/nginx.conf
+deps
+scgi_temp
+uwsgi_temp
+proxy_temp
+fastcgi_temp
+client_body_temp
+utils/lj-releng
+utils/reindex
+*.etcd/
+t/lib/dubbo-backend/dubbo-backend-interface/target/
+t/lib/dubbo-backend/dubbo-backend-provider/target/
+.idea/
+*.iml
+\.*
+!.github/
+!.gitmodules
+!.markdownlint.yml
+!.licenserc.yaml
+!.ignore_words
+conf/apisix.yaml
+conf/apisix-*.yaml
+conf/config-*.yaml
+!conf/config-default.yaml
+conf/debug-*.yaml
+build-cache/
+t/fuzzing/__pycache__/
+boofuzz-results/
+*.pyc
+*.wasm
+t/grpc_server_example/grpc_server_example
+t/plugin/grpc-web/grpc-web-server
+t/plugin/grpc-web/node_modules/
+pack
+pack-v*-linux.tgz*
+
+# release tar package
+*.tgz
+release/*

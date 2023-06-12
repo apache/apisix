@@ -15,7 +15,11 @@
 -- limitations under the License.
 --
 
+<<<<<<< HEAD
 --- Get configuration information in standalone mode.
+=======
+--- Get configuration information in Stand-alone mode.
+>>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
 --
 -- @module core.config_yaml
 

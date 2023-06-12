@@ -1,0 +1,25 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# wiki link pattern https://github.com/koalaman/shellcheck/wiki/{code}
+# like SC2148, links to https://github.com/koalaman/shellcheck/wiki/SC2148
+
+disable=SC1083,SC1091
+disable=SC2002,SC2004,SC2006,SC2009,SC2010,SC2016,SC2024,SC2027,SC2034,SC2046,SC2048,SC2059
+disable=SC2068,SC2076,SC2086,SC2089,SC2090
+disable=SC2103,SC2126,SC2143,SC2148,SC2155,SC2157,SC2164,SC2181
+disable=SC2215,SC2216,SC2251,SC2260,SC3037
