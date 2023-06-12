@@ -22,6 +22,7 @@
 echo "
 apisix:
     enable_admin: false
+    proxy_mode: stream
     stream_proxy:
         tcp:
             - addr: 9100
@@ -40,6 +41,7 @@ echo "passed: enable stream proxy only by default"
 echo "
 apisix:
     enable_admin: false
+    proxy_mode: stream
     stream_proxy:
         only: false
         tcp:
@@ -57,6 +59,7 @@ fi
 echo "
 apisix:
     enable_admin: true
+    proxy_mode: http&stream
     stream_proxy:
         tcp:
             - addr: 9100
@@ -76,6 +79,7 @@ echo "
 apisix:
     ssl:
         ssl_trusted_certificate: t/certs/mtls_ca.crt
+    proxy_mode: http&stream
     stream_proxy:
         tcp:
             - addr: 9100
@@ -92,6 +96,7 @@ echo "passed: set trust certificate"
 
 echo "
 apisix:
+    proxy_mode: http&stream
     stream_proxy:
         tcp:
             - addr: 9100
@@ -108,6 +113,7 @@ fi
 
 echo "
 apisix:
+    proxy_mode: http&stream
     stream_proxy:
         tcp:
             - addr: 9100

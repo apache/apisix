@@ -105,6 +105,7 @@ echo "passed: certificate verify with CA success expectedly"
 # etcd mTLS in stream subsystem
 echo '
 apisix:
+  proxy_mode: http&stream
   stream_proxy:
     tcp:
       - addr: 9100

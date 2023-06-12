@@ -230,6 +230,7 @@ echo "passed: should find upstream scheme"
 # check stream logs
 echo '
 apisix:
+    proxy_mode: stream
     stream_proxy:                  # UDP proxy
      udp:
        - "127.0.0.1:9200"
