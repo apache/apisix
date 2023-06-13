@@ -26,10 +26,14 @@ local pcall  = pcall
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 local function handle_error_response(status_detail_type, proto)
 =======
 local function handle_error_response(status_detail_type)
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+local function handle_error_response(status_detail_type, proto)
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
     local err_msg
 
     local grpc_status = ngx.header["grpc-status-details-bin"]
@@ -63,12 +67,18 @@ local function handle_error_response(status_detail_type)
             local decoded_details = {}
             for _, detail in ipairs(details) do
 <<<<<<< HEAD
+<<<<<<< HEAD
                 local pb_old_state = pb.state(proto.pb_state)
                 local ok, err_or_value = pcall(pb.decode, status_detail_type, detail.value)
                 pb.state(pb_old_state)
 =======
                 local ok, err_or_value = pcall(pb.decode, status_detail_type, detail.value)
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+                local pb_old_state = pb.state(proto.pb_state)
+                local ok, err_or_value = pcall(pb.decode, status_detail_type, detail.value)
+                pb.state(pb_old_state)
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
                 if not ok then
                     err_msg = "failed to call pb.decode to decode details in "
                            .. "grpc-status-details-bin"
@@ -110,10 +120,14 @@ return function(ctx, proto, service, method, pb_option, show_status_in_body, sta
     -- handle error response after the last response chunk
     if ngx.status >= 300 and show_status_in_body then
 <<<<<<< HEAD
+<<<<<<< HEAD
         return handle_error_response(status_detail_type, proto)
 =======
         return handle_error_response(status_detail_type)
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+        return handle_error_response(status_detail_type, proto)
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
     end
 
     -- when body has already been read by other plugin
@@ -133,17 +147,25 @@ return function(ctx, proto, service, method, pb_option, show_status_in_body, sta
     end
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     local pb_old_state = pb.state(proto.pb_state)
 =======
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+    local pb_old_state = pb.state(proto.pb_state)
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
     util.set_options(proto, pb_option)
 
     local err_msg
     local decoded = pb.decode(m.output_type, buffer)
 <<<<<<< HEAD
+<<<<<<< HEAD
     pb.state(pb_old_state)
 =======
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+    pb.state(pb_old_state)
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
     if not decoded then
         err_msg = "failed to decode response data by protobuf"
         ngx.arg[1] = err_msg

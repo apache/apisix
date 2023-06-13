@@ -521,10 +521,14 @@
       "targets": [
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
           "expr": "sum(rate(apisix_bandwidth{instance=~\"$instance\"}[$__rate_interval])) by (type)",
 =======
           "expr": "sum(rate(apisix_bandwidth{instance=~\"$instance\"}[30s])) by (type)",
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+          "expr": "sum(rate(apisix_bandwidth{instance=~\"$instance\"}[$__rate_interval])) by (type)",
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
           "legendFormat": "{{type}}",
           "refId": "A"
         }
@@ -625,19 +629,27 @@
       "targets": [
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
           "expr": "sum(irate(apisix_bandwidth{type=\"ingress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (service)",
 =======
           "expr": "sum(irate(apisix_bandwidth{type=\"ingress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (service)",
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+          "expr": "sum(irate(apisix_bandwidth{type=\"ingress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (service)",
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
           "legendFormat": "service:{{service}}",
           "refId": "A"
         },
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
           "expr": "sum(irate(apisix_bandwidth{type=\"ingress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (route)",
 =======
           "expr": "sum(irate(apisix_bandwidth{type=\"ingress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (route)",
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+          "expr": "sum(irate(apisix_bandwidth{type=\"ingress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (route)",
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
           "legendFormat": "route:{{route}}",
           "refId": "B"
         }
@@ -738,20 +750,28 @@
       "targets": [
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
           "expr": "sum(rate(apisix_bandwidth{type=\"egress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (service)",
 =======
           "expr": "sum(rate(apisix_bandwidth{type=\"egress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (service)",
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+          "expr": "sum(rate(apisix_bandwidth{type=\"egress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (service)",
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
           "interval": "",
           "legendFormat": "service:{{service}}",
           "refId": "A"
         },
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
           "expr": "sum(rate(apisix_bandwidth{type=\"egress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (route)",
 =======
           "expr": "sum(rate(apisix_bandwidth{type=\"egress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (route)",
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+          "expr": "sum(rate(apisix_bandwidth{type=\"egress\", service =~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (route)",
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
           "legendFormat": "route:{{route}}",
           "refId": "B"
         }
@@ -874,10 +894,14 @@
       "targets": [
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
           "expr": "sum(rate(apisix_http_status{service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (code)",
 =======
           "expr": "sum(rate(apisix_http_status{service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (code)",
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+          "expr": "sum(rate(apisix_http_status{service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (code)",
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
@@ -990,10 +1014,14 @@
       "targets": [
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
           "expr": "sum(rate(apisix_http_status{service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (service)",
 =======
           "expr": "sum(rate(apisix_http_status{service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (service)",
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+          "expr": "sum(rate(apisix_http_status{service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (service)",
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
           "instant": false,
           "interval": "",
           "intervalFactor": 1,
@@ -1002,10 +1030,14 @@
         },
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
           "expr": "sum(rate(apisix_http_status{service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (route)",
 =======
           "expr": "sum(rate(apisix_http_status{service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[1m])) by (route)",
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+          "expr": "sum(rate(apisix_http_status{service=~\"$service\",route=~\"$route\",instance=~\"$instance\"}[$__rate_interval])) by (route)",
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
           "interval": "",
           "legendFormat": "route:{{route}}",
           "refId": "D"
@@ -1116,10 +1148,14 @@
       "targets": [
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
           "expr": "histogram_quantile(0.90, sum(rate(apisix_http_latency_bucket{type=~\"request\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\",route=~\"$route\"}[$__rate_interval])) by (le))",
 =======
           "expr": "histogram_quantile(0.90, sum(rate(apisix_http_latency_bucket{type=~\"request\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+          "expr": "histogram_quantile(0.90, sum(rate(apisix_http_latency_bucket{type=~\"request\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\",route=~\"$route\"}[$__rate_interval])) by (le))",
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
           "format": "time_series",
           "interval": "",
           "legendFormat": "P90",
@@ -1127,20 +1163,28 @@
         },
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
           "expr": "histogram_quantile(0.95, sum(rate(apisix_http_latency_bucket{type=~\"request\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\",route=~\"$route\"}[$__rate_interval])) by (le))",
 =======
           "expr": "histogram_quantile(0.95, sum(rate(apisix_http_latency_bucket{type=~\"request\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+          "expr": "histogram_quantile(0.95, sum(rate(apisix_http_latency_bucket{type=~\"request\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\",route=~\"$route\"}[$__rate_interval])) by (le))",
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
           "interval": "",
           "legendFormat": "P95",
           "refId": "B"
         },
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
           "expr": "histogram_quantile(0.99, sum(rate(apisix_http_latency_bucket{type=~\"request\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\",route=~\"$route\"}[$__rate_interval])) by (le))",
 =======
           "expr": "histogram_quantile(0.99, sum(rate(apisix_http_latency_bucket{type=~\"request\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+          "expr": "histogram_quantile(0.99, sum(rate(apisix_http_latency_bucket{type=~\"request\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\",route=~\"$route\"}[$__rate_interval])) by (le))",
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
           "interval": "",
           "legendFormat": "P99",
           "refId": "C"
@@ -1251,10 +1295,14 @@
       "targets": [
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
           "expr": "histogram_quantile(0.90, sum(rate(apisix_http_latency_bucket{type=~\"apisix\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\",route=~\"$route\"}[$__rate_interval])) by (le))",
 =======
           "expr": "histogram_quantile(0.90, sum(rate(apisix_http_latency_bucket{type=~\"apisix\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+          "expr": "histogram_quantile(0.90, sum(rate(apisix_http_latency_bucket{type=~\"apisix\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\",route=~\"$route\"}[$__rate_interval])) by (le))",
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -1264,20 +1312,28 @@
         },
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
           "expr": "histogram_quantile(0.95, sum(rate(apisix_http_latency_bucket{type=~\"apisix\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\",route=~\"$route\"}[$__rate_interval])) by (le))",
 =======
           "expr": "histogram_quantile(0.95, sum(rate(apisix_http_latency_bucket{type=~\"apisix\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+          "expr": "histogram_quantile(0.95, sum(rate(apisix_http_latency_bucket{type=~\"apisix\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\",route=~\"$route\"}[$__rate_interval])) by (le))",
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
           "interval": "",
           "legendFormat": "P95",
           "refId": "B"
         },
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
           "expr": "histogram_quantile(0.99, sum(rate(apisix_http_latency_bucket{type=~\"apisix\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\",route=~\"$route\"}[$__rate_interval])) by (le))",
 =======
           "expr": "histogram_quantile(0.99, sum(rate(apisix_http_latency_bucket{type=~\"apisix\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+          "expr": "histogram_quantile(0.99, sum(rate(apisix_http_latency_bucket{type=~\"apisix\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\",route=~\"$route\"}[$__rate_interval])) by (le))",
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
           "interval": "",
           "legendFormat": "P99",
           "refId": "C"
@@ -1387,10 +1443,14 @@
       "targets": [
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
           "expr": "histogram_quantile(0.90, sum(rate(apisix_http_latency_bucket{type=~\"upstream\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\",route=~\"$route\"}[$__rate_interval])) by (le))",
 =======
           "expr": "histogram_quantile(0.90, sum(rate(apisix_http_latency_bucket{type=~\"upstream\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+          "expr": "histogram_quantile(0.90, sum(rate(apisix_http_latency_bucket{type=~\"upstream\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\",route=~\"$route\"}[$__rate_interval])) by (le))",
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
           "format": "time_series",
           "interval": "",
           "legendFormat": "P90",
@@ -1398,20 +1458,28 @@
         },
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
           "expr": "histogram_quantile(0.95, sum(rate(apisix_http_latency_bucket{type=~\"upstream\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\",route=~\"$route\"}[$__rate_interval])) by (le))",
 =======
           "expr": "histogram_quantile(0.95, sum(rate(apisix_http_latency_bucket{type=~\"upstream\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+          "expr": "histogram_quantile(0.95, sum(rate(apisix_http_latency_bucket{type=~\"upstream\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\",route=~\"$route\"}[$__rate_interval])) by (le))",
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
           "interval": "",
           "legendFormat": "P95",
           "refId": "B"
         },
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
           "expr": "histogram_quantile(0.99, sum(rate(apisix_http_latency_bucket{type=~\"upstream\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\",route=~\"$route\"}[$__rate_interval])) by (le))",
 =======
           "expr": "histogram_quantile(0.99, sum(rate(apisix_http_latency_bucket{type=~\"upstream\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\"}[1m])) by (le))",
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+          "expr": "histogram_quantile(0.99, sum(rate(apisix_http_latency_bucket{type=~\"upstream\",service=~\"$service\",consumer=~\"$consumer\",node=~\"$node\",route=~\"$route\"}[$__rate_interval])) by (le))",
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
           "interval": "",
           "legendFormat": "P99",
           "refId": "C"

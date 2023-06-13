@@ -66,10 +66,14 @@ deployment:
 ```
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 ### 使用环境变量 {#using-environment-variables}
 =======
 ### 使用环境变量 {$using-environment-variables}
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+### 使用环境变量 {#using-environment-variables}
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
 
 要通过环境变量进行配置，可以使用 `${{VAR}}` 语法。例如：
 

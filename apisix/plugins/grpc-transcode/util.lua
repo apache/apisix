@@ -49,10 +49,13 @@ function _M.find_method(proto, service, method)
     end
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     -- restore pb state
     pb.state(proto.pb_state)
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
     return res
 end
 

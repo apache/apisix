@@ -100,10 +100,14 @@ end
 local function compile_proto(content)
     -- clear pb state
 <<<<<<< HEAD
+<<<<<<< HEAD
     local old_pb_state = pb.state(nil)
 =======
     pb.state(nil)
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+    local old_pb_state = pb.state(nil)
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
 
     local compiled, err = compile_proto_text(content)
     if not compiled then
@@ -115,10 +119,14 @@ local function compile_proto(content)
 
     -- fetch pb state
 <<<<<<< HEAD
+<<<<<<< HEAD
     compiled.pb_state = pb.state(old_pb_state)
 =======
     compiled.pb_state = pb.state(nil)
 >>>>>>> adcf6951c7baedf949108bfd37f46d078afe1143
+=======
+    compiled.pb_state = pb.state(old_pb_state)
+>>>>>>> 7ec3c0f583510ebcdf9c414f83792e1ac247a5b9
     return compiled
 end
 
