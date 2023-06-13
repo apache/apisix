@@ -38,6 +38,8 @@ local networks = {
     "ckb-mirana",
     "starknet-mainnet",
     "starknet-testnet",
+    "base-testnet",
+
 
     -- staging
     "staging-eth-mainnet",
@@ -51,6 +53,7 @@ local networks = {
     "staging-ckb-mirana",
     "staging-starknet-mainnet",
     "staging-starknet-testnet",
+    "staging-base-testnet",
 }
 
 local web3_methods = {
@@ -394,7 +397,8 @@ function _M.init()
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, trace_methods)
         elseif network == "arb-mainnet" or network == "opt-mainnet" or
-            network == "staging-arb-mainnet" or network == "staging-opt-mainnet" then
+            network == "staging-arb-mainnet" or network == "staging-opt-mainnet" or
+            network == "staging-base-testnet" or network == "base-testnet" then
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
             _M.paid_list[network] = _M.free_list[network]
         elseif network == "polygon-mainnet" or network == "staging-polygon-mainnet" then
