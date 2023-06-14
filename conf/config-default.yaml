@@ -131,13 +131,15 @@ apisix:
                                   # !!! So do not change it after encryption, it can't decrypt the fields have be saved if you change !!
                                   # Only use the first key to encrypt, and decrypt in the order of the array.
 
-nginx_config:                     # Configurations to generate `nginx.conf`
-  # user: root                    # specifies the execution user of the worker process.
-                                  # the "user" directive makes sense only if the master process runs with super-user privileges.
-                                  # if you're not root user,the default is current user.
-  error_log: logs/error.log
-  error_log_level:  warn          # warn,error
-  worker_processes: auto          # if you want use multiple cores in container, you can inject the number of cpu as environment variable "APISIX_WORKER_PROCESSES"
+nginx_config:                     # Config for render the template to generate nginx.conf
+  # user: root                    # Specify the execution user of the worker process. This is only  
+                                  # effective if the master process runs with super-user privileges.
+  error_log: logs/error.log       # Location of the error.log
+  error_log_level:  warn          # Logging level: info, debug, notice, warn, error, crit, alert, or emerg
+  worker_processes: auto          # Automatically determine the optimal number of worker processes based
+                                  # on the available system resources. 
+                                  # If you want use multiple cores in container, you can inject the number of 
+                                  # CPU cores as environment variable "APISIX_WORKER_PROCESSES".
   enable_cpu_affinity: false      # disable CPU affinity by default, if APISIX is deployed on a physical machine, it can be enabled and work well.
   worker_rlimit_nofile: 20480     # the number of files a worker process can open, should be larger than worker_connections
   worker_shutdown_timeout: 240s   # timeout for a graceful shutdown of worker processes
