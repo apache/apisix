@@ -131,8 +131,8 @@ apisix:
                                   # !!! So do not change it after encryption, it can't decrypt the fields have be saved if you change !!
                                   # Only use the first key to encrypt, and decrypt in the order of the array.
 
-nginx_config:                     # config for render the template to generate nginx.conf
-  #user: root                     # specifies the execution user of the worker process.
+nginx_config:                     # Configurations to generate `nginx.conf`
+  # user: root                    # specifies the execution user of the worker process.
                                   # the "user" directive makes sense only if the master process runs with super-user privileges.
                                   # if you're not root user,the default is current user.
   error_log: logs/error.log
