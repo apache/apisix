@@ -1,0 +1,212 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
+local core = require("apisix.core")
+local sdk = require("apisix.stream.xrpc.sdk")
+local xrpc_socket = require("resty.apisix.stream.xrpc.socket")
+local ffi = require("ffi")
+local ffi_str = ffi.string
+local math_random = math.random
+local OK = ngx.OK
+local DECLINED = ngx.DECLINED
+local DONE = ngx.DONE
+local bit = require("bit")
+
+-- dubbo protocol spec: https://cn.dubbo.apache.org/zh-cn/overview/reference/protocols/tcp/
+local protocol_name = "dubbo"
+local header_len = 16
+
+local _M = {}
+
+function _M.init_downstream(session)
+    session.req_id_seq = 0
+    session.resp_id_seq = 0
+    session.cmd_labels = { session.route.id, "" }
+    return xrpc_socket.downstream.socket()
+end
+
+local function parse_dubbo_header(header)
+    local magic_number = string.format("%04x", header:byte(1) * 256 + header:byte(2))
+    local message_flag = header:byte(3)
+    local status = header:byte(4)
+    local request_id = 0
+    for i = 5, 12 do
+        request_id = request_id * 256 + header:byte(i)
+    end
+    local data_length = header:byte(13) * 16777216 + header:byte(14) * 65536 + header:byte(15) * 256 + header:byte(16)
+
+    local is_request = bit.band(bit.rshift(message_flag, 7), 0x01) == 1 and 1 or 0
+    local is_two_way = bit.band(bit.rshift(message_flag, 6), 0x01) == 1 and 1 or 0
+    local is_event = bit.band(bit.rshift(message_flag, 5), 0x01) == 1 and 1 or 0
+
+    return {
+        magic_number = magic_number,
+        message_flag = message_flag,
+        is_request = is_request,
+        is_two_way = is_two_way,
+        is_event = is_event,
+        status = status,
+        request_id = request_id,
+        data_length = data_length
+    }
+end
+
+local function read_data(sk, is_req)
+    local header_data, err1 = sk:read(header_len)
+    if not header_data then
+        core.log.warn("failed to read Dubbo request header: ", err1)
+        return
+    end
+
+    local header_str = ffi_str(header_data, header_len)
+    local header_info = parse_dubbo_header(header_str)
+
+    local is_valid_magic_number = header_info.magic_number == "dabb"
+    if not is_valid_magic_number then
+        return true, nil, false
+    end
+
+    local body_data, err = sk:read(header_info.data_length)
+    if not body_data then
+        core.log.warn("failed to read Dubbo request body: ", err)
+        return nil, err, false
+    end
+    ngx.ctx.dubbo_serialization_id = bit.band(header_info.message_flag, 0x1F)
+    if is_req then
+        ngx.ctx.dubbo_req_body_data = body_data
+    else
+        ngx.ctx.dubbo_rsp_body_data = body_data
+    end
+
+
+    return true, nil, false
+end
+
+local function read_req(sk)
+    return read_data(sk, true)
+end
+
+local function read_reply(sk)
+    return read_data(sk, false)
+end
+
+local function handle_reply(session, sk)
+    local ok, err = read_reply(sk)
+    if not ok then
+        return nil, err
+    end
+
+    local ctx = sdk.get_req_ctx(session, 10)
+
+    return ctx
+end
+
+function _M.from_downstream(session, downstream)
+    local read_pipeline = false
+    session.req_id_seq = session.req_id_seq + 1
+    local ctx = sdk.get_req_ctx(session, session.req_id_seq)
+    session._downstream_ctx = ctx
+    while true do
+        local ok, err, pipelined = read_req(downstream)
+        if not ok then
+            if err ~= "timeout" and err ~= "closed" then
+                core.log.error("failed to read request: ", err)
+            end
+
+            if read_pipeline and err == "timeout" then
+                break
+            end
+
+            return DECLINED
+        end
+
+        if not pipelined then
+            break
+        end
+
+        if not read_pipeline then
+            read_pipeline = true
+            -- set minimal read timeout to read pipelined data
+            downstream:settimeouts(0, 0, 1)
+        end
+    end
+
+    if read_pipeline then
+        -- set timeout back
+        downstream:settimeouts(0, 0, 0)
+    end
+
+    return OK, ctx
+end
+
+function _M.connect_upstream(session, ctx)
+    local conf = session.upstream_conf
+    local nodes = conf.nodes
+    if #nodes == 0 then
+        core.log.error("failed to connect: no nodes")
+        return DECLINED
+    end
+
+    local node = nodes[math_random(#nodes)]
+    local sk = sdk.connect_upstream(node, conf)
+    if not sk then
+        return DECLINED
+    end
+    core.log.warn("dubbo_connect_upstream end")
+    return OK, sk
+end
+
+function _M.disconnect_upstream(session, upstream)
+    sdk.disconnect_upstream(upstream, session.upstream_conf)
+end
+
+function _M.to_upstream(session, ctx, downstream, upstream)
+    local ok, err = upstream:move(downstream)
+    if not ok then
+        core.log.error("failed to send to upstream: ", err)
+        return DECLINED
+    end
+
+    return OK
+end
+
+function _M.from_upstream(session, downstream, upstream)
+    local ctx = handle_reply(session, upstream)
+
+    local ok, err = downstream:move(upstream)
+    if not ok then
+        core.log.error("failed to handle upstream: ", err)
+        return DECLINED
+    end
+
+    return DONE, ctx
+end
+
+function _M.log(session, ctx)
+    local metrics = sdk.get_metrics(session, protocol_name)
+    if metrics then
+        session.cmd_labels[2] = ctx.cmd
+        metrics.commands_total:inc(1, session.cmd_labels)
+        metrics.commands_latency_seconds:observe(ctx.var.rpc_time, session.cmd_labels)
+    end
+
+    ctx.cmd_line = nil
+end
+
+return _M
+
+
+
