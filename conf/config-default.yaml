@@ -134,7 +134,7 @@ apisix:
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Specify the execution user of the worker process. This is only  
                                   # effective if the master process runs with super-user privileges.
-  error_log: logs/error.log       # Location of the error.log
+  error_log: logs/error.log       # Location of the error log.
   error_log_level:  warn          # Logging level: info, debug, notice, warn, error, crit, alert, or emerg.
   worker_processes: auto          # Automatically determine the optimal number of worker processes based
                                   # on the available system resources. 
@@ -144,29 +144,33 @@ nginx_config:                     # Config for render the template to generate n
                                   # behavior of APISIX in containers. For example, multiple instances could 
                                   # be bound to one CPU core, which is not desirable.
                                   # If APISIX is deployed on a physical machine, CPU affinity can be enabled.
-  worker_rlimit_nofile: 20480     # the number of files a worker process can open, should be larger than worker_connections
-  worker_shutdown_timeout: 240s   # timeout for a graceful shutdown of worker processes
+  worker_rlimit_nofile: 20480     # The number of files a worker process can open.
+                                  # The value should be larger than worker_connections.
+  worker_shutdown_timeout: 240s   # Timeout for a graceful shutdown of worker processes.
 
-  max_pending_timers: 16384       # increase it if you see "too many pending timers" error
-  max_running_timers: 4096        # increase it if you see "lua_max_running_timers are not enough" error
+  max_pending_timers: 16384       # The maximum number of pending timers that can be active at any given time.
+                                  # Error "too many pending timers" indicates the threshold is reached.
+  max_running_timers: 4096        # The maximum number of running timers that can be active at any given time.
+                                  # Error "lua_max_running_timers are not enough" error indicates the 
+                                  # threshold is reached.
 
   event:
     worker_connections: 10620
-  #envs:                          # allow to get a list of environment variables
+
+  # envs:                         # Get environment variables.
   #  - TEST_ENV
 
   meta:
-    lua_shared_dict:
-      prometheus-metrics: 15m
+    lua_shared_dict:              # Nginx Lua shared memory zone
+      prometheus-metrics: 15m     # Size units are m or k.
 
   stream:
-    enable_access_log: false         # enable access log or not, default false
-    access_log: logs/access_stream.log
-    access_log_format: "$remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received $session_time"
-                                            # create your custom log format by visiting http://nginx.org/en/docs/varindex.html
-    access_log_format_escape: default       # allows setting json or default characters escaping in variables
-    lua_shared_dict:
-      etcd-cluster-health-check-stream: 10m
+    enable_access_log: false                 # Enable access logging.
+    access_log: logs/access_stream.log       # Location of the stream access log.
+    access_log_format: "$remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received $session_time" # Customize log format: http://nginx.org/en/docs/varindex.html
+    access_log_format_escape: default        # Escape default or json characters in variables.
+    lua_shared_dict:                         # Nginx Lua shared memory zone
+      etcd-cluster-health-check-stream: 10m  # Size units are m or k.
       lrucache-lock-stream: 10m
       plugin-limit-conn-stream: 10m
       worker-events-stream: 10m
@@ -199,9 +203,9 @@ nginx_config:                     # Config for render the template to generate n
 
   http:
     enable_access_log: true         # enable access log or not, default true
-    access_log: logs/access.log
+    access_log: logs/access.log     # Location of the access log.
     access_log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\""
-    access_log_format_escape: default       # allows setting json or default characters escaping in variables
+    access_log_format_escape: default   # Escape default or json characters in variables.
     keepalive_timeout: 60s          # timeout during which a keep-alive client connection will stay open on the server side.
     client_header_timeout: 60s      # timeout for reading client request header, then 408 (Request Time-out) error is returned to the client
     client_body_timeout: 60s        # timeout for reading client request body, then 408 (Request Time-out) error is returned to the client
@@ -216,7 +220,7 @@ nginx_config:                     # Config for render the template to generate n
     real_ip_from:                  # http://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from
       - 127.0.0.1
       - "unix:"
-    #custom_lua_shared_dict:       # add custom shared cache to nginx.conf
+    #custom_lua_shared_dict:       #  custom shared cache to nginx.conf
     #  ipc_shared_dict: 100m       # custom shared cache, format: `cache-key: cache-size`
 
     # Enables or disables passing of the server name through TLS Server Name Indication extension (SNI, RFC 6066)
@@ -232,8 +236,8 @@ nginx_config:                     # Config for render the template to generate n
                                     # http://nginx.org/en/docs/http/ngx_http_charset_module.html#charset
     variables_hash_max_size: 2048   # Sets the maximum size of the variables hash table.
 
-    lua_shared_dict:
-      internal-status: 10m
+    lua_shared_dict:               # Nginx Lua shared memory zone
+      internal-status: 10m         # Size units are m or k.
       plugin-limit-req: 10m
       plugin-limit-count: 10m
       prometheus-metrics: 10m
