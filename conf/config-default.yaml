@@ -525,6 +525,7 @@ plugin_attr:
     service_name: APISIX
     service_instance_name: APISIX Instance Name
     endpoint_addr: http://127.0.0.1:12800
+    report_interval: 1
   opentelemetry:
     trace_id_source: x-request-id
     resource:
