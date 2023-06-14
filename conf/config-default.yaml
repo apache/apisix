@@ -29,7 +29,7 @@ apisix:
   #     port: 9082
   #     enable_http2: true
   enable_admin: true
-  enable_dev_mode: false            # Sets nginx worker_processes to 1 if set to true
+  enable_dev_mode: false            # Set nginx worker_processes to 1 if set to true
   enable_reuseport: true            # Enable nginx SO_REUSEPORT switch if set to true.
   show_upstream_status_in_response_header: false # when true all upstream status write to `X-APISIX-Upstream-Status` otherwise only 5xx code
   enable_ipv6: true
@@ -132,7 +132,7 @@ apisix:
                                   # Only use the first key to encrypt, and decrypt in the order of the array.
 
 nginx_config:                     # Config for render the template to generate nginx.conf
-  # user: root                    # Specify the execution user of the worker process. This is only  
+  # user: root                    # Set the execution user of the worker process. This is only  
                                   # effective if the master process runs with super-user privileges.
   error_log: logs/error.log       # Location of the error log.
   error_log_level:  warn          # Logging level: info, debug, notice, warn, error, crit, alert, or emerg.
@@ -161,24 +161,24 @@ nginx_config:                     # Config for render the template to generate n
   #  - TEST_ENV
 
   meta:
-    lua_shared_dict:              # Nginx Lua shared memory zone
-      prometheus-metrics: 15m     # Size units are m or k.
+    lua_shared_dict:              # Nginx Lua shared memory zone. Size units are m or k.
+      prometheus-metrics: 15m
 
   stream:
-    enable_access_log: false                 # Enable access logging.
+    enable_access_log: false                 # Enable stream proxy access logging.
     access_log: logs/access_stream.log       # Location of the stream access log.
     access_log_format: "$remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received $session_time" # Customize log format: http://nginx.org/en/docs/varindex.html
     access_log_format_escape: default        # Escape default or json characters in variables.
-    lua_shared_dict:                         # Nginx Lua shared memory zone
-      etcd-cluster-health-check-stream: 10m  # Size units are m or k.
+    lua_shared_dict:                         # Nginx Lua shared memory zone. Size units are m or k.
+      etcd-cluster-health-check-stream: 10m
       lrucache-lock-stream: 10m
       plugin-limit-conn-stream: 10m
       worker-events-stream: 10m
       tars-stream: 1m
 
-  # As user can add arbitrary configurations in the snippet,
-  # it is user's responsibility to check the configurations
-  # don't conflict with APISIX.
+  # Add other custom Nginx configurations.
+  # Users are responsible for validating the custom configurations
+  # to ensure they are not in conflict with APISIX configurations.
   main_configuration_snippet: |
     # Add custom Nginx main configuration to nginx.conf.
     # The configuration should be well indented!
@@ -202,42 +202,48 @@ nginx_config:                     # Config for render the template to generate n
     # The configuration should be well indented!
 
   http:
-    enable_access_log: true         # enable access log or not, default true
-    access_log: logs/access.log     # Location of the access log.
-    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\""
-    access_log_format_escape: default   # Escape default or json characters in variables.
-    keepalive_timeout: 60s          # timeout during which a keep-alive client connection will stay open on the server side.
-    client_header_timeout: 60s      # timeout for reading client request header, then 408 (Request Time-out) error is returned to the client
-    client_body_timeout: 60s        # timeout for reading client request body, then 408 (Request Time-out) error is returned to the client
-    client_max_body_size: 0         # The maximum allowed size of the client request body.
-                                    # If exceeded, the 413 (Request Entity Too Large) error is returned to the client.
-                                    # Note that unlike Nginx, we don't limit the body size by default.
-
-    send_timeout: 10s              # timeout for transmitting a response to the client.then the connection is closed
-    underscores_in_headers: "on"   # default enables the use of underscores in client request header fields
-    real_ip_header: X-Real-IP      # http://nginx.org/en/docs/http/ngx_http_realip_module.html#real_ip_header
-    real_ip_recursive: "off"       # http://nginx.org/en/docs/http/ngx_http_realip_module.html#real_ip_recursive
-    real_ip_from:                  # http://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from
+    enable_access_log: true            # Enable HTTP proxy access logging.
+    access_log: logs/access.log        # Location of the access log.
+    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\"" 
+    # Customize log format: http://nginx.org/en/docs/varindex.html
+    access_log_format_escape: default  # Escape default or json characters in variables.
+    keepalive_timeout: 60s             # Set the maximum time for which TCP connection keeps alive.
+    client_header_timeout: 60s         # Set the maximum time waiting for client to send the entire HTTP 
+                                       # request header before closing the connection.
+    client_body_timeout: 60s           # Set the maximum time waiting for client to send the request body.
+    client_max_body_size: 0            # Set the maximum allowed size of the client request body.
+                                       # Default to 0, unlimited.
+                                       # Unlike Nginx, APISIX does not limit the body size by default.
+                                       # If exceeded, the 413 (Request Entity Too Large) error is returned.
+    send_timeout: 10s   # Set the maximum time for transmitting a response to the client before closing.
+    underscores_in_headers: "on"  # Allow HTTP request headers to contain underscores in their names.
+    real_ip_header: X-Real-IP     # https://nginx.org/en/docs/http/ngx_http_realip_module.html#real_ip_header
+    real_ip_recursive: "off" # http://nginx.org/en/docs/http/ngx_http_realip_module.html#real_ip_recursive
+    real_ip_from:            # http://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from
       - 127.0.0.1
       - "unix:"
-    #custom_lua_shared_dict:       #  custom shared cache to nginx.conf
-    #  ipc_shared_dict: 100m       # custom shared cache, format: `cache-key: cache-size`
 
-    # Enables or disables passing of the server name through TLS Server Name Indication extension (SNI, RFC 6066)
-    # when establishing a connection with the proxied HTTPS server.
-    proxy_ssl_server_name: true
+    # custom_lua_shared_dict:     # Custom Nginx Lua shared memory zone for nginx.conf. Size units are m or k.
+    #  ipc_shared_dict: 100m      # Custom shared cache, format: `cache-key: cache-size`
+
+    proxy_ssl_server_name: true   # Send the server name in the SNI extension when establishing an SSL/TLS 
+                                  # connection with the upstream server, allowing the upstream server to 
+                                  # select the appropriate SSL/TLS certificate and configuration based on 
+                                  # the requested server name.
+
     upstream:
-      keepalive: 320                # Sets the maximum number of idle keepalive connections to upstream servers that are preserved in the cache of each worker process.
-                                    # When this number is exceeded, the least recently used connections are closed.
-      keepalive_requests: 1000      # Sets the maximum number of requests that can be served through one keepalive connection.
-                                    # After the maximum number of requests is made, the connection is closed.
-      keepalive_timeout: 60s        # Sets a timeout during which an idle keepalive connection to an upstream server will stay open.
-    charset: utf-8                  # Adds the specified charset to the "Content-Type" response header field, see
-                                    # http://nginx.org/en/docs/http/ngx_http_charset_module.html#charset
-    variables_hash_max_size: 2048   # Sets the maximum size of the variables hash table.
+      keepalive: 320              # Set the maximum time of keep-alive connections to the upstream servers.
+                                  # When the value is exceeded, the least recently used connection is closed.
+      keepalive_requests: 1000    # Set the maximum number of requests that can be served through one 
+                                  # keep-alive connection.
+                                  # After the maximum number of requests is made, the connection is closed.
+      keepalive_timeout: 60s      # Set the maximum time for which TCP connection keeps alive.
+    charset: utf-8                # Add the charset to the "Content-Type" response header field. 
+                                  # See http://nginx.org/en/docs/http/ngx_http_charset_module.html#charset
+    variables_hash_max_size: 2048 # Set the maximum size of the variables hash table.
 
-    lua_shared_dict:               # Nginx Lua shared memory zone
-      internal-status: 10m         # Size units are m or k.
+    lua_shared_dict:              # Nginx Lua shared memory zone. Size units are m or k.
+      internal-status: 10m         
       plugin-limit-req: 10m
       plugin-limit-count: 10m
       prometheus-metrics: 10m
