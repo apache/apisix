@@ -93,7 +93,7 @@ apisix:
   #dns_resolver:                  # If not set, read from `/etc/resolv.conf`
   #  - 1.1.1.1
   #  - 8.8.8.8
-  #dns_resolver_valid: 30         # if given, override the TTL of the valid records. The unit is second.
+  #dns_resolver_valid: 30         # if given, override the TTL of the valid records. The unit issond.
   resolver_timeout: 5             # resolver timeout
   enable_resolv_search_opt: true  # enable search option in resolv.conf
   ssl:
@@ -266,93 +266,92 @@ nginx_config:                     # Config for render the template to generate n
       tars: 1m
       cas-auth: 10m
 
-#discovery:                       # service discovery center
+# discovery:                      # Service Discovery
 #  dns:
 #    servers:
-#      - "127.0.0.1:8600"         # use the real address of your dns server
-#    order:                       # order in which to try different dns record types when resolving
-#      - last                     # "last" will try the last previously successful type for a hostname.
+#      - "127.0.0.1:8600"         # Replace with the address of your DNS server.
+#    order:                       # Resolve DNS records this order.
+#      - last                     # Try the latest successful type for a hostname.
 #      - SRV
 #      - A
 #      - AAAA
 #      - CNAME
-#  eureka:
-#    host:                        # it's possible to define multiple eureka hosts addresses of the same eureka cluster.
+#  eureka:                        # Eureka
+#    host:                        # Eureka address(es)
 #      - "http://127.0.0.1:8761"
 #    prefix: /eureka/
-#    fetch_interval: 30           # default 30s
-#    weight: 100                  # default weight for node
+#    fetch_interval: 30           # Default 30s
+#    weight: 100                  # Default weight for node
 #    timeout:
-#      connect: 2000              # default 2000ms
-#      send: 2000                 # default 2000ms
-#      read: 5000                 # default 5000ms
-#  nacos:
-#    host:
+#      connect: 2000              # Default 2000ms
+#      send: 2000                 # Default 2000ms
+#      read: 5000                 # Default 5000ms
+#  nacos:                         # Nacos
+#    host:                        # Nacos address(es)
 #      - "http://${username}:${password}@${host1}:${port1}"
 #    prefix: "/nacos/v1/"
-#    fetch_interval: 30    # default 30 sec
-#    weight: 100           # default 100
+#    fetch_interval: 30    # Default 30s
+#    weight: 100           # Default 100
 #    timeout:
-#      connect: 2000       # default 2000 ms
-#      send: 2000          # default 2000 ms
-#      read: 5000          # default 5000 ms
-#  consul_kv:
-#    servers:
+#      connect: 2000       # Default 2000ms
+#      send: 2000          # Default 2000ms
+#      read: 5000          # Default 5000ms
+#  consul_kv:              # Consul KV
+#    servers:              # Consul KV address(es)
 #      - "http://127.0.0.1:8500"
 #      - "http://127.0.0.1:8600"
 #    prefix: "upstreams"
-#    skip_keys:                    # if you need to skip special keys
+#    skip_keys:                     # Skip special keys
 #      - "upstreams/unused_api/"
 #    timeout:
-#      connect: 2000               # default 2000 ms
-#      read: 2000                  # default 2000 ms
-#      wait: 60                    # default 60 sec
-#    weight: 1                     # default 1
-#    fetch_interval: 3             # default 3 sec, only take effect for keepalive: false way
-#    keepalive: true               # default true, use the long pull way to query consul servers
-#    default_server:               # you can define default server when missing hit
+#      connect: 2000                # Default 2000ms
+#      read: 2000                   # Default 2000ms
+#      wait: 60                     # Default 60s
+#    weight: 1                      # Default 1
+#    fetch_interval: 3              # Default 3s. Effective only when keepalive is false.
+#    keepalive: true                # Default to true. Use long pull to query Consul.
+#    default_server:                # Define default server to route traffic to.
 #      host: "127.0.0.1"
 #      port: 20999
 #      metadata:
-#        fail_timeout: 1           # default 1 ms
-#        weight: 1                 # default 1
-#        max_fails: 1              # default 1
-#    dump:                         # if you need, when registered nodes updated can dump into file
-#       path: "logs/consul_kv.dump"
-#       expire: 2592000            # unit sec, here is 30 day
-#  consul:
-#    servers:                          # make sure service name is unique in these consul servers
-#      - "http://127.0.0.1:8500"       # `http://127.0.0.1:8500` and `http://127.0.0.1:8600` are different clusters
+#        fail_timeout: 1            # Default 1ms
+#        weight: 1                  # Default 1
+#        max_fails: 1               # Default 1
+#    dump:                          # Dump the Consul key-value (KV) store to a file.
+#       path: "logs/consul_kv.dump" # Location of the dump file.
+#       expire: 2592000             # Specify the expiration time of the dump file in units of seconds. 
+#  consul:                          # Consul
+#    servers:                       # Consul address(es)
+#      - "http://127.0.0.1:8500"
 #      - "http://127.0.0.1:8600"
-#    skip_services:                    # if you need to skip special services
-#      - "service_a"                   # `consul` service is default skip service
+#    skip_services:                 # Skip services during service discovery.
+#      - "service_a"
 #    timeout:
-#      connect: 2000               # default 2000 ms
-#      read: 2000                  # default 2000 ms
-#      wait: 60                    # default 60 sec
-#    weight: 1                     # default 1
-#    fetch_interval: 3             # default 3 sec, only take effect for keepalive: false way
-#    keepalive: true               # default true, use the long pull way to query consul servers
-#    default_service:               # you can define default server when missing hit
+#      connect: 2000                # Default 2000ms
+#      read: 2000                   # Default 2000ms
+#      wait: 60                     # Default 60s
+#    weight: 1                      # Default 1
+#    fetch_interval: 3              # Default 3s. Effective only when keepalive is false.
+#    keepalive: true                # Default to true. Use long pull to query Consul.
+#    default_service:               # Define the default service to route traffic to.
 #      host: "127.0.0.1"
 #      port: 20999
 #      metadata:
-#        fail_timeout: 1           # default 1 ms
-#        weight: 1                 # default 1
-#        max_fails: 1              # default 1
-#    dump:                         # if you need, when registered nodes updated can dump into file
-#       path: "logs/consul.dump"
-#       expire: 2592000            # unit sec, here is 30 day
-#       load_on_init: true         # default true, load the consul dump file on init
-#  kubernetes:
+#        fail_timeout: 1           # Default 1ms
+#        weight: 1                 # Default 1
+#        max_fails: 1              # Default 1
+#    dump:                           # Dump the Consul key-value (KV) store to a file.
+#       path: "logs/consul_kv.dump"  # Location of the dump file.
+#       expire: 2592000              # Specify the expiration time of the dump file in units of seconds. 
+#       load_on_init: true           # Default true, load the consul dump file on init
+#  kubernetes:                     # Kubernetes service discovery
 #    ### kubernetes service discovery both support single-cluster and multi-cluster mode
 #    ### applicable to the case where the service is distributed in a single or multiple kubernetes clusters.
-#
 #    ### single-cluster mode ###
 #    service:
-#      schema: https                     #apiserver schema, options [http, https], default https
-#      host: ${KUBERNETES_SERVICE_HOST}  #apiserver host, options [ipv4, ipv6, domain, environment variable], default ${KUBERNETES_SERVICE_HOST}
-#      port: ${KUBERNETES_SERVICE_PORT}  #apiserver port, options [port number, environment variable], default ${KUBERNETES_SERVICE_PORT}
+#      schema: https                     # apiserver schema, options [http, https], default https
+#      host: ${KUBERNETES_SERVICE_HOST}  # apiserver host, options [ipv4, ipv6, domain, environment variable], default ${KUBERNETES_SERVICE_HOST}
+#      port: ${KUBERNETES_SERVICE_PORT}  # apiserver port, options [port number, environment variable], default ${KUBERNETES_SERVICE_PORT}
 #    client:
 #      # serviceaccount token or path of serviceaccount token_file
 #      token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
@@ -381,13 +380,12 @@ nginx_config:                     # Config for render the template to generate n
 #    # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
 #    shared_size: 1m #default 1m
 #    ### single-cluster mode ###
-#
 #    ### multi-cluster mode ###
 #  - id: release  # a custom name refer to the cluster, pattern ^[a-z0-9]{1,8}
 #    service:
-#      schema: https                     #apiserver schema, options [http, https], default https
-#      host: ${KUBERNETES_SERVICE_HOST}  #apiserver host, options [ipv4, ipv6, domain, environment variable]
-#      port: ${KUBERNETES_SERVICE_PORT}  #apiserver port, options [port number, environment variable]
+#      schema: https                     # apiserver schema, options [http, https], default https
+#      host: ${KUBERNETES_SERVICE_HOST}  # apiserver host, options [ipv4, ipv6, domain, environment variable]
+#      port: ${KUBERNETES_SERVICE_PORT}  # apiserver port, options [port number, environment variable]
 #    client:
 #      # serviceaccount token or path of serviceaccount token_file
 #      token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
@@ -532,7 +530,7 @@ stream_plugins: # sorted by priority
 
 plugin_attr:
   log-rotate:
-    interval: 3600    # rotate interval (unit: second)
+    interval: 3600    # rotate interval (unit:sond)
     max_kept: 168     # max number of log files will be kept
     max_size: -1      # max size bytes of log files to be rotated, size check would be skipped with a value less than 0
     enable_compression: false    # enable log file compression(gzip) or not, default false
@@ -577,7 +575,7 @@ plugin_attr:
     #    extra_labels:
     #      - upstream_addr: $upstream_addr
   server-info:
-    report_ttl: 60   # live time for server info in etcd (unit: second)
+    report_ttl: 60   # live time for server info in etcd (unit:sond)
   dubbo-proxy:
     upstream_multiplex_count: 32
   request-id:
@@ -586,8 +584,8 @@ plugin_attr:
       snowflake_epoc: 1609459200000   # the starting timestamp is expressed in milliseconds
       data_machine_bits: 12           # data machine bit, maximum 31, because Lua cannot do bit operations greater than 31
       sequence_bits: 10               # each machine generates a maximum of (1 << sequence_bits) serial numbers per millisecond
-      data_machine_ttl: 30            # live time for data_machine in etcd (unit: second)
-      data_machine_interval: 10       # lease renewal interval in etcd (unit: second)
+      data_machine_ttl: 30            # live time for data_machine in etcd (unit:sond)
+      data_machine_interval: 10       # lease renewal interval in etcd (unit:sond)
   proxy-mirror:
     timeout:                          # proxy timeout in mirrored sub-request
       connect: 60s
@@ -596,7 +594,7 @@ plugin_attr:
 #  redirect:
 #    https_port: 8443   # the default port for use by HTTP redirects to HTTPS
   inspect:
-    delay: 3            # in seconds
+    delay: 3            # insonds
     hooks_file: "/usr/local/apisix/plugin_inspect_hooks.lua"
 
 deployment:
@@ -605,7 +603,7 @@ deployment:
     config_provider: etcd
   admin:
     # Admin API authentication is enabled by default.
-    # Set it false in the production environment will cause a serious security issue.
+    # Set it false in the production environment will cause a serioussurity issue.
     # admin_key_required: true
 
     # Default token when use API to call for Admin API.
@@ -647,9 +645,9 @@ deployment:
                                     # e.g. https://127.0.0.1:2379.
     prefix: /apisix                 # configuration prefix in etcd
     use_grpc: false                 # enable the experimental configuration sync via gRPC
-    timeout: 30                     # 30 seconds. Use a much higher timeout (like an hour) if the `use_grpc` is true.
-    #resync_delay: 5                # when sync failed and a rest is needed, resync after the configured seconds plus 50% random jitter
-    #health_check_timeout: 10       # etcd retry the unhealthy nodes after the configured seconds
+    timeout: 30                     # 30sonds. Use a much higher timeout (like an hour) if the `use_grpc` is true.
+    #resync_delay: 5                # when sync failed and a rest is needed, resync after the configuredsonds plus 50% random jitter
+    #health_check_timeout: 10       # etcd retry the unhealthy nodes after the configuredsonds
     startup_retry: 2                # the number of retry to etcd during the startup, default to 2
     #user: root                     # root username for etcd
     #password: 5tHkHhYkjr6cQY       # root password for etcd
