@@ -576,7 +576,7 @@ plugin_attr:          # Plugin attributes
     #    extra_labels:
     #      - upstream_addr: $upstream_addr
   server-info:
-    report_ttl: 60   # live time for server info in etcd (unit:sond)
+    report_ttl: 60   # Set the TTL for server info in etcd in seconds.
   dubbo-proxy:
     upstream_multiplex_count: 32
   request-id:
@@ -585,8 +585,8 @@ plugin_attr:          # Plugin attributes
       snowflake_epoc: 1609459200000   # the starting timestamp is expressed in milliseconds
       data_machine_bits: 12           # data machine bit, maximum 31, because Lua cannot do bit operations greater than 31
       sequence_bits: 10               # each machine generates a maximum of (1 << sequence_bits) serial numbers per millisecond
-      data_machine_ttl: 30            # live time for data_machine in etcd (unit:sond)
-      data_machine_interval: 10       # lease renewal interval in etcd (unit:sond)
+      data_machine_ttl: 30            # Set the live time for data_machine in etcd in seconds.
+      data_machine_interval: 10       # Set the lease renewal interval in etcd in seconds.
   proxy-mirror:
     timeout:                          # proxy timeout in mirrored sub-request
       connect: 60s
@@ -595,7 +595,7 @@ plugin_attr:          # Plugin attributes
 #  redirect:
 #    https_port: 8443   # the default port for use by HTTP redirects to HTTPS
   inspect:
-    delay: 3            # insonds
+    delay: 3            # Set the delay in seconds.
     hooks_file: "/usr/local/apisix/plugin_inspect_hooks.lua"
 
 deployment:
@@ -604,7 +604,7 @@ deployment:
     config_provider: etcd
   admin:
     # Admin API authentication is enabled by default.
-    # Set it false in the production environment will cause a serioussurity issue.
+    # Set it false in the production environment will introduce major security risks.
     # admin_key_required: true
 
     # Default token when use API to call for Admin API.
@@ -646,9 +646,9 @@ deployment:
                                     # e.g. https://127.0.0.1:2379.
     prefix: /apisix                 # configuration prefix in etcd
     use_grpc: false                 # enable the experimental configuration sync via gRPC
-    timeout: 30                     # 30sonds. Use a much higher timeout (like an hour) if the `use_grpc` is true.
-    #resync_delay: 5                # when sync failed and a rest is needed, resync after the configuredsonds plus 50% random jitter
-    #health_check_timeout: 10       # etcd retry the unhealthy nodes after the configuredsonds
+    timeout: 30                     # Set the timeout in seconds. Use a much higher timeout (like an hour) if the `use_grpc` is true.
+    #resync_delay: 5                # when sync failed and a rest is needed, resync after the configured seconds plus 50% random jitter
+    #health_check_timeout: 10       # etcd retry the unhealthy nodes after the configured seconds
     startup_retry: 2                # the number of retry to etcd during the startup, default to 2
     #user: root                     # root username for etcd
     #password: 5tHkHhYkjr6cQY       # root password for etcd
