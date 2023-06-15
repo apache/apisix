@@ -124,7 +124,7 @@ http {
 
 {% end %}
 
-{% if stream_proxy then %}
+{% if proxy_mode == "stream" or proxy_mode == "http&stream" then %}
 stream {
     lua_package_path  "{*extra_lua_path*}$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
                       .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
