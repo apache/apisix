@@ -582,24 +582,28 @@ plugin_attr:          # Plugin attributes
     upstream_multiplex_count: 32      # Set the maximum number of connections that can be multiplexed over 
                                       # a single network connection between the Dubbo Proxy and the upstream 
                                       # Dubbo services.
-  request-id:
-    snowflake:
-      enable: false
-      snowflake_epoc: 1609459200000   # the starting timestamp is expressed in milliseconds
-      data_machine_bits: 12           # data machine bit, maximum 31, because Lua cannot do bit operations greater than 31
-      sequence_bits: 10               # each machine generates a maximum of (1 << sequence_bits) serial numbers per millisecond
-      data_machine_ttl: 30            # Set the live time for data_machine in etcd in seconds.
+  request-id:                         # Plugin: request-id
+    snowflake:                        # Snowflake algorithm
+      enable: false                   # Enable Snowflake algorithm
+      snowflake_epoc: 1609459200000   # Set the starting timestamp in milliseconds.
+      data_machine_bits: 12           # Set the data machine bit. 
+                                      # Maximum 31 as Lua cannot do bit operations greater than 31.
+      sequence_bits: 10               # Set the sequence bits. Each machine generates a maximum of 
+                                      # (1 << sequence_bits) serial numbers per millisecond.
+      data_machine_ttl: 30            # Set the TTL for data_machine in etcd in seconds.
       data_machine_interval: 10       # Set the lease renewal interval in etcd in seconds.
-  proxy-mirror:
-    timeout:                          # proxy timeout in mirrored sub-request
+  proxy-mirror:                       # Plugin: proxy-mirror
+    timeout:                          # Set the timeout for mirrored requests.
       connect: 60s
       read: 60s
       send: 60s
-#  redirect:
-#    https_port: 8443   # the default port for use by HTTP redirects to HTTPS
-  inspect:
-    delay: 3            # Set the delay in seconds.
-    hooks_file: "/usr/local/apisix/plugin_inspect_hooks.lua"
+  # redirect:                         # Plugin: redirect
+  #   https_port: 8443                # Set the default port used to redirect HTTP to HTTPS.
+  inspect:                            # Plugin: inspect
+    delay: 3                          # Set the delay in seconds for the frequency of checking the hooks file.
+    hooks_file: "/usr/local/apisix/plugin_inspect_hooks.lua"  # Set the path to the Lua file that defines 
+                                                              # hooks. Only administrators should have 
+                                                              # write access to this file for security.
 
 deployment:
   role: traditional
