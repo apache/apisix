@@ -61,7 +61,7 @@ plugin_attr:
 
 ### 如何修改延迟指标中的 `default_buckets`
 
-`DEFAULT_BUCKETS` 是 `http_latency` 指标中bucket数组的默认值。
+`DEFAULT_BUCKETS` 是 `http_latency` 指标中 bucket 数组的默认值。
 
 你可以通过修改配置文件中的 `default_buckets` 来重新指定 `DEFAULT_BUCKETS`
 
