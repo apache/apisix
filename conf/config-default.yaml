@@ -629,12 +629,12 @@ deployment:                    # Deployment configurations
       ip: 0.0.0.0                 # Set listening IP.
       port: 9180                  # Set listening port. Beware of port conflict with node_listen.
 
-    # https_admin: true           # Enable HTTPS for Admin API on admin_listen ip and port.
-
-    admin_api_mtls:               # Depends on `admin_listen` and `https_admin`.
-      admin_ssl_cert: ""          # Path of your self-signed server side cert.
-      admin_ssl_cert_key: ""      # Path of your self-signed server side key.
-      admin_ssl_ca_cert: ""       # Path of your self-signed ca cert.The CA is used to sign all admin api callers' certificates.
+    # https_admin: true           # Enable SSL for Admin API on IP and port specified in admin_listen.
+                                  # Use admin_api_mtls.admin_ssl_cert and admin_api_mtls.admin_ssl_cert_key.
+    # admin_api_mtls:             # Set this if `https_admin` is true.
+    #   admin_ssl_cert: ""        # Set path to SSL/TLS certificate.
+    #   admin_ssl_cert_key: ""    # Set path to SSL/TLS key.
+    #   admin_ssl_ca_cert: ""     # Set path to CA certificate used to sign client certificates.
 
     admin_api_version: v3         # The version of admin api, latest version is v3.
 
