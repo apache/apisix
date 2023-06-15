@@ -87,8 +87,8 @@ apisix:
   #   - 1.1.1.1
   #   - 8.8.8.8
   # dns_resolver_valid: 30        # Override the default TTL of the DNS records.
-  resolver_timeout: 5             # Time that the server will wait for a response from the DNS resolver
-                                  # before timing out.
+  resolver_timeout: 5             # Set the time in seconds that the server will wait for a response from the 
+                                  # DNS resolver before timing out.
   enable_resolv_search_opt: true  # If true, use search option in the resolv.conf file in DNS lookups.
 
   ssl:
@@ -99,7 +99,8 @@ apisix:
       # - ip: 127.0.0.3                          # If not set, default to `0.0.0.0`.
       #   port: 9445
       #   enable_http2: true
-    # ssl_trusted_certificate: /path/to/ca-cert  # Path to CA certificates in the PEM format.
+    # ssl_trusted_certificate: /path/to/ca-cert  # Set the path to CA certificates used to verify client 
+                                                 # certificates in the PEM format.
     ssl_protocols: TLSv1.2 TLSv1.3               # TLS versions supported.
     ssl_ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
     ssl_session_tickets: false  # If true, session tickets are used for SSL/TLS connections.
@@ -112,7 +113,7 @@ apisix:
                                 # CAUTION: DO NOT MODIFY SALT VALUE AFTER KEY IS WRITTEN TO ETCD.
                                 # VALUES CANNOT BE DECRYPTED OTHERWISE.
 
-    # fallback_sni: "my.default.domain"      # Fallback SNI to use if client does not send SNI during
+    # fallback_sni: "my.default.domain"      # Fallback SNI to be used if the client does not send SNI during
     #                                        # the handshake.
 
   enable_control: true  # Control API
