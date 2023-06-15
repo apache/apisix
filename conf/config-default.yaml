@@ -636,26 +636,25 @@ deployment:                    # Deployment configurations
     #   admin_ssl_cert_key: ""    # Set path to SSL/TLS key.
     #   admin_ssl_ca_cert: ""     # Set path to CA certificate used to sign client certificates.
 
-    admin_api_version: v3         # The version of admin api, latest version is v3.
+    admin_api_version: v3         # Set the version of Admin API (latest: v3).
 
   etcd:
-    host:                           # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
-      - "http://127.0.0.1:2379"     # multiple etcd address, if your etcd cluster enables TLS, please use https scheme,
-                                    # e.g. https://127.0.0.1:2379.
-    prefix: /apisix                 # configuration prefix in etcd
-    use_grpc: false                 # enable the experimental configuration sync via gRPC
-    timeout: 30                     # Set the timeout in seconds. Use a much higher timeout (like an hour) if the `use_grpc` is true.
-    #resync_delay: 5                # when sync failed and a rest is needed, resync after the configured seconds plus 50% random jitter
-    #health_check_timeout: 10       # etcd retry the unhealthy nodes after the configured seconds
-    startup_retry: 2                # the number of retry to etcd during the startup, default to 2
-    #user: root                     # root username for etcd
-    #password: 5tHkHhYkjr6cQY       # root password for etcd
+    host:                         # Set etcd address(es) in the same etcd cluster.
+      - "http://127.0.0.1:2379"   # If TLS is enabled for etcd, use https://127.0.0.1:2379.
+    prefix: /apisix               # Set prefix in etcd.
+    use_grpc: false               # Use gRPC (experimental) for etcd configuration sync.
+    timeout: 30                   # Set timeout in seconds. 
+                                  # Set a higher timeout (e.g. an hour) if `use_grpc` is true.
+    # resync_delay: 5             # Set resync time in seconds after a sync failure. 
+                                  # The actual resync time would be resync_delay plus 50% random jitter.
+    # health_check_timeout: 10    # Set timeout in seconds for etcd health check.
+                                  # Default to 10 if not set or a negative value is provided.
+    startup_retry: 2              # Set the number of retries to etcd on startup. Default to 2.
+    # user: root                  # Set the root username for etcd.
+    # password: 5tHkHhYkjr6cQ     # Set the root password for etcd.
     tls:
-      # To enable etcd client certificate you need to build APISIX-Base, see
-      # https://apisix.apache.org/docs/apisix/FAQ#how-do-i-build-the-apisix-base-environment
-      #cert: /path/to/cert          # path of certificate used by the etcd client
-      #key: /path/to/key            # path of key used by the etcd client
-
-      verify: true                  # whether to verify the etcd endpoint certificate when setup a TLS connection to etcd,
-                                    # the default value is true, e.g. the certificate will be verified strictly.
-      #sni:                         # the SNI for etcd TLS requests. If missed, the host part of the URL will be used.
+      # cert: /path/to/cert       # Set the path to certificate used by the etcd client
+      # key: /path/to/key         # Set the path to path of key used by the etcd client
+      verify: true                # Verify the etcd certificate when establishing a TLS connection with etcd.
+      # sni:                      # The SNI for etcd TLS requests.
+                                  # If not set, the host from the URL is used.
