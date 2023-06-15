@@ -118,6 +118,12 @@ function _M.check_schema(conf)
     return true
 end
 
+
+local function only_allow(conf)
+    return conf.allowlist and not conf.denylist
+end
+
+
 function _M.access(conf, ctx)
     local user_agent = core.request.header(ctx, "User-Agent")
 
@@ -133,10 +139,8 @@ function _M.access(conf, ctx)
         for _, v in ipairs(user_agent) do
             if type(v) == "string" then
                 match = lrucache_useragent(v, conf, match_user_agent, v, conf)
-                if match > MATCH_ALLOW then
+                if (match == MATCH_ALLOW and only_allow(conf)) or match == MATCH_DENY then
                     break
-                elseif match == MATCH_ALLOW and conf.allowlist and not conf.denylist then
-                    return
                 end
             end
         end
@@ -144,7 +148,7 @@ function _M.access(conf, ctx)
         match = lrucache_useragent(user_agent, conf, match_user_agent, user_agent, conf)
     end
 
-    if match > MATCH_ALLOW or (match == MATCH_NONE and conf.allowlist and not conf.denylist) then
+    if (only_allow(conf) and match == MATCH_NONE) or match == MATCH_DENY then
         return 403, { message = conf.message }
     end
 end
