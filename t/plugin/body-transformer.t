@@ -824,7 +824,7 @@ location /demo {
 
 
 
-=== TEST 12: emtpy xml value should be rendered as empty string
+=== TEST 12: empty xml value should be rendered as empty string
 --- config
 location /demo {
     content_by_lua_block {
