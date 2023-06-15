@@ -134,3 +134,62 @@ GET /hello
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_http_status\{code="200",route="10",matched_uri="\/hello",matched_host="",service="",consumer="",node="127.0.0.1",dummy=""\} \d+/
+
+
+
+=== TEST 7: set route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "prometheus": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello1"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: set default_buckets
+--- yaml_config
+plugin_attr:
+    prometheus:
+        default_buckets:
+            - 15
+            - 55
+            - 105
+            - 205
+            - 505
+--- request
+GET /hello1
+
+
+
+=== TEST 9: fetch metrics
+--- request
+GET /apisix/prometheus/metrics
+--- response_body eval
+qr/apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="15"\} \d+
+apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="55"\} \d+
+apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="105"\} \d+
+apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="205"\} \d+
+apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="505"\} \d+/
