@@ -25,6 +25,7 @@ local str_format        = string.format
 local type              = type
 local pcall             = pcall
 local pairs             = pairs
+local next              = next
 
 
 local transform_schema = {
