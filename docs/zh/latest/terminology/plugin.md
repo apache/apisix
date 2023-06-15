@@ -284,6 +284,6 @@ curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034
 
 :::
 
-## stand-alone 模式下的热加载
+## Standalone 模式下的热加载
 
-关于 Stand Alone 模式下的热加载的信息，请参考 [stand alone 模式](../stand-alone.md)。
+关于 Stand Alone 模式下的热加载的信息，请参考 [stand alone 模式](../../../en/latest/deployment-modes.md#standalone)。
