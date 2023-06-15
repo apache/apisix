@@ -74,6 +74,10 @@ end
 
 local function remove_namespace(tbl)
     for k, v in pairs(tbl) do
+        if type(v) == "table" and next(v) == nil then
+            v = ""
+            tbl[k] = v
+        end
         if type(k) == "string" then
             local newk = k:match(".*:(.*)")
             if newk then
