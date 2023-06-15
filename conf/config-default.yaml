@@ -575,10 +575,13 @@ plugin_attr:          # Plugin attributes
     #  bandwidth:
     #    extra_labels:
     #      - upstream_addr: $upstream_addr
-  server-info:
-    report_ttl: 60   # Set the TTL for server info in etcd in seconds.
-  dubbo-proxy:
-    upstream_multiplex_count: 32
+  server-info:                        # Plugin: server-info
+    report_ttl: 60                    # Set the TTL in seconds for server info in etcd.
+                                      # Maximum: 86400. Minimum: 3.
+  dubbo-proxy:                        # Plugin: dubbo-proxy
+    upstream_multiplex_count: 32      # Set the maximum number of connections that can be multiplexed over 
+                                      # a single network connection between the Dubbo Proxy and the upstream 
+                                      # Dubbo services.
   request-id:
     snowflake:
       enable: false
