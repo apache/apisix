@@ -605,40 +605,31 @@ plugin_attr:          # Plugin attributes
                                                               # hooks. Only administrators should have 
                                                               # write access to this file for security.
 
-deployment:
-  role: traditional
+deployment:                    # Deployment configurations
+  role: traditional            # Set deployment mode: traditional, control_plane, data_plane.
   role_traditional:
-    config_provider: etcd
-  admin:
-    # Admin API authentication is enabled by default.
-    # Set it false in the production environment will introduce major security risks.
-    # admin_key_required: true
-
-    # Default token when use API to call for Admin API.
-    # *NOTE*: Highly recommended to modify this value to protect APISIX's Admin API.
-    # Disabling this configuration item means that the Admin API does not
-    # require any authentication.
+    config_provider: etcd      # Set the configuration center.
+  admin:                       # Admin API
+    admin_key_required: true   # Enable Admin API authentication by default for security.
     admin_key:
       -
-        name: admin
-        key: edd1c9f034335f136f87ad84b625c8f1
-        role: admin                 # admin: manage all configuration data
-                                    # viewer: only can view configuration data
+        name: admin                             # admin: write access to configurations.
+        key: edd1c9f034335f136f87ad84b625c8f1   # Set API key for the admin of Admin API.
+        role: admin                 
       -
-        name: viewer
-        key: 4054f7cf07e344346cd3f287985e76a2
+        name: viewer                            # viewer: read-only to configurations.                      
+        key: 4054f7cf07e344346cd3f287985e76a2   # Set API key for the viewer of Admin API.
         role: viewer
 
-    enable_admin_cors: true         # Admin API support CORS response headers.
-    allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
-      - 127.0.0.0/24                # If we don't set any IP list, then any IP access is allowed by default.
-      #- "::/64"
-    admin_listen:                 # use a separate port
-      ip: 0.0.0.0                 # Specific IP, if not set, the default value is `0.0.0.0`.
-      port: 9180                  # Specific port, which must be different from node_listen's port.
+    enable_admin_cors: true       # Enable Admin API CORS response header `Access-Control-Allow-Origin`.
+    allow_admin:                  # Limit Admin API access by IP addresses.
+      - 127.0.0.0/24              # If not set, any IP address is allowed.
+      # - "::/64"
+    admin_listen:                 # Set the Admin API listening addresses.
+      ip: 0.0.0.0                 # Set listening IP.
+      port: 9180                  # Set listening port. Beware of port conflict with node_listen.
 
-    #https_admin: true            # enable HTTPS when use a separate port for Admin API.
-                                  # Admin API will use conf/apisix_admin_api.crt and conf/apisix_admin_api.key as certificate.
+    # https_admin: true           # Enable HTTPS for Admin API on admin_listen ip and port.
 
     admin_api_mtls:               # Depends on `admin_listen` and `https_admin`.
       admin_ssl_cert: ""          # Path of your self-signed server side cert.
