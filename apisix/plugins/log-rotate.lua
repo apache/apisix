@@ -46,8 +46,8 @@ local COMPRESSION_FILE_SUFFIX = ".tar.gz" -- compression file suffix
 local rotate_time
 local default_logs
 local enable_compression = false
-local DEFAULT_ACCESS_LOG_FILENAME = "logs/access.log"
-local DEFAULT_ERROR_LOG_FILENAME = "logs/error.log"
+local DEFAULT_ACCESS_LOG_FILEPATH = "logs/access.log"
+local DEFAULT_ERROR_LOG_FILEPATH = "logs/error.log"
 local custom_access_log_filename
 local custom_error_log_filename
 
@@ -74,11 +74,12 @@ local function file_exists(path)
     return file ~= nil
 end
 
+
 -- get the log directory path
 local function get_log_path_info(file_type)
     local_conf = core.config.local_conf()
     local conf_path
-    if file_type == custom_error_log_filename or file_type == DEFAULT_ERROR_LOG_FILENAME then
+    if file_type == custom_error_log_filename or file_type == DEFAULT_ERROR_LOG_FILEPATH then
         conf_path = local_conf and local_conf.nginx_config and
         local_conf.nginx_config.error_log
     else
@@ -111,6 +112,7 @@ local function tab_sort_comp(a, b)
     return a > b
 end
 
+
 -- scans the log directory and returns a sorted table of matching log files
 local function scan_log_folder(log_file_name)
     local t = {}
@@ -131,6 +133,7 @@ local function scan_log_folder(log_file_name)
     core.table.sort(t, tab_sort_comp)
     return t, log_dir
 end
+
 
 local function get_custom_logfile_name()
     local local_conf = core.config.local_conf()
@@ -157,6 +160,7 @@ local function rename_file(log, date_str)
         core.log.info("file exist: ", new_file)
         return new_file
     end
+
     local filename = log.file
     -- create the file if it does not exist
     local exists = lfs.attributes(filename, "mode") == "file"
@@ -166,6 +170,7 @@ local function rename_file(log, date_str)
             file:close()
         end
     end
+
     local ok, err = os_rename(filename, new_file)
     if not ok then
         core.log.error("move file from ", filename, " to ", new_file,
@@ -280,8 +285,8 @@ local function rotate()
     local max_kept = MAX_KEPT
     local max_size = MAX_SIZE
     local attr = plugin.plugin_attr(plugin_name)
-    local access_log_filename = custom_access_log_filename or DEFAULT_ACCESS_LOG_FILENAME
-    local error_log_filename = custom_error_log_filename or DEFAULT_ERROR_LOG_FILENAME
+    local access_log_filename = custom_access_log_filename or DEFAULT_ACCESS_LOG_FILEPATH
+    local error_log_filename = custom_error_log_filename or DEFAULT_ERROR_LOG_FILEPATH
     if attr then
         interval = attr.interval or interval
         max_kept = attr.max_kept or max_kept
@@ -335,7 +340,6 @@ end
 
 
 function _M.init()
-    timers.register_timer("plugin#log-rotate", rotate, true)
     custom_access_log_filename, custom_error_log_filename = get_custom_logfile_name()
     timers.register_timer("plugin#log-rotate", rotate, true)
 end
