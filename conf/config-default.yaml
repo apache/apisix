@@ -41,7 +41,7 @@ apisix:
   #   listen_https_port: 9182          # APISIX listening port for HTTPS traffic with PROXY protocol.
   #   enable_tcp_pp: true              # Enable the PROXY protocol when stream_proxy.tcp is set.
   #   enable_tcp_pp_to_upstream: true  # Enable the PROXY protocol.
-  
+
   enable_server_tokens: true           # If true, show APISIX version in the `Server` response header.
   extra_lua_path: ""                   # Extend lua_package_path to load third-party code.
   extra_lua_cpath: ""                  # Extend lua_package_cpath to load third-party code.
@@ -64,9 +64,9 @@ apisix:
         memory_size: 50m
 
   delete_uri_tail_slash: false        # Delete the '/' at the end of the URI
-  normalize_uri_like_servlet: false   # If true, use the same path normalization rules as the Java 
+  normalize_uri_like_servlet: false   # If true, use the same path normalization rules as the Java
                                       # servlet specification. See https://github.com/jakartaee/servlet/blob/master/spec/src/main/asciidoc/servlet-spec-body.adoc#352-uri-path-canonicalization, which is used in Tomcat.
-  
+
   router:
     http: radixtree_host_uri    # radixtree_host_uri: match route by host and URI
                                 # radixtree_uri: match route by URI
@@ -76,21 +76,21 @@ apisix:
   # stream_proxy:                 # TCP/UDP L4 proxy
   #   only: true                  # Enable L4 proxy only without L7 proxy.
   #   tcp:
-  #     - addr: 9100              # TCP proxy listening ports 
+  #     - addr: 9100              # Set the TCP proxy listening ports.
   #       tls: true
   #     - addr: "127.0.0.1:9101"
-  #   udp:                        # UDP proxy listening ports 
+  #   udp:                        # Set the UDP proxy listening ports.
   #     - 9200
   #     - "127.0.0.1:9201"
-  
+
   # dns_resolver:                 # If not set, read from `/etc/resolv.conf`
   #   - 1.1.1.1
   #   - 8.8.8.8
   # dns_resolver_valid: 30        # Override the default TTL of the DNS records.
-  resolver_timeout: 5             # Time that the server will wait for a response from the DNS resolver 
+  resolver_timeout: 5             # Time that the server will wait for a response from the DNS resolver
                                   # before timing out.
   enable_resolv_search_opt: true  # If true, use search option in the resolv.conf file in DNS lookups.
-  
+
   ssl:
     enable: true
     listen:                                      # APISIX listening port for HTTPS traffic.
@@ -103,18 +103,18 @@ apisix:
     ssl_protocols: TLSv1.2 TLSv1.3               # TLS versions supported.
     ssl_ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
     ssl_session_tickets: false  # If true, session tickets are used for SSL/TLS connections.
-                                # Disabled by default because it renders Perfect Forward Secrecy (FPS) 
+                                # Disabled by default because it renders Perfect Forward Secrecy (FPS)
                                 # useless. See https://github.com/mozilla/server-side-tls/issues/135.
 
     key_encrypt_salt:           # Salt for SSL/TLS private key used with AES-128-CBC.
       - edd1c9f0985e76a2        # Each salt value should be a hexadecimal string of length 16.
                                 # Support multiple salt values for rotation.
-                                # CAUTION: DO NOT MODIFY SALT VALUE AFTER KEY IS WRITTEN TO ETCD. 
+                                # CAUTION: DO NOT MODIFY SALT VALUE AFTER KEY IS WRITTEN TO ETCD.
                                 # VALUES CANNOT BE DECRYPTED OTHERWISE.
 
-    # fallback_sni: "my.default.domain"      # Fallback SNI to use if client does not send SNI during 
-                                             # the handshake.
-    
+    # fallback_sni: "my.default.domain"      # Fallback SNI to use if client does not send SNI during
+    #                                        # the handshake.
+
   enable_control: true  # Control API
   # control:
   #  ip: 127.0.0.1
