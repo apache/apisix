@@ -138,6 +138,15 @@ qr/apisix_http_status\{code="200",route="10",matched_uri="\/hello",matched_host=
 
 
 === TEST 7: set route
+--- yaml_config
+plugin_attr:
+    prometheus:
+        default_buckets:
+            - 15
+            - 55
+            - 105
+            - 205
+            - 505
 --- config
     location /t {
         content_by_lua_block {
@@ -164,23 +173,10 @@ qr/apisix_http_status\{code="200",route="10",matched_uri="\/hello",matched_host=
             ngx.say(body)
         }
     }
---- response_body
-passed
-
-
-
-=== TEST 8: set default_buckets
---- yaml_config
-plugin_attr:
-    prometheus:
-        default_buckets:
-            - 15
-            - 55
-            - 105
-            - 205
-            - 505
 --- request
 GET /hello1
+--- response_body
+passed
 
 
 
