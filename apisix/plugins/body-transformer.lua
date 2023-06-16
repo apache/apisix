@@ -128,6 +128,8 @@ local function transform(conf, body, typ, ctx)
                 core.log.error(err, ", body=", body)
                 return nil, 400, err
             end
+        else
+            ngx.log(ngx.WARN, "no input format to parse ", typ, " body")
         end
     end
 
