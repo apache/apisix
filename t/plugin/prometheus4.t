@@ -173,14 +173,14 @@ plugin_attr:
             ngx.say(body)
         }
     }
---- request
-GET /hello1
---- response_body
-passed
+--- pipelined_requests eval
+["GET /t", "GET /hello1"]
+--- response_body eval
+["passed\n", "hello1 world\n"]
 
 
 
-=== TEST 9: fetch metrics
+=== TEST 8: fetch metrics
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
