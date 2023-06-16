@@ -109,6 +109,7 @@ apisix:
 
     key_encrypt_salt:           # Set the encryption key for AES-128-CBC. It should be a
       - edd1c9f0985e76a2        # hexadecimal string of length 16.
+                                # If not set, APISIX saves the original data into etcd.
                                 # For the convenience of key replacement, key_encrypt_salt
                                 # supports the use of multiple keys. The additional keys are
                                 # used in sequential order for decryption, when the previous
@@ -130,6 +131,7 @@ apisix:
     enable: false
     keyring:                      # Set the encryption key for AES-128-CBC. It should be a
       - qeddd145sfvddff3          # hexadecimal string of length 16.
+                                  # If not set, APISIX saves the original data into etcd.
                                   # For the convenience of key replacement, keyring
                                   # supports the use of multiple keys. The additional keys are
                                   # used in sequential order for decryption, when the previous
