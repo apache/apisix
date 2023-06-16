@@ -128,7 +128,7 @@ apisix:
 
   data_encryption:                # Encrypt fields specified in `encrypt_fields` in plugin schema.
     enable: false
-    keyring:
+    keyring:                     # Set the encryption key for AES-128-CBC. It should be a
       - qeddd145sfvddff3         # hexadecimal string of length 16.
                                  # For the convenience of key replacement, keyring 
                                  # supports the use of multiple keys. The additional keys are 
