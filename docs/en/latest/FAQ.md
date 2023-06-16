@@ -732,6 +732,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
         }
     }
 }'
+```
 
 ## How does APISIX configure ETCD with authentication?
 
