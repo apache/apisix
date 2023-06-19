@@ -150,26 +150,6 @@ Then copy the `apisix` folder to the target host and run:
 sudo yum install ./apisix/*.rpm
 ```
 
-### Managing APISIX server
-
-Once APISIX is installed, you can initialize the configuration file and etcd by running:
-
-```shell
-apisix init
-```
-
-To start APISIX server, run:
-
-```shell
-apisix start
-```
-
-:::tip
-
-Run `apisix help` to get a list of all available operations.
-
-:::
-
 </TabItem>
 
 <TabItem value="deb">
@@ -200,27 +180,7 @@ Then, to install APISIX, run:
 sudo apt update
 sudo apt install -y apisix=3.0.0-0
 ```
-
-### Managing APISIX server
-
-Once APISIX is installed, you can initialize the configuration file and etcd by running:
-
-```shell
-sudo apisix init
-```
-
-To start APISIX server, run:
-
-```shell
-sudo apisix start
-```
-
-:::tip
-
-Run `apisix help` to get a list of all available operations.
-
-:::
-
+  
 </TabItem>
 
 <TabItem value="source code">
@@ -265,6 +225,27 @@ brew services start etcd
 
 </TabItem>
 </Tabs>
+
+### Starting APISIX
+
+Once APISIX is installed, you can initialize the configuration file and etcd by running:
+
+```shell
+sudo apisix init
+```
+
+To start APISIX server, run:
+
+```shell
+sudo apisix start
+```
+
+:::tip
+
+Run `apisix help` to get a list of all available operations.
+
+:::
+
 
 ## Next steps
 
