@@ -27,20 +27,28 @@ local loadstring = loadstring
 local pairs = pairs
 local cached_router_version
 local cached_service_version
-local host_router
-local only_uri_router
+local base        = require("resty.core.base")
+local clear_tab   = base.clear_tab
 
 
 local _M = {version = 0.1}
 
 
-local function push_host_router(route, host_routes, only_uri_routes)
+local function tab_cpy(t1, t2)
+    t1 = {}
+    for k, v in pairs(t2) do
+        t1[k] = v
+    end
+end
+
+
+function _M.push_host_router(route, host_routes, only_uri_routes, all_hosts, op, rdx_rt, pre_route, pre_rdx_rt)
     if type(route) ~= "table" then
         return
     end
 
     local filter_fun, err
-    if route.value.filter_func then
+    if route.value and route.value.filter_func then
         filter_fun, err = loadstring(
                                 "return " .. route.value.filter_func,
                                 "router#" .. route.value.id)
@@ -53,67 +61,213 @@ local function push_host_router(route, host_routes, only_uri_routes)
         filter_fun = filter_fun()
     end
 
-    local hosts = route.value.hosts
-    if not hosts then
-        if route.value.host then
-            hosts = {route.value.host}
-        elseif route.value.service_id then
-            local service = service_fetch(route.value.service_id)
-            if not service then
-                core.log.error("failed to fetch service configuration by ",
-                                "id: ", route.value.service_id)
-                -- we keep the behavior that missing service won't affect the route matching
-            else
-                hosts = service.value.hosts
+    local radixtree_route, pre_radixtree_route = {}, {}
+    local hosts
+    if route and route.value then
+        hosts = route.value.hosts
+        if not hosts then
+            if route.value.host then
+                hosts = {route.value.host}
+            elseif route.value.service_id then
+                local service = service_fetch(route.value.service_id)
+                if not service then
+                    core.log.error("failed to fetch service configuration by ",
+                                    "id: ", route.value.service_id)
+                    -- we keep the behavior that missing service won't affect the route matching
+                else
+                    hosts = service.value.hosts
+                end
+            end
+        end
+
+        radixtree_route = {
+            id = route.value.id,
+            paths = route.value.uris or route.value.uri,
+            methods = route.value.methods,
+            priority = route.value.priority,
+            remote_addrs = route.value.remote_addrs
+                        or route.value.remote_addr,
+            vars = route.value.vars,
+            filter_fun = filter_fun,
+            handler = function (api_ctx, match_opts)
+                api_ctx.matched_params = nil
+                api_ctx.matched_route = route
+                api_ctx.curr_req_matched = match_opts.matched
+                api_ctx.real_curr_req_matched_path = match_opts.matched._path
+            end
+        }
+
+        if rdx_rt ~= nil then
+            for k, v in pairs(radixtree_route) do
+                rdx_rt[k] = v
             end
         end
     end
 
-    local radixtree_route = {
-        paths = route.value.uris or route.value.uri,
-        methods = route.value.methods,
-        priority = route.value.priority,
-        remote_addrs = route.value.remote_addrs
-                       or route.value.remote_addr,
-        vars = route.value.vars,
-        filter_fun = filter_fun,
-        handler = function (api_ctx, match_opts)
-            api_ctx.matched_params = nil
-            api_ctx.matched_route = route
-            api_ctx.curr_req_matched = match_opts.matched
-            api_ctx.real_curr_req_matched_path = match_opts.matched._path
-        end
-    }
-
-    if hosts == nil then
+    if hosts == nil and all_hosts == nil then
         core.table.insert(only_uri_routes, radixtree_route)
         return
     end
 
-    for i, host in ipairs(hosts) do
-        local host_rev = host:reverse()
-        if not host_routes[host_rev] then
-            host_routes[host_rev] = {radixtree_route}
+    local pre_hosts
+    if pre_route and pre_route.value then
+        pre_hosts = pre_route.value.hosts
+        if not pre_hosts then
+            if pre_route.value.host then
+                pre_hosts = {pre_route.value.host}
+            elseif pre_route.value.service_id then
+                local service = service_fetch(pre_route.value.service_id)
+                if not service then
+                    core.log.error("failed to fetch service configuration by ",
+                                    "id: ", pre_route.value.service_id)
+                    -- we keep the behavior that missing service won't affect the route matching
+                else
+                    pre_hosts = service.value.hosts
+                end
+            end
+        end
+
+        pre_radixtree_route = {
+            id = pre_route.value.id,
+            paths = pre_route.value.uris or pre_route.value.uri,
+            methods = pre_route.value.methods,
+            priority = pre_route.value.priority,
+            remote_addrs = pre_route.value.remote_addrs
+                           or pre_route.value.remote_addr,
+            vars = pre_route.value.vars,
+            filter_fun = filter_fun,
+            handler = function (api_ctx, match_opts)
+                api_ctx.matched_params = nil
+                api_ctx.matched_route = pre_route
+                api_ctx.curr_req_matched = match_opts.matched
+                api_ctx.real_curr_req_matched_path = match_opts.matched._path
+            end
+        }
+
+        if pre_rdx_rt ~= nil then
+            for k, v in pairs(pre_radixtree_route) do
+                pre_rdx_rt[k] = v
+            end
+        end
+    end
+
+    if all_hosts ~= nil then
+        all_hosts["host"] = hosts
+        all_hosts["pre_host"] = pre_hosts
+    end
+
+    local pre_t = {}
+    if pre_hosts then
+        for i, h in ipairs(pre_hosts) do
+            local rev_h = h:reverse()
+            pre_t[rev_h] = 1
+        end
+    end
+
+    local t = {}
+    if hosts then
+        for i, h in ipairs(hosts) do
+            local rev_h = h:reverse()
+            t[rev_h] = 1
+        end
+    end
+
+    local comm = {}
+    for k, v in pairs(pre_t) do
+        if t[k] ~= nil then
+            tab_insert(comm, k)
+            pre_t[k] = nil
+            t[k] = nil
+        end
+    end
+
+    for _, j in ipairs(comm) do
+        local routes = host_routes[j]
+        if routes == nil then
+            core.log.error("no routes array for reverse host in the map.", j)
+            return
+        end
+
+        local found = false
+        for i, r in ipairs(routes) do
+            if r.id == radixtree_route.id then
+                routes[i] = radixtree_route
+                found = true
+                if op then
+                    table.insert(op["upd"], j)
+                end
+                break
+            end
+        end
+
+        if not found then
+            core.log.error("cannot find the route in common host's table.", j, radixtree_route.id)
+            return
+        end
+    end
+
+    for k, v in pairs(pre_t) do
+        local routes = host_routes[k]
+        if routes == nil then
+            core.log.error("no routes array for reverse host in the map.", k)
+            return
+        end
+
+        local found = false
+        for i, r in ipairs(routes) do
+            if r.id == pre_radixtree_route.id then
+                table.remove(routes, i)
+                found = true
+                break
+            end
+        end
+
+        if not found then
+            core.log.error("cannot find the route in previous host's table.", k, pre_radixtree_route.id)
+            return
+        end
+
+        if #routes == 0 then
+            host_routes[k] = nil
+            if op then
+                table.insert(op["del"], k)
+            end
         else
-            tab_insert(host_routes[host_rev], radixtree_route)
+            if op then
+                table.insert(op["upd"], k)
+            end
+        end
+    end
+
+    for k, v in pairs(t) do
+        local routes = host_routes[k]
+        if routes == nil then
+            host_routes[k] = {radixtree_route}
+            if op then
+                table.insert(op["add"], k)
+            end
+        else
+            table.insert(routes, radixtree_route)
+            if op then
+                table.insert(op["upd"], k)
+            end
         end
     end
 end
 
 
-local function create_radixtree_router(routes)
+function _M.create_radixtree_router(routes)
     local host_routes = {}
     local only_uri_routes = {}
-    host_router = nil
     routes = routes or {}
 
     for _, route in ipairs(routes) do
         local status = core.table.try_read_attr(route, "value", "status")
         -- check the status
         if not status or status == 1 then
-            push_host_router(route, host_routes, only_uri_routes)
-        end
-    end
+            _M.push_host_router(route, host_routes, only_uri_routes)
+        end 
+    end 
 
     -- create router: host_router
     local host_router_routes = {}
@@ -121,45 +275,42 @@ local function create_radixtree_router(routes)
         local sub_router = router.new(routes)
 
         core.table.insert(host_router_routes, {
+            id = 1,
             paths = host_rev,
             filter_fun = function(vars, opts, ...)
                 return sub_router:dispatch(vars.uri, opts, ...)
             end,
             handler = function (api_ctx, match_opts)
                 api_ctx.real_curr_req_matched_host = match_opts.matched._path
-            end
-        })
-    end
+            end 
+        })  
+    end 
+
+    _M.host_routes = host_routes
 
     event.push(event.CONST.BUILD_ROUTER, routes)
 
     if #host_router_routes > 0 then
-        host_router = router.new(host_router_routes)
+        _M.host_router = router.new(host_router_routes)
     end
 
     -- create router: only_uri_router
-    only_uri_router = router.new(only_uri_routes)
+    _M.only_uri_router = router.new(only_uri_routes)
+    
     return true
 end
 
 
     local match_opts = {}
 function _M.match(api_ctx)
-    local user_routes = _M.user_routes
-    local _, service_version = get_services()
-    if not cached_router_version or cached_router_version ~= user_routes.conf_version
-        or not cached_service_version or cached_service_version ~= service_version
-    then
-        create_radixtree_router(user_routes.values)
-        cached_router_version = user_routes.conf_version
-        cached_service_version = service_version
-    end
-
     return _M.matching(api_ctx)
 end
 
 
 function _M.matching(api_ctx)
+    local host_router = _M.host_router
+    local only_uri_router = _M.only_uri_router
+
     core.log.info("route match mode: radixtree_host_uri")
 
     core.table.clear(match_opts)
