@@ -826,23 +826,24 @@ location /demo {
 
 === TEST 12: empty xml value should be rendered as empty string
 --- config
-location /demo {
-    content_by_lua_block {
-        ngx.print([[
-<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xrd="http://x-road.eu/xsd/xroad.xsd" xmlns:prod="http://rr.x-road.eu/producer" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:id="http://x-road.eu/xsd/identifiers" xmlns:repr="http://x-road.eu/xsd/representation.xsd" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/">
-  <SOAP-ENV:Body>
-    <prod:RR58isikEpiletResponse>
-      <request><Isikukood>33333333333</Isikukood></request>
-      <response>
-        <Isikukood>33333333333</Isikukood>
-        <KOVKood></KOVKood>
-      </response>
-    </prod:RR58isikEpiletResponse>
-  </SOAP-ENV:Body>
-</SOAP-ENV:Envelope>
-        ]])
+    location /demo {
+        content_by_lua_block {
+            ngx.print([[
+    <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xrd="http://x-road.eu/xsd/xroad.xsd" xmlns:prod="http://rr.x-road.eu/producer" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:id="http://x-road.eu/xsd/identifiers" xmlns:repr="http://x-road.eu/xsd/representation.xsd" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/">
+      <SOAP-ENV:Body>
+        <prod:RR58isikEpiletResponse>
+          <request><Isikukood>33333333333</Isikukood></request>
+          <response>
+            <Isikukood>33333333333</Isikukood>
+            <KOVKood></KOVKood>
+          </response>
+        </prod:RR58isikEpiletResponse>
+      </SOAP-ENV:Body>
+    </SOAP-ENV:Envelope>
+            ]])
+        }
     }
-}
+
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin")
