@@ -140,11 +140,13 @@ sudo yum install apisix-2.13.1
 ```shell
 # amd64
 echo "deb http://openresty.org/package/debian bullseye openresty" | sudo tee /etc/apt/sources.list.d/openresty.list
+wget -O - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
 wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
 echo "deb http://repos.apiseven.com/packages/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
 
 # arm64
 echo "deb http://openresty.org/package/debian bullseye openresty" | sudo tee /etc/apt/sources.list.d/openresty.list
+wget -O - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
 wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
 echo "deb http://repos.apiseven.com/packages/arm64/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
 ```
