@@ -99,7 +99,9 @@ You can find other Helm charts on the [apisix-helm-chart](https://github.com/apa
 
 <TabItem value="rpm">
 
-This installation method is suitable for CentOS Stream 8 and CentOS Linux 7. If you choose this method to install APISIX, you need to install etcd first. For the specific installation method, please refer to [Installing etcd](#installing-etcd).
+If you use this installation method, you need to install etcd separately. Please see [Installing etcd](#installing-etcd).
+
+This installation method is tested on CentOS Stream 8 and CentOS Linux 7. 
 
 ### Installation via RPM repository
 
@@ -174,7 +176,9 @@ Run `apisix help` to get a list of all available operations.
 
 ### Installation via DEB repository
 
-Currently the only DEB repository supported by APISIX is Debian 11 (Bullseye) and supports both amd64 and arm64 architectures.
+If you use this installation method, you need to install etcd separately. Please see [Installing etcd](#installing-etcd).
+  
+Currently the only DEB repository supported by APISIX is Debian 11 (Bullseye). The installation supports both amd64 and arm64 architectures.
 
 ```shell
 # amd64
