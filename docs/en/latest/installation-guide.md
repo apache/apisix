@@ -137,11 +137,13 @@ Currently the only DEB repository supported by APISIX is Debian 11 (Bullseye) an
 ```shell
 # amd64
 sudo echo "deb http://openresty.org/package/debian bullseye openresty" | tee /etc/apt/sources.list.d/openresty.list
+wget -O - https://openresty.org/package/pubkey.gpg | apt-key add -
 wget -O - http://repos.apiseven.com/pubkey.gpg | apt-key add -
 echo "deb http://repos.apiseven.com/packages/debian bullseye main" | tee /etc/apt/sources.list.d/apisix.list
 
 # arm64
 sudo echo "deb http://openresty.org/package/debian bullseye openresty" | tee /etc/apt/sources.list.d/openresty.list
+wget -O - https://openresty.org/package/pubkey.gpg | apt-key add -
 wget -O - http://repos.apiseven.com/pubkey.gpg | apt-key add -
 echo "deb http://repos.apiseven.com/packages/arm64/debian bullseye main" | tee /etc/apt/sources.list.d/apisix.list
 ```
