@@ -202,13 +202,13 @@ sudo apt install -y apisix=3.0.0-0
 Once APISIX is installed, you can initialize the configuration file and etcd by running:
 
 ```shell
-apisix init
+sudo apisix init
 ```
 
 To start APISIX server, run:
 
 ```shell
-apisix start
+sudo apisix start
 ```
 
 :::tip

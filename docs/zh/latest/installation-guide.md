@@ -205,13 +205,13 @@ sudo apt install -y apisix=3.0.0-0
 APISIX 安装完成后，你可以运行以下命令初始化 NGINX 配置文件和 etcd：
 
 ```shell
-apisix init
+sudo apisix init
 ```
 
 使用以下命令启动 APISIX：
 
 ```shell
-apisix start
+sudo apisix start
 ```
 
 :::tip
