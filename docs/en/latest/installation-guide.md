@@ -99,7 +99,7 @@ You can find other Helm charts on the [apisix-helm-chart](https://github.com/apa
 
 <TabItem value="rpm">
 
-This installation method is suitable for CentOS 7 and Centos 8. If you choose this method to install APISIX, you need to install etcd first. For the specific installation method, please refer to [Installing etcd](#installing-etcd).
+This installation method is suitable for CentOS Stream 8 and CentOS Linux 7. If you choose this method to install APISIX, you need to install etcd first. For the specific installation method, please refer to [Installing etcd](#installing-etcd).
 
 ### Installation via RPM repository
 
