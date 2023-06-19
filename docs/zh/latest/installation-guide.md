@@ -44,6 +44,7 @@ import TabItem from '@theme/TabItem';
     {label: 'Docker', value: 'docker'},
     {label: 'Helm', value: 'helm'},
     {label: 'RPM', value: 'rpm'},
+    {label: 'DEB', value: 'deb'},
     {label: 'Source Code', value: 'source code'},
   ]}>
 <TabItem value="docker">
@@ -133,6 +134,47 @@ sudo yum install apisix-2.13.1
 
 :::
 
+### 通过 RPM 包离线安装：
+
+将 APISIX 离线 RPM 包下载到 `apisix` 文件夹：
+
+```shell
+sudo mkdir -p apisix
+sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+sudo yum clean all && yum makecache
+sudo yum install -y --downloadonly --downloaddir=./apisix apisix
+```
+
+然后将 `apisix` 文件夹复制到目标主机并运行以下命令：
+
+```shell
+sudo yum install ./apisix/*.rpm
+```
+
+### 管理 APISIX 服务
+
+APISIX 安装完成后，你可以运行以下命令初始化 NGINX 配置文件和 etcd：
+
+```shell
+apisix init
+```
+
+使用以下命令启动 APISIX：
+
+```shell
+apisix start
+```
+
+:::tip
+
+你可以运行 `apisix help` 命令，通过查看返回结果，获取其他操作的命令及描述。
+
+:::
+
+</TabItem>
+
+<TabItem value="deb">
+
 ### 通过 DEB 仓库安装
 
 目前 APISIX 支持的 DEB 仓库仅支持 Debian 11（Bullseye），并且支持 amd64 和 arm64 架构。
@@ -156,23 +198,6 @@ echo "deb http://repos.apiseven.com/packages/arm64/debian bullseye main" | sudo 
 ```shell
 sudo apt update
 sudo apt install -y apisix=3.0.0-0
-```
-
-### 通过 RPM 包离线安装：
-
-将 APISIX 离线 RPM 包下载到 `apisix` 文件夹：
-
-```shell
-sudo mkdir -p apisix
-sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
-sudo yum clean all && yum makecache
-sudo yum install -y --downloadonly --downloaddir=./apisix apisix
-```
-
-然后将 `apisix` 文件夹复制到目标主机并运行以下命令：
-
-```shell
-sudo yum install ./apisix/*.rpm
 ```
 
 ### 管理 APISIX 服务

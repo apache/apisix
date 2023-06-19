@@ -43,6 +43,7 @@ APISIX can be installed by the different methods listed below:
     {label: 'Docker', value: 'docker'},
     {label: 'Helm', value: 'helm'},
     {label: 'RPM', value: 'rpm'},
+    {label: 'DEB', value: 'deb'},
     {label: 'Source Code', value: 'source code'},
   ]}>
 <TabItem value="docker">
@@ -130,6 +131,47 @@ sudo yum install apisix-2.13.1
 
 :::
 
+### Installation via RPM offline package
+
+First, download APISIX RPM offline package to an `apisix` folder:
+
+```shell
+sudo mkdir -p apisix
+sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+sudo yum clean all && yum makecache
+sudo yum install -y --downloadonly --downloaddir=./apisix apisix
+```
+
+Then copy the `apisix` folder to the target host and run:
+
+```shell
+sudo yum install ./apisix/*.rpm
+```
+
+### Managing APISIX server
+
+Once APISIX is installed, you can initialize the configuration file and etcd by running:
+
+```shell
+apisix init
+```
+
+To start APISIX server, run:
+
+```shell
+apisix start
+```
+
+:::tip
+
+Run `apisix help` to get a list of all available operations.
+
+:::
+
+</TabItem>
+
+<TabItem value="deb">
+
 ### Installation via DEB repository
 
 Currently the only DEB repository supported by APISIX is Debian 11 (Bullseye) and supports both amd64 and arm64 architectures.
@@ -153,23 +195,6 @@ Then, to install APISIX, run:
 ```shell
 sudo apt update
 sudo apt install -y apisix=3.0.0-0
-```
-
-### Installation via RPM offline package
-
-First, download APISIX RPM offline package to an `apisix` folder:
-
-```shell
-sudo mkdir -p apisix
-sudo yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
-sudo yum clean all && yum makecache
-sudo yum install -y --downloadonly --downloaddir=./apisix apisix
-```
-
-Then copy the `apisix` folder to the target host and run:
-
-```shell
-sudo yum install ./apisix/*.rpm
 ```
 
 ### Managing APISIX server
