@@ -738,6 +738,20 @@ local function init_etcd(env, args)
     etcd.init(env, args)
 end
 
+local function cleanup()
+    local local_conf_path = profile:yaml_path("config")
+    local local_conf_path_bak = local_conf_path .. ".bak"
+    if pl_path.exists(local_conf_path_bak) then
+        local ok, err = os_remove(local_conf_path)
+        if not ok then
+            print("failed to remove customized config, error: ", err)
+        end
+        ok, err = os_rename(local_conf_path_bak,  local_conf_path)
+        if not ok then
+            util.die("failed to recover original config file, error: ", err)
+        end
+    end
+end
 
 local function start(env, ...)
     -- Because the worker process started by apisix has "nobody" permission,
@@ -821,6 +835,8 @@ local function start(env, ...)
         end
 
         print("Use customized yaml: ", customized_yaml)
+    else 
+        cleanup() -- Cleanup any custom config from previous runs
     end
 
     init(env)
@@ -833,20 +849,7 @@ local function start(env, ...)
 end
 
 
-local function cleanup()
-    local local_conf_path = profile:yaml_path("config")
-    local local_conf_path_bak = local_conf_path .. ".bak"
-    if pl_path.exists(local_conf_path_bak) then
-        local ok, err = os_remove(local_conf_path)
-        if not ok then
-            print("failed to remove customized config, error: ", err)
-        end
-        ok, err = os_rename(local_conf_path_bak,  local_conf_path)
-        if not ok then
-            util.die("failed to recover original config file, error: ", err)
-        end
-    end
-end
+
 
 
 local function test(env, backup_ngx_conf)
