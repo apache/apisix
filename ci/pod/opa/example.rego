@@ -35,7 +35,6 @@ reason = users[request.query["user"]].reason {
 }
 
 headers = users[request.query["user"]].headers {
-    not allow
     request.query["user"]
 }
 

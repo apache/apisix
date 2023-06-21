@@ -37,6 +37,7 @@ local schema = {
             description = "timeout in milliseconds",
         },
         keepalive = {type = "boolean", default = true},
+        send_header_upstream = {type = "boolean", default = false},
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         keepalive_pool = {type = "integer", minimum = 1, default = 5},
         with_route = {type = "boolean", default = false},
@@ -125,6 +126,11 @@ function _M.access(conf, ctx)
         end
 
         return status_code, reason
+    else if conf.send_header_upstream and result.headers then
+           for key,value in pairs(result.headers) do
+                core.request.set_header(ctx,key,value)
+           end
+        end
     end
 end
 
