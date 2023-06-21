@@ -32,7 +32,7 @@ description: This article introduce how to perform service discovery based on Ku
 
 The [_Kubernetes_](https://kubernetes.io/) service discovery [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) real-time changes of [_Endpoints_](https://kubernetes.io/docs/concepts/services-networking/service/) resources, then store theirs value into `ngx.shared.DICT`.
 
-Discovery also provides a node query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md).
+Discovery also provides a node query interface in accordance with the [_APISIX Discovery Specification_](../discovery.md).
 
 :::note
 
@@ -122,7 +122,7 @@ discovery:
 
 ### Single-Cluster Mode Query Interface
 
-The Kubernetes service discovery provides a query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md).
+The Kubernetes service discovery provides a query interface in accordance with the [_APISIX Discovery Specification_](../discovery.md).
 
 **function:**
  nodes(service_name)
@@ -232,7 +232,7 @@ Multi-Kubernetes service discovery does not fill default values for service and 
 
 ### Multi-Cluster Mode Query Interface
 
-The Kubernetes service discovery provides a query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md).
+The Kubernetes service discovery provides a query interface in accordance with the [_APISIX Discovery Specification_](../discovery.md).
 
 **function:**
 nodes(service_name)
