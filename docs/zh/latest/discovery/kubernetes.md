@@ -32,7 +32,7 @@ description: 本文将介绍如何在 Apache APISIX 中基于 Kubernetes 进行�
 
 Kubernetes 服务发现以 [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts) 方式监听 [_Kubernetes_](https://kubernetes.io) 集群 [_Endpoints_](https://kubernetes.io/docs/concepts/services-networking/service) 资源的实时变化，并将其值存储到 ngx.shared.DICT 中。
 
-同时遵循 [_APISIX Discovery 规范_](https://github.com/apache/apisix/blob/master/docs/zh/latest/discovery.md) 提供了节点查询接口。
+同时遵循 [_APISIX Discovery 规范_](../discovery.md) 提供了节点查询接口。
 
 :::note
 
@@ -122,7 +122,7 @@ discovery:
 
 ### 单集群模式 Kubernetes 服务发现的查询接口
 
-单集群模式 Kubernetes 服务发现遵循 [_APISIX Discovery 规范_](https://github.com/apache/apisix/blob/master/docs/zh/latest/discovery.md) 提供节点查询接口。
+单集群模式 Kubernetes 服务发现遵循 [_APISIX Discovery 规范_](../discovery.md) 提供节点查询接口。
 
 **函数：**
 nodes(service_name)
@@ -231,7 +231,7 @@ discovery:
 
 ### 多集群模式 Kubernetes 服务发现的查询接口
 
-多集群模式 Kubernetes 服务发现遵循 [_APISIX Discovery 规范_](https://github.com/apache/apisix/blob/master/docs/zh/latest/discovery.md) 提供节点查询接口。
+多集群模式 Kubernetes 服务发现遵循 [_APISIX Discovery 规范_](../discovery.md) 提供节点查询接口。
 
 **函数：**
 nodes(service_name)
