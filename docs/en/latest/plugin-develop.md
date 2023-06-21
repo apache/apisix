@@ -259,7 +259,7 @@ Here is the consumer configuration for key-auth plugin:
 }
 ```
 
-It will be used when you try to create a [Consumer](https://github.com/apache/apisix/blob/master/docs/en/latest/admin-api.md#consumer)
+It will be used when you try to create a [Consumer](./admin-api.md#consumer)
 
 To validate the configuration, the plugin uses a schema like this:
 
