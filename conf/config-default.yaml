@@ -114,8 +114,11 @@ apisix:
                                 # supports the use of multiple keys. The additional keys are
                                 # used in sequential order for decryption, when the previous
                                 # decryption attempt fails.
-                                # CAUTION: DO NOT MODIFY SALT VALUE AFTER DATA HAS BEEN WRITTEN
-                                # TO ETCD. IT CAN RENDER THE ENCRYPTED DATA UNRECOVERABLE.
+                                # CAUTION: If you would like to update the key, add the new key as the
+                                # first item in the array and keep the older keys below the newly added
+                                # key, so that data can be decrypted with the older keys and encrypted 
+                                # with the new key. Removing the old keys directly can render the data
+                                # unrecoverable. 
 
     # fallback_sni: "my.default.domain"      # Fallback SNI to be used if the client does not send SNI during
     #                                        # the handshake.
@@ -136,8 +139,11 @@ apisix:
                                   # supports the use of multiple keys. The additional keys are
                                   # used in sequential order for decryption, when the previous
                                   # decryption attempt fails.
-                                  # CAUTION: DO NOT MODIFY SALT VALUE AFTER DATA HAS BEEN WRITTEN
-                                  # TO ETCD. IT CAN RENDER THE ENCRYPTED DATA UNRECOVERABLE.
+                                  # CAUTION: If you would like to update the key, add the new key as the
+                                  # first item in the array and keep the older keys below the newly added
+                                  # key, so that data can be decrypted with the older keys and encrypted 
+                                  # with the new key. Removing the old keys directly can render the data
+                                  # unrecoverable. 
 
 nginx_config:                     # config for render the template to generate nginx.conf
   #user: root                     # specifies the execution user of the worker process.
