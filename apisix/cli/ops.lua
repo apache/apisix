@@ -836,7 +836,8 @@ local function start(env, ...)
 
         print("Use customized yaml: ", customized_yaml)
     else 
-        cleanup() -- Cleanup any custom config from previous runs
+        -- Cleanup any custom config from previous runs
+        cleanup()
     end
 
     init(env)
