@@ -43,7 +43,6 @@ apisix:
     enable_admin: false
     proxy_mode: stream
     stream_proxy:
-        only: false
         tcp:
             - addr: 9100
 " > conf/config.yaml

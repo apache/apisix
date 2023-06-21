@@ -174,7 +174,8 @@ local function run()
 
     if seg_res == "stream_routes" then
         local local_conf = core.config.local_conf()
-        if local_conf.apisix.proxy_mode ~= "stream" and local_conf.apisix.proxy_mode ~= "http&stream" then
+        if local_conf.apisix.proxy_mode ~= "stream" and
+           local_conf.apisix.proxy_mode ~= "http&stream" then
             core.log.warn("stream mode is disabled, can not add any stream ",
                           "routes")
             core.response.exit(400, {error_msg = "stream mode is disabled, " ..
