@@ -20,6 +20,7 @@ local http   = require("resty.http")
 local helper = require("apisix.plugins.opa.helper")
 local type   = type
 
+local pairs = pairs
 local schema = {
     type = "object",
     properties = {
