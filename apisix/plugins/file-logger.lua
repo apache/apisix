@@ -16,6 +16,7 @@
 --
 local log_util     =   require("apisix.utils.log-util")
 local core         =   require("apisix.core")
+local expr         =   require("resty.expr.v1")
 local ngx          =   ngx
 local io_open      =   io.open
 local is_apisix_or, process = pcall(require, "resty.apisix.process")
@@ -38,6 +39,13 @@ local schema = {
             items = {
                 type = "array"
             }
+        },
+        vars = {
+            type = "array",
+            maxItems = 20,
+            items = {
+                type = "array",
+            },
         }
     },
     required = {"path"}
@@ -113,6 +121,18 @@ if is_apisix_or then
     end
 end
 
+local function vars_match(vars, ctx)
+    local match_result
+    for _, var in ipairs(vars) do
+        local expr, _ = expr.new(var)
+        match_result = expr:eval(ctx.var)
+        if match_result then
+            break
+        end
+    end
+
+    return match_result
+end
 
 local function write_file_data(conf, log_message)
     local msg = core.json.encode(log_message)
@@ -149,6 +169,11 @@ function _M.body_filter(conf, ctx)
 end
 
 function _M.log(conf, ctx)
+    -- If the "vars" configuration is set and the matching conditions are not met, then do not log the message.
+    if conf.vars and not vars_match(conf.vars, ctx) then
+        return
+    end
+
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
     write_file_data(conf, entry)
 end
