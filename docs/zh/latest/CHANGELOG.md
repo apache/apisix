@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [3.2.2](#322)
 - [3.2.1](#321)
 - [3.2.0](#320)
 - [3.1.0](#310)
@@ -67,6 +68,23 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.2.2
+
+### Bugfix
+
+- 修复 upstream key 无法通过 `mqtt_client_id` 负载均衡 [#9450](https://github.com/apache/apisix/pull/9450)
+- hold_body_chunk 不能在多个插件中使用 [#9266](https://github.com/apache/apisix/pull/9266)
+- 使用 domain nodes 会导致健康检查器泄露 [#9090](https://github.com/apache/apisix/pull/9090)
+- traffic-split 插件引用的上游可以被删掉，导致插件异常 [#9044](https://github.com/apache/apisix/pull/9044)
+- `allow_origins_by_regex` 不为 nil，使用其他域名也会被验证 [#9028](https://github.com/apache/apisix/pull/9028)
+- traffic-split 插件配置域名时，只会被解析一次。 [#9332](https://github.com/apache/apisix/pull/9332)
+- syslog 插件存在错误的日志编码格式导致该插件不可用 [#9425](https://github.com/apache/apisix/pull/9425)
+- http-logger 缺少默认请求 path / 导致日志推送失败 [#9472](https://github.com/apache/apisix/pull/9472)
+- consumer 使用 Wolf-rbac 时，无法同时使用其他插件 [#9298](https://github.com/apache/apisix/pull/9298)
+- splunk-hec-logging 错误的日志格式导致请求无法被推送， [#9478](https://github.com/apache/apisix/pull/9478)
+- opentelemetry、grpc-transcode 插件不能同时使用 [#9606](https://github.com/apache/apisix/pull/9606)
+- response-rewrite 增加 header `key: value` 时，value 不能配置为 1 个字符 [#9372](https://github.com/apache/apisix/pull/9372)
 
 ## 3.2.1
 
