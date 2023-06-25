@@ -141,7 +141,7 @@ location /demo {
             assert(res.status == 200)
             local data1 = core.json.decode(res.body)
             local data2 = core.json.decode[[{"status":"200","currency":"EUR","population":46704314,"capital":"Madrid","name":"Spain"}]]
-            assert(core.json.stably_encode(data1), core.json.stably_encode(data2))
+            assert(core.json.stably_encode(data1) == core.json.stably_encode(data2))
         }
     }
 
@@ -819,5 +819,78 @@ location /demo {
             local data = core.json.decode(res.body)
             assert(data.result == "hello world")
             assert(data.raw_body == '{"result": "hello world"}')
+        }
+    }
+
+
+
+=== TEST 12: empty xml value should be rendered as empty string
+--- config
+    location /demo {
+        content_by_lua_block {
+            ngx.print([[
+    <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xrd="http://x-road.eu/xsd/xroad.xsd" xmlns:prod="http://rr.x-road.eu/producer" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:id="http://x-road.eu/xsd/identifiers" xmlns:repr="http://x-road.eu/xsd/representation.xsd" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/">
+      <SOAP-ENV:Body>
+        <prod:RR58isikEpiletResponse>
+          <request><Isikukood>33333333333</Isikukood></request>
+          <response>
+            <Isikukood>33333333333</Isikukood>
+            <KOVKood></KOVKood>
+          </response>
+        </prod:RR58isikEpiletResponse>
+      </SOAP-ENV:Body>
+    </SOAP-ENV:Envelope>
+            ]])
+        }
+    }
+
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+
+            local rsp_template = ngx.encode_base64[[
+{ "KOVKood":"{{Envelope.Body.RR58isikEpiletResponse.response.KOVKood}}" }
+            ]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format([[{
+                    "uri": "/ws",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/demo"
+                        },
+                        "body-transformer": {
+                            "response": {
+                                "input_format": "xml",
+                                "template": "%s"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:%d": 1
+                        }
+                    }
+                }]], rsp_template, ngx.var.server_port)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ws"
+            local opt = {method = "GET"}
+            local httpc = http.new()
+            local res = httpc:request_uri(uri, opt)
+            assert(res.status == 200)
+            local data1 = core.json.decode(res.body)
+            local data2 = core.json.decode[[{"KOVKood":""}]]
+            assert(core.json.stably_encode(data1) == core.json.stably_encode(data2))
         }
     }
