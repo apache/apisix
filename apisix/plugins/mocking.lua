@@ -49,7 +49,19 @@ local schema = {
         -- specify response json schema, if response_example is not nil, this conf will be ignore.
         -- generate random response by json schema.
         response_schema = { type = "object" },
-        with_mock_header = { type = "boolean", default = true }
+        with_mock_header = { type = "boolean", default = true },
+        headers = {
+            type = "object",
+            minProperties = 1,
+            patternProperties = {
+                ["^[^:]+$"] = {
+                    oneOf = {
+                        { type = "string" },
+                        { type = "number" }
+                    }
+                }
+            },
+        }
     },
     anyOf = {
         { required = { "response_example" } },
@@ -215,6 +227,12 @@ function _M.access(conf, ctx)
         ngx.header["x-mock-by"] = "APISIX/" .. core.version.VERSION
     end
 
+    if conf.headers then
+        for key, value in pairs(conf.headers) do
+            core.log.warn(key, value, "dibag")
+            core.response.add_header(key, value)
+        end
+    end
     if conf.delay > 0 then
         ngx.sleep(conf.delay)
     end
