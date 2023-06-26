@@ -77,7 +77,7 @@ function _M.get(name)
         return 200, all_plugins
     end
 
-    local plugin 
+    local plugin
     -- By default search through all subsystems
     local all_subsystem = true
     if subsystem then
@@ -88,14 +88,14 @@ function _M.get(name)
     if all_subsystem or subsystem == "http"  then
         plugin = plugin_get_http(name)
     end
-    
+
     -- When subsystem is passed as stream or not passed at all(searching through all)
     if (not plugin) and (all_subsystem or subsystem == "stream") then
         plugin = plugin_get_stream(name)
     end
-    
+
     if not plugin then
-        local err = "failed to load plugin " .. name 
+        local err = "failed to load plugin " .. name
         if subsystem then
             err = err .. " in subsystem ".. subsystem
         end
