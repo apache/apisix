@@ -339,3 +339,4 @@ networks:
   skywalk_net:
   rocketmq_net:
   opa_net:
+  vector_net:
