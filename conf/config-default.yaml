@@ -575,6 +575,12 @@ plugin_attr:          # Plugin attributes
     #  bandwidth:
     #    extra_labels:
     #      - upstream_addr: $upstream_addr
+    # default_buckets:
+    #   - 10
+    #   - 50
+    #   - 100
+    #   - 200
+    #   - 500
   server-info:                        # Plugin: server-info
     report_ttl: 60                    # Set the TTL in seconds for server info in etcd.
                                       # Maximum: 86400. Minimum: 3.
