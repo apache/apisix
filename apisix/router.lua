@@ -53,6 +53,10 @@ local function filter(route, pre_route_or_size, obj)
     end
 
     core.log.info("filter route: ", core.json.delay_encode(route, true))
+    --filter route from other config source
+    if not obj then
+        return
+    end
 
     --load_full_data()'s filter() goes here. create radixtree while etcd compacts
     local conf = core.config.local_conf()
@@ -83,6 +87,9 @@ local function filter(route, pre_route_or_size, obj)
                 end
 
                 _M.uri_router = uri_router
+                if not first_route then
+                    first_route = true
+                end
             end
 
             return
@@ -201,6 +208,9 @@ local function filter(route, pre_route_or_size, obj)
                 event.push(event.CONST.BUILD_ROUTER, routes_obj.values)
                 core.log.notice("create radixtree uri after load_full_data.", #routes_obj.values)
                 host_uri.create_radixtree_router(routes_obj.values)
+                if not first_route then
+                    first_route = true
+                end
             end
 
             return
@@ -231,7 +241,6 @@ local function filter(route, pre_route_or_size, obj)
             return
         end
 
-        -- to be confirm??? assign variable of other module.
         host_uri.push_host_router(route, host_uri.host_routes, only_uri_routes, all_hosts, op, rdx_r, pre_route_or_size, pre_rdx_r)
 
         hosts = all_hosts["host"]
