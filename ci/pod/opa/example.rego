@@ -29,12 +29,23 @@ allow {
     request.query["user"]
 }
 
+allow {
+    request.method == "GET"
+    startswith(request.path, "/echo")
+}
+
 reason = users[request.query["user"]].reason {
     not allow
     request.query["user"]
 }
 
 headers = users[request.query["user"]].headers {
+    not allow
+    request.query["user"]
+}
+
+headers = {"user": request.query["user"]} {
+    allow
     request.query["user"]
 }
 
