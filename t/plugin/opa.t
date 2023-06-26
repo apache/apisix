@@ -218,7 +218,7 @@ passed
 
 
 
-=== TEST 13: hit route 
+=== TEST 13: hit route
 --- request
 GET /echo?test=1234&user=none
 --- response_headers
