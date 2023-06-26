@@ -223,6 +223,16 @@ function _M.get_log_entry(plugin_name, conf, ctx)
     if conf.log_format or has_meta_log_format then
         customized = true
         entry = get_custom_format_log(ctx, conf.log_format or metadata.value.log_format)
+        if conf.request_header_keys then
+
+            local req_headers = ngx.req.get_headers()
+            for i, v in pairs(conf.request_header_keys) do
+                local key_name = string.format("request_headers_%s",v)
+                entry[key_name]  =  req_headers[v]
+
+            end
+
+        end
     else
         if is_http then
             entry = get_full_log(ngx, conf)

@@ -38,6 +38,13 @@ local schema = {
             items = {
                 type = "array"
             }
+        },
+        request_header_keys = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "string"
+            }
         }
     },
     required = {"path"}
