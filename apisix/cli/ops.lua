@@ -558,6 +558,7 @@ Please modify "admin_key" in conf/config.yaml .
         use_apisix_base = env.use_apisix_base,
         error_log = {level = "warn"},
         enable_http = enable_http,
+        enable_stream = enable_stream,
         enabled_discoveries = enabled_discoveries,
         enabled_plugins = enabled_plugins,
         enabled_stream_plugins = enabled_stream_plugins,
