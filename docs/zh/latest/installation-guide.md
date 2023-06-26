@@ -44,6 +44,7 @@ import TabItem from '@theme/TabItem';
     {label: 'Docker', value: 'docker'},
     {label: 'Helm', value: 'helm'},
     {label: 'RPM', value: 'rpm'},
+    {label: 'DEB', value: 'deb'},
     {label: 'Source Code', value: 'source code'},
   ]}>
 <TabItem value="docker">
@@ -133,29 +134,6 @@ sudo yum install apisix-2.13.1
 
 :::
 
-### 通过 DEB 仓库安装
-
-目前 APISIX 支持的 DEB 仓库仅支持 Debian 11（Bullseye），并且支持 amd64 和 arm64 架构。
-
-```shell
-# amd64
-sudo echo "deb http://openresty.org/package/debian bullseye openresty" | tee /etc/apt/sources.list.d/openresty.list
-wget -O - http://repos.apiseven.com/pubkey.gpg | apt-key add -
-echo "deb http://repos.apiseven.com/packages/debian bullseye main" | tee /etc/apt/sources.list.d/apisix.list
-
-# arm64
-sudo echo "deb http://openresty.org/package/debian bullseye openresty" | tee /etc/apt/sources.list.d/openresty.list
-wget -O - http://repos.apiseven.com/pubkey.gpg | apt-key add -
-echo "deb http://repos.apiseven.com/packages/arm64/debian bullseye main" | tee /etc/apt/sources.list.d/apisix.list
-```
-
-完成上述操作后使用以下命令安装 APISIX：
-
-```shell
-sudo apt update
-sudo apt install -y apisix=3.0.0-0
-```
-
 ### 通过 RPM 包离线安装：
 
 将 APISIX 离线 RPM 包下载到 `apisix` 文件夹：
@@ -185,6 +163,55 @@ apisix init
 
 ```shell
 apisix start
+```
+
+:::tip
+
+你可以运行 `apisix help` 命令，通过查看返回结果，获取其他操作的命令及描述。
+
+:::
+
+</TabItem>
+
+<TabItem value="deb">
+
+### 通过 DEB 仓库安装
+
+目前 APISIX 支持的 DEB 仓库仅支持 Debian 11（Bullseye），并且支持 amd64 和 arm64 架构。
+
+```shell
+# amd64
+echo "deb http://openresty.org/package/debian bullseye openresty" | sudo tee /etc/apt/sources.list.d/openresty.list
+wget -O - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
+echo "deb http://repos.apiseven.com/packages/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
+
+# arm64
+echo "deb http://openresty.org/package/debian bullseye openresty" | sudo tee /etc/apt/sources.list.d/openresty.list
+wget -O - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
+echo "deb http://repos.apiseven.com/packages/arm64/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
+```
+
+完成上述操作后使用以下命令安装 APISIX：
+
+```shell
+sudo apt update
+sudo apt install -y apisix=3.0.0-0
+```
+
+### 管理 APISIX 服务
+
+APISIX 安装完成后，你可以运行以下命令初始化 NGINX 配置文件和 etcd：
+
+```shell
+sudo apisix init
+```
+
+使用以下命令启动 APISIX：
+
+```shell
+sudo apisix start
 ```
 
 :::tip
