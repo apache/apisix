@@ -69,7 +69,7 @@ local function filter(route, pre_route_or_size, obj)
                 no_param_match = false
             }
         end
-        
+
         if type(pre_route_or_size) == "number" then
             if pre_route_or_size == #obj.values then
                 routes_obj = obj
@@ -159,7 +159,7 @@ local function filter(route, pre_route_or_size, obj)
                 remote_addrs = pre_route_or_size.value.remote_addrs or pre_route_or_size.value.remote_addr,
                 vars = pre_route_or_size.value.vars
             }
-        
+
             if route.value then
                 --update route
                 core.log.notice("update routes watched from etcd into radixtree.", json.encode(route))
@@ -202,7 +202,7 @@ local function filter(route, pre_route_or_size, obj)
                 core.log.notice("create radixtree uri after load_full_data.", #routes_obj.values)
                 host_uri.create_radixtree_router(routes_obj.values)
             end
-    
+
             return
         end
 

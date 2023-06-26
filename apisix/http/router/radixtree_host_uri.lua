@@ -34,14 +34,6 @@ local clear_tab   = base.clear_tab
 local _M = {version = 0.1}
 
 
-local function tab_cpy(t1, t2)
-    t1 = {}
-    for k, v in pairs(t2) do
-        t1[k] = v
-    end
-end
-
-
 function _M.push_host_router(route, host_routes, only_uri_routes, all_hosts, op, rdx_rt, pre_route, pre_rdx_rt)
     if type(route) ~= "table" then
         return
@@ -266,8 +258,8 @@ function _M.create_radixtree_router(routes)
         -- check the status
         if not status or status == 1 then
             _M.push_host_router(route, host_routes, only_uri_routes)
-        end 
-    end 
+        end
+    end
 
     -- create router: host_router
     local host_router_routes = {}
@@ -282,9 +274,9 @@ function _M.create_radixtree_router(routes)
             end,
             handler = function (api_ctx, match_opts)
                 api_ctx.real_curr_req_matched_host = match_opts.matched._path
-            end 
-        })  
-    end 
+            end
+        })
+    end
 
     _M.host_routes = host_routes
 
@@ -296,7 +288,7 @@ function _M.create_radixtree_router(routes)
 
     -- create router: only_uri_router
     _M.only_uri_router = router.new(only_uri_routes)
-    
+
     return true
 end
 
