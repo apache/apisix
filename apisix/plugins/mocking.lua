@@ -229,7 +229,6 @@ function _M.access(conf, ctx)
 
     if conf.response_headers then
         for key, value in pairs(conf.response_headers) do
-            core.log.warn(key, value, "dibag")
             core.response.add_header(key, value)
         end
     end
