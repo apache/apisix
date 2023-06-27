@@ -438,7 +438,7 @@ empty_var:
                            "plugins": {
                                "mocking": {
                                    "response_example": "hello world",
-                                   "headers": {
+                                   "response_headers": {
                                         "X-Apisix": "is-cool",
                                         "X-Really":"yes"
                                     }

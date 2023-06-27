@@ -50,7 +50,7 @@ local schema = {
         -- generate random response by json schema.
         response_schema = { type = "object" },
         with_mock_header = { type = "boolean", default = true },
-        headers = {
+        response_headers = {
             type = "object",
             minProperties = 1,
             patternProperties = {
@@ -227,8 +227,8 @@ function _M.access(conf, ctx)
         ngx.header["x-mock-by"] = "APISIX/" .. core.version.VERSION
     end
 
-    if conf.headers then
-        for key, value in pairs(conf.headers) do
+    if conf.response_headers then
+        for key, value in pairs(conf.response_headers) do
             core.log.warn(key, value, "dibag")
             core.response.add_header(key, value)
         end
