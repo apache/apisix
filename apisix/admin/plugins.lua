@@ -44,6 +44,10 @@ end
 
 function _M.get(name)
     local arg = get_uri_args()
+    if arg and arg["all"] == "true" then
+        core.log.warn("query parameter \"all\" will be deprecated soon."..
+        "By default, the API returns all plugins now unless subsystem is specified.")
+    end
     -- If subsystem is passed inside args then it should be oneOf: http / stream.
     local subsystem = arg["subsystem"]
     if subsystem and subsystem ~= "http" and subsystem ~= "stream" then
