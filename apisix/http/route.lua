@@ -93,7 +93,11 @@ function _M.create_radixtree_uri_router(routes, uri_routes, with_parameter)
         end
     end
 
-    event.push(event.CONST.BUILD_ROUTER, routes)
+    local router_module = require("apisix.router")
+    if router_module.router_http then
+        event.push(event.CONST.BUILD_ROUTER, routes)
+    end
+
     core.log.info("route items: ", core.json.delay_encode(uri_routes, true))
 
     if with_parameter then

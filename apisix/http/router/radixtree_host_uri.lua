@@ -280,7 +280,10 @@ function _M.create_radixtree_router(routes)
 
     _M.host_routes = host_routes
 
-    event.push(event.CONST.BUILD_ROUTER, routes)
+    local router_module = require("apisix.router")
+    if router_module.router_http then
+        event.push(event.CONST.BUILD_ROUTER, routes)
+    end
 
     if #host_router_routes > 0 then
         _M.host_router = router.new(host_router_routes)

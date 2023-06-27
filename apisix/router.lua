@@ -78,10 +78,6 @@ local function filter(route, pre_route_or_size, obj)
         if type(pre_route_or_size) == "number" then
             if pre_route_or_size == #obj.values then
                 routes_obj = obj
-                if router_module.router_http then
-                    event.push(event.CONST.BUILD_ROUTER, routes_obj.values)
-                end
-
                 local uri_routes = {}
                 core.log.notice("create radixtree uri after load_full_data.", #routes_obj.values)
                 local uri_router = http_route.create_radixtree_uri_router(routes_obj.values, uri_routes, with_parameter)
@@ -101,10 +97,6 @@ local function filter(route, pre_route_or_size, obj)
 
         if not first_route then
             routes_obj = obj
-            if router_module.router_http then
-                event.push(event.CONST.BUILD_ROUTER, routes_obj.values)
-            end
-
             local uri_routes = {}
             core.log.notice("create radixtree uri for the first route income.")
             local uri_router = http_route.create_radixtree_uri_router(routes_obj.values, uri_routes, with_parameter)
@@ -212,10 +204,6 @@ local function filter(route, pre_route_or_size, obj)
         if type(pre_route_or_size) == "number" then
             if pre_route_or_size == #obj.values then
                 routes_obj = obj
-                if router_module.router_http then
-                    event.push(event.CONST.BUILD_ROUTER, routes_obj.values)
-                end
-
                 core.log.notice("create radixtree uri after load_full_data.", #routes_obj.values)
                 host_uri.create_radixtree_router(routes_obj.values)
                 if not first_route then
@@ -228,10 +216,6 @@ local function filter(route, pre_route_or_size, obj)
 
         if not first_route then
             routes_obj = obj
-            if router_module.router_http then
-                event.push(event.CONST.BUILD_ROUTER, routes_obj.values)
-            end
-
             core.log.notice("create radixtree uri for the first route income.")
             host_uri.create_radixtree_router(routes_obj.values)
             first_route = true
