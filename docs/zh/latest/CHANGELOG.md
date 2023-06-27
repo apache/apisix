@@ -89,7 +89,7 @@ title: CHANGELOG
 ### Bugfixes
 
 - 修复 (body-transformer)：xml2lua 将空表替换为空字符串 [#9669](https://github.com/apache/apisix/pull/9669)
-- 修复：保存和恢复 pb 状态 [#9606](https://github.com/apache/apisix/pull/9606)
+- 修复：opentelemetry 和 grpc-transcode 插件无法同时启用 [#9606](https://github.com/apache/apisix/pull/9606)
 - 修复 (skywalking-logger, error-log-logger)：支持在 skywalking service_instance_name 中使用 $hostname [#9401](https://github.com/apache/apisix/pull/9401)
 - 修复 (admin)：修复 secrets 不支持通过 PATCH 更新属性 [#9510](https://github.com/apache/apisix/pull/9510)
 - 修复 (http-logger)：默认请求路径应为'/' [#9472](https://github.com/apache/apisix/pull/9472)
