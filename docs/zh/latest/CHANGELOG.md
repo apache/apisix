@@ -75,33 +75,33 @@ title: CHANGELOG
 
 ### Core
 
-- :sunrise: 支持路由级别的MTLS [#9332](https://github.com/apache/apisix/pull/9332)
-- :sunrise: 支持全局规则的id schema [#9517](https://github.com/apache/apisix/pull/9517)
-- :sunrise: 支持使用单个长连接来监视etcd的所有资源 [#9456](https://github.com/apache/apisix/pull/9456)
-- :sunrise: 支持ssl标签的最大长度为256 [#9301](https://github.com/apache/apisix/pull/9301)
+- :sunrise: 支持路由级别的 MTLS [#9332](https://github.com/apache/apisix/pull/9332)
+- :sunrise: 支持全局规则的 id schema [#9517](https://github.com/apache/apisix/pull/9517)
+- :sunrise: 支持使用单个长连接来监视 etcd 的所有资源 [#9456](https://github.com/apache/apisix/pull/9456)
+- :sunrise: 支持 ssl 标签的最大长度为 256 [#9301](https://github.com/apache/apisix/pull/9301)
 
 ### Plugins
 
-- :sunrise: 支持proxy_rewrite插件的多个正则表达式匹配 [#9194](https://github.com/apache/apisix/pull/9194)
-- :sunrise: 添加loki-logger插件 [#9399](https://github.com/apache/apisix/pull/9399)
-- :sunrise: 允许用户为prometheus插件配置DEFAULT_BUCKETS [#9673](https://github.com/apache/apisix/pull/9673)
+- :sunrise: 支持 proxy_rewrite 插件的多个正则表达式匹配 [#9194](https://github.com/apache/apisix/pull/9194)
+- :sunrise: 添加 loki-logger 插件 [#9399](https://github.com/apache/apisix/pull/9399)
+- :sunrise: 允许用户为 prometheus 插件配置 DEFAULT_BUCKETS [#9673](https://github.com/apache/apisix/pull/9673)
 
 ### Bugfixes
 
-- 修复(body-transformer)：xml2lua: 将空表替换为空字符串 [#9669](https://github.com/apache/apisix/pull/9669)
-- 修复：保存和恢复pb状态 [#9606](https://github.com/apache/apisix/pull/9606)
-- 修复(skywalking-logger, error-log-logger)：支持在skywalking service_instance_name中使用$hostname [#9401](https://github.com/apache/apisix/pull/9401)
-- 修复(admin)：secrets不支持通过PATCH更新属性 (#9510)[#9510](https://github.com/apache/apisix/pull/9510)
-- 修复(http-logger)：默认请求路径应为'/' [#9472](https://github.com/apache/apisix/pull/9472)
-- 修复：syslog插件不起作用 [#9425](https://github.com/apache/apisix/pull/9425)
-- 修复：splunk-hec-logging的日志格式错误 [#9478](https://github.com/apache/apisix/pull/9478)
-- 修复(etcd)：重用cli并启用keepalive [#9420](https://github.com/apache/apisix/pull/9420)
-- 修复：upstream key config添加mqtt_client_id支持 [#9450](https://github.com/apache/apisix/pull/9450)
-- 修复：body-transformer插件总是返回原始body [#9446](https://github.com/apache/apisix/pull/9446)
-- 修复(wolf-rbac)：当consumer使用wolf-rbac插件时，consumer中的其他插件无效 [#9298](https://github.com/apache/apisix/pull/9298)
-- 修复：当host是域名时，总是解析域名 [#9332](https://github.com/apache/apisix/pull/9332)
-- 修复：response-rewrite插件不能只添加一个字符 [#9372](https://github.com/apache/apisix/pull/9372)
-- 修复(consul)：支持只获取health endpoint [#9204](https://github.com/apache/apisix/pull/9204)
+- 修复 (body-transformer)：xml2lua 将空表替换为空字符串 [#9669](https://github.com/apache/apisix/pull/9669)
+- 修复：保存和恢复 pb 状态 [#9606](https://github.com/apache/apisix/pull/9606)
+- 修复 (skywalking-logger, error-log-logger)：支持在 skywalking service_instance_name 中使用 $hostname [#9401](https://github.com/apache/apisix/pull/9401)
+- 修复 (admin)：secrets 不支持通过 PATCH 更新属性 (#9510)[#9510](https://github.com/apache/apisix/pull/9510)
+- 修复 (http-logger)：默认请求路径应为'/' [#9472](https://github.com/apache/apisix/pull/9472)
+- 修复：syslog 插件不起作用 [#9425](https://github.com/apache/apisix/pull/9425)
+- 修复：splunk-hec-logging 的日志格式错误 [#9478](https://github.com/apache/apisix/pull/9478)
+- 修复：etcd 复用 cli 并启用 keepalive [#9420](https://github.com/apache/apisix/pull/9420)
+- 修复：upstream key 添加 mqtt_client_id 支持 [#9450](https://github.com/apache/apisix/pull/9450)
+- 修复：body-transformer 插件总是返回原始 body [#9446](https://github.com/apache/apisix/pull/9446)
+- 修复：当 consumer 使用 wolf-rbac 插件时，consumer 中的其他插件无效 [#9298](https://github.com/apache/apisix/pull/9298)
+- 修复：当 host 是域名时，总是解析域名 [#9332](https://github.com/apache/apisix/pull/9332)
+- 修复：response-rewrite 插件不能只添加一个字符 [#9372](https://github.com/apache/apisix/pull/9372)
+- 修复：consul 支持只获取 health endpoint [#9204](https://github.com/apache/apisix/pull/9204)
 
 ## 3.3.0
 
