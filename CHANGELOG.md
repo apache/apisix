@@ -91,7 +91,7 @@ title: Changelog
 - Fix(body-transformer): xml2lua: replace empty table with empty string [#9669](https://github.com/apache/apisix/pull/9669)
 - Fix: save and restore pb state [#9606](https://github.com/apache/apisix/pull/9606)
 - Fix(skywalking-logger, error-log-logger): support $hostname in skywalking service_instance_name [#9401](https://github.com/apache/apisix/pull/9401)
-- Fix(admin): secrets do not support to update attributes by PATCH (#9510)[#9510](https://github.com/apache/apisix/pull/9510)
+- Fix(admin): fix secrets do not support to update attributes by PATCH [#9510](https://github.com/apache/apisix/pull/9510)
 - Fix(http-logger): default request path should be '/' [#9472](https://github.com/apache/apisix/pull/9472)
 - Fix: syslog plugin doesn't work [#9425](https://github.com/apache/apisix/pull/9425)
 - Fix: wrong log format for splunk-hec-logging [#9478](https://github.com/apache/apisix/pull/9478)
