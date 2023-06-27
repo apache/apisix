@@ -31,7 +31,7 @@ description: This document contains information about the Apache APISIX batch-re
 
 After enabling the batch-requests plugin, users can assemble multiple requests into one request and send them to the gateway. The gateway will parse the corresponding requests from the request body and then individually encapsulate them into separate requests. Instead of the user initiating multiple HTTP requests to the gateway, the gateway will use the HTTP pipeline method, go through several stages such as route matching, forwarding to the corresponding upstream, and then return the combined results to the client after merging.
 
-![batch-request](https://static.apiseven.com/uploads/2023/06/08/MSa2DwbO_batch-request.png)
+![batch-request](https://static.apiseven.com/uploads/2023/06/27/ATzEuOn4_batch-request.png)
 
 In cases where the client needs to access multiple APIs, this will significantly improve performance.
 

@@ -31,7 +31,7 @@ description: 本文介绍了关于 Apache APISIX `batch-request` 插件的基本
 
 在启用 `batch-requests` 插件后，用户可以通过将多个请求组装成一个请求的形式，把请求发送给网关，网关会从请求体中解析出对应的请求，再分别封装成独立的请求，以 [HTTP pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式代替用户向网关自身再发起多个 HTTP 请求，经历路由匹配，转发到对应上游等多个阶段，合并结果后再返回客户端。
 
-![batch-request](https://static.apiseven.com/uploads/2023/06/08/MSa2DwbO_batch-request.png)
+![batch-request](https://static.apiseven.com/uploads/2023/06/27/ATzEuOn4_batch-request.png)
 
 在客户端需要访问多个 API 的情况下，这将显著提高性能。
 
