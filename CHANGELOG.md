@@ -84,7 +84,7 @@ title: Changelog
 
 - :sunrise: Support miltiple regex pattern matching for proxy_rewrite plugin [#9194](https://github.com/apache/apisix/pull/9194)
 - :sunrise: Add loki-logger plugin [#9399](https://github.com/apache/apisix/pull/9399)
-- :sunrise: Allow user configure DEFAULT_BUCKETS for prometheus plugin  [#9673](https://github.com/apache/apisix/pull/9673)
+- :sunrise: Allow user configure DEFAULT_BUCKETS for prometheus plugin [#9673](https://github.com/apache/apisix/pull/9673)
 
 ### Bugfixes
 
