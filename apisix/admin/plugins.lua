@@ -44,18 +44,15 @@ end
 
 function _M.get(name)
     local arg = get_uri_args()
-    if arg and arg["all"] == "true" then
-        core.log.warn("query parameter \"all\" will be deprecated soon."..
-        "By default, the API returns all plugins now unless subsystem is specified.")
-    end
     -- If subsystem is passed inside args then it should be oneOf: http / stream.
     local subsystem = arg["subsystem"]
     if subsystem and subsystem ~= "http" and subsystem ~= "stream" then
         return 400, {error_msg = "unsupported subsystem: "..subsystem}
     end
 
-    -- When name is unspecified, return all plugins for the given subsystem
-    if not name then
+    -- To be deprecated
+    if arg and arg["all"] == "true" then
+        core.log.warn("query parameter \"all\" will be deprecated soon.")
         local http_plugins, stream_plugins = plugin_get_all({
             version = true,
             priority = true,
@@ -65,15 +62,6 @@ function _M.get(name)
             type = true,
             scope = true,
         })
-
-        if subsystem == "stream" then
-            return 200, stream_plugins
-        end
-
-        if subsystem == "http" then
-            return 200, http_plugins
-        end
-
         local all_plugins = http_plugins
         for k, v in pairs(stream_plugins) do
             all_plugins[k] = v
