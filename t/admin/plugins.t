@@ -449,7 +449,7 @@ qr/\{"error_msg":"failed to load plugin http-logger in subsystem stream"\}/
 
 
 
-=== TEST 14: check with right plugin in right subsystem
+=== TEST 15: check with right plugin in right subsystem
 --- config
     location /t {
         content_by_lua_block {
