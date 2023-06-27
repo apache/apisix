@@ -359,6 +359,7 @@ function _M.http_init_worker()
     attach_http_router_common_methods(router_http)
     router_http.init_worker(filter)
     _M.router_http = router_http
+    event.push(event.CONST.BUILD_ROUTER, router_http.user_routes.values)
 
     local router_ssl = require("apisix.ssl.router." .. router_ssl_name)
     router_ssl.init_worker()
