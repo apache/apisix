@@ -87,21 +87,21 @@ apisix:
   #   - 1.1.1.1
   #   - 8.8.8.8
   # dns_resolver_valid: 30        # Override the default TTL of the DNS records.
-  resolver_timeout: 5             # Set the time in seconds that the server will wait for a response from the 
+  resolver_timeout: 5             # Set the time in seconds that the server will wait for a response from the
                                   # DNS resolver before timing out.
   enable_resolv_search_opt: true  # If true, use search option in the resolv.conf file in DNS lookups.
 
   ssl:
     enable: true
-    listen:                                      # APISIX listening port for HTTPS traffic.
+    listen:                                       # APISIX listening port for HTTPS traffic.
       - port: 9443
         enable_http2: true
-      # - ip: 127.0.0.3                          # If not set, default to `0.0.0.0`.
+      # - ip: 127.0.0.3                           # If not set, default to `0.0.0.0`.
       #   port: 9445
       #   enable_http2: true
-    # ssl_trusted_certificate: /path/to/ca-cert  # Set the path to CA certificates used to verify client 
-                                                 # certificates in the PEM format.
-    ssl_protocols: TLSv1.2 TLSv1.3               # TLS versions supported.
+    # ssl_trusted_certificate: /path/to/ca-cert   # Set the path to CA certificates used to verify client
+                                                  # certificates in the PEM format.
+    ssl_protocols: TLSv1.2 TLSv1.3                # TLS versions supported.
     ssl_ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
     ssl_session_tickets: false  # If true, session tickets are used for SSL/TLS connections.
                                 # Disabled by default because it renders Perfect Forward Secrecy (FPS)
@@ -112,9 +112,9 @@ apisix:
                                 # If not set, APISIX saves the original data into etcd.
                                 # CAUTION: If you would like to update the key, add the new key as the
                                 # first item in the array and keep the older keys below the newly added
-                                # key, so that data can be decrypted with the older keys and encrypted 
+                                # key, so that data can be decrypted with the older keys and encrypted
                                 # with the new key. Removing the old keys directly can render the data
-                                # unrecoverable. 
+                                # unrecoverable.
 
     # fallback_sni: "my.default.domain"      # Fallback SNI to be used if the client does not send SNI during
     #                                        # the handshake.
@@ -133,9 +133,9 @@ apisix:
                                   # If not set, APISIX saves the original data into etcd.
                                   # CAUTION: If you would like to update the key, add the new key as the
                                   # first item in the array and keep the older keys below the newly added
-                                  # key, so that data can be decrypted with the older keys and encrypted 
+                                  # key, so that data can be decrypted with the older keys and encrypted
                                   # with the new key. Removing the old keys directly can render the data
-                                  # unrecoverable. 
+                                  # unrecoverable.
 
 nginx_config:                     # config for render the template to generate nginx.conf
   #user: root                     # specifies the execution user of the worker process.
