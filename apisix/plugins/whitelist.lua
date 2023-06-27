@@ -388,8 +388,7 @@ function _M.init()
     _M.paid_list = {}
     for _, network in ipairs(networks) do
         _M.network_list[network] = true
-        if network == "staging-eth-mainnet" or network == "eth-mainnet" or
-            network == "staging-scroll-alpha" or network == "scroll-alpha" then
+        if network == "staging-eth-mainnet" or network == "eth-mainnet" then
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, trace_methods, debug_methods)
         elseif network == "eth-sepolia" or network == "staging-eth-sepolia" or
@@ -398,9 +397,10 @@ function _M.init()
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, trace_methods)
         elseif network == "arb-mainnet" or network == "opt-mainnet" or
             network == "staging-arb-mainnet" or network == "staging-opt-mainnet" or
-            network == "staging-base-testnet" or network == "base-testnet" then
+            network == "staging-base-testnet" or network == "base-testnet" or
+            network == "staging-scroll-alpha" or network == "scroll-alpha" then
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
-            _M.paid_list[network] = _M.free_list[network]
+            _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, debug_methods)
         elseif network == "polygon-mainnet" or network == "staging-polygon-mainnet" then
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods, bor_methods)
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, bor_methods, trace_methods)
