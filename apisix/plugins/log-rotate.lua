@@ -163,7 +163,7 @@ local function rename_file(log, date_str)
 
     local filename = log.file
     -- create the file if it does not exist
-    local exists = lfs.attributes(filename, "mode") == "file"
+    local exists = file_exists(filename)
     if not exists then
         local file = io_open(filename, "w")
         if file then
