@@ -214,7 +214,7 @@ local function filter(route, pre_route_or_size, obj)
             return
         end
 
-        if not first_route then
+        if not first_route or (not host_uri.host_router or not host_uri.only_uri_router) then
             routes_obj = obj
             core.log.notice("create radixtree uri for the first route income.")
             host_uri.create_radixtree_router(routes_obj.values)
