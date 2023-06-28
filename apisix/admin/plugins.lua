@@ -52,6 +52,7 @@ function _M.get(name)
 
     -- To be deprecated
     if arg and arg["all"] == "true" then
+        core.log.warn("query parameter \"all\" will be deprecated soon.")
         local http_plugins, stream_plugins = plugin_get_all({
             version = true,
             priority = true,
