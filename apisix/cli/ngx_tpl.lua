@@ -416,7 +416,7 @@ http {
         apisix.http_init_worker()
     }
 
-    {% if not use_openresty_1_17 then %}
+    {% if not use_openresty_1_19 then %}
     exit_worker_by_lua_block {
         apisix.http_exit_worker()
     }

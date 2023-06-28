@@ -227,14 +227,14 @@ Please modify "admin_key" in conf/config.yaml .
         util.die("can not find openresty\n")
     end
 
-    local need_ver = "1.17.8"
+    local need_ver = "1.21.4"
     if not version_greater_equal(or_ver, need_ver) then
         util.die("openresty version must >=", need_ver, " current ", or_ver, "\n")
     end
 
-    local use_openresty_1_17 = false
+    local use_openresty_1_21 = false
     if not version_greater_equal(or_ver, "1.19.3") then
-        use_openresty_1_17 = true
+        use_openresty_1_21 = true
     end
 
     local or_info = util.execute_cmd("openresty -V 2>&1")
@@ -525,7 +525,7 @@ Please modify "admin_key" in conf/config.yaml .
 
     -- Using template.render
     local sys_conf = {
-        use_openresty_1_17 = use_openresty_1_17,
+        use_openresty_1_21 = use_openresty_1_21,
         lua_path = env.pkg_path_org,
         lua_cpath = env.pkg_cpath_org,
         os_name = util.trim(util.execute_cmd("uname")),
