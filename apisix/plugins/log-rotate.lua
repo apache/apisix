@@ -145,9 +145,14 @@ local function rename_file(log, date_str)
     end
 
     local ok, err = os_rename(log.file, new_file)
-    if not ok then
-        core.log.error("move file from ", log.file, " to ", new_file,
-                       " res:", ok, " msg:", err)
+    if err then
+        if string.sub(err, -25) == "No such file or directory" then
+          core.log.warn("move file from ", log.file, " to ", new_file,
+                        " res:", ok, " msg:", err)
+        else
+          core.log.error("move file from ", log.file, " to ", new_file,
+                         " res:", ok, " msg:", err)
+        end
         return
     end
 
