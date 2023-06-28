@@ -340,7 +340,7 @@ Returns multiple configurations:
 
 - Port of Admin API changed to 9180: [#7806](https://github.com/apache/apisix/pull/7806)
 - We only support OpenResty 1.19.3.2 and above: [#7625](https://github.com/apache/apisix/pull/7625)
-- Adjusted the priority of the Plugin Config object so that the priority of a plugin configuration with the same name changes from Consumer > Plugin Config > Route > Service to Consumer > Route > Plugin Config > Service: [#7614](https://github. com/apache/apisix/pull/7614)
+- Adjusted the priority of the Plugin Config object so that the priority of a plugin configuration with the same name changes from Consumer > Plugin Config > Route > Service to Consumer > Route > Plugin Config > Service: [#7614](https://github.com/apache/apisix/pull/7614)
 
 ### Core
 

@@ -23,12 +23,12 @@ In this tutorial, you will enable the `limit-count` plugin to set a rate limitin
 
 ## Prerequisite(s)
 
-1. Complete the [Get APISIX](../README) step to install APISIX first.
-2. Complete the [Configure Routes](../configure-routes#what-is-a-route) step.
+1. Complete the [Get APISIX](./README.md) step to install APISIX first.
+2. Complete the [Configure Routes](./configure-routes.md#what-is-a-route) step.
 
 ## Enable Rate Limiting
 
-The following route `getting-started-ip` is inherited from [Configure Routes](./configure-routes). You only need to use the `PATCH` method to add the `limit-count` plugin to the route:
+The following route `getting-started-ip` is inherited from [Configure Routes](./configure-routes.md). You only need to use the `PATCH` method to add the `limit-count` plugin to the route:
 
 ```shell
 curl -i "http://127.0.0.1:9180/apisix/admin/routes/getting-started-ip" -X PATCH -d '
