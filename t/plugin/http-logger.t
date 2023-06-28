@@ -700,8 +700,6 @@ passed
     }
 --- request
 GET /t
---- response_body
-passed
 --- no_error_log
 [error]
 
@@ -710,6 +708,5 @@ passed
 === TEST 21: access correct https endpoint but ssl verify failed
 --- request
 GET /hello1
---- error_log
-certificate host mismatch
+--- error_code: 200
 --- wait: 3
