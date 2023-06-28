@@ -21,7 +21,7 @@ supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/apache/apisix",
-    branch = "master",
+    branch = "3.2.1",
 }
 
 description = {
@@ -39,7 +39,7 @@ dependencies = {
     "lua-resty-balancer = 0.04",
     "lua-resty-ngxvar = 0.5.2",
     "lua-resty-jit-uuid = 0.0.7",
-    "lua-resty-healthcheck-api7 = 3.0.0",
+    "lua-resty-healthcheck-api7 = 2.2.2",
     "api7-lua-resty-jwt = 0.2.4",
     "lua-resty-hmac-ffi = 0.05",
     "lua-resty-cookie = 0.1.0",
@@ -50,7 +50,7 @@ dependencies = {
     "lua-resty-openidc = 1.7.5",
     "luafilesystem = 1.7.0-2",
     "api7-lua-tinyyaml = 0.4.2",
-    "nginx-lua-prometheus = 0.20221218",
+    "nginx-lua-prometheus = 0.20220527",
     "jsonschema = 0.9.8",
     "lua-resty-ipmatcher = 0.6.1",
     "lua-resty-kafka = 0.20-0",
@@ -69,6 +69,7 @@ dependencies = {
     "penlight = 1.9.2-1",
     "ext-plugin-proto = 0.6.0",
     "casbin = 1.41.5",
+    "api7-snowflake = 2.0-1",
     "inspect == 3.1.1",
     "lualdap = 1.2.6-1",
     "lua-resty-rocketmq = 0.3.0-0",
@@ -77,7 +78,7 @@ dependencies = {
     "xml2lua = 1.5-2",
     "nanoid = 0.1-1",
     "lua-resty-mediador = 0.1.2-1",
-    "lua-resty-ldap = 0.2.2-0"
+    "lua-resty-ldap = 0.1.0-0"
 }
 
 build = {

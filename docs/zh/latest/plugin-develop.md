@@ -239,7 +239,7 @@ local _M = {
 }
 ```
 
-你在创建 [Consumer](https://github.com/apache/apisix/blob/master/docs/zh/latest/admin-api.md#consumer) 时会用到它。
+你在创建 [Consumer](./admin-api.md#consumer) 时会用到它。
 
 为了检验这个配置，这个插件使用了如下的 schema:
 

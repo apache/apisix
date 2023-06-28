@@ -156,7 +156,7 @@ local function run_watch(premature)
                 log.error("etcd get: ", err)
                 ngx_sleep(3)
             else
-                watch_ctx.rev = tonumber(res.body.header.revision)
+                rev = tonumber(res.body.header.revision)
                 break
             end
         end

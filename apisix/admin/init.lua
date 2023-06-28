@@ -56,8 +56,8 @@ local resources = {
     stream_routes   = require("apisix.admin.stream_routes"),
     plugin_metadata = require("apisix.admin.plugin_metadata"),
     plugin_configs  = require("apisix.admin.plugin_config"),
-    consumer_groups  = require("apisix.admin.consumer_group"),
-    secrets             = require("apisix.admin.secrets"),
+    consumer_groups = require("apisix.admin.consumer_group"),
+    secrets         = require("apisix.admin.secrets"),
 }
 
 
@@ -104,6 +104,22 @@ local function check_token(ctx)
     return true
 end
 
+-- Set the `apictx` variable and check admin api token, if the check fails, the current
+-- request will be interrupted and an error response will be returned.
+--
+-- NOTE: This is a higher wrapper for `check_token` function.
+local function set_ctx_and_check_token()
+    local api_ctx = {}
+    core.ctx.set_vars_meta(api_ctx)
+    ngx.ctx.api_ctx = api_ctx
+
+    local ok, err = check_token(api_ctx)
+    if not ok then
+        core.log.warn("failed to check token: ", err)
+        core.response.exit(401, { error_msg = "failed to check token" })
+    end
+end
+
 
 local function strip_etcd_resp(data)
     if type(data) == "table"
@@ -142,15 +158,7 @@ end
 
 
 local function run()
-    local api_ctx = {}
-    core.ctx.set_vars_meta(api_ctx)
-    ngx.ctx.api_ctx = api_ctx
-
-    local ok, err = check_token(api_ctx)
-    if not ok then
-        core.log.warn("failed to check token: ", err)
-        core.response.exit(401, {error_msg = "failed to check token"})
-    end
+    set_ctx_and_check_token()
 
     local uri_segs = core.utils.split_uri(ngx.var.uri)
     core.log.info("uri: ", core.json.delay_encode(uri_segs))
@@ -176,7 +184,7 @@ local function run()
 
     local resource = resources[seg_res]
     if not resource then
-        core.response.exit(404, {error_msg = "not found"})
+        core.response.exit(404, {error_msg = "Unsupported resource type: ".. seg_res})
     end
 
     local method = str_lower(get_method())
@@ -244,31 +252,25 @@ end
 
 
 local function get_plugins_list()
-    local api_ctx = {}
-    core.ctx.set_vars_meta(api_ctx)
-    ngx.ctx.api_ctx = api_ctx
-
-    local ok, err = check_token(api_ctx)
-    if not ok then
-        core.log.warn("failed to check token: ", err)
-        core.response.exit(401, {error_msg = "failed to check token"})
-    end
+    set_ctx_and_check_token()
 
     local plugins = resources.plugins.get_plugins_list()
     core.response.exit(200, plugins)
 end
 
+-- Handle unsupported request methods for the virtual "reload" plugin
+local function unsupported_methods_reload_plugin()
+    set_ctx_and_check_token()
+
+    core.response.exit(405, {
+        error_msg = "please use PUT method to reload the plugins, "
+                    .. get_method() .. " method is not allowed."
+    })
+end
+
 
 local function post_reload_plugins()
-    local api_ctx = {}
-    core.ctx.set_vars_meta(api_ctx)
-    ngx.ctx.api_ctx = api_ctx
-
-    local ok, err = check_token(api_ctx)
-    if not ok then
-        core.log.warn("failed to check token: ", err)
-        core.response.exit(401, {error_msg = "failed to check token"})
-    end
+    set_ctx_and_check_token()
 
     local success, err = events.post(reload_event, get_method(), ngx_time())
     if not success then
@@ -385,6 +387,12 @@ local uri_route = {
         paths = reload_event,
         methods = {"PUT"},
         handler = post_reload_plugins,
+    },
+    -- Handle methods other than "PUT" on "/plugin/reload" to inform user
+    {
+        paths = reload_event,
+        methods = { "GET", "POST", "DELETE", "PATCH" },
+        handler = unsupported_methods_reload_plugin,
     },
 }
 

@@ -37,7 +37,7 @@ APISIX 有两个 `serverless` 插件：`serverless-pre-function` 和 `serverless
 
 | 名称      | 类型          | 必选项   | 默认值     | 有效值                                                                       | 描述                                                                            |
 | --------- | ------------- | ------- | ---------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| phase     | string        | 否      | ["access"] | ["rewrite", "access", "header_filter", "body_filter", "log", "before_proxy"] | 执行 severless 函数的阶段。                                                     |
+| phase     | string        | 否      | ["access"] | ["rewrite", "access", "header_filter", "body_filter", "log", "before_proxy"] | 执行 serverless 函数的阶段。                                                     |
 | functions | array[string] | 是      |            |                                                                              | 指定运行的函数列表。该属性可以包含一个函数，也可以是多个函数，按照先后顺序执行。    |
 
 :::info 重要
