@@ -169,7 +169,8 @@ function _M.body_filter(conf, ctx)
 end
 
 function _M.log(conf, ctx)
-    -- If the "vars" configuration is set and the matching conditions are not met, then do not log the message.
+    -- If the "vars" configuration is set and the matching conditions are not met, 
+    -- then do not log the message.
     if conf.vars and not vars_match(conf.vars, ctx) then
         return
     end
