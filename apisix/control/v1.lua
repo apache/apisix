@@ -22,7 +22,6 @@ local get_services = require("apisix.http.service").services
 local upstream_mod = require("apisix.upstream")
 local get_upstreams = upstream_mod.upstreams
 local collectgarbage = collectgarbage
-local ipairs = ipairs
 local pcall = pcall
 local str_format = string.format
 local ngx_var = ngx.var
