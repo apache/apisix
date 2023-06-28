@@ -49,6 +49,27 @@ The `file-logger` Plugin is used to push log streams to a specific location.
 | log_format | object | False    | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 | include_resp_body      | boolean | False     | When set to `true` includes the response body in the log file.                                                                                                                                                                |
 | include_resp_body_expr | array   | False     | When the `include_resp_body` attribute is set to `true`, use this to filter based on [lua-resty-expr](https://github.com/api7/lua-resty-expr). If present, only logs the response into file if the expression evaluates to `true`. |
+| vars        | array[] | False   |  Logs will be recorded only when the rule match is successful. See lua-resty-expr for a list of available expressions.   |
+
+:::tip
+
+`vars` 是由 [`lua-resty-expr`](https://github.com/api7/lua-resty-expr) 的表达式组成的列表，它可以灵活的实现规则之间的 AND/OR 关系，示例如下：：
+
+```json
+[
+    [
+        [ "arg_name","==","jack" ],
+        [ "arg_age","==",18 ]
+    ],
+    [
+        [ "arg_name2","==","allen" ]
+    ]
+]
+```
+
+以上示例表示前两个表达式之间的关系是 AND，而前两个和第三个表达式之间的关系是 OR。
+
+:::
 
 ## Metadata
 

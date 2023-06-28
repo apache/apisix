@@ -51,6 +51,27 @@ description: API 网关 Apache APISIX file-logger 插件可用于将日志数据
 | log_format       | object  | 否     | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | include_resp_body      | boolean | 否     | 当设置为 `true` 时，生成的文件包含响应体。                                                                                               |
 | include_resp_body_expr | array   | 否     | 当 `include_resp_body` 属性设置为 `true` 时，使用该属性并基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 进行过滤。如果存在，则仅在表达式计算结果为 `true` 时记录响应。       |
+| vars        | array[] | 否   |  当规则匹配通过后才会记录日志。`vars` 是一个表达式列表，来自 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)。   |
+
+:::tip
+
+`vars` 是由 [`lua-resty-expr`](https://github.com/api7/lua-resty-expr) 的表达式组成的列表，它可以灵活的实现规则之间的 AND/OR 关系，示例如下：：
+
+```json
+[
+    [
+        [ "arg_name","==","jack" ],
+        [ "arg_age","==",18 ]
+    ],
+    [
+        [ "arg_name2","==","allen" ]
+    ]
+]
+```
+
+以上示例表示前两个表达式之间的关系是 AND，而前两个和第三个表达式之间的关系是 OR。
+
+:::
 
 ## 插件元数据设置
 
