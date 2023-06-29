@@ -381,6 +381,12 @@ services:
     command: sh mqnamesrv
     networks:
       rocketmq_net:
+    healthcheck:
+      test: ["CMD", "sleep", "10"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   rocketmq_broker:
     image: apacherocketmq/rocketmq:4.6.0
@@ -395,6 +401,12 @@ services:
     command: sh mqbroker -n rocketmq_namesrv:9876 -c ../conf/broker.conf
     networks:
       rocketmq_net:
+    healthcheck:
+      test: ["CMD", "sleep", "10"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # Open Policy Agent
   opa:

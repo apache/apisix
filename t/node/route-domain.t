@@ -140,13 +140,13 @@ qr/host: httpbin.org/
                  [[{
                         "upstream": {
                             "nodes": {
-                                "httpbin.org:80": 1
+                                "nghttp2.org": 1
                             },
                             "type": "roundrobin",
                             "desc": "new upstream",
                             "pass_host": "node"
                         },
-                        "uri": "/get"
+                        "uri": "/httpbin/get"
                 }]]
                 )
 
@@ -167,9 +167,9 @@ passed
 
 === TEST 7: hit route
 --- request
-GET /get
+GET /httpbin/get
 --- response_body eval
-qr/"Host": "httpbin.org"/
+qr/"Host": "nghttp2.org"/
 --- no_error_log
 [error]
 --- timeout: 10
