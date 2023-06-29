@@ -1456,4 +1456,4 @@ HTTP/1.1 200 OK
 
 ### 应答参数 {#secret-config-response-parameters}
 
-当前，响应是从 etcd 返回的。
+当前的响应是从etcd返回的。
