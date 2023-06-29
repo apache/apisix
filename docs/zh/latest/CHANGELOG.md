@@ -1343,7 +1343,7 @@ title: CHANGELOG
 
 ### Core
 
-- :sunrise: **[gRPC 协议转换](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/grpc-transcoding.md)**: 支持 gRPC 协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API. [#395](https://github.com/apache/incubator-apisix/issues/395)
+- :sunrise: **[gRPC 协议转换](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/grpc-transcode.md)**: 支持 gRPC 协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API. [#395](https://github.com/apache/incubator-apisix/issues/395)
 - :sunrise: **[radix tree 路由](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//router-radixtree.md)**: 默认的路由器更改为 radix tree，支持把 uri、host、cookie、请求头、请求参数、Nginx 内置变量等作为路由的条件，并支持等于、大于、小于等常见操作符，更加强大和灵活。**需要注意的是，这个改动不向下兼容，所有使用历史版本的用户，需要手动修改路由才能正常使用**。[#414](https://github.com/apache/incubator-apisix/issues/414)
 - 动态上游支持更多的参数，可以指定上游的 uri 和 host，以及是否开启 websocket. [#451](https://github.com/apache/incubator-apisix/pull/451)
 - 支持从 `ctx.var` 中直接获取 cookie 中的值。[#449](https://github.com/apache/incubator-apisix/pull/449)
