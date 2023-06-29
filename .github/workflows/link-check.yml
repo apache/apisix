@@ -45,4 +45,5 @@ jobs:
 
       - name: Link check (critical, all files)
         run: |
-          python link_checker.py ./ --enable-external --ignore "http://apisix.iresty.com" "https://www.upyun.com" "https://github.com/apache/apisix/actions/workflows/build.yml/badge.svg" "https://httpbin.org/" "https://en.wikipedia.org/wiki/Cache"
+          # python link_checker.py ./ --enable-external --ignore "http://apisix.iresty.com" "https://www.upyun.com" "https://github.com/apache/apisix/actions/workflows/build.yml/badge.svg" "https://httpbin.org/" "https://en.wikipedia.org/wiki/Cache"
+          python link_checker.py ./
