@@ -1397,7 +1397,7 @@ Plugin 资源请求地址：/apisix/admin/stream_routes/{id}
 
 ## Secret
 
-你可以将 secret 资源用于密钥管理，需要配合支持的密钥管理器，例如 `vault`。
+Secret 指的是 `Secrets Management`（密钥管理），可以使用任何支持的密钥管理器，例如 `vault`。
 
 ### 请求地址 {#secret-config-uri}
 
@@ -1407,11 +1407,11 @@ Secret 资源请求地址：/apisix/admin/secrets/{secretmanager}/{id}
 
 | 名称 | 请求 URI                          | 请求 body | 描述                                        |
 | :--: | :----------------------------: | :---: | :---------------------------------------: |
-| GET  | /apisix/admin/secrets            | NULL  | 获取资源列表。                  |
-| GET  | /apisix/admin/secrets/{manager}/{id} | NULL  | 获取资源           |
-| PUT  | /apisix/admin/secrets/{manager}            | {...} | 创建资源。                              |
-| DELETE | /apisix/admin/secrets/{manager}/{id} | NULL   | 删除资源。 |
-| PATCH  | /apisix/admin/secrets/{manager}/{id}        | {...} | 更新指定资源的属性。要删除属性，将属性的值设置为 null。|
+| GET  | /apisix/admin/secrets            | NULL  | 获取所有 secret 的列表。                  |
+| GET  | /apisix/admin/secrets/{manager}/{id} | NULL  | 根据 id 获取指定的 secret。           |
+| PUT  | /apisix/admin/secrets/{manager}            | {...} | 创建新的 secret 配置。                              |
+| DELETE | /apisix/admin/secrets/{manager}/{id} | NULL   | 删除具有指定 id 的secret。 |
+| PATCH  | /apisix/admin/secrets/{manager}/{id}        | {...} | 更新指定 secret 的选定属性。如果要删除一个属性，可以将该属性的值设置为 null。|
 | PATCH  | /apisix/admin/secrets/{manager}/{id}/{path} | {...} | 更新路径中指定的属性。其他属性的值保持不变。
 
 ### body 请求参数 {#secret-config-body-requset-parameters}
@@ -1420,9 +1420,9 @@ Secret 资源请求地址：/apisix/admin/secrets/{secretmanager}/{id}
 
 | 名称  | 必选项 | 类型        | 描述                                                                                                        | 例子                                          |
 | ----------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| uri    | 是     | URI        |  vault 服务器的 URI                                                 |                                                  |
+| uri    | 是     | URI        |  Vault 服务器的 URI                                                 |                                                  |
 | prefix    | 是    | 字符串       | 密钥前缀
-| token     | 是    | 字符串       | vault 令牌 |                                                  |
+| token     | 是    | 字符串       | Vault 令牌 |                                                  |
 
 配置示例：
 
