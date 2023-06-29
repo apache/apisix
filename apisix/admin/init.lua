@@ -16,6 +16,7 @@
 --
 local require = require
 local core = require("apisix.core")
+local get_uri_args = ngx.req.get_uri_args
 local route = require("apisix.utils.router")
 local plugin = require("apisix.plugin")
 local v3_adapter = require("apisix.admin.v3_adapter")
@@ -253,8 +254,9 @@ end
 
 local function get_plugins_list()
     set_ctx_and_check_token()
-
-    local plugins = resources.plugins.get_plugins_list()
+    local args = get_uri_args()
+    local subsystem = args["subsystem"]
+    local plugins = resources.plugins.get_plugins_list(subsystem)
     core.response.exit(200, plugins)
 end
 

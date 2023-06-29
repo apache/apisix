@@ -50,8 +50,8 @@ function _M.get(name)
         return 400, {error_msg = "unsupported subsystem: "..subsystem}
     end
 
-    -- To be deprecated
-    if arg and arg["all"] == "true" then
+    -- arg all to be deprecated
+    if (arg and arg["all"] == "true") or not name then
         core.log.warn("query parameter \"all\" will be deprecated soon.")
         local http_plugins, stream_plugins = plugin_get_all({
             version = true,
@@ -71,19 +71,16 @@ function _M.get(name)
     end
 
     local plugin
-    -- By default search through all subsystems
-    local all_subsystem = true
-    if subsystem then
-        all_subsystem = false
+    -- By default search through http subsystems
+    if not subsystem then
+        subsystem = "http"
     end
 
-    -- When subsystem is passed as http or not passed at all(searching through all)
-    if all_subsystem or subsystem == "http"  then
+    if subsystem == "http"  then
         plugin = plugin_get_http(name)
     end
 
-    -- When subsystem is passed as stream or not passed at all(searching through all)
-    if (not plugin) and (all_subsystem or subsystem == "stream") then
+    if (not plugin) and (subsystem == "stream") then
         plugin = plugin_get_stream(name)
     end
 
@@ -109,8 +106,14 @@ function _M.get(name)
 end
 
 
-function _M.get_plugins_list()
-    local plugins = core.config.local_conf().plugins
+function _M.get_plugins_list(subsystem)
+    local plugins
+    if subsystem == "stream" then
+        plugins = core.config.local_conf().stream_plugins
+    else 
+        plugins = core.config.local_conf().plugins
+    end
+
     local priorities = {}
     local success = {}
     for i, name in ipairs(plugins) do
