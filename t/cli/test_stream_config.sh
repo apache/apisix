@@ -41,7 +41,7 @@ echo "passed: enable stream proxy only by default"
 echo "
 apisix:
     enable_admin: false
-    proxy_mode: stream
+    proxy_mode: http&stream
     stream_proxy:
         tcp:
             - addr: 9100
