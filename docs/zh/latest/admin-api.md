@@ -1399,7 +1399,7 @@ Plugin 资源请求地址：/apisix/admin/stream_routes/{id}
 
 你可以将 secret 资源用于密钥管理，需要配合支持的密钥管理器，例如 `vault`。
 
-### 安全密钥 API {#secret-config-uri}
+### 请求地址 {#secret-config-uri}
 
 Secret 资源请求地址：/apisix/admin/secrets/{secretmanager}/{id}
 
@@ -1424,7 +1424,7 @@ Secret 资源请求地址：/apisix/admin/secrets/{secretmanager}/{id}
 | prefix    | 是    | 字符串       | 密钥前缀
 | token     | 是    | 字符串       | vault 令牌 |                                                  |
 
-示例配置：
+配置示例：
 
 ```shell
 {
@@ -1435,7 +1435,7 @@ Secret 资源请求地址：/apisix/admin/secrets/{secretmanager}/{id}
 
 ```
 
-示例 API 使用：
+使用示例：
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/secrets/vault/test2 \
@@ -1454,6 +1454,6 @@ HTTP/1.1 200 OK
 {"key":"\/apisix\/secrets\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
 ```
 
-### 响应参数 {#secret-config-response-parameters}
+### 应答参数 {#secret-config-response-parameters}
 
 当前，响应是从 etcd 返回的。
