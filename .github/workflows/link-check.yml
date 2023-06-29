@@ -7,7 +7,7 @@ name: 'Link Checker'
 on:
   workflow_dispatch:
   push:
-    branches: [master, 'release/**']
+    # branches: [master, 'release/**']
     paths:
       - '**/*.md'
       - '**/link-check.yml'
