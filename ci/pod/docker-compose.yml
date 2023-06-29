@@ -378,15 +378,9 @@ services:
     restart: unless-stopped
     ports:
       - "9876:9876"
-    command: sh mqnamesrv
+    command: bash -c "mqnamesrv; sleep 10"
     networks:
       rocketmq_net:
-    healthcheck:
-      test: ["CMD", "sleep", "10"]
-      interval: 1m30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   rocketmq_broker:
     image: apacherocketmq/rocketmq:4.6.0
@@ -398,15 +392,9 @@ services:
       - "10912:10912"
     depends_on:
       - rocketmq_namesrv
-    command: sh mqbroker -n rocketmq_namesrv:9876 -c ../conf/broker.conf
+    command: bash -c "mqbroker -n rocketmq_namesrv:9876 -c ../conf/broker.conf; sleep 10"
     networks:
       rocketmq_net:
-    healthcheck:
-      test: ["CMD", "sleep", "10"]
-      interval: 1m30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
   # Open Policy Agent
   opa:
