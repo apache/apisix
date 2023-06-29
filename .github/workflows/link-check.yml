@@ -7,10 +7,11 @@ name: 'Link Checker'
 on:
   workflow_dispatch:
   push:
-    branches:[master, 'release/**']
+    branches: [master, 'release/**']
     paths:
       - '**/*.md'
-  pull_request:[master, 'release/**']
+  pull_request: 
+    branches: [master, "release/**"]
     paths:
       - '**/*.md'
 
