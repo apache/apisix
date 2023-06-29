@@ -488,9 +488,13 @@ curl -i -X GET "http://127.0.0.1:9090/v1/plugin/example-plugin/hello"
 
 ## register custom variable
 
-We can use variables in many places of APISIX. For example, customizing log format in http-logger, using it as the key of `limit-*` plugins. In some situations, the builtin variables are not enough. Therefore, APISIX allows developers to register their variables globally, and use them as normal builtin variables.
+We can use variables in many places of APISIX. For example, customizing log format in http-logger, using it as the key of `limit-*` plugins. In some situations, the builtin variables are not enough. Therefore, APISIX allows developers to register their variables globally, and use them as normal builtin variables. You can register simple variables like so:
 
-For instance, let's register a variable called `a6_labels_zone` to fetch the value of the `zone` label in a route:
+```
+ctx.my_var = my_data
+```
+
+For variables that require some kind of complex logic you can use the `core.ctx.register_var` function. For instance, let's register a variable called `a6_labels_zone` to fetch the value of the `zone` label in a route:
 
 ```
 local core = require "apisix.core"

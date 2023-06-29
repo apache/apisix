@@ -457,9 +457,13 @@ curl -i -X GET "http://127.0.0.1:9090/v1/plugin/example-plugin/hello"
 
 ## 注册自定义变量
 
-我们可以在 APISIX 的许多地方使用变量。例如，在 http-logger 中自定义日志格式，用它作为 `limit-*` 插件的键。在某些情况下，内置的变量是不够的。因此，APISIX 允许开发者在全局范围内注册他们的变量，并将它们作为普通的内置变量使用。
+我们可以在APISIX的很多地方使用变量。 例如，自定义http-logger中的日志格式，将其用作 `limit-*` 插件的关键。 在某些情况下，内置变量是不够的。 因此，APISIX 允许开发人员全局注册他们的变量，并将它们用作普通的内置变量。 您可以像这样注册简单的变量：
 
-例如，让我们注册一个叫做 `a6_labels_zone` 的变量来获取路由中 `zone` 标签的值。
+```
+ctx.my_var = my_data
+```
+
+对于需要某种复杂逻辑的变量，可以使用 `core.ctx.register_var` 函数。 例如，让我们注册一个名为 `a6_labels_zone` 的变量来获取路由中 `zone` 标签的值：
 
 ```
 local core = require "apisix.core"
