@@ -1410,7 +1410,7 @@ Secret 资源请求地址：/apisix/admin/secrets/{secretmanager}/{id}
 | GET  | /apisix/admin/secrets            | NULL  | 获取所有 secret 的列表。                  |
 | GET  | /apisix/admin/secrets/{manager}/{id} | NULL  | 根据 id 获取指定的 secret。           |
 | PUT  | /apisix/admin/secrets/{manager}            | {...} | 创建新的 secret 配置。                              |
-| DELETE | /apisix/admin/secrets/{manager}/{id} | NULL   | 删除具有指定 id 的secret。 |
+| DELETE | /apisix/admin/secrets/{manager}/{id} | NULL   | 删除具有指定 id 的 secret。 |
 | PATCH  | /apisix/admin/secrets/{manager}/{id}        | {...} | 更新指定 secret 的选定属性。如果要删除一个属性，可以将该属性的值设置为 null。|
 | PATCH  | /apisix/admin/secrets/{manager}/{id}/{path} | {...} | 更新路径中指定的属性。其他属性的值保持不变。
 
@@ -1456,4 +1456,4 @@ HTTP/1.1 200 OK
 
 ### 应答参数 {#secret-config-response-parameters}
 
-当前的响应是从etcd返回的。
+当前的响应是从 etcd 返回的。
