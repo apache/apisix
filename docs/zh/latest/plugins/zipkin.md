@@ -31,7 +31,7 @@ description: 本文介绍了关于 Apache APISIX zipkin 插件的基本信息及
 
 [Zipkin](https://github.com/openzipkin/zipkin) 是一个开源的分布调用链追踪系统。`zipkin` 插件基于 [Zipkin API 规范](https://zipkin.io/pages/instrumenting.html)，支持收集跟踪信息并上报给 Zipkin Collector。
 
-该插件也支持 [Apache SkyWalking](https://skywalking.apache.org/docs/main/latest/en/setup/backend/zipkin-trace/#zipkin-receiver) 和 [Jaeger](https://www.jaegertracing.io/docs/1.31/getting-started/#migrating-from-zipkin)，因为它们都支持了 Zipkin [v1](https://zipkin.io/zipkin-api/zipkin-api.yaml) 和 [v2](https://zipkin.io/zipkin-api/zipkin2-api.yaml) API。当然 `zipkin` 插件也可以与其他支持了 Zipkin v1 和 v2 API 格式的调用链追踪系统集成。
+该插件也支持 [Apache SkyWalking](https://skywalking.apache.org/docs/main/next/en/setup/backend/zipkin-trace/#zipkin-receiver) 和 [Jaeger](https://www.jaegertracing.io/docs/1.31/getting-started/#migrating-from-zipkin)，因为它们都支持了 Zipkin [v1](https://zipkin.io/zipkin-api/zipkin-api.yaml) 和 [v2](https://zipkin.io/zipkin-api/zipkin2-api.yaml) API。当然 `zipkin` 插件也可以与其他支持了 Zipkin v1 和 v2 API 格式的调用链追踪系统集成。
 
 ## 属性
 
