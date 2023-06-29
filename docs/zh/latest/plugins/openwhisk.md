@@ -62,7 +62,7 @@ description: 本文介绍了关于 Apache APISIX openwhisk 插件的基本信息
 
 ### 搭建 Apache OpenWhisk 测试环境
 
-1. 在使用 `openwhisk` 插件之前，你需要通过以下命令运行 OpenWhisk stand-alone 模式。请确保当前环境中已经安装 Docker 软件。
+1. 在使用 `openwhisk` 插件之前，你需要通过以下命令运行 OpenWhisk standalone 模式。请确保当前环境中已经安装 Docker 软件。
 
 ```shell
 docker run --rm -d \

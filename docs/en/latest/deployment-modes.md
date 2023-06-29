@@ -159,7 +159,7 @@ deployment:
 
 ## Standalone
 
-Turning on the APISIX node in Stand-alone mode will no longer use the default etcd as the configuration center.
+Turning on the APISIX node in Standalone mode will no longer use the default etcd as the configuration center.
 
 This method is more suitable for two types of users:
 
@@ -170,7 +170,7 @@ The routing rules in the `conf/apisix.yaml` file are loaded into memory immediat
 
 *Note*: Reloading and updating routing rules are all hot memory updates. There is no replacement of working processes, since it's a hot update.
 
-Since the current Admin API is based on the etcd configuration center solution, enable Admin API is not allowed when the Stand-alone mode is enabled.
+Since the current Admin API is based on the etcd configuration center solution, enable Admin API is not allowed when the Standalone mode is enabled.
 
 Standalone mode can only be enabled when we set the role of APISIX as data plane. We set `deployment.role` to `data_plane` and `deployment.role_data_plane.config_provider` to `yaml`.
 
