@@ -10,7 +10,7 @@ on:
     branches: [master, 'release/**']
     paths:
       - '**/*.md'
-  pull_request: 
+  pull_request:
     branches: [master, "release/**"]
     paths:
       - '**/*.md'
@@ -31,7 +31,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        
+
       - name: Get script
         run: |
           wget https://raw.githubusercontent.com/xuruidong/markdown-link-checker/main/link_checker.py
