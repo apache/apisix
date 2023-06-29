@@ -272,4 +272,4 @@ To run a specific test case, use the command below:
 prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 ```
 
-See [testing framework](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md) for more details.
+See [testing framework](./internal/testing-framework.md) for more details.

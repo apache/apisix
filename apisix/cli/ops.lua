@@ -58,7 +58,7 @@ local function help()
     print([[
 Usage: apisix [action] <argument>
 
-help:       show this message, then exit
+help:       print the apisix cli help message
 init:       initialize the local nginx.conf
 init_etcd:  initialize the data of etcd
 start:      start the apisix server

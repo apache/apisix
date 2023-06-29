@@ -316,12 +316,13 @@ services:
       - ./ci/pod/vector:/etc/vector/
       - ./t/certs:/certs
     ports:
-      - '3000:3000'
+      - '3000:3000' #tcp logger
       - '8127:8127/udp'
       - '43000:43000'
       - '5140:5140'
       - "18088:18088" # For splunk logging tests
       - '5150:5150/udp'
+      - "3001:3001" #http logger
     networks:
       vector_net:
 

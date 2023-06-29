@@ -229,7 +229,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 
 <img src="https://user-images.githubusercontent.com/40708551/109484046-f7c4e280-7aa5-11eb-9d71-aab90830773a.png" width="725" height="1700" />
 
-欢迎用户把自己加入到 [Powered By](https://github.com/apache/apisix/blob/master/powered-by.md) 页面。
+欢迎用户把自己加入到 [Powered By](../../../powered-by.md) 页面。
 
 ## 全景图
 

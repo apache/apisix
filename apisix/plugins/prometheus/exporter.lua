@@ -173,10 +173,15 @@ function _M.http_init(prometheus_enabled_in_stream)
             {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node",
             unpack(extra_labels("http_status"))})
 
+    local buckets = DEFAULT_BUCKETS
+    if attr and attr.default_buckets then
+        buckets = attr.default_buckets
+    end
+
     metrics.latency = prometheus:histogram("http_latency",
         "HTTP request latency in milliseconds per service in APISIX",
         {"type", "route", "service", "consumer", "node", unpack(extra_labels("http_latency"))},
-        DEFAULT_BUCKETS)
+        buckets)
 
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",

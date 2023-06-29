@@ -59,6 +59,25 @@ plugin_attr:
     export_uri: /apisix/metrics
 ```
 
+### 如何修改延迟指标中的 `default_buckets`
+
+`DEFAULT_BUCKETS` 是 `http_latency` 指标中 bucket 数组的默认值。
+
+你可以通过修改配置文件中的 `default_buckets` 来重新指定 `DEFAULT_BUCKETS`
+
+配置示例如下：
+
+```yaml title="conf/config.yaml"
+plugin_attr:
+  prometheus:
+    default_buckets:
+      - 15
+      - 55
+      - 105
+      - 205
+      - 505
+```
+
 ## API
 
 `prometheus` 插件会增加 `/apisix/prometheus/metrics` 接口或者你自定义的 URI 来暴露其指标信息。

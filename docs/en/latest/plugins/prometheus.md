@@ -77,6 +77,25 @@ plugin_attr:
                 - upstream_status: $upstream_status
 ```
 
+### Specifying `default_buckets`
+
+`DEFAULT_BUCKETS` is the default value for bucket array in `http_latency` metrics.
+
+You can change the `DEFAULT_BUCKETS` by configuring `default_buckets` attribute in you configuration file.
+
+Here is a configuration example:
+
+```yaml title="conf/config.yaml"
+plugin_attr:
+  prometheus:
+    default_buckets:
+      - 15
+      - 55
+      - 105
+      - 205
+      - 505
+```
+
 ## API
 
 This Plugin will add the API endpoint `/apisix/prometheus/metrics` or your custom export URI for exposing the metrics.

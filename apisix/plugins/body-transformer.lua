@@ -25,6 +25,7 @@ local str_format        = string.format
 local type              = type
 local pcall             = pcall
 local pairs             = pairs
+local next              = next
 
 
 local transform_schema = {
@@ -74,6 +75,10 @@ end
 
 local function remove_namespace(tbl)
     for k, v in pairs(tbl) do
+        if type(v) == "table" and next(v) == nil then
+            v = ""
+            tbl[k] = v
+        end
         if type(k) == "string" then
             local newk = k:match(".*:(.*)")
             if newk then
@@ -123,6 +128,8 @@ local function transform(conf, body, typ, ctx)
                 core.log.error(err, ", body=", body)
                 return nil, 400, err
             end
+        else
+            core.log.warn("no input format to parse ", typ, " body")
         end
     end
 
