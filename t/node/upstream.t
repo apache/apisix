@@ -297,6 +297,7 @@ GET /get
 qr/"Host": "httpbin.org"/
 --- no_error_log
 [error]
+--- timeout: 20
 
 
 
