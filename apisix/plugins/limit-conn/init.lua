@@ -104,6 +104,12 @@ function _M.decrease(conf, ctx)
         return
     end
 
+    local is_http = ctx.config.subsystem == "http"
+    if not is_http then
+        core.log.warn("The limit-conn plugin is not applicable in stream mode")
+        return
+    end
+
     for i = 1, #limit_conn, 4 do
         local lim = limit_conn[i]
         local key = limit_conn[i + 1]
@@ -125,7 +131,6 @@ function _M.decrease(conf, ctx)
         core.log.debug("request latency is ", latency) -- for test
 
         if not latency then
-            core.log.warn("The limit-conn plugin is not applicable in stream mode")
             return
         end
 

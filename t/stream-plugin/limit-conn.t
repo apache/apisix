@@ -21,7 +21,6 @@ no_long_string();
 no_shuffle();
 no_root_location();
 
-
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -341,7 +340,7 @@ The value of the configured key is empty, use client IP instead
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local ctx = { proxy_passed = false}
+            local ctx = { proxy_passed = false,config={} }
             ctx.limit_conn = core.tablepool.fetch("plugin#limit-conn", 0, 6)
             local lrucache = core.lrucache.new({
                  type = "plugin",
