@@ -110,7 +110,7 @@ function _M.get_plugins_list(subsystem)
     local plugins
     if subsystem == "stream" then
         plugins = core.config.local_conf().stream_plugins
-    else 
+    else
         plugins = core.config.local_conf().plugins
     end
 

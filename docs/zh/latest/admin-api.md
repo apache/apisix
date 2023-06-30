@@ -1319,7 +1319,7 @@ Content-Type: text/plain
 
 Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 
-### 请求参数 
+### 请求参数
 
 | 名称 | 描述 | 默认 |
 | --------- | -------------------------------------- | -------- |
