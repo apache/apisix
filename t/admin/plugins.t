@@ -143,7 +143,7 @@ ext-plugin-post-resp
 GET /apisix/admin/plugins/asdf
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to load plugin asdf"}
+{"error_msg":"failed to load plugin asdf in subsystem http"}
 
 
 
