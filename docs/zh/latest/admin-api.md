@@ -1325,7 +1325,7 @@ Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 | --------- | -------------------------------------- | -------- |
 | subsystem | 插件子系统。 | http |
 
-可以在子系统上过滤插件，以便在通过查询参数传递的子系统中搜索 ({plugin_name})。 请注意，此查询参数在“/apisix/admin/plugins/list”上不可用
+可以在子系统上过滤插件，以便在通过查询参数传递的子系统中搜索 ({plugin_name})。请注意，此查询参数在“/apisix/admin/plugins/list”上不可用
 
 ### 请求方法 {#plugin-request-methods}
 
@@ -1366,7 +1366,7 @@ Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 
 你可以使用 `/apisix/admin/plugins?all=true` 接口获取所有插件的所有属性，每个插件包括 `name`，`priority`，`type`，`schema`，`consumer_schema` 和 `version`。
 
-您可以使用“/apisix/admin/plugins?all=true” API 获取所有插件的所有属性。 查询参数 `?all=true` 将很快被弃用。
+您可以使用“/apisix/admin/plugins?all=true”API 获取所有插件的所有属性。查询参数 `?all=true` 将很快被弃用。
 
 :::
 
