@@ -31,7 +31,9 @@ local networks = {
     "eth-sepolia",
     "polygon-mainnet",
     "cfx-core",
+    "cfx-core-testnet",
     "cfx-espace",
+    "cfx-espace-testnet",
     "arb-mainnet",
     "opt-mainnet",
     "scroll-alpha",
@@ -39,6 +41,10 @@ local networks = {
     "starknet-mainnet",
     "starknet-testnet",
     "base-testnet",
+    "zksync-era-mainnet",
+    "zksync-era-testnet",
+    "linea-mainnet",
+    "linea-testnet",
 
 
     -- staging
@@ -46,7 +52,9 @@ local networks = {
     "staging-eth-sepolia",
     "staging-polygon-mainnet",
     "staging-cfx-core",
+    "staging-cfx-core-testnet",
     "staging-cfx-espace",
+    "staging-cfx-espace-testnet",
     "staging-arb-mainnet",
     "staging-opt-mainnet",
     "staging-scroll-alpha",
@@ -54,6 +62,10 @@ local networks = {
     "staging-starknet-mainnet",
     "staging-starknet-testnet",
     "staging-base-testnet",
+    "staging-zksync-era-mainnet",
+    "staging-zksync-era-testnet",
+    "staging-linea-mainnet",
+    "staging-linea-testnet",
 }
 
 local web3_methods = {
@@ -392,19 +404,25 @@ function _M.init()
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, trace_methods, debug_methods)
         elseif network == "eth-sepolia" or network == "staging-eth-sepolia" or
-            network == "staging-cfx-espace" or network == "cfx-espace" then
+            network == "cfx-espace" or network == "staging-cfx-espace" or
+            network == "cfx-espace-testnet" or network == "staging-cfx-espace-testnet" then
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, trace_methods)
         elseif network == "arb-mainnet" or network == "opt-mainnet" or
             network == "staging-arb-mainnet" or network == "staging-opt-mainnet" or
             network == "staging-base-testnet" or network == "base-testnet" or
-            network == "staging-scroll-alpha" or network == "scroll-alpha" then
+            network == "staging-scroll-alpha" or network == "scroll-alpha" or
+            network == "staging-zksync-era-mainnet" or network == "zksync-era-mainnet" or
+            network == "staging-zksync-era-testnet" or network == "zksync-era-testnet" or
+            network == "staging-linea-mainnet" or network == "linea-mainnet" or
+            network == "staging-linea-testnet" or network == "linea-testnet" then
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, debug_methods)
         elseif network == "polygon-mainnet" or network == "staging-polygon-mainnet" then
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods, bor_methods)
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, bor_methods, trace_methods)
-        elseif network == "cfx-core" or network == "staging-cfx-core" then
+        elseif network == "cfx-core" or network == "staging-cfx-core" or
+            network == "cfx-core-testnet" or network == "staging-cfx-core-testnet" then
             _M.free_list[network] = merge_methods(cfx_methods, cfx_pos_methods)
             _M.paid_list[network] = merge_methods(cfx_methods, cfx_pos_methods, cfx_trace_methods)
         elseif network == "ckb-mirana" or network == "staging-ckb-mirana" then
