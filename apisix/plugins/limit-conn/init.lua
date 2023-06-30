@@ -22,19 +22,16 @@ if ngx.config.subsystem == "stream" then
     shdict_name = shdict_name .. "-stream"
 end
 
-
 local lrucache = core.lrucache.new({
     type = "plugin",
 })
 local _M = {}
 
-
 local function create_limit_obj(conf)
     core.log.info("create new limit-conn plugin instance")
     return limit_conn_new(shdict_name, conf.conn, conf.burst,
-                          conf.default_conn_delay)
+            conf.default_conn_delay)
 end
-
 
 function _M.increase(conf, ctx)
     core.log.info("ver: ", ctx.conf_version)
@@ -101,7 +98,6 @@ function _M.increase(conf, ctx)
     end
 end
 
-
 function _M.decrease(conf, ctx)
     local limit_conn = ctx.limit_conn
     if not limit_conn then
@@ -112,7 +108,7 @@ function _M.decrease(conf, ctx)
         local lim = limit_conn[i]
         local key = limit_conn[i + 1]
         local delay = limit_conn[i + 2]
-        local use_delay =  limit_conn[i + 3]
+        local use_delay = limit_conn[i + 3]
 
         local latency
         if not use_delay then
@@ -128,10 +124,15 @@ function _M.decrease(conf, ctx)
         end
         core.log.debug("request latency is ", latency) -- for test
 
+        if not latency then
+            core.log.warn("The limit-conn plugin is not applicable in stream mode")
+            return
+        end
+
         local conn, err = lim:leaving(key, latency)
         if not conn then
             core.log.error("failed to record the connection leaving request: ",
-                           err)
+                    err)
             break
         end
     end
@@ -140,6 +141,5 @@ function _M.decrease(conf, ctx)
     ctx.limit_conn = nil
     return
 end
-
 
 return _M
