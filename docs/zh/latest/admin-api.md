@@ -1394,3 +1394,66 @@ Plugin 资源请求地址：/apisix/admin/stream_routes/{id}
 | protocol.conf    | 否    | 配置     | 协议特定的配置。                                                               |                    |
 
 你可以查看 [Stream Proxy](./stream-proxy.md#更多-route-匹配选项) 了解更多过滤器的信息。
+
+## Secret
+
+Secret 指的是 `Secrets Management`（密钥管理），可以使用任何支持的密钥管理器，例如 `vault`。
+
+### 请求地址 {#secret-config-uri}
+
+Secret 资源请求地址：/apisix/admin/secrets/{secretmanager}/{id}
+
+### 请求方法 {#secret-config-request-methods}
+
+| 名称 | 请求 URI                          | 请求 body | 描述                                        |
+| :--: | :----------------------------: | :---: | :---------------------------------------: |
+| GET  | /apisix/admin/secrets            | NULL  | 获取所有 secret 的列表。                  |
+| GET  | /apisix/admin/secrets/{manager}/{id} | NULL  | 根据 id 获取指定的 secret。           |
+| PUT  | /apisix/admin/secrets/{manager}            | {...} | 创建新的 secret 配置。                              |
+| DELETE | /apisix/admin/secrets/{manager}/{id} | NULL   | 删除具有指定 id 的 secret。 |
+| PATCH  | /apisix/admin/secrets/{manager}/{id}        | {...} | 更新指定 secret 的选定属性。如果要删除一个属性，可以将该属性的值设置为 null。|
+| PATCH  | /apisix/admin/secrets/{manager}/{id}/{path} | {...} | 更新路径中指定的属性。其他属性的值保持不变。
+
+### body 请求参数 {#secret-config-body-requset-parameters}
+
+当 `{secretmanager}` 是 `vault` 时：
+
+| 名称  | 必选项 | 类型        | 描述                                                                                                        | 例子                                          |
+| ----------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| uri    | 是     | URI        |  Vault 服务器的 URI                                                 |                                                  |
+| prefix    | 是    | 字符串       | 密钥前缀
+| token     | 是    | 字符串       | Vault 令牌 |                                                  |
+
+配置示例：
+
+```shell
+{
+    "uri": "https://localhost/vault",
+    "prefix": "/apisix/kv",
+    "token": "343effad"
+}
+
+```
+
+使用示例：
+
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/secrets/vault/test2 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "http://xxx/get",
+    "prefix" : "apisix",
+    "token" : "apisix"
+}'
+```
+
+```shell
+HTTP/1.1 200 OK
+...
+
+{"key":"\/apisix\/secrets\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
+```
+
+### 应答参数 {#secret-config-response-parameters}
+
+当前的响应是从 etcd 返回的。
