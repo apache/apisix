@@ -135,3 +135,19 @@ fi
 
 rm conf/config_original.yaml conf/customized_config.yaml
 echo "passed: customized config.yaml copied and reverted succeeded"
+
+# Check if custom configs from previous runs are cleaned up
+
+echo "Invalid custom config
+" >> conf/customized_config.yaml
+
+./bin/apisix start -c conf/customized_config.yaml
+
+./bin/apisix start
+
+if [ $? -ne 0 ];then
+    echo "failed: could not start apisix with valid config subsequently after trying to start with an invalid config"
+    exit 1
+fi
+rm conf/customized_config.yaml
+echo "All tests passed successfully"
