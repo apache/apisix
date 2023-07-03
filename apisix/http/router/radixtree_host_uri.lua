@@ -20,6 +20,7 @@ local core = require("apisix.core")
 local event = require("apisix.core.event")
 local get_services = require("apisix.http.service").services
 local service_fetch = require("apisix.http.service").get
+local apisix_router = require("apisix/router")
 local ipairs = ipairs
 local type = type
 local tab_insert = table.insert
@@ -27,14 +28,14 @@ local loadstring = loadstring
 local pairs = pairs
 local cached_router_version
 local cached_service_version
-local base        = require("resty.core.base")
-local clear_tab   = base.clear_tab
+local host_router
+local only_uri_router
 
 
 local _M = {version = 0.1}
 
 
-function _M.push_host_router(route, host_routes, only_uri_routes, all_hosts, op, rdx_rt, pre_route, pre_rdx_rt)
+local function push_host_router(route, host_routes, only_uri_routes, all_hosts, op, rdx_rt, pre_route, pre_rdx_rt)
     if type(route) ~= "table" then
         return
     end
@@ -248,16 +249,17 @@ function _M.push_host_router(route, host_routes, only_uri_routes, all_hosts, op,
 end
 
 
-function _M.create_radixtree_router(routes)
+local function create_radixtree_router(routes)
     local host_routes = {}
     local only_uri_routes = {}
+    host_router = nil
     routes = routes or {}
 
     for _, route in ipairs(routes) do
         local status = core.table.try_read_attr(route, "value", "status")
         -- check the status
         if not status or status == 1 then
-            _M.push_host_router(route, host_routes, only_uri_routes)
+            push_host_router(route, host_routes, only_uri_routes)
         end
     end
 
@@ -267,7 +269,6 @@ function _M.create_radixtree_router(routes)
         local sub_router = router.new(routes)
 
         core.table.insert(host_router_routes, {
-            id = 1,
             paths = host_rev,
             filter_fun = function(vars, opts, ...)
                 return sub_router:dispatch(vars.uri, opts, ...)
@@ -278,34 +279,84 @@ function _M.create_radixtree_router(routes)
         })
     end
 
-    _M.host_routes = host_routes
-
-    local router_module = require("apisix.router")
-    if router_module.router_http then
-        event.push(event.CONST.BUILD_ROUTER, routes)
-    end
+    event.push(event.CONST.BUILD_ROUTER, routes)
 
     if #host_router_routes > 0 then
-        _M.host_router = router.new(host_router_routes)
+        host_router = router.new(host_router_routes)
     end
 
     -- create router: only_uri_router
-    _M.only_uri_router = router.new(only_uri_routes)
-
+    only_uri_router = router.new(only_uri_routes)
     return true
+end
+
+
+local function incremental_operate_radixtree(routes)
+    if apisix_router.need_create_radixtree then
+        core.log.notice("create radixtree uri after load_full_data.", #routes)
+        create_radixtree_router(routes)
+        apisix_router.need_create_radixtree = false
+        return
+    end
+
+    local sync_tb = apisix_router.sync_tb
+    local op, cur_rt, lst_rt, err
+    local router_opts = {
+        no_param_match = true
+    }
+    for k, v in pairs(sync_tb) do
+        op = sync_tb[k]["op"]
+        cur_rt = sync_tb[k]["cur_route"]
+        lst_rt = sync_tb[k]["last_route"]
+
+        if op == "update" then
+            core.log.notice("update routes watched from etcd into radixtree.", json.encode(cur_rt))
+            err = uri_router:update_route(lst_rt, cur_rt, router_opts)
+            if err ~= nil then
+                core.log.error("update a route into radixtree failed.", json.encode(cur_rt), err)
+                return
+            end
+        elseif op == "create" then
+            core.log.notice("create routes watched from etcd into radixtree.", json.encode(cur_rt))
+            err = uri_router:add_route(cur_rt, router_opts)
+            if err ~= nil then
+                core.log.error("add routes into radixtree failed.", json.encode(cur_rt), err)
+                return
+            end
+        elseif op == "delete" then
+            core.log.notice("delete routes watched from etcd into radixtree.", json.encode(cur_rt))
+            err = uri_router:delete_route(lst_rt, router_opts)
+            if err ~= nil then
+                core.log.error("delete a route into radixtree failed.", json.encode(cur_rt), err)
+                return
+            end
+        end
+
+        sync_tb[k] = nil
+    end
+
+    apisix_router.sync_tb = sync_tb
 end
 
 
     local match_opts = {}
 function _M.match(api_ctx)
+    local user_routes = _M.user_routes
+    local _, service_version = get_services()
+    if not cached_router_version or cached_router_version ~= user_routes.conf_version
+        or not cached_service_version or cached_service_version ~= service_version
+    then
+        --create_radixtree_router(user_routes.values)
+        incremental_operate_radixtree(user_routes.values)
+        cached_router_version = user_routes.conf_version
+        cached_service_version = service_version
+    end
+
     return _M.matching(api_ctx)
 end
 
 
 function _M.matching(api_ctx)
-    local host_router = _M.host_router
-    local only_uri_router = _M.only_uri_router
-
     core.log.info("route match mode: radixtree_host_uri")
 
     core.table.clear(match_opts)
