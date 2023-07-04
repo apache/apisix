@@ -79,7 +79,7 @@ apisix:
   #  - 1.1.1.1
   #  - 8.8.8.8
   #dns_resolver_valid: 30         # if given, override the TTL of the valid records. The unit is second.
-  
+
   # The URI normalization in servlet is a little different from the RFC's.
   # See https://github.com/jakartaee/servlet/blob/master/spec/src/main/asciidoc/servlet-spec-body.adoc#352-uri-path-canonicalization,
   # which is used under Tomcat.
