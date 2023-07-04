@@ -75,7 +75,7 @@ if ! echo "$out" | grep "nginx.pid exists but there's no corresponding process w
 fi
 make stop
 echo "pass: no corresponding process"
-
+sleep 0.5
 # check running when run repeatedly
 out=$(make run; make run || true)
 if ! echo "$out" | grep "APISIX is running"; then
@@ -85,7 +85,7 @@ fi
 
 make stop
 echo "pass: check APISIX running"
-
+sleep 0.5
 # check customized config.yaml is copied and reverted.
 
 git checkout conf/config.yaml
@@ -126,7 +126,7 @@ if [ ! $code -eq 200 ]; then
 fi
 
 make stop
-
+sleep 0.5
 if ! cmp -s "conf/config.yaml" "conf/config_original.yaml"; then
     rm conf/config_original.yaml conf/customized_config.yaml
     echo "failed: customized config.yaml reverted failed"
@@ -151,3 +151,4 @@ if [ $? -ne 0 ];then
 fi
 rm conf/customized_config.yaml
 echo "All tests passed successfully"
+./bin/apisix stop
