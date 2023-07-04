@@ -18,7 +18,7 @@ local require = require
 local core = require("apisix.core")
 local base_router = require("apisix.http.route")
 local get_services = require("apisix.http.service").services
-local apisix_router = require("apisix/router")
+local apisix_router = require("apisix.router")
 local json = require("apisix.core.json")
 local cached_router_version
 local cached_service_version

@@ -24,9 +24,17 @@ local error   = error
 local ipairs  = ipairs
 local table        = require("apisix.core.table")
 local json         = require("apisix.core.json")
+local sub_str      = string.sub
 
 
 local _M = {version = 0.3}
+
+_M.need_create_radixtree = true
+
+
+local function short_key(self, str)
+    return sub_str(str, #self.key + 2)
+end
 
 
 local function filter(route, pre_route_or_size, obj)
@@ -34,20 +42,23 @@ local function filter(route, pre_route_or_size, obj)
     route.update_count = 0
 
     route.has_domain = false
-    if not route.value then
+    if route.value then
+        if route.value.host then
+            route.value.host = str_lower(route.value.host)
+        elseif route.value.hosts then
+            for i, v in ipairs(route.value.hosts) do
+                route.value.hosts[i] = str_lower(v)
+            end
+        end
+
+        apisix_upstream.filter_upstream(route.value.upstream, route)
+    end
+
+    core.log.info("filter route: ", core.json.delay_encode(route, true))
+
+    if not obj then
         return
     end
-
-    if route.value.host then
-        route.value.host = str_lower(route.value.host)
-    elseif route.value.hosts then
-        for i, v in ipairs(route.value.hosts) do
-            route.value.hosts[i] = str_lower(v)
-        end
-    end
-
-    apisix_upstream.filter_upstream(route.value.upstream, route)
-
     --save sync route and operation type into a map
     if type(pre_route_or_size) == "number" then
         if pre_route_or_size == #obj.values then
@@ -56,8 +67,14 @@ local function filter(route, pre_route_or_size, obj)
         return
     end
 
+    local key
+    if obj.single_item then
+        key = obj.key
+    else
+        key = short_key(obj, route.key)
+    end
+
     local sync_tb = _M.sync_tb
-    local val
     if pre_route_or_size then
         if route.value then
             --update route
@@ -72,12 +89,12 @@ local function filter(route, pre_route_or_size, obj)
         else
             --delete route
             core.log.notice("delete routes watched from etcd into radixtree.", json.encode(route))
-            if not sync_tb[route.value.id] then
-                sync_tb[route.value.id] = {op = "delete", last_route = pre_route_or_size}
-            elseif sync_tb[route.value.id]["op"] == "create" then
-                sync_tb[route.value.id] = nil
-            elseif sync_tb[route.value.id]["op"] == "update" then
-                sync_tb[route.value.id] = {op = "delete", last_route = sync_tb[route.value.id]["last_route"]}
+            if not sync_tb[key] then
+                sync_tb[key] = {op = "delete", last_route = pre_route_or_size}
+            elseif sync_tb[key]["op"] == "create" then
+                sync_tb[key] = nil
+            elseif sync_tb[key]["op"] == "update" then
+                sync_tb[key] = {op = "delete", last_route = sync_tb[route.value.id]["last_route"]}
             end
         end
     elseif route.value then
