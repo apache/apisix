@@ -313,7 +313,6 @@ end
 local function incremental_operate_radixtree(routes)
     local sync_tb = apisix_router.sync_tb
     if apisix_router.need_create_radixtree then
-        core.log.error("######11111#############", #routes)
         core.log.notice("create object of radixtree host uri after load_full_data or init.", #routes)
         create_radixtree_router(routes)
         apisix_router.need_create_radixtree = false
@@ -322,8 +321,6 @@ local function incremental_operate_radixtree(routes)
         end
         return
     end
-
-    core.log.error("######22222222#############")
 
     local operate, route, last_route, err
     local router_opts = {
@@ -349,8 +346,6 @@ local function incremental_operate_radixtree(routes)
         local rdx_r = {}
         local pre_rdx_r = {}
         local op = {add={}, upd={}, del={}}
-
-        
 
         push_host_router(route, host_routes, only_uri_routes, all_hosts, op, rdx_r, last_route, pre_rdx_r)
 
@@ -389,21 +384,18 @@ local function incremental_operate_radixtree(routes)
                 for _, j in ipairs(v) do
                     core.log.notice("add the route with reverse host watched from etcd into radixtree.", json.encode(route), j)
                     local r_opt = route_opt[j]
-                    core.log.notice("!!!!!!!!!!!!!!!!!!!!11122221add!!!", k, r_opt.paths)
                     host_router:add_route(r_opt, router_opts)
                 end
             elseif k == "upd" then
                 for _, j in ipairs(v) do
                     core.log.notice("update the route with reverse host watched from etcd into radixtree.", json.encode(route), j)
                     local r_opt = route_opt[j]
-                    core.log.notice("!!!!!!!!!!!!!!!!!!!!11122221upd!!!", k, r_opt.paths)
                     host_router:update_route(r_opt, r_opt, router_opts)
                 end
             elseif k == "del" then
                 for _, j in ipairs(v) do
                     core.log.notice("delete the route with reverse host watched from etcd into radixtree.", json.encode(route), j)
                     local pre_r_opt = pre_route_opt[j]
-                    core.log.notice("!!!!!!!!!!!!!!!!!!!!11122221del!!!", k, pre_r_opt.paths)
                     host_router:delete_route(pre_r_opt, router_opts)
                 end
             end
@@ -457,7 +449,6 @@ function _M.matching(api_ctx)
 
     if host_router then
         local host_uri = api_ctx.var.host
-        core.log.error("@@@@@@@@@@@@@@@@", host_uri:reverse())
         local ok = host_router:dispatch(host_uri:reverse(), match_opts, api_ctx, match_opts)
         if ok then
             if api_ctx.real_curr_req_matched_path then
@@ -472,7 +463,6 @@ function _M.matching(api_ctx)
         end
     end
 
-    core.log.error("@@@@@@@@@@@@@@@@",api_ctx.var.uri)
     local ok = only_uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx, match_opts)
     return ok
 end

@@ -20,6 +20,7 @@ local base_router = require("apisix.http.route")
 local get_services = require("apisix.http.service").services
 local apisix_router = require("apisix.router")
 local json = require("apisix.core.json")
+local table = require("apisix.core.table")
 local cached_router_version
 local cached_service_version
 local uri_routes = {}
@@ -32,6 +33,7 @@ local _M = {version = 0.2}
 local function incremental_operate_radixtree(routes)
     local sync_tb = apisix_router.sync_tb
     if apisix_router.need_create_radixtree then
+        core.log.error("@@@@@@@@@@create_radixtree_uri_router@@@")
         uri_router = base_router.create_radixtree_uri_router(routes, uri_routes, false)
         apisix_router.need_create_radixtree = false
         for k, _ in pairs(sync_tb) do
@@ -52,7 +54,7 @@ local function incremental_operate_radixtree(routes)
         cur_tmp = {}
         last_tmp = {}
 
-        if route then
+        if route and route.value then
             local status = table.try_read_attr(route, "value", "status")
             if status and status == 0 then
                 return
@@ -89,7 +91,7 @@ local function incremental_operate_radixtree(routes)
             }
         end
 
-        if last_route then
+        if last_route and last_route.value then
             last_tmp = {
                 id = last_route.value.id,
                 paths = last_route.value.uris or last_route.value.uri,
@@ -116,10 +118,10 @@ local function incremental_operate_radixtree(routes)
                 return
             end
         elseif op == "delete" then
-            core.log.notice("delete routes watched from etcd into radixtree.", json.encode(route))
+            core.log.notice("delete routes watched from etcd into radixtree.", json.encode(last_route))
             err = uri_router:delete_route(last_tmp, router_opts)
             if err ~= nil then
-                core.log.error("delete a route into radixtree failed.", json.encode(route), err)
+                core.log.error("delete a route into radixtree failed.", json.encode(last_route), err)
                 return
             end
         end
