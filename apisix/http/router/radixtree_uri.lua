@@ -27,13 +27,13 @@ local uri_routes = {}
 local uri_router
 local match_opts = {}
 
+
 local _M = {version = 0.2}
 
 
 local function incremental_operate_radixtree(routes)
     local sync_tb = apisix_router.sync_tb
     if apisix_router.need_create_radixtree then
-        core.log.error("@@@@@@@@@@create_radixtree_uri_router@@@")
         uri_router = base_router.create_radixtree_uri_router(routes, uri_routes, false)
         apisix_router.need_create_radixtree = false
         for k, _ in pairs(sync_tb) do
@@ -45,7 +45,7 @@ local function incremental_operate_radixtree(routes)
     local op, route, last_route, err
     local cur_tmp, last_tmp = {}, {}
     local router_opts = {
-        no_param_match = false
+        no_param_match = true
     }
     for k, v in pairs(sync_tb) do
         op = sync_tb[k]["op"]
