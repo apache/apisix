@@ -34,6 +34,8 @@ local get_ssls   = router.ssls
 local get_services = require("apisix.http.service").services
 local get_consumers = require("apisix.consumer").consumers
 local get_upstreams = require("apisix.upstream").upstreams
+local get_global_rules = require("apisix.global_rules").global_rules
+local get_global_rules_prev_index = require("apisix.global_rules").get_pre_index
 local clear_tab = core.table.clear
 local get_stream_routes = router.stream_routes
 local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
@@ -377,14 +379,15 @@ local function etcd_modify_index()
     global_max_idx = set_modify_index("consumers", consumers, consumers_ver, global_max_idx)
 
     -- global_rules
-    local global_rules = router.global_rules
+    local global_rules, global_rules_ver = get_global_rules()
     if global_rules then
-        global_max_idx = set_modify_index("global_rules", global_rules.values,
-            global_rules.conf_version, global_max_idx)
+        global_max_idx = set_modify_index("global_rules", global_rules,
+            global_rules_ver, global_max_idx)
 
         -- prev_index
         key_values[1] = "prev_index"
-        metrics.etcd_modify_indexes:set(global_rules.prev_index, key_values)
+        local prev_index = get_global_rules_prev_index()
+        metrics.etcd_modify_indexes:set(prev_index, key_values)
 
     else
         global_max_idx = set_modify_index("global_rules", nil, nil, global_max_idx)
