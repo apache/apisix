@@ -383,20 +383,20 @@ local function incremental_operate_radixtree(routes)
         for k, v in pairs(op) do
             if k == "add" then
                 for _, j in ipairs(v) do
-                    core.log.notice("add the route with reverse host watched from etcd into radixtree.", json.encode(route), j)
                     local r_opt = route_opt[j]
+                    core.log.notice("add the route with reverse host watched from etcd into radixtree.", r_opt.id, r_opt.paths)
                     host_router:add_route(r_opt, router_opts)
                 end
             elseif k == "upd" then
                 for _, j in ipairs(v) do
-                    core.log.notice("update the route with reverse host watched from etcd into radixtree.", json.encode(route), j)
                     local r_opt = route_opt[j]
+                    core.log.notice("update the route with reverse host watched from etcd into radixtree.", r_opt.id, r_opt.paths)
                     host_router:update_route(r_opt, r_opt, router_opts)
                 end
             elseif k == "del" then
                 for _, j in ipairs(v) do
-                    core.log.notice("delete the route with reverse host watched from etcd into radixtree.", json.encode(route), j)
                     local pre_r_opt = pre_route_opt[j]
+                    core.log.notice("delete the route with reverse host watched from etcd into radixtree.", pre_r_opt.id, pre_r_opt.paths)
                     host_router:delete_route(pre_r_opt, router_opts)
                 end
             end
