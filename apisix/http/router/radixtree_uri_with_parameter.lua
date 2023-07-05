@@ -21,6 +21,7 @@ local get_services = require("apisix.http.service").services
 local apisix_router = require("apisix.router")
 local json = require("apisix.core.json")
 local table = require("apisix.core.table")
+local event = require("apisix.core.event")
 local cached_router_version
 local cached_service_version
 local uri_routes = {}
@@ -43,10 +44,12 @@ local function incremental_operate_radixtree(routes)
     end
 
     local op, route, last_route, err
-    local cur_tmp, last_tmp = {}, {}
+    local cur_tmp, last_tmp
     local router_opts = {
         no_param_match = false
     }
+
+    event.push(event.CONST.BUILD_ROUTER, routes)
     for k, v in pairs(sync_tb) do
         op = sync_tb[k]["op"]
         route = sync_tb[k]["cur_route"]

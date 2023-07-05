@@ -323,14 +323,13 @@ local function incremental_operate_radixtree(routes)
         return
     end
 
-    local operate, route, last_route, err
+    local route, last_route
     local router_opts = {
         no_param_match = true
     }
 
     event.push(event.CONST.BUILD_ROUTER, routes)
     for k, _ in pairs(sync_tb) do
-        operate = sync_tb[k]["op"]
         route = sync_tb[k]["cur_route"]
         last_route = sync_tb[k]["last_route"]
 
@@ -343,7 +342,7 @@ local function incremental_operate_radixtree(routes)
 
         local route_opt, pre_route_opt = {}, {}
         local all_hosts = {}
-        local hosts, pre_hosts = nil, nil
+        local hosts, pre_hosts
         local rdx_r = {}
         local pre_rdx_r = {}
         local op = {add={}, upd={}, del={}}

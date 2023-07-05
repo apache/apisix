@@ -17,14 +17,13 @@
 local require = require
 local http_route = require("apisix.http.route")
 local apisix_upstream = require("apisix.upstream")
-local core    = require("apisix.core")
+local core = require("apisix.core")
+local json = require("apisix.core.json")
 local plugin_checker = require("apisix.plugin").plugin_checker
 local str_lower = string.lower
-local error   = error
-local ipairs  = ipairs
-local table        = require("apisix.core.table")
-local json         = require("apisix.core.json")
-local sub_str      = string.sub
+local error = error
+local ipairs = ipairs
+local sub_str = string.sub
 
 
 local _M = {version = 0.3}
@@ -82,7 +81,8 @@ local function filter(route, pre_route_or_size, obj)
             if not sync_tb[route.value.id] then
                 sync_tb[route.value.id] = {op = "update", last_route = pre_route_or_size, cur_route = route}
             elseif sync_tb[route.value.id]["op"] == "update" then
-                sync_tb[route.value.id] = {op = "update", last_route = sync_tb[route.value.id]["last_route"], cur_route = route}
+                sync_tb[route.value.id] = {op = "update", last_route = sync_tb[route.value.id]["last_route"],
+                                            cur_route = route}
             elseif sync_tb[route.value.id]["op"] == "create" then
                 sync_tb[route.value.id] = {op = "create", cur_route = route}
             end
@@ -94,7 +94,7 @@ local function filter(route, pre_route_or_size, obj)
             elseif sync_tb[key]["op"] == "create" then
                 sync_tb[key] = nil
             elseif sync_tb[key]["op"] == "update" then
-                sync_tb[key] = {op = "delete", last_route = sync_tb[route.value.id]["last_route"]}
+                sync_tb[key] = {op = "delete", last_route = sync_tb[key]["last_route"]}
             end
         end
     elseif route.value then
@@ -103,7 +103,8 @@ local function filter(route, pre_route_or_size, obj)
         if not sync_tb[route.value.id] then
             sync_tb[route.value.id] = {op = "create", cur_route = route}
         elseif sync_tb[route.value.id]["op"] == "delete" then
-            sync_tb[route.value.id] = {op = "update", cur_route = route, last_route = sync_tb[route.value.id]["last_route"]}
+            sync_tb[route.value.id] = {op = "update", cur_route = route, 
+                                        last_route = sync_tb[route.value.id]["last_route"]}
         end
     else
         core.log.error("invalid operation type for a route.", route.key)
