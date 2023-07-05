@@ -244,6 +244,7 @@ local function push_host_router(route, host_routes, only_uri_routes, all_hosts, 
         if #routes == 0 then
             host_routes[k] = nil
             if op then
+                core.log.error("###################del####", k)
                 table.insert(op["del"], k)
             end
         else
@@ -288,6 +289,7 @@ local function create_radixtree_router(routes)
         local sub_router = router.new(routes)
 
         core.table.insert(host_router_routes, {
+            id = 1,
             paths = host_rev,
             filter_fun = function(vars, opts, ...)
                 return sub_router:dispatch(vars.uri, opts, ...)
@@ -394,7 +396,7 @@ local function incremental_operate_radixtree(routes)
                 end
             elseif k == "del" then
                 for _, j in ipairs(v) do
-                    core.log.notice("delete the route with reverse host watched from etcd into radixtree.", json.encode(route), j)
+                    core.log.notice("delete the route with reverse host watched from etcd into radixtree.", json.encode(route), j, pre_r_opt.id)
                     local pre_r_opt = pre_route_opt[j]
                     host_router:delete_route(pre_r_opt, router_opts)
                 end
@@ -411,7 +413,6 @@ local function incremental_operate_radixtree(routes)
             core.log.notice("delete the route with uri watched from etcd into radixtree.", json.encode(last_route))
             only_uri_router:delete_route(pre_rdx_r, router_opts)
         end
-        
 
         sync_tb[k] = nil
     end
