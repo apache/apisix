@@ -17,6 +17,7 @@
 
 local core    = require("apisix.core")
 local plugin_checker = require("apisix.plugin").plugin_checker
+local error = error
 
 
 local _M = {}
