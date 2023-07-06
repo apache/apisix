@@ -24,9 +24,9 @@ git checkout conf/config.yaml
 # remove stale conf server sock
 touch conf/config_listen.sock
 ./bin/apisix start
-sleep 0.5
+sleep 5
 ./bin/apisix stop
-sleep 0.5
+sleep 5
 
 if [ -e conf/config_listen.sock ]; then
     echo "failed: should remove stale conf server sock"
@@ -35,9 +35,9 @@ fi
 
 # don't remove stale conf server sock when APISIX is running
 ./bin/apisix start
-sleep 0.5
+sleep 5
 ./bin/apisix start
-sleep 0.5
+sleep 5
 
 if [ ! -e conf/config_listen.sock ]; then
     echo "failed: should not remove stale conf server sock"
@@ -45,7 +45,7 @@ if [ ! -e conf/config_listen.sock ]; then
 fi
 
 ./bin/apisix stop
-sleep 0.5
+sleep 5
 
 echo "passed: stale conf server sock removed"
 
@@ -59,14 +59,14 @@ if echo "$out" | grep "APISIX is running"; then
 fi
 
 ./bin/apisix stop
-sleep 0.5
+sleep 5
 rm logs/nginx.pid || true
 
 # check no corresponding process
 make run
 oldpid=$(< logs/nginx.pid)
 make stop
-sleep 0.5
+sleep 5
 echo $oldpid > logs/nginx.pid
 out=$(make run || true)
 if ! echo "$out" | grep "nginx.pid exists but there's no corresponding process with pid"; then
@@ -75,8 +75,8 @@ if ! echo "$out" | grep "nginx.pid exists but there's no corresponding process w
 fi
 make stop
 echo "pass: no corresponding process"
-sleep 0.5
-# check running when run repeatedly
+sleep 5
+
 out=$(make run; make run || true)
 if ! echo "$out" | grep "APISIX is running"; then
     echo "failed: should find APISIX running"
@@ -85,7 +85,7 @@ fi
 
 make stop
 echo "pass: check APISIX running"
-sleep 0.5
+sleep 5
 # check customized config.yaml is copied and reverted.
 
 git checkout conf/config.yaml
@@ -126,7 +126,7 @@ if [ ! $code -eq 200 ]; then
 fi
 
 make stop
-sleep 0.5
+sleep 5
 if ! cmp -s "conf/config.yaml" "conf/config_original.yaml"; then
     rm conf/config_original.yaml conf/customized_config.yaml
     echo "failed: customized config.yaml reverted failed"
@@ -141,8 +141,11 @@ echo "passed: customized config.yaml copied and reverted succeeded"
 echo "Invalid custom config
 " >> conf/customized_config.yaml
 
-./bin/apisix start -c conf/customized_config.yaml
-
+if ./bin/apisix start -c conf/customized_config.yaml; then
+    echo "failed: apisix still start with invalid customized config.yaml"
+    exit 1
+fi
+sleep 5
 ./bin/apisix start
 
 if [ $? -ne 0 ];then
