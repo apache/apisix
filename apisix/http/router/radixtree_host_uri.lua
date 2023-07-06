@@ -20,9 +20,10 @@ local core = require("apisix.core")
 local event = require("apisix.core.event")
 local get_services = require("apisix.http.service").services
 local service_fetch = require("apisix.http.service").get
-local apisix_router = require("apisix.router")
+local ar = require("apisix.router")
 local table = require("apisix.core.table")
 local json = require("apisix.core.json")
+local rdx = require("resty.radixtree")
 local ipairs = ipairs
 local type = type
 local tab_insert = table.insert
@@ -32,245 +33,99 @@ local cached_router_version
 local cached_service_version
 local host_router
 local only_uri_router
-local host_routes = {}
-local only_uri_routes = {}
 
 
 local _M = {version = 0.1}
 
 
-local function empty_func() end
-
-
-local function push_host_router(route, host_routes, only_uri_routes, all_hosts, op, rdx_rt, pre_route, pre_rdx_rt)
-    if route and type(route) ~= "table" then
+local function push_host_router(route, host_routes, only_uri_routes)
+    if type(route) ~= "table" or route.value == nil then
         return
     end
 
-    local radixtree_route, pre_radixtree_route = {}, {}
-    local hosts
-    if route and route.value then
-        hosts = route.value.hosts
-        if not hosts then
-            if route.value.host then
-                hosts = {route.value.host}
-            elseif route.value.service_id then
-                local service = service_fetch(route.value.service_id)
-                if not service then
-                    core.log.error("failed to fetch service configuration by ",
-                                    "id: ", route.value.service_id)
-                    -- we keep the behavior that missing service won't affect the route matching
-                else
-                    hosts = service.value.hosts
-                end
-            end
+    local filter_fun, err
+    if route.value.filter_func then
+        filter_fun, err = loadstring(
+                                "return " .. route.value.filter_func,
+                                "router#" .. route.value.id)
+        if not filter_fun then
+            core.log.error("failed to load filter function: ", err,
+                            " route id: ", route.value.id)
+            return
         end
 
-        local filter_fun, err
-        if route.value and route.value.filter_func then
-            filter_fun, err = loadstring(
-                                    "return " .. route.value.filter_func,
-                                    "router#" .. route.value.id)
-            if not filter_fun then
-                core.log.error("failed to load filter function: ", err,
-                                " route id: ", route.value.id)
-                return
-            end
+        filter_fun = filter_fun()
+    end
 
-            filter_fun = filter_fun()
-        end
-
-        radixtree_route = {
-            id = route.value.id,
-            paths = route.value.uris or route.value.uri,
-            methods = route.value.methods,
-            priority = route.value.priority,
-            remote_addrs = route.value.remote_addrs
-                        or route.value.remote_addr,
-            vars = route.value.vars,
-            filter_fun = filter_fun,
-            handler = function (api_ctx, match_opts)
-                api_ctx.matched_params = nil
-                api_ctx.matched_route = route
-                api_ctx.curr_req_matched = match_opts.matched
-                api_ctx.real_curr_req_matched_path = match_opts.matched._path
-            end
-        }
-
-        if rdx_rt ~= nil then
-            for k, v in pairs(radixtree_route) do
-                rdx_rt[k] = v
+    local hosts = route.value.hosts
+    if not hosts then
+        if route.value.host then
+            hosts = {route.value.host}
+        elseif route.value.service_id then
+            local service = service_fetch(route.value.service_id)
+            if not service then
+                core.log.error("failed to fetch service configuration by ",
+                                "id: ", route.value.service_id)
+                -- we keep the behavior that missing service won't affect the route matching
+            else
+                hosts = service.value.hosts
             end
         end
     end
 
-    if hosts == nil and all_hosts == nil then
+    local radixtree_route = {
+        paths = route.value.uris or route.value.uri,
+        methods = route.value.methods,
+        priority = route.value.priority,
+        remote_addrs = route.value.remote_addrs
+                       or route.value.remote_addr,
+        vars = route.value.vars,
+        filter_fun = filter_fun,
+        handler = function (api_ctx, match_opts)
+            api_ctx.matched_params = nil
+            api_ctx.matched_route = route
+            api_ctx.curr_req_matched = match_opts.matched
+            api_ctx.real_curr_req_matched_path = match_opts.matched._path
+        end
+    }
+
+    if hosts == nil then
         core.table.insert(only_uri_routes, radixtree_route)
         return
     end
 
-    local pre_hosts
-    if pre_route and pre_route.value then
-        pre_hosts = pre_route.value.hosts
-        if not pre_hosts then
-            if pre_route.value.host then
-                pre_hosts = {pre_route.value.host}
-            elseif pre_route.value.service_id then
-                local service = service_fetch(pre_route.value.service_id)
-                if not service then
-                    core.log.error("failed to fetch service configuration by ",
-                                    "id: ", pre_route.value.service_id)
-                    -- we keep the behavior that missing service won't affect the route matching
-                else
-                    pre_hosts = service.value.hosts
-                end
-            end
-        end
+    local match_opts = {}
+    match_opts.method = route.value.methods[1]
+    match_opts.remote_addr = route.value.remote_addrs[1] or route.value.remote_addr
+    match_opts.vars = route.value.vars
+    match_opts.host = route.value.host or route.value.hosts[1]
+    match_opts.matched = core.tablepool.fetch("matched_route_record", 0, 4)
 
-        local filter_fun, err
-        if pre_route.value and pre_route.value.filter_func then
-            filter_fun, err = loadstring(
-                                    "return " .. pre_route.value.filter_func,
-                                    "router#" .. pre_route.value.id)
-            if not filter_fun then
-                core.log.error("failed to load filter function: ", err,
-                                " route id: ", pre_route.value.id)
-                return
-            end
+    local sr = rdx.match(match_opts.host:reverse(), match_opts)["sub_route"]
 
-            filter_fun = filter_fun()
-        end
-
-        pre_radixtree_route = {
-            id = pre_route.value.id,
-            paths = pre_route.value.uris or pre_route.value.uri,
-            methods = pre_route.value.methods,
-            priority = pre_route.value.priority,
-            remote_addrs = pre_route.value.remote_addrs
-                           or pre_route.value.remote_addr,
-            vars = pre_route.value.vars,
-            filter_fun = filter_fun,
-            handler = function (api_ctx, match_opts)
-                api_ctx.matched_params = nil
-                api_ctx.matched_route = pre_route
-                api_ctx.curr_req_matched = match_opts.matched
-                api_ctx.real_curr_req_matched_path = match_opts.matched._path
-            end
-        }
-
-        if pre_rdx_rt ~= nil then
-            for k, v in pairs(pre_radixtree_route) do
-                pre_rdx_rt[k] = v
-            end
-        end
+    local rev = {}
+    for h in ipairs(hosts) do
+        table.insert(rev, h:reverse())
     end
-
-    if all_hosts ~= nil then
-        all_hosts["host"] = hosts
-        all_hosts["pre_host"] = pre_hosts
-    end
-
-    local pre_t = {}
-    if pre_hosts then
-        for i, h in ipairs(pre_hosts) do
-            local rev_h = h:reverse()
-            pre_t[rev_h] = 1
-        end
-    end
-
-    local t = {}
-    if hosts then
-        for i, h in ipairs(hosts) do
-            local rev_h = h:reverse()
-            t[rev_h] = 1
-        end
-    end
-
-    local comm = {}
-    for k, v in pairs(pre_t) do
-        if t[k] ~= nil then
-            tab_insert(comm, k)
-            pre_t[k] = nil
-            t[k] = nil
-        end
-    end
-
-    for _, j in ipairs(comm) do
-        local routes = host_routes[j]
-        if routes == nil then
-            core.log.error("no routes array for reverse host in the map.", j)
-            return
-        end
-
-        local found = false
-        for i, r in ipairs(routes) do
-            if r.id == radixtree_route.id then
-                routes[i] = radixtree_route
-                found = true
-                if op then
-                    table.insert(op["upd"], j)
-                end
-                break
-            end
-        end
-
-        if not found then
-            core.log.error("cannot find the route in common host's table.", j, radixtree_route.id)
-            return
-        end
-    end
-
-    for k, v in pairs(pre_t) do
-        local routes = host_routes[k]
-        if routes == nil then
-            core.log.error("no routes array for reverse host in the map.", k)
-            return
-        end
-
-        local found = false
-        for i, r in ipairs(routes) do
-            if r.id == pre_radixtree_route.id then
-                table.remove(routes, i)
-                found = true
-                break
-            end
-        end
-
-        if not found then
-            core.log.error("cannot find the route in previous host's table.", k, pre_radixtree_route.id)
-            return
-        end
-
-        if #routes == 0 then
-            host_routes[k] = nil
-            if op then
-                table.insert(op["del"], k)
-            end
-        else
-            if op then
-                table.insert(op["upd"], k)
-            end
-        end
-    end
-
-    for k, v in pairs(t) do
-        local routes = host_routes[k]
-        if routes == nil then
-            host_routes[k] = {radixtree_route}
-            if op then
-                table.insert(op["add"], k)
-            end
-        else
-            table.insert(routes, radixtree_route)
-            if op then
-                table.insert(op["upd"], k)
-            end
-        end
-    end
+    local sub_router = router.new({radixtree_route})
+    core.table.insert(host_routes, {
+        id = route.value.id,
+        paths = rev,
+        sub_r = sub_router,
+        filter_fun = function(vars, opts, ...)
+            return sub_router:dispatch(vars.uri, opts, ...)
+        end,
+        handler = function (api_ctx, match_opts)
+            api_ctx.real_curr_req_matched_host = match_opts.matched._path
+        end,
+        metadata = {sub_route=sub_router}
+    })
 end
 
 
 local function create_radixtree_router(routes)
+    local host_routes = {}
+    local only_uri_routes = {}
     host_router = nil
     routes = routes or {}
 
@@ -282,27 +137,10 @@ local function create_radixtree_router(routes)
         end
     end
 
-    -- create router: host_router
-    local host_router_routes = {}
-    for host_rev, routes in pairs(host_routes) do
-        local sub_router = router.new(routes)
-
-        core.table.insert(host_router_routes, {
-            id = 1,
-            paths = host_rev,
-            filter_fun = function(vars, opts, ...)
-                return sub_router:dispatch(vars.uri, opts, ...)
-            end,
-            handler = function (api_ctx, match_opts)
-                api_ctx.real_curr_req_matched_host = match_opts.matched._path
-            end
-        })
-    end
-
     event.push(event.CONST.BUILD_ROUTER, routes)
 
-    if #host_router_routes > 0 then
-        host_router = router.new(host_router_routes)
+    if #host_routes > 0 then
+        host_router = router.new(host_routes)
     end
 
     -- create router: only_uri_router
@@ -312,110 +150,56 @@ end
 
 
 local function incremental_operate_radixtree(routes)
-    local sync_tb = apisix_router.sync_tb
-    if apisix_router.need_create_radixtree then
+    if ar.need_create_radixtree then
         core.log.notice("create object of radixtree host uri after load_full_data or init.", #routes)
         create_radixtree_router(routes)
-        apisix_router.need_create_radixtree = false
-        for k, _ in pairs(sync_tb) do
-            sync_tb[k] = nil
-        end
+        ar.need_create_radixtree = false
+        table.clear(ar.sync_tb)
         return
     end
 
-    local route, last_route
+    local op, route, last_route
     local router_opts = {
         no_param_match = true
     }
 
     event.push(event.CONST.BUILD_ROUTER, routes)
-    for k, _ in pairs(sync_tb) do
-        route = sync_tb[k]["cur_route"]
-        last_route = sync_tb[k]["last_route"]
+    for k, _ in pairs(ar.sync_tb) do
+        op = ar.sync_tb[k]["op"]
+        route = ar.sync_tb[k]["cur_route"]
+        last_route = ar.sync_tb[k]["last_route"]
+        local host_routes = {}
+        local only_uri_routes = {}
+        local last_host = {}
+        local last_only_uri = {}
 
-        if route then
-            local status = table.try_read_attr(route, "value", "status")
-            if status and status == 0 then
+        push_host_router(route, host_routes, only_uri_routes)
+        push_host_router(last_route, last_host, last_only_uri)
+
+        if #host_routes > 0 then
+            local cur_tmp = host_routes[1] or {paths = {}}
+            local last_tmp = last_host[1] or {paths = {}}
+
+            core.log.notice("update routes watched from etcd into radixtree.", json.encode(route))
+            local err = host_router:update_route(last_tmp, cur_tmp, router_opts)
+            if err ~= nil then
+                core.log.error("update a route into radixtree failed.", json.encode(route), err)
+                return
+            end
+        else
+            local cur_tmp = only_uri_routes[1] or {paths = {}}
+            local last_tmp = last_only_uri[1] or {paths = {}}
+
+            core.log.notice("update routes watched from etcd into radixtree.", json.encode(route))
+            local err = only_uri_router:update_route(last_tmp, cur_tmp, router_opts)
+            if err ~= nil then
+                core.log.error("update a route into radixtree failed.", json.encode(route), err)
                 return
             end
         end
 
-        local route_opt, pre_route_opt = {}, {}
-        local all_hosts = {}
-        local hosts, pre_hosts
-        local rdx_r = {}
-        local pre_rdx_r = {}
-        local op = {add={}, upd={}, del={}}
-
-        push_host_router(route, host_routes, only_uri_routes, all_hosts, op, rdx_r, last_route, pre_rdx_r)
-
-        hosts = all_hosts["host"]
-        if hosts ~= nil then
-            for _, h in ipairs(hosts) do
-                local host_rev = h:reverse()
-                local routes = host_routes[host_rev]
-                local sub_router = router.new(routes)
-                route_opt[host_rev] = {
-                    id = 1,
-                    paths = host_rev,
-                    filter_fun = function(vars, opts, ...)
-                        return sub_router:dispatch(vars.uri, opts, ...)
-                    end,
-                    handler = empty_func,
-                }
-            end
-        end
-
-        pre_hosts = all_hosts["pre_host"]
-        if pre_hosts ~= nil then
-            for _, h in ipairs(pre_hosts) do
-                local host_rev = h:reverse()
-                pre_route_opt[host_rev] = {
-                    id = 1,
-                    paths = host_rev,
-                    filter_fun = empty_func,
-                    handler = empty_func,
-                }
-            end
-        end
-
-        for k, v in pairs(op) do
-            if k == "add" then
-                for _, j in ipairs(v) do
-                    local r_opt = route_opt[j]
-                    core.log.notice("add the route with reverse host watched from etcd into radixtree.", r_opt.id, r_opt.paths)
-                    host_router:add_route(r_opt, router_opts)
-                end
-            elseif k == "upd" then
-                for _, j in ipairs(v) do
-                    local r_opt = route_opt[j]
-                    core.log.notice("update the route with reverse host watched from etcd into radixtree.", r_opt.id, r_opt.paths)
-                    host_router:update_route(r_opt, r_opt, router_opts)
-                end
-            elseif k == "del" then
-                for _, j in ipairs(v) do
-                    local pre_r_opt = pre_route_opt[j]
-                    core.log.notice("delete the route with reverse host watched from etcd into radixtree.", pre_r_opt.id, pre_r_opt.paths)
-                    host_router:delete_route(pre_r_opt, router_opts)
-                end
-            end
-        end
-
-        if (route and (route.value and not hosts)) and (not last_route or pre_hosts) then
-            core.log.notice("add the route with uri watched from etcd into radixtree.", json.encode(route))
-            only_uri_router:add_route(rdx_r, router_opts)
-        elseif (route and (route.value and not hosts)) and (last_route and not pre_hosts) then
-            core.log.notice("update the route with uri watched from etcd into radixtree.", json.encode(route))
-            only_uri_router:update_route(pre_rdx_r, rdx_r, router_opts)
-        elseif (last_route and not pre_hosts) and (not (route and route.value) or hosts) then
-            core.log.notice("delete the route with uri watched from etcd into radixtree.", json.encode(last_route))
-            only_uri_router:delete_route(pre_rdx_r, router_opts)
-        end
-
-        sync_tb[k] = nil
+        ar.sync_tb[k] = nil
     end
-
-    apisix_router.sync_tb = sync_tb
 end
 
 
