@@ -122,7 +122,7 @@ function _M.get_plugins_list(subsystem)
                 priorities[name] = plugin.priority
                 table_insert(success, name)
             end
-        end   
+        end
     end
 
     if streamplugins then
@@ -133,7 +133,7 @@ function _M.get_plugins_list(subsystem)
                 priorities[name] = plugin.priority
                 table_insert(success, name)
             end
-        end 
+        end
     end
 
     local function cmp(x, y)
