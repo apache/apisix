@@ -151,4 +151,3 @@ if [ $? -ne 0 ];then
 fi
 rm conf/customized_config.yaml
 echo "All tests passed successfully"
-./bin/apisix stop
