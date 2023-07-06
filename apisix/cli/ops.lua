@@ -850,9 +850,6 @@ local function start(env, ...)
 end
 
 
-
-
-
 local function test(env, backup_ngx_conf)
     -- backup nginx.conf
     local ngx_conf_path = env.apisix_home .. "/conf/nginx.conf"
