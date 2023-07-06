@@ -276,6 +276,6 @@ curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034
 
 If a configured Plugin is disabled, then its execution will be skipped.
 
-### Hot reload in stand-alone mode
+### Hot reload in standalone mode
 
-For hot-reloading in stand-alone mode, see the plugin related section in [stand alone mode](../deployment-modes.md#stand-alone).
+For hot-reloading in standalone mode, see the plugin related section in [stand alone mode](../deployment-modes.md#standalone).
