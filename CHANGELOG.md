@@ -75,7 +75,7 @@ title: Changelog
 
 ### Core
 
-- :sunrise: Support route-level MTLS [#9332](https://github.com/apache/apisix/pull/9332)
+- :sunrise: Support route-level MTLS [#9322](https://github.com/apache/apisix/pull/9322)
 - :sunrise: Support id schema for global_rules [#9517](https://github.com/apache/apisix/pull/9517)
 - :sunrise: Support use a single long http connection to watch all resources for etcd [#9456](https://github.com/apache/apisix/pull/9456)
 - :sunrise: Support max len 256 for ssl label [#9301](https://github.com/apache/apisix/pull/9301)

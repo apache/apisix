@@ -75,7 +75,7 @@ title: CHANGELOG
 
 ### Core
 
-- :sunrise: 支持路由级别的 MTLS [#9332](https://github.com/apache/apisix/pull/9332)
+- :sunrise: 支持路由级别的 MTLS [#9322](https://github.com/apache/apisix/pull/9322)
 - :sunrise: 支持全局规则的 id schema [#9517](https://github.com/apache/apisix/pull/9517)
 - :sunrise: 支持使用单个长连接来监视 etcd 的所有资源 [#9456](https://github.com/apache/apisix/pull/9456)
 - :sunrise: 支持 ssl 标签的最大长度为 256 [#9301](https://github.com/apache/apisix/pull/9301)
