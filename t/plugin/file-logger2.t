@@ -275,7 +275,9 @@ passed
 --- response_body
 write file log success
 
-=== TEST 8: Add new configuration with vars_match
+
+
+=== TEST 8: Add new configuration with matches
 --- config
     location /t {
         content_by_lua_block {
@@ -285,8 +287,8 @@ write file log success
                 [[{
                         "plugins": {
                             "file-logger": {
-                                "path": "file-with-vars_match.log",
-                                "vars": [
+                                "path": "file-with-matches.log",
+                                "matches": [
                                     [
                                         [ "arg_name","==","jack" ]
                                     ]
@@ -314,18 +316,20 @@ write file log success
 --- response_body
 passed
 
-=== TEST 9: Request matches vars_match
+
+
+=== TEST 9: Request matches
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
             local code = t("/hello?name=jack", ngx.HTTP_GET)
-            local fd, err = io.open("file-with-vars_match.log", 'r')
+            local fd, err = io.open("file-with-matches.log", 'r')
             local msg
 
             if not fd then
-                core.log.error("failed to open file: file-with-vars_match.log, error info: ", err)
+                core.log.error("failed to open file: file-with-matches.log, error info: ", err)
                 return
             end
 
@@ -340,21 +344,22 @@ passed
                 ngx.say(msg)
             end
 
-            os.remove("file-with-vars_match.log")
+            os.remove("file-with-matches.log")
         }
     }
 --- response_body
 write file log success
 
 
-=== TEST 10: Request not matches vars_match
+
+=== TEST 10: Request not matches matches
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
             local code = t("/hello?name=tony", ngx.HTTP_GET)
-            local fd, err = io.open("file-with-vars_match.log", 'r')
+            local fd, err = io.open("file-with-matches.log", 'r')
             local msg
 
             if not fd then

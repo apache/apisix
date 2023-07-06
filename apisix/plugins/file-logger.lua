@@ -40,7 +40,7 @@ local schema = {
                 type = "array"
             }
         },
-        vars = {
+        matches = {
             type = "array",
             maxItems = 20,
             items = {
@@ -121,10 +121,11 @@ if is_apisix_or then
     end
 end
 
-local function vars_match(vars, ctx)
+
+local function is_match(matches, ctx)
     local match_result
-    for _, var in ipairs(vars) do
-        local expr, _ = expr.new(var)
+    for _, match in ipairs(matches) do
+        local expr, _ = expr.new(match)
         match_result = expr:eval(ctx.var)
         if match_result then
             break
@@ -133,6 +134,7 @@ local function vars_match(vars, ctx)
 
     return match_result
 end
+
 
 local function write_file_data(conf, log_message)
     local msg = core.json.encode(log_message)
@@ -169,9 +171,9 @@ function _M.body_filter(conf, ctx)
 end
 
 function _M.log(conf, ctx)
-    -- If the "vars" configuration is set and the matching conditions are not met,
+    -- If the "matches" configuration is set and the matching conditions are not met,
     -- then do not log the message.
-    if conf.vars and not vars_match(conf.vars, ctx) then
+    if conf.matches and not is_match(conf.matches, ctx) then
         return
     end
 
