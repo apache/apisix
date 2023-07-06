@@ -51,7 +51,7 @@ function _M.get(name)
     end
 
     -- arg all to be deprecated
-    if (arg and arg["all"] == "true") or not name then
+    if (arg and arg["all"] == "true") then
         core.log.warn("query parameter \"all\" will be deprecated soon.")
         local http_plugins, stream_plugins = plugin_get_all({
             version = true,
@@ -72,23 +72,19 @@ function _M.get(name)
 
     local plugin
     -- By default search through http subsystems
-    if not subsystem then
-        subsystem = "http"
-    end
+    subsystem = subsystem or "http"
 
     if subsystem == "http"  then
         plugin = plugin_get_http(name)
     end
 
-    if (not plugin) and (subsystem == "stream") then
+    if subsystem == "stream" then
         plugin = plugin_get_stream(name)
     end
 
     if not plugin then
-        local err = "failed to load plugin " .. name
-        if subsystem then
-            err = err .. " in subsystem ".. subsystem
-        end
+        subsystem = subsystem or "http"
+        local err = "failed to load plugin " .. name .. " in subsystem " .. subsystem
         core.log.warn("failed to load plugin [", name, "] err: ", plugin)
         return 400, {error_msg = err }
     end
@@ -107,22 +103,37 @@ end
 
 
 function _M.get_plugins_list(subsystem)
-    local plugins
+    local httpplugins
+    local streamplugins
     if subsystem == "stream" then
-        plugins = core.config.local_conf().stream_plugins
-    else
-        plugins = core.config.local_conf().plugins
+        streamplugins = core.config.local_conf().stream_plugins
+    end
+    if subsystem == "http" then
+        httpplugins = core.config.local_conf().plugins
     end
 
     local priorities = {}
     local success = {}
-    for i, name in ipairs(plugins) do
-        local plugin_name = "apisix.plugins." .. name
-        local ok, plugin = pcall(require, plugin_name)
-        if ok and plugin.priority then
-            priorities[name] = plugin.priority
-            table_insert(success, name)
-        end
+    if httpplugins then
+        for i, name in ipairs(httpplugins) do
+            local plugin_name = "apisix.plugins." .. name
+            local ok, plugin = pcall(require, plugin_name)
+            if ok and plugin.priority then
+                priorities[name] = plugin.priority
+                table_insert(success, name)
+            end
+        end   
+    end
+
+    if streamplugins then
+        for i, name in ipairs(streamplugins) do
+            local plugin_name = "apisix.stream.plugins." .. name
+            local ok, plugin = pcall(require, plugin_name)
+            if ok and plugin.priority then
+                priorities[name] = plugin.priority
+                table_insert(success, name)
+            end
+        end 
     end
 
     local function cmp(x, y)

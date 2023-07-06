@@ -256,8 +256,13 @@ local function get_plugins_list()
     set_ctx_and_check_token()
     local args = get_uri_args()
     local subsystem = args["subsystem"]
-    local plugins = resources.plugins.get_plugins_list(subsystem)
-    core.response.exit(200, plugins)
+    -- If subsystem is passed then it should be either http or stream. If it is not passed/nil then http will be default.
+    subsystem = subsystem or "http"
+    if subsystem == "http" or subsystem == "stream" then
+        local plugins = resources.plugins.get_plugins_list(subsystem)
+        core.response.exit(200, plugins)
+    end
+    core.response.exit(400,"invalid subsystem passed")
 end
 
 -- Handle unsupported request methods for the virtual "reload" plugin

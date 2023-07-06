@@ -252,7 +252,7 @@ plugins:
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
 
-            local code, message, res = t('/apisix/admin/plugins',
+            local code, message, res = t('/apisix/admin/plugins?all=true',
                 ngx.HTTP_GET
             )
 
@@ -282,7 +282,7 @@ qr/\{"metadata_schema":\{"properties":\{"ikey":\{"minimum":0,"type":"number"\},"
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
 
-            local code, message, res = t('/apisix/admin/plugins',
+            local code, message, res = t('/apisix/admin/plugins?all=true',
                 ngx.HTTP_GET
             )
 
@@ -321,7 +321,7 @@ qr/\[\{"name":"wolf-rbac","priority":2555\},\{"name":"ldap-auth","priority":2540
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
 
-            local code, message, res = t('/apisix/admin/plugins',
+            local code, message, res = t('/apisix/admin/plugins?all=true',
                 ngx.HTTP_GET
             )
 
@@ -353,7 +353,7 @@ qr/\{"encrypt_fields":\["password"\],"properties":\{"password":\{"type":"string"
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
 
-            local code, message, res = t('/apisix/admin/plugins?subsystem=stream',
+            local code, message, res = t('/apisix/admin/plugins?all=true&subsystem=stream',
                 ngx.HTTP_GET
             )
 
@@ -390,7 +390,7 @@ plugins:
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
 
-            local code, message, res = t('/apisix/admin/plugins',
+            local code, message, res = t('/apisix/admin/plugins?all=true',
                 ngx.HTTP_GET
             )
 
