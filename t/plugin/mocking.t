@@ -427,7 +427,7 @@ empty_var:
 
 
 
-=== TEST 19: set route(return headers)
+=== TEST 19: set route (return headers)
 --- config
        location /t {
            content_by_lua_block {
@@ -459,7 +459,7 @@ passed
 
 
 
-=== TEST 20: hit route(return response example:"hello world")
+=== TEST 20: hit route (return response example:"hello world")
 --- request
 GET /hello
 --- response_headers
