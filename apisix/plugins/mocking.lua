@@ -232,6 +232,7 @@ function _M.access(conf, ctx)
             core.response.add_header(key, value)
         end
     end
+
     if conf.delay > 0 then
         ngx.sleep(conf.delay)
     end
