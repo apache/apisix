@@ -440,7 +440,7 @@ empty_var:
                                    "response_example": "hello world",
                                    "response_headers": {
                                         "X-Apisix": "is-cool",
-                                        "X-Really":"yes"
+                                        "X-Really": "yes"
                                     }
                                }
                            },
