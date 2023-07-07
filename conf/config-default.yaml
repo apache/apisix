@@ -92,21 +92,6 @@ apisix:
                                 # radixtree_uri: match route by URI
                                 # radixtree_uri_with_parameter: similar to radixtree_uri but match URI with parameters. See https://github.com/api7/lua-resty-radixtree/#parameters-in-path for more details.
     ssl: radixtree_sni          # radixtree_sni: match route by SNI
-
-  # stream_proxy:                 # TCP/UDP L4 proxy
-  #   only: true                  # Enable L4 proxy only without L7 proxy.
-  #   tcp:
-  #     - addr: 9100              # Set the TCP proxy listening ports.
-  #       tls: true
-  #     - addr: "127.0.0.1:9101"
-  #   udp:                        # Set the UDP proxy listening ports.
-  #     - 9200
-  #     - "127.0.0.1:9201"
-
-  # dns_resolver:                 # If not set, read from `/etc/resolv.conf`
-  #   - 1.1.1.1
-  #   - 8.8.8.8
-  # dns_resolver_valid: 30        # Override the default TTL of the DNS records.
   resolver_timeout: 5             # Set the time in seconds that the server will wait for a response from the
                                   # DNS resolver before timing out.
   enable_resolv_search_opt: true  # If true, use search option in the resolv.conf file in DNS lookups.
