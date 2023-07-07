@@ -109,40 +109,33 @@ function _M.decrease(conf, ctx)
         return
     end
 
-    if not is_http then
-        core.log.warn("The limit-conn plugin is not applicable in stream mode")
-        return
-    end
+    if is_http then
+        for i = 1, #limit_conn, 4 do
+            local lim = limit_conn[i]
+            local key = limit_conn[i + 1]
+            local delay = limit_conn[i + 2]
+            local use_delay = limit_conn[i + 3]
 
-    for i = 1, #limit_conn, 4 do
-        local lim = limit_conn[i]
-        local key = limit_conn[i + 1]
-        local delay = limit_conn[i + 2]
-        local use_delay =  limit_conn[i + 3]
-
-        local latency
-        if not use_delay then
-            if ctx.proxy_passed then
-                latency = ctx.var.upstream_response_time
-            else
-                if ctx.var.request_time ~= nil then
-                    latency = ctx.var.request_time - delay
-                else
+            local latency
+            if not use_delay then
+                if ctx.proxy_passed then
                     latency = ctx.var.upstream_response_time
+                else
+                    if ctx.var.request_time ~= nil then
+                        latency = ctx.var.request_time - delay
+                    else
+                        latency = ctx.var.upstream_response_time
+                    end
                 end
             end
-        end
-        core.log.debug("request latency is ", latency) -- for test
+            core.log.debug("request latency is ", latency) -- for test
 
-        if not latency then
-            return
-        end
-
-        local conn, err = lim:leaving(key, latency)
-        if not conn then
-            core.log.error("failed to record the connection leaving request: ",
-                           err)
-            break
+            local conn, err = lim:leaving(key, latency)
+            if not conn then
+                core.log.error("failed to record the connection leaving request: ",
+                        err)
+                break
+            end
         end
     end
 
