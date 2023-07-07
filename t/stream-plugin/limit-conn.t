@@ -343,12 +343,6 @@ The value of the configured key is empty, use client IP instead
             local core = require("apisix.core")
             local ctx = { proxy_passed = false,config={} }
             ctx.limit_conn = core.tablepool.fetch("plugin#limit-conn", 0, 6)
-            local lrucache = core.lrucache.new({
-                 type = "plugin",
-            })
-            ctx.limit_conn[1] = {lrucache,"key",1,nil}
-            ctx.var = core.tablepool.fetch("plugin#limit-conn", 0, 6)
-
             local plugin = require("apisix.plugins.limit-conn")
             plugin.log({conn = 1, burst = 0, default_conn_delay = 0.1, rejected_code = 503, key = 'remote_addr'},ctx)
             ngx.say("done")
