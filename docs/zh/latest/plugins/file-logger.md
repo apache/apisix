@@ -145,7 +145,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 }'
 ```
 
-## 配置 matches 参数
+## 过滤日志
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
