@@ -121,11 +121,7 @@ function _M.decrease(conf, ctx)
                 if ctx.proxy_passed then
                     latency = ctx.var.upstream_response_time
                 else
-                    if ctx.var.request_time ~= nil then
-                        latency = ctx.var.request_time - delay
-                    else
-                        latency = ctx.var.upstream_response_time
-                    end
+                    latency = ctx.var.request_time - delay
                 end
             end
             core.log.debug("request latency is ", latency) -- for test
