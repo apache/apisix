@@ -43,7 +43,7 @@ description: 本文介绍了如何通过 Apache APISIX 发布服务和路由。
 
 [Route](../terminology/route.md) 也称为路由，是 APISIX 中最基础和最核心的资源对象。
 
-APISIX 可以通过路由定义规则来匹配客户端请求，根据匹配结果加载并执行相应的[插件](./terminology/plugin.md)，最后把请求转发给到指定的上游服务。路由中主要包含三部分内容：匹配规则、插件配置和上游信息。
+APISIX 可以通过路由定义规则来匹配客户端请求，根据匹配结果加载并执行相应的[插件](../terminology/plugin.md)，最后把请求转发给到指定的上游服务。路由中主要包含三部分内容：匹配规则、插件配置和上游信息。
 
 ### 服务
 
@@ -123,4 +123,4 @@ curl -i -X GET "http://127.0.0.1:9080/anything/get?foo1=bar1&foo2=bar2" -H "Host
 
 你可以查看[保护 API](./protect-api.md) 来保护你的 API。
 
-接下来，你可以通过 APISIX 的一些[插件](./plugins/batch-requests.md)，实现更多功能。
+接下来，你可以通过 APISIX 的一些[插件](../plugins/batch-requests.md)，实现更多功能。

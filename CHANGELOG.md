@@ -340,7 +340,7 @@ Returns multiple configurations:
 
 - Port of Admin API changed to 9180: [#7806](https://github.com/apache/apisix/pull/7806)
 - We only support OpenResty 1.19.3.2 and above: [#7625](https://github.com/apache/apisix/pull/7625)
-- Adjusted the priority of the Plugin Config object so that the priority of a plugin configuration with the same name changes from Consumer > Plugin Config > Route > Service to Consumer > Route > Plugin Config > Service: [#7614](https://github. com/apache/apisix/pull/7614)
+- Adjusted the priority of the Plugin Config object so that the priority of a plugin configuration with the same name changes from Consumer > Plugin Config > Route > Service to Consumer > Route > Plugin Config > Service: [#7614](https://github.com/apache/apisix/pull/7614)
 
 ### Core
 
@@ -1332,7 +1332,7 @@ and support for ARM platform, and proxy rewrite plugin.
 
 ### Core
 
-- :sunrise: **[support stand-alone mode](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/stand-alone-cn.md)**: using yaml to update configurations of APISIX, more friendly to kubernetes. [#464](https://github.com/apache/incubator-apisix/pull/464)
+- :sunrise: **[support standalone mode](https://github.com/apache/apisix/blob/master/docs/en/latest/deployment-modes.md#standalone)**: using yaml to update configurations of APISIX, more friendly to kubernetes. [#464](https://github.com/apache/incubator-apisix/pull/464)
 - :sunrise: **[support stream proxy](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/stream-proxy.md)**. [#513](https://github.com/apache/incubator-apisix/pull/513)
 - :sunrise: support consumer bind plugins. [#544](https://github.com/apache/incubator-apisix/pull/544)
 - support domain name in upstream, not only IP. [#522](https://github.com/apache/incubator-apisix/pull/522)
@@ -1374,7 +1374,7 @@ This release brings many new features, such as IP black and white list, gPRC pro
 
 ### Core
 
-- :sunrise: **[gRPC transcoding](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/plugins/grpc-transcoding.md)**: supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON. [#395](https://github.com/apache/incubator-apisix/issues/395)
+- :sunrise: **[gRPC transcoding](https://github.com/apache/apisix/blob/master/docs/en/latest/plugins/grpc-transcode.md)**: supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON. [#395](https://github.com/apache/incubator-apisix/issues/395)
 - :sunrise: **[radix tree router](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/router-radixtree.md)**: The radix tree is used as the default router implementation. It supports the uri, host, cookie, request header, request parameters, Nginx built-in variables, etc. as the routing conditions, and supports common operators such as equal, greater than, less than, etc., more powerful and flexible.**IMPORTANT: This change is not downward compatible. All users who use historical versions need to manually modify their routing to work properly.** [#414](https://github.com/apache/incubator-apisix/issues/414)
 - Dynamic upstream supports more parameters, you can specify the upstream uri and host, and whether to enable websocket. [#451](https://github.com/apache/incubator-apisix/pull/451)
 - Support for get values from cookies directly from `ctx.var`. [#449](https://github.com/apache/incubator-apisix/pull/449)
@@ -1420,7 +1420,7 @@ This release brings many new features such as health check and circuit breaker, 
 ### Plugins
 
 - :sunrise: **[OpenTracing](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/plugins/zipkin.md)**: support Zipkin and Apache SkyWalking. [#304](https://github.com/apache/incubator-apisix/pull/304)
-- [JWT auth](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/plugins/jwt-auth-cn.md). [#303](https://github.com/apache/incubator-apisix/pull/303)
+- [JWT auth](https://github.com/apache/apisix/blob/master/docs/en/latest/plugins/jwt-auth.md). [#303](https://github.com/apache/incubator-apisix/pull/303)
 
 ### CLI
 

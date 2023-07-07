@@ -154,7 +154,7 @@ To observe the above log information, you need to adjust the error log level to 
 
 :::
 
-The health check status can be fetched via `GET /v1/healthcheck` in [Control API](./control-api.md).
+The health check status can be fetched via `GET /v1/healthcheck` in [Control API](../control-api.md).
 
 ```shell
 
