@@ -738,6 +738,7 @@ local function init_etcd(env, args)
     etcd.init(env, args)
 end
 
+
 local function cleanup()
     local local_conf_path = profile:yaml_path("config")
     local local_conf_path_bak = local_conf_path .. ".bak"
@@ -752,6 +753,7 @@ local function cleanup()
         end
     end
 end
+
 
 local function start(env, ...)
     -- Because the worker process started by apisix has "nobody" permission,
