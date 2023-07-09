@@ -18,7 +18,7 @@ local require = require
 local core = require("apisix.core")
 local base_router = require("apisix.http.route")
 local get_services = require("apisix.http.service").services
-local apisix_router = require("apisix.router")
+local ar = require("apisix.router")
 local json = require("apisix.core.json")
 local table = require("apisix.core.table")
 local event = require("apisix.core.event")
@@ -32,35 +32,33 @@ local match_opts = {}
 local _M = {version = 0.2}
 
 
-local function incremental_operate_radixtree(routes)
-    local sync_tb = apisix_router.sync_tb
-    if apisix_router.need_create_radixtree then
+function _M.incremental_operate_radixtree(routes, no_param)
+    local sync_tb = ar.sync_tb
+    if ar.need_create_radixtree then
         uri_router = base_router.create_radixtree_uri_router(routes, uri_routes, false)
-        apisix_router.need_create_radixtree = false
-        for k, _ in pairs(sync_tb) do
-            sync_tb[k] = nil
-        end
+        ar.need_create_radixtree = false
+        table.clear(ar.sync_tb)
         return
     end
 
     local op, route, last_route, err
     local cur_tmp, last_tmp
     local router_opts = {
-        no_param_match = true
+        no_param_match = no_param
     }
 
     event.push(event.CONST.BUILD_ROUTER, routes)
-    for k, v in pairs(sync_tb) do
-        op = sync_tb[k]["op"]
-        route = sync_tb[k]["cur_route"]
-        last_route = sync_tb[k]["last_route"]
+    for k, v in pairs(ar.sync_tb) do
+        op = ar.sync_tb[k]["op"]
+        route = ar.sync_tb[k]["cur_route"]
+        last_route = ar.sync_tb[k]["last_route"]
         cur_tmp = {}
         last_tmp = {}
 
         if route and route.value then
             local status = table.try_read_attr(route, "value", "status")
             if status and status == 0 then
-                return
+                goto CONTINUE
             end
 
             local filter_fun, err
@@ -129,10 +127,9 @@ local function incremental_operate_radixtree(routes)
             end
         end
 
-        sync_tb[k] = nil
+        ar.sync_tb[k] = nil
+        ::CONTINUE::
     end
-
-    apisix_router.sync_tb = sync_tb
 end
 
 
@@ -142,7 +139,7 @@ function _M.match(api_ctx)
     if not cached_router_version or cached_router_version ~= user_routes.conf_version
         or not cached_service_version or cached_service_version ~= service_version
     then
-        incremental_operate_radixtree(user_routes.values)
+        _M.incremental_operate_radixtree(user_routes.values,true)
         cached_router_version = user_routes.conf_version
         cached_service_version = service_version
     end

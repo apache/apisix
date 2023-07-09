@@ -193,20 +193,7 @@ local function incremental_operate_radixtree(routes)
                     }
                 end
 
-                local match_opts = {}
-                match_opts.method = route.value.methods[1]
-                match_opts.remote_addr = route.value.remote_addrs[1] or route.value.remote_addr
-                match_opts.vars = route.value.vars
-                match_opts.host = route.value.host or route.value.hosts[1]
-                match_opts.matched = core.tablepool.fetch("matched_route_record", 0, 4)
-
-                local metadata, err = rdx.match(match_opts.host:reverse(), match_opts)
-                if metadata and metadata["sub_route"] then
-                    sub_router = metadata["sub_route"]
-                    sub_router:update_route(last_inner_route, inner_route, router_opts)
-                else
-                    sub_router = router.new(inner_route)
-                end
+                sub_router = router.new(inner_route)
 
                 outer_route =  {
                     id = route.value.id,
