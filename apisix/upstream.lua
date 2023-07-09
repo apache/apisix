@@ -282,6 +282,19 @@ function _M.set_by_route(route, api_ctx)
             end
 
             up_conf.nodes = new_nodes
+            -- fill node info before clone
+            if not is_http then
+                local ok, err = fill_node_info(up_conf, nil, true)
+                if not ok then
+                    return 503, err
+                end
+            else
+                local ok, err = fill_node_info(up_conf, api_ctx.upstream_scheme, false)
+                if not ok then
+                    return 503, err
+                end
+            end
+
             local new_up_conf = core.table.clone(up_conf)
             core.log.info("discover new upstream from ", up_conf.service_name, ", type ",
                           up_conf.discovery_type, ": ",
