@@ -16,8 +16,6 @@
 --
 local log_util     =   require("apisix.utils.log-util")
 local core         =   require("apisix.core")
-local expr         =   require("resty.expr.v1")
-local ipairs       =   ipairs
 local ngx          =   ngx
 local io_open      =   io.open
 local is_apisix_or, process = pcall(require, "resty.apisix.process")
@@ -74,7 +72,12 @@ function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
-    return core.schema.check(schema, conf)
+
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return nil, err
+    end
+    return log_util.check_log_schema(conf)
 end
 
 
@@ -123,20 +126,6 @@ if is_apisix_or then
 end
 
 
-local function is_match(matches, ctx)
-    local match_result
-    for _, match in ipairs(matches) do
-        local expr, _ = expr.new(match)
-        match_result = expr:eval(ctx.var)
-        if match_result then
-            break
-        end
-    end
-
-    return match_result
-end
-
-
 local function write_file_data(conf, log_message)
     local msg = core.json.encode(log_message)
 
@@ -172,13 +161,10 @@ function _M.body_filter(conf, ctx)
 end
 
 function _M.log(conf, ctx)
-    -- If the "matches" configuration is set and the matching conditions are not met,
-    -- then do not log the message.
-    if conf.matches and not is_match(conf.matches, ctx) then
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
+    if entry == nil then
         return
     end
-
-    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
     write_file_data(conf, entry)
 end
 
