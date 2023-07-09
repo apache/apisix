@@ -336,7 +336,7 @@ passed
             msg = fd:read()
 
             local new_msg = core.json.decode(msg)
-            if new_msg.request == 'GET /hello?name=jack HTTP/1.1' 
+            if new_msg.request == 'GET /hello?name=jack HTTP/1.1'
                 and new_msg.route_id == '1'
             then
                 msg = "write file log success"
@@ -366,7 +366,7 @@ write file log success
                 msg = "not write file log"
                 ngx.say(msg)
                 return
-            end            
+            end
         }
     }
 --- response_body
