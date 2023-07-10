@@ -336,6 +336,7 @@ The value of the configured key is empty, use client IP instead
 --- stream_enable
 
 
+
 === TEST 11: decrease
 --- config
     location /t {
