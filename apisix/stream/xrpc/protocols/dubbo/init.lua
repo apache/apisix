@@ -166,7 +166,9 @@ function _M.connect_upstream(session, ctx)
     if not sk then
         return DECLINED
     end
-    core.log.warn("dubbo_connect_upstream end")
+
+    core.log.debug("dubbo_connect_upstream end")
+
     return OK, sk
 end
 
