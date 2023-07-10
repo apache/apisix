@@ -83,7 +83,9 @@ local function read_data(sk, is_req)
         core.log.warn("failed to read Dubbo request body: ", err)
         return nil, err, false
     end
+
     ngx.ctx.dubbo_serialization_id = bit.band(header_info.message_flag, 0x1F)
+
     if is_req then
         ngx.ctx.dubbo_req_body_data = body_data
     else
