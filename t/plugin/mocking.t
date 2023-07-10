@@ -439,7 +439,7 @@ empty_var:
                                "mocking": {
                                    "response_example": "hello world",
                                    "response_headers": {
-                                        "X-Apisix": "is-cool",
+                                        "X-Apisix": "is, cool",
                                         "X-Really": "yes"
                                     }
                                }
@@ -459,9 +459,9 @@ passed
 
 
 
-=== TEST 20: hit route (return response example:"hello world")
+=== TEST 20: hit route
 --- request
 GET /hello
 --- response_headers
-X-Apisix: is-cool
+X-Apisix: is, cool
 X-Really: yes
