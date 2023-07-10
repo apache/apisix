@@ -71,8 +71,7 @@ local function read_data(sk, is_req)
         return
     end
 
-    local header_str = ffi_str(header_data, header_len)
-    local header_info = parse_dubbo_header(header_str)
+    local header_info = parse_dubbo_header(header_data)
 
     local is_valid_magic_number = header_info.magic_number == "dabb"
     if not is_valid_magic_number then
