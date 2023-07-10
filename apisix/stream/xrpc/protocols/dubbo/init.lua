@@ -196,15 +196,7 @@ function _M.from_upstream(session, downstream, upstream)
     return DONE, ctx
 end
 
-function _M.log(session, ctx)
-    local metrics = sdk.get_metrics(session, protocol_name)
-    if metrics then
-        session.cmd_labels[2] = ctx.cmd
-        metrics.commands_total:inc(1, session.cmd_labels)
-        metrics.commands_latency_seconds:observe(ctx.var.rpc_time, session.cmd_labels)
-    end
-
-    ctx.cmd_line = nil
+function _M.log(_, _)
 end
 
 return _M
