@@ -103,19 +103,19 @@ end
 
 
 function _M.get_plugins_list(subsystem)
-    local httpplugins
-    local streamplugins
+    local http_plugins
+    local stream_plugins
     if subsystem == "stream" then
-        streamplugins = core.config.local_conf().stream_plugins
+        stream_plugins = core.config.local_conf().stream_plugins
     end
     if subsystem == "http" then
-        httpplugins = core.config.local_conf().plugins
+        http_plugins = core.config.local_conf().plugins
     end
 
     local priorities = {}
     local success = {}
-    if httpplugins then
-        for i, name in ipairs(httpplugins) do
+    if http_plugins then
+        for i, name in ipairs(http_plugins) do
             local plugin_name = "apisix.plugins." .. name
             local ok, plugin = pcall(require, plugin_name)
             if ok and plugin.priority then
@@ -125,8 +125,8 @@ function _M.get_plugins_list(subsystem)
         end
     end
 
-    if streamplugins then
-        for i, name in ipairs(streamplugins) do
+    if stream_plugins then
+        for i, name in ipairs(stream_plugins) do
             local plugin_name = "apisix.stream.plugins." .. name
             local ok, plugin = pcall(require, plugin_name)
             if ok and plugin.priority then
