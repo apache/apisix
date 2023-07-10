@@ -868,7 +868,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 | service_name   | 是，与 `nodes` 二选一。                              | string         | 服务发现时使用的服务名，请参考 [集成服务发现注册中心](./discovery.md)。                                                                                                                                                                                                                                                                                            | `a-bootiful-client`                              |
 | discovery_type | 是，与 `service_name` 配合使用。                      | string         | 服务发现类型，请参考 [集成服务发现注册中心](./discovery.md)。                                                                                                                                                                                                                                                                                                      | `eureka`                                         |
 | key            | 条件必需                                          | 匹配类型       | 该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的节点 `id`，相同的 `key` 在同一个对象中，则返回相同 id。目前支持的 NGINX 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自 URL 的请求参数，详细信息请参考 [NGINX 变量列表](http://nginx.org/en/docs/varindex.html)。 |                                                  |
-| checks         | 否                                             | health_checker | 配置健康检查的参数，详细信息请参考 [health-check](health-check.md)。                                                                                                                                                                                                                                                                                               |                                                  |
+| checks         | 否                                             | health_checker | 配置健康检查的参数，详细信息请参考 [health-check](./tutorials/health-check.md)。                                                                                                                                                                                                                                                                                               |                                                  |
 | retries        | 否                                             | 整型           | 使用 NGINX 重试机制将请求传递给下一个上游，默认启用重试机制且次数为后端可用的节点数量。如果指定了具体重试次数，它将覆盖默认值。当设置为 `0` 时，表示不启用重试机制。                                                                                                                                                                                                 |                                                  |
 | retry_timeout  | 否                                             | number         | 限制是否继续重试的时间，若之前的请求和重试请求花费太多时间就不再继续重试。当设置为 `0` 时，表示不启用重试超时机制。                                                                                                                                                                                                 |                                                  |
 | timeout        | 否                                             | 超时时间对象   | 设置连接、发送消息、接收消息的超时时间，以秒为单位。| `{"connect": 0.5,"send": 0.5,"read": 0.5}` |
@@ -1162,8 +1162,8 @@ SSL 资源请求地址：/apisix/admin/ssls/{id}
 
 | 名称        | 必选项 | 类型           | 描述                                                                                                   | 示例                                             |
 | ----------- | ------ | -------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| cert        | 是     | 证书           | HTTP 证书。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                                                             |                                                  |
-| key         | 是     | 私钥           | HTTPS 证书私钥。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                                                         |                                                  |
+| cert        | 是     | 证书           | HTTP 证书。该字段支持使用 [APISIX Secret](./terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                                                             |                                                  |
+| key         | 是     | 私钥           | HTTPS 证书私钥。该字段支持使用 [APISIX Secret](./terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                                                         |                                                  |
 | certs       | 否   | 证书字符串数组 | 当你想给同一个域名配置多个证书时，除了第一个证书需要通过 `cert` 传递外，剩下的证书可以通过该参数传递上来。 |                                                  |
 | keys        | 否   | 私钥字符串数组 | `certs` 对应的证书私钥，需要与 `certs` 一一对应。                                                          |                                                  |
 | client.ca   | 否   | 证书 |  设置将用于客户端证书校验的 `CA` 证书。该特性需要 OpenResty 为 1.19 及以上版本。  |                                                  |
@@ -1394,3 +1394,66 @@ Plugin 资源请求地址：/apisix/admin/stream_routes/{id}
 | protocol.conf    | 否    | 配置     | 协议特定的配置。                                                               |                    |
 
 你可以查看 [Stream Proxy](./stream-proxy.md#更多-route-匹配选项) 了解更多过滤器的信息。
+
+## Secret
+
+Secret 指的是 `Secrets Management`（密钥管理），可以使用任何支持的密钥管理器，例如 `vault`。
+
+### 请求地址 {#secret-config-uri}
+
+Secret 资源请求地址：/apisix/admin/secrets/{secretmanager}/{id}
+
+### 请求方法 {#secret-config-request-methods}
+
+| 名称 | 请求 URI                          | 请求 body | 描述                                        |
+| :--: | :----------------------------: | :---: | :---------------------------------------: |
+| GET  | /apisix/admin/secrets            | NULL  | 获取所有 secret 的列表。                  |
+| GET  | /apisix/admin/secrets/{manager}/{id} | NULL  | 根据 id 获取指定的 secret。           |
+| PUT  | /apisix/admin/secrets/{manager}            | {...} | 创建新的 secret 配置。                              |
+| DELETE | /apisix/admin/secrets/{manager}/{id} | NULL   | 删除具有指定 id 的 secret。 |
+| PATCH  | /apisix/admin/secrets/{manager}/{id}        | {...} | 更新指定 secret 的选定属性。如果要删除一个属性，可以将该属性的值设置为 null。|
+| PATCH  | /apisix/admin/secrets/{manager}/{id}/{path} | {...} | 更新路径中指定的属性。其他属性的值保持不变。
+
+### body 请求参数 {#secret-config-body-requset-parameters}
+
+当 `{secretmanager}` 是 `vault` 时：
+
+| 名称  | 必选项 | 类型        | 描述                                                                                                        | 例子                                          |
+| ----------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
+| uri    | 是     | URI        |  Vault 服务器的 URI                                                 |                                                  |
+| prefix    | 是    | 字符串       | 密钥前缀
+| token     | 是    | 字符串       | Vault 令牌 |                                                  |
+
+配置示例：
+
+```shell
+{
+    "uri": "https://localhost/vault",
+    "prefix": "/apisix/kv",
+    "token": "343effad"
+}
+
+```
+
+使用示例：
+
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/secrets/vault/test2 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "http://xxx/get",
+    "prefix" : "apisix",
+    "token" : "apisix"
+}'
+```
+
+```shell
+HTTP/1.1 200 OK
+...
+
+{"key":"\/apisix\/secrets\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
+```
+
+### 应答参数 {#secret-config-response-parameters}
+
+当前的响应是从 etcd 返回的。
