@@ -279,7 +279,8 @@ function _M.rewrite(conf, ctx)
     local separator_escaped = false
     if conf.use_real_request_uri_unsafe then
         upstream_uri = ctx.var.real_request_uri
-    elseif conf.uri ~= nil then
+    end
+    if conf.uri ~= nil then
         separator_escaped = true
         upstream_uri = core.utils.resolve_var(conf.uri, ctx.var, escape_separator)
     elseif conf.regex_uri ~= nil then
@@ -345,8 +346,22 @@ function _M.rewrite(conf, ctx)
         else
             ctx.var.upstream_uri = upstream_uri
         end
+    else
+        ctx.var.upstream_uri = upstream_uri
     end
 
+    if conf.use_real_request_uri_unsafe and conf.regex_uri then
+        local index
+        if separator_escaped then
+            index = str_find(upstream_uri,"?")
+        end
+        if index then
+            upstream_uri = sub_str(upstream_uri, 1, index - 1)
+                           ..sub_str(upstream_uri,index)
+        end
+        req_set_uri(upstream_uri)
+        ctx.var.upstream_uri = upstream_uri
+    end
     if conf.headers then
         local hdr_op, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
                                     create_header_operation, conf.headers)
