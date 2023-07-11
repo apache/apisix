@@ -79,7 +79,7 @@ plugins:
 
 在每个阶段内，你可以在插件的 `_meta.priority` 字段中可选地定义一个新的优先级数，该优先级数优先于默认插件优先级在执行期间。具有更高优先级数的插件首先执行。
 
-例如，如果你想在请求到达路由时，让 limit-count （优先级1002）先于 `ip-restriction`（优先级3000）运行，可以通过将更高的优先级数传递给 `limit-count` 的 `_meta.priority` 字段来实现：
+例如，如果你想在请求到达路由时，让 `limit-count`（优先级 1002）先于 `ip-restriction`（优先级 3000）运行，可以通过将更高的优先级数传递给 `limit-count` 的 `_meta.priority` 字段来实现：
 
 ```json
 {
