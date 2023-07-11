@@ -44,7 +44,7 @@ APISIX 附带一个`config-default.yaml`的默认配置文件和一个 `config.y
 ```yaml
 plugins:
   - real-ip         # 安装
-  - ai              
+  - ai
   - client-control
   - proxy-control
   - request-id

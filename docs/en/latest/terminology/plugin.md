@@ -45,7 +45,7 @@ The `plugins` block is where you can declare the Plugins loaded to your APISIX i
 ```yaml
 plugins:
   - real-ip         # loaded
-  - ai              
+  - ai
   - client-control
   - proxy-control
   - request-id
@@ -71,7 +71,7 @@ When a request goes through APISIX, the plugin's corresponding methods are execu
 In general, plugins are executed in the following order:
 
 1. Plugins in [global rules](./global-rule.md)
-   1. plugins in rewrite phase 
+   1. plugins in rewrite phase
    2. plugins in access phase
 
 2. Plugins bound to other objects
@@ -100,13 +100,13 @@ To reset the priority of this plugin instance to the default, simply remove the 
 
 ## Plugins merging precedence
 
-When the same plugin is configured both globally in a global rule and locally in an object (e.g. a route), both plugin instances are executed sequentially. 
+When the same plugin is configured both globally in a global rule and locally in an object (e.g. a route), both plugin instances are executed sequentially.
 
-However, if the same plugin is configured locally on multiple objects, such as on [Route](./route.md), [Service](./service.md), [Consumer](./consumer.md), [Consumer Group](./consumer-group.md), or [Plugin Config](./plugin-config.md), only one copy of configuration is used as each non-global plugin is only executed once. This is because during execution, plugins configured in these objects are merged with respect to a specific order of precedence: 
+However, if the same plugin is configured locally on multiple objects, such as on [Route](./route.md), [Service](./service.md), [Consumer](./consumer.md), [Consumer Group](./consumer-group.md), or [Plugin Config](./plugin-config.md), only one copy of configuration is used as each non-global plugin is only executed once. This is because during execution, plugins configured in these objects are merged with respect to a specific order of precedence:
 
 `Consumer`  > `Consumer Group` > `Route` > `Plugin Config` > `Service`
 
-such that if the same plugin has different configurations in different objects, the plugin configuration with the highest order of precedence during merging will be used. 
+such that if the same plugin has different configurations in different objects, the plugin configuration with the highest order of precedence during merging will be used.
 
 ## Plugin common configuration
 
