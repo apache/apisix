@@ -88,27 +88,15 @@ For example, if you want to have `limit-count` (priority 1002) run before `ip-re
   "plugins": {
     "limit-count": {
       ...,
-      # highlight-start
       "_meta": {
         "priority": 3010
       }
-      # highlight-end
     }
   }
 }
 ```
 
 To reset the priority of this plugin instance to the default, simply remove the `_meta.priority` field from your plugin configuration.
-
-## Plugins merging precedence
-
-When the same plugin is configured both globally in a global rule and locally in an object (e.g. a route), both plugin instances are executed sequentially. 
-
-However, if the same plugin is configured locally on multiple objects, such as on a [`Route`](./route.md), [`Service`](./service.md), [`Consumer`](./consumer.md) or [`Plugin Config`](./plugin-config.md), only one copy of configuration is used as each non-global plugin is only executed once. This is because during execution, plugins configured in these objects are merged with respect to a specific order of precedence: 
-
-`Consumer`  > `Consumer Group` > `Route` > `Plugin Config` > `Service`
-
-such that if the same plugin has different configurations in different objects, the plugin configuration with the highest order of precedence during merging will be used. 
 
 ## Plugins merging precedence
 
