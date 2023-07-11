@@ -999,4 +999,3 @@ GET /hello/%ED%85%8C%EC%8A%A4%ED%8A%B8 HTTP/1.1
     }
 --- response_body
 /hello?unsafe_variable=%ED%85%8C%EC%8A%A4%ED%8A%B8
-
