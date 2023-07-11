@@ -253,7 +253,7 @@ function _M:delete(id, conf, sub_path)
 
     key = key .. "/" .. id
 
-    if self.delete_checker then
+    if self.delete_checker and conf._force_delete ~= "true" then
         local code, err = self.delete_checker(id)
         if err then
             return code, err

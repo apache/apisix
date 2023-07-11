@@ -103,6 +103,33 @@ deployment:
 
 This will find the environment variable `ADMIN_KEY` first, and if it does not exist, it will use `edd1c9f034335f136f87ad84b625c8f1` as the default value.
 
+### Force Delete
+
+By default, the Admin API checks for references between resources and will refuse to delete resources in use.
+
+You can make a force deletion by adding the request header `X-Force-Delete: true` to the delete request, for example:
+
+```bash
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{
+    "nodes": {
+        "127.0.0.1:8080": 1
+    },
+    "type": "roundrobin"
+}'
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{
+    "uri": "/*",
+    "upstream_id": 1
+}'
+{"value":{"priority":0,"upstream_id":1,"uri":"/*","create_time":1689038794,"id":"1","status":1,"update_time":1689038916},"key":"/apisix/routes/1"}
+
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+{"error_msg":"can not delete this upstream, route [1] is still using it now"}
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE -H 'X-Force-Delete: any-value'
+{"error_msg":"can not delete this upstream, route [1] is still using it now"}
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE -H 'X-Force-Delete: true'
+{"deleted":"1","key":"/apisix/upstreams/1"}
+```
+
 ## V3 new feature
 
 The Admin API has made some breaking changes in V3 version, as well as supporting additional features.

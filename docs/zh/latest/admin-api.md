@@ -105,6 +105,33 @@ deployment:
 
 首先查找环境变量 `ADMIN_KEY`，如果该环境变量不存在，它将使用 `edd1c9f034335f136f87ad84b625c8f1` 作为默认值。
 
+### 强制删除 {#force-delete}
+
+默认情况下，Admin API 会检查资源间的引用关系，将会拒绝删除正在使用中的资源。
+
+可以通过在删除请求中添加请求头 `X-Force-Delete: true` 来进行强制删除，例如：
+
+```bash
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{
+    "nodes": {
+        "127.0.0.1:8080": 1
+    },
+    "type": "roundrobin"
+}'
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{
+    "uri": "/*",
+    "upstream_id": 1
+}'
+{"value":{"priority":0,"upstream_id":1,"uri":"/*","create_time":1689038794,"id":"1","status":1,"update_time":1689038916},"key":"/apisix/routes/1"}
+
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+{"error_msg":"can not delete this upstream, route [1] is still using it now"}
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE -H 'X-Force-Delete: any-value'
+{"error_msg":"can not delete this upstream, route [1] is still using it now"}
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE -H 'X-Force-Delete: true'
+{"deleted":"1","key":"/apisix/upstreams/1"}
+```
+
 ## v3 版本新功能 {#v3-new-function}
 
 在 APISIX v3 版本中，Admin API 支持了一些不向下兼容的新特性，比如支持新的响应体格式、支持分页查询、支持过滤资源等。

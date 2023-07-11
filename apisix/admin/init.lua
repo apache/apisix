@@ -221,6 +221,12 @@ local function run()
     if seg_res == "schema" or seg_res == "plugins" then
         code, data = resource[method](seg_id, req_body, seg_sub_path, uri_args)
     else
+        if method == "delete" then
+            if not req_body then
+                req_body = {}
+            end
+            req_body._force_delete = ngx.req.get_headers()["X-Force-Delete"]
+        end
         code, data = resource[method](resource, seg_id, req_body, seg_sub_path, uri_args)
     end
 
