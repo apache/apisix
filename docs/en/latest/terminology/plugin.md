@@ -32,8 +32,6 @@ description: This article introduces the related information of the APISIX Plugi
 
 APISIX Plugins extend APISIX's functionalities to meet organization or user-specific requirements in traffic management, observability, security, request/response transformation, serverless computing, and more.
 
-APISIX offers many existing Plugins that can be customized and orchestrated to suit your needs. These plugins can be globally enabled to be triggered on every incoming request, or locally bound to other objects, such as routes, services, consumers, consumer groups, or plugin configs.
-
 A **Plugin** configuration can be bound directly to a [`Route`](./route.md), [`Service`](./service.md), [`Consumer`](./consumer.md) or [`Plugin Config`](./plugin-config.md). You can refer to [Admin API plugins](../admin-api.md#plugin) for how to use this resource.
 
 If existing APISIX Plugins do not meet your needs, you can also write your own plugins in Lua or other languages such as Java, Python, Go, and Wasm.
@@ -106,7 +104,7 @@ To reset the priority of this plugin instance to the default, simply remove the 
 
 When the same plugin is configured both globally in a global rule and locally in an object (e.g. a route), both plugin instances are executed sequentially. 
 
-However, if the same plugin is configured locally on multiple objects, such as on a [`Route`](./route.md), a [`Service`](./service.md), a [`Consumer`](./consumer.md) or a [`Plugin Config`](./plugin-config.md), only one copy of configuration is used as each non-global plugin is only executed once. This is because during execution, plugins configured in these objects are merged with respect to a specific order of precedence: 
+However, if the same plugin is configured locally on multiple objects, such as on a [`Route`](./route.md), [`Service`](./service.md), [`Consumer`](./consumer.md) or [`Plugin Config`](./plugin-config.md), only one copy of configuration is used as each non-global plugin is only executed once. This is because during execution, plugins configured in these objects are merged with respect to a specific order of precedence: 
 
 `Consumer`  > `Consumer Group` > `Route` > `Plugin Config` > `Service`
 
@@ -314,6 +312,8 @@ curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034
 :::note
 
 If a configured Plugin is disabled, then its execution will be skipped.
+
+:::
 
 ### Hot reload in standalone mode
 
