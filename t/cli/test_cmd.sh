@@ -77,6 +77,7 @@ make stop
 echo "pass: no corresponding process"
 sleep 0.5
 
+# check running when run repeatedly
 out=$(make run; make run || true)
 if ! echo "$out" | grep "APISIX is running"; then
     echo "failed: should find APISIX running"
