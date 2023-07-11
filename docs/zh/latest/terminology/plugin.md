@@ -29,11 +29,11 @@ description: 本文介绍了 APISIX Plugin 对象的相关信息及其使用方�
 
 ## 描述
 
-APISIX插件可以扩展APISIX的功能，以满足组织或用户特定的流量管理、可观测性、安全、请求/响应转换、无服务器计算等需求。
+APISIX 插件可以扩展 APISIX 的功能，以满足组织或用户特定的流量管理、可观测性、安全、请求/响应转换、无服务器计算等需求。
 
-APISIX提供了许多现有的插件，可以定制和编排以满足你的需求。这些插件可以全局启用，以在每个传入请求上触发，也可以局部绑定到其他对象，例如在 [Route](./route.md)、[Service](./service.md)、[Consumer](./consumer.md) 或 [Plugin Config](./plugin-config.md) 上。你可以参考 [Admin API](../admin-api.md#plugin) 了解如何使用该资源。
+APISIX 提供了许多现有的插件，可以定制和编排以满足你的需求。这些插件可以全局启用，以在每个传入请求上触发，也可以局部绑定到其他对象，例如在 [Route](./route.md)、[Service](./service.md)、[Consumer](./consumer.md) 或 [Plugin Config](./plugin-config.md) 上。你可以参考 [Admin API](../admin-api.md#plugin) 了解如何使用该资源。
 
-如果现有的APISIX插件不满足需求，你还可以使用Lua或其他语言（如Java、Python、Go和Wasm）编写自定义插件。
+如果现有的 APISIX 插件不满足需求，你还可以使用 Lua 或其他语言（如 Java、Python、Go 和 Wasm）编写自定义插件。
 
 ## 插件安装
 
@@ -57,7 +57,7 @@ plugins:
 
 安装的插件首先会被初始化。然后会检查插件的配置，以确保插件配置遵循定义的[JSON Schema](https://json-schema.org)。
 
-当一个请求通过APISIX时，插件的相应方法会在以下一个或多个阶段中执行：`rewrite`, `access`, `before_proxy`, `header_filter`, `body_filter`, and `log`。这些阶段在很大程度上受到[OpenResty指令](https://openresty-reference.readthedocs.io/en/latest/Directives/)的影响。
+当一个请求通过 APISIX 时，插件的相应方法会在以下一个或多个阶段中执行： `rewrite`, `access`, `before_proxy`, `header_filter`, `body_filter`, and `log`。这些阶段在很大程度上受到[OpenResty 指令](https://openresty-reference.readthedocs.io/en/latest/Directives/)的影响。
 
 <br />
 <div style={{textAlign: 'center'}}>
@@ -67,7 +67,7 @@ plugins:
 
 ## 插件执行顺序
 
-通常情况下，插件按照以下顺序执行:
+通常情况下，插件按照以下顺序执行：
 
 1. [全局规则](./global-rule.md) 插件
    1. rewrite 阶段的插件
@@ -79,7 +79,7 @@ plugins:
 
 在每个阶段内，你可以在插件的 `_meta.priority` 字段中可选地定义一个新的优先级数，该优先级数优先于默认插件优先级在执行期间。具有更高优先级数的插件首先执行。
 
-例如，如果你想在请求到达路由时，让limit-count（优先级1002）先于`ip-restriction`（优先级3000）运行，可以通过将更高的优先级数传递给`limit-count`的`_meta.priority`字段来实现：
+例如，如果你想在请求到达路由时，让 limit-count （优先级1002）先于 `ip-restriction`（优先级3000）运行，可以通过将更高的优先级数传递给 `limit-count` 的 `_meta.priority` 字段来实现：
 
 ```json
 {
