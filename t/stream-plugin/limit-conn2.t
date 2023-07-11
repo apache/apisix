@@ -52,7 +52,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: init
+=== TEST 1: create a stream router with limit-conn
 --- config
     location /t {
         content_by_lua_block {
@@ -92,7 +92,7 @@ passed
 
 
 
-=== TEST 2: hit
+=== TEST 2: access the redis via proxy
 --- config
     location /t {
         content_by_lua_block {
