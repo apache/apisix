@@ -359,7 +359,6 @@ function _M.rewrite(conf, ctx)
             upstream_uri = sub_str(upstream_uri, 1, index - 1)
                            ..sub_str(upstream_uri,index)
         end
-        req_set_uri(upstream_uri)
         ctx.var.upstream_uri = upstream_uri
     end
     if conf.headers then
