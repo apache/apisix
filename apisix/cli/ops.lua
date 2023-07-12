@@ -312,7 +312,7 @@ Please modify "admin_key" in conf/config.yaml .
         end
 
         if not pass_real_client_ip then
-            return false, "missing loopback or unspecified in the nginx_config.http.real_ip_from" 
+            return false, "missing loopback or unspecified in the nginx_config.http.real_ip_from"
             .. " for plugin batch-requests\n"
         end
     end
