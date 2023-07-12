@@ -50,7 +50,6 @@ To enable the Plugin, you need to first enable the `stream_proxy` configuration 
         http: 'radixtree_uri'
         ssl: 'radixtree_sni'
     stream_proxy:                 # TCP/UDP proxy
-      only: false                 # needed if HTTP and Stream Proxy should be enabled
       tcp:                        # TCP proxy port list
         - 9100
     dns_resolver:

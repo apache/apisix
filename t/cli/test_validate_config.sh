@@ -82,6 +82,7 @@ deployment:
 apisix:
     node_listen: 9080
     enable_admin: true
+    proxy_mode: http&stream
     stream_proxy:
         tcp:
             - "localhost:9100"
