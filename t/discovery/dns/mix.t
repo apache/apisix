@@ -120,4 +120,3 @@ upstreams:
     }
 --- request
 GET /t
-
