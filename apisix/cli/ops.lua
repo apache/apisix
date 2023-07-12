@@ -173,12 +173,12 @@ local function init(env)
     -- read_yaml_conf
     local yaml_conf, err = file.read_yaml_conf(env.apisix_home)
     if not yaml_conf then
-        util.die("failed to read local yaml config of apisix: ", err, "\n")
+        return false, "failed to read local yaml config of apisix: ", err, "\n"
     end
 
     local ok, err = schema.validate(yaml_conf)
     if not ok then
-        util.die(err, "\n")
+        return false, err
     end
 
     -- check the Admin API token
@@ -211,7 +211,7 @@ Please modify "admin_key" in conf/config.yaml .
 
         if type(admin_key) ~= "table" or #admin_key == 0
         then
-            util.die(help:format("ERROR: missing valid Admin API token."))
+            return false, help:format("ERROR: missing valid Admin API token.")
         end
 
         for _, admin in ipairs(admin_key) do
@@ -222,7 +222,7 @@ Please modify "admin_key" in conf/config.yaml .
             end
 
             if admin.key == "" then
-                util.die(help:format("ERROR: missing valid Admin API token."), "\n")
+                return false, help:format("ERROR: missing valid Admin API token."), "\n"
             end
 
             if admin.key == "edd1c9f034335f136f87ad84b625c8f1" then
@@ -243,30 +243,30 @@ Please modify "admin_key" in conf/config.yaml .
             admin_api_mtls.admin_ssl_cert_key and
             admin_api_mtls.admin_ssl_cert_key ~= "")
         then
-            util.die("missing ssl cert for https admin")
+            return false, "missing ssl cert for https admin"
         end
     end
 
     if yaml_conf.apisix.enable_admin and
         yaml_conf.deployment.config_provider == "yaml"
     then
-        util.die("ERROR: Admin API can only be used with etcd config_provider.\n")
+        return false, "ERROR: Admin API can only be used with etcd config_provider.\n"
     end
 
     local or_ver = get_openresty_version()
     if or_ver == nil then
-        util.die("can not find openresty\n")
+        return false, "can not find openresty\n"
     end
 
     local need_ver = "1.19.3"
     if not version_greater_equal(or_ver, need_ver) then
-        util.die("openresty version must >=", need_ver, " current ", or_ver, "\n")
+        return false, "openresty version must >=", need_ver, " current ", or_ver, "\n"
     end
 
     local or_info = env.openresty_info
     if not or_info:find("http_stub_status_module", 1, true) then
-        util.die("'http_stub_status_module' module is missing in ",
-                 "your openresty, please check it out.\n")
+        return false, "'http_stub_status_module' module is missing in ",
+        "your openresty, please check it out.\n"
     end
 
     local enable_http = true
@@ -292,7 +292,7 @@ Please modify "admin_key" in conf/config.yaml .
     end
 
     if enabled_plugins["proxy-cache"] and not yaml_conf.apisix.proxy_cache then
-        util.die("missing apisix.proxy_cache for plugin proxy-cache\n")
+        return false, "missing apisix.proxy_cache for plugin proxy-cache\n"
     end
 
     if enabled_plugins["batch-requests"] then
@@ -312,8 +312,8 @@ Please modify "admin_key" in conf/config.yaml .
         end
 
         if not pass_real_client_ip then
-            util.die("missing loopback or unspecified in the nginx_config.http.real_ip_from" ..
-                     " for plugin batch-requests\n")
+            return "missing loopback or unspecified in the nginx_config.http.real_ip_from" 
+            .. " for plugin batch-requests\n"
         end
     end
 
@@ -324,10 +324,10 @@ Please modify "admin_key" in conf/config.yaml .
         local ip = configured_ip or default_ip
         local port = tonumber(configured_port) or default_port
         if ports_to_check[port] ~= nil then
-            util.die(port_name .. " ", port, " conflicts with ", ports_to_check[port], "\n")
+            return nil, port_name .. " ", port, " conflicts with ", ports_to_check[port], "\n"
         end
         ports_to_check[port] = port_name
-        return ip .. ":" .. port
+        return ip .. ":" .. port, nil
     end
 
     -- listen in admin use a separate port, support specific IP, compatible with the original style
@@ -335,19 +335,28 @@ Please modify "admin_key" in conf/config.yaml .
     if yaml_conf.apisix.enable_admin then
         local ip = yaml_conf.deployment.admin.admin_listen.ip
         local port = yaml_conf.deployment.admin.admin_listen.port
-        admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0", ip,
-                                                          9180, port)
+        local results = {validate_and_get_listen_addr("admin port", "0.0.0.0", ip,
+                                                          9180, port)}
+        admin_server_addr = results[1]
+        if not admin_server_addr then
+            return false, table.unpack(results, 2)
+        end
     end
 
     local control_server_addr
     if yaml_conf.apisix.enable_control then
+        local results
         if not yaml_conf.apisix.control then
-            control_server_addr = validate_and_get_listen_addr("control port", "127.0.0.1", nil,
-                                          9090, nil)
+            results = {validate_and_get_listen_addr("control port", "127.0.0.1", nil,
+                                          9090, nil)}
         else
-            control_server_addr = validate_and_get_listen_addr("control port", "127.0.0.1",
+            results = {validate_and_get_listen_addr("control port", "127.0.0.1",
                                           yaml_conf.apisix.control.ip,
-                                          9090, yaml_conf.apisix.control.port)
+                                          9090, yaml_conf.apisix.control.port)}
+        end
+        admin_server_addr = results[1]
+        if not admin_server_addr then
+            return false, table.unpack(results, 2)
         end
     end
 
@@ -355,30 +364,34 @@ Please modify "admin_key" in conf/config.yaml .
     if yaml_conf.plugin_attr.prometheus then
         local prometheus = yaml_conf.plugin_attr.prometheus
         if prometheus.enable_export_server then
-            prometheus_server_addr = validate_and_get_listen_addr("prometheus port", "127.0.0.1",
+            local results = {validate_and_get_listen_addr("prometheus port", "127.0.0.1",
                                              prometheus.export_addr.ip,
-                                             9091, prometheus.export_addr.port)
+                                             9091, prometheus.export_addr.port)}
+            prometheus_server_addr = results[1]
+            if not prometheus_server_addr then
+                return false, table.unpack(results, 2)
+            end
         end
     end
 
     if enabled_stream_plugins["prometheus"] and not prometheus_server_addr then
-        util.die("L4 prometheus metric should be exposed via export server\n")
+        return false, "L4 prometheus metric should be exposed via export server\n"
     end
 
     local ip_port_to_check = {}
 
     local function listen_table_insert(listen_table, scheme, ip, port, enable_http2, enable_ipv6)
         if type(ip) ~= "string" then
-            util.die(scheme, " listen ip format error, must be string", "\n")
+            return false, scheme, " listen ip format error, must be string", "\n"
         end
 
         if type(port) ~= "number" then
-            util.die(scheme, " listen port format error, must be number", "\n")
+            return false, scheme, " listen port format error, must be number", "\n"
         end
 
         if ports_to_check[port] ~= nil then
-            util.die(scheme, " listen port ", port, " conflicts with ",
-                ports_to_check[port], "\n")
+            return false, scheme, " listen port ", port, " conflicts with ",
+            ports_to_check[port], "\n"
         end
 
         local addr = ip .. ":" .. port
@@ -476,7 +489,7 @@ Please modify "admin_key" in conf/config.yaml .
         cert_path = pl_path.abspath(cert_path)
 
         if not pl_path.exists(cert_path) then
-            util.die("certificate path", cert_path, "doesn't exist\n")
+            return false, "certificate path", cert_path, "doesn't exist\n"
         end
 
         yaml_conf.apisix.ssl.ssl_trusted_certificate = cert_path
@@ -511,7 +524,7 @@ Please modify "admin_key" in conf/config.yaml .
 
     if yaml_conf.apisix.dns_resolver_valid then
         if tonumber(yaml_conf.apisix.dns_resolver_valid) == nil then
-            util.die("apisix->dns_resolver_valid should be a number")
+            return false, "apisix->dns_resolver_valid should be a number"
         end
     end
 
@@ -522,7 +535,7 @@ Please modify "admin_key" in conf/config.yaml .
 
     local conf_server, err = snippet.generate_conf_server(env, yaml_conf)
     if err then
-        util.die(err, "\n")
+        return false, err
     end
 
     if yaml_conf.deployment and yaml_conf.deployment.role then
@@ -558,11 +571,11 @@ Please modify "admin_key" in conf/config.yaml .
     }
 
     if not yaml_conf.apisix then
-        util.die("failed to read `apisix` field from yaml file")
+        return false, "failed to read `apisix` field from yaml file"
     end
 
     if not yaml_conf.nginx_config then
-        util.die("failed to read `nginx_config` field from yaml file")
+        return false, "failed to read `nginx_config` field from yaml file"
     end
 
     if util.is_32bit_arch() then
@@ -604,11 +617,11 @@ Please modify "admin_key" in conf/config.yaml .
     if not dns_resolver or #dns_resolver == 0 then
         local dns_addrs, err = local_dns_resolver("/etc/resolv.conf")
         if not dns_addrs then
-            util.die("failed to import local DNS: ", err, "\n")
+            return false, "failed to import local DNS: ", err, "\n"
         end
 
         if #dns_addrs == 0 then
-            util.die("local DNS is empty\n")
+            return false, "local DNS is empty\n"
         end
 
         sys_conf["dns_resolver"] = dns_addrs
@@ -729,8 +742,10 @@ Please modify "admin_key" in conf/config.yaml .
     local ok, err = util.write_file(env.apisix_home .. "/conf/nginx.conf",
                                     ngxconf)
     if not ok then
-        util.die("failed to update nginx.conf: ", err, "\n")
+        return false, "failed to update nginx.conf: ", err, "\n"
     end
+
+    return true
 end
 
 
@@ -837,12 +852,14 @@ local function start(env, ...)
         end
 
         print("Use customized yaml: ", customized_yaml)
-    else
-        -- Cleanup any custom config from previous runs
-        cleanup()
     end
 
-    init(env)
+    local results = {init(env)}
+    local ok = results[1]
+    if not ok then
+        cleanup()
+        util.die(table.unpack(results,2))
+    end
 
     if env.deployment_role ~= "data_plane" then
         init_etcd(env, args)
