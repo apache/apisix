@@ -314,7 +314,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_body
-{"message":"Missing authentication in request."}
+{"message":"Missing authentication information in request."}
 
 
 
@@ -325,7 +325,7 @@ GET /hello
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- error_code: 401
 --- response_body
-{"message":"Missing authentication in request."}
+{"message":"Missing authentication information in request."}
 
 
 
@@ -336,7 +336,7 @@ GET /hello
 Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- error_code: 401
 --- response_body
-{"message":"Missing authentication in request."}
+{"message":"Missing authentication information in request."}
 
 
 
@@ -383,7 +383,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_body
-{"message":"Missing authentication in request."}
+{"message":"Missing authentication information in request."}
 
 
 
@@ -394,7 +394,7 @@ GET /hello
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- error_code: 401
 --- response_body
-{"message":"Missing authentication in request."}
+{"message":"Missing authentication information in request."}
 
 
 
@@ -405,7 +405,7 @@ GET /hello
 Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- error_code: 401
 --- response_body
-{"message":"Missing authentication in request."}
+{"message":"Missing authentication information in request."}
 
 
 
