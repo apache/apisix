@@ -50,7 +50,7 @@ local str_find = string.find
 local str_byte = string.byte
 local str_sub = string.sub
 local str_format = string.format
-
+local unpack_table = require("table.unpack")
 local _M = {}
 
 
@@ -339,7 +339,7 @@ Please modify "admin_key" in conf/config.yaml .
                                                           9180, port)}
         admin_server_addr = results[1]
         if not admin_server_addr then
-            return false, table.unpack(results, 2)
+            return false, unpack_table(results, 2)
         end
     end
 
@@ -356,7 +356,7 @@ Please modify "admin_key" in conf/config.yaml .
         end
         control_server_addr = results[1]
         if not control_server_addr then
-            return false, table.unpack(results, 2)
+            return false, unpack_table(results,2)
         end
     end
 
@@ -369,7 +369,7 @@ Please modify "admin_key" in conf/config.yaml .
                                              9091, prometheus.export_addr.port)}
             prometheus_server_addr = results[1]
             if not prometheus_server_addr then
-                return false, table.unpack(results, 2)
+                return false, unpack_table(results,2)
             end
         end
     end
@@ -858,7 +858,7 @@ local function start(env, ...)
     local ok = results[1]
     if not ok then
         cleanup()
-        util.die(table.unpack(results,2))
+        util.die(unpack_table(results,2))
     end
 
     if env.deployment_role ~= "data_plane" then
@@ -886,7 +886,7 @@ local function test(env, backup_ngx_conf)
     local ok = results[1]
     if not ok then
         cleanup()
-        util.die(table.unpack(results,2))
+        util.die(unpack_table(results,2))
     end
 
     local test_cmd = env.openresty_args .. [[ -t -q ]]
@@ -942,7 +942,7 @@ local function reload(env)
     local ok = results[1]
     if not ok then
         cleanup()
-        util.die(table.unpack(results,2))
+        util.die(unpack_table(results,2))
     end
 
     local test_cmd = env.openresty_args .. [[ -t -q ]]
