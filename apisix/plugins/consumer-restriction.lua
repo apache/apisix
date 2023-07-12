@@ -130,7 +130,7 @@ function _M.access(conf, ctx)
     if not value then
         local err_msg
         if conf.type == "consumer_name" then
-            err_msg = "Missing authentication in request."
+            err_msg = "Missing authentication information in request."
         else
             err_msg = "Please ensure " .. conf.type .. " is present in request"
         end
