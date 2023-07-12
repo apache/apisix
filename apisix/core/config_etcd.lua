@@ -499,7 +499,7 @@ local function load_full_data(self, dir_res, headers)
             item.clean_handlers = {}
 
             if self.filter then
-                self.filter(item)
+                self.filter(item, 1, self)
             end
         end
 
@@ -551,7 +551,7 @@ local function load_full_data(self, dir_res, headers)
                 item.clean_handlers = {}
 
                 if self.filter then
-                    self.filter(item)
+                    self.filter(item, #values, self)
                 end
             end
 
@@ -695,9 +695,10 @@ local function sync_data(self)
             return false
         end
 
+        local pre_val
         local pre_index = self.values_hash[key]
         if pre_index then
-            local pre_val = self.values[pre_index]
+            pre_val = self.values[pre_index]
             if pre_val then
                 config_util.fire_all_clean_handlers(pre_val)
             end
@@ -755,7 +756,7 @@ local function sync_data(self)
         -- /plugins' filter need to known self.values when it is called
         -- so the filter should be called after self.values set.
         if self.filter then
-            self.filter(res)
+            self.filter(res, pre_val, self)
         end
 
         self.conf_version = self.conf_version + 1

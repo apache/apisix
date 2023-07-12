@@ -20,6 +20,10 @@ local core = require("apisix.core")
 local event = require("apisix.core.event")
 local get_services = require("apisix.http.service").services
 local service_fetch = require("apisix.http.service").get
+local ar = require("apisix.router")
+local table = require("apisix.core.table")
+local json = require("apisix.core.json")
+local rdx = require("resty.radixtree")
 local ipairs = ipairs
 local type = type
 local tab_insert = table.insert
@@ -35,7 +39,7 @@ local _M = {version = 0.1}
 
 
 local function push_host_router(route, host_routes, only_uri_routes)
-    if type(route) ~= "table" then
+    if route == nil or (type(route) ~= "table" or  route.value == nil) then
         return
     end
 
@@ -70,6 +74,7 @@ local function push_host_router(route, host_routes, only_uri_routes)
     end
 
     local radixtree_route = {
+        id = route.value.id,
         paths = route.value.uris or route.value.uri,
         methods = route.value.methods,
         priority = route.value.priority,
@@ -90,14 +95,15 @@ local function push_host_router(route, host_routes, only_uri_routes)
         return
     end
 
-    for i, host in ipairs(hosts) do
-        local host_rev = host:reverse()
-        if not host_routes[host_rev] then
-            host_routes[host_rev] = {radixtree_route}
-        else
-            tab_insert(host_routes[host_rev], radixtree_route)
-        end
+    local rev = {}
+    for i, h in ipairs(hosts) do
+        tab_insert(rev, h:reverse())
     end
+
+    core.table.insert(host_routes, {
+        rev = rev,
+        route = radixtree_route
+    })
 end
 
 
@@ -115,13 +121,13 @@ local function create_radixtree_router(routes)
         end
     end
 
-    -- create router: host_router
     local host_router_routes = {}
-    for host_rev, routes in pairs(host_routes) do
-        local sub_router = router.new(routes)
+    for i, hr in ipairs(host_routes) do
+        local sub_router = router.new(hr["route"])
 
         core.table.insert(host_router_routes, {
-            paths = host_rev,
+            id = hr["route"]["id"],
+            paths = hr["rev"],
             filter_fun = function(vars, opts, ...)
                 return sub_router:dispatch(vars.uri, opts, ...)
             end,
@@ -143,6 +149,87 @@ local function create_radixtree_router(routes)
 end
 
 
+local function incremental_operate_radixtree(routes)
+    if ar.need_create_radixtree then
+        core.log.notice("create object of radixtree host uri after load_full_data or init.", #routes)
+        create_radixtree_router(routes)
+        ar.need_create_radixtree = false
+        table.clear(ar.sync_tb)
+        return
+    end
+
+    local op, route, last_route
+    local router_opts = {
+        no_param_match = true
+    }
+
+    event.push(event.CONST.BUILD_ROUTER, routes)
+    for k, _ in pairs(ar.sync_tb) do
+        op = ar.sync_tb[k]["op"]
+        route = ar.sync_tb[k]["outer_routeoute"]
+        last_route = ar.sync_tb[k]["last_route"]
+        local host_routes = {}
+        local only_uri_routes = {}
+        local last_host_routes = {}
+        local last_only_uri_routes = {}
+        local outer_route, last_outer_route = {paths={}}, {paths={}}
+        local inner_route, last_inner_route = {}, {}
+        local sub_router
+
+        push_host_router(route, host_routes, only_uri_routes)
+        push_host_router(last_route, last_host_routes, last_only_uri_routes)
+
+        if #host_routes > 0 or #last_host_routes > 0 then
+            if route then
+                if #host_routes > 0 then
+                    inner_route = host_routes[1]["route"]
+                end
+
+                if #last_host_routes > 0 then
+                    last_inner_route = last_host_routes[1]["route"]
+                    last_outer_route = {
+                        id = last_route.value.id,
+                        paths = last_host_routes[1]["rev"],
+                    }
+                end
+
+                sub_router = router.new(inner_route)
+
+                outer_route =  {
+                    id = route.value.id,
+                    paths = host_routes[1]["rev"],
+                    filter_fun = function(vars, opts, ...)
+                        return sub_router:dispatch(vars.uri, opts, ...)
+                    end,
+                    handler = function (api_ctx, match_opts)
+                        api_ctx.real_curr_req_matched_host = match_opts.matched._path
+                    end
+                }
+            end
+
+            core.log.notice("update routes watched from etcd into radixtree.", json.encode(route))
+            local err = host_router:update_route(last_outer_route, outer_route, router_opts)
+            if err ~= nil then
+                core.log.error("update a route into radixtree failed.", json.encode(route), err)
+                return
+            end
+        else
+            local cur_tmp = only_uri_routes[1] or {paths = {}}
+            local last_tmp = last_only_uri_routes[1] or {paths = {}}
+
+            core.log.notice("update routes watched from etcd into radixtree.", json.encode(route))
+            local err = only_uri_router:update_route(last_tmp, cur_tmp, router_opts)
+            if err ~= nil then
+                core.log.error("update a route into radixtree failed.", json.encode(route), err)
+                return
+            end
+        end
+
+        ar.sync_tb[k] = nil
+    end
+end
+
+
     local match_opts = {}
 function _M.match(api_ctx)
     local user_routes = _M.user_routes
@@ -150,7 +237,8 @@ function _M.match(api_ctx)
     if not cached_router_version or cached_router_version ~= user_routes.conf_version
         or not cached_service_version or cached_service_version ~= service_version
     then
-        create_radixtree_router(user_routes.values)
+        --create_radixtree_router(user_routes.values)
+        incremental_operate_radixtree(user_routes.values)
         cached_router_version = user_routes.conf_version
         cached_service_version = service_version
     end

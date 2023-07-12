@@ -17,35 +17,101 @@
 local require = require
 local http_route = require("apisix.http.route")
 local apisix_upstream = require("apisix.upstream")
-local core    = require("apisix.core")
+local core = require("apisix.core")
+local json = require("apisix.core.json")
 local plugin_checker = require("apisix.plugin").plugin_checker
 local str_lower = string.lower
-local error   = error
-local ipairs  = ipairs
+local error = error
+local ipairs = ipairs
+local sub_str = string.sub
 
 
 local _M = {version = 0.3}
 
+_M.need_create_radixtree = true
 
-local function filter(route)
+
+local function short_key(self, str)
+    return sub_str(str, #self.key + 2)
+end
+
+
+local function filter(route, pre_route_or_size, obj)
     route.orig_modifiedIndex = route.modifiedIndex
     route.update_count = 0
 
     route.has_domain = false
-    if not route.value then
+    if route.value then
+        if route.value.host then
+            route.value.host = str_lower(route.value.host)
+        elseif route.value.hosts then
+            for i, v in ipairs(route.value.hosts) do
+                route.value.hosts[i] = str_lower(v)
+            end
+        end
+
+        apisix_upstream.filter_upstream(route.value.upstream, route)
+    end
+
+    core.log.info("filter route: ", core.json.delay_encode(route, true))
+
+    if not obj then
+        return
+    end
+    --save sync route and operation type into a map
+    if type(pre_route_or_size) == "number" then
+        if pre_route_or_size == #obj.values then
+            _M.need_create_radixtree = true
+        end
         return
     end
 
-    if route.value.host then
-        route.value.host = str_lower(route.value.host)
-    elseif route.value.hosts then
-        for i, v in ipairs(route.value.hosts) do
-            route.value.hosts[i] = str_lower(v)
-        end
+    local key
+    if obj.single_item then
+        key = obj.key
+    else
+        key = short_key(obj, route.key)
     end
 
-    apisix_upstream.filter_upstream(route.value.upstream, route)
+    local sync_tb = _M.sync_tb
+    if pre_route_or_size then
+        if route.value then
+            --update route
+            core.log.notice("update routes watched from etcd into radixtree.", json.encode(route))
+            if not sync_tb[route.value.id] then
+                sync_tb[route.value.id] = {op = "update", last_route = pre_route_or_size, cur_route = route}
+            elseif sync_tb[route.value.id]["op"] == "update" then
+                sync_tb[route.value.id] = {op = "update", last_route = sync_tb[route.value.id]["last_route"],
+                                            cur_route = route}
+            elseif sync_tb[route.value.id]["op"] == "create" then
+                sync_tb[route.value.id] = {op = "create", cur_route = route}
+            end
+        else
+            --delete route
+            core.log.notice("delete routes watched from etcd into radixtree.", json.encode(route))
+            if not sync_tb[key] then
+                sync_tb[key] = {op = "delete", last_route = pre_route_or_size}
+            elseif sync_tb[key]["op"] == "create" then
+                sync_tb[key] = nil
+            elseif sync_tb[key]["op"] == "update" then
+                sync_tb[key] = {op = "delete", last_route = sync_tb[key]["last_route"]}
+            end
+        end
+    elseif route.value then
+        --create route
+        core.log.notice("create routes watched from etcd into radixtree.", json.encode(route))
+        if not sync_tb[route.value.id] then
+            sync_tb[route.value.id] = {op = "create", cur_route = route}
+        elseif sync_tb[route.value.id]["op"] == "delete" then
+            sync_tb[route.value.id] = {op = "update", cur_route = route, 
+                                        last_route = sync_tb[route.value.id]["last_route"]}
+        end
+    else
+        core.log.error("invalid operation type for a route.", route.key)
+        return
+    end
 
+    _M.sync_tb = sync_tb
     core.log.info("filter route: ", core.json.delay_encode(route, true))
 end
 
@@ -72,6 +138,7 @@ end
 
 
 function _M.http_init_worker()
+    _M.sync_tb = {}
     local conf = core.config.local_conf()
     local router_http_name = "radixtree_uri"
     local router_ssl_name = "radixtree_sni"
