@@ -45,6 +45,7 @@ fi
 # Both HTTP and Stream
 echo '
 apisix:
+    proxy_mode: http&stream
     enable_admin: true
     stream_proxy:
         tcp:
@@ -74,6 +75,7 @@ fi
 echo '
 apisix:
     enable_admin: false
+    proxy_mode: stream
     stream_proxy:
         tcp:
             - addr: 9100

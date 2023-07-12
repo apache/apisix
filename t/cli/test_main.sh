@@ -670,10 +670,10 @@ echo "passed: bad lua_module_hook should be rejected"
 
 echo '
 apisix:
+    proxy_mode: http&stream
     extra_lua_path: "\$prefix/example/?.lua"
     lua_module_hook: "my_hook"
     stream_proxy:
-        only: false
         tcp:
             - addr: 9100
 ' > conf/config.yaml
@@ -810,6 +810,7 @@ git checkout conf/config.yaml
 
 echo '
 apisix:
+  proxy_mode: http&stream
   stream_proxy:
     tcp:
       - addr: 9100

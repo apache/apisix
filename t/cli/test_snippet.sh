@@ -25,8 +25,8 @@ echo '
 apisix:
     node_listen: 9080
     enable_admin: true
+    proxy_mode: http&stream
     stream_proxy:
-        only: false
         tcp:
             - 9100
 nginx_config:
