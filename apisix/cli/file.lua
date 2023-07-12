@@ -238,8 +238,8 @@ function _M.read_yaml_conf(apisix_home)
     end
 
     if not is_empty_file then
-        local user_conf = yaml.parse(user_conf_yaml)
-        if not user_conf then
+        local ok, user_conf = pcall(yaml.parse,user_conf_yaml)
+        if not ok or not user_conf then
             return nil, "invalid config.yaml file"
         end
 

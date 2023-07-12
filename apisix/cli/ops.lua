@@ -354,8 +354,8 @@ Please modify "admin_key" in conf/config.yaml .
                                           yaml_conf.apisix.control.ip,
                                           9090, yaml_conf.apisix.control.port)}
         end
-        admin_server_addr = results[1]
-        if not admin_server_addr then
+        control_server_addr = results[1]
+        if not control_server_addr then
             return false, table.unpack(results, 2)
         end
     end
@@ -882,7 +882,12 @@ local function test(env, backup_ngx_conf)
     end
 
     -- reinit nginx.conf
-    init(env)
+    local results = {init(env)}
+    local ok = results[1]
+    if not ok then
+        cleanup()
+        util.die(table.unpack(results,2))
+    end
 
     local test_cmd = env.openresty_args .. [[ -t -q ]]
     local test_ret = execute((test_cmd))
@@ -933,7 +938,12 @@ end
 
 local function reload(env)
     -- reinit nginx.conf
-    init(env)
+    local results = {init(env)}
+    local ok = results[1]
+    if not ok then
+        cleanup()
+        util.die(table.unpack(results,2))
+    end
 
     local test_cmd = env.openresty_args .. [[ -t -q ]]
     -- When success,
