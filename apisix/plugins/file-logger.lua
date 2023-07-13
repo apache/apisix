@@ -39,7 +39,7 @@ local schema = {
                 type = "array"
             }
         },
-        matches = {
+        match = {
             type = "array",
             maxItems = 20,
             items = {
@@ -72,12 +72,13 @@ function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
-
-    local ok, err = core.schema.check(schema, conf)
-    if not ok then
-        return nil, err
+    if conf.match then
+        local ok, err = expr.new(conf.match)
+        if not ok then
+            return nil, "failed to validate the 'match' expression: " .. err
+        end
     end
-    return log_util.check_log_schema(conf)
+    return core.schema.check(schema, conf)
 end
 
 

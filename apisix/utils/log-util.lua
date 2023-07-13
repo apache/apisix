@@ -210,10 +210,10 @@ function _M.inject_get_full_log(f)
 end
 
 
-local function is_match(matches, ctx)
+local function is_match(match, ctx)
     local match_result
-    for _, match in pairs(matches) do
-        local expr, _ = expr.new(match)
+    for _, m in pairs(match) do
+        local expr, _ = expr.new(m)
         match_result = expr:eval(ctx.var)
         if match_result then
             break
@@ -225,9 +225,9 @@ end
 
 
 function _M.get_log_entry(plugin_name, conf, ctx)
-    -- If the "matches" configuration is set and the matching conditions are not met,
+    -- If the "match" configuration is set and the matching conditions are not met,
     -- then do not log the message.
-    if conf.matches and not is_match(conf.matches, ctx) then
+    if conf.match and not is_match(conf.match, ctx) then
         return
     end
 
@@ -285,12 +285,6 @@ function _M.check_log_schema(conf)
         local ok, err = expr.new(conf.include_resp_body_expr)
         if not ok then
             return nil, "failed to validate the 'include_resp_body_expr' expression: " .. err
-        end
-    end
-    if conf.matches then
-        local ok, err = expr.new(conf.matches)
-        if not ok then
-            return nil, "failed to validate the 'matches' expression: " .. err
         end
     end
     return true, nil

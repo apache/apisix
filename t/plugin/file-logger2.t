@@ -277,7 +277,7 @@ write file log success
 
 
 
-=== TEST 8: Add new configuration with matches
+=== TEST 8: Add new configuration with match
 --- config
     location /t {
         content_by_lua_block {
@@ -287,8 +287,8 @@ write file log success
                 [[{
                         "plugins": {
                             "file-logger": {
-                                "path": "file-with-matches.log",
-                                "matches": [
+                                "path": "file-with-match.log",
+                                "match": [
                                     [
                                         [ "arg_name","==","jack" ]
                                     ]
@@ -318,16 +318,16 @@ passed
 
 
 
-=== TEST 9: Request matches
+=== TEST 9: Request match
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
             local code = t("/hello?name=jack", ngx.HTTP_GET)
-            local fd, err = io.open("file-with-matches.log", 'r')
+            local fd, err = io.open("file-with-match.log", 'r')
             if not fd then
-                core.log.error("failed to open file: file-with-matches.log, error info: ", err)
+                core.log.error("failed to open file: file-with-match.log, error info: ", err)
                 return
             end
             local msg = fd:read()
@@ -341,7 +341,7 @@ passed
                 ngx.say(msg)
             end
 
-            os.remove("file-with-matches.log")
+            os.remove("file-with-match.log")
         }
     }
 --- response_body
@@ -349,14 +349,14 @@ write file log success
 
 
 
-=== TEST 10: Request not matches matches
+=== TEST 10: Request not match
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin").test
             local code = t("/hello?name=tony", ngx.HTTP_GET)
-            local fd, err = io.open("file-with-matches.log", 'r')
+            local fd, err = io.open("file-with-match.log", 'r')
             if not fd then
                 local msg = "not write file log"
                 ngx.say(msg)
