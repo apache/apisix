@@ -329,7 +329,7 @@ passed
             if not fd then
                 core.log.error("failed to open file: file-with-matches.log, error info: ", err)
                 return
-            end            
+            end
             local msg = fd:read()
 
             local new_msg = core.json.decode(msg)
