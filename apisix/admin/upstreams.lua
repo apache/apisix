@@ -16,12 +16,12 @@
 --
 local core = require("apisix.core")
 local config_util = require("apisix.core.config_util")
-local router = require("apisix.router")
 local get_routes = require("apisix.router").http_routes
 local get_services = require("apisix.http.service").services
 local get_plugin_configs = require("apisix.plugin_config").plugin_configs
 local get_consumers = require("apisix.consumer").consumers
 local get_consumer_groups = require("apisix.consumer_group").consumer_groups
+local get_global_rules = require("apisix.global_rules").global_rules
 local apisix_upstream = require("apisix.upstream")
 local resource = require("apisix.admin.resource")
 local tostring = tostring
@@ -115,21 +115,10 @@ local function delete_checker(id)
         return 400, err_msg
     end
 
-    -- TODO: Refactor router.global_rules and then refactor the following code
-    local global_rules = router.global_rules
-    if global_rules and global_rules.values
-        and #global_rules.values > 0 then
-
-        for _, global_rule in config_util.iterate_values(global_rules.values) do
-            if global_rule and global_rule.value
-                and global_rule.value.plugins
-                and up_id_in_plugins(global_rule.value.plugins, id) then
-                 return 400, {error_msg = "can not delete this upstream,"
-                                          .. " plugin in global_rule ["
-                                          .. global_rule.value.id
-                                          .. "] is still using it now"}
-            end
-        end
+    local global_rules = get_global_rules()
+    err_msg = check_resources_reference(global_rules, id, true, "global_rules")
+    if err_msg then
+        return 400, err_msg
     end
 
     return nil, nil
