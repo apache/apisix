@@ -19,7 +19,7 @@ local yaml = require("tinyyaml")
 local profile = require("apisix.core.profile")
 local util = require("apisix.cli.util")
 local dkjson = require("dkjson")
-
+local pcall = pcall
 local pairs = pairs
 local type = type
 local tonumber = tonumber
