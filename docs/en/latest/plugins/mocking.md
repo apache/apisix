@@ -41,6 +41,7 @@ The `mocking` Plugin is used for mocking an API. When executed, it returns rando
 | response_example | string  | False    |                  | Body of the response, support use variables, like `$remote_addr $consumer_name`.       |
 | response_schema  | object  | False    |                  | The JSON schema object for the response. Works when `response_example` is unspecified. |
 | with_mock_header | boolean | False    | true             | When set to `true`, adds a response header `x-mock-by: APISIX/{version}`.              |
+| response_headers | object  | false    |                  | Headers to be added in the mocked response. Example: `{"X-Foo": "bar", "X-Few": "baz"}`|
 
 The JSON schema supports the following types in their fields:
 
