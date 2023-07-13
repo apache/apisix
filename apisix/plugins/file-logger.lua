@@ -16,6 +16,7 @@
 --
 local log_util     =   require("apisix.utils.log-util")
 local core         =   require("apisix.core")
+local expr         =   require("resty.expr.v1")
 local ngx          =   ngx
 local io_open      =   io.open
 local is_apisix_or, process = pcall(require, "resty.apisix.process")
