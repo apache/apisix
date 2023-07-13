@@ -357,10 +357,8 @@ write file log success
             local t = require("lib.test_admin").test
             local code = t("/hello?name=tony", ngx.HTTP_GET)
             local fd, err = io.open("file-with-matches.log", 'r')
-            local msg
-
             if not fd then
-                msg = "not write file log"
+                local msg = "not write file log"
                 ngx.say(msg)
                 return
             end
