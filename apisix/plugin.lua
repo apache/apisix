@@ -1141,8 +1141,7 @@ end
 
 
 function _M.run_global_rules(api_ctx, global_rules, phase_name)
-    if global_rules and global_rules.values
-       and #global_rules.values > 0 then
+    if global_rules and #global_rules > 0 then
         local orig_conf_type = api_ctx.conf_type
         local orig_conf_version = api_ctx.conf_version
         local orig_conf_id = api_ctx.conf_id
@@ -1152,7 +1151,7 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
         end
 
         local plugins = core.tablepool.fetch("plugins", 32, 0)
-        local values = global_rules.values
+        local values = global_rules
         local route = api_ctx.matched_route
         for _, global_rule in config_util.iterate_values(values) do
             api_ctx.conf_type = "global_rule"
