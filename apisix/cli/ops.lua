@@ -50,7 +50,7 @@ local str_find = string.find
 local str_byte = string.byte
 local str_sub = string.sub
 local str_format = string.format
-local unpack_table = require("table.unpack")
+local unpack_table = table.unpack
 local _M = {}
 
 
