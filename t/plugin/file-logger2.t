@@ -326,14 +326,11 @@ passed
             local t = require("lib.test_admin").test
             local code = t("/hello?name=jack", ngx.HTTP_GET)
             local fd, err = io.open("file-with-matches.log", 'r')
-            local msg
-
             if not fd then
                 core.log.error("failed to open file: file-with-matches.log, error info: ", err)
                 return
-            end
-
-            msg = fd:read()
+            end            
+            local msg = fd:read()
 
             local new_msg = core.json.decode(msg)
             if new_msg.request == 'GET /hello?name=jack HTTP/1.1'
