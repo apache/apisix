@@ -18,9 +18,7 @@ local require = require
 local http_route = require("apisix.http.route")
 local apisix_upstream = require("apisix.upstream")
 local core    = require("apisix.core")
-local plugin_checker = require("apisix.plugin").plugin_checker
 local str_lower = string.lower
-local error   = error
 local ipairs  = ipairs
 
 
@@ -91,17 +89,6 @@ function _M.http_init_worker()
     _M.router_ssl = router_ssl
 
     _M.api = require("apisix.api_router")
-
-    local global_rules, err = core.config.new("/global_rules", {
-            automatic = true,
-            item_schema = core.schema.global_rule,
-            checker = plugin_checker,
-        })
-    if not global_rules then
-        error("failed to create etcd instance for fetching /global_rules : "
-              .. err)
-    end
-    _M.global_rules = global_rules
 end
 
 
