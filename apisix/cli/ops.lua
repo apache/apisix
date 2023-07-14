@@ -964,7 +964,14 @@ end
 local action = {
     help = help,
     version = version,
-    init = init,
+    init = function (env)
+        local results = {init(env)}
+        local ok = results[1]
+        if not ok then
+            cleanup()
+            util.die(table_unpack(results,2))
+        end
+    end,
     init_etcd = etcd.init,
     start = start,
     stop = stop,
