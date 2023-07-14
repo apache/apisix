@@ -109,7 +109,7 @@ deployment:
 
 默认情况下，Admin API 会检查资源间的引用关系，将会拒绝删除正在使用中的资源。
 
-可以通过在删除请求中添加请求头 `X-Force-Delete: true` 来进行强制删除，例如：
+可以通过在删除请求中添加请求参数 `force=true` 来进行强制删除，例如：
 
 ```bash
 $ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{
@@ -126,9 +126,9 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 
 $ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 {"error_msg":"can not delete this upstream, route [1] is still using it now"}
-$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE -H 'X-Force-Delete: any-value'
+$ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1?force=anyvalue" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 {"error_msg":"can not delete this upstream, route [1] is still using it now"}
-$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE -H 'X-Force-Delete: true'
+$ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1?force=true" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 {"deleted":"1","key":"/apisix/upstreams/1"}
 ```
 

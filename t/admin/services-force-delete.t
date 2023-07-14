@@ -95,11 +95,8 @@ passed
         content_by_lua_block {
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/services/1',
-                ngx.HTTP_DELETE, nil, nil,
-                {
-                    ["X-Force-Delete"] = "any-value",
-                }
+            local code, message = t('/apisix/admin/services/1?force=anyvalue',
+                ngx.HTTP_DELETE
             )
             ngx.print("[delete] code: ", code, " message: ", message)
         }
@@ -132,11 +129,8 @@ passed
         content_by_lua_block {
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/services/1',
-                ngx.HTTP_DELETE, nil, nil,
-                {
-                    ["X-Force-Delete"] = "true",
-                }
+            local code, message = t('/apisix/admin/services/1?force=true',
+                ngx.HTTP_DELETE
             )
             ngx.print("[delete] code: ", code, " message: ", message)
         }
