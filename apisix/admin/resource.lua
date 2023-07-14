@@ -230,7 +230,7 @@ function _M:put(id, conf, sub_path, args)
 end
 
 -- Keep the unused conf to make the args list consistent with other methods
-function _M:delete(id, conf, sub_path)
+function _M:delete(id, conf, sub_path, uri_args)
     if core.table.array_find(self.unsupported_methods, "delete") then
         return 405, {error_msg = "not supported `DELETE` method for " .. self.kind}
     end
@@ -253,7 +253,7 @@ function _M:delete(id, conf, sub_path)
 
     key = key .. "/" .. id
 
-    if self.delete_checker then
+    if self.delete_checker and uri_args.force ~= "true" then
         local code, err = self.delete_checker(id)
         if err then
             return code, err

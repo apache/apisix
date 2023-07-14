@@ -105,6 +105,33 @@ deployment:
 
 首先查找环境变量 `ADMIN_KEY`，如果该环境变量不存在，它将使用 `edd1c9f034335f136f87ad84b625c8f1` 作为默认值。
 
+### 强制删除 {#force-delete}
+
+默认情况下，Admin API 会检查资源间的引用关系，将会拒绝删除正在使用中的资源。
+
+可以通过在删除请求中添加请求参数 `force=true` 来进行强制删除，例如：
+
+```bash
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{
+    "nodes": {
+        "127.0.0.1:8080": 1
+    },
+    "type": "roundrobin"
+}'
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{
+    "uri": "/*",
+    "upstream_id": 1
+}'
+{"value":{"priority":0,"upstream_id":1,"uri":"/*","create_time":1689038794,"id":"1","status":1,"update_time":1689038916},"key":"/apisix/routes/1"}
+
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+{"error_msg":"can not delete this upstream, route [1] is still using it now"}
+$ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1?force=anyvalue" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+{"error_msg":"can not delete this upstream, route [1] is still using it now"}
+$ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1?force=true" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+{"deleted":"1","key":"/apisix/upstreams/1"}
+```
+
 ## v3 版本新功能 {#v3-new-function}
 
 在 APISIX v3 版本中，Admin API 支持了一些不向下兼容的新特性，比如支持新的响应体格式、支持分页查询、支持过滤资源等。
@@ -868,7 +895,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 | service_name   | 是，与 `nodes` 二选一。                              | string         | 服务发现时使用的服务名，请参考 [集成服务发现注册中心](./discovery.md)。                                                                                                                                                                                                                                                                                            | `a-bootiful-client`                              |
 | discovery_type | 是，与 `service_name` 配合使用。                      | string         | 服务发现类型，请参考 [集成服务发现注册中心](./discovery.md)。                                                                                                                                                                                                                                                                                                      | `eureka`                                         |
 | key            | 条件必需                                          | 匹配类型       | 该选项只有类型是 `chash` 才有效。根据 `key` 来查找对应的节点 `id`，相同的 `key` 在同一个对象中，则返回相同 id。目前支持的 NGINX 内置变量有 `uri, server_name, server_addr, request_uri, remote_port, remote_addr, query_string, host, hostname, arg_***`，其中 `arg_***` 是来自 URL 的请求参数，详细信息请参考 [NGINX 变量列表](http://nginx.org/en/docs/varindex.html)。 |                                                  |
-| checks         | 否                                             | health_checker | 配置健康检查的参数，详细信息请参考 [health-check](health-check.md)。                                                                                                                                                                                                                                                                                               |                                                  |
+| checks         | 否                                             | health_checker | 配置健康检查的参数，详细信息请参考 [health-check](./tutorials/health-check.md)。                                                                                                                                                                                                                                                                                               |                                                  |
 | retries        | 否                                             | 整型           | 使用 NGINX 重试机制将请求传递给下一个上游，默认启用重试机制且次数为后端可用的节点数量。如果指定了具体重试次数，它将覆盖默认值。当设置为 `0` 时，表示不启用重试机制。                                                                                                                                                                                                 |                                                  |
 | retry_timeout  | 否                                             | number         | 限制是否继续重试的时间，若之前的请求和重试请求花费太多时间就不再继续重试。当设置为 `0` 时，表示不启用重试超时机制。                                                                                                                                                                                                 |                                                  |
 | timeout        | 否                                             | 超时时间对象   | 设置连接、发送消息、接收消息的超时时间，以秒为单位。| `{"connect": 0.5,"send": 0.5,"read": 0.5}` |
@@ -1162,8 +1189,8 @@ SSL 资源请求地址：/apisix/admin/ssls/{id}
 
 | 名称        | 必选项 | 类型           | 描述                                                                                                   | 示例                                             |
 | ----------- | ------ | -------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
-| cert        | 是     | 证书           | HTTP 证书。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                                                             |                                                  |
-| key         | 是     | 私钥           | HTTPS 证书私钥。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                                                         |                                                  |
+| cert        | 是     | 证书           | HTTP 证书。该字段支持使用 [APISIX Secret](./terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                                                             |                                                  |
+| key         | 是     | 私钥           | HTTPS 证书私钥。该字段支持使用 [APISIX Secret](./terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                                                         |                                                  |
 | certs       | 否   | 证书字符串数组 | 当你想给同一个域名配置多个证书时，除了第一个证书需要通过 `cert` 传递外，剩下的证书可以通过该参数传递上来。 |                                                  |
 | keys        | 否   | 私钥字符串数组 | `certs` 对应的证书私钥，需要与 `certs` 一一对应。                                                          |                                                  |
 | client.ca   | 否   | 证书 |  设置将用于客户端证书校验的 `CA` 证书。该特性需要 OpenResty 为 1.19 及以上版本。  |                                                  |

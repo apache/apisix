@@ -115,7 +115,7 @@ world
 --- response_headers
 in: out
 --- error_log eval
-qr/conf_version: \d+#1,/
+qr/conf_version: \d+#\d+,/
 
 
 

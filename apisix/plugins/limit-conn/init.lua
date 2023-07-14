@@ -16,6 +16,7 @@
 --
 local limit_conn_new = require("resty.limit.conn").new
 local core = require("apisix.core")
+local is_http = ngx.config.subsystem == "http"
 local sleep = core.sleep
 local shdict_name = "plugin-limit-conn"
 if ngx.config.subsystem == "stream" then
@@ -115,11 +116,13 @@ function _M.decrease(conf, ctx)
         local use_delay =  limit_conn[i + 3]
 
         local latency
-        if not use_delay then
-            if ctx.proxy_passed then
-                latency = ctx.var.upstream_response_time
-            else
-                latency = ctx.var.request_time - delay
+        if is_http then
+            if not use_delay then
+                if ctx.proxy_passed then
+                    latency = ctx.var.upstream_response_time
+                else
+                    latency = ctx.var.request_time - delay
+                end
             end
         end
         core.log.debug("request latency is ", latency) -- for test
