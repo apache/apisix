@@ -417,8 +417,8 @@ Please modify "admin_key" in conf/config.yaml .
     local node_listen = {}
     -- listen in http, support multiple ports and specific IP, compatible with the original style
     if type(yaml_conf.apisix.node_listen) == "number" then
-        local results = {listen_table_insert(node_listen, "http", "0.0.0.0", yaml_conf.apisix.node_listen,
-                false, yaml_conf.apisix.enable_ipv6)}
+        local results = {listen_table_insert(node_listen, "http", "0.0.0.0",
+                yaml_conf.apisix.node_listen, false, yaml_conf.apisix.enable_ipv6)}
         local ok = results[0]
         if not ok then
             return false, table_unpack(results,2)
