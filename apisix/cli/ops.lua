@@ -412,6 +412,7 @@ Please modify "admin_key" in conf/config.yaml .
                 ip_port_to_check[addr] = scheme
             end
         end
+        return true
     end
 
     local node_listen = {}
@@ -419,7 +420,7 @@ Please modify "admin_key" in conf/config.yaml .
     if type(yaml_conf.apisix.node_listen) == "number" then
         local results = {listen_table_insert(node_listen, "http", "0.0.0.0",
                 yaml_conf.apisix.node_listen, false, yaml_conf.apisix.enable_ipv6)}
-        local ok = results[0]
+        local ok = results[1]
         if not ok then
             return false, table_unpack(results,2)
         end
@@ -429,11 +430,10 @@ Please modify "admin_key" in conf/config.yaml .
             if type(value) == "number" then
                 local results = {listen_table_insert(node_listen, "http", "0.0.0.0", value,
                         false, yaml_conf.apisix.enable_ipv6)}
-                local ok = results[0]
+                local ok = results[1]
                 if not ok then
                     return false, table_unpack(results,2)
                 end
-
             elseif type(value) == "table" then
                 local ip = value.ip
                 local port = value.port
@@ -457,7 +457,7 @@ Please modify "admin_key" in conf/config.yaml .
 
                 local results = {listen_table_insert(node_listen, "http", ip, port,
                         enable_http2, enable_ipv6)}
-                local ok = results[0]
+                local ok = results[1]
                 if not ok then
                     return false, table_unpack(results,2)
                 end
@@ -491,7 +491,7 @@ Please modify "admin_key" in conf/config.yaml .
 
         local results = {listen_table_insert(ssl_listen, "https", ip, port,
                 enable_http2, enable_ipv6)}
-        local ok = results[0]
+        local ok = results[1]
         if not ok then
             return false, table_unpack(results,2)
         end
