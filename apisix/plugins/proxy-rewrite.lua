@@ -352,17 +352,6 @@ function _M.rewrite(conf, ctx)
         ctx.var.upstream_uri = upstream_uri
     end
 
-    if conf.use_real_request_uri_unsafe and conf.regex_uri then
-        local index
-        if separator_escaped then
-            index = str_find(upstream_uri,"?")
-        end
-        if index then
-            upstream_uri = sub_str(upstream_uri, 1, index - 1)
-                           ..sub_str(upstream_uri,index)
-        end
-        ctx.var.upstream_uri = upstream_uri
-    end
     if conf.headers then
         local hdr_op, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
                                     create_header_operation, conf.headers)
