@@ -38,13 +38,12 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: set allowlist, denylist, bypass_missing and user-defined message
+=== TEST 1: set both allowlist and denylist
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.ua-restriction")
             local conf = {
-               bypass_missing = true,
                allowlist = {
                     "my-bot1",
                     "my-bot2"
@@ -53,18 +52,18 @@ __DATA__
                     "my-bot1",
                     "my-bot2"
                },
-               message = "User-Agent Forbidden",
             }
             local ok, err = plugin.check_schema(conf)
             if not ok then
                 ngx.say(err)
+                return
             end
 
             ngx.say(require("toolkit.json").encode(conf))
         }
     }
 --- response_body
-{"allowlist":["my-bot1","my-bot2"],"bypass_missing":true,"denylist":["my-bot1","my-bot2"],"message":"User-Agent Forbidden"}
+allowlist and denylist can't be enabled at the same time.
 
 
 
@@ -302,72 +301,9 @@ hello world
 GET /hello
 --- more_headers
 User-Agent:foo/bar
---- error_code: 200
+--- error_code: 403
 --- response_body
-hello world
-
-
-
-=== TEST 15: set config: user-agent in both allowlist and denylist
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "uri": "/hello",
-                        "upstream": {
-                            "type": "roundrobin",
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            }
-                        },
-                        "plugins": {
-                            "ua-restriction": {
-                                 "allowlist": [
-                                     "foo/bar",
-                                     "(Baiduspider)/(\\d+)\\.(\\d+)"
-                                 ],
-                                 "denylist": [
-                                     "foo/bar",
-                                     "(Baiduspider)/(\\d+)\\.(\\d+)"
-                                 ]
-                            }
-                        }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 16: hit route and user-agent in both allowlist and denylist, pass(part 1)
---- request
-GET /hello
---- more_headers
-User-Agent:foo/bar
---- error_code: 200
---- response_body
-hello world
-
-
-
-=== TEST 17: hit route and user-agent in both allowlist and denylist, pass(part 2)
---- request
-GET /hello
---- more_headers
-User-Agent:Baiduspider/1.0
---- error_code: 200
---- response_body
-hello world
+{"message":"Not allowed"}
 
 
 

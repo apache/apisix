@@ -22,10 +22,6 @@ local type = type
 local str_strip = stringx.strip
 local re_find = ngx.re.find
 
-local MATCH_NONE = 0
-local MATCH_ALLOW = 1
-local MATCH_DENY = 2
-
 local lrucache_useragent = core.lrucache.new({ ttl = 300, count = 4096 })
 
 local schema = {
@@ -74,20 +70,22 @@ local function match_user_agent(user_agent, conf)
     if conf.allowlist then
         for _, rule in ipairs(conf.allowlist) do
             if re_find(user_agent, rule, "jo") then
-                return MATCH_ALLOW
+                return true
             end
         end
+        return false
     end
 
     if conf.denylist then
         for _, rule in ipairs(conf.denylist) do
             if re_find(user_agent, rule, "jo") then
-                return MATCH_DENY
+                return false
             end
         end
+        return true
     end
 
-    return MATCH_NONE
+    return true
 end
 
 function _M.check_schema(conf)
@@ -95,6 +93,10 @@ function _M.check_schema(conf)
 
     if not ok then
         return false, err
+    end
+
+    if conf.allowlist and conf.denylist then
+        return false, "allowlist and denylist can't be enabled at the same time."
     end
 
     if conf.allowlist then
@@ -128,12 +130,13 @@ function _M.access(conf, ctx)
             return 403, { message = conf.message }
         end
     end
-    local match = MATCH_NONE
+    local match
+
     if type(user_agent) == "table" then
         for _, v in ipairs(user_agent) do
             if type(v) == "string" then
                 match = lrucache_useragent(v, conf, match_user_agent, v, conf)
-                if match > MATCH_ALLOW then
+                if not match then
                     break
                 end
             end
@@ -142,7 +145,7 @@ function _M.access(conf, ctx)
         match = lrucache_useragent(user_agent, conf, match_user_agent, user_agent, conf)
     end
 
-    if match > MATCH_ALLOW then
+    if not match then
         return 403, { message = conf.message }
     end
 end
