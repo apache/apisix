@@ -43,7 +43,7 @@ description: 本文介绍了 Apache APISIX ua-restriction 插件的使用方法�
 
 :::note
 
-`allowlist` 和 `denylist` 可以同时启用。同时启用时，插件会根据 `User-Agent` 先检查 `allowlist`，再检查 `denylist`。
+`allowlist` 和 `denylist` 不可以同时启用。
 
 :::
 
