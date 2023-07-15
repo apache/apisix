@@ -128,12 +128,8 @@ function _M.access(conf, ctx)
     local method = ngx.req.get_method()
 
     if not value then
-        local err_msg
-        if conf.type == "consumer_name" then
-            err_msg = "Missing authentication information in request."
-        else
-            err_msg = "Please ensure " .. conf.type .. " is present in request"
-        end
+        local err_msg = "The request is rejected, please check the "
+                        .. conf.type .. " for this request"
         return 401, { message = err_msg}
     end
     core.log.info("value: ", value)

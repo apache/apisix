@@ -313,7 +313,7 @@ GET /hello
 Authorization: Basic amFjazIwMjE6MTIzNDU2
 --- error_code: 401
 --- response_body
-{"message":"Please ensure consumer_group_id is present in request"}
+{"message":"The request is rejected, please check the consumer_group_id for this request"}
 
 
 
@@ -362,11 +362,11 @@ passed
 GET /hello
 --- error_code: 401
 --- response_body
-{"message":"Please ensure service_id is present in request"}
+{"message":"The request is rejected, please check the service_id for this request"}
 
 
 
-=== TEST 17: set white with service_id
+=== TEST 17: set whitelist with service_id
 --- config
     location /t {
         content_by_lua_block {
@@ -411,4 +411,4 @@ passed
 GET /hello
 --- error_code: 401
 --- response_body
-{"message":"Please ensure service_id is present in request"}
+{"message":"The request is rejected, please check the service_id for this request"}
