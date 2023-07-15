@@ -62,8 +62,15 @@ local params_cache = {
 local function get_ip(hostname)
     local _, resolved = socket.dns.toip(hostname)
     local ip_list = {}
-    for _, v in ipairs(resolved.ip) do
-        insert_tab(ip_list, v)
+    if not resolved.ip then
+        -- DNS parsing failure
+        local err = resolved
+        core.log.warn("resolve ip failed, hostname: " .. hostname .. ", error: " .. err)
+        insert_tab(ip_list, "127.0.0.1")
+    else
+        for _, v in ipairs(resolved.ip) do
+            insert_tab(ip_list, v)
+        end
     end
     return ip_list
 end
