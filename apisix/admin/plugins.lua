@@ -105,12 +105,12 @@ end
 function _M.get_plugins_list(subsystem)
     local http_plugins
     local stream_plugins
-    if subsystem == "stream" then
-        stream_plugins = core.config.local_conf().stream_plugins
-    end
     if subsystem == "http" then
         http_plugins = core.config.local_conf().plugins
+    else
+        stream_plugins = core.config.local_conf().stream_plugins
     end
+
 
     local priorities = {}
     local success = {}
