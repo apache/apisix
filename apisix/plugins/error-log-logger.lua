@@ -127,6 +127,51 @@ local metadata_schema = {
             },
             required = {"brokers", "kafka_topic"},
         },
+        elasticsearch = {
+            type = "object",
+            properties = {
+                -- deprecated, use "endpoint_addrs" instead
+                endpoint_addr = {
+                    type = "string",
+                    pattern = "[^/]$",
+                },
+                endpoint_addrs = {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        type = "string",
+                        pattern = "[^/]$",
+                    },
+                },
+                field = {
+                    type = "object",
+                    properties = {
+                        index = { type = "string"},
+                        type = { type = "string"}
+                    },
+                    required = {"index"}
+                },
+                log_format = {type = "object"},
+                auth = {
+                    type = "object",
+                    properties = {
+                        username = {
+                            type = "string",
+                            minLength = 1
+                        },
+                        password = {
+                            type = "string",
+                            minLength = 1
+                        },
+                    },
+                    required = {"username", "password"},
+                },
+                ssl_verify = {
+                    type = "boolean",
+                    default = true
+                }
+            },
+        },
         name = {type = "string", default = plugin_name},
         level = {type = "string", default = "WARN", enum = {"STDERR", "EMERG", "ALERT", "CRIT",
                 "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"}},
@@ -143,10 +188,11 @@ local metadata_schema = {
         {required = {"tcp"}},
         {required = {"clickhouse"}},
         {required = {"kafka"}},
+        {required = {"elasticsearch"}},
         -- for compatible with old schema
         {required = {"host", "port"}}
     },
-    encrypt_fields = {"clickhouse.password"},
+    encrypt_fields = {"clickhouse.password","elasticsearch.auth.password"},
 }
 
 
@@ -403,6 +449,10 @@ local function send_to_kafka(log_message)
 end
 
 
+local function send_to_elasticsearch(log_message)
+
+end
+
 local function send(data)
     if config.skywalking then
         return send_to_skywalking(data)
@@ -410,6 +460,8 @@ local function send(data)
         return send_to_clickhouse(data)
     elseif config.kafka then
         return send_to_kafka(data)
+    elseif config.elasticsearch then
+        return send_to_elasticsearch(data)
     end
     return send_to_tcp_server(data)
 end
