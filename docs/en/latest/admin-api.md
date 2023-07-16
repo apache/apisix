@@ -1324,7 +1324,7 @@ The Plugin ({plugin_name}) of the data structure.
 | --------- | ----------------------------- | ------- |
 | subsystem | The subsystem of the Plugins. | http    |
 
-The plugin can be filtered on subsystem so that the ({plugin_name}) is searched in the subsystem passed through query params. Note that this query parameter is not available on `/apisix/admin/plugins/list`
+The plugin can be filtered on subsystem so that the ({plugin_name}) is searched in the subsystem passed through query params.
 
 ### Example API usage:
 

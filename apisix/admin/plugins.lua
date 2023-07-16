@@ -76,17 +76,14 @@ function _M.get(name)
 
     if subsystem == "http"  then
         plugin = plugin_get_http(name)
-    end
-
-    if subsystem == "stream" then
+    else
         plugin = plugin_get_stream(name)
     end
 
     if not plugin then
-        subsystem = subsystem or "http"
         local err = "failed to load plugin " .. name .. " in subsystem " .. subsystem
-        core.log.warn("failed to load plugin [", name, "] err: ", plugin)
-        return 400, {error_msg = err }
+        core.log.warn("failed to load plugin [", name, "] err: ", err)
+        return 404, nil
     end
 
     local json_schema = plugin.schema
