@@ -753,7 +753,18 @@ local function init_etcd(env, args)
 end
 
 
+local function cleanup(env)
+    os_remove(env.apisix_home .. "/conf/.config_path")
+end
+
+
 local function start(env, ...)
+    cleanup(env)
+
+    if env.apisix_home then
+        profile.apisix_home = env.apisix_home
+    end
+
     -- Because the worker process started by apisix has "nobody" permission,
     -- it cannot access the `/root` directory. Therefore, it is necessary to
     -- prohibit APISIX from running in the /root directory.
@@ -817,21 +828,25 @@ local function start(env, ...)
 
     local customized_yaml = args["config"]
     if customized_yaml then
-        profile.apisix_home = env.apisix_home .. "/"
-        local local_conf_path = profile:yaml_path("config")
-        local local_conf_path_bak = local_conf_path .. ".bak"
-
-        local ok, err = os_rename(local_conf_path, local_conf_path_bak)
-        if not ok then
-            util.die("failed to backup config, error: ", err)
-        end
-        local ok, err1 = lfs.link(customized_yaml, local_conf_path)
-        if not ok then
-            ok, err = os_rename(local_conf_path_bak,  local_conf_path)
-            if not ok then
-                util.die("failed to recover original config file, error: ", err)
+        local customized_config_path
+        local idx = string.find(customized_yaml, "/")
+        if idx and idx == 1 then
+            customized_config_path = customized_yaml
+        else
+            local cur_dir, err = lfs.currentdir()
+            if err then
+                util.die("failed to get current directory")
             end
-            util.die("failed to link customized config, error: ", err1)
+            customized_config_path = cur_dir .. "/" .. customized_yaml
+        end
+
+        if not util.file_exists(customized_config_path) then
+           util.die("customized config file not exists, path: " .. customized_config_path)
+        end
+
+        local ok, err = util.write_file(profile:customized_config_index(), customized_config_path)
+        if not ok then
+            util.die("write customized config index failed, err: " .. err)
         end
 
         print("Use customized yaml: ", customized_yaml)
@@ -844,22 +859,6 @@ local function start(env, ...)
     end
 
     util.execute_cmd(env.openresty_args)
-end
-
-
-local function cleanup()
-    local local_conf_path = profile:yaml_path("config")
-    local local_conf_path_bak = local_conf_path .. ".bak"
-    if pl_path.exists(local_conf_path_bak) then
-        local ok, err = os_remove(local_conf_path)
-        if not ok then
-            print("failed to remove customized config, error: ", err)
-        end
-        ok, err = os_rename(local_conf_path_bak,  local_conf_path)
-        if not ok then
-            util.die("failed to recover original config file, error: ", err)
-        end
-    end
 end
 
 
@@ -902,7 +901,7 @@ end
 
 
 local function quit(env)
-    cleanup()
+    cleanup(env)
 
     local cmd = env.openresty_args .. [[ -s quit]]
     util.execute_cmd(cmd)
@@ -910,7 +909,7 @@ end
 
 
 local function stop(env)
-    cleanup()
+    cleanup(env)
 
     local cmd = env.openresty_args .. [[ -s stop]]
     util.execute_cmd(cmd)

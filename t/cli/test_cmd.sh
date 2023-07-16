@@ -94,14 +94,12 @@ echo "
 deployment:
     admin:
         admin_listen:
-            port: 9180
+            port: 9280
         https_admin: true
         admin_api_mtls:
             admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
             admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
 " > conf/customized_config.yaml
-
-cp conf/config.yaml conf/config_original.yaml
 
 make init
 
@@ -112,26 +110,36 @@ fi
 
 ./bin/apisix start -c conf/customized_config.yaml
 
-if cmp -s "conf/config.yaml" "conf/config_original.yaml"; then
-    rm conf/config_original.yaml
-    echo "failed: customized config.yaml copied failed"
-    exit 1
-fi
-
-code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9280/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ ! $code -eq 200 ]; then
-    rm conf/config_original.yaml conf/customized_config.yaml
+    rm conf/customized_config.yaml
     echo "failed: customized config.yaml not be used"
     exit 1
 fi
 
 make stop
 
-if ! cmp -s "conf/config.yaml" "conf/config_original.yaml"; then
-    rm conf/config_original.yaml conf/customized_config.yaml
-    echo "failed: customized config.yaml reverted failed"
+echo "
+deployment:
+    admin:
+        admin_listen:
+            port: 9280
+        https_admin: true
+        admin_api_mtls:
+            admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
+            admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
+    etcd:
+        host:
+         - "http://127.0.0.1:22379"
+" > conf/customized_config.yaml
+
+
+if [ ! ./bin/apisix start -c conf/customized_config.yaml ]; then
+    rm conf/customized_config.yaml
+    echo "start should be failed"
     exit 1
 fi
 
-rm conf/config_original.yaml conf/customized_config.yaml
-echo "passed: customized config.yaml copied and reverted succeeded"
+
+rm conf/customized_config.yaml
+echo "passed: test customized configuration successful"

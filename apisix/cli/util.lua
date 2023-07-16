@@ -127,4 +127,9 @@ function _M.write_file(file_path, data)
 end
 
 
+function _M.file_exists(file_path)
+    local f = io.open(file_path, "r")
+    return f ~= nil and io.close(f)
+end
+
 return _M
