@@ -1347,7 +1347,7 @@ curl "http://127.0.0.1:9180/apisix/admin/plugins/key-auth?subsystem=http" -H 
 
 :::tip
 
-You can use the `/apisix/admin/plugins?all=true` API to get all properties of all plugins. The query param `?all=true` will be deprecated soon.
+You can use the `/apisix/admin/plugins?all=true` API to get all properties of all plugins. This API will be deprecated soon.
 
 :::
 
