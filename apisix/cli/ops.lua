@@ -829,7 +829,7 @@ local function start(env, ...)
     local customized_yaml = args["config"]
     if customized_yaml then
         local customized_config_path
-        local idx = string.find(customized_yaml, "/")
+        local idx = str_find(customized_yaml, "/")
         if idx and idx == 1 then
             customized_config_path = customized_yaml
         else
