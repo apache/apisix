@@ -141,9 +141,9 @@ ext-plugin-post-resp
 === TEST 2: invalid plugin
 --- request
 GET /apisix/admin/plugins/asdf
---- error_code: 400
+--- error_code: 404
 --- response_body
-{"error_msg":"failed to load plugin asdf in subsystem http"}
+{"error_msg":"plugin not found"}
 
 
 
@@ -445,7 +445,7 @@ qr/\{"error_msg":"unsupported subsystem: asdf"\}/
         }
     }
 --- response_body eval
-qr/\{"error_msg":"failed to load plugin http-logger in subsystem stream"\}/
+qr/\{"error_msg":"plugin not found"\}/
 
 
 

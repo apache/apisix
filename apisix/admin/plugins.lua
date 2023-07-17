@@ -83,7 +83,7 @@ function _M.get(name)
     if not plugin then
         local err = "failed to load plugin " .. name .. " in subsystem " .. subsystem
         core.log.warn("failed to load plugin [", name, "] err: ", err)
-        return 404, nil
+        return 404, {error_msg = "plugin not found"}
     end
 
     local json_schema = plugin.schema
