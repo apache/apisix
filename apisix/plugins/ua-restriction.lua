@@ -54,6 +54,22 @@ local schema = {
             default = "Not allowed"
         },
     },
+    oneOf = {
+        {
+            required = {"allowlist"}
+        },
+        {
+            required = {"denylist"}
+        },
+        {
+            ["not"] = {
+                anyOf = {
+                    {required = {"allowlist"}},
+                    {required = {"denylist"}}
+                }
+            }
+        }
+    }
 }
 
 local plugin_name = "ua-restriction"
@@ -94,10 +110,6 @@ function _M.check_schema(conf)
 
     if not ok then
         return false, err
-    end
-
-    if conf.allowlist and conf.denylist then
-        return false, "allowlist and denylist can't be enabled at the same time."
     end
 
     if conf.allowlist then

@@ -63,7 +63,7 @@ __DATA__
         }
     }
 --- response_body
-allowlist and denylist can't be enabled at the same time.
+value should match only one schema, but matches both schemas 1 and 2
 
 
 
