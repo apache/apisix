@@ -17,8 +17,6 @@
 local core = require("apisix.core")
 local sdk = require("apisix.stream.xrpc.sdk")
 local xrpc_socket = require("resty.apisix.stream.xrpc.socket")
-local ffi = require("ffi")
-local ffi_str = ffi.string
 local math_random = math.random
 local OK = ngx.OK
 local DECLINED = ngx.DECLINED
@@ -26,7 +24,6 @@ local DONE = ngx.DONE
 local bit = require("bit")
 
 -- dubbo protocol spec: https://cn.dubbo.apache.org/zh-cn/overview/reference/protocols/tcp/
-local protocol_name = "dubbo"
 local header_len = 16
 
 local _M = {}
