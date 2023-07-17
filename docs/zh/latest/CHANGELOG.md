@@ -78,6 +78,8 @@ title: CHANGELOG
 
 - 升级 `lua-resty-jwt` 到 0.2.5 版本。修复安全问题 [#9837](https://github.com/apache/apisix/pull/9837)
 
+## 3.4.0
+
 ### Core
 
 - :sunrise: 支持路由级别的 MTLS [#9322](https://github.com/apache/apisix/pull/9322)
