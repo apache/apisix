@@ -194,7 +194,7 @@ test-header: only-for-test
                             "opa": {
                                 "host": "http://127.0.0.1:8181",
                                 "policy": "example",
-                                "send_header_upstream": true
+                                "send_headers_upstream": ["user"]
                             }
                         },
                         "upstream": {
