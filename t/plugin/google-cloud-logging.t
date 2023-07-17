@@ -263,6 +263,7 @@ Batch Processor[google-cloud-logging] exceeded the max_retry_count
                 plugins = {
                     ["google-cloud-logging"] = {
                         auth_config = {
+                            client_email = "email@apisix.iam.gserviceaccount.com",
                             private_key = [[
 -----BEGIN PRIVATE KEY-----
 MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDDzrFwnA3EvYyR
