@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [3.4.1](#341)
 - [3.4.0](#340)
 - [3.3.0](#330)
 - [3.2.1](#321)
@@ -71,7 +72,11 @@ title: CHANGELOG
 - [0.7.0](#070)
 - [0.6.0](#060)
 
-## 3.4.0
+## 3.4.1
+
+### Security
+
+- 升级 `lua-resty-jwt` 到 0.2.5 版本。修复安全问题 [#9837](https://github.com/apache/apisix/pull/9837)
 
 ### Core
 
