@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.4.1](#341)
 - [3.4.0](#340)
 - [3.3.0](#330)
 - [3.2.1](#321)
@@ -70,6 +71,14 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.4.1
+
+The 3.4.1 version is mainly for security update.
+
+### Security
+
+- Upgrade the `lua-resty-jwt` module to version 0.2.5. [#9837](https://github.com/apache/apisix/pull/9837)
 
 ## 3.4.0
 
