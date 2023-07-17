@@ -53,6 +53,37 @@ local function tab_is_array(t)
     return #t == count
 end
 
+local function var_sub(val)
+    local err
+    local var_used = false
+    -- we use '${{var}}' because '$var' and '${var}' are taken
+    -- by Nginx
+    local new_val = val:gsub("%$%{%{%s*([%w_]+[%:%=]?.-)%s*%}%}", function(var)
+        local i, j = var:find("%:%=")
+        local default
+        if i and j then
+            default = var:sub(i + 2, #var)
+            default = default:gsub('^%s*(.-)%s*$', '%1')
+            var = var:sub(1, i - 1)
+        end
+
+        local v = getenv(var) or default
+        if v then
+            if not exported_vars then
+                exported_vars = {}
+            end
+
+            exported_vars[var] = v
+            var_used = true
+            return v
+        end
+
+        err = "failed to handle configuration: " ..
+              "can't find environment variable " .. var
+        return ""
+    end)
+    return new_val, var_used, err
+end
 
 local function resolve_conf_var(conf)
     for key, val in pairs(conf) do
@@ -63,34 +94,7 @@ local function resolve_conf_var(conf)
             end
 
         elseif type(val) == "string" then
-            local err
-            local var_used = false
-            -- we use '${{var}}' because '$var' and '${var}' are taken
-            -- by Nginx
-            local new_val = val:gsub("%$%{%{%s*([%w_]+[%:%=]?.-)%s*%}%}", function(var)
-                local i, j = var:find("%:%=")
-                local default
-                if i and j then
-                    default = var:sub(i + 2, #var)
-                    default = default:gsub('^%s*(.-)%s*$', '%1')
-                    var = var:sub(1, i - 1)
-                end
-
-                local v = getenv(var) or default
-                if v then
-                    if not exported_vars then
-                        exported_vars = {}
-                    end
-
-                    exported_vars[var] = v
-                    var_used = true
-                    return v
-                end
-
-                err = "failed to handle configuration: " ..
-                      "can't find environment variable " .. var
-                return ""
-            end)
+            local new_val, var_used, err = var_sub(val)
 
             if err then
                 return nil, err
