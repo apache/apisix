@@ -86,7 +86,7 @@ fi
 make stop
 echo "pass: check APISIX running"
 
-# check customized config.yaml is copied and reverted.
+# check customized config
 
 git checkout conf/config.yaml
 
@@ -94,7 +94,7 @@ echo "
 deployment:
     admin:
         admin_listen:
-            port: 9280
+            port: 9180
         https_admin: true
         admin_api_mtls:
             admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
@@ -108,9 +108,16 @@ if ./bin/apisix start -c conf/not_existed_config.yaml; then
     exit 1
 fi
 
+
 ./bin/apisix start -c conf/customized_config.yaml
 
-code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9280/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+if [ ! -e conf/.config_path ]; then
+    rm conf/customized_config.yaml
+    echo ".config_path file should exits"
+    exit 1
+fi
+
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ ! $code -eq 200 ]; then
     rm conf/customized_config.yaml
     echo "failed: customized config.yaml not be used"
@@ -119,11 +126,18 @@ fi
 
 make stop
 
+if [ -e conf/.config_path ]; then
+    rm conf/customized_config.yaml
+    echo ".config_path file should be removed"
+    exit 1
+fi
+
+
 echo "
 deployment:
     admin:
         admin_listen:
-            port: 9280
+            port: 9180
         https_admin: true
         admin_api_mtls:
             admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
@@ -134,12 +148,24 @@ deployment:
 " > conf/customized_config.yaml
 
 
-if [ ! ./bin/apisix start -c conf/customized_config.yaml ]; then
+if ./bin/apisix start -c conf/customized_config.yaml ; then
     rm conf/customized_config.yaml
     echo "start should be failed"
     exit 1
 fi
 
 
+./bin/apisix start
+
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+if [ ! $code -eq 200 ]; then
+    rm conf/customized_config.yaml
+    echo "failed: should use default config"
+    exit 1
+fi
+
+make stop
+
+
 rm conf/customized_config.yaml
-echo "passed: test customized configuration successful"
+echo "passed: test customized config successful"
