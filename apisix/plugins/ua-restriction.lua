@@ -88,6 +88,7 @@ local function match_user_agent(user_agent, conf)
     return true
 end
 
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
 
@@ -120,6 +121,7 @@ function _M.check_schema(conf)
     return true
 end
 
+
 function _M.access(conf, ctx)
     local user_agent = core.request.header(ctx, "User-Agent")
 
@@ -136,7 +138,7 @@ function _M.access(conf, ctx)
         for _, v in ipairs(user_agent) do
             if type(v) == "string" then
                 match = lrucache_useragent(v, conf, match_user_agent, v, conf)
-                if not match then
+                if (conf.denylist and not match) or (conf.allowlist and match) then
                     break
                 end
             end

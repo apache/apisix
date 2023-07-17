@@ -215,7 +215,19 @@ User-Agent:my-bot2
 
 
 
-=== TEST 9: hit route and user-agent match denylist regex
+=== TEST 9: hit route and user-agent in denylist with reverse order multiple user-agent
+--- request
+GET /hello
+--- more_headers
+User-Agent:my-bot2
+User-Agent:my-bot1
+--- error_code: 403
+--- response_body
+{"message":"Not allowed"}
+
+
+
+=== TEST 10: hit route and user-agent match denylist regex
 --- request
 GET /hello
 --- more_headers
@@ -226,7 +238,7 @@ User-Agent:Baiduspider/3.0
 
 
 
-=== TEST 10: hit route and user-agent not in denylist
+=== TEST 11: hit route and user-agent not in denylist
 --- request
 GET /hello
 --- more_headers
@@ -237,7 +249,7 @@ hello world
 
 
 
-=== TEST 11: set allowlist
+=== TEST 12: set allowlist
 --- config
     location /t {
         content_by_lua_block {
@@ -274,7 +286,7 @@ passed
 
 
 
-=== TEST 12: hit route and user-agent in allowlist
+=== TEST 13: hit route and user-agent in allowlist
 --- request
 GET /hello
 --- more_headers
@@ -285,7 +297,7 @@ hello world
 
 
 
-=== TEST 13: hit route and user-agent match allowlist regex
+=== TEST 14: hit route and user-agent match allowlist regex
 --- request
 GET /hello
 --- more_headers
@@ -296,7 +308,7 @@ hello world
 
 
 
-=== TEST 14: hit route and user-agent not in allowlist
+=== TEST 15: hit route and user-agent not in allowlist
 --- request
 GET /hello
 --- more_headers
@@ -307,7 +319,29 @@ User-Agent:foo/bar
 
 
 
-=== TEST 15: bypass_missing test, using default, reset conf(part1)
+=== TEST 16:  hit route and user-agent in allowlist with multiple user-agent
+--- request
+GET /hello
+--- more_headers
+User-Agent:foo/bar
+User-Agent:my-bot1
+--- response_body
+hello world
+
+
+
+=== TEST 17:  hit route and user-agent in allowlist with reverse order multiple user-agent
+--- request
+GET /hello
+--- more_headers
+User-Agent:my-bot1
+User-Agent:foo/bar
+--- response_body
+hello world
+
+
+
+=== TEST 18: bypass_missing test, using default, reset conf(part1)
 --- config
     location /t {
         content_by_lua_block {
@@ -340,7 +374,7 @@ passed
 
 
 
-=== TEST 16: bypass_missing test, using default, send request without User-Agent(part2)
+=== TEST 19: bypass_missing test, using default, send request without User-Agent(part2)
 --- request
 GET /hello
 --- error_code: 403
@@ -349,7 +383,7 @@ GET /hello
 
 
 
-=== TEST 17: bypass_missing test, set to true(part1)
+=== TEST 20: bypass_missing test, set to true(part1)
 --- config
     location /t {
         content_by_lua_block {
@@ -383,7 +417,7 @@ passed
 
 
 
-=== TEST 18: bypass_missing test, set to true, send request without User-Agent(part2)
+=== TEST 21: bypass_missing test, set to true, send request without User-Agent(part2)
 --- request
 GET /hello
 --- error_code: 200
@@ -392,7 +426,7 @@ hello world
 
 
 
-=== TEST 19: bypass_missing test, set to false(part1)
+=== TEST 22: bypass_missing test, set to false(part1)
 --- config
     location /t {
         content_by_lua_block {
@@ -426,7 +460,7 @@ passed
 
 
 
-=== TEST 20: bypass_missing test, set to false, send request without User-Agent(part2)
+=== TEST 23: bypass_missing test, set to false, send request without User-Agent(part2)
 --- request
 GET /hello
 --- error_code: 403
@@ -435,7 +469,7 @@ GET /hello
 
 
 
-=== TEST 21: message that do not reach the minimum range
+=== TEST 24: message that do not reach the minimum range
 --- config
     location /t {
         content_by_lua_block {
@@ -466,7 +500,7 @@ qr/string too short, expected at least 1, got 0/
 
 
 
-=== TEST 22: exceeds the maximum limit of message
+=== TEST 25: exceeds the maximum limit of message
 --- config
     location /t {
         content_by_lua_block {
@@ -504,7 +538,7 @@ qr/string too long, expected at most 1024, got 1025/
 
 
 
-=== TEST 23: set custom message
+=== TEST 26: set custom message
 --- config
     location /t {
         content_by_lua_block {
@@ -542,7 +576,7 @@ passed
 
 
 
-=== TEST 24: test custom message
+=== TEST 27: test custom message
 --- request
 GET /hello
 --- more_headers
@@ -553,7 +587,7 @@ User-Agent:Baiduspider/1.0
 
 
 
-=== TEST 25: test remove ua-restriction, add denylist(part 1)
+=== TEST 28: test remove ua-restriction, add denylist(part 1)
 --- config
     location /enable {
         content_by_lua_block {
@@ -592,7 +626,7 @@ passed
 
 
 
-=== TEST 26: test remove ua-restriction, fail(part 2)
+=== TEST 29: test remove ua-restriction, fail(part 2)
 --- request
 GET /hello
 --- more_headers
@@ -603,7 +637,7 @@ User-Agent:Baiduspider/1.0
 
 
 
-=== TEST 27: test remove ua-restriction, remove plugin(part 3)
+=== TEST 30: test remove ua-restriction, remove plugin(part 3)
 --- config
     location /disable {
         content_by_lua_block {
@@ -637,7 +671,7 @@ passed
 
 
 
-=== TEST 28: test remove ua-restriction, check spider User-Agent(part 4)
+=== TEST 31: test remove ua-restriction, check spider User-Agent(part 4)
 --- request
 GET /hello
 --- more_headers
@@ -647,7 +681,7 @@ hello world
 
 
 
-=== TEST 29: set disable=true
+=== TEST 32: set disable=true
 --- config
     location /t {
         content_by_lua_block {
@@ -680,7 +714,7 @@ passed
 
 
 
-=== TEST 30: the element in allowlist is null
+=== TEST 33: the element in allowlist is null
 --- config
     location /t {
         content_by_lua_block {
@@ -707,7 +741,7 @@ done
 
 
 
-=== TEST 31: the element in denylist is null
+=== TEST 34: the element in denylist is null
 --- config
     location /t {
         content_by_lua_block {
