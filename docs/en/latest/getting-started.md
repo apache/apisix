@@ -148,7 +148,7 @@ Make sure that all the required ports (default: 9080, 9180, 9443 and 2379) are a
 Once APISIX is running, you can use curl to access it. Send a simple HTTP request to validate if APISIX is working properly or not.
 
 ```sh
-curl -s "http://127.0.0.1:9080" --head | grep Server
+curl -sI "http://127.0.0.1:9080" | grep Server
 ```
 
 If everything is ok, you will get the following response.
