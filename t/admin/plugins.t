@@ -143,7 +143,7 @@ ext-plugin-post-resp
 GET /apisix/admin/plugins/asdf
 --- error_code: 404
 --- response_body
-{"error_msg":"plugin not found"}
+{"error_msg":"plugin not found in subsystem http"}
 
 
 
@@ -445,7 +445,7 @@ qr/\{"error_msg":"unsupported subsystem: asdf"\}/
         }
     }
 --- response_body eval
-qr/\{"error_msg":"plugin not found"\}/
+qr/\{"error_msg":"plugin not found in subsystem stream"\}/
 
 
 
