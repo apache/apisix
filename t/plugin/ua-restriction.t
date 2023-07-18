@@ -340,6 +340,7 @@ User-Agent:foo/bar
 hello world
 
 
+
 === TEST 18: message that do not reach the minimum range
 --- config
     location /t {
@@ -670,3 +671,91 @@ done
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin ua-restriction err: value should match only one schema, but matches none"}
+
+
+
+=== TEST 30: test bypass_missing
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "ua-restriction": {
+                                "allowlist": [
+                                    "my-bot1"
+                                ]
+                            }
+                        }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 31: hit
+--- request
+GET /hello
+--- error_code: 403
+--- response_body
+{"message":"Not allowed"}
+
+
+
+=== TEST 32: test bypass_missing with true
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "ua-restriction": {
+                                "bypass_missing": true,
+                                "denylist": [
+                                    "my-bot1"
+                                ]
+                            }
+                        }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 33: hit
+--- request
+GET /hello
+--- response_body
+hello world

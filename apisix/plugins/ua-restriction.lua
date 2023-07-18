@@ -83,7 +83,7 @@ local function check_with_allow_list(user_agents, allowlist)
     end
 
     if type(user_agents) == "table" then
-        for _, v in ipairs(allowlist) do
+        for _, v in ipairs(user_agents) do
             if lrucache_allow(v, allowlist, check, v) then
                 return true
             end
@@ -101,21 +101,21 @@ local function check_with_deny_list(user_agents, denylist)
 
         for _, rule in ipairs(denylist) do
             if re_find(user_agent, rule, "jo") then
-                return  false
+                return false
             end
         end
         return true
     end
 
     if type(user_agents) == "table" then
-        for _, v in ipairs(denylist) do
-            if lrucache_allow(v, denylist, check, v) then
+        for _, v in ipairs(user_agents) do
+            if lrucache_deny(v, denylist, check, v) then
                 return false
             end
         end
         return true
     else
-        return lrucache_allow(user_agents, denylist, check, user_agents)
+        return lrucache_deny(user_agents, denylist, check, user_agents)
     end
 end
 
