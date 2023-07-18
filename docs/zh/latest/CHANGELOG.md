@@ -83,8 +83,12 @@ title: CHANGELOG
 - http-logger 缺少默认请求 path / 导致日志推送失败 [#9472](https://github.com/apache/apisix/pull/9472)
 - consumer 使用 Wolf-rbac 时，无法同时使用其他插件 [#9298](https://github.com/apache/apisix/pull/9298)
 - splunk-hec-logging 错误的日志格式导致请求无法被推送， [#9478](https://github.com/apache/apisix/pull/9478)
-- opentelemetry、grpc-transcode 插件不能同时使用 [#9606](https://github.com/apache/apisix/pull/9606)
+- opentelemetry 和 grpc-transcode 插件不能同时使用 [#9606](https://github.com/apache/apisix/pull/9606)
 - response-rewrite 增加 header `key: value` 时，value 不能配置为 1 个字符 [#9372](https://github.com/apache/apisix/pull/9372)
+- etcd_cli 启用 keepalive [#9420](https://github.com/apache/apisix/pull/9420)
+- 单个 HTTP 长连接 watch 全部 etcd 资源 [#9456](https://github.com/apache/apisix/pull/9456)
+- 修复 jwt 插件绕过认证的安全问题 [#9837](https://github.com/apache/apisix/pull/9837)
+- 修复更新 `update_count` 后，导致 lru 缓存 `key` 冲突 [#9811](https://github.com/apache/apisix/pull/9811)
 
 ## 3.2.1
 
