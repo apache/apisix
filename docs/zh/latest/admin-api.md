@@ -105,7 +105,7 @@ deployment:
 
 首先查找环境变量 `ADMIN_KEY`，如果该环境变量不存在，它将使用 `edd1c9f034335f136f87ad84b625c8f1` 作为默认值。
 
-您还可以在 yaml 键中指定环境变量。 这在 `standalone` 模式 中特别有用，您可以在其中指定上游节点，如下所示：
+您还可以在 yaml 键中指定环境变量。这在 `standalone` 模式 中特别有用，您可以在其中指定上游节点，如下所示：
 
 ```yaml title="./conf/apisix.yaml"
 routes:
