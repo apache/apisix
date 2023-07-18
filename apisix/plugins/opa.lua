@@ -135,15 +135,11 @@ function _M.access(conf, ctx)
 
         return status_code, reason
     else if result.headers and conf.send_headers_upstream then
-        local headersToSend = {}
-        for key in pairs(conf.send_headers_upstream) do
-            headersToSend[key] = true
-        end
-        for key,value in pairs(result.headers) do
-            if headersToSend[key] then
-                core.request.set_header(ctx,key,value)
+        for _, name in ipairs(conf.send_headers_upstream) do
+            local value = result.headers[name]
+            if value then
+                core.request.set_header(ctx, name, value)
             end
-
         end
         end
     end
