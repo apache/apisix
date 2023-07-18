@@ -37,6 +37,7 @@ This plugin also allows to push logs as a batch to your Google Cloud Logging Ser
 | Name                    | Required | Default                                                                                                                                                                                              | Description                                                                                                                                                        |
 |-------------------------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | auth_config             | True     |                                                                                                                                                                                                      | Either `auth_config` or `auth_file` must be provided.                                                                                                              |
+| auth_config.client_email | True     |                                                                                                                                                                                                    | Email address of the Google Cloud service account.                                                                                                                   |
 | auth_config.private_key | True     |                                                                                                                                                                                                      | Private key of the Google Cloud service account.                                                                                                                   |
 | auth_config.project_id  | True     |                                                                                                                                                                                                      | Project ID in the Google Cloud service account.                                                                                                                    |
 | auth_config.token_uri   | True    | https://oauth2.googleapis.com/token                                                                                                                                                                  | Token URI of the Google Cloud service account.                                                                                                                     |
@@ -98,6 +99,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         "google-cloud-logging": {
             "auth_config":{
                 "project_id":"apisix",
+                "client_email":"your service account email@apisix.iam.gserviceaccount.com",
                 "private_key":"-----BEGIN RSA PRIVATE KEY-----your private key-----END RSA PRIVATE KEY-----",
                 "token_uri":"https://oauth2.googleapis.com/token",
                 "scopes":[
@@ -137,6 +139,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         "google-cloud-logging": {
             "auth_config":{
                 "project_id":"apisix",
+                "client_email":"your service account email@apisix.iam.gserviceaccount.com",
                 "private_key":"-----BEGIN RSA PRIVATE KEY-----your private key-----END RSA PRIVATE KEY-----"
             }
         }
