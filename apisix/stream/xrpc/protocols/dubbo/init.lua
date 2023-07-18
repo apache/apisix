@@ -43,6 +43,7 @@ local function parse_dubbo_header(header)
     for i = 5, 12 do
         request_id = request_id * 256 + header:byte(i)
     end
+
     local byte13Val = header:byte(13) * 256 * 256 * 256
     local byte14Val = header:byte(14) * 256 * 256
     local data_length = byte13Val + byte14Val + header:byte(15) * 256 + header:byte(16)
