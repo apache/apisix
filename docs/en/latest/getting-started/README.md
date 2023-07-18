@@ -48,7 +48,7 @@ You will see the following message once APISIX is ready:
 Once APISIX is running, you can use curl to interact with it. Send a simple HTTP request to validate if APISIX is working properly:
 
 ```shell
-curl -s "http://127.0.0.1:9080" --head | grep Server
+curl "http://127.0.0.1:9080" --head | grep Server
 ```
 
 If everything is ok, you will get the following response:
