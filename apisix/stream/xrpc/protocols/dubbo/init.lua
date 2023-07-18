@@ -43,7 +43,9 @@ local function parse_dubbo_header(header)
     for i = 5, 12 do
         request_id = request_id * 256 + header:byte(i)
     end
-    local data_length = header:byte(13) * 16777216 + header:byte(14) * 65536 + header:byte(15) * 256 + header:byte(16)
+    local byte13Val = header:byte(13) * 256 * 256 * 256
+    local byte14Val = header:byte(14) * 256 * 256
+    local data_length = byte13Val + byte14Val + header:byte(15) * 256 + header:byte(16)
 
     local is_request = bit.band(bit.rshift(message_flag, 7), 0x01) == 1 and 1 or 0
     local is_two_way = bit.band(bit.rshift(message_flag, 6), 0x01) == 1 and 1 or 0
@@ -88,7 +90,6 @@ local function read_data(sk, is_req)
     else
         ngx.ctx.dubbo_rsp_body_data = body_data
     end
-
 
     return true, nil, false
 end
