@@ -832,23 +832,23 @@ local function start(env, ...)
 
     local customized_yaml = args["config"]
     if customized_yaml then
-        local customized_config_path
+        local customized_yaml_path
         local idx = str_find(customized_yaml, "/")
         if idx and idx == 1 then
-            customized_config_path = customized_yaml
+            customized_yaml_path = customized_yaml
         else
             local cur_dir, err = lfs.currentdir()
             if err then
                 util.die("failed to get current directory")
             end
-            customized_config_path = cur_dir .. "/" .. customized_yaml
+            customized_yaml_path = cur_dir .. "/" .. customized_yaml
         end
 
-        if not util.file_exists(customized_config_path) then
-           util.die("customized config file not exists, path: " .. customized_config_path)
+        if not util.file_exists(customized_yaml_path) then
+           util.die("customized config file not exists, path: " .. customized_yaml_path)
         end
 
-        local ok, err = util.write_file(profile:customized_yaml_index(), customized_config_path)
+        local ok, err = util.write_file(profile:customized_yaml_index(), customized_yaml_path)
         if not ok then
             util.die("write customized config index failed, err: " .. err)
         end
