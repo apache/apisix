@@ -191,7 +191,9 @@ function _M.log(conf, ctx)
     if batch_processor_manager:add_entry(conf, entry) then
         return
     end
+
     local labels = conf.log_labels
+
     -- parsing possible variables in label value
     for key, value in pairs(labels) do
         local new_val, err, n_resolved = core.utils.resolve_var(value, ctx.var)
@@ -199,6 +201,7 @@ function _M.log(conf, ctx)
             labels[key] = new_val
         end
     end
+
     -- generate a function to be executed by the batch processor
     local func = function(entries)
         -- build loki request data
