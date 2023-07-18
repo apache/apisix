@@ -89,6 +89,7 @@ title: CHANGELOG
 - 单个 HTTP 长连接 watch 全部 etcd 资源 [#9456](https://github.com/apache/apisix/pull/9456)
 - 修复 jwt 插件绕过认证的安全问题 [#9837](https://github.com/apache/apisix/pull/9837)
 - 修复更新 `update_count` 后，导致 lru 缓存 `key` 冲突 [#9811](https://github.com/apache/apisix/pull/9811)
+- 修复 consumer 在 etcd 启动时连接失败，仍然可以运行 [#9077](https://github.com/apache/apisix/pull/9077)
 
 ## 3.2.1
 

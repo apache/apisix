@@ -86,9 +86,10 @@ title: Changelog
 - Fix `opentelemetry` and `grpc-transcode` plugins cannot be used at the same time [#9606](https://github.com/apache/apisix/pull/9606)
 - When adding a header `key: value` in the `response-rewrite` plugin, the value cannot be configured as one character [#9372](https://github.com/apache/apisix/pull/9372)
 - Fix etcd enable keepalive [#9420](https://github.com/apache/apisix/pull/9420)
-- Use a singe long http connection to watch all resources for etcd [#9456](https://github.com/apache/apisix/pull/9456)
+- Use a single long http connection to watch all resources for etcd [#9456](https://github.com/apache/apisix/pull/9456)
 - Fix authentication bypass in the jwt-auth plugin [#9837](https://github.com/apache/apisix/pull/9837)
 - Fix `update_count` is reset once updated, cause cache key conflict [#9811](https://github.com/apache/apisix/pull/9811)
+- Fix(consumer): etcd connection failed during startup and still works [#9077](https://github.com/apache/apisix/pull/9077)
 
 ## 3.2.1
 
