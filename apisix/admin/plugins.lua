@@ -18,7 +18,6 @@ local require   = require
 local core = require("apisix.core")
 local check_schema = require("apisix.plugin").check_schema
 local ipairs    = ipairs
-local pcall     = pcall
 local table_sort = table.sort
 local table_insert = table.insert
 local get_uri_args = ngx.req.get_uri_args
@@ -45,8 +44,8 @@ end
 function _M.get(name)
     local arg = get_uri_args()
     -- If subsystem is passed inside args then it should be oneOf: http / stream.
-    local subsystem = arg["subsystem"]
-    if subsystem and subsystem ~= "http" and subsystem ~= "stream" then
+    local subsystem = arg["subsystem"] or "http"
+    if subsystem ~= "http" and subsystem ~= "stream" then
         return 400, {error_msg = "unsupported subsystem: "..subsystem}
     end
 
@@ -71,8 +70,6 @@ function _M.get(name)
     end
 
     local plugin
-    -- By default search through http subsystems
-    subsystem = subsystem or "http"
 
     if subsystem == "http"  then
         plugin = plugin_get_http(name)
@@ -81,9 +78,9 @@ function _M.get(name)
     end
 
     if not plugin then
-        local err = "failed to load plugin " .. name .. " in subsystem " .. subsystem
-        core.log.warn("failed to load plugin [", name, "] err: ", err)
-        return 404, {error_msg = "plugin not found"}
+        local err = "plugin not found in subsystem " .. subsystem
+        core.log.warn(err)
+        return 404, {error_msg = err}
     end
 
     local json_schema = plugin.schema
@@ -108,14 +105,12 @@ function _M.get_plugins_list(subsystem)
         stream_plugins = core.config.local_conf().stream_plugins
     end
 
-
     local priorities = {}
     local success = {}
     if http_plugins then
         for i, name in ipairs(http_plugins) do
-            local plugin_name = "apisix.plugins." .. name
-            local ok, plugin = pcall(require, plugin_name)
-            if ok and plugin.priority then
+            local plugin = plugin_get_http(name)
+            if plugin and plugin.priority then
                 priorities[name] = plugin.priority
                 table_insert(success, name)
             end
@@ -124,9 +119,8 @@ function _M.get_plugins_list(subsystem)
 
     if stream_plugins then
         for i, name in ipairs(stream_plugins) do
-            local plugin_name = "apisix.stream.plugins." .. name
-            local ok, plugin = pcall(require, plugin_name)
-            if ok and plugin.priority then
+            local plugin = plugin_get_stream(name)
+            if plugin and plugin.priority then
                 priorities[name] = plugin.priority
                 table_insert(success, name)
             end
