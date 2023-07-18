@@ -223,7 +223,7 @@ function _M.read_yaml_conf(apisix_home)
         return nil, "invalid config-default.yaml file"
     end
 
-    local_conf_path = profile:customized_config_path()
+    local_conf_path = profile:customized_yaml_path()
     if not local_conf_path then
         local_conf_path = profile:yaml_path("config")
     end

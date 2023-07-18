@@ -754,7 +754,11 @@ end
 
 
 local function cleanup(env)
-    os_remove(env.apisix_home .. "/conf/.config_path")
+    if env.apisix_home then
+        profile.apisix_home = env.apisix_home
+    end
+
+    os_remove(profile:customized_yaml_index())
 end
 
 
@@ -844,7 +848,7 @@ local function start(env, ...)
            util.die("customized config file not exists, path: " .. customized_config_path)
         end
 
-        local ok, err = util.write_file(profile:customized_config_index(), customized_config_path)
+        local ok, err = util.write_file(profile:customized_yaml_index(), customized_config_path)
         if not ok then
             util.die("write customized config index failed, err: " .. err)
         end

@@ -50,13 +50,13 @@ function _M.yaml_path(self, file_name)
 end
 
 
-function _M.customized_config_index(self)
-    return self.apisix_home .. "/conf/.config_path"
+function _M.customized_yaml_index(self)
+    return self.apisix_home .. "/conf/.customized_config_path"
 end
 
 
-function _M.customized_config_path(self)
-    local customized_config_index = self:customized_config_index()
+function _M.customized_yaml_path(self)
+    local customized_config_index = self:customized_yaml_index()
     if util.file_exists(customized_config_index) then
         return util.read_file(customized_config_index)
     end

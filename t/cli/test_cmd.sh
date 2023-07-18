@@ -90,6 +90,15 @@ echo "pass: check APISIX running"
 
 git checkout conf/config.yaml
 
+# start with not existed customized config
+make init
+
+if ./bin/apisix start -c conf/not_existed_config.yaml; then
+    echo "failed: apisix still start with invalid customized config.yaml"
+    exit 1
+fi
+
+# start with customized config
 echo "
 deployment:
     admin:
@@ -101,22 +110,16 @@ deployment:
             admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
 " > conf/customized_config.yaml
 
-make init
-
-if ./bin/apisix start -c conf/not_existed_config.yaml; then
-    echo "failed: apisix still start with invalid customized config.yaml"
-    exit 1
-fi
-
-
 ./bin/apisix start -c conf/customized_config.yaml
 
-if [ ! -e conf/.config_path ]; then
+# check if .customized_config_path has been created
+if [ ! -e conf/.customized_config_path ]; then
     rm conf/customized_config.yaml
     echo ".config_path file should exits"
     exit 1
 fi
 
+# check if the custom config is used
 code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ ! $code -eq 200 ]; then
     rm conf/customized_config.yaml
@@ -126,13 +129,35 @@ fi
 
 make stop
 
+# check if .customized_config_path has been removed
 if [ -e conf/.config_path ]; then
-    rm conf/customized_config.yaml
+    rm conf/customized_config_path.yaml
     echo ".config_path file should be removed"
     exit 1
 fi
 
+# start with invalied config
+echo "abc" > conf/customized_config.yaml
 
+if ./bin/apisix start -c conf/customized_config.yaml ; then
+    rm conf/customized_config.yaml
+    echo "start should be failed"
+    exit 1
+fi
+
+# check if apisix can be started use correctly default config. (https://github.com/apache/apisix/issues/9700)
+./bin/apisix start
+
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+if [ ! $code -eq 200 ]; then
+    rm conf/customized_config.yaml
+    echo "failed: should use default config"
+    exit 1
+fi
+
+make stop
+
+# check if apisix can be started after multiple start failures. (https://github.com/apache/apisix/issues/9171)
 echo "
 deployment:
     admin:
@@ -147,25 +172,29 @@ deployment:
          - "http://127.0.0.1:22379"
 " > conf/customized_config.yaml
 
+./bin/apisix start -c conf/customized_config.yaml || true
+./bin/apisix start -c conf/customized_config.yaml || true
+./bin/apisix start -c conf/customized_config.yaml || true
 
-if ./bin/apisix start -c conf/customized_config.yaml ; then
-    rm conf/customized_config.yaml
-    echo "start should be failed"
-    exit 1
-fi
+echo "
+deployment:
+    admin:
+        admin_listen:
+            port: 9180
+        https_admin: true
+        admin_api_mtls:
+            admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
+            admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
+" > conf/customized_config.yaml
 
+./bin/apisix start -c conf/customized_config.yaml
 
-./bin/apisix start
-
-code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
 if [ ! $code -eq 200 ]; then
     rm conf/customized_config.yaml
     echo "failed: should use default config"
     exit 1
 fi
-
-make stop
-
 
 rm conf/customized_config.yaml
 echo "passed: test customized config successful"
