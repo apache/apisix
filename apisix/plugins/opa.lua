@@ -20,6 +20,7 @@ local http   = require("resty.http")
 local helper = require("apisix.plugins.opa.helper")
 local type   = type
 local pairs = pairs
+
 local schema = {
     type = "object",
     properties = {
@@ -39,7 +40,7 @@ local schema = {
         keepalive = {type = "boolean", default = true},
         send_headers_upstream = {
             type = "array",
-            minItems = 0,
+            minItems = 1,
             items = {
                 type = "string"
             },
@@ -133,17 +134,17 @@ function _M.access(conf, ctx)
         end
 
         return status_code, reason
-    else if result.headers and #conf.send_headers_upstream > 0 then
-            local headersToSend = {}
-            for key in pairs(conf.send_headers_upstream) do
-                headersToSend[key] = true
+    else if result.headers and conf.send_headers_upstream then
+        local headersToSend = {}
+        for key in pairs(conf.send_headers_upstream) do
+            headersToSend[key] = true
+        end
+        for key,value in pairs(result.headers) do
+            if headersToSend[key] then
+                core.request.set_header(ctx,key,value)
             end
-           for key,value in pairs(result.headers) do
-                if headersToSend[key] then
-                    core.request.set_header(ctx,key,value)
-                end
 
-           end
+        end
         end
     end
 end
