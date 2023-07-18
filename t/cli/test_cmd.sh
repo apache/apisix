@@ -169,7 +169,7 @@ deployment:
             admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
     etcd:
         host:
-         - "http://127.0.0.1:22379"
+         - http://127.0.0.1:22379
 " > conf/customized_config.yaml
 
 ./bin/apisix start -c conf/customized_config.yaml || true
