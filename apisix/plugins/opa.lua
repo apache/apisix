@@ -42,7 +42,7 @@ local schema = {
             type = "array",
             minItems = 0,
             items = {
-                type = "array"
+                type = "string"
             },
             description = "list of headers to pass to upstream in request"
         },
