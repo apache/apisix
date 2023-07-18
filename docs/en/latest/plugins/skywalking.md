@@ -94,7 +94,7 @@ nohup java -javaagent:/root/skywalking/app/agent/skywalking-agent.jar \
 2>&1 > /root/skywalking/app/logs/nohup.log &
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 To enable the Plugin, you have to add it to your configuration file (`conf/config.yaml`):
 

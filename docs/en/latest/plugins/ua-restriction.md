@@ -47,7 +47,7 @@ Both `allowlist` and `denylist` can be used on their own. If they are used toget
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a Route or a Service as shown below:
 

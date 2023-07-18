@@ -77,7 +77,7 @@ If only the `weight` attribute is configured, it corresponds to the weight of th
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can configure the Plugin on a Route as shown below:
 

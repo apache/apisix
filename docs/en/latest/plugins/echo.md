@@ -50,7 +50,7 @@ The `echo` Plugin is built as an example. It has missing cases and should **not*
 
 At least one of `before_body`, `body`, and `after_body` must be specified.
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can enable the `echo` Plugin for a specific Route:
 

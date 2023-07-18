@@ -49,7 +49,7 @@ Use cases:
 | `response.input_format`      | string       | False      | response body original format, if not specified, it would be determined from `Content-Type` header.       |
 | `response.template`      | string       | True      | response body transformation template       |
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a specific Route as shown below:
 

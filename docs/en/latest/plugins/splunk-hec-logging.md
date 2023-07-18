@@ -81,7 +81,7 @@ With this configuration, your logs would be formatted as shown below:
 [{"time":1673976669.269,"source":"apache-apisix-splunk-hec-logging","event":{"host":"localhost","client_ip":"127.0.0.1","@timestamp":"2023-01-09T14:47:25+08:00","route_id":"1"},"host":"DESKTOP-2022Q8F-wsl","sourcetype":"_json"}]
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 ### Full configuration
 

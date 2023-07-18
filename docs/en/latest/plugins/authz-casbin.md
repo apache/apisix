@@ -57,7 +57,7 @@ If you wish to use a global Casbin configuration, you can first specify `model` 
 | model  | string | True     | Casbin model configuration in text format. |
 | policy | string | True     | Casbin policy in text format.              |
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a Route by either using the model/policy file paths or using the model/policy text in Plugin configuration/metadata.
 

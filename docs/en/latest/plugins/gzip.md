@@ -49,7 +49,7 @@ This Plugin requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-the
 | buffers.size   | integer              | False    | 4096          | >= 1         | Dynamically sets the `gzip_buffers` directive.                                          |
 | vary           | boolean              | False    | false         |              | Dynamically sets the `gzip_vary` directive.                                             |
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the `gzip` Plugin on the specified Route:
 

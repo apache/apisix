@@ -106,7 +106,7 @@ func main(){
 }
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the Plugin on a specific Route:
 

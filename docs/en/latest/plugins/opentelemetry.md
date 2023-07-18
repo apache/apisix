@@ -89,7 +89,7 @@ plugin_attr:
       max_export_batch_size: 2
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 To enable the Plugin, you have to add it to your configuration file (`conf/config.yaml`):
 

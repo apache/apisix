@@ -55,7 +55,7 @@ The `callback_url` must belong to the URI of your Route. See the code snippet be
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a specific Route as shown below:
 

@@ -40,7 +40,7 @@ This Plugin supports both the protocols [3.1.*](http://docs.oasis-open.org/mqtt/
 | protocol_name  | string  | True       | Name of the protocol. Generally `MQTT`.                                           |
 | protocol_level | integer | True       | Level of the protocol. It should be `4` for MQTT `3.1.*` and `5` for MQTT `5.0`.  |
 
-## Enabling the Plugin
+## Enable Plugin
 
 To enable the Plugin, you need to first enable the `stream_proxy` configuration in your configuration file (`conf/config.yaml`). The below configuration represents listening on the `9100` TCP port:
 

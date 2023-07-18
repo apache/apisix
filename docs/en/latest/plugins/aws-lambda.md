@@ -58,7 +58,7 @@ This Plugin supports authorization via AWS API key and AWS IAM secrets.
 | aws_region | string | False    | "us-east-1"   | AWS region where the request is being sent.                                         |
 | service    | string | False    | "execute-api" | The service that is receiving the request. For HTTP trigger, it is `"execute-api"`. |
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can configure the Plugin on a specific Route:
 

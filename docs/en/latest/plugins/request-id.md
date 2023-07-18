@@ -48,7 +48,7 @@ The Plugin will not add a unique ID if the request already has a header with the
 | range_id.char_set      | string | False | "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789| The minimum string length is 6 | Character set for range_id |
 | range_id.length    | integer | False | 16             | Minimum 6 | Id length for range_id algorithm |
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the Plugin on a specific Route:
 

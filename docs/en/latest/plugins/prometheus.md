@@ -131,7 +131,7 @@ This feature requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-th
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 The `prometheus` Plugin can be enabled with an empty table.
 

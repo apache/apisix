@@ -50,7 +50,7 @@ This Plugin works with a [Consumer](../terminology/consumer.md) object and a con
 
 NOTE: `encrypt_fields = {"secret_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
-## Enabling the Plugin
+## Enable Plugin
 
 First we enable the Plugin on a Consumer object as shown below:
 

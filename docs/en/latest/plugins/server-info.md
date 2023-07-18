@@ -50,7 +50,7 @@ None.
 
 This Plugin exposes the endpoint `/v1/server_info` to the [Control API](../control-api.md)
 
-## Enabling the Plugin
+## Enable Plugin
 
 Add `server-info` to the Plugin list in your configuration file (`conf/config.yaml`):
 

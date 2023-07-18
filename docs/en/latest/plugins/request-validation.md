@@ -45,7 +45,7 @@ At least one of `header_schema` or `body_schema` should be filled in.
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can configure the Plugin on a specific Route as shown below:
 

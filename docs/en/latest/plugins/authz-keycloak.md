@@ -143,7 +143,7 @@ curl --location --request POST 'http://127.0.0.1:9080/api/token' \
 --data-urlencode 'password=<Password>'
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can enable the `authz-keycloak` Plugin on a specific Route. `${realm}` represents the realm name in Keycloak.
 

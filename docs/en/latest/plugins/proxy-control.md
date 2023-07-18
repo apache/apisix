@@ -42,7 +42,7 @@ This Plugin requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-the
 | ----------------- | ------- | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | request_buffering | boolean | False    | true    | When set to `true`, the Plugin dynamically sets the [`proxy_request_buffering`](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_request_buffering) directive. |
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the Plugin on a specific Route:
 

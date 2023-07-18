@@ -57,7 +57,7 @@ You may need to use the [public-api](public-api.md) plugin to expose this endpoi
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the `batch-requests` Plugin by adding it to your configuration file (`conf/config.yaml`):
 

@@ -52,7 +52,7 @@ For Route:
 | query  | string | optional    | apikey  |       | The query string to get the key from. Lower priority than header.                                                                                                                                                                                                             |
 | hide_credentials   | bool | optional    | false        |       | Apache APISIX will pass the request header or query string that contains the authentication information to the Upstream if `hide_credentials` is `false`. Otherwise the authentication information will be removed before proxying.|
 
-## Enabling the Plugin
+## Enable Plugin
 
 To enable the Plugin, you have to create a Consumer object with an authentication key and configure your Route to authenticate requests.
 
