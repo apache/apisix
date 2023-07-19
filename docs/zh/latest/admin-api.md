@@ -1346,6 +1346,14 @@ Content-Type: text/plain
 
 Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 
+### 请求参数
+
+| 名称 | 描述 | 默认 |
+| --------- | -------------------------------------- | -------- |
+| subsystem | 插件子系统。 | http |
+
+可以在子系统上过滤插件，以便在通过查询参数传递的子系统中搜索 ({plugin_name})
+
 ### 请求方法 {#plugin-request-methods}
 
 | 名称        | 请求 URI                            | 请求 body | 描述          |
@@ -1373,7 +1381,7 @@ Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 - 获取指定插件的属性
 
     ```shell
-    curl "http://127.0.0.1:9180/apisix/admin/plugins/key-auth" \
+    curl "http://127.0.0.1:9180/apisix/admin/plugins/key-auth?subsystem=http" \
     -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
     ```
 
@@ -1385,7 +1393,7 @@ Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 
 你可以使用 `/apisix/admin/plugins?all=true` 接口获取所有插件的所有属性，每个插件包括 `name`，`priority`，`type`，`schema`，`consumer_schema` 和 `version`。
 
-默认情况下，该接口只返回 L7 插件。如果你需要获取 L4 / Stream 插件，需要使用 `/apisix/admin/plugins?all=true&subsystem=stream`。
+您可以使用“/apisix/admin/plugins?all=true”获取所有插件的所有属性。这个 API 将很快被弃用
 
 :::
 
