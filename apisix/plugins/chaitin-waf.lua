@@ -5,14 +5,12 @@ local rr_balancer = require("apisix.balancer.roundrobin")
 local plugin = require("apisix.plugin")
 local healthcheck = require("resty.healthcheck")
 local t1k = require "resty.t1k"
-local expr       = require("resty.expr.v1")
+local expr = require("resty.expr.v1")
 
 local ngx = ngx
 local ngx_now = ngx.now
 local string = string
 local fmt = string.format
-local str_sub = string.sub
-local str_lower = string.lower
 local tostring = tostring
 local tonumber = tonumber
 local pairs = pairs
@@ -50,6 +48,14 @@ local plugin_schema = {
                 },
             },
             required = { "servers" },
+        },
+        add_header = {
+            type = "boolean",
+            default = true
+        },
+        add_debug_header = {
+            type = "boolean",
+            default = false
         },
         match = match_schema,
     },
@@ -209,15 +215,6 @@ function _M.check_schema(conf, schema_type)
     return true
 end
 
-local HEADER_CHAITIN_WAF = "X-APISIX-CHAITIN-WAF"
-local HEADER_CHAITIN_WAF_REASON = "X-APISIX-CHAITIN-WAF-REASON"
-local HEADER_CHAITIN_WAF_ERROR = "X-APISIX-CHAITIN-WAF-ERROR"
-local HEADER_CHAITIN_WAF_TIME = "X-APISIX-CHAITIN-WAF-TIME"
-local HEADER_CHAITIN_WAF_STATUS = "X-APISIX-CHAITIN-WAF-STATUS"
-local HEADER_CHAITIN_WAF_ACTION = "X-APISIX-CHAITIN-WAF-ACTION"
-
-local cjson = require "cjson.safe".new()
-
 local function release_checker()
     if not global_healthcheck.checker then
         return
@@ -244,6 +241,11 @@ local function get_health_checker(metadata)
         shm_name = "upstream-healthcheck",
         checks = metadata.checks,
     })
+
+    if not checker then
+        core.log.error("fail to create healthcheck instance: ", err)
+        return nil
+    end
 
     release_checker()
 
@@ -298,23 +300,14 @@ local function get_healthy_chaitin_server(metadata, checker)
     return new_nodes
 end
 
-local ERR_NO_METADATA = 1
-local ERR_NO_HEALTHY_NODES = 2
-local ERR_INVALID_MATCH_EXPR = 3
-
-local function get_chaitin_server(ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    if not core.table.try_read_attr(metadata, "value", "nodes") then
-        return nil, nil, { code = ERR_NO_METADATA, message = "chaitin-waf: missing metadata" }
-    end
-
+local function get_chaitin_server(metadata, ctx)
     local checker = get_health_checker(metadata.value)
     if not global_server_picker or global_server_picker.upstream ~= metadata.value.nodes or
             (checker and checker.status_ver ~= global_healthcheck.status_ver) then
 
         local up_nodes = get_healthy_chaitin_server(metadata.value, checker)
         if core.table.nkeys(up_nodes) == 0 then
-            return nil, nil, { code = ERR_NO_HEALTHY_NODES, message = "chaitin-waf: no healthy nodes" }
+            return nil, nil, "no healthy nodes"
         end
         core.log.info("healthy chaitin-waf nodes: ", core.json.delay_encode(up_nodes))
 
@@ -330,12 +323,6 @@ local function get_chaitin_server(ctx)
     return host, port, nil
 end
 
-local function get_server_from_metadata(metadata)
-    -- TODO: healthcheck
-
-    return metadata.nodes[1].host, metadata.nodes[1].port
-end
-
 local function get_upstream_addr(conf)
     local upstream = conf.upstream
     local servers = upstream.servers -- TODO: 多个 servers 怎么处理？？
@@ -344,153 +331,63 @@ local function get_upstream_addr(conf)
 end
 
 local function check_match(conf, ctx)
-    core.log.error("CHECKING conf: ", cjson.encode(conf))
-    core.log.error("CHECKING matches: ", cjson.encode(conf.match))
     local match_passed = true
 
     for _, match in ipairs(conf.match) do
-        core.log.error("CHECKING match: " .. tostring(match))
-        local expr, err = expr.new(match.vars)
+        local exp, err = expr.new(match.vars)
         if err then
-            local msg = "failed to create match expression " .. tostring(match.vars) .. ", err: " .. tostring(err)
+            local msg = "failed to create match expression for " .. tostring(match.vars) .. ", err: " .. tostring(err)
             core.log.error(msg)
-            return { result = false, code = ERR_INVALID_MATCH_EXPR, message = msg }
+            return false, msg
         end
 
-        match_passed = expr:eval(ctx.var)
+        match_passed = exp:eval(ctx.var)
         if match_passed then
-            core.log.error("EXPR match: " .. tostring(ctx.var))
             break
         end
     end
 
-    return { result = match_passed }
+    return match_passed, nil
 end
 
-function _M.access(conf, ctx)
+local HEADER_CHAITIN_WAF = "X-APISIX-CHAITIN-WAF"
+local HEADER_CHAITIN_WAF_ERROR = "X-APISIX-CHAITIN-WAF-ERROR"
+local HEADER_CHAITIN_WAF_TIME = "X-APISIX-CHAITIN-WAF-TIME"
+local HEADER_CHAITIN_WAF_STATUS = "X-APISIX-CHAITIN-WAF-STATUS"
+local HEADER_CHAITIN_WAF_ACTION = "X-APISIX-CHAITIN-WAF-ACTION"
+local HEADER_CHAITIN_WAF_SERVER = "X-APISIX-CHAITIN-WAF-SERVER"
+local blocked_message = [[{"code": %s, "success":false, "message": "blocked by Chaitin SafeLine Web Application Firewall", "event_id": "%s"}]]
+
+local function do_access(conf, ctx)
     local extra_headers = {}
-    --[[
-        测试 plugin_metadata，包含一个错误的 server
-        curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-       {
-          "nodes":[
-             {
-               "host": "unix:/home/lingsamuel/chaitin-waf/safeline/resources/detector/snserver.sock",
-               "port": 8000
-             }, {
-               "host": "127.0.0.1",
-               "port": 1551,
-             }
-          ]
-       }'
 
-        测试 plugin_metadata，包含一个错误的 server
-        curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-        {
-            "nodes":[
-                {
-                    "host": "unix:/home/lingsamuel/chaitin-waf/safeline/resources/detector/snserver.sock",
-                    "port": 8000
-                },
-                {
-                    "host": "127.0.0.1",
-                    "port": 1551
-                }
-            ],
-
-            "checks": {
-                "active": {
-                    "type": "tcp",
-                    "host": "localhost",
-                    "timeout": 5,
-                    "http_path": "/status",
-                    "healthy": {
-                        "interval": 2,
-                        "successes": 1
-                    },
-                    "unhealthy": {
-                        "interval": 1,
-                        "http_failures": 2
-                    },
-                    "req_headers": ["User-Agent: curl/7.29.0"]
-                }
-            }
-        }'
-
-        测试请求：
-        curl -H "Host: httpbun.org" http://127.0.0.1:9080/getid=1%20AND%201=1 -i
-        curl -H "Host: httpbun.org" http://127.0.0.1:9080/get -i
-        curl -H "Host: httpbun.org" -H "release: new_release" http://127.0.0.1:9080/get -i
-        curl -H "Host: httpbun.org" -H "release: new_release" http://127.0.0.1:9080/getid=1%20AND%201=1 -i
-        测试路由：
-        curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-       {
-           "uri": "/*",
-           "plugins": {
-               "chaitin-waf": {
-                   "upstream": {
-                       "servers": ["httpbun.org"]
-                   },
-                   "match": [
-                        {
-                            "vars": [
-                                ["http_release","==","new_release"]
-                            ]
-                        }
-                    ]
-               }
-            },
-           "upstream": {
-               "type": "roundrobin",
-               "nodes": {
-                   "httpbun.org:80": 1
-               }
-           }
-       }'
-    --]]
-
-    local match = check_match(conf, ctx)
-    if match and match.message then
-        extra_headers[HEADER_CHAITIN_WAF_ERROR] = match.message
-
-        extra_headers[HEADER_CHAITIN_WAF_REASON] = match.message
-        core.response.set_header(extra_headers)
-        return 500
-    elseif not match.result then
-        extra_headers[HEADER_CHAITIN_WAF] = "no"
-        extra_headers[HEADER_CHAITIN_WAF_REASON] = "no match"
-        core.response.set_header(extra_headers)
-        return
+    local match, err = check_match(conf, ctx)
+    if not match then
+        if err then
+            extra_headers[HEADER_CHAITIN_WAF] = "err"
+            extra_headers[HEADER_CHAITIN_WAF_ERROR] = tostring(err)
+            return 500, nil, extra_headers
+        else
+            extra_headers[HEADER_CHAITIN_WAF] = "no"
+            return nil, nil, extra_headers
+        end
     end
-    extra_headers[HEADER_CHAITIN_WAF_REASON] = "match"
 
-    --local plugin_metadata = plugin.plugin_metadata(plugin_name)
-    --get_upstream_addr(conf)
-    --
-    --local metadata = plugin.plugin_metadata(plugin_name)
-    --
-    ---- TODO: condition
-    --
-    --if not core.table.try_read_attr(metadata, "value", "nodes") then
-    --    --extra_headers[HEADER_CHAITIN_WAF] = "no"
-    --    --core.response.set_header(extra_headers)
-    --    --return 503, { message = "Missing metadata for chaitin-waf" }
-    --end
-
-    local host, port, err = get_chaitin_server(ctx)
-    if err and err.code then
-        ngx.log(ngx.ERR, "HEALTHY CHAITIN SERVER: host: " .. err.message)
-        extra_headers["X-APISIX-CHAITIN-WAF-SERVER"] = "no-healthy"
-
-        core.response.set_header(extra_headers)
-        return
+    local metadata = plugin.plugin_metadata(plugin_name)
+    if not core.table.try_read_attr(metadata, "value", "nodes") then
+        extra_headers[HEADER_CHAITIN_WAF] = "err"
+        extra_headers[HEADER_CHAITIN_WAF_ERROR] = "missing metadata"
+        return 500, nil, extra_headers
     end
-    ngx.log(ngx.ERR, "HEALTHY CHAITIN SERVER: host: " .. tostring(host) .. ", port: " .. tostring(port) .. ", err: " .. tostring(err))
+
+    local host, port, err = get_chaitin_server(metadata, ctx)
     if err then
-        return
+        extra_headers[HEADER_CHAITIN_WAF] = "unhealthy"
+        extra_headers[HEADER_CHAITIN_WAF_ERROR] = tostring(err)
+
+        return 500, nil, extra_headers
     end
 
-    extra_headers["X-APISIX-CHAITIN-WAF-SERVER"] = host
     -- TODO: FIXME? 实测发现请求如果不带 Host header 的话，在日志里只会显示原地址
     -- 例如：curl -H "Host: httpbin.default" localhost:9080/getid=1%20AND%201=1 -i
     -- 和：curl localhost:9080/getid=1%20AND%201=1 -i
@@ -510,39 +407,49 @@ function _M.access(conf, ctx)
         req_body_size = 1024, -- request body size, in KB, integer, default 1MB (1024KB)
         keepalive_size = 256, -- maximum concurrent idle connections to the SafeLine WAF detection service, integer, default 256
         keepalive_timeout = 60000, -- idle connection timeout, in milliseconds, integer, default 60s (60000ms)
-        remote_addr = "httpbin.default", -- remote address from ngx.var.VARIABLE, string, default from ngx.var.remote_addr
+        remote_addr = remote_addr, -- remote address from ngx.var.VARIABLE, string, default from ngx.var.remote_addr
     }
 
+    extra_headers[HEADER_CHAITIN_WAF_SERVER] = host
     extra_headers[HEADER_CHAITIN_WAF] = "yes"
-    ngx.log(ngx.ERR, "REQUEST TO CHAITIN: " .. remote_addr)
 
     local start_time = ngx_now() * 1000
     local ok, err, result = t1k.do_access(t, false)
     if not ok then
-        ngx.log(ngx.ERR, "ERROR: " .. tostring(err) .. ", RESULT: " .. cjson.encode(result))
-
+        extra_headers[HEADER_CHAITIN_WAF] = "waf-err"
         extra_headers[HEADER_CHAITIN_WAF_ERROR] = tostring(err)
     else
-        ngx.log(ngx.ERR, "OK: " .. tostring(err) .. ", RESULT: " .. cjson.encode(result))
+        extra_headers[HEADER_CHAITIN_WAF_ACTION] = "pass"
     end
     extra_headers[HEADER_CHAITIN_WAF_TIME] = ngx_now() * 1000 - start_time
 
     local code = 200
-    if result and result.status then
-        extra_headers[HEADER_CHAITIN_WAF_STATUS] = code
-        extra_headers[HEADER_CHAITIN_WAF_ACTION] = "reject"
-        core.response.set_header(extra_headers)
-
+    if result then
         code = result.status
+        if result.status then
+            extra_headers[HEADER_CHAITIN_WAF_STATUS] = code
+            extra_headers[HEADER_CHAITIN_WAF_ACTION] = "reject"
 
-        local blocked_message = [[{"code": %s, "success":false, "message": "blocked message", "event_id": "%s"}]]
-        return tonumber(code), fmt(blocked_message, code, result.event_id)
+            return tonumber(code), fmt(blocked_message, code, result.event_id), extra_headers
+        end
     end
-    extra_headers[HEADER_CHAITIN_WAF_ACTION] = "pass"
+    extra_headers[HEADER_CHAITIN_WAF_STATUS] = code
 
-    core.response.set_header(extra_headers)
+    return nil, nil, extra_headers
+end
 
-    return
+function _M.access(conf, ctx)
+    local code, msg, extra_headers = do_access(conf, ctx)
+
+    if not conf.add_debug_header then
+        extra_headers[HEADER_CHAITIN_WAF_ERROR] = nil
+        extra_headers[HEADER_CHAITIN_WAF_SERVER] = nil
+    end
+    if conf.add_header then
+        core.response.set_header(extra_headers)
+    end
+
+    return code, msg
 
     -- TODO: blacklist/whitelist?
     -- TODO: captcha?
@@ -550,12 +457,10 @@ function _M.access(conf, ctx)
 end
 
 function _M.header_filter(conf, ctx)
-    ngx.log(ngx.ERR, "CHAITIN: do_header_filter")
     t1k.do_header_filter()
 end
 
 function _M.body_filter(conf, ctx)
-    ngx.log(ngx.ERR, "CHAITIN: do_body_filter", ngx.arg[1])
 end
 
 return _M
