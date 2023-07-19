@@ -18,7 +18,9 @@ local core = require("apisix.core")
 local sdk = require("apisix.stream.xrpc.sdk")
 local xrpc_socket = require("resty.apisix.stream.xrpc.socket")
 local math_random = math.random
+local ngx = ngx
 local OK = ngx.OK
+local str_format = string.format
 local DECLINED = ngx.DECLINED
 local DONE = ngx.DONE
 local bit = require("bit")
@@ -36,7 +38,7 @@ function _M.init_downstream(session)
 end
 
 local function parse_dubbo_header(header)
-    local magic_number = string.format("%04x", header:byte(1) * 256 + header:byte(2))
+    local magic_number = str_format("%04x", header:byte(1) * 256 + header:byte(2))
     local message_flag = header:byte(3)
     local status = header:byte(4)
     local request_id = 0
@@ -84,12 +86,13 @@ local function read_data(sk, is_req)
         return nil, err, false
     end
 
-    ngx.ctx.dubbo_serialization_id = bit.band(header_info.message_flag, 0x1F)
+    local ctx = ngx.ctx
+    ctx.dubbo_serialization_id = bit.band(header_info.message_flag, 0x1F)
 
     if is_req then
-        ngx.ctx.dubbo_req_body_data = body_data
+        ctx.dubbo_req_body_data = body_data
     else
-        ngx.ctx.dubbo_rsp_body_data = body_data
+        ctx.dubbo_rsp_body_data = body_data
     end
 
     return true, nil, false
