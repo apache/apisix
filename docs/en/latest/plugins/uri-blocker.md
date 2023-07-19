@@ -39,7 +39,7 @@ The `uri-blocker` Plugin intercepts user requests with a set of `block_rules`.
 | rejected_msg     | string        | False    |         | non-empty    | HTTP response body returned when the request URI hits any of the `block_rules`.                                                                                                                       |
 | case_insensitive | boolean       | False    | false   |              | When set to `true`, ignores the case when matching request URI.                                                                                                                                       |
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the `uri-blocker` Plugin on a specific Route:
 

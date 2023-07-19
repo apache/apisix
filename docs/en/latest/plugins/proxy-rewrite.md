@@ -52,7 +52,7 @@ Header configurations are executed according to the following priorities:
 
 `add` > `remove` > `set`
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the `proxy-rewrite` Plugin on a specific Route:
 

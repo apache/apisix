@@ -60,7 +60,7 @@ To use this Plugin, you have to first [install wolf](https://github.com/iGeeky/w
 
 Once you have done that you need to add `application`, `admin`, `normal user`, `permission`, `resource` and user authorize to the [wolf-console](https://github.com/iGeeky/wolf/blob/master/docs/usage.md).
 
-## Enabling the Plugin
+## Enable Plugin
 
 You need to first configure the Plugin on a Consumer:
 

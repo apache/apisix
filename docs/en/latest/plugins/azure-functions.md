@@ -71,7 +71,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/azure-functions -H 'X-AP
 }'
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can configure the Plugin on a specific Route as shown below assuming that you already have your Azure Functions up and running:
 

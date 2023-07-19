@@ -57,7 +57,7 @@ APISIX takes in an HTTP request, transcodes it and forwards it to a gRPC service
 | default values  | `auto_default_values`, `no_default_values`, `use_default_values`, `use_default_metatable` |
 | hooks           | `enable_hooks`, `disable_hooks`                                                           |
 
-## Enabling the Plugin
+## Enable Plugin
 
 Before enabling the Plugin, you have to add the content of your `.proto` or `.pb` files to APISIX.
 

@@ -41,7 +41,7 @@ to do authentication, from the SP (service provider) perspective.
 | `cas_callback_uri`      | string       | True      | redirect uri used to callback the SP from IdP after login or logout.       |
 | `logout_uri`      | string       | True      | logout uri to trigger logout.       |
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a specific Route as shown below:
 

@@ -79,7 +79,7 @@ Prior to v2.12.0, the phase `before_proxy` was called `balancer`. This was updat
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the Plugin on a specific Route:
 
