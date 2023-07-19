@@ -28,6 +28,9 @@ upstream apisix_conf_backend {
         local conf_server = require("apisix.conf_server")
         conf_server.balancer()
     }
+    keepalive 320;
+    keepalive_requests 1000;
+    keepalive_timeout 60s;
 }
 
 {% if trusted_ca_cert then %}

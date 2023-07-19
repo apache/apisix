@@ -221,7 +221,6 @@ Returns all configured [Routes](./terminology/route.md):
 ```json
 [
   {
-    "update_count": 0,
     "value": {
       "priority": 0,
       "uris": [
@@ -260,7 +259,6 @@ Returns the Route with the specified `route_id`:
 
 ```json
 {
-  "update_count": 0,
   "value": {
     "priority": 0,
     "uris": [

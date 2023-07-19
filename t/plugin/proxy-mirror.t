@@ -705,8 +705,8 @@ passed
                     [[{
                         "plugins": {
                             "proxy-mirror": {
-                               "host": "http://httpbin.org",
-                               "path": "/get"
+                               "host": "http://test.com:1980",
+                               "path": "/hello"
                             }
                         },
                         "upstream": {
@@ -736,7 +736,7 @@ GET /hello
 --- response_body
 hello world
 --- error_log_like eval
-qr/http:\/\/httpbin\.org is resolved to: http:\/\/((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})(\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})){3}/
+qr/http:\/\/test\.com is resolved to: http:\/\/((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})(\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})){3}/
 
 
 

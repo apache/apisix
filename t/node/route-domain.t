@@ -115,8 +115,7 @@ passed
 --- request
 GET /echo
 --- response_headers
-Host: test.com
---- timeout: 10
+host: test.com
 
 
 
@@ -157,8 +156,7 @@ passed
 --- request
 GET /echo
 --- response_headers
-Host: test.com:1980
---- timeout: 10
+host: test.com:1980
 
 
 
