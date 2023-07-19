@@ -112,7 +112,7 @@ qr/"required":\["count","time_window"\]/
 === TEST 8: get not exist plugin
 --- request
 GET /apisix/admin/schema/plugins/no-exist
---- error_code: 400
+--- error_code: 404
 
 
 
