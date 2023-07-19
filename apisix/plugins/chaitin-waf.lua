@@ -5,6 +5,7 @@ local rr_balancer = require("apisix.balancer.roundrobin")
 local plugin = require("apisix.plugin")
 local healthcheck = require("resty.healthcheck")
 local t1k = require "resty.t1k"
+local expr       = require("resty.expr.v1")
 
 local ngx = ngx
 local ngx_now = ngx.now
@@ -20,6 +21,20 @@ local ipairs = ipairs
 -- module define
 local plugin_name = "chaitin-waf"
 
+local vars_schema = {
+    type = "array",
+}
+
+local match_schema = {
+    type = "array",
+    items = {
+        type = "object",
+        properties = {
+            vars = vars_schema
+        }
+    },
+}
+
 local plugin_schema = {
     type = "object",
     properties = {
@@ -32,10 +47,11 @@ local plugin_schema = {
                         type = "string"
                     },
                     minItems = 1,
-                }
+                },
             },
             required = { "servers" },
         },
+        match = match_schema,
     },
     required = { "upstream" },
 }
@@ -48,23 +64,23 @@ local health_checker = {
             properties = {
                 type = {
                     type = "string",
-                    enum = {"http", "https", "tcp"},
+                    enum = { "http", "https", "tcp" },
                     default = "http"
                 },
-                timeout = {type = "number", default = 1},
-                concurrency = {type = "integer", default = 10},
+                timeout = { type = "number", default = 1 },
+                concurrency = { type = "integer", default = 10 },
                 host = core.schema.host_def,
                 port = {
                     type = "integer",
                     minimum = 1,
                     maximum = 65535
                 },
-                http_path = {type = "string", default = "/"},
-                https_verify_certificate = {type = "boolean", default = true},
+                http_path = { type = "string", default = "/" },
+                https_verify_certificate = { type = "boolean", default = true },
                 healthy = {
                     type = "object",
                     properties = {
-                        interval = {type = "integer", minimum = 1, default = 1},
+                        interval = { type = "integer", minimum = 1, default = 1 },
                         http_statuses = {
                             type = "array",
                             minItems = 1,
@@ -74,7 +90,7 @@ local health_checker = {
                                 maximum = 599
                             },
                             uniqueItems = true,
-                            default = {200, 302}
+                            default = { 200, 302 }
                         },
                         successes = {
                             type = "integer",
@@ -87,7 +103,7 @@ local health_checker = {
                 unhealthy = {
                     type = "object",
                     properties = {
-                        interval = {type = "integer", minimum = 1, default = 1},
+                        interval = { type = "integer", minimum = 1, default = 1 },
                         http_statuses = {
                             type = "array",
                             minItems = 1,
@@ -97,7 +113,7 @@ local health_checker = {
                                 maximum = 599
                             },
                             uniqueItems = true,
-                            default = {429, 404, 500, 501, 502, 503, 504, 505}
+                            default = { 429, 404, 500, 501, 502, 503, 504, 505 }
                         },
                         http_failures = {
                             type = "integer",
@@ -130,7 +146,7 @@ local health_checker = {
             }
         }
     },
-    {required = {"active"}},
+    { required = { "active" } },
 }
 
 local metadata_schema = {
@@ -170,7 +186,31 @@ local _M = {
     metadata_schema = metadata_schema
 }
 
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
+
+    local ok, err = core.schema.check(plugin_schema, conf)
+
+    if not ok then
+        return false, err
+    end
+
+    if conf.match then
+        for _, m in ipairs(conf.match) do
+            local ok, err = expr.new(m.vars)
+            if not ok then
+                return false, "failed to validate the 'vars' expression: " .. err
+            end
+        end
+    end
+
+    return true
+end
+
 local HEADER_CHAITIN_WAF = "X-APISIX-CHAITIN-WAF"
+local HEADER_CHAITIN_WAF_REASON = "X-APISIX-CHAITIN-WAF-REASON"
 local HEADER_CHAITIN_WAF_ERROR = "X-APISIX-CHAITIN-WAF-ERROR"
 local HEADER_CHAITIN_WAF_TIME = "X-APISIX-CHAITIN-WAF-TIME"
 local HEADER_CHAITIN_WAF_STATUS = "X-APISIX-CHAITIN-WAF-STATUS"
@@ -260,10 +300,12 @@ end
 
 local ERR_NO_METADATA = 1
 local ERR_NO_HEALTHY_NODES = 2
+local ERR_INVALID_MATCH_EXPR = 3
+
 local function get_chaitin_server(ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
     if not core.table.try_read_attr(metadata, "value", "nodes") then
-        return nil, nil, { code = ERR_NO_METADATA, message = "chaitin-waf: missing metadata"}
+        return nil, nil, { code = ERR_NO_METADATA, message = "chaitin-waf: missing metadata" }
     end
 
     local checker = get_health_checker(metadata.value)
@@ -272,7 +314,7 @@ local function get_chaitin_server(ctx)
 
         local up_nodes = get_healthy_chaitin_server(metadata.value, checker)
         if core.table.nkeys(up_nodes) == 0 then
-            return nil, nil, { code = ERR_NO_HEALTHY_NODES, message = "chaitin-waf: no healthy nodes"}
+            return nil, nil, { code = ERR_NO_HEALTHY_NODES, message = "chaitin-waf: no healthy nodes" }
         end
         core.log.info("healthy chaitin-waf nodes: ", core.json.delay_encode(up_nodes))
 
@@ -301,89 +343,142 @@ local function get_upstream_addr(conf)
     return servers[1]
 end
 
-function _M.access(conf, ctx)
-    local extra_headers = {}
+local function check_match(conf, ctx)
+    core.log.error("CHECKING conf: ", cjson.encode(conf))
+    core.log.error("CHECKING matches: ", cjson.encode(conf.match))
+    local match_passed = true
 
-    -- 测试 plugin_metadata，包含一个错误的 server
-    -- curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-    --{
-    --   "nodes":[
-    --      {
-    --        "host": "unix:/home/lingsamuel/chaitin-waf/safeline/resources/detector/snserver.sock",
-    --        "port": 8000
-    --      }, {
-    --        "host": "127.0.0.1",
-    --        "port": 1551,
-    --      }
-    --   ]
-    --}'
+    for _, match in ipairs(conf.match) do
+        core.log.error("CHECKING match: " .. tostring(match))
+        local expr, err = expr.new(match.vars)
+        if err then
+            local msg = "failed to create match expression " .. tostring(match.vars) .. ", err: " .. tostring(err)
+            core.log.error(msg)
+            return { result = false, code = ERR_INVALID_MATCH_EXPR, message = msg }
+        end
 
-    -- 测试 plugin_metadata，包含一个错误的 server
-    -- curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-    --     "nodes":[
-    --         {
-    --             "host": "unix:/home/lingsamuel/chaitin-waf/safeline/resources/detector/snserver.sock",
-    --             "port": 8000
-    --         },
-    --         {
-    --             "host": "127.0.0.1",
-    --             "port": 1551
-    --         }
-    --     ],
-
-    --     "checks": {
-    --         "active": {
-    --             "type": "tcp",
-    --             "host": "localhost",
-    --             "timeout": 5,
-    --             "http_path": "/status",
-    --             "healthy": {
-    --                 "interval": 2,
-    --                 "successes": 1
-    --             },
-    --             "unhealthy": {
-    --                 "interval": 1,
-    --                 "http_failures": 2
-    --             },
-    --             "req_headers": ["User-Agent: curl/7.29.0"]
-    --         }
-    --     }
-    -- }'
-
-    -- 测试路由：curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-    --{
-    --    "uri": "/*",
-    --    "plugins": {
-    --        "chaitin-waf": {
-    --            "upstream": {
-    --                "servers": ["www.apisix.com"],
-    --            }
-    --        }
-    --     },
-    --    "upstream": {
-    --        "type": "roundrobin",
-    --        "nodes": {
-    --            "<UPSTREAM>:80": 1
-    --        }
-    --    }
-    --}'
-    -- 测试请求：curl localhost:9080/getid=1%20AND%201=1 -i
-
-    local plugin_metadata = plugin.plugin_metadata(plugin_name)
-    get_upstream_addr(conf)
-
-    local metadata = plugin.plugin_metadata(plugin_name)
-
-    -- TODO: condition
-
-    if not core.table.try_read_attr(metadata, "value", "nodes") then
-        --extra_headers[HEADER_CHAITIN_WAF] = "no"
-        --core.response.set_header(extra_headers)
-        --return 503, { message = "Missing metadata for chaitin-waf" }
+        match_passed = expr:eval(ctx.var)
+        if match_passed then
+            core.log.error("EXPR match: " .. tostring(ctx.var))
+            break
+        end
     end
 
+    return { result = match_passed }
+end
+
+function _M.access(conf, ctx)
+    local extra_headers = {}
+    --[[
+        测试 plugin_metadata，包含一个错误的 server
+        curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+       {
+          "nodes":[
+             {
+               "host": "unix:/home/lingsamuel/chaitin-waf/safeline/resources/detector/snserver.sock",
+               "port": 8000
+             }, {
+               "host": "127.0.0.1",
+               "port": 1551,
+             }
+          ]
+       }'
+
+        测试 plugin_metadata，包含一个错误的 server
+        curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+        {
+            "nodes":[
+                {
+                    "host": "unix:/home/lingsamuel/chaitin-waf/safeline/resources/detector/snserver.sock",
+                    "port": 8000
+                },
+                {
+                    "host": "127.0.0.1",
+                    "port": 1551
+                }
+            ],
+
+            "checks": {
+                "active": {
+                    "type": "tcp",
+                    "host": "localhost",
+                    "timeout": 5,
+                    "http_path": "/status",
+                    "healthy": {
+                        "interval": 2,
+                        "successes": 1
+                    },
+                    "unhealthy": {
+                        "interval": 1,
+                        "http_failures": 2
+                    },
+                    "req_headers": ["User-Agent: curl/7.29.0"]
+                }
+            }
+        }'
+
+        测试请求：
+        curl -H "Host: httpbun.org" http://127.0.0.1:9080/getid=1%20AND%201=1 -i
+        curl -H "Host: httpbun.org" http://127.0.0.1:9080/get -i
+        curl -H "Host: httpbun.org" -H "release: new_release" http://127.0.0.1:9080/get -i
+        curl -H "Host: httpbun.org" -H "release: new_release" http://127.0.0.1:9080/getid=1%20AND%201=1 -i
+        测试路由：
+        curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+       {
+           "uri": "/*",
+           "plugins": {
+               "chaitin-waf": {
+                   "upstream": {
+                       "servers": ["httpbun.org"]
+                   },
+                   "match": [
+                        {
+                            "vars": [
+                                ["http_release","==","new_release"]
+                            ]
+                        }
+                    ]
+               }
+            },
+           "upstream": {
+               "type": "roundrobin",
+               "nodes": {
+                   "httpbun.org:80": 1
+               }
+           }
+       }'
+    --]]
+
+    local match = check_match(conf, ctx)
+    if match and match.message then
+        extra_headers[HEADER_CHAITIN_WAF_ERROR] = match.message
+
+        extra_headers[HEADER_CHAITIN_WAF_REASON] = match.message
+        core.response.set_header(extra_headers)
+        return 500
+    elseif not match.result then
+        extra_headers[HEADER_CHAITIN_WAF] = "no"
+        extra_headers[HEADER_CHAITIN_WAF_REASON] = "no match"
+        core.response.set_header(extra_headers)
+        return
+    end
+    extra_headers[HEADER_CHAITIN_WAF_REASON] = "match"
+
+    --local plugin_metadata = plugin.plugin_metadata(plugin_name)
+    --get_upstream_addr(conf)
+    --
+    --local metadata = plugin.plugin_metadata(plugin_name)
+    --
+    ---- TODO: condition
+    --
+    --if not core.table.try_read_attr(metadata, "value", "nodes") then
+    --    --extra_headers[HEADER_CHAITIN_WAF] = "no"
+    --    --core.response.set_header(extra_headers)
+    --    --return 503, { message = "Missing metadata for chaitin-waf" }
+    --end
+
     local host, port, err = get_chaitin_server(ctx)
-    if err.code then
+    if err and err.code then
         ngx.log(ngx.ERR, "HEALTHY CHAITIN SERVER: host: " .. err.message)
         extra_headers["X-APISIX-CHAITIN-WAF-SERVER"] = "no-healthy"
 
