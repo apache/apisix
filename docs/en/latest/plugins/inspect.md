@@ -85,7 +85,7 @@ The `info` is a hash table which contains below keys:
 | delay           | integer | False     | 3 | Time in seconds specifying how often to check the hooks file.                                       |
 | hooks_file           | string | False     | "/usr/local/apisix/plugin_inspect_hooks.lua"  | Lua file to define hooks, which could be a link file. Ensure only administrator could write this file, otherwise it may be a security risk. |
 
-## Enabling the Plugin
+## Enable Plugin
 
 Plugin is enabled by default (`conf/config-default.yaml`):
 

@@ -93,7 +93,7 @@ Then create a table in your ClickHouse database to store the logs.
 echo "CREATE TABLE default.test (\`host\` String, \`client_ip\` String, \`route_id\` String, \`service_id\` String, \`@timestamp\` String, PRIMARY KEY(\`@timestamp\`)) ENGINE = MergeTree()" | curl 'http://localhost:8123/'
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 If multiple endpoints are configured, they will be written randomly.
 The example below shows how you can enable the Plugin on a specific Route:

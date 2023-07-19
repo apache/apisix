@@ -51,7 +51,7 @@ For Route:
 |------------------|---------|----------|---------|------------------------------------------------------------------------|
 | hide_credentials | boolean | False    | false   | Set to true will not pass the authorization request headers to the Upstream. |
 
-## Enabling the Plugin
+## Enable Plugin
 
 To enable the Plugin, you have to create a Consumer object with the authentication configuration:
 

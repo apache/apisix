@@ -42,7 +42,7 @@ This Plugin requires APISIX to run on APISIX-Base. See [apisix-build-tools](http
 | ------------- | ------- | -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
 | max_body_size | integer | False    | [0,...]      | Dynamically set the [`client_max_body_size`](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size) directive. |
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the Plugin on a specific Route:
 

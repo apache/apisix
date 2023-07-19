@@ -56,7 +56,7 @@ OpenWhisk supports timeouts in the range 1ms to 60000ms and it is recommended to
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 Before configuring the Plugin, you need to have OpenWhisk running. The example below shows OpenWhisk in standalone mode:
 

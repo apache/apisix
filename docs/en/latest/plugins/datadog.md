@@ -113,7 +113,7 @@ If there are no suitable values for any particular tag, the tag will be omitted.
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 Once you have your Datadog agent running, you can enable the Plugin as shown below:
 

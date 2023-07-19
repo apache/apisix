@@ -44,7 +44,7 @@ The `limit-con` Plugin limits the number of concurrent requests to your services
 | rejected_msg           | string  | False    |         | non-empty                  | Body of the response returned when the requests exceeding the threshold are rejected.                                                                                                                                                                                                                                                                                                                 |
 | allow_degradation      | boolean | False    | false   |                            | When set to `true` enables Plugin degradation when the Plugin is temporarily unavailable and allows requests to continue.                                                                                                                                                                                                                                                                             |
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a Route as shown below:
 

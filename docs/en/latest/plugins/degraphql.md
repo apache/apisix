@@ -57,7 +57,7 @@ After starting the server, the following endpoints are now available:
 - http://localhost:8080/ - A simple reacter
 - ws://localhost:8080/subscriptions
 
-### Enabling the Plugin
+### Enable Plugin
 
 #### Query list
 

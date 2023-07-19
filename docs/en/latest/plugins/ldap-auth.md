@@ -54,7 +54,7 @@ For Route:
 | tls_verify| boolean  | False     | `false`        | Whether to verify the server certificate when `use_tls` is enabled; If set to `true`, you must set `ssl_trusted_certificate` in `config.yaml`, and make sure the host of `ldap_uri` matches the host in server certificate. |
 | uid      | string  | False    | `cn`    | uid attribute.                                                         |
 
-## Enabling the plugin
+## Enable plugin
 
 First, you have to create a Consumer and enable the `ldap-auth` Plugin on it:
 

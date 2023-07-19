@@ -45,7 +45,7 @@ Only one of `whitelist` or `blacklist` attribute must be specified. They cannot 
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a specific Route or a Service as shown below:
 

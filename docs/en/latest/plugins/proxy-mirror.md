@@ -61,7 +61,7 @@ plugin_attr:
 | read    | string | 60s     | Read timeout to the mirrored Upstream.    |
 | send    | string | 60s     | Send timeout to the mirrored Upstream.    |
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a specific Route as shown below:
 

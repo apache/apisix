@@ -56,7 +56,7 @@ The `cors` Plugins lets you enable [CORS](https://developer.mozilla.org/en-US/do
 |---------------|--------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | allow_origins | object | False    | A map with origin reference and allowed origins. The keys in the map are used in the attribute `allow_origins_by_metadata` and the value are equivalent to the `allow_origins` attribute of the Plugin. |
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a specific Route or Service:
 

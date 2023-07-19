@@ -44,7 +44,7 @@ The `limit-req` Plugin limits the number of requests to your service using the [
 | nodelay           | boolean | False    | false   |                            | If set to `true`, requests within the burst threshold would not be delayed.                                                                                                                                                                                                                                                                                                                           |
 | allow_degradation | boolean | False    | false   |                            | When set to `true` enables Plugin degradation when the Plugin is temporarily unavailable and allows requests to continue.                                                                                                                                                                                                                                                                             |
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a Route as shown below:
 

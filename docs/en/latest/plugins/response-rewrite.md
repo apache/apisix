@@ -67,7 +67,7 @@ Only one of `body` or `filters` can be configured.
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the `response-rewrite` Plugin on a specific Route:
 

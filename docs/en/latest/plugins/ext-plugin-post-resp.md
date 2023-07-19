@@ -55,7 +55,7 @@ Execution of External Plugins will affect the response of the current request.
 | conf              | array   | False    |         | [{"name": "ext-plugin-A", "value": "{\"enable\":\"feature\"}"}] | List of Plugins and their configurations to be executed on the Plugin Runner.                                          |
 | allow_degradation | boolean | False    | false   |                                                                 | Sets Plugin degradation when the Plugin Runner is not available. When set to `true`, requests are allowed to continue. |
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the `ext-plugin-post-resp` Plugin on a specific Route:
 

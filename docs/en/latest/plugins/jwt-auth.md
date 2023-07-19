@@ -72,7 +72,7 @@ You may need to use the [public-api](public-api.md) plugin to expose this endpoi
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 To enable the Plugin, you have to create a Consumer object with the JWT token and configure your Route to use JWT authentication.
 
