@@ -79,7 +79,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/loggly -H 'X-API-KEY: ed
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 ### Full configuration
 

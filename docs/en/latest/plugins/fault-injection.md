@@ -75,7 +75,7 @@ This means that the relationship between the first two expressions is AND, and t
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the `fault-injection` Plugin on a specific Route as shown below:
 

@@ -53,7 +53,7 @@ If the address specified in `source` is missing or invalid, the Plugin would not
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the `real-ip` Plugin on the specified Route:
 

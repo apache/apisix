@@ -55,7 +55,7 @@ The data to be cached can be filtered with response codes, request modes, or mor
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can add your cache configuration in you APISIX configuration file (`conf/config.yaml`) as shown below:
 

@@ -61,7 +61,7 @@ In `rules`, match `case` in order according to the index of the `rules`, and exe
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can configure the `workflow` plugin on a Route as shown below:
 

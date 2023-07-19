@@ -53,7 +53,7 @@ The `redirect` Plugin can be used to configure redirects.
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can enable the `redirect` Plugin on a specific Route:
 

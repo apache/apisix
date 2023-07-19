@@ -40,7 +40,7 @@ This Plugin will add the endpoint `/apisix/status` to expose the status of APISI
 
 You may need to use the [public-api](public-api.md) Plugin to expose the endpoint.
 
-## Enabling the Plugin
+## Enable Plugin
 
 To configure the `node-status` Plugin, you have to first enable it in your configuration file (`conf/config.yaml`):
 

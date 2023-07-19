@@ -83,7 +83,7 @@ With this configuration, your logs would be formatted as shown below:
 {"@timestamp":"2023-01-09T14:47:25+08:00","route_id":"1","host":"localhost","client_ip":"127.0.0.1"}
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can enable the `tcp-logger` Plugin on a specific Route:
 

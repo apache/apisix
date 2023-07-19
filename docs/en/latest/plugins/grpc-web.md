@@ -32,7 +32,7 @@ description: This document contains information about the Apache APISIX grpc-web
 
 The `grpc-web` Plugin is a proxy Plugin that can process [gRPC Web](https://github.com/grpc/grpc-web) requests from JavaScript clients to a gRPC service.
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the `grpc-web` Plugin on a specific Route as shown below:
 

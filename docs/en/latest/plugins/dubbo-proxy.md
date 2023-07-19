@@ -52,7 +52,7 @@ If you are using OpenResty, you need to build it with Dubbo support. See [How do
 | ------------------------ | ------ | -------- | ------- | ------------ | --------------------------------------------------------------- |
 | upstream_multiplex_count | number | True | 32      | >= 1         | Maximum number of multiplex requests in an upstream connection. |
 
-## Enabling the Plugin
+## Enable Plugin
 
 To enable the `dubbo-proxy` Plugin, you have to add it in your configuration file (`conf/config.yaml`):
 
