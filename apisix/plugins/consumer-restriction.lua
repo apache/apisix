@@ -128,7 +128,9 @@ function _M.access(conf, ctx)
     local method = ngx.req.get_method()
 
     if not value then
-        return 401, { message = "Missing authentication or identity verification."}
+        local err_msg = "The request is rejected, please check the "
+                        .. conf.type .. " for this request"
+        return 401, { message = err_msg}
     end
     core.log.info("value: ", value)
 
