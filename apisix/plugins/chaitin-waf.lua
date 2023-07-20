@@ -333,17 +333,19 @@ end
 local function check_match(conf, ctx)
     local match_passed = true
 
-    for _, match in ipairs(conf.match) do
-        local exp, err = expr.new(match.vars)
-        if err then
-            local msg = "failed to create match expression for " .. tostring(match.vars) .. ", err: " .. tostring(err)
-            core.log.error(msg)
-            return false, msg
-        end
+    if conf.match then
+        for _, match in ipairs(conf.match) do
+            local exp, err = expr.new(match.vars)
+            if err then
+                local msg = "failed to create match expression for " .. tostring(match.vars) .. ", err: " .. tostring(err)
+                core.log.error(msg)
+                return false, msg
+            end
 
-        match_passed = exp:eval(ctx.var)
-        if match_passed then
-            break
+            match_passed = exp:eval(ctx.var)
+            if match_passed then
+                break
+            end
         end
     end
 
@@ -424,16 +426,19 @@ local function do_access(conf, ctx)
     extra_headers[HEADER_CHAITIN_WAF_TIME] = ngx_now() * 1000 - start_time
 
     local code = 200
+    extra_headers[HEADER_CHAITIN_WAF_STATUS] = code
     if result then
-        code = result.status
         if result.status then
+            code = result.status
             extra_headers[HEADER_CHAITIN_WAF_STATUS] = code
             extra_headers[HEADER_CHAITIN_WAF_ACTION] = "reject"
 
             return tonumber(code), fmt(blocked_message, code, result.event_id), extra_headers
         end
     end
-    extra_headers[HEADER_CHAITIN_WAF_STATUS] = code
+    if not ok then
+        extra_headers[HEADER_CHAITIN_WAF_STATUS] = nil
+    end
 
     return nil, nil, extra_headers
 end

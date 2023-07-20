@@ -246,11 +246,42 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H 'X-API-KE
 }'
 ```
 
-在没有配置健康检查的情况下，一部分请求会转发到不可用的 WAF 服务器上，从而导致不可用：
+在没有配置健康检查的情况下，一部分请求会转发到不可用的 WAF 服务器上，从而导致不可用（该输出开启了 `add_debug_header` 选项）：
 
-```
+```bash
+curl -H "Host: httpbun.org" -H "waf: true" http://127.0.0.1:9080/get -i
 
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 427
+Connection: keep-alive
+X-APISIX-CHAITIN-WAF: waf-err
+X-APISIX-CHAITIN-WAF-SERVER: 127.0.0.1
+X-APISIX-CHAITIN-WAF-TIME: 1
+X-APISIX-CHAITIN-WAF-ACTION: pass
+X-APISIX-CHAITIN-WAF-ERROR: failed to connect to t1k server 127.0.0.1:1551: connection refused
+Date: Wed, 19 Jul 2023 09:41:20 GMT
+X-Powered-By: httpbun/3c0dc05883dd9212ac38b04705037d50b02f2596
+Server: APISIX/3.3.0
 
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Connection": "close",
+    "Host": "httpbun.org",
+    "User-Agent": "curl/8.1.2",
+    "Waf": "true",
+    "X-Forwarded-For": "127.0.0.1",
+    "X-Forwarded-Host": "httpbun.org",
+    "X-Forwarded-Port": "9080",
+    "X-Forwarded-Proto": "http",
+    "X-Real-Ip": "127.0.0.1"
+  },
+  "method": "GET",
+  "origin": "127.0.0.1, 122.231.76.178",
+  "url": "http://httpbun.org/get"
+}
 ```
 
 添加了健康检查的示例配置如下，此时健康检查将会过滤掉不可用的 WAF 服务器：
@@ -291,20 +322,17 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H 'X-API-KE
 
 ## 禁用插件
 
-当您要禁用 `tencent-waf` 插件时，这很简单，您可以在插件配置中删除相应的 json 配置，无需重新启动服务，它将立即生效：
+需要禁用 `tencent-waf` 插件时，在插件配置中删除相应的插件配置即可：
 
 ```bash
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "methods": ["GET"],
-    "uri": "/hello",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
+   "uri": "/*",
+   "upstream": {
+       "type": "roundrobin",
+       "nodes": {
+           "httpbun.org:80": 1
+       }
+   }
 }'
 ```
