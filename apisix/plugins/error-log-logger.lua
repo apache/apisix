@@ -450,7 +450,46 @@ end
 
 
 local function send_to_elasticsearch(log_message)
+    local httpc, err = http.new()
+    if not httpc then
+        return false, str_format("create http error: %s", err)
+    end
 
+    local selected_endpoint_addr
+    if config.elasticsearch.endpoint_addr then
+        selected_endpoint_addr = config.elasticsearch.endpoint_addr
+    else
+        selected_endpoint_addr = config.elasticsearch.endpoint_addr[math_random(#config.elasticsearch.endpoint_addr)]
+    end
+    local uri = selected_endpoint_addr .. "/_bulk"
+    local body = core.table.concat(log_message, "")
+    local headers = {["Content-Type"] = "application/x-ndjson"}
+    if config.elasticsarch.auth then
+        local authorization = "Basic " .. ngx.encode_base64(
+                config.elasticsearch.auth.username .. ":" .. config.elasticsearch.auth.password
+        )
+        headers["Authorization"] = authorization
+    end
+
+    core.log.info("uri: ", uri, ", body: ", body)
+
+    httpc:set_timeout(config.timeout * 1000)
+    local resp, err = httpc:request_uri(uri, {
+        ssl_verify = config.elasticsearch.ssl_verify,
+        method = "POST",
+        headers = headers,
+        body = body
+    })
+    if not resp then
+        return false, err
+    end
+
+    if resp.status ~= 200 then
+        return false, str_format("elasticsearch server returned status: %d, body: %s",
+                resp.status, resp.body or "")
+    end
+
+    return true
 end
 
 local function send(data)
