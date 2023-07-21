@@ -496,14 +496,9 @@ _EOC_
     if (defined $stream_conf_enable) {
         $main_config .= <<_EOC_;
 stream {
-$lua_deps_path
-
-##aaaa
-
 $stream_config
     server {
         listen 1985;
-
         $stream_server_config
     }
 }

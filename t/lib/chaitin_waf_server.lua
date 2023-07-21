@@ -48,7 +48,7 @@ function _M.reject()
 end
 
 function _M.timeout()
-    ngx.sleep(70)
+    ngx.sleep(100)
     _M.pass()
 end
 

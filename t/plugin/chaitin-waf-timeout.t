@@ -8,14 +8,17 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     my $stream_default_server = <<_EOC_;
+    server {
         listen 8088;
         listen 8089;
         content_by_lua_block {
-            require("apisix.chaitin_waf_server").timeout()
+            require("lib.chaitin_waf_server").timeout()
         }
+    }
 _EOC_
 
-    $block->set_value("stream_server_config", $stream_default_server);
+    $block->set_value("extra_stream_config", $stream_default_server);
+    $block->set_value("stream_conf_enable", 1);
 
     # setup default conf.yaml
     my $extra_yaml_config = $block->extra_yaml_config // <<_EOC_;
