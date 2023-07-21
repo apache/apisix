@@ -49,59 +49,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: wrong schema: nodes empty
---- config
-    location /do {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin_metadata/chaitin-waf',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "nodes": []
-                    }
-                 ]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.print(body)
-        }
-    }
---- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: property \"nodes\" validation failed: expect array to have at least 1 items"}
-
-
-
-=== TEST 2: wrong schema: nodes misses host
---- config
-    location /do {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin_metadata/chaitin-waf',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "nodes": [
-                        {}
-                    ]
-                    }
-                 ]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.print(body)
-        }
-    }
---- error_code: 400
---- response_body
-{"error_msg":"invalid configuration: property \"nodes\" validation failed: failed to validate item 1: property \"host\" is required"}
-
-
-
-=== TEST 4: sanity
+=== TEST 4: set invalid waf server and route
 --- config
     location /do {
         content_by_lua_block {
@@ -112,13 +60,27 @@ __DATA__
                     "nodes": [
                         {
                             "host": "127.0.0.1",
-                            "port": 8088
-                        },
-                        {
-                            "host": "127.0.0.1",
-                            "port": 8089
+                            "port": 18890
                         }
-                    ]
+                    ],
+
+                    "checks": {
+                        "active": {
+                            "type": "tcp",
+                            "host": "localhost",
+                            "timeout": 5,
+                            "http_path": "/",
+                            "healthy": {
+                                "interval": 2,
+                                "successes": 1
+                            },
+                            "unhealthy": {
+                                "interval": 1,
+                                "http_failures": 2
+                            },
+                            "req_headers": ["User-Agent: curl/7.29.0"]
+                        }
+                    }
                  }]]
                 )
 
@@ -127,6 +89,7 @@ __DATA__
                 return ngx.print(body)
             end
 
+            ngx.sleep(1)
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
@@ -135,7 +98,8 @@ __DATA__
                             "chaitin-waf": {
                                 "upstream": {
                                    "servers": ["httpbun.org"]
-                               }
+                               },
+                               "add_debug_header": true
                             }
                         },
                         "upstream": {
@@ -146,7 +110,7 @@ __DATA__
                         },
                         "uri": "/*"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -168,36 +132,69 @@ GET /hello
 hello world
 --- error_log
 --- response_headers
-X-APISIX-CHAITIN-WAF: yes
-X-APISIX-CHAITIN-WAF-STATUS: 200
-X-APISIX-CHAITIN-WAF-ACTION: pass
+X-APISIX-CHAITIN-WAF: waf-err
+X-APISIX-CHAITIN-WAF-ERROR: failed to connect to t1k server 127.0.0.1:18890: connection refused
 --- response_headers_like
 X-APISIX-CHAITIN-WAF-TIME:
 
 
 
 
-=== TEST 4: match condition
+=== TEST 4: set invalid waf server with valid waf server and healthcheck
 --- config
     location /do {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/chaitin-waf',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": [
+                        {
+                            "host": "127.0.0.1",
+                            "port": 8088
+                        },
+                        {
+                            "host": "127.0.0.1",
+                            "port": 18890
+                        }
+                    ],
+
+                    "checks": {
+                        "active": {
+                            "type": "tcp",
+                            "host": "localhost",
+                            "timeout": 5,
+                            "http_path": "/",
+                            "healthy": {
+                                "interval": 2,
+                                "successes": 1
+                            },
+                            "unhealthy": {
+                                "interval": 1,
+                                "http_failures": 2
+                            },
+                            "req_headers": ["User-Agent: curl/7.29.0"]
+                        }
+                    }
+                 }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.print(body)
+            end
+
+            ngx.sleep(1)
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
                         "plugins": {
                             "chaitin-waf": {
-                               "upstream": {
+                                "upstream": {
                                    "servers": ["httpbun.org"]
                                },
-                               "match": [
-                                    {
-                                        "vars": [
-                                            ["http_waf","==","true"]
-                                        ]
-                                    }
-                                ]
+                               "add_debug_header": true
                             }
                         },
                         "upstream": {
@@ -208,7 +205,7 @@ X-APISIX-CHAITIN-WAF-TIME:
                         },
                         "uri": "/*"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -220,22 +217,11 @@ X-APISIX-CHAITIN-WAF-TIME:
 passed
 
 
-=== test 5: no match
---- request
-GET /hello
---- error_code: 200
---- response_body
-hello world
---- error_log
---- response_headers
-X-APISIX-CHAITIN-WAF: no
 
 
-=== test 5: matched
+=== test 5: pass
 --- request
 GET /hello
---- more_headers
-waf: true
 --- error_code: 200
 --- response_body
 hello world

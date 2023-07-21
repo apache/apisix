@@ -1,6 +1,5 @@
 local require = require
 local core = require("apisix.core")
-local http = require("resty.http")
 local rr_balancer = require("apisix.balancer.roundrobin")
 local plugin = require("apisix.plugin")
 local healthcheck = require("resty.healthcheck")
@@ -13,7 +12,6 @@ local string = string
 local fmt = string.format
 local tostring = tostring
 local tonumber = tonumber
-local pairs = pairs
 local ipairs = ipairs
 
 -- module define
@@ -58,6 +56,29 @@ local plugin_schema = {
             default = false
         },
         match = match_schema,
+        config = {
+            type = "object",
+            properties = {
+                connect_timeout = {
+                    type = "integer",
+                },
+                send_timeout = {
+                    type = "integer",
+                },
+                read_timeout = {
+                    type = "integer",
+                },
+                req_body_size = {
+                    type = "integer",
+                },
+                keepalive_size = {
+                    type = "integer",
+                },
+                keepalive_timeout = {
+                    type = "integer",
+                },
+            },
+        },
     },
     required = { "upstream" },
 }
@@ -177,6 +198,41 @@ local metadata_schema = {
             minItems = 1,
         },
         checks = health_checker,
+        config = {
+            type = "object",
+            properties = {
+                -- connect timeout, in milliseconds, integer, default 1s (1000ms)
+                connect_timeout = {
+                    type = "integer",
+                    default = 1000
+                },
+                -- send timeout, in milliseconds, integer, default 1s (1000ms)
+                send_timeout = {
+                    type = "integer",
+                    default = 1000
+                },
+                -- read timeout, in milliseconds, integer, default 1s (1000ms)
+                read_timeout = {
+                    type = "integer",
+                    default = 1000
+                },
+                -- request body size, in KB, integer, default 1MB (1024KB)
+                req_body_size = {
+                    type = "integer",
+                    default = 1024
+                },
+                -- maximum concurrent idle connections to the SafeLine WAF detection service, integer, default 256
+                keepalive_size = {
+                    type = "integer",
+                    default = 256
+                },
+                -- idle connection timeout, in milliseconds, integer, default 60s (60000ms)
+                keepalive_timeout = {
+                    type = "integer",
+                    default = 60000
+                },
+            },
+        },
     },
     required = { "nodes" },
 }
@@ -258,7 +314,8 @@ local function get_health_checker(metadata)
     for _, node in ipairs(metadata.nodes) do
         local ok, err = checker:add_target(node.host, port or node.port, host, true, host_hdr)
         if not ok then
-            core.log.error("failed to add new health check target: ", node.host, ":", port or node.port, " err: ", err)
+            core.log.error("failed to add new health check target: ",
+                    node.host, ":", port or node.port, " err: ", err)
         end
     end
 
@@ -283,17 +340,17 @@ local function get_healthy_chaitin_server(metadata, checker)
     local host = metadata.checks and metadata.checks.active and metadata.checks.active.host
     local port = metadata.checks and metadata.checks.active and metadata.checks.active.port
     for _, node in ipairs(nodes) do
-
-        core.log.error("testing chaitin servers: ", node.host, ":", port or node.port, ", host: ", host)
         local ok, err = checker:get_target_status(node.host, port or node.port, host)
         if ok then
             core.log.error("get chaitin-waf health check target status, addr: ",
                     node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
             new_nodes[node.host .. ":" .. tostring(node.port)] = 1
         elseif err then
-            core.log.error("failed to get chaitin-waf health check target status, addr: ", node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
+            core.log.error("failed to get chaitin-waf health check target status, addr: ",
+                    node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
         else
-            core.log.error("failed to get chaitin-waf health check target status, addr: ", node.host, ":", port or node.port, ", host: ", host)
+            core.log.error("failed to get chaitin-waf health check target status, addr: ",
+                    node.host, ":", port or node.port, ", host: ", host)
         end
     end
 
@@ -337,7 +394,8 @@ local function check_match(conf, ctx)
         for _, match in ipairs(conf.match) do
             local exp, err = expr.new(match.vars)
             if err then
-                local msg = "failed to create match expression for " .. tostring(match.vars) .. ", err: " .. tostring(err)
+                local msg = "failed to create match expression for " ..
+                        tostring(match.vars) .. ", err: " .. tostring(err)
                 core.log.error(msg)
                 return false, msg
             end
@@ -352,13 +410,52 @@ local function check_match(conf, ctx)
     return match_passed, nil
 end
 
+local function get_conf(conf, metadata)
+    local t = {
+        mode = "block", -- block or monitor or off, default off
+        connect_timeout = metadata.config.connect_timeout,
+        send_timeout = metadata.config.send_timeout,
+        read_timeout = metadata.config.read_timeout,
+        req_body_size = metadata.config.req_body_size,
+        keepalive_size = metadata.config.keepalive_size,
+        keepalive_timeout = metadata.config.keepalive_timeout,
+    }
+    if conf.config then
+        if conf.config.connect_timeout then
+            t.connect_timeout = conf.config.connect_timeout
+        end
+
+        if conf.config.send_timeout then
+            t.send_timeout = conf.config.send_timeout
+        end
+
+        if conf.config.read_timeout then
+            t.read_timeout = conf.config.read_timeout
+        end
+
+        if conf.config.req_body_size then
+            t.req_body_size = conf.config.req_body_size
+        end
+
+        if conf.config.keepalive_size then
+            t.keepalive_size = conf.config.keepalive_size
+        end
+
+        if conf.config.keepalive_timeout then
+            t.keepalive_timeout = conf.config.keepalive_timeout
+        end
+    end
+    return t
+end
+
 local HEADER_CHAITIN_WAF = "X-APISIX-CHAITIN-WAF"
 local HEADER_CHAITIN_WAF_ERROR = "X-APISIX-CHAITIN-WAF-ERROR"
 local HEADER_CHAITIN_WAF_TIME = "X-APISIX-CHAITIN-WAF-TIME"
 local HEADER_CHAITIN_WAF_STATUS = "X-APISIX-CHAITIN-WAF-STATUS"
 local HEADER_CHAITIN_WAF_ACTION = "X-APISIX-CHAITIN-WAF-ACTION"
 local HEADER_CHAITIN_WAF_SERVER = "X-APISIX-CHAITIN-WAF-SERVER"
-local blocked_message = [[{"code": %s, "success":false, "message": "blocked by Chaitin SafeLine Web Application Firewall", "event_id": "%s"}]]
+local blocked_message = [[{"code": %s, "success":false,
+    "message": "blocked by Chaitin SafeLine Web Application Firewall", "event_id": "%s"}]]
 
 local function do_access(conf, ctx)
     local extra_headers = {}
@@ -397,20 +494,14 @@ local function do_access(conf, ctx)
     --http://localhost:9080/getid=1%20AND%201=1
     --http://httpbin.default:9080/getid=1%20AND%201=1
     -- 并且在“防护站点“里的计数并不会增加，可能是由于长亭waf没有做实际的转发只是请求了规则引擎
+    core.log.info("picked chaitin-waf server: ", host, ":", port)
     local remote_addr = get_upstream_addr(conf)
+
     -- TODO: request id?
-    local t = {
-        mode = "block", -- block or monitor or off, default off
-        host = host, -- required, SafeLine WAF detection service host, unix domain socket, IP, or domain is supported, string
-        port = port, -- required when the host is an IP or domain, SafeLine WAF detection service port, integer
-        connect_timeout = 4000, -- connect timeout, in milliseconds, integer, default 1s (1000ms)
-        send_timeout = 4000, -- send timeout, in milliseconds, integer, default 1s (1000ms)
-        read_timeout = 4000, -- read timeout, in milliseconds, integer, default 1s (1000ms)
-        req_body_size = 1024, -- request body size, in KB, integer, default 1MB (1024KB)
-        keepalive_size = 256, -- maximum concurrent idle connections to the SafeLine WAF detection service, integer, default 256
-        keepalive_timeout = 60000, -- idle connection timeout, in milliseconds, integer, default 60s (60000ms)
-        remote_addr = remote_addr, -- remote address from ngx.var.VARIABLE, string, default from ngx.var.remote_addr
-    }
+    local t = get_conf(conf, metadata.value)
+    t.host = host
+    t.port = port
+    t.remote_addr = remote_addr
 
     extra_headers[HEADER_CHAITIN_WAF_SERVER] = host
     extra_headers[HEADER_CHAITIN_WAF] = "yes"
@@ -433,7 +524,7 @@ local function do_access(conf, ctx)
             extra_headers[HEADER_CHAITIN_WAF_STATUS] = code
             extra_headers[HEADER_CHAITIN_WAF_ACTION] = "reject"
 
-            return tonumber(code), fmt(blocked_message, code, result.event_id), extra_headers
+            return tonumber(code), fmt(blocked_message, code, result.event_id) .. "\n", extra_headers
         end
     end
     if not ok then
