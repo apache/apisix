@@ -49,7 +49,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 4: set route
+=== TEST 1: set route
 --- config
     location /do {
         content_by_lua_block {
@@ -107,8 +107,7 @@ passed
 
 
 
-
-=== test 5: pass
+=== TEST 2: pass
 --- request
 GET /hello
 --- error_code: 403
@@ -121,6 +120,3 @@ X-APISIX-CHAITIN-WAF-STATUS: 403
 X-APISIX-CHAITIN-WAF-ACTION: reject
 --- response_headers_like
 X-APISIX-CHAITIN-WAF-TIME:
-
-
-

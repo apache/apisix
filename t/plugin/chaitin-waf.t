@@ -101,7 +101,7 @@ __DATA__
 
 
 
-=== TEST 4: sanity
+=== TEST 3: sanity
 --- config
     location /do {
         content_by_lua_block {
@@ -159,8 +159,7 @@ passed
 
 
 
-
-=== test 5: pass
+=== TEST 4: pass
 --- request
 GET /hello
 --- error_code: 200
@@ -176,8 +175,7 @@ X-APISIX-CHAITIN-WAF-TIME:
 
 
 
-
-=== TEST 4: match condition
+=== TEST 5: match condition
 --- config
     location /do {
         content_by_lua_block {
@@ -220,7 +218,8 @@ X-APISIX-CHAITIN-WAF-TIME:
 passed
 
 
-=== test 5: no match
+
+=== TEST 6: no match
 --- request
 GET /hello
 --- error_code: 200
@@ -231,7 +230,8 @@ hello world
 X-APISIX-CHAITIN-WAF: no
 
 
-=== test 5: matched
+
+=== TEST 7: matched
 --- request
 GET /hello
 --- more_headers
@@ -246,4 +246,3 @@ X-APISIX-CHAITIN-WAF-STATUS: 200
 X-APISIX-CHAITIN-WAF-ACTION: pass
 --- response_headers_like
 X-APISIX-CHAITIN-WAF-TIME:
-

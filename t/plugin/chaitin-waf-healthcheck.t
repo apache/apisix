@@ -49,7 +49,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 4: set invalid waf server and route
+=== TEST 1: set invalid waf server and route
 --- config
     location /do {
         content_by_lua_block {
@@ -123,8 +123,7 @@ passed
 
 
 
-
-=== test 5: pass
+=== TEST 2: pass
 --- request
 GET /hello
 --- error_code: 200
@@ -139,8 +138,7 @@ X-APISIX-CHAITIN-WAF-TIME:
 
 
 
-
-=== TEST 4: set invalid waf server with valid waf server and healthcheck
+=== TEST 3: set invalid waf server with valid waf server and healthcheck
 --- config
     location /do {
         content_by_lua_block {
@@ -218,8 +216,7 @@ passed
 
 
 
-
-=== test 5: pass
+=== TEST 4: pass
 --- request
 GET /hello
 --- error_code: 200
@@ -232,4 +229,3 @@ X-APISIX-CHAITIN-WAF-STATUS: 200
 X-APISIX-CHAITIN-WAF-ACTION: pass
 --- response_headers_like
 X-APISIX-CHAITIN-WAF-TIME:
-

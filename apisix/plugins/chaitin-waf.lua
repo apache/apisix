@@ -221,7 +221,8 @@ local metadata_schema = {
                     type = "integer",
                     default = 1024
                 },
-                -- maximum concurrent idle connections to the SafeLine WAF detection service, integer, default 256
+                -- maximum concurrent idle connections to
+                -- the SafeLine WAF detection service, integer, default 256
                 keepalive_size = {
                     type = "integer",
                     default = 256
@@ -524,7 +525,8 @@ local function do_access(conf, ctx)
             extra_headers[HEADER_CHAITIN_WAF_STATUS] = code
             extra_headers[HEADER_CHAITIN_WAF_ACTION] = "reject"
 
-            return tonumber(code), fmt(blocked_message, code, result.event_id) .. "\n", extra_headers
+            return tonumber(code), fmt(blocked_message, code,
+                    result.event_id) .. "\n", extra_headers
         end
     end
     if not ok then

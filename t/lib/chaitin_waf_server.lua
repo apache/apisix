@@ -4,7 +4,7 @@ local function get_socket()
     ngx.flush(true)
     local sock, err = ngx.req.socket(true)
     if not sock then
-        core.log.error("failed to get the request socket: ", err)
+        ngx.log(ngx.ERR, "failed to get the request socket: " .. tostring(err))
         return nil
     end
     return sock
