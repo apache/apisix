@@ -34,19 +34,6 @@ local match_schema = {
 local plugin_schema = {
     type = "object",
     properties = {
-        upstream = {
-            type = "object",
-            properties = {
-                servers = {
-                    type = "array",
-                    items = {
-                        type = "string"
-                    },
-                    minItems = 1,
-                },
-            },
-            required = { "servers" },
-        },
         add_header = {
             type = "boolean",
             default = true
@@ -77,10 +64,12 @@ local plugin_schema = {
                 keepalive_timeout = {
                     type = "integer",
                 },
+                remote_addr = {
+                    type = "string",
+                }
             },
         },
     },
-    required = { "upstream" },
 }
 
 local health_checker = {
@@ -117,7 +106,7 @@ local health_checker = {
                                 maximum = 599
                             },
                             uniqueItems = true,
-                            default = { 200, 302 }
+                            default = { 200, 403 }
                         },
                         successes = {
                             type = "integer",
@@ -232,7 +221,13 @@ local metadata_schema = {
                     type = "integer",
                     default = 60000
                 },
+                -- remote address from ngx.var.VARIABLE, string
+                remote_addr = {
+                    type = "string",
+                    default = "http_x_forwarded_for: 1",
+                }
             },
+            default = {},
         },
     },
     required = { "nodes" },
@@ -381,13 +376,6 @@ local function get_chaitin_server(metadata, ctx)
     return host, port, nil
 end
 
-local function get_upstream_addr(conf)
-    local upstream = conf.upstream
-    local servers = upstream.servers -- TODO: 多个 servers 怎么处理？？
-
-    return servers[1]
-end
-
 local function check_match(conf, ctx)
     local match_passed = true
 
@@ -414,13 +402,18 @@ end
 local function get_conf(conf, metadata)
     local t = {
         mode = "block", -- block or monitor or off, default off
-        connect_timeout = metadata.config.connect_timeout,
-        send_timeout = metadata.config.send_timeout,
-        read_timeout = metadata.config.read_timeout,
-        req_body_size = metadata.config.req_body_size,
-        keepalive_size = metadata.config.keepalive_size,
-        keepalive_timeout = metadata.config.keepalive_timeout,
     }
+
+    if metadata.config then
+        t.connect_timeout = metadata.config.connect_timeout
+        t.send_timeout = metadata.config.send_timeout
+        t.read_timeout = metadata.config.read_timeout
+        t.req_body_size = metadata.config.req_body_size
+        t.keepalive_size = metadata.config.keepalive_size
+        t.keepalive_timeout = metadata.config.keepalive_timeout
+        t.remote_addr = metadata.config.remote_addr
+    end
+
     if conf.config then
         if conf.config.connect_timeout then
             t.connect_timeout = conf.config.connect_timeout
@@ -445,6 +438,9 @@ local function get_conf(conf, metadata)
         if conf.config.keepalive_timeout then
             t.keepalive_timeout = conf.config.keepalive_timeout
         end
+        if conf.config.remote_addr then
+            t.remote_addr = conf.config.remote_addr
+        end
     end
     return t
 end
@@ -455,8 +451,8 @@ local HEADER_CHAITIN_WAF_TIME = "X-APISIX-CHAITIN-WAF-TIME"
 local HEADER_CHAITIN_WAF_STATUS = "X-APISIX-CHAITIN-WAF-STATUS"
 local HEADER_CHAITIN_WAF_ACTION = "X-APISIX-CHAITIN-WAF-ACTION"
 local HEADER_CHAITIN_WAF_SERVER = "X-APISIX-CHAITIN-WAF-SERVER"
-local blocked_message = [[{"code": %s, "success":false,
-    "message": "blocked by Chaitin SafeLine Web Application Firewall", "event_id": "%s"}]]
+local blocked_message = [[{"code": %s, "success":false, ]] ..
+        [["message": "blocked by Chaitin SafeLine Web Application Firewall", "event_id": "%s"}]]
 
 local function do_access(conf, ctx)
     local extra_headers = {}
@@ -496,13 +492,10 @@ local function do_access(conf, ctx)
     --http://httpbin.default:9080/getid=1%20AND%201=1
     -- 并且在“防护站点“里的计数并不会增加，可能是由于长亭waf没有做实际的转发只是请求了规则引擎
     core.log.info("picked chaitin-waf server: ", host, ":", port)
-    local remote_addr = get_upstream_addr(conf)
 
-    -- TODO: request id?
     local t = get_conf(conf, metadata.value)
     t.host = host
     t.port = port
-    t.remote_addr = remote_addr
 
     extra_headers[HEADER_CHAITIN_WAF_SERVER] = host
     extra_headers[HEADER_CHAITIN_WAF] = "yes"
@@ -511,6 +504,10 @@ local function do_access(conf, ctx)
     local ok, err, result = t1k.do_access(t, false)
     if not ok then
         extra_headers[HEADER_CHAITIN_WAF] = "waf-err"
+        local err_msg = tostring(err)
+        if core.string.find(err_msg, "timeout") then
+            extra_headers[HEADER_CHAITIN_WAF] = "timeout"
+        end
         extra_headers[HEADER_CHAITIN_WAF_ERROR] = tostring(err)
     else
         extra_headers[HEADER_CHAITIN_WAF_ACTION] = "pass"
@@ -525,6 +522,7 @@ local function do_access(conf, ctx)
             extra_headers[HEADER_CHAITIN_WAF_STATUS] = code
             extra_headers[HEADER_CHAITIN_WAF_ACTION] = "reject"
 
+            core.log.error("request rejected by chaitin-waf, event_id: " .. result.event_id)
             return tonumber(code), fmt(blocked_message, code,
                     result.event_id) .. "\n", extra_headers
         end
@@ -556,9 +554,6 @@ end
 
 function _M.header_filter(conf, ctx)
     t1k.do_header_filter()
-end
-
-function _M.body_filter(conf, ctx)
 end
 
 return _M

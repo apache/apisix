@@ -67,6 +67,7 @@ description: 本文介绍了关于 Apache APISIX `chaitin-waf` 插件的基本�
 | config.req_body_size     | integer        | 否   | 1024  | 请求体大小, 单位为 KB, 默认值为 1MB (1024KB)                                                                                                              |
 | config.keepalive_size    | integer        | 否   | 256   | 长亭 WAF 服务的最大并发空闲连接数, 毫秒，默认值为 256                                                                                                              |
 | config.keepalive_timeout | integer        | 否   | 60000 | 空闲链接超时, 毫秒，默认值为 60s (60000ms)                                                                                                                 |
+| config.remote_addr       | string         | 否   |       | 从 ngx.var.VARIABLE 中提取 remote_addr 的变量，默认值为 `"http_x_forwarded_for: 1"`。如果没有获取到，将从 `ngx.var.remote_addr` 获取                                   |
 
 一个典型的示例配置如下：
 
@@ -86,8 +87,6 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H 'X-API-KE
 
 | 名称                       | 类型            | 必选项 | 默认值   | 描述                                                                                                                                                                                                                                                                           |
 |--------------------------|---------------|-----|-------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| upstream                 | object        | 必选  |       | 设置上游                                                                                                                                                                                                                                                                         |
-| upstream.servers[0]      | array[string] | 必选  |       | 设置上游地址                                                                                                                                                                                                                                                                       |
 | match                    | array[object] | 否   |       | 匹配规则列表，默认为空且规则将被无条件执行。                                                                                                                                                                                                                                                       |
 | match.vars               | array[array]  | 否   |       | 由一个或多个 `{var, operator, val}` 元素组成的列表，例如：`{"arg_name", "==", "json"}`，表示当前请求参数 `name` 是 `json`。这里的 `var` 与 NGINX 内部自身变量命名是保持一致，所以也可以使用 `request_uri`、`host` 等；对于已支持的运算符，具体用法请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 `operator-list` 部分。 |
 | add_header               | bool          | 否   | true  | 是否添加响应头                                                                                                                                                                                                                                                                      |
@@ -99,6 +98,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H 'X-API-KE
 | config.req_body_size     | integer       | 否   |       | 请求体大小, 单位为 KB                                                                                                                                                                                                                                                                |
 | config.keepalive_size    | integer       | 否   |       | 长亭 WAF 服务的最大并发空闲连接数                                                                                                                                                                                                                                                          |
 | config.keepalive_timeout | integer       | 否   |       | 空闲链接超时, 毫秒                                                                                                                                                                                                                                                                   |
+| config.remote_addr       | string        | 否   |       | 从 ngx.var.VARIABLE 中提取 remote_addr 的变量                                                                                                                                                                                                                                       |
 
 一个典型的示例配置如下，这里使用 `httpbun.org` 作为示例后端，可以按需替换：
 
@@ -108,9 +108,6 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
    "uri": "/*",
    "plugins": {
        "chaitin-waf": {
-           "upstream": {
-               "servers": ["httpbun.org"]
-           },
            "match": [
                 {
                     "vars": [
