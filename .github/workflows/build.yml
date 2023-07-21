@@ -137,7 +137,7 @@ jobs:
           [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
           echo "Linux launch services, done."
       - name: Start Dubbo Backend
-        if: matrix.os_name == 'linux_openresty' && steps.test_env.outputs.type == 'plugin'
+        if: matrix.os_name == 'linux_openresty' && [steps.test_env.outputs.type == 'plugin' || steps.test_env.outputs.type == 'xrpc']
         run: |
           sudo apt install -y maven
           cd t/lib/dubbo-backend
