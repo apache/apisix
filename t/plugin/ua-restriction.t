@@ -38,13 +38,12 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: set allowlist, denylist, bypass_missing and user-defined message
+=== TEST 1: set both allowlist and denylist
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.ua-restriction")
             local conf = {
-               bypass_missing = true,
                allowlist = {
                     "my-bot1",
                     "my-bot2"
@@ -53,18 +52,18 @@ __DATA__
                     "my-bot1",
                     "my-bot2"
                },
-               message = "User-Agent Forbidden",
             }
             local ok, err = plugin.check_schema(conf)
             if not ok then
                 ngx.say(err)
+                return
             end
 
             ngx.say(require("toolkit.json").encode(conf))
         }
     }
 --- response_body
-{"allowlist":["my-bot1","my-bot2"],"bypass_missing":true,"denylist":["my-bot1","my-bot2"],"message":"User-Agent Forbidden"}
+value should match only one schema, but matches both schemas 1 and 2
 
 
 
@@ -216,7 +215,19 @@ User-Agent:my-bot2
 
 
 
-=== TEST 9: hit route and user-agent match denylist regex
+=== TEST 9: hit route and user-agent in denylist with reverse order multiple user-agent
+--- request
+GET /hello
+--- more_headers
+User-Agent:my-bot2
+User-Agent:my-bot1
+--- error_code: 403
+--- response_body
+{"message":"Not allowed"}
+
+
+
+=== TEST 10: hit route and user-agent match denylist regex
 --- request
 GET /hello
 --- more_headers
@@ -227,7 +238,7 @@ User-Agent:Baiduspider/3.0
 
 
 
-=== TEST 10: hit route and user-agent not in denylist
+=== TEST 11: hit route and user-agent not in denylist
 --- request
 GET /hello
 --- more_headers
@@ -238,7 +249,7 @@ hello world
 
 
 
-=== TEST 11: set allowlist
+=== TEST 12: set allowlist
 --- config
     location /t {
         content_by_lua_block {
@@ -275,7 +286,7 @@ passed
 
 
 
-=== TEST 12: hit route and user-agent in allowlist
+=== TEST 13: hit route and user-agent in allowlist
 --- request
 GET /hello
 --- more_headers
@@ -286,7 +297,7 @@ hello world
 
 
 
-=== TEST 13: hit route and user-agent match allowlist regex
+=== TEST 14: hit route and user-agent match allowlist regex
 --- request
 GET /hello
 --- more_headers
@@ -297,209 +308,40 @@ hello world
 
 
 
-=== TEST 14: hit route and user-agent not in allowlist
+=== TEST 15: hit route and user-agent not in allowlist
 --- request
 GET /hello
 --- more_headers
 User-Agent:foo/bar
---- error_code: 200
---- response_body
-hello world
-
-
-
-=== TEST 15: set config: user-agent in both allowlist and denylist
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "uri": "/hello",
-                        "upstream": {
-                            "type": "roundrobin",
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            }
-                        },
-                        "plugins": {
-                            "ua-restriction": {
-                                 "allowlist": [
-                                     "foo/bar",
-                                     "(Baiduspider)/(\\d+)\\.(\\d+)"
-                                 ],
-                                 "denylist": [
-                                     "foo/bar",
-                                     "(Baiduspider)/(\\d+)\\.(\\d+)"
-                                 ]
-                            }
-                        }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 16: hit route and user-agent in both allowlist and denylist, pass(part 1)
---- request
-GET /hello
---- more_headers
-User-Agent:foo/bar
---- error_code: 200
---- response_body
-hello world
-
-
-
-=== TEST 17: hit route and user-agent in both allowlist and denylist, pass(part 2)
---- request
-GET /hello
---- more_headers
-User-Agent:Baiduspider/1.0
---- error_code: 200
---- response_body
-hello world
-
-
-
-=== TEST 18: bypass_missing test, using default, reset conf(part1)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "uri": "/hello",
-                        "upstream": {
-                            "type": "roundrobin",
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            }
-                        },
-                        "plugins": {
-                            "ua-restriction": {
-                            }
-                        }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 19: bypass_missing test, using default, send request without User-Agent(part2)
---- request
-GET /hello
 --- error_code: 403
 --- response_body
 {"message":"Not allowed"}
 
 
 
-=== TEST 20: bypass_missing test, set to true(part1)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "uri": "/hello",
-                        "upstream": {
-                            "type": "roundrobin",
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            }
-                        },
-                        "plugins": {
-                            "ua-restriction": {
-                                "bypass_missing": true
-                            }
-                        }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 21: bypass_missing test, set to true, send request without User-Agent(part2)
+=== TEST 16:  hit route and user-agent in allowlist with multiple user-agent
 --- request
 GET /hello
---- error_code: 200
+--- more_headers
+User-Agent:foo/bar
+User-Agent:my-bot1
 --- response_body
 hello world
 
 
 
-=== TEST 22: bypass_missing test, set to false(part1)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "uri": "/hello",
-                        "upstream": {
-                            "type": "roundrobin",
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            }
-                        },
-                        "plugins": {
-                            "ua-restriction": {
-                                "bypass_missing": false
-                            }
-                        }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 23: bypass_missing test, set to false, send request without User-Agent(part2)
+=== TEST 17:  hit route and user-agent in allowlist with reverse order multiple user-agent
 --- request
 GET /hello
---- error_code: 403
+--- more_headers
+User-Agent:my-bot1
+User-Agent:foo/bar
 --- response_body
-{"message":"Not allowed"}
+hello world
 
 
 
-=== TEST 24: message that do not reach the minimum range
+=== TEST 18: message that do not reach the minimum range
 --- config
     location /t {
         content_by_lua_block {
@@ -530,7 +372,7 @@ qr/string too short, expected at least 1, got 0/
 
 
 
-=== TEST 25: exceeds the maximum limit of message
+=== TEST 19: exceeds the maximum limit of message
 --- config
     location /t {
         content_by_lua_block {
@@ -568,7 +410,7 @@ qr/string too long, expected at most 1024, got 1025/
 
 
 
-=== TEST 26: set custom message
+=== TEST 20: set custom message
 --- config
     location /t {
         content_by_lua_block {
@@ -606,7 +448,7 @@ passed
 
 
 
-=== TEST 27: test custom message
+=== TEST 21: test custom message
 --- request
 GET /hello
 --- more_headers
@@ -617,7 +459,7 @@ User-Agent:Baiduspider/1.0
 
 
 
-=== TEST 28: test remove ua-restriction, add denylist(part 1)
+=== TEST 22: test remove ua-restriction, add denylist(part 1)
 --- config
     location /enable {
         content_by_lua_block {
@@ -656,7 +498,7 @@ passed
 
 
 
-=== TEST 29: test remove ua-restriction, fail(part 2)
+=== TEST 23: test remove ua-restriction, fail(part 2)
 --- request
 GET /hello
 --- more_headers
@@ -667,7 +509,7 @@ User-Agent:Baiduspider/1.0
 
 
 
-=== TEST 30: test remove ua-restriction, remove plugin(part 3)
+=== TEST 24: test remove ua-restriction, remove plugin(part 3)
 --- config
     location /disable {
         content_by_lua_block {
@@ -701,7 +543,7 @@ passed
 
 
 
-=== TEST 31: test remove ua-restriction, check spider User-Agent(part 4)
+=== TEST 25: test remove ua-restriction, check spider User-Agent(part 4)
 --- request
 GET /hello
 --- more_headers
@@ -711,7 +553,7 @@ hello world
 
 
 
-=== TEST 32: set disable=true
+=== TEST 26: set disable=true
 --- config
     location /t {
         content_by_lua_block {
@@ -744,7 +586,7 @@ passed
 
 
 
-=== TEST 33: the element in allowlist is null
+=== TEST 27: the element in allowlist is null
 --- config
     location /t {
         content_by_lua_block {
@@ -771,7 +613,7 @@ done
 
 
 
-=== TEST 34: the element in denylist is null
+=== TEST 28: the element in denylist is null
 --- config
     location /t {
         content_by_lua_block {
@@ -795,3 +637,125 @@ done
 --- response_body
 property "denylist" validation failed: wrong type: expected array, got table
 done
+
+
+
+=== TEST 29: test both allowlist and denylist are not exist
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "ua-restriction": {
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin ua-restriction err: value should match only one schema, but matches none"}
+
+
+
+=== TEST 30: test bypass_missing
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "ua-restriction": {
+                                "allowlist": [
+                                    "my-bot1"
+                                ]
+                            }
+                        }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 31: hit
+--- request
+GET /hello
+--- error_code: 403
+--- response_body
+{"message":"Not allowed"}
+
+
+
+=== TEST 32: test bypass_missing with true
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "ua-restriction": {
+                                "bypass_missing": true,
+                                "denylist": [
+                                    "my-bot1"
+                                ]
+                            }
+                        }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 33: hit
+--- request
+GET /hello
+--- response_body
+hello world
