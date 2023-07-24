@@ -53,6 +53,7 @@ local function tab_is_array(t)
     return #t == count
 end
 
+
 local function var_sub(val)
     local err
     local var_used = false
@@ -84,6 +85,7 @@ local function var_sub(val)
     end)
     return new_val, var_used, err
 end
+
 
 local function resolve_conf_var(conf)
     for key, val in pairs(conf) do
