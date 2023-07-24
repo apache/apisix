@@ -306,3 +306,71 @@ hello world
         }
     }
 --- error_code: 200
+
+
+
+=== TEST 12: setup route (with log_labels as variables)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "loki-logger": {
+                            "endpoint_addrs": ["http://127.0.0.1:3100"],
+                            "tenant_id": "tenant_1",
+                            "log_labels": {
+                                "custom_label": "$remote_addr"
+                            },
+                            "batch_max_size": 1
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: hit route
+--- request
+GET /hello
+--- response_body
+hello world
+
+
+
+=== TEST 14: check loki log (with custom_label)
+--- config
+    location /t {
+        content_by_lua_block {
+            local cjson = require("cjson")
+            local now = ngx.now() * 1000
+            local data, err = require("lib.grafana_loki").fetch_logs_from_loki(
+                tostring(now - 3000) .. "000000", -- from
+                tostring(now) .. "000000",        -- to
+                { query = [[{custom_label="127.0.0.1"} | json]] }
+            )
+
+            assert(err == nil, "fetch logs error: " .. (err or ""))
+            assert(data.status == "success", "loki response error: " .. cjson.encode(data))
+            assert(#data.data.result > 0, "loki log empty: " .. cjson.encode(data))
+        }
+    }
+--- error_code: 200
