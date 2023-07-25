@@ -620,7 +620,7 @@ deployment:                    # Deployment configurations
     #   control_plane:                          # Set control plane details if config_provider is control_plane.
     #     host:                                 # Set the address of control plane.
     #       - https://${control_plane_IP}:9280
-    #     prefix: /apisix
+    #     prefix: /apisix                       # Set etcd prefix.
     #     timeout: 30                           # Set timeout in seconds.
     #   certs:
     #     cert: /path/to/client.crt           # Set path to the client certificate.
@@ -671,7 +671,7 @@ deployment:                    # Deployment configurations
   etcd:
     host:                         # Set etcd address(es) in the same etcd cluster.
       - "http://127.0.0.1:2379"   # If TLS is enabled for etcd, use https://127.0.0.1:2379.
-    prefix: /apisix               # Set prefix in etcd.
+    prefix: /apisix               # Set etcd prefix.
     use_grpc: false               # Use gRPC (experimental) for etcd configuration sync.
     timeout: 30                   # Set timeout in seconds.
                                   # Set a higher timeout (e.g. an hour) if `use_grpc` is true.
