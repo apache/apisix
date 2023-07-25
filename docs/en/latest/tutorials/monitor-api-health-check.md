@@ -88,13 +88,16 @@ Create a [Route](https://apisix.apache.org/docs/apisix/terminology/route/) objec
 ```bash
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
-  "name": "backend-service-route",
-  "methods": ["GET"],
-  "uri": "/",
-      "plugins": {
-        "prometheus":{}
-    },
-  "upstream_id": "1"
+   "name":"backend-service-route",
+   "methods":[
+      "GET"
+   ],
+   "uri":"/",
+   "plugins":{
+      "prometheus":{
+      }
+   },
+   "upstream_id":"1"
 }'
 ```
 
