@@ -55,24 +55,24 @@ This process involves checking the operational status of the 'upstream' nodes. A
 ```bash
 curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
-  "nodes": {
-    "web1:80": 1,
-	  "web2:80": 1
-  },
-   "checks": {
-     "active": {
-		 "timeout": 5,
-         "type": "http",
-         "http_path": "/health",
-         "healthy": {
-             "interval": 2,
-             "successes": 1
+   "nodes":{
+      "web1:80":1,
+      "web2:80":1
+   },
+   "checks":{
+      "active":{
+         "timeout":5,
+         "type":"http",
+         "http_path":"/health",
+         "healthy":{
+            "interval":2,
+            "successes":1
          },
-         "unhealthy": {
-             "interval": 1,
-             "http_failures": 2
+         "unhealthy":{
+            "interval":1,
+            "http_failures":2
          }
-     }
+      }
    }
 }'
 ```
@@ -86,10 +86,10 @@ This example configures an active health check on the **`/health`** endpoint of 
 Create a [Route](https://apisix.apache.org/docs/apisix/terminology/route/) object and enable the Prometheus plugin for the route by adding `"prometheus": {}` in the plugins option. APISIX gathers internal runtime metrics and exposes them through port `9091` and URI path `/apisix/prometheus/metrics` by default that Prometheus can scrape. It is also possible to customize the export port and **URI path**, **add** **extra labels, the frequency of these scrapes, and other parameters** by configuring them in the Prometheus configuration `/prometheus_conf/prometheus.yml`file.
 
 ```bash
-curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '    
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "name": "backend-service-route",
-  "methods": ["GET"],                                       
+  "methods": ["GET"],
   "uri": "/",
       "plugins": {
         "prometheus":{}
