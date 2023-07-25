@@ -1,3 +1,19 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 local _M = {}
 
 local function get_socket()
@@ -19,17 +35,6 @@ function _M.pass()
 
     ngx.exit(200)
 end
-
--- 返回值会被分为如下的形式
-
--- 长度为 5 bytes 的 packet
--- 紧跟一段 body
-
--- 其中：
--- 第一个 packet 的 第一个 byte 需要 & 0x40 == 0x40
--- 最后一个 packet 的 第一个 byte 需要 & 0x80 == 0x80
-
--- tag 为 packet 的第一个 byte & !0x40 & !0x80
 
 function _M.reject()
     local sock = get_socket()

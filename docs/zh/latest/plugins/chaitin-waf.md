@@ -323,7 +323,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H 'X-API-KE
             },
             "unhealthy": {
                 "interval": 1,
-                "http_failures": 2
+                "tcp_failures": 2
             },
             "req_headers": ["User-Agent: curl/7.29.0"]
         }
