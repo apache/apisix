@@ -197,9 +197,9 @@ You should also be able to see traces from all services:
 
 ![ ](../../../assets/images/plugin/skywalking-5.png)
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `skywalking` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `skywalking` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

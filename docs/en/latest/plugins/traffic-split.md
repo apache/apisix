@@ -616,9 +616,9 @@ curl http://127.0.0.1:9080/hello -H 'x-api-id: 3'
 1980
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `traffic-split` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `traffic-split` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \

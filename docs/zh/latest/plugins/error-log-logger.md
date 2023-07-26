@@ -162,7 +162,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
 }'
 ```
 
-## 禁用插件
+## 删除插件
 
 当你不再需要该插件时，只需要在 `./conf/config.yaml` 中删除或注释该插件即可。
 
