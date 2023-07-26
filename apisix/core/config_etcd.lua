@@ -213,10 +213,12 @@ local function run_watch(premature)
             end)
 
             local _, sem_err = sema:wait(opts.timeout + 10)
+
             if sem_err then
                 ngx_thread_kill(get_res_th)
                 ngx_thread_kill(check_worker_th)
-                goto watch_event
+                cancel_watch(http_cli)
+                break
             end
 
             if exiting() then
