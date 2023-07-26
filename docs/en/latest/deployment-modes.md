@@ -434,3 +434,23 @@ upstreams:
     id: 1
 #END
 ```
+
+### How to configure protos
+
+```yaml
+protos:
+  - id: helloworld
+    desc: hello world
+    content: >
+      syntax = "proto3";
+      package helloworld;
+      service Greeter {
+      rpc SayHello (HelloRequest) returns (HelloReply) {}
+      }
+      message HelloRequest {
+      string name = 1;
+      }
+      message HelloReply {
+      string message = 1;
+      }
+```
