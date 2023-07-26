@@ -38,7 +38,7 @@ In this tutorial, we'll guide you on how to **enable and monitor API health chec
 
 ## Start the APISIX demo project
 
-This project leverages existing the pre-defined [Docker Compose configuration](https://github.com/apache/apisix-docker/blob/master/example/docker-compose.yml) file to set up, deploy and run APISIX, etcd, Prometheus, and other services with a single command. First, clone the [apisix-docker](https://github.com/apache/apisix-docker) repo on GitHub and open it in your favorite editor, navigate to `/example` folder, and start the project by simply running `docker compose up` from the folder.
+This project leverages the pre-defined [Docker Compose configuration](https://github.com/apache/apisix-docker/blob/master/example/docker-compose.yml) file to set up, deploy and run APISIX, etcd, Prometheus, and other services with a single command. First, clone the [apisix-docker](https://github.com/apache/apisix-docker) repo on GitHub and open it in your favorite editor, navigate to `/example` folder, and start the project by simply running `docker compose up` from the folder.
 
 When you start the project, Docker downloads any images it needs to run. You can see the full list of services in [docker-compose.yaml](https://github.com/apache/apisix-docker/blob/master/example/docker-compose.yml) file.
 
