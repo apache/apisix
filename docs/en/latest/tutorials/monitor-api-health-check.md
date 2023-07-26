@@ -99,7 +99,7 @@ curl "http://127.0.0.1:9180/apisix/admin/global_rules" -H "X-API-KEY: edd1c9f034
 
 ## Create a Route
 
-Create a [Route](https://apisix.apache.org/docs/apisix/terminology/route/) object to route incoming request to upstream nodes:
+Create a [Route](https://apisix.apache.org/docs/apisix/terminology/route/) object to route incoming requests to upstream nodes:
 
 ```bash
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
@@ -173,15 +173,15 @@ apisix_upstream_status{name="/apisix/upstreams/1",ip="172.27.0.7",port="80"} 1
 
 Health check data is represented with metrics label `apisix_upstream_status`. It has attributes like upstream `name`, `ip` and `port`. A value of 1 represents healthy and 0 means the upstream node is unhealthy.
 
-## Visualize the data in Prometheus dashboard
+## Visualize the data in the Prometheus dashboard
 
-Navigate to http://localhost:9090/ where Prometheus instance is running in Docker and type **Expression** `apisix_upstream_status` in the search bar. You can also see the output of the health check statuses of upstream nodes on the **Prometheus dashboard** in the table or graph view:
+Navigate to http://localhost:9090/ where the Prometheus instance is running in Docker and type **Expression** `apisix_upstream_status` in the search bar. You can also see the output of the health check statuses of upstream nodes on the **Prometheus dashboard** in the table or graph view:
 
 ![Visualize the data in Prometheus dashboard](https://static.apiseven.com/uploads/2023/07/20/OGBtqbDq_output.png)
 
 ## Next Steps
 
-You have now learned how to setup and monitor API health checks with Prometheus and APISIX.  APISIX Prometheus plugin is configured to connect [Grafana](https://grafana.com/) automatically to visualize metrics. Keep exploring the data and customize [Grafana dashboard](https://grafana.com/grafana/dashboards/11719-apache-apisix/) by adding a panel that shows the number of active health checks.
+You have now learned how to set up and monitor API health checks with Prometheus and APISIX.  APISIX Prometheus plugin is configured to connect [Grafana](https://grafana.com/) automatically to visualize metrics. Keep exploring the data and customize the [Grafana dashboard](https://grafana.com/grafana/dashboards/11719-apache-apisix/) by adding a panel that shows the number of active health checks.
 
 ### Related resources
 
