@@ -46,7 +46,7 @@ When you start the project, Docker downloads any images it needs to run. You can
 
 To check API health periodically, APISIX needs an HTTP path of the health endpoint of the upstream service. So, you need first to add `/health` endpoint for your backend service.  From there, you inspect the most relevant metrics for that service such as memory usage, database connectivity, response duration, and more.  Assume that we have two backend REST API services web1 and web2 running using the demo project and each has its **own health check** endpoint at URL path `/health`. At this point, you do not need to make additional configurations. In reality, you can replace them with your backend services.
 
-> The simplest and standardized way to validate the status of a service is to define a new [health check](https://docs.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/monitor-app-health) endpoint like `/health` or `/status`
+> The simplest and standardized way to validate the status of a service is to define a new [health check](https://datatracker.ietf.org/doc/html/draft-inadarei-api-health-check) endpoint like `/health` or `/status`
 
 ## Setting Up Health Checks in APISIX
 
@@ -79,11 +79,27 @@ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -H "X-API-KEY: edd1c9f0343
 
 This example configures an active health check on the **`/health`** endpoint of the node. It considers the node healthy after **one successful health check** and unhealthy **after two failed health checks**.
 
-> Note that sometimes you might need the IP addresses of upstream nodes, not their domains (`web1` and `web2`) if you are running services outside docker network. It is by design that the health check will be started only if the number of nodes (resolved IPs) is bigger than 1.
+> Note that sometimes you might need the IP addresses of upstream nodes, not their domains (`web1` and `web2`) if you are running services outside docker network. Health check will be started only if the number of nodes (resolved IPs) is bigger than 1.
 
-## Enable the Prometheus Plugin for a route
+## Enable the Prometheus Plugin
 
-Create a [Route](https://apisix.apache.org/docs/apisix/terminology/route/) object and enable the Prometheus plugin for the route by adding `"prometheus": {}` in the plugins option. APISIX gathers internal runtime metrics and exposes them through port `9091` and URI path `/apisix/prometheus/metrics` by default that Prometheus can scrape. It is also possible to customize the export port and **URI path**, **add** **extra labels, the frequency of these scrapes, and other parameters** by configuring them in the Prometheus configuration `/prometheus_conf/prometheus.yml`file.
+Create a global rule to enable the `prometheus` plugin on all routes by adding `"prometheus": {}` in the plugins option. APISIX gathers internal runtime metrics and exposes them through port `9091` and URI path `/apisix/prometheus/metrics` by default that Prometheus can scrape. It is also possible to customize the export port and **URI path**, **add** **extra labels, the frequency of these scrapes, and other parameters** by configuring them in the Prometheus configuration `/prometheus_conf/prometheus.yml`file.
+
+```bash
+curl "http://127.0.0.1:9180/apisix/admin/global_rules" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+{
+   "id":"rule-for-metrics",
+   "plugins":{
+      "prometheus":{
+         
+      }
+   }
+}'
+```
+
+## Create a Route
+
+Create a [Route](https://apisix.apache.org/docs/apisix/terminology/route/) object to route incoming request to upstream nodes:
 
 ```bash
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
@@ -93,10 +109,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
       "GET"
    ],
    "uri":"/",
-   "plugins":{
-      "prometheus":{
-      }
-   },
    "upstream_id":"1"
 }'
 ```
@@ -109,7 +121,7 @@ To generate some metrics, you try to send few requests to the route we created i
 curl -i -X GET "http://localhost:9080/"
 ```
 
-If you run the above requests a couple of times, you can see from responses that APISX routes some requests to `node2` and while others to `node2`. That’s how Gateway load balancing works!
+If you run the above requests a couple of times, you can see from responses that APISX routes some requests to `node2` and others to `node2`. That’s how Gateway load balancing works!
 
 ```bash
 HTTP/1.1 200 OK
@@ -167,14 +179,15 @@ Navigate to http://localhost:9090/ where Prometheus instance is running in Docke
 
 ![Visualize the data in Prometheus dashboard](https://static.apiseven.com/uploads/2023/07/20/OGBtqbDq_output.png)
 
-## Cleanup
-
-Once you are done experimenting with Prometheus and APISIX Gateway health check metrics, you can use the following commands to stop and remove the services created in this guide:
-
-```bash
-docker compose down
-```
-
 ## Next Steps
 
 You have now learned how to setup and monitor API health checks with Prometheus and APISIX.  APISIX Prometheus plugin is configured to connect [Grafana](https://grafana.com/) automatically to visualize metrics. Keep exploring the data and customize [Grafana dashboard](https://grafana.com/grafana/dashboards/11719-apache-apisix/) by adding a panel that shows the number of active health checks.
+
+### Related resources
+
+- [Monitoring API Metrics: How to Ensure Optimal Performance of Your API?](https://api7.ai/blog/api7-portal-monitor-api-metrics)
+- [Monitoring Microservices with Prometheus and Grafana](https://api7.ai/blog/introduction-to-monitoring-microservices)
+
+### Recommended content
+
+- [Implementing resilient applications with API Gateway (Health Check)](https://dev.to/apisix/implementing-resilient-applications-with-api-gateway-health-check-338c)
