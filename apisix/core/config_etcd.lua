@@ -55,6 +55,8 @@ local constants    = require("apisix.constants")
 local health_check = require("resty.etcd.health_check")
 local semaphore    = require("ngx.semaphore")
 local tablex       = require("pl.tablex")
+local ngx_thread_spawn = ngx.thread.spawn
+local ngx_thread_kill = ngx.thread.kill
 
 
 local is_http = ngx.config.subsystem == "http"
@@ -189,7 +191,7 @@ local function run_watch(premature)
         ::watch_event::
         while true do
             local res, watched
-            local th = ngx.thread.spawn(function ()
+            local th = ngx_thread_spawn(function ()
                 res, err = res_func()
                 if log_level >= NGX_INFO then
                     log.info("res_func: ", inspect(res))
@@ -199,11 +201,11 @@ local function run_watch(premature)
 
             while not watched do
                 if exiting() then
-                    ngx.thread.kill(th)
+                    ngx_thread_kill(th)
                     produce_res(nil, "worker exited")
                     return
                 end
-                ngx.sleep(0.1)
+                ngx_sleep(0.1)
             end
 
             if not res then
