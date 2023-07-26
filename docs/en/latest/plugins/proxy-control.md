@@ -75,9 +75,9 @@ curl -i http://127.0.0.1:9080/upload -d @very_big_file
 
 It's expected to not find a message "a client request body is buffered to a temporary file" in the error log.
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `proxy-control` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `proxy-control` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \

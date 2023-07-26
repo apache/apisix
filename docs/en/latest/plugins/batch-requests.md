@@ -211,6 +211,6 @@ This will give a response:
 ]
 ```
 
-## Disable Plugin
+## Delete Plugin
 
 You can remove `batch-requests` from your list of Plugins in your configuration file (`conf/config.yaml`).

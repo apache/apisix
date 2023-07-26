@@ -162,7 +162,7 @@ stack traceback:
 2022/09/01 00:55:52 [info] 2754534#2754534: *4070 [lua] resty_inspect_hooks.lua:6: conf_key=remote_addr, client: 127.0.0.1, server: _, request: "GET /get HTTP/1.1", host: "127.0.0.1:9080"
 ```
 
-## Disable plugin
+## Delete Plugin
 
 To remove the `inspect` Plugin, you can remove it from your configuration file (`conf/config.yaml`):
 

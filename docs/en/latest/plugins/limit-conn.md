@@ -120,9 +120,9 @@ curl -i http://127.0.0.1:9080/index.html?sleep=20
 </html>
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `limit-conn` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `limit-conn` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \

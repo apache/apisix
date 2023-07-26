@@ -90,7 +90,7 @@ curl -i http://127.0.0.1:9080/index.html
 
 在返回结果中可以看到刚刚配置的 Plugin Runner 已经被触发，同时 `ext-plugin-A` 插件也已经被执行。
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `ext-plugin-post-resp` 插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
