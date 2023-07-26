@@ -99,7 +99,7 @@ The parameters in the response are described below:
 | reading   | Number of connections where APISIX is reading the request header.                                                      |
 | id        | UID of APISIX instance saved in `apisix/conf/apisix.uid`.                                                              |
 
-## Disable Plugin
+## Delete Plugin
 
 To remove the Plugin, you can remove it from your configuration file (`conf/config.yaml`):
 
