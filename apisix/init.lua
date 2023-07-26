@@ -178,11 +178,29 @@ end
 
 
 function _M.http_ssl_phase()
+    local ok, err = router.router_ssl.set(ngx.ctx.matched_ssl)
+    if not ok then
+        if err then
+            core.log.error("failed to fetch ssl config: ", err)
+        end
+        ngx_exit(-1)
+    end
+end
+
+function _M.http_ssl_protocols_phase()
+    local ssl_clt = require "ngx.ssl.clienthello"
+    local host, err = ssl_clt.get_client_hello_server_name()
+
+    if err then
+        core.log.error("failed to get the SNI name: ", err)
+        ngx_exit(-1)
+    end
+
     local ngx_ctx = ngx.ctx
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
 
-    local ok, err = router.router_ssl.match_and_set(api_ctx)
+    local ok, err = router.router_ssl.match_and_set(api_ctx, true, host)
 
     ngx_ctx.matched_ssl = api_ctx.matched_ssl
     core.tablepool.release("api_ctx", api_ctx)
@@ -194,8 +212,12 @@ function _M.http_ssl_phase()
         end
         ngx_exit(-1)
     end
-end
 
+    local ssl_protocols = ngx_ctx.matched_ssl.value.ssl_protocols
+    if ssl_protocols then
+        ssl_clt.set_protocols(ssl_protocols)
+    end
+end
 
 local function stash_ngx_ctx()
     local ref = ctxdump.stash_ngx_ctx()

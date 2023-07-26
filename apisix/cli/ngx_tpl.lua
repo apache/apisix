@@ -653,6 +653,10 @@ http {
         }
 
         {% if ssl.enable then %}
+        ssl_client_hello_by_lua_block {
+            apisix.http_ssl_protocols_phase()
+        }
+
         ssl_certificate_by_lua_block {
             apisix.http_ssl_phase()
         }

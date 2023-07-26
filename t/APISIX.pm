@@ -712,6 +712,12 @@ _EOC_
         ssl_certificate_key         cert/apisix.key;
         lua_ssl_trusted_certificate cert/apisix.crt;
 
+        ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
+
+        ssl_client_hello_by_lua_block {
+            apisix.http_ssl_protocols_phase()
+        }
+
         ssl_certificate_by_lua_block {
             apisix.http_ssl_phase()
         }
