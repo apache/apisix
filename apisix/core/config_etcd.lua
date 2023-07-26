@@ -190,22 +190,41 @@ local function run_watch(premature)
 
         ::watch_event::
         while true do
-            local res, watched
-            local th = ngx_thread_spawn(function ()
+            local res
+            local sema, err = semaphore.new()
+            if not sema then
+                log.error("create sema failed", err)
+                goto watch_event
+            end
+
+            local get_res_th = ngx_thread_spawn(function ()
                 res, err = res_func()
                 if log_level >= NGX_INFO then
                     log.info("res_func: ", inspect(res))
                 end
-                watched = true
+                sema:post()
             end)
 
-            while not watched do
-                if exiting() then
-                    ngx_thread_kill(th)
-                    produce_res(nil, "worker exited")
-                    return
+            local check_worker_th = ngx_thread_spawn(function ()
+                while not exiting() do
+                    ngx_sleep(0.1)
                 end
-                ngx_sleep(0.1)
+                sema:post()
+            end)
+
+            local _, sem_err = sema:wait(opts.timeout + 10)
+            if sem_err then
+                ngx_thread_kill(get_res_th)
+                ngx_thread_kill(check_worker_th)
+                goto watch_event
+            end
+
+            if exiting() then
+                ngx_thread_kill(get_res_th)
+                produce_res(nil, "worker exited")
+                return
+            else
+                ngx_thread_kill(check_worker_th)
             end
 
             if not res then
