@@ -188,9 +188,22 @@ local function run_watch(premature)
 
         ::watch_event::
         while true do
-            local res, err = res_func()
-            if log_level >= NGX_INFO then
-                log.info("res_func: ", inspect(res))
+            local res, watched
+            local th = ngx.thread.spawn(function ()
+                res, err = res_func()
+                if log_level >= NGX_INFO then
+                    log.info("res_func: ", inspect(res))
+                end
+                watched = true
+            end)
+
+            while not watched do
+                if exiting() then
+                    ngx.thread.kill(th)
+                    produce_res(nil, "worker exited")
+                    return
+                end
+                ngx.sleep(0.1)
             end
 
             if not res then
@@ -851,6 +864,9 @@ local function _automatic_fetch(premature, self)
                                        .. backoff_duration .. "s")
                         end
                     end
+                elseif err == "worker exited" then
+                    log.info("worker exited.")
+                    return
                 elseif err ~= "timeout" and err ~= "Key not found"
                     and self.last_err ~= err then
                     log.error("failed to fetch data from etcd: ", err, ", ",
