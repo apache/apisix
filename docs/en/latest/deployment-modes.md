@@ -444,13 +444,14 @@ protos:
     content: >
       syntax = "proto3";
       package helloworld;
+
       service Greeter {
-      rpc SayHello (HelloRequest) returns (HelloReply) {}
+        rpc SayHello (HelloRequest) returns (HelloReply) {}
       }
       message HelloRequest {
-      string name = 1;
+        string name = 1;
       }
       message HelloReply {
-      string message = 1;
+        string message = 1;
       }
 ```
