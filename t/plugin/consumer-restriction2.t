@@ -135,7 +135,37 @@ passed
 
 
 
-=== TEST 5: set whitelist
+=== TEST 5: consumer jack3 with no consumer group
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack3",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "jack2021",
+                            "password": "123456"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 6: set whitelist
 --- config
     location /t {
         content_by_lua_block {
@@ -175,7 +205,7 @@ passed
 
 
 
-=== TEST 6: verify unauthorized
+=== TEST 7: verify unauthorized
 --- request
 GET /hello
 --- error_code: 401
@@ -184,7 +214,7 @@ GET /hello
 
 
 
-=== TEST 7: verify jack1
+=== TEST 8: verify jack1
 --- request
 GET /hello
 --- more_headers
@@ -194,7 +224,7 @@ hello world
 
 
 
-=== TEST 8: verify jack2
+=== TEST 9: verify jack2
 --- request
 GET /hello
 --- more_headers
@@ -205,7 +235,7 @@ Authorization: Basic amFjazIwMjA6MTIzNDU2
 
 
 
-=== TEST 9: set blacklist
+=== TEST 10: set blacklist
 --- config
     location /t {
         content_by_lua_block {
@@ -246,7 +276,7 @@ passed
 
 
 
-=== TEST 10: verify unauthorized
+=== TEST 11: verify unauthorized
 --- request
 GET /hello
 --- error_code: 401
@@ -255,7 +285,7 @@ GET /hello
 
 
 
-=== TEST 11: verify jack1
+=== TEST 12: verify jack1
 --- request
 GET /hello
 --- more_headers
@@ -266,10 +296,119 @@ Authorization: Basic amFjazIwMTk6MTIzNDU2
 
 
 
-=== TEST 12: verify jack2
+=== TEST 13: verify jack2
 --- request
 GET /hello
 --- more_headers
 Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- response_body
 hello world
+
+
+
+=== TEST 14: verify jack2
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic amFjazIwMjE6MTIzNDU2
+--- error_code: 401
+--- response_body
+{"message":"The request is rejected, please check the consumer_group_id for this request"}
+
+
+
+=== TEST 15: set blacklist with service_id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "consumer-restriction": {
+                                 "type": "service_id",
+                                 "blacklist": [
+                                     "1"
+                                 ],
+                                 "rejected_msg": "request is forbidden"
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 16: hit
+--- request
+GET /hello
+--- error_code: 401
+--- response_body
+{"message":"The request is rejected, please check the service_id for this request"}
+
+
+
+=== TEST 17: set whitelist with service_id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "consumer-restriction": {
+                                 "type": "service_id",
+                                 "whitelist": [
+                                     "1"
+                                 ],
+                                 "rejected_msg": "request is forbidden"
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 18: hit
+--- request
+GET /hello
+--- error_code: 401
+--- response_body
+{"message":"The request is rejected, please check the service_id for this request"}

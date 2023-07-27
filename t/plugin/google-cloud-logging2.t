@@ -93,6 +93,7 @@ apisix:
                 plugins = {
                     ["google-cloud-logging"] = {
                         auth_config = {
+                            client_email = "email@apisix.iam.gserviceaccount.com",
                             private_key = [[
 -----BEGIN PRIVATE KEY-----
 MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDDzrFwnA3EvYyR
@@ -211,6 +212,7 @@ YnwwDKc5vNzo0OU4StTRQbwgCnTZ3dmYiBFm8aGnvTxlE86D2nT07Q3BWhUdky6OGIox4MRLbiHz13NZ
                 plugins = {
                     ["google-cloud-logging"] = {
                         auth_config = {
+                            client_email = "email@apisix.iam.gserviceaccount.com",
                             private_key = [[
 -----BEGIN PRIVATE KEY-----
 MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDDzrFwnA3EvYyR
@@ -350,6 +352,7 @@ the mock backend is hit
                 plugins = {
                     ["google-cloud-logging"] = {
                         auth_config = {
+                            client_email = "email@apisix.iam.gserviceaccount.com",
                             private_key = [[
 -----BEGIN PRIVATE KEY-----
 MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDDzrFwnA3EvYyR

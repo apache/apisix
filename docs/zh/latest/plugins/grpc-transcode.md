@@ -376,7 +376,7 @@ Server: APISIX web server
 {"error":{"details":[{"type":"service","message":"The server is out of service","code":1}],"message":"Out of service","code":14}}
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `grpc-transcode` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 

@@ -78,8 +78,7 @@ function _M.merge(route_conf, plugin_config)
         end
     end
 
-    route_conf.update_count = route_conf.update_count + 1
-    route_conf.modifiedIndex = route_conf.orig_modifiedIndex .. "#" .. route_conf.update_count
+    route_conf.modifiedIndex = route_conf.orig_modifiedIndex .. "#" .. plugin_config.modifiedIndex
     route_conf.prev_plugin_config_ver = plugin_config.modifiedIndex
 
     return route_conf

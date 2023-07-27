@@ -131,7 +131,7 @@ This feature requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-th
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 The `prometheus` Plugin can be enabled with an empty table.
 
@@ -359,9 +359,9 @@ apisix_upstream_status{name="/apisix/routes/1",ip="100.24.156.8",port="80"} 0
 apisix_upstream_status{name="/apisix/routes/1",ip="52.86.68.46",port="80"} 1
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `prometheus` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `prometheus` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
