@@ -57,6 +57,7 @@ local semaphore    = require("ngx.semaphore")
 local tablex       = require("pl.tablex")
 local ngx_thread_spawn = ngx.thread.spawn
 local ngx_thread_kill = ngx.thread.kill
+local ngx_thread_wait = ngx.thread.wait
 
 
 local is_http = ngx.config.subsystem == "http"
@@ -191,30 +192,23 @@ local function run_watch(premature)
         ::watch_event::
         while true do
             local res
-            local sema, err = semaphore.new()
-            if not sema then
-                log.error("create sema failed", err)
-                goto watch_event
-            end
 
             local get_res_th = ngx_thread_spawn(function ()
                 res, err = res_func()
                 if log_level >= NGX_INFO then
                     log.info("res_func: ", inspect(res))
                 end
-                sema:post()
             end)
 
             local check_worker_th = ngx_thread_spawn(function ()
                 while not exiting() do
                     ngx_sleep(0.1)
                 end
-                sema:post()
             end)
 
-            local _, sem_err = sema:wait(opts.timeout + 10)
+            local ok = ngx_thread_wait(get_res_th, check_worker_th)
 
-            if sem_err then
+            if not ok then
                 ngx_thread_kill(get_res_th)
                 ngx_thread_kill(check_worker_th)
                 cancel_watch(http_cli)
