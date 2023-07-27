@@ -24,6 +24,8 @@ local str_format = string.format
 local DECLINED = ngx.DECLINED
 local DONE = ngx.DONE
 local bit = require("bit")
+local ffi = require("ffi")
+local ffi_str = ffi.string
 
 -- dubbo protocol spec: https://cn.dubbo.apache.org/zh-cn/overview/reference/protocols/tcp/
 local header_len = 16
@@ -38,6 +40,13 @@ function _M.init_downstream(session)
 end
 
 local function parse_dubbo_header(header)
+    for i = 1, header_len do
+        local currentByte = header:byte(i)
+        if not currentByte then
+            return nil
+        end
+    end
+
     local magic_number = str_format("%04x", header:byte(1) * 256 + header:byte(2))
     local message_flag = header:byte(3)
     local status = header:byte(4)
@@ -67,22 +76,26 @@ local function parse_dubbo_header(header)
 end
 
 local function read_data(sk, is_req)
-    local header_data, err1 = sk:read(header_len)
+    local header_data, err = sk:read(header_len)
     if not header_data then
-        core.log.warn("failed to read Dubbo request header: ", err1)
+        core.log.error("failed to read Dubbo request header: ", err)
         return
     end
 
-    local header_info = parse_dubbo_header(header_data)
+    local header_str = ffi_str(header_data, header_len)
+    local header_info = parse_dubbo_header(header_str)
+    if not header_info then
+        return nil, "header insufficient", false
+    end
 
     local is_valid_magic_number = header_info.magic_number == "dabb"
     if not is_valid_magic_number then
-        return true, nil, false
+        return nil, str_format("unknown magic number: \"%s\"", header_info.magic_number), false
     end
 
     local body_data, err = sk:read(header_info.data_length)
     if not body_data then
-        core.log.warn("failed to read Dubbo request body: ", err)
+        core.log.error("failed to read Dubbo request body")
         return nil, err, false
     end
 
