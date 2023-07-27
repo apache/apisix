@@ -59,7 +59,6 @@ description: 本文介绍了关于 Apache APISIX `chaitin-waf` 插件的基本�
 | nodes                    | array(object)  | 必选  |       | 长亭 WAF 的地址列表。                                                                                                                                 |
 | nodes[0].host            | string         | 必选  |       | 长亭 WAF 的地址，支持 IPV4、IPV6、Unix Socket 等配置方式。                                                                                                    |
 | nodes[0].port            | string         | 可选  | 80    | 长亭 WAF 的端口。                                                                                                                                   |
-| checks                   | health_checker | 可选  |       | 配置针对 WAF Server 的健康检查参数，目前只支持主动健康检查。细信息请参考 [health-check](https://github.com/apache/apisix/blob/release%2F3.4/docs/zh/latest/health-check.md) |
 | config                   | object         | 否   |       | 长亭 WAF 服务的配置参数值。当路由没有配置时将使用这里所配置的参数。                                                                                                          |
 | config.connect_timeout   | integer        | 否   | 1000  | connect timeout, 毫秒，默认值为 1s (1000ms)                                                                                                          |
 | config.send_timeout      | integer        | 否   | 1000  | send timeout, 毫秒，默认值为 1s (1000ms)                                                                                                             |
@@ -236,99 +235,6 @@ Server: APISIX/3.3.0
 Set-Cookie: sl-session=UdywdGL+uGS7q8xMfnJlbQ==; Domain=; Path=/; Max-Age=86400
 
 {"code": 403, "success":false, "message": "blocked by Chaitin SafeLine Web Application Firewall", "event_id": "51a268653f2c4189bfa3ec66afbcb26d"}
-```
-
-## 健康检查
-
-一个典型的插件元数据配置如下，该配置包含了一个错误的服务器用以模拟异常的 WAF 服务器：
-
-```bash
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-  "nodes":[
-     {
-        "host": "unix:/path/to/safeline/resources/detector/snserver.sock",
-        "port": 8000
-     }, {
-        "host": "127.0.0.1",
-        "port": 1551
-     }
-  ]
-}'
-```
-
-在没有配置健康检查的情况下，一部分请求会转发到不可用的 WAF 服务器上，从而导致不可用（该输出开启了 `add_debug_header` 选项）：
-
-```bash
-curl -H "Host: httpbun.org" -H "waf: true" http://127.0.0.1:9080/get -i
-
-HTTP/1.1 200 OK
-Content-Type: application/json
-Content-Length: 427
-Connection: keep-alive
-X-APISIX-CHAITIN-WAF: waf-err
-X-APISIX-CHAITIN-WAF-SERVER: 127.0.0.1
-X-APISIX-CHAITIN-WAF-TIME: 1
-X-APISIX-CHAITIN-WAF-ACTION: pass
-X-APISIX-CHAITIN-WAF-ERROR: failed to connect to t1k server 127.0.0.1:1551: connection refused
-Date: Wed, 19 Jul 2023 09:41:20 GMT
-X-Powered-By: httpbun/3c0dc05883dd9212ac38b04705037d50b02f2596
-Server: APISIX/3.3.0
-
-{
-  "args": {},
-  "headers": {
-    "Accept": "*/*",
-    "Connection": "close",
-    "Host": "httpbun.org",
-    "User-Agent": "curl/8.1.2",
-    "Waf": "true",
-    "X-Forwarded-For": "127.0.0.1",
-    "X-Forwarded-Host": "httpbun.org",
-    "X-Forwarded-Port": "9080",
-    "X-Forwarded-Proto": "http",
-    "X-Real-Ip": "127.0.0.1"
-  },
-  "method": "GET",
-  "origin": "127.0.0.1, 122.231.76.178",
-  "url": "http://httpbun.org/get"
-}
-```
-
-添加了健康检查的示例配置如下，此时健康检查将会过滤掉不可用的 WAF 服务器：
-
-```bash
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "nodes":[
-        {
-            "host": "unix:/path/to/safeline/resources/detector/snserver.sock",
-            "port": 8000
-        },
-        {
-            "host": "127.0.0.1",
-            "port": 1551
-        }
-    ],
-
-    "checks": {
-        "active": {
-            "type": "tcp",
-            "host": "localhost",
-            "timeout": 5,
-            "http_path": "/",
-            "healthy": {
-                "interval": 2,
-                "successes": 1
-            },
-            "unhealthy": {
-                "interval": 1,
-                "tcp_failures": 2
-            },
-            "req_headers": ["User-Agent: curl/7.29.0"]
-        }
-    }
-}'
 ```
 
 ## 禁用插件
