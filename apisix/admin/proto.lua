@@ -50,7 +50,7 @@ local function check_proto_used(plugins, deleting, ptype, pid)
         if type(plugins) == "table" and plugins["grpc-transcode"]
            and plugins["grpc-transcode"].proto_id
            and tostring(plugins["grpc-transcode"].proto_id) == deleting then
-            return false, {error_msg = "can not delete this proto,"
+            return false, {error_msg = "can not delete this proto, "
                                      .. ptype .. " [" .. pid
                                      .. "] is still using it now"}
         end

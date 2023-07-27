@@ -52,7 +52,8 @@ local schema = {
                 required = {"case", "actions"}
             }
         }
-    }
+    },
+    required = {"rules"}
 }
 
 local plugin_name = "workflow"

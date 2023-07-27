@@ -41,7 +41,7 @@ to do authentication, from the SP (service provider) perspective.
 | `cas_callback_uri`      | string       | True      | redirect uri used to callback the SP from IdP after login or logout.       |
 | `logout_uri`      | string       | True      | logout uri to trigger logout.       |
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a specific Route as shown below:
 
@@ -88,9 +88,9 @@ or path only (e.g. `/anything/logout`), but it is recommended to be path only to
 These uris need to be captured by the route where the current APISIX is located.
 For example, if the `uri` of the current route is `/api/v1/*`, `cas_callback_uri` can be filled in as `/api/v1/cas_callback`.
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `cas-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `cas-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/cas1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

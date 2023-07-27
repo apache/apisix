@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.4.0](#340)
 - [3.3.0](#330)
 - [3.2.1](#321)
 - [3.2.0](#320)
@@ -69,6 +70,38 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.4.0
+
+### Core
+
+- :sunrise: Support route-level MTLS [#9322](https://github.com/apache/apisix/pull/9322)
+- :sunrise: Support id schema for global_rules [#9517](https://github.com/apache/apisix/pull/9517)
+- :sunrise: Support use a single long http connection to watch all resources for etcd [#9456](https://github.com/apache/apisix/pull/9456)
+- :sunrise: Support max len 256 for ssl label [#9301](https://github.com/apache/apisix/pull/9301)
+
+### Plugins
+
+- :sunrise: Support multiple regex pattern matching for proxy_rewrite plugin [#9194](https://github.com/apache/apisix/pull/9194)
+- :sunrise: Add loki-logger plugin [#9399](https://github.com/apache/apisix/pull/9399)
+- :sunrise: Allow user configure DEFAULT_BUCKETS for prometheus plugin [#9673](https://github.com/apache/apisix/pull/9673)
+
+### Bugfixes
+
+- Fix(body-transformer): xml2lua: replace empty table with empty string [#9669](https://github.com/apache/apisix/pull/9669)
+- Fix: opentelemetry and grpc-transcode plugins cannot work together [#9606](https://github.com/apache/apisix/pull/9606)
+- Fix(skywalking-logger, error-log-logger): support $hostname in skywalking service_instance_name [#9401](https://github.com/apache/apisix/pull/9401)
+- Fix(admin): fix secrets do not support to update attributes by PATCH [#9510](https://github.com/apache/apisix/pull/9510)
+- Fix(http-logger): default request path should be '/' [#9472](https://github.com/apache/apisix/pull/9472)
+- Fix: syslog plugin doesn't work [#9425](https://github.com/apache/apisix/pull/9425)
+- Fix: wrong log format for splunk-hec-logging [#9478](https://github.com/apache/apisix/pull/9478)
+- Fix(etcd): reuse cli and enable keepalive [#9420](https://github.com/apache/apisix/pull/9420)
+- Fix: upstream key config add mqtt_client_id support [#9450](https://github.com/apache/apisix/pull/9450)
+- Fix: body-transformer plugin return raw body anytime [#9446](https://github.com/apache/apisix/pull/9446)
+- Fix(wolf-rbac): other plugin in consumer not effective when consumer used wolf-rbac plugin [#9298](https://github.com/apache/apisix/pull/9298)
+- Fix: always parse domain when host is domain name [#9332](https://github.com/apache/apisix/pull/9332)
+- Fix: response-rewrite plugin can't add only one character [#9372](https://github.com/apache/apisix/pull/9372)
+- Fix(consul): support to fetch only health endpoint [#9204](https://github.com/apache/apisix/pull/9204)
 
 ## 3.3.0
 
@@ -340,7 +373,7 @@ Returns multiple configurations:
 
 - Port of Admin API changed to 9180: [#7806](https://github.com/apache/apisix/pull/7806)
 - We only support OpenResty 1.19.3.2 and above: [#7625](https://github.com/apache/apisix/pull/7625)
-- Adjusted the priority of the Plugin Config object so that the priority of a plugin configuration with the same name changes from Consumer > Plugin Config > Route > Service to Consumer > Route > Plugin Config > Service: [#7614](https://github. com/apache/apisix/pull/7614)
+- Adjusted the priority of the Plugin Config object so that the priority of a plugin configuration with the same name changes from Consumer > Plugin Config > Route > Service to Consumer > Route > Plugin Config > Service: [#7614](https://github.com/apache/apisix/pull/7614)
 
 ### Core
 
@@ -1332,7 +1365,7 @@ and support for ARM platform, and proxy rewrite plugin.
 
 ### Core
 
-- :sunrise: **[support stand-alone mode](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/stand-alone-cn.md)**: using yaml to update configurations of APISIX, more friendly to kubernetes. [#464](https://github.com/apache/incubator-apisix/pull/464)
+- :sunrise: **[support standalone mode](https://github.com/apache/apisix/blob/master/docs/en/latest/deployment-modes.md#standalone)**: using yaml to update configurations of APISIX, more friendly to kubernetes. [#464](https://github.com/apache/incubator-apisix/pull/464)
 - :sunrise: **[support stream proxy](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/stream-proxy.md)**. [#513](https://github.com/apache/incubator-apisix/pull/513)
 - :sunrise: support consumer bind plugins. [#544](https://github.com/apache/incubator-apisix/pull/544)
 - support domain name in upstream, not only IP. [#522](https://github.com/apache/incubator-apisix/pull/522)
@@ -1374,7 +1407,7 @@ This release brings many new features, such as IP black and white list, gPRC pro
 
 ### Core
 
-- :sunrise: **[gRPC transcoding](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/plugins/grpc-transcoding.md)**: supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON. [#395](https://github.com/apache/incubator-apisix/issues/395)
+- :sunrise: **[gRPC transcoding](https://github.com/apache/apisix/blob/master/docs/en/latest/plugins/grpc-transcode.md)**: supports protocol transcoding so that clients can access your gRPC API by using HTTP/JSON. [#395](https://github.com/apache/incubator-apisix/issues/395)
 - :sunrise: **[radix tree router](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/router-radixtree.md)**: The radix tree is used as the default router implementation. It supports the uri, host, cookie, request header, request parameters, Nginx built-in variables, etc. as the routing conditions, and supports common operators such as equal, greater than, less than, etc., more powerful and flexible.**IMPORTANT: This change is not downward compatible. All users who use historical versions need to manually modify their routing to work properly.** [#414](https://github.com/apache/incubator-apisix/issues/414)
 - Dynamic upstream supports more parameters, you can specify the upstream uri and host, and whether to enable websocket. [#451](https://github.com/apache/incubator-apisix/pull/451)
 - Support for get values from cookies directly from `ctx.var`. [#449](https://github.com/apache/incubator-apisix/pull/449)
@@ -1420,7 +1453,7 @@ This release brings many new features such as health check and circuit breaker, 
 ### Plugins
 
 - :sunrise: **[OpenTracing](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/plugins/zipkin.md)**: support Zipkin and Apache SkyWalking. [#304](https://github.com/apache/incubator-apisix/pull/304)
-- [JWT auth](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/plugins/jwt-auth-cn.md). [#303](https://github.com/apache/incubator-apisix/pull/303)
+- [JWT auth](https://github.com/apache/apisix/blob/master/docs/en/latest/plugins/jwt-auth.md). [#303](https://github.com/apache/incubator-apisix/pull/303)
 
 ### CLI
 

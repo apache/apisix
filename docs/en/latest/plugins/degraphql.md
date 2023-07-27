@@ -57,7 +57,7 @@ After starting the server, the following endpoints are now available:
 - http://localhost:8080/ - A simple reacter
 - ws://localhost:8080/subscriptions
 
-### Enabling the Plugin
+### Enable Plugin
 
 #### Query list
 
@@ -308,9 +308,9 @@ curl 'http://localhost:9080/graphql?name=Niek&githubAccount=npalm'
 
 In the GET request, the variables are passed in the query string.
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `degraphql` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `degraphql` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

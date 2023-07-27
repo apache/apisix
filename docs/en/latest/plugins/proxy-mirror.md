@@ -61,7 +61,7 @@ plugin_attr:
 | read    | string | 60s     | Read timeout to the mirrored Upstream.    |
 | send    | string | 60s     | Send timeout to the mirrored Upstream.    |
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a specific Route as shown below:
 
@@ -129,9 +129,9 @@ HTTP/1.1 200 OK
 hello world
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `proxy-mirror` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `proxy-mirror` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \

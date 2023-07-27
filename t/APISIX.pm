@@ -102,6 +102,7 @@ my $etcd_key = read_file("t/certs/etcd.key");
 $user_yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
+  proxy_mode: http&stream
   stream_proxy:
     tcp:
       - 9100

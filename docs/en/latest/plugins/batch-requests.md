@@ -57,7 +57,7 @@ You may need to use the [public-api](public-api.md) plugin to expose this endpoi
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the `batch-requests` Plugin by adding it to your configuration file (`conf/config.yaml`):
 
@@ -211,6 +211,6 @@ This will give a response:
 ]
 ```
 
-## Disable Plugin
+## Delete Plugin
 
 You can remove `batch-requests` from your list of Plugins in your configuration file (`conf/config.yaml`).

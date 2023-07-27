@@ -55,7 +55,7 @@ The data to be cached can be filtered with response codes, request modes, or mor
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can add your cache configuration in you APISIX configuration file (`conf/config.yaml`) as shown below:
 
@@ -146,9 +146,9 @@ If the response code is `200`, the deletion is successful. If the cached data is
 
 :::
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `proxy-cache` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `proxy-cache` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \

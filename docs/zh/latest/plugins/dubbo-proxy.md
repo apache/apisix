@@ -27,7 +27,7 @@ title: dubbo-proxy
 
 ## 要求
 
-如果你正在使用 `OpenResty`, 你需要编译它来支持 `dubbo`, 参考 [APISIX-Base](../FAQ#如何构建-apisix-base-环境)。
+如果你正在使用 `OpenResty`, 你需要编译它来支持 `dubbo`, 参考 [APISIX-Base](../FAQ.md#如何构建-apisix-base-环境)。
 
 ## 运行时属性
 
@@ -114,7 +114,7 @@ header2: value2
 blahblah # "body" will be the body
 ```
 
-## 禁用插件
+## 删除插件
 
 当你想在某个路由或服务中禁用 `dubbo-proxy` 插件，非常简单，你可以直接删除插件配置中的 `json` 配置，不需要重启服务就能立即生效：
 

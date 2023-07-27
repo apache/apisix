@@ -57,7 +57,7 @@ APISIX takes in an HTTP request, transcodes it and forwards it to a gRPC service
 | default values  | `auto_default_values`, `no_default_values`, `use_default_values`, `use_default_metatable` |
 | hooks           | `enable_hooks`, `disable_hooks`                                                           |
 
-## Enabling the Plugin
+## Enable Plugin
 
 Before enabling the Plugin, you have to add the content of your `.proto` or `.pb` files to APISIX.
 
@@ -375,9 +375,9 @@ Server: APISIX web server
 {"error":{"details":[{"type":"service","message":"The server is out of service","code":1}],"message":"Out of service","code":14}}
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `grpc-transcode` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `grpc-transcode` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

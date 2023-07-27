@@ -185,6 +185,7 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
         for _, msni in ipairs(api_ctx.matched_sni) do
             if sni_rev == msni or not str_find(sni_rev, ".", #msni) then
                 matched = true
+                break
             end
         end
         if not matched then
