@@ -30,9 +30,9 @@ install_dependencies() {
     yum install -y libnghttp2-devel
     install_curl
 
-    # install openresty to make apisix's rpm test work
-    yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
-    yum install -y openresty openresty-debug openresty-openssl111-debug-devel pcre pcre-devel xz
+    # install apisix-base to make apisix's rpm test work
+    yum install -y https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+    yum install -y apisix-base openresty-debug openresty-openssl111-debug-devel pcre pcre-devel
 
     # install luarocks
     ./utils/linux-install-luarocks.sh
