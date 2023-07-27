@@ -54,19 +54,19 @@ description: 本文介绍了关于 Apache APISIX `chaitin-waf` 插件的基本�
 
 ## 插件元数据
 
-| 名称                       | 类型             | 必选项 | 默认值   | 描述                                                                                                                                            |
-|--------------------------|----------------|-----|-------|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| nodes                    | array(object)  | 必选  |       | 长亭 WAF 的地址列表。                                                                                                                                 |
-| nodes[0].host            | string         | 必选  |       | 长亭 WAF 的地址，支持 IPV4、IPV6、Unix Socket 等配置方式。                                                                                                    |
-| nodes[0].port            | string         | 可选  | 80    | 长亭 WAF 的端口。                                                                                                                                   |
-| config                   | object         | 否   |       | 长亭 WAF 服务的配置参数值。当路由没有配置时将使用这里所配置的参数。                                                                                                          |
-| config.connect_timeout   | integer        | 否   | 1000  | connect timeout, 毫秒，默认值为 1s (1000ms)                                                                                                          |
-| config.send_timeout      | integer        | 否   | 1000  | send timeout, 毫秒，默认值为 1s (1000ms)                                                                                                             |
-| config.read_timeout      | integer        | 否   | 1000  | read timeout, 毫秒，默认值为 1s (1000ms)                                                                                                             |
-| config.req_body_size     | integer        | 否   | 1024  | 请求体大小，单位为 KB, 默认值为 1MB (1024KB)                                                                                                               |
-| config.keepalive_size    | integer        | 否   | 256   | 长亭 WAF 服务的最大并发空闲连接数，毫秒，默认值为 256                                                                                                               |
-| config.keepalive_timeout | integer        | 否   | 60000 | 空闲链接超时，毫秒，默认值为 60s (60000ms)                                                                                                                  |
-| config.remote_addr       | string         | 否   |       | 从 ngx.var.VARIABLE 中提取 remote_addr 的变量，默认值为 `"http_x_forwarded_for: 1"`。如果没有获取到，将从 `ngx.var.remote_addr` 获取                                   |
+| 名称                       | 类型            | 必选项 | 默认值                         | 描述                                                                                                          |
+|--------------------------|---------------|-----|-----------------------------|-------------------------------------------------------------------------------------------------------------|
+| nodes                    | array(object) | 必选  |                             | 长亭 WAF 的地址列表。                                                                                               |
+| nodes[0].host            | string        | 必选  |                             | 长亭 WAF 的地址，支持 IPV4、IPV6、Unix Socket 等配置方式。                                                                  |
+| nodes[0].port            | string        | 可选  | 80                          | 长亭 WAF 的端口。                                                                                                 |
+| config                   | object        | 否   |                             | 长亭 WAF 服务的配置参数值。当路由没有配置时将使用这里所配置的参数。                                                                        |
+| config.connect_timeout   | integer       | 否   | 1000                        | connect timeout, 毫秒，默认值为 1s (1000ms)                                                                        |
+| config.send_timeout      | integer       | 否   | 1000                        | send timeout, 毫秒，默认值为 1s (1000ms)                                                                           |
+| config.read_timeout      | integer       | 否   | 1000                        | read timeout, 毫秒，默认值为 1s (1000ms)                                                                           |
+| config.req_body_size     | integer       | 否   | 1024                        | 请求体大小，单位为 KB, 默认值为 1MB (1024KB)                                                                             |
+| config.keepalive_size    | integer       | 否   | 256                         | 长亭 WAF 服务的最大并发空闲连接数，毫秒，默认值为 256                                                                             |
+| config.keepalive_timeout | integer       | 否   | 60000                       | 空闲链接超时，毫秒，默认值为 60s (60000ms)                                                                                |
+| config.remote_addr       | string        | 否   | `"http_x_forwarded_for: 1"` | 从 ngx.var.VARIABLE 中提取 remote_addr 的变量，默认值为 `"http_x_forwarded_for: 1"`。如果没有获取到，将从 `ngx.var.remote_addr` 获取 |
 
 一个典型的示例配置如下：
 
@@ -239,7 +239,7 @@ Set-Cookie: sl-session=UdywdGL+uGS7q8xMfnJlbQ==; Domain=; Path=/; Max-Age=86400
 
 ## 禁用插件
 
-需要禁用 `tencent-waf` 插件时，在插件配置中删除相应的插件配置即可：
+需要禁用 `chaitin-waf` 插件时，在插件配置中删除相应的插件配置即可：
 
 ```bash
 $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
