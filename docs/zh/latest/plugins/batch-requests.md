@@ -214,7 +214,7 @@ curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 ]
 ```
 
-## 禁用插件
+## 删除插件
 
 如果你想禁用插件，可以将 `batch-requests` 从配置文件中的插件列表删除，重新加载 APISIX 后即可生效。
 

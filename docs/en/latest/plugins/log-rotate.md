@@ -108,7 +108,7 @@ total 10.5K
 -rw-r--r--. 1 resty resty 1.5K Mar 20 21:31 error.log
 ```
 
-## Disable plugin
+## Delete Plugin
 
 To remove the `log-rotate` Plugin, you can remove it from your configuration file (`conf/config.yaml`):
 

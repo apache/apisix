@@ -153,9 +153,9 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
 }'
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the Plugin, you can remove it from your configuration file (`conf/config.yaml`):
+To remove the Plugin, you can remove it from your configuration file (`conf/config.yaml`):
 
 ```yaml title="conf/config.yaml"
 plugins:
