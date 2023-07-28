@@ -114,7 +114,7 @@ header2: value2
 blahblah # "body" will be the body
 ```
 
-## 禁用插件
+## 删除插件
 
 当你想在某个路由或服务中禁用 `dubbo-proxy` 插件，非常简单，你可以直接删除插件配置中的 `json` 配置，不需要重启服务就能立即生效：
 

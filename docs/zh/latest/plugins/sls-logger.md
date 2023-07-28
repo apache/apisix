@@ -121,7 +121,7 @@ hello, world
 * 查看阿里云日志服务上传记录
 ![sls logger view](../../../assets/images/plugin/sls-logger-1.png "阿里云日志服务预览")
 
-## 禁用插件
+## 删除插件
 
 想要禁用“sls-logger”插件，是非常简单的，将对应的插件配置从 json 配置删除，就会立即生效，不需要重新启动服务：
 

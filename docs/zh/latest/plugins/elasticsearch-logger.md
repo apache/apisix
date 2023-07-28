@@ -255,16 +255,16 @@ curl -X GET "http://127.0.0.1:9200/services/_search" | jq .
 }
 ```
 
-### 禁用插件元数据
+### 删除插件元数据
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 ```
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \

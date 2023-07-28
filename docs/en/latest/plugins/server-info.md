@@ -102,9 +102,9 @@ You can also view the server info report through the [APISIX Dashboard](/docs/da
 
 :::
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the Plugin, you can remove `server-info` from the list of Plugins in your configuration file:
+To remove the Plugin, you can remove `server-info` from the list of Plugins in your configuration file:
 
 ```yaml title="conf/config.yaml"
 plugins:

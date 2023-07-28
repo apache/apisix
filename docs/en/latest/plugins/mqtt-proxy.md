@@ -151,9 +151,9 @@ curl 127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 The `sni` name must match one or more of the SNIs provided to the SSL object that you created with the CA and server certificates.
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `mqtt-proxy` Plugin you can remove the corresponding configuration as shown below:
+To remove the `mqtt-proxy` Plugin you can remove the corresponding configuration as shown below:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
