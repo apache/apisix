@@ -188,11 +188,12 @@ function _M.http_ssl_phase()
 end
 
 function _M.http_ssl_protocols_phase()
-    local ssl_clt = require "ngx.ssl.clienthello"
-    local host, err = ssl_clt.get_client_hello_server_name()
-
-    if err then
-        core.log.error("failed to get the SNI name: ", err)
+    local sni, err = apisix_ssl.server_name(true)
+    if not sni or type(sni) ~= "string" then
+        local advise = "please check if the client requests via IP or uses an outdated " ..
+        "protocol. If you need to report an issue, " ..
+        "provide a packet capture file of the TLS handshake."
+        core.log.error("failed to find SNI: " .. (err or advise))
         ngx_exit(-1)
     end
 
@@ -200,7 +201,7 @@ function _M.http_ssl_protocols_phase()
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
 
-    local ok, err = router.router_ssl.match_and_set(api_ctx, true, host)
+    local ok, err = router.router_ssl.match_and_set(api_ctx, true, sni)
 
     ngx_ctx.matched_ssl = api_ctx.matched_ssl
     core.tablepool.release("api_ctx", api_ctx)
@@ -213,9 +214,10 @@ function _M.http_ssl_protocols_phase()
         ngx_exit(-1)
     end
 
-    local ssl_protocols = ngx_ctx.matched_ssl.value.ssl_protocols
-    if ssl_protocols then
-        ssl_clt.set_protocols(ssl_protocols)
+    ok ,err = apisix_ssl.set_protocols_by_clienthello(ngx_ctx.matched_ssl.value.ssl_protocols)
+    if not ok then
+        core.log.error("failed to set ssl protocols: ", err)
+        ngx_exit(-1)
     end
 end
 
