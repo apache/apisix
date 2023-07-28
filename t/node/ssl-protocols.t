@@ -116,7 +116,7 @@ passed
 
 
 
-=== TEST 3: Successfully, access test.com with TLSv1.3 
+=== TEST 3: Successfully, access test.com with TLSv1.3
 --- exec
 curl -k -v --tls-max 1.3 --tlsv1.3 --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello 2>&1 | cat
 --- response_body eval
@@ -124,7 +124,7 @@ qr/TLSv1\.3 \(IN\), TLS handshake, Server hello(?s).*hello world/
 
 
 
-=== TEST 4: Successfully, access test.com with TLSv1.2 
+=== TEST 4: Successfully, access test.com with TLSv1.2
 --- exec
 curl -k -v --tls-max 1.2 --tlsv1.2 --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello 2>&1 | cat
 --- response_body eval
@@ -132,7 +132,7 @@ qr/TLSv1\.2 \(IN\), TLS handshake, Server hello(?s).*hello world/
 
 
 
-=== TEST 5: Successfully, access test.com with TLSv1.1 
+=== TEST 5: Successfully, access test.com with TLSv1.1
 --- exec
 curl -k -v --tls-max 1.1 --tlsv1.1 --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello 2>&1 | cat
 --- response_body eval
@@ -207,7 +207,7 @@ GET /t
 
 
 
-=== TEST 8: Successfully, access test.com with TLSv1.3 
+=== TEST 8: Successfully, access test.com with TLSv1.3
 --- exec
 curl -k -v --tls-max 1.3 --tlsv1.3 --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello 2>&1 | cat
 --- response_body eval
@@ -215,7 +215,7 @@ qr/TLSv1\.3 \(IN\), TLS handshake, Server hello(?s).*hello world/
 
 
 
-=== TEST 9: Successfully, access test.com with TLSv1.2 
+=== TEST 9: Successfully, access test.com with TLSv1.2
 --- exec
 curl -k -v --tls-max 1.2 --tlsv1.2 --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello 2>&1 | cat
 --- response_body eval
@@ -223,7 +223,7 @@ qr/TLSv1\.2 \(IN\), TLS handshake, Server hello(?s).*hello world/
 
 
 
-=== TEST 10: Successfully, access test2.com with TLSv1.3 
+=== TEST 10: Successfully, access test2.com with TLSv1.3
 --- exec
 curl -k -v --tls-max 1.3 --tlsv1.3 --resolve "test2.com:1994:127.0.0.1" https://test2.com:1994/hello 2>&1 | cat
 --- response_body eval
@@ -231,7 +231,7 @@ qr/TLSv1\.3 \(IN\), TLS handshake, Server hello(?s).*hello world/
 
 
 
-=== TEST 11: Failed, access test2.com with TLSv1.2 
+=== TEST 11: Failed, access test2.com with TLSv1.2
 --- exec
 curl -k -v --tls-max 1.2 --tlsv1.2 --resolve "test2.com:1994:127.0.0.1" https://test2.com:1994/hello 2>&1 | cat
 --- response_body eval

@@ -42,7 +42,7 @@ apisix:
 
 使用 ssl 资源中 ssl_protocols 字段动态的为每一个 SNI 指定不同的 TLS 协议版本。
 
-* 指定 test.com 域名使用 TLSv1.2 TLSv1.3 协议版本:
+* 指定 test.com 域名使用 TLSv1.2 TLSv1.3 协议版本。
 
 ```bash
 {
@@ -69,7 +69,7 @@ apisix:
 存在一些老旧的客户端，仍然采用较低级别的 TLSv1.1 协议版本，而新的产品则使用较高安全级别的 TLS 协议版本。如果让新产品支持 TLSv1.1 可能会带来一些安全隐患。为了保证 API 的安全性，我们需要在协议版本之间进行灵活转换。
 例如：test.com 是老旧客户端所使用的域名，需要将其配置为 TLSv1.1 而 test2.com 属于新产品，同时支持了 TLSv1.2，TLSv1.3 协议。
 
-1. apisix config.yaml 配置
+1. config.yaml 配置。
 
 ```yaml
 apisix:
@@ -108,7 +108,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 
 3. 访问验证
 
-* 使用 TLSv1.3 访问 test.com 失败
+* 使用 TLSv1.3 访问 test.com 失败。
 
 ```shell
 $ curl --tls-max 1.3 --tlsv1.3  https://test.com:9443 -v -k -I
@@ -126,10 +126,10 @@ $ curl --tls-max 1.3 --tlsv1.3  https://test.com:9443 -v -k -I
 curl: (35) error:1409442E:SSL routines:ssl3_read_bytes:tlsv1 alert protocol version
 ```
 
-* 使用 TLSv1.1 访问 test.com 成功
+* 使用 TLSv1.1 访问 test.com 成功。
 
 ```shell
-$ curl --tls-max 1.1 --tlsv1.1  https://test.com:9443 -v -k -I 
+$ curl --tls-max 1.1 --tlsv1.1  https://test.com:9443 -v -k -I
 *   Trying 127.0.0.1:9443...
 * Connected to test.com (127.0.0.1) port 9443 (#0)
 * ALPN, offering h2
@@ -149,7 +149,7 @@ $ curl --tls-max 1.1 --tlsv1.1  https://test.com:9443 -v -k -I
 * SSL connection using TLSv1.1 / ECDHE-RSA-AES256-SHA
 ```
 
-* 使用 TLSv1.3 访问 test2.com 成功
+* 使用 TLSv1.3 访问 test2.com 成功。
 
 ```shell
 $ curl --tls-max 1.3 --tlsv1.3  https://test2.com:9443 -v -k -I
@@ -171,7 +171,7 @@ $ curl --tls-max 1.3 --tlsv1.3  https://test2.com:9443 -v -k -I
 * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
 ```
 
-* 使用 TLSv1.3 访问 test2.com 失败
+* 使用 TLSv1.3 访问 test2.com 失败。
 
 ```shell
 curl --tls-max 1.1 --tlsv1.1  https://test2.com:9443 -v -k -I
@@ -193,7 +193,7 @@ curl: (35) error:1409442E:SSL routines:ssl3_read_bytes:tlsv1 alert protocol vers
 
 有时候，我们可能会遇到这样一种情况，即一个证书关联了多个域名，但是它们需要使用不同的 TLS 协议来保证安全性。例如 test.com 域名需要使用 TlSv1.2 协议，而 test2.com 域名则需要使用 TLSv1.3 协议。在这种情况下，我们不能简单地为所有的域名创建一个 SSL 对象，而是需要为每个域名单独创建一个 SSL 对象，并指定相应的协议版本。这样，我们就可以根据不同的域名和协议版本来进行正确的 SSL 握手和加密通信。示例如下：
 
-1. 使用证书为 test.com 创建 ssl 对象，并指定 TLSv1.2 协议
+1. 使用证书为 test.com 创建 ssl 对象，并指定 TLSv1.2 协议。
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
@@ -225,7 +225,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/2 \
 
 3. 访问验证
 
-* 使用 TLSv1.2 访问 test.com 成功
+* 使用 TLSv1.2 访问 test.com 成功。
 
 ```shell
 $ curl --tls-max 1.2 --tlsv1.2  https://test.com:9443 -v -k -I
@@ -264,7 +264,7 @@ $ curl --tls-max 1.2 --tlsv1.2  https://test.com:9443 -v -k -I
 
 ```
 
-* 使用 TLSv1.3 协议访问 test.com 失败
+* 使用 TLSv1.3 协议访问 test.com 失败。
 
 ```shell
 $ curl --tls-max 1.3 --tlsv1.3  https://test.com:9443 -v -k -I
@@ -283,7 +283,7 @@ curl: (35) error:1409442E:SSL routines:ssl3_read_bytes:tlsv1 alert protocol vers
 
 ```
 
-* 使用 TLSv1.3 协议访问 test2.com 成功
+* 使用 TLSv1.3 协议访问 test2.com 成功。
 
 ```shell
 $ curl --tls-max 1.3 --tlsv1.3  https://test2.com:9443 -v -k -I
@@ -324,7 +324,7 @@ $ curl --tls-max 1.3 --tlsv1.3  https://test2.com:9443 -v -k -I
 * old SSL session ID is stale, removing
 ```
 
-* 使用 TLSv1.2 协议访问 test2.com 失败
+* 使用 TLSv1.2 协议访问 test2.com 失败。
 
 ```shell
 $ curl --tls-max 1.2 --tlsv1.2  https://test2.com:9443 -v -k -I
