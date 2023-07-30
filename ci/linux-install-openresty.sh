@@ -38,6 +38,13 @@ OPENSSL3_PREFIX=${OPENSSL3_PREFIX-/home/runner}
 SSL_LIB_VERSION=${SSL_LIB_VERSION-openssl}
 
 if [ "$OPENRESTY_VERSION" == "source" ]; then
+    export openssl_prefix=$OPENRESTY_PREFIX/openssl111
+    export zlib_prefix=$OPENRESTY_PREFIX/zlib
+    export pcre_prefix=$OPENRESTY_PREFIX/pcre
+
+    export cc_opt="-DNGX_LUA_ABORT_AT_PANIC -I${zlib_prefix}/include -I${pcre_prefix}/include -I${openssl_prefix}/include"
+    export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib"
+
     if [ "$COMPILE_OPENSSL3" == "yes" ]; then
         apt install -y build-essential
         git clone https://github.com/openssl/openssl

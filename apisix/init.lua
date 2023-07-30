@@ -211,6 +211,7 @@ function _M.http_ssl_protocols_phase()
         if err then
             core.log.error("failed to fetch ssl config: ", err)
         end
+        core.log.error("failed to find any SSL certificate by SNI: ", sni)
         ngx_exit(-1)
     end
 

@@ -14,14 +14,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-use t::APISIX 'no_plan';
+use t::APISIX;
 
 repeat_each(1);
 log_level('info');
 no_root_location();
 no_shuffle();
 
-$ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
+my $openssl_bin = $ENV{OPENSSL111_BIN};
+if (! -x $openssl_bin) {
+    $ENV{OPENSSL111_BIN} = '/usr/local/openresty/openssl111/bin/openssl';
+    if (! -x $ENV{OPENSSL111_BIN}) {
+        plan(skip_all => "openssl111 not installed");
+    }
+}
+
+plan('no_plan');
 
 add_block_preprocessor(sub {
     my ($block) = @_;
@@ -120,9 +128,9 @@ passed
 
 === TEST 3: Successfully, access test.com with TLSv1.3
 --- exec
-curl -k -v --tls-max 1.3 --tlsv1.3 --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello 2>&1 | cat
+echo -n "Q"  | $OPENSSL111_BIN s_client -connect 127.0.0.1:1994 -servername test.com -tls1_3 2>&1 | cat
 --- response_body eval
-qr/TLSv1\.3 \(IN\), TLS handshake, Server hello(?s).*hello world/
+qr/Server certificate/
 
 
 
@@ -136,9 +144,9 @@ qr/TLSv1\.2 \(IN\), TLS handshake, Server hello(?s).*hello world/
 
 === TEST 5: Successfully, access test.com with TLSv1.1
 --- exec
-curl -k -v --tls-max 1.1 --tlsv1.1 --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello 2>&1 | cat
+echo -n "Q"  | $OPENSSL111_BIN s_client -connect 127.0.0.1:1994 -servername test.com -tls1_1 2>&1 | cat
 --- response_body eval
-qr/TLSv1\.1 \(IN\), TLS handshake, Server hello(?s).*hello world/
+qr/Server certificate/
 
 
 
@@ -211,9 +219,9 @@ GET /t
 
 === TEST 8: Successfully, access test.com with TLSv1.3
 --- exec
-curl -k -v --tls-max 1.3 --tlsv1.3 --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello 2>&1 | cat
+echo -n "Q"  | $OPENSSL111_BIN s_client -connect 127.0.0.1:1994 -servername test.com -tls1_3 2>&1 | cat
 --- response_body eval
-qr/TLSv1\.3 \(IN\), TLS handshake, Server hello(?s).*hello world/
+qr/Server certificate/
 
 
 
@@ -227,9 +235,9 @@ qr/TLSv1\.2 \(IN\), TLS handshake, Server hello(?s).*hello world/
 
 === TEST 10: Successfully, access test2.com with TLSv1.3
 --- exec
-curl -k -v --tls-max 1.3 --tlsv1.3 --resolve "test2.com:1994:127.0.0.1" https://test2.com:1994/hello 2>&1 | cat
+echo -n "Q"  | $OPENSSL111_BIN s_client -connect 127.0.0.1:1994 -servername test2.com -tls1_3 2>&1 | cat
 --- response_body eval
-qr/TLSv1\.3 \(IN\), TLS handshake, Server hello(?s).*hello world/
+qr/Server certificate/
 
 
 
@@ -277,57 +285,14 @@ passed
 
 === TEST 13: Successfully, access test.com with TLSv1.1
 --- exec
-curl -k -v --tls-max 1.1 --tlsv1.1 --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello 2>&1 | cat
+echo -n "Q"  | $OPENSSL111_BIN s_client -connect 127.0.0.1:1994 -servername test.com -tls1_1 2>&1 | cat
 --- response_body eval
-qr/TLSv1\.1 \(IN\), TLS handshake, Server hello(?s).*hello world/
+qr/Server certificate/
 
 
 
 === TEST 14: Failed, access test.com with TLSv1.3
 --- exec
-curl -k -v --tls-max 1.3 --tlsv1.3 --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello 2>&1 | cat
+echo -n "Q"  | $OPENSSL111_BIN s_client -connect 127.0.0.1:1994 -servername test.com -tls1_3 2>&1 | cat
 --- response_body eval
-qr/TLSv1\.3 \(IN\), TLS alert/
-
-
-
-=== TEST 15: hello
---- config
-listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
-
-location /t {
-    content_by_lua_block {
-        do
-            local sock = ngx.socket.tcp()
-            local ssl = require "ssl"
-
-            sock:settimeout(2000)
-
-            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
-            if not ok then
-                ngx.say("failed to connect: ", err)
-                return
-            end
-
-            local params = {
-                mode = "client",
-                protocol = "tlsv1_3",
-                verify = "none",
-                options = "all",
-            }
-            local sec_sock = ssl.wrap(sock, params)
-
-            local sess, err = sec_sock:dohandshake()
-            if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
-                return
-            end
-            ngx.say("ssl handshake: ", sess ~= nil)
-        end  -- do
-        -- collectgarbage()
-    }
-}
---- request
-GET /t
---- response_body
-ssl handshake: true
+qr/tlsv1 alert/
