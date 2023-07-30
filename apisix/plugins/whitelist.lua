@@ -371,11 +371,6 @@ local function merge_methods(...)
 end
 
 local function check_access(self, network, method, monthly_quota, default_paid_quota)
-    -- if network has inner- prefix, grant access
-    if string.find(network, "inner-") or string.find(network, "das-account-indexer") then
-        return nil
-    end
-
     local isPaid = monthly_quota > default_paid_quota
     local supported = false
     if self.paid_list[network] and self.paid_list[network][method] then
