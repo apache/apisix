@@ -3,10 +3,10 @@ name: Publish Docker image
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 env:
-  REGISTRY: ghcr.io/unifra20/apisix
+  REGISTRY: ghcr.io/unifralabs/apisix
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
@@ -16,18 +16,18 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
-        
+
       - name: Get version
         id: get_version
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
-        
+
       - name: Log in to the Container registry
         uses: docker/login-action@v1.10.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Push to GitHub Packages
         run: |
           docker build -t ${{ env.REGISTRY }}:${{ steps.get_version.outputs.VERSION }} -f docker/Dockerfile .
