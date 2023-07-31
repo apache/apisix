@@ -22,8 +22,8 @@ after() {
     docker exec -i apache-apisix_kafka-server2_1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server2:2181 --replication-factor 1 --partitions 1 --topic test4
 
     # prepare openwhisk env
-    docker pull openwhisk/action-nodejs-v14:nightly
-    docker run --rm -d --name openwhisk -p 3233:3233 -p 3232:3232 -v /var/run/docker.sock:/var/run/docker.sock openwhisk/standalone:nightly
+    docker pull openwhisk/action-nodejs-v14:1.20.0
+    docker run --rm -d --name openwhisk -p 3233:3233 -p 3232:3232 -v /var/run/docker.sock:/var/run/docker.sock openwhisk/standalone:1.0.0
     docker exec -i openwhisk waitready
     docker exec -i openwhisk bash -c "wsk package create pkg"
     docker exec -i openwhisk bash -c "wsk action update /guest/pkg/testpkg <(echo 'function main(args){return {\"hello\": \"world\"}}') --kind nodejs:14"
