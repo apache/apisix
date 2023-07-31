@@ -101,7 +101,7 @@ local function resolve_conf_var(conf)
                 return nil, err
             end
             if new_key ~= key then
-                table.insert(new_keys, new_key)
+                new_keys[new_key] = "dummy" -- we only care about checking the key
                 conf.key = nil
                 conf[new_key] = val
                 key = new_key
