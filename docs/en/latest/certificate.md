@@ -125,23 +125,22 @@ Send a request to verify:
 ```shell
 curl --resolve 'www.test.com:9443:127.0.0.1' https://www.test.com:9443/get -k -vvv
 
-* Added test.com:9443:127.0.0.1 to DNS cache
-* About to connect() to test.com port 9443 (#0)
-*   Trying 127.0.0.1...
-* Connected to test.com (127.0.0.1) port 9443 (#0)
-* Initializing NSS with certpath: sql:/etc/pki/nssdb
-* skipping SSL peer certificate verification
-* SSL connection using TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+* Added www.test.com:9443:127.0.0.1 to DNS cache
+* Hostname www.test.com was found in DNS cache
+*   Trying 127.0.0.1:9443...
+* Connected to www.test.com (127.0.0.1) port 9443 (#0)
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN, server accepted to use h2
 * Server certificate:
-* 	subject: CN=test.com,O=iresty,L=ZhuHai,ST=GuangDong,C=CN
-* 	start date: Jun 24 22:18:05 2019 GMT
-* 	expire date: May 31 22:18:05 2119 GMT
-* 	common name: test.com
-* 	issuer: CN=test.com,O=iresty,L=ZhuHai,ST=GuangDong,C=CN
-> GET /hello HTTP/1.1
-> User-Agent: curl/7.29.0
-> Host: test.com:9443
-> Accept: */*
+*  subject: C=CN; ST=GuangDong; L=ZhuHai; O=iresty; CN=test.com
+*  start date: Jun 24 22:18:05 2019 GMT
+*  expire date: May 31 22:18:05 2119 GMT
+*  issuer: C=CN; ST=GuangDong; L=ZhuHai; O=iresty; CN=test.com
+*  SSL certificate verify result: self signed certificate (18), continuing anyway.
+> GET /get HTTP/2
+> Host: www.test.com:9443
+> user-agent: curl/7.74.0
+> accept: */*
 ```
 
 ### multiple domain
