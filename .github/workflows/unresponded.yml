@@ -33,6 +33,6 @@ jobs:
           is incorrect, or the issue requires additional review, you can revive the issue at
           any time.
         # Issues with these labels will never be considered stale.
-        exempt-issue-labels: 'good first issue'
+        only-labels: 'wait for update'
         stale-issue-label: 'no response'
         ascending: true
