@@ -360,6 +360,26 @@ local starknet_methods = {
     "starknet_estimateFee"
 }
 
+local zks_methods = {
+    "zks_estimateFee",
+    "zks_estimateGasL1ToL2",
+    "zks_getAllAccountBalances",
+    "zks_getBlockDetails",
+    "zks_getBridgeContracts",
+    "zks_getBytecodeByHash",
+    "zks_getConfirmedTokens",
+    "zks_getL1BatchBlockRange",
+    "zks_getL1BatchDetails",
+    "zks_getL2ToL1LogProof",
+    "zks_getMainContract",
+    "zks_getRawBlockTransactions",
+    "zks_getTestnetPaymaster",
+    "zks_getTokenPrice",
+    "zks_getTransactionDetails",
+    "zks_L1BatchNumber",
+    "zks_L1ChainId"
+}
+
 local function merge_methods(...)
     local methods = {}
     for _, method_list in ipairs({ ... }) do
@@ -403,12 +423,14 @@ function _M.init()
             network == "cfx-espace-testnet" or network == "staging-cfx-espace-testnet" then
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, trace_methods)
+        elseif network == "staging-zksync-era-mainnet" or network == "zksync-era-mainnet" or
+            network == "staging-zksync-era-testnet" or network == "zksync-era-testnet" then
+            _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods, zks_methods)
+            _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, zks_methods, debug_methods)
         elseif network == "arb-mainnet" or network == "opt-mainnet" or
             network == "staging-arb-mainnet" or network == "staging-opt-mainnet" or
             network == "staging-base-testnet" or network == "base-testnet" or
             network == "staging-scroll-alpha" or network == "scroll-alpha" or
-            network == "staging-zksync-era-mainnet" or network == "zksync-era-mainnet" or
-            network == "staging-zksync-era-testnet" or network == "zksync-era-testnet" or
             network == "staging-linea-mainnet" or network == "linea-mainnet" or
             network == "staging-linea-testnet" or network == "linea-testnet" then
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
