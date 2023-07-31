@@ -32,6 +32,7 @@ local print = print
 
 local _M = {}
 local exported_vars
+local new_keys = {}
 
 
 function _M.get_exported_vars()
@@ -89,6 +90,10 @@ end
 
 local function resolve_conf_var(conf)
     for key, val in pairs(conf) do
+        -- avoid re-iterating the table for already iterated key
+        if new_keys[key] then
+            goto continue
+        end
         -- substitute environment variables from conf keys
         if type(key) == "string" then
             local new_key, _, err = var_sub(key)
@@ -96,6 +101,7 @@ local function resolve_conf_var(conf)
                 return nil, err
             end
             if new_key ~= key then
+                table.insert(new_keys, new_key)
                 conf.key = nil
                 conf[new_key] = val
                 key = new_key
@@ -126,6 +132,7 @@ local function resolve_conf_var(conf)
 
             conf[key] = new_val
         end
+        ::continue::
     end
 
     return true
