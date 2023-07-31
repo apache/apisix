@@ -32,7 +32,6 @@ local print = print
 
 local _M = {}
 local exported_vars
-local new_keys = {}
 
 
 function _M.get_exported_vars()
@@ -89,6 +88,7 @@ end
 
 
 local function resolve_conf_var(conf)
+    local new_keys = {}
     for key, val in pairs(conf) do
         -- avoid re-iterating the table for already iterated key
         if new_keys[key] then
