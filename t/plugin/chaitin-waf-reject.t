@@ -48,8 +48,6 @@ apisix:
    udp:                        # Set the UDP proxy listening ports.
      - 9200
      - "127.0.0.1:9201"
-plugins:
-    - chaitin-waf
 _EOC_
 
     $block->set_value("extra_yaml_config", $extra_yaml_config);

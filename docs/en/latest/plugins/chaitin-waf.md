@@ -29,8 +29,7 @@ description: This document contains basic information about the Apache APISIX `c
 
 ## Description
 
-With the `chaitin-waf` plugin enabled, traffic can be forwarded to the Chaitin SafeLine WAF service, which can protect
-requests from attackers.
+After enabling the chaitin-waf plugin, the traffic will be forwarded to the Chaitin WAF service for the detection and prevention of various web application attacks, ensuring the security of the application and user data.
 
 ## Response Headers
 
@@ -67,7 +66,6 @@ The response headers are listed below:
 | config.req_body_size     | integer       | false    | 1024                        | request body size, in KB, integer, default 1MB (1024KB)                                                                      |
 | config.keepalive_size    | integer       | false    | 256                         | maximum concurrent idle connections to the SafeLine WAF detection service, integer, default 256                              |
 | config.keepalive_timeout | integer       | false    | 60000                       | idle connection timeout, in milliseconds, integer, default 60s (60000ms)                                                     |
-| config.remote_addr       | string        | false    | `"http_x_forwarded_for: 1"` | remote address from ngx.var.VARIABLE, string, default `"http_x_forwarded_for: 1"` or fallback to `ngx.var.remote_addr`       |
 
 An example configuration is as follows.
 
@@ -98,7 +96,6 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H 'X-API-KE
 | config.req_body_size     | integer       | false    |               | request body size, in KB, integer                                                                                                                                                                                                                                                                                                                         |
 | config.keepalive_size    | integer       | false    |               | maximum concurrent idle connections to the SafeLine WAF detection service, integer                                                                                                                                                                                                                                                                        |
 | config.keepalive_timeout | integer       | false    |               | idle connection timeout, in milliseconds, integer                                                                                                                                                                                                                                                                                                         |
-| config.remote_addr       | string        | false    |               | remote address from ngx.var.VARIABLE, strin                                                                                                                                                                                                                                                                                                               |
 
 A sample configuration is shown below, using `httpbun.org` as the example backend, which can be replaced as needed:
 
@@ -238,9 +235,9 @@ Set-Cookie: sl-session=UdywdGL+uGS7q8xMfnJlbQ==; Domain=; Path=/; Max-Age=86400
 {"code": 403, "success":false, "message": "blocked by Chaitin SafeLine Web Application Firewall", "event_id": "51a268653f2c4189bfa3ec66afbcb26d"}
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `chaitin-waf` plugin, remove the plugin configuration in the plugin configuration:
+To remove the `chaitin-waf` plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect:
 
 ```bash
 $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

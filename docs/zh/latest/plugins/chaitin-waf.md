@@ -29,7 +29,7 @@ description: 本文介绍了关于 Apache APISIX `chaitin-waf` 插件的基本�
 
 ## 描述
 
-在启用 `chaitin-waf` 插件后，流量将可以被转发到长亭 WAF 服务，可以保护请求使其免于受到黑客的攻击。
+在启用 `chaitin-waf` 插件后，流量将被转发给长亭 WAF 服务，用以检测和防止各种 Web 应用程序攻击，以保护应用程序和用户数据的安全。
 
 ## 响应头
 
@@ -66,7 +66,6 @@ description: 本文介绍了关于 Apache APISIX `chaitin-waf` 插件的基本�
 | config.req_body_size     | integer       | 否   | 1024                        | 请求体大小，单位为 KB, 默认值为 1MB (1024KB)                                                                             |
 | config.keepalive_size    | integer       | 否   | 256                         | 长亭 WAF 服务的最大并发空闲连接数，毫秒，默认值为 256                                                                             |
 | config.keepalive_timeout | integer       | 否   | 60000                       | 空闲链接超时，毫秒，默认值为 60s (60000ms)                                                                                |
-| config.remote_addr       | string        | 否   | `"http_x_forwarded_for: 1"` | 从 ngx.var.VARIABLE 中提取 remote_addr 的变量，默认值为 `"http_x_forwarded_for: 1"`。如果没有获取到，将从 `ngx.var.remote_addr` 获取 |
 
 一个典型的示例配置如下：
 
@@ -97,7 +96,6 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H 'X-API-KE
 | config.req_body_size     | integer       | 否   |       | 请求体大小，单位为 KB                                                                                                                                                                                                                                                                 |
 | config.keepalive_size    | integer       | 否   |       | 长亭 WAF 服务的最大并发空闲连接数                                                                                                                                                                                                                                                          |
 | config.keepalive_timeout | integer       | 否   |       | 空闲链接超时，毫秒                                                                                                                                                                                                                                                                    |
-| config.remote_addr       | string        | 否   |       | 从 ngx.var.VARIABLE 中提取 remote_addr 的变量                                                                                                                                                                                                                                       |
 
 一个典型的示例配置如下，这里使用 `httpbun.org` 作为示例后端，可以按需替换：
 
@@ -180,7 +178,7 @@ Server: APISIX/3.3.0
 404 page not found
 ```
 
-当满足匹配条件时，正常请求依然可以触达：
+当满足匹配条件时，正常请求依然可以触达上游：
 
 ```bash
 curl -H "Host: httpbun.org" -H "waf: true" http://127.0.0.1:9080/get -i
@@ -239,7 +237,7 @@ Set-Cookie: sl-session=UdywdGL+uGS7q8xMfnJlbQ==; Domain=; Path=/; Max-Age=86400
 
 ## 禁用插件
 
-需要禁用 `chaitin-waf` 插件时，在插件配置中删除相应的插件配置即可：
+当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```bash
 $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
