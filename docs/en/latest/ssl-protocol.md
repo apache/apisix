@@ -42,7 +42,7 @@ apisix:
 
 Use the `ssl_protocols` field in the `ssl` resource to dynamically specify different TLS protocol versions for each SNI.
 
-* Specify the `test.com` domain uses the TLSv1.2 and TLSv1.3.
+Specify the `test.com` domain uses the TLSv1.2 and TLSv1.3:
 
 ```bash
 {
@@ -58,18 +58,18 @@ Use the `ssl_protocols` field in the `ssl` resource to dynamically specify diffe
 
 ### Notes
 
-- Dynamic configuration has a higher priority than static configuration. When the ssl_protocols configuration item in the ssl resource is not empty, the static configuration will be overridden.
-- The static configuration applies to the entire APISIX and requires a restart of APISIX to take effect.
+- Dynamic configuration has a higher priority than static configuration. When the `ssl_protocols` configuration item in the ssl resource is not empty, the static configuration will be overridden.
+- The static configuration applies to the entire APISIX and requires a reload of APISIX to take effect.
 - Dynamic configuration can control the TLS protocol version of each SNI in a fine-grained manner and can be dynamically modified, which is more flexible than static configuration.
 
 ## Examples
 
 ### How to specify the TLSv1.1 protocol
 
-There are some old clients that still use the lower-level TLSv1.1 protocol version, while new products use higher security-level TLS protocol versions. Enabling TLSv1.1 for new products may bring some security risks. To ensure the security of the API, we need to flexibly switch between protocol versions.
-For example: test.com is the domain name used by old clients and needs to be configured for TLSv1.1, while test2.com belongs to new products and supports TLSv1.2 and TLSv1.3 protocols.
+While newer products utilize higher security-level TLS protocol versions, there are still legacy clients that rely on the lower-level TLSv1.1 protocol. However, enabling TLSv1.1 for new products presents potential security risks. In order to maintain the security of the API, it is crucial to have the ability to seamlessly switch between different protocol versions based on specific requirements and circumstances.
+For example, consider two domain names: `test.com`, utilized by legacy clients requiring TLSv1.1 configuration, and `test2.com`, associated with new products that support TLSv1.2 and TLSv1.3 protocols.
 
-1. config.yaml configuration.
+1. `config.yaml` configuration.
 
 ```yaml
 apisix:

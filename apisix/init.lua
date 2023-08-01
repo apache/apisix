@@ -187,6 +187,7 @@ function _M.http_ssl_phase()
     end
 end
 
+
 function _M.http_ssl_protocols_phase()
     local sni, err = apisix_ssl.server_name(true)
     if not sni or type(sni) ~= "string" then
