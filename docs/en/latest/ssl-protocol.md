@@ -106,9 +106,9 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 }'
 ```
 
-3. Access Verification
+4. Access Verification
 
-* Failed, accessed test.com with TLSv1.3.
+Failed, accessed test.com with TLSv1.3:
 
 ```shell
 $ curl --tls-max 1.3 --tlsv1.3  https://test.com:9443 -v -k -I
@@ -126,7 +126,7 @@ $ curl --tls-max 1.3 --tlsv1.3  https://test.com:9443 -v -k -I
 curl: (35) error:1409442E:SSL routines:ssl3_read_bytes:tlsv1 alert protocol version
 ```
 
-* Successfully, accessed test.com with TLSv1.1.
+Successfully, accessed test.com with TLSv1.1:
 
 ```shell
 $ curl --tls-max 1.1 --tlsv1.1  https://test.com:9443 -v -k -I
@@ -149,7 +149,7 @@ $ curl --tls-max 1.1 --tlsv1.1  https://test.com:9443 -v -k -I
 * SSL connection using TLSv1.1 / ECDHE-RSA-AES256-SHA
 ```
 
-* Successfully, accessed test2.com with TLSv1.3.
+Successfully, accessed test2.com with TLSv1.3:
 
 ```shell
 $ curl --tls-max 1.3 --tlsv1.3  https://test2.com:9443 -v -k -I
@@ -171,7 +171,7 @@ $ curl --tls-max 1.3 --tlsv1.3  https://test2.com:9443 -v -k -I
 * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
 ```
 
-* Failed, accessed test2.com with TLSv1.1.
+Failed, accessed test2.com with TLSv1.1:
 
 ```shell
 curl --tls-max 1.1 --tlsv1.1  https://test2.com:9443 -v -k -I
@@ -225,7 +225,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/2 \
 
 3. Access verification
 
-* Successfully, accessed test.com with TLSv1.2.
+Successfully, accessed test.com with TLSv1.2:
 
 ```shell
 $ curl --tls-max 1.2 --tlsv1.2  https://test.com:9443 -v -k -I
@@ -264,7 +264,7 @@ $ curl --tls-max 1.2 --tlsv1.2  https://test.com:9443 -v -k -I
 
 ```
 
-* Failed, accessed test.com with TLSv1.3.
+Failed, accessed test.com with TLSv1.3:
 
 ```shell
 $ curl --tls-max 1.3 --tlsv1.3  https://test.com:9443 -v -k -I
@@ -283,7 +283,7 @@ curl: (35) error:1409442E:SSL routines:ssl3_read_bytes:tlsv1 alert protocol vers
 
 ```
 
-* Successfully, accessed test2.com with TLSv1.3.
+Successfully, accessed test2.com with TLSv1.3:
 
 ```shell
 $ curl --tls-max 1.3 --tlsv1.3  https://test2.com:9443 -v -k -I
@@ -324,7 +324,7 @@ $ curl --tls-max 1.3 --tlsv1.3  https://test2.com:9443 -v -k -I
 * old SSL session ID is stale, removing
 ```
 
-* Failed, accessed test2.com with TLSv1.2.
+Failed, accessed test2.com with TLSv1.2:
 
 ```shell
 $ curl --tls-max 1.2 --tlsv1.2  https://test2.com:9443 -v -k -I

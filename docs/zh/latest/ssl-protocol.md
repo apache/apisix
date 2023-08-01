@@ -42,7 +42,7 @@ apisix:
 
 使用 ssl 资源中 ssl_protocols 字段动态的为每一个 SNI 指定不同的 TLS 协议版本。
 
-* 指定 test.com 域名使用 TLSv1.2 TLSv1.3 协议版本。
+指定 test.com 域名使用 TLSv1.2 TLSv1.3 协议版本：
 
 ```bash
 {
@@ -106,9 +106,9 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 }'
 ```
 
-3. 访问验证
+4. 访问验证
 
-* 使用 TLSv1.3 访问 test.com 失败。
+使用 TLSv1.3 访问 test.com 失败：
 
 ```shell
 $ curl --tls-max 1.3 --tlsv1.3  https://test.com:9443 -v -k -I
@@ -126,7 +126,7 @@ $ curl --tls-max 1.3 --tlsv1.3  https://test.com:9443 -v -k -I
 curl: (35) error:1409442E:SSL routines:ssl3_read_bytes:tlsv1 alert protocol version
 ```
 
-* 使用 TLSv1.1 访问 test.com 成功。
+使用 TLSv1.1 访问 test.com 成功：
 
 ```shell
 $ curl --tls-max 1.1 --tlsv1.1  https://test.com:9443 -v -k -I
@@ -149,7 +149,7 @@ $ curl --tls-max 1.1 --tlsv1.1  https://test.com:9443 -v -k -I
 * SSL connection using TLSv1.1 / ECDHE-RSA-AES256-SHA
 ```
 
-* 使用 TLSv1.3 访问 test2.com 成功。
+使用 TLSv1.3 访问 test2.com 成功：
 
 ```shell
 $ curl --tls-max 1.3 --tlsv1.3  https://test2.com:9443 -v -k -I
@@ -171,7 +171,7 @@ $ curl --tls-max 1.3 --tlsv1.3  https://test2.com:9443 -v -k -I
 * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
 ```
 
-* 使用 TLSv1.3 访问 test2.com 失败。
+使用 TLSv1.3 访问 test2.com 失败：
 
 ```shell
 curl --tls-max 1.1 --tlsv1.1  https://test2.com:9443 -v -k -I
@@ -225,7 +225,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/2 \
 
 3. 访问验证
 
-* 使用 TLSv1.2 访问 test.com 成功。
+使用 TLSv1.2 访问 test.com 成功：
 
 ```shell
 $ curl --tls-max 1.2 --tlsv1.2  https://test.com:9443 -v -k -I
@@ -264,7 +264,7 @@ $ curl --tls-max 1.2 --tlsv1.2  https://test.com:9443 -v -k -I
 
 ```
 
-* 使用 TLSv1.3 协议访问 test.com 失败。
+使用 TLSv1.3 协议访问 test.com 失败：
 
 ```shell
 $ curl --tls-max 1.3 --tlsv1.3  https://test.com:9443 -v -k -I
@@ -283,7 +283,7 @@ curl: (35) error:1409442E:SSL routines:ssl3_read_bytes:tlsv1 alert protocol vers
 
 ```
 
-* 使用 TLSv1.3 协议访问 test2.com 成功。
+使用 TLSv1.3 协议访问 test2.com 成功：
 
 ```shell
 $ curl --tls-max 1.3 --tlsv1.3  https://test2.com:9443 -v -k -I
@@ -324,7 +324,7 @@ $ curl --tls-max 1.3 --tlsv1.3  https://test2.com:9443 -v -k -I
 * old SSL session ID is stale, removing
 ```
 
-* 使用 TLSv1.2 协议访问 test2.com 失败。
+使用 TLSv1.2 协议访问 test2.com 失败：
 
 ```shell
 $ curl --tls-max 1.2 --tlsv1.2  https://test2.com:9443 -v -k -I
