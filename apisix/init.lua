@@ -211,11 +211,11 @@ function _M.http_ssl_protocols_phase()
         if err then
             core.log.error("failed to fetch ssl config: ", err)
         end
-        core.log.error("failed to find any SSL certificate by SNI: ", sni)
+        core.log.error("failed to match any SSL certificate by SNI: ", sni)
         ngx_exit(-1)
     end
 
-    ok ,err = apisix_ssl.set_protocols_by_clienthello(ngx_ctx.matched_ssl.value.ssl_protocols)
+    ok, err = apisix_ssl.set_protocols_by_clienthello(ngx_ctx.matched_ssl.value.ssl_protocols)
     if not ok then
         core.log.error("failed to set ssl protocols: ", err)
         ngx_exit(-1)

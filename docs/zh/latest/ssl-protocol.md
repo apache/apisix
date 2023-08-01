@@ -24,7 +24,7 @@ title: SSL 协议
 `APISIX` 支持，还支持动态的为每一个 SNI 指定不同的 TLS 协议版本。
 
 **为了安全考虑，APISIX 默认使用的加密套件不支持 TLSv1.1 以及更低的版本。**
-**如果你需要启用 TLS 1.1 协议，请在 config.yaml 的配置项 apisix.ssl.ssl_ciphers 增加 TLSv1.1 协议所支持的加密套件。**
+**如果你需要启用 TLSv1.1 协议，请在 config.yaml 的配置项 apisix.ssl.ssl_ciphers 增加 TLSv1.1 协议所支持的加密套件。**
 
 ## ssl_protocols 配置
 

@@ -14,10 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core                  = require("apisix.core")
-local ngx_ssl               = require("ngx.ssl")
-local secret                = require("apisix.secret")
-local ngx_ssl_client        = require("ngx.ssl.clienthello")
+local core           = require("apisix.core")
+local secret         = require("apisix.secret")
+local ngx_ssl        = require("ngx.ssl")
+local ngx_ssl_client = require("ngx.ssl.clienthello")
+
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
 local aes = require("resty.aes")
@@ -45,7 +46,6 @@ function _M.server_name(clienthello)
         sni, err = ngx_ssl_client.get_client_hello_server_name()
     else
         sni, err = ngx_ssl.server_name()
-
     end
     if err then
         return nil, err
@@ -63,12 +63,14 @@ function _M.server_name(clienthello)
     return sni
 end
 
+
 function _M.set_protocols_by_clienthello(ssl_protocols)
     if ssl_protocols then
        return ngx_ssl_client.set_protocols(ssl_protocols)
     end
     return true
 end
+
 
 local function init_iv_tbl(ivs)
     local _aes_128_cbc_with_iv_tbl = core.table.new(2, 0)

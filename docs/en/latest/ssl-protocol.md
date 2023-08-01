@@ -21,10 +21,10 @@ title: SSL Protocol
 #
 -->
 
-`APISIX` supports set TLS protocol and also supports dynamically specifying different TLS protocol versions for each SNI.
+`APISIX` supports set TLS protocol and also supports dynamically specifying different TLS protocol versions for each [SNI](https://en.wikipedia.org/wiki/Server_Name_Indication).
 
 **For security reasons, the encryption suite used by default in `APISIX` does not support TLSv1.1 and lower versions.**
-**If you need to enable the TLS 1.1 protocol, please add the encryption suite supported by the TLSv1.1 protocol to the configuration item `apisix.ssl.ssl_ciphers` in `config.yaml`.**
+**If you need to enable the TLSv1.1 protocol, please add the encryption suite supported by the TLSv1.1 protocol to the configuration item `apisix.ssl.ssl_ciphers` in `config.yaml`.**
 
 ## ssl_protocols Configuration
 

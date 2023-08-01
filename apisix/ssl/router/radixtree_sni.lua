@@ -223,9 +223,9 @@ end
 
 function _M.set(matched_ssl, sni)
     if not matched_ssl then
-        return false, "not found any matched ssl certificate"
+        return false, "failed to match ssl certificate"
     end
-    local err,ok
+    local ok, err
     if not sni then
         sni, err = apisix_ssl.server_name()
         if type(sni) ~= "string" then
