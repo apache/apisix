@@ -95,7 +95,7 @@ local function read_data(sk, is_req)
 
     local body_data, err = sk:read(header_info.data_length)
     if not body_data then
-        core.log.error("failed to read Dubbo request body")
+        core.log.error("failed to read dubbo request body")
         return nil, err, false
     end
 
