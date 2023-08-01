@@ -228,6 +228,7 @@ local function check_match(conf, ctx)
 
     if conf.match then
         for _, match in ipairs(conf.match) do
+            -- todo: use lrucache to cache the result
             local exp, err = expr.new(match.vars)
             if err then
                 local msg = "failed to create match expression for " ..
