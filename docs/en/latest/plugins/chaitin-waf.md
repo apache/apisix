@@ -29,7 +29,8 @@ description: This document contains basic information about the Apache APISIX `c
 
 ## Description
 
-After enabling the chaitin-waf plugin, the traffic will be forwarded to the Chaitin WAF service for the detection and prevention of various web application attacks, ensuring the security of the application and user data.
+After enabling the chaitin-waf plugin, the traffic will be forwarded to the Chaitin WAF service for the detection and
+prevention of various web application attacks, ensuring the security of the application and user data.
 
 ## Response Headers
 
@@ -54,18 +55,18 @@ The response headers are listed below:
 
 ## Plugin Metadata
 
-| Name                     | Type          | Required | Default value               | Description                                                                                                                  |
-|--------------------------|---------------|----------|-----------------------------|------------------------------------------------------------------------------------------------------------------------------|
-| nodes                    | array(object) | true     |                             | A list of addresses for the Chaitin SafeLine WAF service.                                                                    |
-| nodes[0].host            | string        | true     |                             | The address of Chaitin SafeLine WAF service. Supports IPV4, IPV6, Unix Socket, etc.                                          |
-| nodes[0].port            | string        | false    | 80                          | The port of Chaitin SafeLine WAF service.                                                                                    |
-| config                   | object        | false    |                             | Configuration of the Chaitin SafeLine WAF service. The parameters configured here will be used when route is not configured. |
-| config.connect_timeout   | integer       | false    | 1000                        | connect timeout, in milliseconds                                                               |
-| config.send_timeout      | integer       | false    | 1000                        | send timeout, in milliseconds                                                                  |
-| config.read_timeout      | integer       | false    | 1000                        | read timeout, in milliseconds                                                                  |
-| config.req_body_size     | integer       | false    | 1024                        | request body size, in KB                                                                      |
-| config.keepalive_size    | integer       | false    | 256                         | maximum concurrent idle connections to the SafeLine WAF detection service                              |
-| config.keepalive_timeout | integer       | false    | 60000                       | idle connection timeout, in milliseconds                                                     |
+| Name                     | Type          | Required | Default value | Description                                                                                                                  |
+|--------------------------|---------------|----------|---------------|------------------------------------------------------------------------------------------------------------------------------|
+| nodes                    | array(object) | true     |               | A list of addresses for the Chaitin SafeLine WAF service.                                                                    |
+| nodes[0].host            | string        | true     |               | The address of Chaitin SafeLine WAF service. Supports IPV4, IPV6, Unix Socket, etc.                                          |
+| nodes[0].port            | string        | false    | 80            | The port of Chaitin SafeLine WAF service.                                                                                    |
+| config                   | object        | false    |               | Configuration of the Chaitin SafeLine WAF service. The parameters configured here will be used when route is not configured. |
+| config.connect_timeout   | integer       | false    | 1000          | connect timeout, in milliseconds                                                                                             |
+| config.send_timeout      | integer       | false    | 1000          | send timeout, in milliseconds                                                                                                |
+| config.read_timeout      | integer       | false    | 1000          | read timeout, in milliseconds                                                                                                |
+| config.req_body_size     | integer       | false    | 1024          | request body size, in KB                                                                                                     |
+| config.keepalive_size    | integer       | false    | 256           | maximum concurrent idle connections to the SafeLine WAF detection service                                                    |
+| config.keepalive_timeout | integer       | false    | 60000         | idle connection timeout, in milliseconds                                                                                     |
 
 An example configuration is as follows.
 
@@ -87,15 +88,15 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H 'X-API-KE
 |--------------------------|---------------|----------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | match                    | array[object] | false    |               | The list of matching rules, default is empty                                                                                                                                                                                                                                                                                                              |
 | match.vars               | array[array]  | false    |               | List of variables to match for filtering requests for conditional traffic split. It is in the format `{variable operator value}`. For example, `{"arg_name", "==", "json"}`. The variables here are consistent with NGINX internal variables. For details on supported operators, [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
-| add_header               | bool          | false    | true          | Whether to add response headers                                                                                                                                                                                                                                                                                                                           |
-| add_debug_header         | bool          | false    | false         | Whether or not to add debugging headers, effective when `add_header` is `true`.                                                                                                                                                                                                                                                                           |
+| append_waf_resp_header   | bool          | false    | true          | Whether to add response headers                                                                                                                                                                                                                                                                                                                           |
+| append_waf_debug_header  | bool          | false    | false         | Whether or not to add debugging headers, effective when `add_header` is `true`.                                                                                                                                                                                                                                                                           |
 | config                   | object        | false    |               | Configuration of the Chaitin SafeLine WAF service. When the route is not configured, the parameters configured in the metadata are used.                                                                                                                                                                                                                  |
-| config.connect_timeout   | integer       | false    |               | connect timeout, in milliseconds                                                                                                                                                                                                                                                                                                                |
-| config.send_timeout      | integer       | false    |               | send timeout, in milliseconds                                                                                                                                                                                                                                                                                                                    |
-| config.read_timeout      | integer       | false    |               | read timeout, in milliseconds                                                                                                                                                                                                                                                                                                                    |
-| config.req_body_size     | integer       | false    |               | request body size, in KB                                                                                                                                                                                                                                                                                                                         |
-| config.keepalive_size    | integer       | false    |               | maximum concurrent idle connections to the SafeLine WAF detection service                                                                                                                                                                                                                                                                        |
-| config.keepalive_timeout | integer       | false    |               | idle connection timeout, in milliseconds                                                                                                                                                                                                                                                                                                         |
+| config.connect_timeout   | integer       | false    |               | connect timeout, in milliseconds                                                                                                                                                                                                                                                                                                                          |
+| config.send_timeout      | integer       | false    |               | send timeout, in milliseconds                                                                                                                                                                                                                                                                                                                             |
+| config.read_timeout      | integer       | false    |               | read timeout, in milliseconds                                                                                                                                                                                                                                                                                                                             |
+| config.req_body_size     | integer       | false    |               | request body size, in KB                                                                                                                                                                                                                                                                                                                                  |
+| config.keepalive_size    | integer       | false    |               | maximum concurrent idle connections to the SafeLine WAF detection service                                                                                                                                                                                                                                                                                 |
+| config.keepalive_timeout | integer       | false    |               | idle connection timeout, in milliseconds                                                                                                                                                                                                                                                                                                                  |
 
 A sample configuration is shown below, using `httpbun.org` as the example backend, which can be replaced as needed:
 
@@ -237,7 +238,8 @@ Set-Cookie: sl-session=UdywdGL+uGS7q8xMfnJlbQ==; Domain=; Path=/; Max-Age=86400
 
 ## Delete Plugin
 
-To remove the `chaitin-waf` plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect:
+To remove the `chaitin-waf` plugin, you can delete the corresponding JSON configuration from the Plugin configuration.
+APISIX will automatically reload and you do not have to restart for this to take effect:
 
 ```bash
 $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
