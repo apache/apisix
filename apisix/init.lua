@@ -290,6 +290,7 @@ local function verify_tls_client(ctx)
     if apisix_base_flags.client_cert_verified_in_handshake then
         -- For apisix-base, there is no need to rematch SSL rules as the invalid
         -- connections are already rejected in the handshake
+        -- test
         return true
     end
 
