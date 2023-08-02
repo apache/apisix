@@ -27,11 +27,13 @@ local getmetatable = getmetatable
 local getenv = os.getenv
 local str_gmatch = string.gmatch
 local str_find = string.find
+local str_byte = string.byte
 local str_sub = string.sub
 local print = print
 
 local _M = {}
 local exported_vars
+local PREFIX = "$secret://"
 
 
 function _M.get_exported_vars()
@@ -140,6 +142,31 @@ end
 
 
 _M.resolve_conf_var = resolve_conf_var
+
+
+local function is_secret_uri(secret_uri)
+    if not secret_uri or type(secret_uri) ~= "string" then
+        return false
+    end
+
+    if str_byte(secret_uri, 1, 1) ~= str_byte('$') or
+        not str_find(secret_uri, PREFIX, 1, true) then
+        return false
+    end
+
+    return true
+end
+
+
+_M.is_secret_uri = is_secret_uri
+
+
+local function resolve_secret_uri(uri)
+    return str_sub(uri, #PREFIX + 1)
+end
+
+
+_M.resolve_secret_uri = resolve_secret_uri
 
 
 local function replace_by_reserved_env_vars(conf)

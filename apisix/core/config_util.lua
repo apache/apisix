@@ -21,6 +21,9 @@
 
 local core_tab = require("apisix.core.table")
 local log = require("apisix.core.log")
+local file = require("apisix.cli.file")
+local is_secret_uri = file.is_secret_uri
+local resolve_secret_uri = file.resolve_secret_uri
 local str_byte = string.byte
 local str_char = string.char
 local ipairs = ipairs
@@ -209,6 +212,21 @@ function _M.parse_time_unit(s)
     end
 
     return size
+end
+
+
+function _M.try_fetch_secret(sm, conf, uri)
+    if not conf or not is_secret_uri(uri) then
+        return uri
+    end
+
+    local value, err = sm.get(conf, resolve_secret_uri(uri))
+    if err then
+        log.error("failed to fetch secret config: ", err)
+        return uri
+    end
+
+    return value
 end
 
 

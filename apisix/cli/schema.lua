@@ -363,11 +363,31 @@ local admin_schema = {
     }
 }
 
+local secret_vault_schema = {
+    type = "object",
+    properties = {
+        enable = {
+            type = "boolean",
+        },
+        uri = {
+            type = "string"
+        },
+        prefix = {
+            type = "string"
+        },
+        token = {
+            type = "string"
+        },
+    },
+    required = {"enable", "uri", "prefix", "token"}
+}
+
 local deployment_schema = {
     traditional = {
         properties = {
             etcd = etcd_schema,
             admin = admin_schema,
+            secret_vault = secret_vault_schema,
             role_traditional = {
                 properties = {
                     config_provider = {
@@ -383,6 +403,7 @@ local deployment_schema = {
         properties = {
             etcd = etcd_schema,
             admin = admin_schema,
+            secret_vault = secret_vault_schema,
             role_control_plane = {
                 properties = {
                     config_provider = {
