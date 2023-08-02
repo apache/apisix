@@ -796,7 +796,7 @@ _M.ssl = {
             maxItems = 3,
             uniqueItems = true,
             items = {
-                enum = {"TLSv1.1","TLSv1.2", "TLSv1.3"}
+                enum = {"TLSv1.1", "TLSv1.2", "TLSv1.3"}
             },
         },
         validity_end = timestamp_def,
