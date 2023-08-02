@@ -33,10 +33,9 @@ SNI（Server Name Indication）是用来改善 SSL 和 TLS 的一项特性，它
 * `key`：SSL 密钥对的私钥，pem 格式
 * `snis`：SSL 证书所指定的一个或多个域名，注意在设置这个参数之前，你需要确保这个证书对应的私钥是有效的。
 
-为了简化示例，我们会使用下面的 shell 命令：
+创建一个包含证书和密钥，单一域名 SNI 的 SSL 对象：
 
 ```shell
-# 创建 SSL 对象
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -44,8 +43,11 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
      "key": "'"$(cat t/certs/apisix.key)"'",
      "snis": ["test.com"]
 }'
+```
 
-# 创建 Router 对象
+创建路由：
+
+```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/get",
@@ -58,10 +60,13 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         }
     }
 }'
+```
 
-# 测试一下
+测试：
 
+```shell
 curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/get -k -vvv
+
 * Added test.com:9443:127.0.0.1 to DNS cache
 * About to connect() to test.com port 9443 (#0)
 *   Trying 127.0.0.1...
@@ -82,14 +87,25 @@ curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/get -k -vvv
 
 ### 泛域名
 
-一个 SSL 证书的域名也可能包含泛域名，如 `*.test.com`，它代表所有以 `test.com` 结尾的域名都可以使用该证书。
-比如 `*.test.com`，可以匹配 `www.test.com`、`mail.test.com`。
+一个 SSL 证书的域名也可能包含泛域名，如 `*.test.com`，它代表所有以 `test.com` 结尾的域名都可以使用该证书。比如 `*.test.com`，可以匹配 `www.test.com`、`mail.test.com`。
 
-看下面这个例子，请注意我们把 `*.test.com` 作为 sni 传递进来：
+以下是在 APISIX 中配置泛域名 SNI 的 SSL 证书的示例。
+
+创建一个包含证书和密钥，泛域名 SNI 的 SSL 对象：
 
 ```shell
-./create-ssl.py t.crt t.key '*.test.com'
+curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+     "cert" : "'"$(cat t/certs/apisix.crt)"'",
+     "key": "'"$(cat t/certs/apisix.key)"'",
+     "snis": ["*.test.com"]
+}'
+```
 
+创建路由：
+
+```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/hello",
@@ -102,33 +118,34 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         }
     }
 }'
+```
 
-# 测试一下
+测试：
 
-curl --resolve 'www.test.com:9443:127.0.0.1' https://www.test.com:9443/hello  -vvv
-* Added test.com:9443:127.0.0.1 to DNS cache
-* About to connect() to test.com port 9443 (#0)
-*   Trying 127.0.0.1...
-* Connected to test.com (127.0.0.1) port 9443 (#0)
-* Initializing NSS with certpath: sql:/etc/pki/nssdb
-* skipping SSL peer certificate verification
-* SSL connection using TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+```shell
+curl --resolve 'www.test.com:9443:127.0.0.1' https://www.test.com:9443/get -k -vvv
+
+* Added www.test.com:9443:127.0.0.1 to DNS cache
+* Hostname www.test.com was found in DNS cache
+*   Trying 127.0.0.1:9443...
+* Connected to www.test.com (127.0.0.1) port 9443 (#0)
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN, server accepted to use h2
 * Server certificate:
-* 	subject: CN=test.com,O=iresty,L=ZhuHai,ST=GuangDong,C=CN
-* 	start date: Jun 24 22:18:05 2019 GMT
-* 	expire date: May 31 22:18:05 2119 GMT
-* 	common name: test.com
-* 	issuer: CN=test.com,O=iresty,L=ZhuHai,ST=GuangDong,C=CN
-> GET /hello HTTP/1.1
-> User-Agent: curl/7.29.0
-> Host: test.com:9443
-> Accept: */*
+*  subject: C=CN; ST=GuangDong; L=ZhuHai; O=iresty; CN=test.com
+*  start date: Jun 24 22:18:05 2019 GMT
+*  expire date: May 31 22:18:05 2119 GMT
+*  issuer: C=CN; ST=GuangDong; L=ZhuHai; O=iresty; CN=test.com
+*  SSL certificate verify result: self signed certificate (18), continuing anyway.
+> GET /get HTTP/2
+> Host: www.test.com:9443
+> user-agent: curl/7.74.0
+> accept: */*
 ```
 
 ### 多域名的情况
 
-如果一个 SSL 证书包含多个独立域名，比如 `www.test.com` 和 `mail.test.com`，
-你可以把它们都放入 `snis` 数组中，就像这样：
+如果一个 SSL 证书包含多个独立域名，比如 `www.test.com` 和 `mail.test.com`，你可以把它们都放入 `snis` 数组中，就像这样：
 
 ```json
 {

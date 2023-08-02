@@ -126,7 +126,8 @@
             "plugins/consumer-restriction",
             "plugins/csrf",
             "plugins/public-api",
-            "plugins/gm"
+            "plugins/gm",
+            "plugins/chaitin-waf"
           ]
         },
         {
