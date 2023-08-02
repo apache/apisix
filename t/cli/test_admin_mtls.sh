@@ -53,3 +53,45 @@ if [ ! "$code" -eq 400 ]; then
 fi
 
 echo "passed: enabled mTLS for admin"
+
+make stop
+
+echo '
+deployment:
+    admin:
+        admin_listen:
+            port: 9180
+        https_admin: true
+        admin_api_mtls:
+            admin_ssl_cert: "$secret://apisix_config/admin_ssl_cert"
+            admin_ssl_cert_key: "$secret://apisix_config/admin_ssl_cert_key"
+            admin_ssl_ca_cert: "$secret://apisix_config/admin_ssl_ca_cert"
+    secret_vault:
+        enable: true
+        uri: "http://127.0.0.1:8200"
+        prefix: "kv/apisix"
+        token: "${{VAULT_TOKEN}}"
+' > conf/config.yaml
+
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/apisix_config admin_ssl_cert=@./t/certs/mtls_server.crt admin_ssl_cert_key=@./t/certs/mtls_server.key admin_ssl_ca_cert=@./t/certs/mtls_ca.crt
+export VAULT_TOKEN=root
+
+make run
+
+sleep 1
+
+# correct certs
+code=$(curl -i -o /dev/null -s -w %{http_code}  --cacert ./t/certs/mtls_ca.crt --key ./t/certs/mtls_client.key --cert ./t/certs/mtls_client.crt -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' https://admin.apisix.dev:9180/apisix/admin/routes)
+if [ ! "$code" -eq 200 ]; then
+    echo "failed: failed to enabled mTLS for admin with vault"
+    exit 1
+fi
+
+# skip
+code=$(curl -i -o /dev/null -s -w %{http_code} -k -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' https://admin.apisix.dev:9180/apisix/admin/routes)
+if [ ! "$code" -eq 400 ]; then
+    echo "failed: failed to enabled mTLS for admin with vault"
+    exit 1
+fi
+
+echo "passed: enabled mTLS for admin with vault"
