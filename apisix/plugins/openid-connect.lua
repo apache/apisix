@@ -130,6 +130,15 @@ local schema = {
                 "header to the request for downstream.",
             type = "boolean",
             default = false
+        },
+        proxy_opts = {
+            description = "Domain and port of the proxy server,like" ..
+            "{" ..
+               "http_proxy: http://your-proxy.com:your-proxy-port," ..
+               "https_proxy: http://your-proxy.com:your-proxy-port" ..
+             "}",
+            type = "object",
+            default = {}
         }
     },
     encrypt_fields = {"client_secret"},
