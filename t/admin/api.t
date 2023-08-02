@@ -236,3 +236,34 @@ GET /apisix/admin/routes
 --- error_code: 200
 --- error_log
 Admin key is bypassed!
+
+
+
+=== TEST 16: store api key into vault
+--- exec
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/apisix_config admin_key=value
+--- response_body
+Success! Data written to: kv/apisix/apisix_config
+
+
+
+=== TEST 17: Access with api key from vault
+--- main_config
+env VAULT_TOKEN=root;
+--- yaml_config
+deployment:
+  admin:
+    admin_key:
+      - key: "$secret://apisix_config/admin_key"
+        name: a
+        role: admin
+  secret_vault:
+    enable: true
+    uri: "http://127.0.0.1:8200"
+    prefix: "kv/apisix"
+    token: "${{VAULT_TOKEN}}"
+--- request
+GET /apisix/admin/routes
+--- more_headers
+X-API-KEY: value
+--- error_code: 200
