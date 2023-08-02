@@ -21,6 +21,8 @@ local route = require("apisix.utils.router")
 local plugin = require("apisix.plugin")
 local v3_adapter = require("apisix.admin.v3_adapter")
 local utils = require("apisix.admin.utils")
+local vault = require("apisix.secret.vault")
+local config_util = require("apisix.core.config_util")
 local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_time = ngx.time
@@ -64,6 +66,7 @@ local resources = {
 
 local _M = {version = 0.4}
 local router
+local vault_conf
 
 
 local function check_token(ctx)
@@ -87,7 +90,7 @@ local function check_token(ctx)
 
     local admin
     for i, row in ipairs(admin_key) do
-        if req_token == row.key then
+        if req_token == config_util.try_fetch_secret(vault, vault_conf, row.key) then
             admin = row
             break
         end
@@ -410,6 +413,11 @@ function _M.init_worker()
     local local_conf = core.config.local_conf()
     if not local_conf.apisix or not local_conf.apisix.enable_admin then
         return
+    end
+
+    vault_conf = local_conf.deployment.secret_vault
+    if vault_conf and not vault_conf.enable then
+        vault_conf = nil
     end
 
     router = route.new(uri_route)
