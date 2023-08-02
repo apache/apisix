@@ -181,6 +181,14 @@ local function init(env)
         util.die(err, "\n")
     end
 
+    local enable_config_secret = false
+    do
+        local vault_conf = yaml_conf.deployment.secret_vault
+        if vault_conf and vault_conf.enable then
+            enable_config_secret = true
+        end
+    end
+
     -- check the Admin API token
     local checked_admin_key = false
     local allow_admin = yaml_conf.deployment.admin and
@@ -244,6 +252,12 @@ Please modify "admin_key" in conf/config.yaml .
             admin_api_mtls.admin_ssl_cert_key ~= "")
         then
             util.die("missing ssl cert for https admin")
+        end
+
+        if enable_config_secret then
+            admin_api_mtls.admin_ssl_cert = "cert/ssl_PLACE_HOLDER.crt"
+            admin_api_mtls.admin_ssl_cert_key = "cert/ssl_PLACE_HOLDER.key"
+            admin_api_mtls.admin_ssl_ca_cert = ""
         end
     end
 
@@ -559,6 +573,7 @@ Please modify "admin_key" in conf/config.yaml .
         error_log = {level = "warn"},
         enable_http = enable_http,
         enable_stream = enable_stream,
+        enable_config_secret = enable_config_secret,
         enabled_discoveries = enabled_discoveries,
         enabled_plugins = enabled_plugins,
         enabled_stream_plugins = enabled_stream_plugins,

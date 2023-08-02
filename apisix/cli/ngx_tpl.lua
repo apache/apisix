@@ -559,6 +559,16 @@ http {
         set $upstream_host               $http_host;
         set $upstream_uri                '';
 
+        {% if enable_config_secret then %}
+        ssl_certificate_by_lua_block {
+            apisix.http_admin_ssl_phase()
+        }
+
+        access_by_lua_block {
+            apisix.http_admin_access_phase()
+        }
+        {% end %}
+
         location /apisix/admin {
             {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}

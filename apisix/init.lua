@@ -27,6 +27,7 @@ require("jit.opt").start("minstitch=2", "maxtrace=4000",
 
 require("apisix.patch").patch()
 local core            = require("apisix.core")
+local config_util     = require("apisix.core.config_util")
 local conf_server     = require("apisix.conf_server")
 local plugin          = require("apisix.plugin")
 local plugin_config   = require("apisix.plugin_config")
@@ -38,6 +39,7 @@ local get_var         = require("resty.ngxvar").fetch
 local router          = require("apisix.router")
 local apisix_upstream = require("apisix.upstream")
 local apisix_secret   = require("apisix.secret")
+local vault           = require("apisix.secret.vault")
 local set_upstream    = apisix_upstream.set_by_route
 local apisix_ssl      = require("apisix.ssl")
 local apisix_global_rules    = require("apisix.global_rules")
@@ -47,6 +49,7 @@ local ctxdump         = require("resty.ctxdump")
 local debug           = require("apisix.debug")
 local pubsub_kafka    = require("apisix.pubsub.kafka")
 local ngx             = ngx
+local ngx_ssl         = require("ngx.ssl")
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
 local math            = math
@@ -76,6 +79,8 @@ end
 
 local load_balancer
 local local_conf
+local vault_conf
+local admin_api_mtls
 local ver_header = "APISIX/" .. core.version.VERSION
 
 local has_mod, apisix_ngx_client = pcall(require, "resty.apisix.client")
@@ -166,6 +171,13 @@ function _M.http_init_worker()
     if local_conf.apisix and local_conf.apisix.enable_server_tokens == false then
         ver_header = "APISIX"
     end
+
+    vault_conf = local_conf.deployment.secret_vault
+    if vault_conf and not vault_conf.enable then
+        vault_conf = nil
+    end
+
+    admin_api_mtls = local_conf.deployment.admin.admin_api_mtls
 end
 
 
@@ -930,6 +942,77 @@ end
 local function add_content_type()
     core.response.set_header("Content-Type", "application/json")
 end
+
+
+function _M.http_admin_ssl_phase()
+    local cert = config_util.try_fetch_secret(vault, vault_conf, admin_api_mtls.admin_ssl_cert)
+    local parsed_cert, err = ngx_ssl.parse_pem_cert(cert)
+    if err then
+        core.log.error("failed to fetch ssl config: ", err)
+        ngx_exit(-1)
+    end
+
+    local ok, err = ngx_ssl.set_cert(parsed_cert)
+    if not ok then
+        core.log.error("failed to set PEM cert: " .. err)
+        ngx_exit(-1)
+    end
+
+    local pkey = config_util.try_fetch_secret(vault, vault_conf, admin_api_mtls.admin_ssl_cert_key)
+    local parsed_pkey, err = ngx_ssl.parse_pem_priv_key(pkey)
+    if err then
+        core.log.error("failed to fetch ssl config: ", err)
+        ngx_exit(-1)
+    end
+
+    ok, err = ngx_ssl.set_priv_key(parsed_pkey)
+    if not ok then
+        core.log.error("failed to set PEM priv key: " .. err)
+        ngx_exit(-1)
+    end
+
+    if admin_api_mtls.admin_ssl_ca_cert and apisix_ssl.support_client_verification() then
+        local ca_cert = config_util.try_fetch_secret(vault, vault_conf, admin_api_mtls.admin_ssl_ca_cert)
+        local parsed_ca_cert, err = ngx_ssl.parse_pem_cert(ca_cert)
+        if err then
+            core.log.error("failed to fetch ssl config: ", err)
+            ngx_exit(-1)
+        end
+
+        ok, err = ngx_ssl.verify_client(parsed_ca_cert, nil, true)
+        if not ok then
+            core.log.error("failed to verify client cert: ", err)
+            ngx_exit(-1)
+        end
+    end
+end
+
+
+function _M.http_admin_access_phase()
+    if not admin_api_mtls.admin_ssl_ca_cert or not apisix_ssl.support_client_verification() then
+        return
+    end
+
+    local ngx_ctx = ngx.ctx
+
+    local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+
+    core.ctx.set_vars_meta(api_ctx)
+    local res = api_ctx.var.ssl_client_verify
+
+    core.tablepool.release("api_ctx", api_ctx)
+
+    if res ~= "SUCCESS" then
+        if res == "NONE" then
+            core.log.error("client certificate was not present")
+        else
+            core.log.error("client certificate verification is not passed: ", res)
+        end
+
+        return core.response.exit(400)
+    end
+end
+
 
 do
     local router
