@@ -77,7 +77,7 @@ dependencies = {
     "xml2lua = 1.5-2",
     "nanoid = 0.1-1",
     "lua-resty-mediador = 0.1.2-1",
-    "lua-resty-ldap = 0.1.0-0"
+    "lua-resty-ldap = 0.1.0-0",
     "lua-resty-t1k = 1.0.3"
 }
 
