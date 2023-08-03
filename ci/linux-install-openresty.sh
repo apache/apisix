@@ -79,7 +79,7 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
     chmod +x build-apisix-base.sh
     ./build-apisix-base.sh latest
 
-    sudo apt-get install -y openresty-openssl111 libldap2-dev openresty-pcre openresty-zlib
+    sudo apt-get install -y openresty-openssl111 openresty-openssl111-debug-dev libldap2-dev openresty-pcre openresty-zlib
 
     exit 0
 fi
