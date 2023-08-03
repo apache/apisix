@@ -716,7 +716,7 @@ _EOC_
         ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
 
         ssl_client_hello_by_lua_block {
-            apisix.http_ssl_protocols_phase()
+            apisix.http_ssl_client_hello_phase()
         }
 
         ssl_certificate_by_lua_block {

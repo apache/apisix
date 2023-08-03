@@ -38,9 +38,7 @@ OPENSSL3_PREFIX=${OPENSSL3_PREFIX-/home/runner}
 SSL_LIB_VERSION=${SSL_LIB_VERSION-openssl}
 
 if [ "$OPENRESTY_VERSION" == "source" ]; then
-    sudo apt-get install -y openresty-openssl111-debug-dev libldap2-dev openresty-pcre-dev openresty-zlib-dev
-
-    export openssl_prefix=$OPENRESTY_PREFIX/openssl111
+    export openssl_prefix=/usr/local/openresty/openssl111
     export zlib_prefix=/usr/local/openresty/zlib
     export pcre_prefix=/usr/local/openresty/pcre
 
@@ -80,6 +78,8 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
     wget -q https://raw.githubusercontent.com/api7/apisix-build-tools/$abt_branch/build-apisix-base.sh
     chmod +x build-apisix-base.sh
     ./build-apisix-base.sh latest
+
+    sudo apt-get install -y openresty-openssl111 libldap2-dev openresty-pcre openresty-zlib
 
     exit 0
 fi

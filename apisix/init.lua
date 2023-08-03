@@ -188,7 +188,7 @@ function _M.http_ssl_phase()
 end
 
 
-function _M.http_ssl_protocols_phase()
+function _M.http_ssl_client_hello_phase()
     local sni, err = apisix_ssl.server_name(true)
     if not sni or type(sni) ~= "string" then
         local advise = "please check if the client requests via IP or uses an outdated " ..
@@ -222,6 +222,7 @@ function _M.http_ssl_protocols_phase()
         ngx_exit(-1)
     end
 end
+
 
 local function stash_ngx_ctx()
     local ref = ctxdump.stash_ngx_ctx()
