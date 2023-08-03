@@ -76,7 +76,7 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
     exit 0
 fi
 
-if ["$OPENRESTY_VERSION" == "apisix-base"]; then
+if [ "$OPENRESTY_VERSION" == "apisix-base" ]; then
     wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
     echo "deb http://repos.apiseven.com/packages/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
     sudo apt update
