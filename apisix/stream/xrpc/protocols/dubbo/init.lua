@@ -78,7 +78,7 @@ end
 local function read_data(sk, is_req)
     local header_data, err = sk:read(header_len)
     if not header_data then
-        core.log.error("failed to read Dubbo request header: ", err)
+        core.log.error("failed to read dubbo request header: ", err)
         return
     end
 
