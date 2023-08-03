@@ -40,6 +40,7 @@ local networks = {
     "ckb-mirana",
     "starknet-mainnet",
     "starknet-testnet",
+    "base-mainnet",
     "base-testnet",
     "zksync-era-mainnet",
     "zksync-era-testnet",
@@ -61,6 +62,7 @@ local networks = {
     "staging-ckb-mirana",
     "staging-starknet-mainnet",
     "staging-starknet-testnet",
+    "staging-base-mainnet",
     "staging-base-testnet",
     "staging-zksync-era-mainnet",
     "staging-zksync-era-testnet",
@@ -429,6 +431,7 @@ function _M.init()
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, zks_methods, debug_methods)
         elseif network == "arb-mainnet" or network == "opt-mainnet" or
             network == "staging-arb-mainnet" or network == "staging-opt-mainnet" or
+            network == "staging-base-mainnet" or network == "base-mainnet" or
             network == "staging-base-testnet" or network == "base-testnet" or
             network == "staging-scroll-alpha" or network == "scroll-alpha" or
             network == "staging-linea-mainnet" or network == "linea-mainnet" or
