@@ -10,7 +10,7 @@ jobs:
   run-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Remove label when user responds
+      - name: update labels when user responds
         uses: andymckay/labeler@master
         if: ${{ github.event.comment.user.login == github.event.issue.user.login && contains(github.event.issue.labels.*.name, 'wait for update') && !contains(github.event.issue.labels.*.name, 'user responded') }}
         with:
