@@ -359,7 +359,7 @@ find consumer user01
                     "plugins": {
                         "ldap-auth": {
                             "base_dn": "ou=users,dc=example,dc=org",
-                            "ldap_uri": "localhost:1636",
+                            "ldap_uri": "test.com:1636",
                             "uid": "cn",
                             "use_tls": true
                         }
@@ -408,7 +408,7 @@ find consumer user01
                     "plugins": {
                         "ldap-auth": {
                             "base_dn": "ou=users,dc=example,dc=org",
-                            "ldap_uri": "localhost:1636",
+                            "ldap_uri": "test.com:1636",
                             "uid": "cn",
                             "use_tls": true,
                             "tls_verify": true
