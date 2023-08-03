@@ -38,7 +38,7 @@ jobs:
     timeout-minutes: 90
     env:
       SERVER_NAME: ${{ matrix.os_name }}
-      OPENRESTY_VERSION: default
+      OPENRESTY_VERSION: apisix-base
 
     steps:
       - name: Check out code
