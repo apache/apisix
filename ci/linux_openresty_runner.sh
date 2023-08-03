@@ -17,6 +17,6 @@
 #
 
 
-export OPENRESTY_VERSION=source
+export OPENRESTY_VERSION=${OPENRESTY_VERSION:-source}
 #export TEST_CI_USE_GRPC=true
 . ./ci/linux_openresty_common_runner.sh
