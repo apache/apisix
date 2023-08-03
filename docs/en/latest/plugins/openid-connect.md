@@ -61,7 +61,7 @@ description: OpenID Connect allows the client to obtain user information from th
 | session                              | object  | False    |                       |              | When bearer_only is set to false, openid-connect will use Authorization Code flow to authenticate on the IDP, so you need to set the session-related configuration. |
 | session.secret                       | string  | True     | Automatic generation  | 16 or more characters | The key used for session encrypt and HMAC operation. |
 | unauth_action                        | string  | False    | "auth"                |              | Specify the response type on unauthenticated requests. "auth" redirects to identity provider, "deny" results in a 401 response, "pass" will allow the request without authentication. |
-| proxy_opts                           | object  | False    |                       | {<br/>          http_proxy: http://your-proxy.com:your-proxy-port,<br/>          https_proxy: http://your-proxy.com:your-proxy-port<br/>        } | domain and port of the proxy server                                                                                                                                                   |
+| proxy_opts                           | object  | False    |                       |              | Configure an HTTP proxy to be used with the openid-connect plugin. |
 
 NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 

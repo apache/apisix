@@ -60,7 +60,7 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 | set_refresh_token_header             | boolean | 否     | false                 |               | 当设置为 `true` 并且刷新令牌可用时，则会将该属性设置在`X-Refresh-Token`请求头中。                      |
 | session                              | object  | 否     |                       |               | 当设置 bearer_only 为 false 时，openid-connect 插件将使用 Authorization Code 在 IDP 上进行认证，因此你必须设置 session 相关设置。 |
 | session.secret                       | string  | 是     | 自动生成               | 16 个以上字符  | 用于 session 加密和 HMAC 计算的密钥。 |
-| proxy_opts                           | object  | 否     |                       | {<br/>          http_proxy: http://your-proxy.com:your-proxy-port,<br/>          https_proxy: http://your-proxy.com:your-proxy-port<br/>        } | 用于设置代理服务器域名与端口                                                                                                      |
+| proxy_opts                           | object  | 否    |                     |               | 给 openid-connect 插件配置一个 proxy。 |
 
 注意：schema 中还定义了 `encrypt_fields = {"client_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
