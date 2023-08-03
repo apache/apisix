@@ -127,7 +127,7 @@ local function produce_res(res, err)
 end
 
 
-local function run_watch(premature)
+local function do_run_watch(premature)
     if premature then
         return
     end
@@ -191,36 +191,9 @@ local function run_watch(premature)
 
         ::watch_event::
         while true do
-            local res
-
-            local get_res_th = ngx_thread_spawn(function ()
-                res, err = res_func()
-                if log_level >= NGX_INFO then
-                    log.info("res_func: ", inspect(res))
-                end
-            end)
-
-            local check_worker_th = ngx_thread_spawn(function ()
-                while not exiting() do
-                    ngx_sleep(0.1)
-                end
-            end)
-
-            local ok = ngx_thread_wait(get_res_th, check_worker_th)
-
-            if not ok then
-                ngx_thread_kill(get_res_th)
-                ngx_thread_kill(check_worker_th)
-                cancel_watch(http_cli)
-                break
-            end
-
-            if exiting() then
-                ngx_thread_kill(get_res_th)
-                produce_res(nil, "worker exited")
-                return
-            else
-                ngx_thread_kill(check_worker_th)
+            local res, err = res_func()
+            if log_level >= NGX_INFO then
+                log.info("res_func: ", inspect(res))
             end
 
             if not res then
@@ -284,6 +257,30 @@ local function run_watch(premature)
             produce_res(res)
         end
     end
+end
+
+
+local function run_watch(premature)
+    local run_watch_th = ngx_thread_spawn(do_run_watch, premature)
+
+    ::restart::
+    local check_worker_th = ngx_thread_spawn(function ()
+        while not exiting() do
+            ngx_sleep(0.1)
+        end
+    end)
+
+    local ok, err = ngx_thread_wait(check_worker_th)
+
+    if not ok then
+        log.error("wait worker checker failed, retart checker, error: " .. err)
+        ngx_thread_kill(check_worker_th)
+        goto restart
+    end
+
+    ngx_thread_kill(run_watch_th)
+    -- notify child watchers
+    produce_res(nil, "worker exited")
 end
 
 
