@@ -132,12 +132,26 @@ local schema = {
             default = false
         },
         proxy_opts = {
-            description = "Domain and port of the proxy server,like" ..
-            "{" ..
-               "http_proxy: http://your-proxy.com:your-proxy-port," ..
-               "https_proxy: http://your-proxy.com:your-proxy-port" ..
-             "}",
+            description = "access via openid server via a proxy server ",
             type = "object",
+            properties = {
+                http_proxy = {
+                    type = "string",
+                    description = "http proxy: http://proxy-server:80",
+                },
+                https_proxy = {
+                    type = "string",
+                    description = "https proxy: https://proxy-server:80",
+                },
+                http_proxy_authorization = {
+                    type = "string",
+                    description = "Basic [base64 username:password]",
+                },
+                https_proxy_authorization = {
+                    type = "string",
+                    description = "Basic [base64 username:password]",
+                },
+            },
             default = {}
         }
     },
