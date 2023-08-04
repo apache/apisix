@@ -74,6 +74,7 @@ referer-restriction
 csrf
 uri-blocker
 request-validation
+chaitin-waf
 openid-connect
 cas-auth
 authz-casbin
