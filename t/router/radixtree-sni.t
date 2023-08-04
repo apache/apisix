@@ -202,7 +202,7 @@ location /t {
 connected: 1
 failed to do SSL handshake: handshake failed
 --- error_log
-failed to find any SSL certificate by SNI
+failed to match any SSL certificate by SNI
 
 
 
