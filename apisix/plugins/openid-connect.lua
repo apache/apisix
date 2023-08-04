@@ -152,7 +152,6 @@ local schema = {
                     description = "Basic [base64 username:password]",
                 },
             },
-            default = {}
         }
     },
     encrypt_fields = {"client_secret"},
