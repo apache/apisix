@@ -192,6 +192,23 @@ The examples below shows how you can configure this Plugin for different validat
 }
 ```
 
+### Header validation
+
+```json
+{
+    "header_schema": {
+        "type": "object",
+        "required": ["Content-Type"],
+        "properties": {
+            "Content-Type": {
+                "type": "string",
+                "pattern": "^application\/json$"
+            }
+        }
+    }
+}
+```
+
 ### Combined validation
 
 ```json
