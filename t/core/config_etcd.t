@@ -446,7 +446,7 @@ qr/readdir key: fake res: \{.*"nodes":\[\{.*"value":\["bar"\].*\}\].*\}/
 
 
 
-=== TEST 13: add route with special character "-"
+=== TEST 13: test route with special character "-"
 --- yaml_config
 deployment:
   role: traditional
