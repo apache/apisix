@@ -459,6 +459,8 @@ deployment:
 --- config
     location /t {
         content_by_lua_block {
+            ngx.sleep(0.5)
+
             local http = require "resty.http"
             local t = require("lib.test_admin").test
 
@@ -476,9 +478,11 @@ deployment:
                 )
             if code >= 300 then
                 ngx.status = code
+                return
             end
             ngx.say(body)
 
+            -- hit
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local res, err = httpc:request_uri(uri, {
@@ -498,6 +502,7 @@ deployment:
             end
             ngx.say(body)
 
+            -- hit
             res, err = httpc:request_uri(uri, {
                 method = "GET"
             })
