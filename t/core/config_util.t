@@ -117,3 +117,38 @@ __DATA__
 qr/fire \w+/
 --- grep_error_log_out eval
 "fire one\nfire two\n" x 3
+
+
+
+=== TEST 3: store api key into vault
+--- exec
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/apisix_config admin_key=value
+--- response_body
+Success! Data written to: kv/apisix/apisix_config
+
+
+
+=== TEST 4: try_fetch_secret
+--- config
+    location /t {
+        content_by_lua_block {
+            local try_fetch_secret = require("apisix.core.config_util").try_fetch_secret
+            local vault = require("apisix.secret.vault")
+
+            local raw_uri = "$secret://apisix_config/admin_key"
+            local invalid_raw_uri = "$invalid://foo/bar"
+            local res = try_fetch_secret(vault, nil, raw_uri)
+            assert(raw_uri == res)
+
+            local vault_conf = {
+                uri = "http://127.0.0.1:8200",
+                prefix = "kv/apisix",
+                token = "root"
+            }
+            res = try_fetch_secret(vault, vault_conf, invalid_raw_uri)
+            assert(invalid_raw_uri == res)
+
+            res = try_fetch_secret(vault, vault_conf, raw_uri)
+            assert("value" == res)
+        }
+    }
