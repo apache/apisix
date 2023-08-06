@@ -87,3 +87,53 @@ OK
 OK
 OK
 Done
+
+
+
+=== TEST 2: test header X-RateLimit-Reset shouldn't be set to 0 after request be rejected
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello2",
+                    "plugins": {
+                        "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "key": "remote_addr",
+                            "policy": "redis-cluster",
+                            "redis_cluster_nodes": [
+                                "127.0.0.1:5000",
+                                "127.0.0.1:5001"
+                            ],
+                            "redis_cluster_name": "redis-cluster-1"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+            for i = 1, 3 do
+                local _, _, headers = t('/hello2', ngx.HTTP_GET)
+                ngx.sleep(1)
+                if tonumber(headers["X-RateLimit-Reset"]) > 0 then
+                    ngx.say("OK")
+                else
+                   ngx.say("WRONG")
+                end
+            end
+            ngx.say("Done")
+        }
+    }
+--- response_body
+OK
+OK
+OK
+Done
