@@ -277,6 +277,7 @@ local function run_watch(premature)
         ngx_thread_kill(check_worker_th)
         goto restart
     end
+    ngx.sleep(1)
 
     ngx_thread_kill(run_watch_th)
     -- notify child watchers

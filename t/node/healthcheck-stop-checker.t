@@ -163,8 +163,6 @@ create new checker: table: 0x
 --- config
     location /t {
         content_by_lua_block {
-            ngx.sleep(1)
-
             local t = require("lib.test_admin").test
 
             -- release the clean handler of previous test
