@@ -27,7 +27,7 @@ require("jit.opt").start("minstitch=2", "maxtrace=4000",
 
 require("apisix.patch").patch()
 local core            = require("apisix.core")
-local config_util     = require("apisix.core.config_util")
+local try_fetch_secret    = require("apisix.core.config_util").try_fetch_secret
 local conf_server     = require("apisix.conf_server")
 local plugin          = require("apisix.plugin")
 local plugin_config   = require("apisix.plugin_config")
@@ -945,7 +945,7 @@ end
 
 
 function _M.http_admin_ssl_phase()
-    local cert = config_util.try_fetch_secret(vault, vault_conf, admin_api_mtls.admin_ssl_cert)
+    local cert = try_fetch_secret(vault, vault_conf, admin_api_mtls.admin_ssl_cert)
     local parsed_cert, err = ngx_ssl.parse_pem_cert(cert)
     if err then
         core.log.error("failed to fetch ssl config: ", err)
@@ -958,7 +958,7 @@ function _M.http_admin_ssl_phase()
         ngx_exit(-1)
     end
 
-    local pkey = config_util.try_fetch_secret(vault, vault_conf, admin_api_mtls.admin_ssl_cert_key)
+    local pkey = try_fetch_secret(vault, vault_conf, admin_api_mtls.admin_ssl_cert_key)
     local parsed_pkey, err = ngx_ssl.parse_pem_priv_key(pkey)
     if err then
         core.log.error("failed to fetch ssl config: ", err)
@@ -972,7 +972,7 @@ function _M.http_admin_ssl_phase()
     end
 
     if admin_api_mtls.admin_ssl_ca_cert and apisix_ssl.support_client_verification() then
-        local ca_cert = config_util.try_fetch_secret(vault, vault_conf, admin_api_mtls.admin_ssl_ca_cert)
+        local ca_cert = try_fetch_secret(vault, vault_conf, admin_api_mtls.admin_ssl_ca_cert)
         local parsed_ca_cert, err = ngx_ssl.parse_pem_cert(ca_cert)
         if err then
             core.log.error("failed to fetch ssl config: ", err)
@@ -992,8 +992,6 @@ function _M.http_admin_access_phase()
     if not admin_api_mtls.admin_ssl_ca_cert or not apisix_ssl.support_client_verification() then
         return
     end
-
-    local ngx_ctx = ngx.ctx
 
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
 

@@ -22,7 +22,7 @@ local plugin = require("apisix.plugin")
 local v3_adapter = require("apisix.admin.v3_adapter")
 local utils = require("apisix.admin.utils")
 local vault = require("apisix.secret.vault")
-local config_util = require("apisix.core.config_util")
+local try_fetch_secret = require("apisix.core.config_util").try_fetch_secret
 local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_time = ngx.time
@@ -90,7 +90,7 @@ local function check_token(ctx)
 
     local admin
     for i, row in ipairs(admin_key) do
-        if req_token == config_util.try_fetch_secret(vault, vault_conf, row.key) then
+        if req_token == try_fetch_secret(vault, vault_conf, row.key) then
             admin = row
             break
         end
