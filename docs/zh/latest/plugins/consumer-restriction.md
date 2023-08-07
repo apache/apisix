@@ -1,4 +1,10 @@
 ---
+title: consumer-restriction
+keywords:
+  - Apache APISIX
+  - API 网关
+  - Consumer restriction
+description: Consumer Restriction 插件允许用户根据 Route、Service 或 Consumer 来设置相应的访问限制。
 span
 ---
 <!--
