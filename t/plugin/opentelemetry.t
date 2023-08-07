@@ -29,22 +29,13 @@ plugin_attr:
         batch_span_processor:
             max_export_batch_size: 1
             inactive_timeout: 0.5
+        collector: 
+            address: 127.0.0.1:4318
+            request_timeout: 3
+            request_headers:
+                foo: bar
 _EOC_
         $block->set_value("extra_yaml_config", $extra_yaml_config);
-    }
-
-
-    if (!$block->extra_init_by_lua) {
-        my $extra_init_by_lua = <<_EOC_;
--- mock exporter http client
-local client = require("opentelemetry.trace.exporter.http_client")
-client.do_request = function()
-    ngx.log(ngx.INFO, "opentelemetry export span")
-    return "ok"
-end
-_EOC_
-
-        $block->set_value("extra_init_by_lua", $extra_init_by_lua);
     }
 
     if (!$block->request) {
@@ -106,11 +97,6 @@ __DATA__
 GET /opentracing
 --- response_body
 opentracing
---- wait: 1
---- grep_error_log eval
-qr/opentelemetry export span/
---- grep_error_log_out
-opentelemetry export span
 
 
 
