@@ -416,7 +416,7 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
         end
 
         -- ignore res with revision smaller then self.prev_index
-        if tonumber(res.result.header.revision) > self.prev_index then
+        if tonumber(res.result.header.revision) >= self.prev_index then
             local res2
             for _, evt in ipairs(res.result.events) do
                 if evt.kv.key:find(key) == 1 then
