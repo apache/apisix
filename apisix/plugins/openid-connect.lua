@@ -137,20 +137,24 @@ local schema = {
             properties = {
                 http_proxy = {
                     type = "string",
-                    description = "http proxy: http://proxy-server:80",
+                    description = "Http proxy: http://proxy-server:80",
                 },
                 https_proxy = {
                     type = "string",
-                    description = "https proxy: https://proxy-server:80",
+                    description = "Https proxy: https://proxy-server:80",
                 },
                 http_proxy_authorization = {
                     type = "string",
-                    description = "Basic [base64 username:password]",
+                    description = "Basic [base64 username:password].",
                 },
                 https_proxy_authorization = {
                     type = "string",
-                    description = "Basic [base64 username:password]",
+                    description = "Basic [base64 username:password].",
                 },
+                no_proxy = {
+                    type = "string",
+                    description = "A comma separated list of hosts that should not be proxied.",
+                }
             },
         }
     },
