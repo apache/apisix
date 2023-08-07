@@ -278,9 +278,6 @@ local function run_watch(premature)
         goto restart
     end
 
-    -- waiting for do_run_watch thread to handle the final etcd event
-    ngx_sleep(1)
-
     ngx_thread_kill(run_watch_th)
     -- notify child watchers
     produce_res(nil, "worker exited")
