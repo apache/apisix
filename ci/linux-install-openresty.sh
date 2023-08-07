@@ -38,6 +38,13 @@ OPENSSL3_PREFIX=${OPENSSL3_PREFIX-/home/runner}
 SSL_LIB_VERSION=${SSL_LIB_VERSION-openssl}
 
 if [ "$OPENRESTY_VERSION" == "source" ]; then
+    export openssl_prefix=/usr/local/openresty/openssl111
+    export zlib_prefix=/usr/local/openresty/zlib
+    export pcre_prefix=/usr/local/openresty/pcre
+
+    export cc_opt="-DNGX_LUA_ABORT_AT_PANIC -I${zlib_prefix}/include -I${pcre_prefix}/include -I${openssl_prefix}/include"
+    export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib"
+
     if [ "$COMPILE_OPENSSL3" == "yes" ]; then
         apt install -y build-essential
         git clone https://github.com/openssl/openssl
@@ -72,7 +79,8 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
     chmod +x build-apisix-base.sh
     ./build-apisix-base.sh latest
 
-    sudo apt-get install openresty-openssl111-debug-dev
+    sudo apt-get install -y openresty-openssl111 openresty-openssl111-debug-dev libldap2-dev openresty-pcre openresty-zlib
+
     exit 0
 fi
 
