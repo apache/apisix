@@ -78,7 +78,7 @@ dependencies = {
     "nanoid = 0.1-1",
     "lua-resty-mediador = 0.1.2-1",
     "lua-resty-ldap = 0.2.2-0",
-    "lua-resty-t1k = 1.0.3"
+    "lua-resty-t1k = 1.1.0"
 }
 
 build = {
