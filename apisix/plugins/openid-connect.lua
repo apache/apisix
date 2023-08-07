@@ -132,7 +132,7 @@ local schema = {
             default = false
         },
         proxy_opts = {
-            description = "access via openid server via a proxy server ",
+            description = "access openid server via a proxy server ",
             type = "object",
             properties = {
                 http_proxy = {
