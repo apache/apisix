@@ -62,20 +62,20 @@ You can add your cache configuration in you APISIX configuration file (`conf/con
 ```yaml title="conf/config.yaml"
 apisix:
   proxy_cache:
-  cache_ttl: 10s  # for caching on disk
-  zones:
-    - name: disk_cache_one
-      memory_size: 50m
-      disk_size: 1G
-      disk_path: /tmp/disk_cache_one
-      cache_levels: 1:2
-    # - name: disk_cache_two
-    #   memory_size: 50m
-    #   disk_size: 1G
-    #   disk_path: "/tmp/disk_cache_two"
-    #   cache_levels: "1:2"
-    - name: memory_cache
-      memory_size: 50m
+    cache_ttl: 10s  # 如果上游未指定缓存时间，则为默认磁盘缓存时间
+    zones:
+      - name: disk_cache_one
+        memory_size: 50m
+        disk_size: 1G
+        disk_path: /tmp/disk_cache_one
+        cache_levels: 1:2
+    #   - name: disk_cache_two
+    #     memory_size: 50m
+    #     disk_size: 1G
+    #     disk_path: "/tmp/disk_cache_two"
+    #     cache_levels: "1:2"
+      - name: memory_cache
+        memory_size: 50m
 ```
 
 ### Use disk-based caching
