@@ -37,6 +37,7 @@ local networks = {
     "arb-mainnet",
     "opt-mainnet",
     "scroll-alpha",
+    "scroll-testnet",
     "ckb-mirana",
     "starknet-mainnet",
     "starknet-testnet",
@@ -59,6 +60,7 @@ local networks = {
     "staging-arb-mainnet",
     "staging-opt-mainnet",
     "staging-scroll-alpha",
+    "staging-scroll-testnet",
     "staging-ckb-mirana",
     "staging-starknet-mainnet",
     "staging-starknet-testnet",
@@ -434,6 +436,7 @@ function _M.init()
             network == "staging-base-mainnet" or network == "base-mainnet" or
             network == "staging-base-testnet" or network == "base-testnet" or
             network == "staging-scroll-alpha" or network == "scroll-alpha" or
+            network == "staging-scroll-testnet" or network == "scroll-testnet" or
             network == "staging-linea-mainnet" or network == "linea-mainnet" or
             network == "staging-linea-testnet" or network == "linea-testnet" then
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
