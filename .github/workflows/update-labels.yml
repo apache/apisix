@@ -8,6 +8,7 @@ on:
 
 jobs:
   run-check:
+    if: ${{ !github.event.issue.pull_request }} # don't execute for PR comments
     runs-on: ubuntu-latest
     steps:
       - name: update labels when user responds
