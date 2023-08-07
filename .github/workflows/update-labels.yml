@@ -16,7 +16,3 @@ jobs:
         with:
           add-labels: 'user responded'
           remove-labels: 'wait for update'
-        if: ${{ github.event.comment.user.login == github.event.issue.user.login && contains(github.event.issue.labels.*.name, 'no response') && contains(github.event.issue.labels.*.name, 'wait for update') && !contains(github.event.issue.labels.*.name, 'user responded') }}
-        with:
-          add-labels: 'user responded'
-          remove-labels: 'wait for update'
