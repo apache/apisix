@@ -27,10 +27,11 @@ local bit = require("bit")
 local ffi = require("ffi")
 local ffi_str = ffi.string
 
+
 -- dubbo protocol spec: https://cn.dubbo.apache.org/zh-cn/overview/reference/protocols/tcp/
 local header_len = 16
-
 local _M = {}
+
 
 function _M.init_downstream(session)
     session.req_id_seq = 0
