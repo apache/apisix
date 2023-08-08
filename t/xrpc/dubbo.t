@@ -25,7 +25,7 @@ if ($version !~ m/\/apisix-nginx-module/) {
     plan('no_plan');
 }
 log_level("warn");
-$ENV{TEST_NGINX_DUBBO_PORT} ||= 1985;
+$ENV{TEST_NGINX_DUBBO_PORT} ||= 20880;
 
 add_block_preprocessor(sub {
     my ($block) = @_;
@@ -45,7 +45,7 @@ _EOC_
             ngx.req.read_body()
             local sock = ngx.socket.tcp()
             sock:settimeout(1000)
-            local ok, err = sock:connect("127.0.0.1", 20880)
+            local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_DUBBO_PORT)
             if not ok then
                 ngx.log(ngx.ERR, "failed to connect: ", err)
                 return ngx.exit(503)
