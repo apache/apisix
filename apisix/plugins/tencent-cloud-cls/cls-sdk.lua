@@ -41,6 +41,7 @@ local type = type
 local tostring = tostring
 local setmetatable = setmetatable
 local pcall = pcall
+local unpack = unpack
 
 -- api doc https://www.tencentcloud.com/document/product/614/16873
 local MAX_SINGLE_VALUE_SIZE = 1 * 1024 * 1024
