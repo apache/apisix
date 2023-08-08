@@ -209,7 +209,7 @@ fi
 
 bin/apisix quit
 
-sleep 1.5
+sleep 0.5
 
 if ps -ef | grep "worker process is shutting down" | grep -v "grep"; then
     echo "all workers should exited"
@@ -228,7 +228,7 @@ fi
 
 bin/apisix reload
 
-sleep 1.5
+sleep 0.5
 
 if ps -ef | grep "worker process is shutting down" | grep -v "grep"; then
     echo "old workers should exited"

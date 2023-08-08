@@ -261,19 +261,19 @@ end
 
 
 local function run_watch(premature)
-    local run_watch_th = ngx_thread_spawn(do_run_watch, premature)
-
     ::restart::
+    local run_watch_th = ngx_thread_spawn(do_run_watch, premature)
     local check_worker_th = ngx_thread_spawn(function ()
         while not exiting() do
             ngx_sleep(0.1)
         end
     end)
 
-    local ok, err = ngx_thread_wait(check_worker_th)
+    local ok, err = ngx_thread_wait(check_worker_th, run_watch_th)
 
     if not ok then
-        log.error("wait worker checker failed, retart checker, error: " .. err)
+        log.error("child thread exit failed, retart checker, error: " .. err)
+        ngx_thread_kill(run_watch_th)
         ngx_thread_kill(check_worker_th)
         goto restart
     end
@@ -416,7 +416,7 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
         end
 
         -- ignore res with revision smaller then self.prev_index
-        if tonumber(res.result.header.revision) >= self.prev_index then
+        if tonumber(res.result.header.revision) > self.prev_index then
             local res2
             for _, evt in ipairs(res.result.events) do
                 if evt.kv.key:find(key) == 1 then
