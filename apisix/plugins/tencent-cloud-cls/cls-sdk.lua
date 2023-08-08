@@ -65,8 +65,8 @@ local function get_ip(hostname)
     if not resolved.ip then
         -- DNS parsing failure
         local err = resolved
-        core.log.warn("resolve ip failed, hostname: " .. hostname .. ", error: " .. err)
-        insert_tab(ip_list, "127.0.0.1")
+        core.log.error("resolve ip failed, hostname: " .. hostname .. ", error: " .. err)
+        return nil, err
     else
         for _, v in ipairs(resolved.ip) do
             insert_tab(ip_list, v)
@@ -75,7 +75,7 @@ local function get_ip(hostname)
     return ip_list
 end
 
-local host_ip = tostring(unpack(get_ip(core_gethostname())))
+local host_ip
 local log_group_list = {}
 local log_group_list_pb = {
     logGroupList = log_group_list,
@@ -228,6 +228,13 @@ end
 
 
 function _M.send_cls_request(self, pb_obj)
+    if not host_ip then
+        local host_ip_list, err = get_ip(core_gethostname())
+        if not host_ip_list then
+            return false, err
+        end
+        host_ip = tostring(unpack(host_ip_list))
+    end
     -- recovery of stored pb_store
     local old_pb_state = pb.state(pb_state)
     local ok, pb_data = pcall(pb.encode, "cls.LogGroupList", pb_obj)
