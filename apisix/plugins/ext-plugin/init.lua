@@ -655,6 +655,12 @@ local rpc_handlers = {
                 end
             end
 
+            local len = rewrite:BodyLength()
+            if len > 0 then
+                let body = rewrite:BodyAsString()
+                ngx.req.read_body()
+                ngx.req.set_body_data(body)
+
             local len = rewrite:RespHeadersLength()
             if len > 0 then
                 local rewrite_resp_headers = {}
