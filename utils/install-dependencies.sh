@@ -112,7 +112,7 @@ function multi_distro_installation() {
         install_dependencies_with_apt "debian"
     elif grep -Eqi "Ubuntu" /etc/issue || grep -Eq "Ubuntu" /etc/*-release; then
         install_dependencies_with_apt "ubuntu"
-    elif grep -Eqi "Arch" /etc/issue || grep -Eq "Arch" /etc/*-release; then
+    elif grep -Eqi "Arch" /etc/issue || grep -Eqi "EndeavourOS" /etc/issue || grep -Eq "Arch" /etc/*-release; then
         install_dependencies_with_aur
     else
         echo "Non-supported operating system version"
