@@ -1,0 +1,19 @@
+name: Update label when user responds
+permissions:
+  issues: write
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  run-check:
+    if: ${{ !github.event.issue.pull_request }} # don't execute for PR comments
+    runs-on: ubuntu-latest
+    steps:
+      - name: update labels when user responds
+        uses: andymckay/labeler@master
+        if: ${{ github.event.comment.user.login == github.event.issue.user.login && contains(github.event.issue.labels.*.name, 'wait for update') && !contains(github.event.issue.labels.*.name, 'user responded') }}
+        with:
+          add-labels: 'user responded'
+          remove-labels: 'wait for update'
