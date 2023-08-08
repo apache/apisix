@@ -102,6 +102,7 @@ my $etcd_key = read_file("t/certs/etcd.key");
 $user_yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
+  proxy_mode: http&stream
   stream_proxy:
     tcp:
       - 9100
@@ -266,6 +267,7 @@ env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
 env PATH; # for searching external plugin runner's binary
 env TEST_NGINX_HTML_DIR;
+env OPENSSL111_BIN;
 _EOC_
 
 
@@ -710,6 +712,12 @@ _EOC_
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;
         lua_ssl_trusted_certificate cert/apisix.crt;
+
+        ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
+
+        ssl_client_hello_by_lua_block {
+            apisix.http_ssl_client_hello_phase()
+        }
 
         ssl_certificate_by_lua_block {
             apisix.http_ssl_phase()

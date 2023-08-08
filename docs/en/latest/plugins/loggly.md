@@ -79,7 +79,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/loggly -H 'X-API-KEY: ed
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 ### Full configuration
 
@@ -148,9 +148,9 @@ You can then view the logs on your Loggly Dashboard:
 
 ![Loggly Dashboard](../../../assets/images/plugin/loggly-dashboard.png)
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `file-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `file-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

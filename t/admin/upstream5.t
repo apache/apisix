@@ -339,7 +339,7 @@ passed
     }
 --- error_code: 400
 --- response_body
-{"error_msg":"can not delete this upstream, plugin in global_rule [1] is still using it now"}
+{"error_msg":"can not delete this upstream, plugin in global_rules [1] is still using it now"}
 
 
 

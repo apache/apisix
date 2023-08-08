@@ -81,7 +81,7 @@ With this configuration, your logs would be formatted as shown below:
 {"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 Once you have set up your SkyWalking OAP server, you can enable the Plugin on a specific Route as shown below:
 
@@ -111,9 +111,9 @@ Now, if you make a request to APISIX, it will be logged in your SkyWalking OAP s
 curl -i http://127.0.0.1:9080/hello
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `skywalking-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `skywalking-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

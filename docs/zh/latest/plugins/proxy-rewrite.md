@@ -103,7 +103,7 @@ curl -X GET http://127.0.0.1:9080/test/index.html
 127.0.0.1 - [26/Sep/2019:10:52:20 +0800] iresty.com GET /test/home.html HTTP/1.1 200 38 - curl/7.29.0 - 0.000 199 107
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `proxy-rewrite` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 

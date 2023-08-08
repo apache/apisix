@@ -74,6 +74,7 @@ passed
             local plugin = require("apisix.plugins.google-cloud-logging")
             local ok, err = plugin.check_schema({
                 auth_config = {
+                    client_email = "email@apisix.iam.gserviceaccount.com",
                     private_key = "private_key",
                     project_id = "apisix",
                     token_uri = "http://127.0.0.1:1980/token",
@@ -132,6 +133,7 @@ passed
             local plugin = require("apisix.plugins.google-cloud-logging")
             local ok, err = plugin.check_schema({
                 auth_config = {
+                    client_email = "email@apisix.iam.gserviceaccount.com",
                     private_key = "private_key",
                     project_id = "apisix",
                     token_uri = "http://127.0.0.1:1980/token",
@@ -190,6 +192,7 @@ value should match only one schema, but matches none
                 plugins = {
                     ["google-cloud-logging"] = {
                         auth_config = {
+                            client_email = "email@apisix.iam.gserviceaccount.com",
                             private_key = [[
 -----BEGIN RSA PRIVATE KEY-----
 MIIBOwIBAAJBAKeXgPvU/dAfVhOPk5BTBXCaOXy/0S3mY9VHyqvWZBJ97g6tGbLZ
@@ -260,6 +263,7 @@ Batch Processor[google-cloud-logging] exceeded the max_retry_count
                 plugins = {
                     ["google-cloud-logging"] = {
                         auth_config = {
+                            client_email = "email@apisix.iam.gserviceaccount.com",
                             private_key = [[
 -----BEGIN PRIVATE KEY-----
 MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDDzrFwnA3EvYyR
@@ -346,6 +350,7 @@ Batch Processor[google-cloud-logging] exceeded the max_retry_count
                 plugins = {
                     ["google-cloud-logging"] = {
                         auth_config = {
+                            client_email = "email@apisix.iam.gserviceaccount.com",
                             private_key = [[
 -----BEGIN PRIVATE KEY-----
 MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDDzrFwnA3EvYyR
@@ -428,6 +433,7 @@ hello world
                 plugins = {
                     ["google-cloud-logging"] = {
                         auth_config = {
+                            client_email = "email@apisix.iam.gserviceaccount.com",
                             private_key = [[
 -----BEGIN PRIVATE KEY-----
 MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDDzrFwnA3EvYyR
@@ -510,6 +516,7 @@ hello world
                 plugins = {
                     ["google-cloud-logging"] = {
                         auth_config = {
+                            client_email = "email@apisix.iam.gserviceaccount.com",
                             private_key = [[
 -----BEGIN PRIVATE KEY-----
 MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDDzrFwnA3EvYyR

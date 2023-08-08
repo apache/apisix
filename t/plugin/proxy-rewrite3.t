@@ -942,3 +942,60 @@ GET /test/plugin/proxy/rewrite/world HTTP/1.1
     }
 --- response_body
 /world/plugin_proxy_rewrite
+
+
+
+=== TEST 40: use regex uri with unsafe allowed
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                      "plugins": {
+                          "proxy-rewrite": {
+                              "regex_uri": [
+                                  "/hello/(.+)",
+                                  "/hello?unsafe_variable=$1"
+                              ],
+                              "use_real_request_uri_unsafe": true
+                           }
+                        },
+                      "upstream": {
+                          "nodes": {
+                              "127.0.0.1:8125": 1
+                          },
+                          "type": "roundrobin"
+                      },
+                      "uri": "/hello/*"
+                 }]]
+                 )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 41: hit
+--- request
+GET /hello/%ED%85%8C%EC%8A%A4%ED%8A%B8 HTTP/1.1
+--- http_config
+    server {
+        listen 8125;
+        location / {
+            content_by_lua_block {
+                ngx.say(ngx.var.request_uri)
+            }
+        }
+    }
+--- response_body
+/hello?unsafe_variable=%ED%85%8C%EC%8A%A4%ED%8A%B8

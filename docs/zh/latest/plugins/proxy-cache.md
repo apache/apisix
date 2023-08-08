@@ -58,22 +58,33 @@ description: 本文介绍了 Apache APISIX proxy-cache 插件的相关操作，�
 你可以在 APISIX 配置文件 `conf/config.yaml` 中添加你的缓存配置，示例如下：
 
 ```yaml title="conf/config.yaml"
-proxy_cache:                       # 代理缓存配置
-    cache_ttl: 10s                 # 如果上游未指定缓存时间，则为默认缓存时间
-    zones:                         # 缓存的参数
-    - name: disk_cache_one         # 缓存名称（缓存区域），管理员可以通过 admin api 中的 cache_zone 字段指定要使用的缓存区域
-      memory_size: 50m             # 共享内存的大小，用于存储缓存索引
-      disk_size: 1G                # 磁盘大小，用于存储缓存数据
-      disk_path: "/tmp/disk_cache_one" # 存储缓存数据的路径
-      cache_levels: "1:2"          # 缓存的层次结构级别
+apisix:
+  proxy_cache:
+    cache_ttl: 10s  # 如果上游未指定缓存时间，则为默认磁盘缓存时间
+    zones:
+      - name: disk_cache_one
+        memory_size: 50m
+        disk_size: 1G
+        disk_path: /tmp/disk_cache_one
+        cache_levels: 1:2
+    #   - name: disk_cache_two
+    #     memory_size: 50m
+    #     disk_size: 1G
+    #     disk_path: "/tmp/disk_cache_two"
+    #     cache_levels: "1:2"
+      - name: memory_cache
+        memory_size: 50m
 ```
 
-以下示例展示了如何在指定路由上启用 `proxy-cache` 插件，`cache_zone` 字段默认设置为 `disk_cache_one`：
+### 使用基于磁盘的缓存
+
+以下示例展示了如何在路由上启用 `proxy-cache` 插件。该插件默认使用基于磁盘的 `cache_strategy` 和默认使用`disk_cache_one` 为 `cache_zone`：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
+    "uri": "/ip",
     "plugins": {
         "proxy-cache": {
             "cache_key":  ["$uri", "-cache-id"],
@@ -86,11 +97,35 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
     },
     "upstream": {
         "nodes": {
-            "127.0.0.1:1999": 1
+            "httpbin.org": 1
         },
         "type": "roundrobin"
+    }
+}'
+```
+
+### 使用基于内存的缓存
+
+以下示例展示了如何在路由上启用 `proxy-cache` 插件，并使用基于内存的 `cache_strategy` 和相应的基于内存的 `cache_zone`。
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/ip",
+    "plugins": {
+        "proxy-cache": {
+            "cache_strategy": "memory",
+            "cache_zone": "memory_cache",
+            "cache_ttl": 10
+        }
     },
-    "uri": "/hello"
+    "upstream": {
+        "nodes": {
+            "httpbin.org": 1
+        },
+        "type": "roundrobin"
+    }
 }'
 ```
 
@@ -99,7 +134,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 按上述配置启用插件后，使用 `curl` 命令请求该路由：
 
 ```shell
-curl http://127.0.0.1:9080/hello -i
+curl http://127.0.0.1:9080/ip -i
 ```
 
 如果返回 `200` HTTP 状态码，并且响应头中包含 `Apisix-Cache-Status`字段，则表示该插件已启用：
@@ -115,7 +150,7 @@ hello
 如果你是第一次请求该路由，数据未缓存，那么 `Apisix-Cache-Status` 字段应为 `MISS`。此时再次请求该路由：
 
 ```shell
-curl http://127.0.0.1:9080/hello -i
+curl http://127.0.0.1:9080/ip -i
 ```
 
 如果返回的响应头中 `Apisix-Cache-Status` 字段变为 `HIT`，则表示数据已被缓存，插件生效：
@@ -135,7 +170,7 @@ hello
 为了清除缓存数据，你只需要指定请求的 method 为 `PURGE`：
 
 ```shell
-curl -i http://127.0.0.1:9080/hello -X PURGE
+curl -i http://127.0.0.1:9080/ip -X PURGE
 ```
 
 HTTP 响应码为 `200` 即表示删除成功，如果缓存的数据未找到将返回 `404`：
@@ -146,20 +181,20 @@ HTTP/1.1 200 OK
 
 :::
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "uri": "/hello",
+    "uri": "/ip",
     "plugins": {},
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:1999": 1
+            "httpbin.org": 1
         }
     }
 }'

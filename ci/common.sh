@@ -21,6 +21,7 @@ export_or_prefix() {
     export OPENRESTY_PREFIX="/usr/local/openresty-debug"
     export APISIX_MAIN="https://raw.githubusercontent.com/apache/incubator-apisix/master/rockspec/apisix-master-0.rockspec"
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
+    export OPENSSL111_BIN=$OPENRESTY_PREFIX/openssl111/bin/openssl
 }
 
 create_lua_deps() {
@@ -102,6 +103,9 @@ install_nodejs () {
 install_rust () {
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo sh -s -- -y
     source "$HOME/.cargo/env"
+    # 1.69.0 version required to compile lua-resty-ldap
+    rustup install 1.69.0
+    rustup default 1.69.0
 }
 
 set_coredns() {

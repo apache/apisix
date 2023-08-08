@@ -156,7 +156,7 @@ local function run_watch(premature)
                 log.error("etcd get: ", err)
                 ngx_sleep(3)
             else
-                watch_ctx.rev = tonumber(res.body.header.revision)
+                rev = tonumber(res.body.header.revision)
                 break
             end
         end
@@ -392,7 +392,7 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
         if tonumber(res.result.header.revision) > self.prev_index then
             local res2
             for _, evt in ipairs(res.result.events) do
-                if evt.kv.key:find(key) == 1 then
+                if core_str.find(evt.kv.key, key) == 1 then
                     if not res2 then
                         res2 = tablex.deepcopy(res)
                         table.clear(res2.result.events)

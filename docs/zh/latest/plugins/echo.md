@@ -92,7 +92,7 @@ HTTP/1.1 200 OK
 before the body modification hello world
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `echo` 插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 

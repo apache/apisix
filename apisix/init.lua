@@ -40,6 +40,7 @@ local apisix_upstream = require("apisix.upstream")
 local apisix_secret   = require("apisix.secret")
 local set_upstream    = apisix_upstream.set_by_route
 local apisix_ssl      = require("apisix.ssl")
+local apisix_global_rules    = require("apisix.global_rules")
 local upstream_util   = require("apisix.utils.upstream")
 local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
@@ -155,6 +156,8 @@ function _M.http_init_worker()
     consumer_group.init_worker()
     apisix_secret.init_worker()
 
+    apisix_global_rules.init_worker()
+
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()
 
@@ -175,11 +178,31 @@ end
 
 
 function _M.http_ssl_phase()
+    local ok, err = router.router_ssl.set(ngx.ctx.matched_ssl)
+    if not ok then
+        if err then
+            core.log.error("failed to fetch ssl config: ", err)
+        end
+        ngx_exit(-1)
+    end
+end
+
+
+function _M.http_ssl_client_hello_phase()
+    local sni, err = apisix_ssl.server_name(true)
+    if not sni or type(sni) ~= "string" then
+        local advise = "please check if the client requests via IP or uses an outdated " ..
+        "protocol. If you need to report an issue, " ..
+        "provide a packet capture file of the TLS handshake."
+        core.log.error("failed to find SNI: " .. (err or advise))
+        ngx_exit(-1)
+    end
+
     local ngx_ctx = ngx.ctx
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
 
-    local ok, err = router.router_ssl.match_and_set(api_ctx)
+    local ok, err = router.router_ssl.match_and_set(api_ctx, true, sni)
 
     ngx_ctx.matched_ssl = api_ctx.matched_ssl
     core.tablepool.release("api_ctx", api_ctx)
@@ -189,6 +212,13 @@ function _M.http_ssl_phase()
         if err then
             core.log.error("failed to fetch ssl config: ", err)
         end
+        core.log.error("failed to match any SSL certificate by SNI: ", sni)
+        ngx_exit(-1)
+    end
+
+    ok, err = apisix_ssl.set_protocols_by_clienthello(ngx_ctx.matched_ssl.value.ssl_protocols)
+    if not ok then
+        core.log.error("failed to set ssl protocols: ", err)
         ngx_exit(-1)
     end
 end
@@ -597,7 +627,8 @@ function _M.http_access_phase()
     local route = api_ctx.matched_route
     if not route then
         -- run global rule when there is no matching route
-        plugin.run_global_rules(api_ctx, router.global_rules, nil)
+        local global_rules = apisix_global_rules.global_rules()
+        plugin.run_global_rules(api_ctx, global_rules, nil)
 
         core.log.info("not find any matched route")
         return core.response.exit(404,
@@ -649,7 +680,8 @@ function _M.http_access_phase()
     api_ctx.route_name = route.value.name
 
     -- run global rule
-    plugin.run_global_rules(api_ctx, router.global_rules, nil)
+    local global_rules = apisix_global_rules.global_rules()
+    plugin.run_global_rules(api_ctx, global_rules, nil)
 
     if route.value.script then
         script.load(route, api_ctx)

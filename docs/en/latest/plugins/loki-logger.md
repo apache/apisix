@@ -43,10 +43,10 @@ When the Plugin is enabled, APISIX will serialize the request context informatio
 | tenant_id | string | False | fake | Loki tenant ID. According to Loki's [multi-tenancy documentation](https://grafana.com/docs/loki/latest/operations/multi-tenancy/#multi-tenancy), its default value is set to the default value `fake` under single-tenancy. |
 | log_labels | object | False | {job = "apisix"} | Loki log label. [APISIX variables](../apisix-variable.md) and [Nginx variables](http://nginx.org/en/docs/varindex.html) can be used by prefixing the string with `$`, both individual and combined, such as `$host` or `$remote_addr:$remote_port`. |
 | ssl_verify        | boolean       | False    | true | When set to `true`, verifies the SSL certificate. |
-| timeout           | integer       | False    | 3000ms  | [1, 60000]ms   | Timeout for the authorization service HTTP call. |
+| timeout           | integer       | False    | 3000ms | Timeout for the Loki service HTTP call. Range from 1 to 60,000ms.  |
 | keepalive         | boolean       | False    | true | When set to `true`, keeps the connection alive for multiple requests. |
-| keepalive_timeout | integer       | False    | 60000ms | [1000, ...]ms  | Idle time after which the connection is closed. |
-| keepalive_pool    | integer       | False    | 5       | [1, ...]ms     | Connection pool limit. |
+| keepalive_timeout | integer       | False    | 60000ms | Idle time after which the connection is closed. Range greater than or equal than 1000ms.  |
+| keepalive_pool    | integer       | False    | 5       | Connection pool limit. Range greater than or equal than 1. |
 | log_format | object | False    |          | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX variables](../apisix-variable.md) and [Nginx variables](http://nginx.org/en/docs/varindex.html) can be used by prefixing the string with `$`. |
 | include_req_body       | boolean | False    | false | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations. |
 | include_req_body_expr  | array   | False    |  | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more. |
@@ -89,7 +89,7 @@ With this configuration, your logs would be formatted as shown below:
 {"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
 ```
 
-## Enabling the plugin
+## Enable plugin
 
 The example below shows how you can enable the `loki-logger` plugin on a specific Route:
 
@@ -150,7 +150,7 @@ Look at `error.log` for such a log.
 
 The error can be diagnosed based on the error code in the `failed to process entries: loki server returned status: 401, body: no org id` and the response body of the loki server.
 
-### Getting errors when QPS is high?
+### Getting errors when RPS is high?
 
 - Make sure to `keepalive` related configuration is set properly. See [Attributes](#attributes) for more information.
 - Check the logs in `error.log`, look for such a log.

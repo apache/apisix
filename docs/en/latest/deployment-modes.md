@@ -97,9 +97,9 @@ deployment:
            prefix: /apisix
            timeout: 30
     certs:
-        cert: /path/to/ca-cert
-        cert_key: /path/to/ca-cert
-        trusted_ca_cert: /path/to/ca-cert
+        cert: /path/to/client.crt
+        cert_key: /path/to/client.key
+        trusted_ca_cert: /path/to/ca.crt
 #END
 ```
 
@@ -117,18 +117,18 @@ deployment:
         config_provider: etcd
         conf_server:
             listen: 0.0.0.0:9280
-            cert: /path/to/ca-cert
-            cert_key: /path/to/ca-cert
-            client_ca_cert: /path/to/ca-cert
+            cert: /path/to/server.crt
+            cert_key: /path/to/server.key
+            client_ca_cert: /path/to/ca.crt
     etcd:
        host:
            - https://${etcd_IP}:${etcd_Port}
        prefix: /apisix
        timeout: 30
     certs:
-        cert: /path/to/ca-cert
-        cert_key: /path/to/ca-cert
-        trusted_ca_cert: /path/to/ca-cert
+        cert: /path/to/client.crt
+        cert_key: /path/to/client.key
+        trusted_ca_cert: /path/to/ca.crt
 #END
 ```
 
@@ -143,15 +143,15 @@ deployment:
         config_provider: etcd
         conf_server:
             listen: 0.0.0.0:9280
-            cert: /path/to/ca-cert
-            cert_key: /path/to/ca-cert
+            cert: /path/to/server.crt
+            cert_key: /path/to/server.key
     etcd:
        host:
            - https://${etcd_IP}:${etcd_Port}
        prefix: /apisix
        timeout: 30
     certs:
-        trusted_ca_cert: /path/to/ca-cert
+        trusted_ca_cert: /path/to/ca.crt
 #END
 ```
 
@@ -159,7 +159,7 @@ deployment:
 
 ## Standalone
 
-Turning on the APISIX node in Stand-alone mode will no longer use the default etcd as the configuration center.
+Turning on the APISIX node in Standalone mode will no longer use the default etcd as the configuration center.
 
 This method is more suitable for two types of users:
 
@@ -170,7 +170,7 @@ The routing rules in the `conf/apisix.yaml` file are loaded into memory immediat
 
 *Note*: Reloading and updating routing rules are all hot memory updates. There is no replacement of working processes, since it's a hot update.
 
-Since the current Admin API is based on the etcd configuration center solution, enable Admin API is not allowed when the Stand-alone mode is enabled.
+Since the current Admin API is based on the etcd configuration center solution, enable Admin API is not allowed when the Standalone mode is enabled.
 
 Standalone mode can only be enabled when we set the role of APISIX as data plane. We set `deployment.role` to `data_plane` and `deployment.role_data_plane.config_provider` to `yaml`.
 
@@ -432,5 +432,27 @@ upstreams:
       "127.0.0.1:1995": 1
     type: roundrobin
     id: 1
+#END
+```
+
+### How to configure protos
+
+```yaml
+protos:
+  - id: helloworld
+    desc: hello world
+    content: >
+      syntax = "proto3";
+      package helloworld;
+
+      service Greeter {
+        rpc SayHello (HelloRequest) returns (HelloReply) {}
+      }
+      message HelloRequest {
+        string name = 1;
+      }
+      message HelloReply {
+        string message = 1;
+      }
 #END
 ```

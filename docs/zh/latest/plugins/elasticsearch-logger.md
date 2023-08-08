@@ -32,7 +32,7 @@ description: 本文介绍了 API 网关 Apache APISIX 的 elasticsearch-logger �
 
 `elasticsearch-logger` 插件用于将 `Apache APISIX` 的请求日志转发到 `Elasticsearch` 中进行分析和存储。
 
-启用该插件后 APISIX 将在 `Log Phase` 获取请求上下文信息并序列化为 [Bulk 格式](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html#docs-bulk) 后提交到批处理队列中，当触发批处理队列每批次最大处理容量或刷新缓冲区的最大时间时会将队列中的数据提交到 Elaticsearch 中。更多信息，请参考 [Batch-Processor](./batch-processor.md)。
+启用该插件后 APISIX 将在 `Log Phase` 获取请求上下文信息并序列化为 [Bulk 格式](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html#docs-bulk) 后提交到批处理队列中，当触发批处理队列每批次最大处理容量或刷新缓冲区的最大时间时会将队列中的数据提交到 Elaticsearch 中。更多信息，请参考 [Batch-Processor](../batch-processor.md)。
 
 ## 属性
 
@@ -192,7 +192,7 @@ curl -X GET "http://127.0.0.1:9200/services/_search" | jq .
 
 | 名称       | 类型   | 必选项 | 默认值                                                       | 有效值 | 描述                                                         |
 | ---------- | ------ | ------ | ------------------------------------------------------------ | ------ | ------------------------------------------------------------ |
-| log_format | object | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |        | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](https://github.com/apache/apisix/blob/master/docs/en/latest/apisix-variable.md) 或 [Nginx 内置变量](http://nginx.org/en/docs/varindex.html)。请注意，**该设置是全局生效的**，因此在指定 log_format 后，将对所有绑定 elasticsearch-logger 的 Route 或 Service 生效。 |
+| log_format | object | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |        | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [Nginx 内置变量](http://nginx.org/en/docs/varindex.html)。请注意，**该设置是全局生效的**，因此在指定 log_format 后，将对所有绑定 elasticsearch-logger 的 Route 或 Service 生效。 |
 
 ### 设置日志格式示例
 
@@ -255,16 +255,16 @@ curl -X GET "http://127.0.0.1:9200/services/_search" | jq .
 }
 ```
 
-### 禁用插件元数据
+### 删除插件元数据
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 ```
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \

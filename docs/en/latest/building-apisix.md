@@ -52,7 +52,7 @@ curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-depend
 Save the APISIX version to an environment variable to be used next:
 
 ```shell
-APISIX_VERSION='3.3.0'
+APISIX_VERSION='3.4.0'
 ```
 
 Clone the APISIX source code of this version into a new directory `apisix-APISIX_VERSION`:
@@ -272,4 +272,4 @@ To run a specific test case, use the command below:
 prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 ```
 
-See [testing framework](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md) for more details.
+See [testing framework](./internal/testing-framework.md) for more details.

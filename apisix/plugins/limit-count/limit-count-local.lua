@@ -65,10 +65,7 @@ end
 
 function _M.incoming(self, key, commit, conf, cost)
     local delay, remaining = self.limit_count:incoming(key, commit, cost)
-    local reset = 0
-    if not delay then
-        return delay, remaining, reset
-    end
+    local reset
 
     if remaining == conf.count - cost then
         reset = set_endtime(self, key, conf.time_window)

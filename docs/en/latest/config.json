@@ -1,5 +1,5 @@
 {
-  "version": "3.3.0",
+  "version": "3.4.0",
   "sidebar": [
     {
       "type": "category",
@@ -26,11 +26,18 @@
       "items": [
         "tutorials/expose-api",
         "tutorials/protect-api",
-        "tutorials/observe-your-api",
+        {
+          "type": "category",
+          "label": "Observability",
+          "items": [
+            "tutorials/observe-your-api",
+            "tutorials/health-check",
+            "tutorials/monitor-api-health-check"
+          ]
+        },
         "tutorials/manage-api-consumers",
         "tutorials/cache-api-responses",
         "tutorials/add-multiple-api-versions",
-        "tutorials/health-check",
         "tutorials/client-to-apisix-mtls",
         "tutorials/websocket-authentication"
       ]
@@ -119,7 +126,8 @@
             "plugins/consumer-restriction",
             "plugins/csrf",
             "plugins/public-api",
-            "plugins/gm"
+            "plugins/gm",
+            "plugins/chaitin-waf"
           ]
         },
         {
@@ -359,6 +367,10 @@
         {
           "type": "doc",
           "id": "profile"
+        },
+        {
+          "type": "doc",
+          "id": "ssl-protocol"
         }
       ]
     },

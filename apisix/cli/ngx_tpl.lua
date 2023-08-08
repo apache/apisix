@@ -124,7 +124,7 @@ http {
 
 {% end %}
 
-{% if stream_proxy then %}
+{% if enable_stream then %}
 stream {
     lua_package_path  "{*extra_lua_path*}$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
                       .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
@@ -653,6 +653,10 @@ http {
         }
 
         {% if ssl.enable then %}
+        ssl_client_hello_by_lua_block {
+            apisix.http_ssl_client_hello_phase()
+        }
+
         ssl_certificate_by_lua_block {
             apisix.http_ssl_phase()
         }

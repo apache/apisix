@@ -81,7 +81,7 @@ With this configuration, your logs would be formatted as shown below:
 [{"time":1673976669.269,"source":"apache-apisix-splunk-hec-logging","event":{"host":"localhost","client_ip":"127.0.0.1","@timestamp":"2023-01-09T14:47:25+08:00","route_id":"1"},"host":"DESKTOP-2022Q8F-wsl","sourcetype":"_json"}]
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 ### Full configuration
 
@@ -152,9 +152,9 @@ You should be able to login and search these logs from your Splunk dashboard:
 
 ![splunk hec search view](../../../assets/images/plugin/splunk-hec-admin-en.png)
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `splunk-hec-logging` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `splunk-hec-logging` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
