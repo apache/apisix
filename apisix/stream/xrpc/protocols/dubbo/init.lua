@@ -39,6 +39,7 @@ function _M.init_downstream(session)
     return xrpc_socket.downstream.socket()
 end
 
+
 local function parse_dubbo_header(header)
     for i = 1, header_len do
         local currentByte = header:byte(i)
@@ -74,6 +75,7 @@ local function parse_dubbo_header(header)
         data_length = data_length
     }
 end
+
 
 local function read_data(sk, is_req)
     local header_data, err = sk:read(header_len)
@@ -111,13 +113,16 @@ local function read_data(sk, is_req)
     return true, nil, false
 end
 
+
 local function read_req(sk)
     return read_data(sk, true)
 end
 
+
 local function read_reply(sk)
     return read_data(sk, false)
 end
+
 
 local function handle_reply(session, sk)
     local ok, err = read_reply(sk)
@@ -129,6 +134,7 @@ local function handle_reply(session, sk)
 
     return ctx
 end
+
 
 function _M.from_downstream(session, downstream)
     local read_pipeline = false
@@ -168,6 +174,7 @@ function _M.from_downstream(session, downstream)
     return OK, ctx
 end
 
+
 function _M.connect_upstream(session, ctx)
     local conf = session.upstream_conf
     local nodes = conf.nodes
@@ -191,6 +198,7 @@ function _M.disconnect_upstream(session, upstream)
     sdk.disconnect_upstream(upstream, session.upstream_conf)
 end
 
+
 function _M.to_upstream(session, ctx, downstream, upstream)
     local ok, err = upstream:move(downstream)
     if not ok then
@@ -200,6 +208,7 @@ function _M.to_upstream(session, ctx, downstream, upstream)
 
     return OK
 end
+
 
 function _M.from_upstream(session, downstream, upstream)
     local ctx = handle_reply(session, upstream)
@@ -213,7 +222,9 @@ function _M.from_upstream(session, downstream, upstream)
     return DONE, ctx
 end
 
+
 function _M.log(_, _)
 end
+
 
 return _M
