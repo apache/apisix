@@ -32,14 +32,16 @@ description: Consumer Restriction 插件允许用户根据 Route、Service 或 C
 
 ## 属性
 
-| 名称     | 类型          | 必选项   | 默认值            | 有效值                    | 描述                          |
-| --------- | ------------- | ------ | -----------------| -------------------------|------------------------|
-| type      | string    | 否    | consumer_name    | ["consumer_name", "consumer_group_id", "service_id", "route_id"] | 支持设置访问限制的对象类型。 |
-| whitelist | array[string] | 是    |                  |                        | 加入白名单的对象，优先级高于 `allowed_by_methods`。 |
-| blacklist | array[string] | 是    |                  |                        | 加入黑名单的对象，优先级高于 `whitelist`。 |
-| rejected_code | integer   | 否    | 403              | [200,...]          | 当请求被拒绝时，返回的 HTTP 状态码。    |
-| rejected_msg | string   | 否    |               |                   | 当请求被拒绝时，返回的错误信息。     |
-| allowed_by_methods | array[object] | 否     |            | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE", "PURGE"] | 为 Consumer 设置的允许的 HTTP 方法列表。 |
+| 名称                       | 类型          | 必选项 | 默认值        | 有效值                                                       | 描述                                                         |
+| -------------------------- | ------------- | ------ | ------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| type                       | string        | 否     | consumer_name | ["consumer_name", "consumer_group_id", "service_id", "route_id"] | 支持设置访问限制的对象类型。                                 |
+| whitelist                  | array[string] | 是     |               |                                                              | 加入白名单的对象，优先级高于`allowed_by_methods`。           |
+| blacklist                  | array[string] | 是     |               |                                                              | 加入黑名单的对象，优先级高于`whitelist`。                    |
+| rejected_code              | integer       | 否     | 403           | [200,...]                                                    | 当请求被拒绝时，返回的 HTTP 状态码。                         |
+| rejected_msg               | string        | 否     |               |                                                              | 当请求被拒绝时，返回的错误信息。                             |
+| allowed_by_methods         | array[object] | 否     |               |                                                              | 一组为 Consumer 设置允许的配置，包括用户名和允许的 HTTP 方法列表。 |
+| allowed_by_methods.user    | string        | 否     |               |                                                              | 为 Consumer 设置的用户名。                                   |
+| allowed_by_methods.methods | array[string] | 否     |               | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE", "PURGE"] | 为 Consumer 设置的允许的 HTTP 方法列表。                     |
 
 :::note
 
