@@ -229,13 +229,6 @@ end
 
 
 function _M.send_cls_request(self, pb_obj)
-    if not host_ip then
-        local host_ip_list, err = get_ip(core_gethostname())
-        if not host_ip_list then
-            return false, err
-        end
-        host_ip = tostring(unpack(host_ip_list))
-    end
     -- recovery of stored pb_store
     local old_pb_state = pb.state(pb_state)
     local ok, pb_data = pcall(pb.encode, "cls.LogGroupList", pb_obj)
@@ -288,6 +281,15 @@ function _M.send_to_cls(self, logs)
     -- sums of all value in all LogGroup should be no more than 5MB
     -- so send whenever size exceed max size
     local group_list_start = 1
+
+    if not host_ip then
+        local host_ip_list, err = get_ip(core_gethostname())
+        if not host_ip_list then
+            return false, err
+        end
+        host_ip = tostring(unpack(host_ip_list))
+    end
+
     for i = 1, #logs, 1 do
         local contents, log_size = normalize_log(logs[i])
         if log_size > MAX_LOG_GROUP_VALUE_SIZE then
