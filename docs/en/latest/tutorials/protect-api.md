@@ -37,7 +37,7 @@ This represents the configuration of the plugins that are executed during the HT
 
 :::note
 
-If [Route](../terminology/route.md), [Service](../terminology/service.md), [Plugin Config](../terminology/plugin-config.md) or Consumer are all bound to the same for plugins, only one plugin configuration will take effect. The priority of plugin configurations is: Consumer > Route > Plugin Config > Service. At the same time, there are 6 stages involved in the plugin execution process, namely `rewrite`, `access`, `before_proxy`, `header_filter`, `body_filter` and `log`.
+If [Route](../terminology/route.md), [Service](../terminology/service.md), [Plugin Config](../terminology/plugin-config.md) or Consumer are all bound to the same for plugins, only one plugin configuration will take effect. The priority of plugin configurations is: `Consumer` > `Route` > `Plugin Config` > `Service`. Plugins configured in `Global Rules` will be executed first at all times. At the same time, there are 6 stages involved in the plugin execution process, namely `rewrite`, `access`, `before_proxy`, `header_filter`, `body_filter` and `log`.
 
 :::
 
