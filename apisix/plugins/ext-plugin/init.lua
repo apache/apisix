@@ -640,6 +640,10 @@ local rpc_handlers = {
             if path then
                 path = core.utils.uri_safe_encode(path)
                 var.upstream_uri = path
+
+                if var.args then
+                    var.upstream_uri = path .. '?' .. var.args
+                end
             end
 
             local len = rewrite:HeadersLength()
