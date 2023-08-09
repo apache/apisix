@@ -132,16 +132,16 @@ local schema = {
             default = false
         },
         proxy_opts = {
-            description = "access openid server via a proxy server ",
+            description = "HTTP proxy server be used to access identity server.",
             type = "object",
             properties = {
                 http_proxy = {
                     type = "string",
-                    description = "Http proxy: http://proxy-server:80",
+                    description = "HTTP proxy like: http://proxy-server:80.",
                 },
                 https_proxy = {
                     type = "string",
-                    description = "Https proxy: https://proxy-server:80",
+                    description = "HTTPS proxy like: http://proxy-server:80.",
                 },
                 http_proxy_authorization = {
                     type = "string",
@@ -153,7 +153,7 @@ local schema = {
                 },
                 no_proxy = {
                     type = "string",
-                    description = "A comma separated list of hosts that should not be proxied.",
+                    description = "Comma separated list of hosts that should not be proxied.",
                 }
             },
         }
