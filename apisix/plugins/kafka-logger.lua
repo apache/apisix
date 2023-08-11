@@ -146,6 +146,17 @@ local _M = {
     metadata_schema = metadata_schema,
 }
 
+local function hide_password_in_conf(conf)
+    if conf.brokers then
+        for _, broker in pairs(conf.brokers) do
+            if broker.sasl_config and broker.sasl_config.password then
+                broker.sasl_config.password = "****" -- hide password
+            end
+        end
+    end
+    return conf
+end
+
 
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
@@ -156,7 +167,7 @@ function _M.check_schema(conf, schema_type)
     if not ok then
         return nil, err
     end
-    return log_util.check_log_schema(conf)
+    return log_util.check_log_schema(hide_password_in_conf(conf))
 end
 
 
@@ -209,21 +220,22 @@ end
 
 
 function _M.body_filter(conf, ctx)
-    log_util.collect_body(conf, ctx)
+    log_util.collect_body(hide_password_in_conf(conf), ctx)
 end
 
 
 function _M.log(conf, ctx)
     local entry
+    local safeconf = hide_password_in_conf(conf)
     if conf.meta_format == "origin" then
-        entry = log_util.get_req_original(ctx, conf)
+        entry = log_util.get_req_original(ctx, safeconf)
         -- core.log.info("origin entry: ", entry)
 
     else
-        entry = log_util.get_log_entry(plugin_name, conf, ctx)
+        entry = log_util.get_log_entry(plugin_name, safeconf, ctx)
     end
 
-    if batch_processor_manager:add_entry(conf, entry) then
+    if batch_processor_manager:add_entry(safeconf, entry) then
         return
     end
 
@@ -278,7 +290,7 @@ function _M.log(conf, ctx)
         return send_kafka_data(conf, data, prod)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
+    batch_processor_manager:add_entry_to_new_processor(safeconf, entry, ctx, func)
 end
 
 
