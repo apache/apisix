@@ -152,7 +152,7 @@ jobs:
 
     - name: Run test cases
       run: |
-        docker exec centos7Instance bash -c "cd apisix && chmod 777 ./ci/pod//etc/otelcol-contrib/data-otlp.json && ./ci/centos7-ci.sh run_case"
+        docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
 
     - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
       name: Save docker images

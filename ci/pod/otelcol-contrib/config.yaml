@@ -1,9 +1,3 @@
-service:
-  pipelines:
-    traces:
-      receivers: [otlp]
-      processors: []
-      exporters: [file]
 receivers:
   otlp:
     protocols:
@@ -12,3 +6,8 @@ receivers:
 exporters:
   file:
     path: /etc/otelcol-contrib/data-otlp.json
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [file]

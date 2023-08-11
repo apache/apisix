@@ -16,18 +16,11 @@
 #
 
 use t::APISIX 'no_plan';
+add_block_preprocessor(sub {
+    my ($block) = @_;
 
-repeat_each(1);
-no_long_string();
-no_root_location();
-log_level("debug");
-
-run_tests;
-
-__DATA__
-
-=== TEST 1: add plugin
---- extra_yaml_config
+    if (!$block->extra_yaml_config) {
+        my $extra_yaml_config = <<_EOC_;
 plugins:
     - opentelemetry
 plugin_attr:
@@ -41,6 +34,22 @@ plugin_attr:
             request_timeout: 3
             request_headers:
                 foo: bar
+_EOC_
+        $block->set_value("extra_yaml_config", $extra_yaml_config);
+    }
+
+    $block;
+});
+repeat_each(1);
+no_long_string();
+no_root_location();
+log_level("debug");
+
+run_tests;
+
+__DATA__
+
+=== TEST 1: add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -57,11 +66,11 @@ plugin_attr:
                     },
                     "upstream": {
                         "nodes": {
-                            "mockbin.org:80": 1
+                            "127.0.0.1:1980": 1
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/request"
+                    "uri": "/opentracing"
                 }]]
                 )
 
@@ -77,10 +86,15 @@ GET /t
 done
 
 
-
 === TEST 2: trigger opentelemetry
 --- request
-GET /request
---- error_code: 403
+GET /opentracing
+--- wait: 2
 --- response_body
-error code: 1003
+opentracing
+
+
+
+
+
+
