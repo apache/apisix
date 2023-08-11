@@ -29,7 +29,7 @@ plugin_attr:
         batch_span_processor:
             max_export_batch_size: 1
             inactive_timeout: 0.5
-        collector: 
+        collector:
             address: 127.0.0.1:4318
             request_timeout: 3
             request_headers:
