@@ -52,7 +52,7 @@ local next         = next
 local assert       = assert
 local rand         = math.random
 local constants    = require("apisix.constants")
---local health_check = require("resty.etcd.health_check")
+local health_check = require("resty.etcd.health_check")
 local semaphore    = require("ngx.semaphore")
 local tablex       = require("pl.tablex")
 local ngx_thread_spawn = ngx.thread.spawn
@@ -64,10 +64,10 @@ local is_http = ngx.config.subsystem == "http"
 local err_etcd_grpc_engine_timeout = "context deadline exceeded"
 local err_etcd_grpc_ngx_timeout = "timeout"
 local err_etcd_unhealthy_all = "has no healthy etcd endpoint available"
---local health_check_shm_name = "etcd-cluster-health-check"
---if not is_http then
---    health_check_shm_name = health_check_shm_name .. "-stream"
---end
+local health_check_shm_name = "etcd-cluster-health-check"
+if not is_http then
+    health_check_shm_name = health_check_shm_name .. "-stream"
+end
 local created_obj  = {}
 local loaded_configuration = {}
 local watch_ctx
@@ -825,7 +825,6 @@ local function _automatic_fetch(premature, self)
         return
     end
 
-    --[[
     if not (health_check.conf and health_check.conf.shm_name) then
         -- used for worker processes to synchronize configuration
         local _, err = health_check.init({
@@ -838,7 +837,6 @@ local function _automatic_fetch(premature, self)
             log.warn("fail to create health_check: " .. err)
         end
     end
-    --]]
 
     local i = 0
     while not exiting() and self.running and i <= 32 do
