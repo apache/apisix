@@ -55,18 +55,3 @@ local use_apisix_base = true
 if not or_info:find("apisix-nginx-module", 1, true) then
     use_apisix_base = false
 end
-
-local res, err
-if arg[1] == "conf_server" then
-    res, err = snippet.generate_conf_server(
-        {
-            apisix_home = "t/servroot/",
-            use_apisix_base = use_apisix_base,
-        },
-        yaml_conf)
-end
-
-if not res then
-    error(err or "none")
-end
-print(res)

@@ -41,8 +41,6 @@ In the traditional deployment mode, one instance of APISIX will be both the `dat
 
 ![traditional deployment mode](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/deployment-traditional.png)
 
-There will be a conf server that listens on the UNIX socket and acts as a proxy between APISIX and etcd. Both the data and the control planes connect to this conf server via HTTP.
-
 An example configuration of the traditional deployment mode is shown below:
 
 ```yaml title="conf/config.yaml"
@@ -106,7 +104,6 @@ deployment:
 The instance of APISIX deployed as the control plane will:
 
 1. Listen on port `9180` and handle Admin API requests.
-2. Provide the conf server which will listen on port `9280`. Both the control plane and the data plane will connect to this via HTTPS enforced by mTLS.
 
 The example below shows the configuration of an APISIX instance as *control plane* in the decoupled mode:
 
@@ -115,11 +112,6 @@ deployment:
     role: control_plane
     role_control_plane:
         config_provider: etcd
-        conf_server:
-            listen: 0.0.0.0:9280
-            cert: /path/to/server.crt
-            cert_key: /path/to/server.key
-            client_ca_cert: /path/to/ca.crt
     etcd:
        host:
            - https://${etcd_IP}:${etcd_Port}
@@ -141,10 +133,6 @@ deployment:
     role: control_plane
     role_control_plane:
         config_provider: etcd
-        conf_server:
-            listen: 0.0.0.0:9280
-            cert: /path/to/server.crt
-            cert_key: /path/to/server.key
     etcd:
        host:
            - https://${etcd_IP}:${etcd_Port}
