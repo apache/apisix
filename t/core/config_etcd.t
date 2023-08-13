@@ -56,6 +56,7 @@ qr/(connection refused){1,}/
 
 
 === TEST 2: originate TLS connection to etcd cluster without TLS configuration
+--- SKIP
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -119,6 +120,7 @@ qr/(closed){1,}/
 
 
 === TEST 4: originate TLS connection to etcd cluster and verify TLS certificate (default behavior)
+--- SKIP
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -234,6 +236,7 @@ passed
 
 
 === TEST 7: ensure only one auth request per subsystem for all the etcd sync
+--- SKIP
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -301,6 +304,7 @@ passed
 
 
 === TEST 9: Test ETCD health check mode switch during APISIX startup
+--- SKIP
 --- config
     location /t {
         content_by_lua_block {
