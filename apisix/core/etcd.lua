@@ -145,13 +145,12 @@ local function new()
         end
     end
 
-    health_check.disable()
-    --if not health_check.conf then
-    --    health_check.init({
-    --        max_fails = 1,
-    --        retry = true,
-    --    })
-    --end
+    if not health_check.conf then
+        health_check.init({
+            max_fails = 1,
+            retry = true,
+        })
+    end
 
     return _new(etcd_conf)
 end
