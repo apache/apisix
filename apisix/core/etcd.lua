@@ -32,12 +32,10 @@ local pcall             = pcall
 local setmetatable      = setmetatable
 local string            = string
 local tonumber          = tonumber
-local ngx_config_prefix = ngx.config.prefix()
 local ngx_socket_tcp    = ngx.socket.tcp
 local ngx_get_phase     = ngx.get_phase
 
 
-local is_http = ngx.config.subsystem == "http"
 local _M = {}
 
 
