@@ -55,42 +55,6 @@ qr/(connection refused){1,}/
 
 
 
-=== TEST 2: originate TLS connection to etcd cluster without TLS configuration
---- SKIP
---- yaml_config
-apisix:
-  node_listen: 1984
-  ssl:
-    ssl_trusted_certificate: t/servroot/conf/cert/etcd.pem
-deployment:
-  role: traditional
-  role_traditional:
-    config_provider: etcd
-  etcd:
-    host:
-      - "https://127.0.0.1:2379"
---- extra_init_by_lua
-local health_check = require("resty.etcd.health_check")
-health_check.get_target_status = function()
-    return true
-end
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.sleep(4)
-            ngx.say("ok")
-        }
-    }
---- timeout: 5
---- request
-GET /t
---- grep_error_log chop
-peer closed connection in SSL handshake while SSL handshaking to upstream
---- grep_error_log_out eval
-qr/(peer closed connection in SSL handshake while SSL handshaking to upstream){1,}/
-
-
-
 === TEST 3: originate plain connection to etcd cluster which enables TLS
 --- yaml_config
 apisix:
@@ -116,42 +80,6 @@ GET /t
 closed
 --- grep_error_log_out eval
 qr/(closed){1,}/
-
-
-
-=== TEST 4: originate TLS connection to etcd cluster and verify TLS certificate (default behavior)
---- SKIP
---- yaml_config
-apisix:
-  node_listen: 1984
-  ssl:
-    ssl_trusted_certificate: t/servroot/conf/cert/etcd.pem
-deployment:
-  role: traditional
-  role_traditional:
-    config_provider: etcd
-  etcd:
-    host:
-      - "https://127.0.0.1:12379"
---- extra_init_by_lua
-local health_check = require("resty.etcd.health_check")
-health_check.get_target_status = function()
-    return true
-end
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.sleep(4)
-            ngx.say("ok")
-        }
-    }
---- timeout: 5
---- request
-GET /t
---- grep_error_log chop
-10:certificate has expired
---- grep_error_log_out eval
-qr/(10:certificate has expired){1,}/
 
 
 
@@ -235,43 +163,6 @@ passed
 
 
 
-=== TEST 7: ensure only one auth request per subsystem for all the etcd sync
---- SKIP
---- yaml_config
-apisix:
-  node_listen: 1984
-deployment:
-  role: traditional
-  role_traditional:
-    config_provider: etcd
-  etcd:
-    host:
-      - "http://127.0.0.1:1980" -- fake server port
-    timeout: 1
-    user: root                    # root username for etcd
-    password: 5tHkHhYkjr6cQY      # root password for etcd
---- extra_init_by_lua
-local health_check = require("resty.etcd.health_check")
-health_check.get_target_status = function()
-    return true
-end
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.sleep(0.5)
-        }
-    }
---- request
-GET /t
---- grep_error_log eval
-qr/etcd auth failed/
---- grep_error_log_out
-etcd auth failed
-etcd auth failed
-etcd auth failed
-
-
-
 === TEST 8: ensure add prefix automatically for _M.getkey
 --- config
     location /t {
@@ -300,26 +191,6 @@ GET /t
 --- response_body
 passed
 passed
-
-
-
-=== TEST 9: Test ETCD health check mode switch during APISIX startup
---- SKIP
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.say("passed")
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- grep_error_log eval
-qr/healthy check use \S+ \w+/
---- grep_error_log_out eval
-qr/healthy check use round robin
-(healthy check use ngx.shared dict){1,}/
 
 
 
