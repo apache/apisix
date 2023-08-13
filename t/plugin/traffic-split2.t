@@ -798,4 +798,4 @@ proxy request to 127.0.0.1:1980
 GET /t
 --- error_code: 500
 --- response_body
-failed to fetch upstream info by upstream id [invalid-id], response code: 404
+failed to fetch upstream info by upstream id: invalid-id
