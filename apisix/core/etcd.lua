@@ -32,10 +32,19 @@ local pcall             = pcall
 local setmetatable      = setmetatable
 local string            = string
 local tonumber          = tonumber
+local ngx_config_prefix = ngx.config.prefix()
+local ngx_socket_tcp    = ngx.socket.tcp
 local ngx_get_phase     = ngx.get_phase
 
 
+local is_http = ngx.config.subsystem == "http"
 local _M = {}
+
+
+local function has_mtls_support()
+    local s = ngx_socket_tcp()
+    return s.tlshandshake ~= nil
+end
 
 
 local function _new(etcd_conf)
@@ -117,9 +126,27 @@ local function new()
         etcd_conf.trusted_ca = local_conf.apisix.ssl.ssl_trusted_certificate
     end
 
-    -- if an unhealthy etcd node is selected in a single admin read/write etcd operation,
-    -- the retry mechanism for health check can select another healthy etcd node
-    -- to complete the read/write etcd operation.
+    if local_conf.deployment then
+        if local_conf.deployment.role == "control_plane" or
+            local_conf.deployment.role == "data_plane" then
+            if has_mtls_support() and local_conf.deployment.certs.cert then
+                local cert = local_conf.deployment.certs.cert
+                local cert_key = local_conf.deployment.certs.cert_key
+
+                if not etcd_conf.tls then
+                    etcd_conf.tls = {}
+                end
+
+                etcd_conf.tls.cert = cert
+                etcd_conf.tls.key = cert_key
+            end
+        end
+
+        if local_conf.deployment.certs and local_conf.deployment.certs.trusted_ca_cert then
+            etcd_conf.trusted_ca = local_conf.deployment.certs.trusted_ca_cert
+        end
+    end
+
     if not health_check.conf then
         health_check.init({
             max_fails = 1,
