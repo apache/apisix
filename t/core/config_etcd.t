@@ -55,7 +55,7 @@ qr/(connection refused){1,}/
 
 
 
-=== TEST 3: originate plain connection to etcd cluster which enables TLS
+=== TEST 2: originate plain connection to etcd cluster which enables TLS
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -83,7 +83,7 @@ qr/(closed){1,}/
 
 
 
-=== TEST 5: set route(id: 1) to etcd cluster with TLS
+=== TEST 3: set route(id: 1) to etcd cluster with TLS
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -127,7 +127,7 @@ passed
 
 
 
-=== TEST 6: get route(id: 1) from etcd cluster with TLS
+=== TEST 4: get route(id: 1) from etcd cluster with TLS
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -163,7 +163,7 @@ passed
 
 
 
-=== TEST 8: ensure add prefix automatically for _M.getkey
+=== TEST 5: ensure add prefix automatically for _M.getkey
 --- config
     location /t {
         content_by_lua_block {
@@ -194,7 +194,7 @@ passed
 
 
 
-=== TEST 10: last_err can be nil when the reconnection is successful
+=== TEST 6: last_err can be nil when the reconnection is successful
 --- config
     location /t {
         content_by_lua_block {
@@ -224,7 +224,7 @@ passed
 
 
 
-=== TEST 11: reloaded data may be in res.body.node (special kvs structure)
+=== TEST 7: reloaded data may be in res.body.node (special kvs structure)
 --- yaml_config
 deployment:
     role: traditional
@@ -271,7 +271,7 @@ qr/readdir key: fake res: \{("value":"bar","key":"foo"|"key":"foo","value":"bar"
 
 
 
-=== TEST 12: reloaded data may be in res.body.node (admin_api_version is v2)
+=== TEST 8: reloaded data may be in res.body.node (admin_api_version is v2)
 --- yaml_config
 deployment:
     role: traditional
@@ -321,7 +321,7 @@ qr/readdir key: fake res: \{.*"nodes":\[\{.*"value":\["bar"\].*\}\].*\}/
 
 
 
-=== TEST 13: test route with special character "-"
+=== TEST 9: test route with special character "-"
 --- yaml_config
 deployment:
   role: traditional
