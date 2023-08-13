@@ -200,7 +200,7 @@ local function new_rr_obj(weighted_upstreams)
     for i, upstream_obj in ipairs(weighted_upstreams) do
         if upstream_obj.upstream_id then
             server_list[upstream_obj.upstream_id] = upstream_obj.weight
-        elseif type(upstream_obj.upstream) == "table" then
+        elseif upstream_obj.upstream and type(upstream_obj.upstream) == "table" then
             -- Add a virtual id field to uniquely identify the upstream key.
             upstream_obj.upstream.vid = i
             -- Get the table id of the nodes as part of the upstream_key,
