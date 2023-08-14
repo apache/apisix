@@ -50,12 +50,14 @@ deployment:
       port: ${{DEPLOYMENT_ADMIN_ADMIN_LISTEN:=}} 
 ```
 
-Now when you run APISIX, you can set these environment variables dynamically:
+When you run APISIX, you can set these environment variables dynamically:
 
 ```shell
 export APISIX_NODE_LISTEN=8132
 export DEPLOYMENT_ADMIN_ADMIN_LISTEN=9232
 ```
+
+Now when you start APISIX, it will listen on port `8132` and expose the Admin API on port `9232`.
 
 To use default values if no environment variables are set, you can add it to your configuration file as shown below:
 
@@ -68,6 +70,8 @@ deployment:
     admin_listen:
       port: ${{DEPLOYMENT_ADMIN_ADMIN_LISTEN:=9180}} 
 ```
+
+Now if you don't specify these environment variables when running APISIX, it will fall back to the default values.
 
 ## Using the `APISIX_PROFILE` environment variable
 
