@@ -120,3 +120,11 @@ upstreams:
     }
 --- request
 GET /t
+--- grep_error_log eval
+qr/connect to 127.0.0.1:1053/
+--- grep_error_log_out
+connect to 127.0.0.1:1053
+connect to 127.0.0.1:1053
+connect to 127.0.0.1:1053
+connect to 127.0.0.1:1053
+connect to 127.0.0.1:1053
