@@ -397,7 +397,7 @@ ab
 GET /t
 --- grep_error_log eval
 qr/init_by_lua:\d+: \S+/
---- grep_error_log_out
-init_by_lua:12.* ab
-init_by_lua:19.* 200
-init_by_lua:26.* 404
+--- grep_error_log_out eval
+qr/init_by_lua:12.* ab/
+qr/init_by_lua:19.* 200/
+qr/init_by_lua:26.* 404/
