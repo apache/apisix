@@ -797,5 +797,5 @@ proxy request to 127.0.0.1:1980
 --- request
 GET /t
 --- error_code: 500
---- response_body
-failed to fetch upstream info by upstream id: invalid-id
+--- error_log
+failed to find upstream by id: invalid-id
