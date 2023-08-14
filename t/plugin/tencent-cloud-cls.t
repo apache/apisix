@@ -545,7 +545,7 @@ passed
 
 
 
-=== TEST 16: test reslove ip failed
+=== TEST 16: test resolvt e ip failed
 --- extra_init_by_lua
     local socket = require("socket")
     socket.dns.toip = function(address)
