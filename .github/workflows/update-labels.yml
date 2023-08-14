@@ -1,0 +1,30 @@
+name: Update label when user responds
+permissions:
+  issues: write
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  run-check:
+    if: ${{ !github.event.issue.pull_request }} # don't execute for PR comments
+    runs-on: ubuntu-latest
+    steps:
+      - name: update labels when user responds
+        uses: actions/github-script@v6
+        if: ${{ github.event.comment.user.login == github.event.issue.user.login && contains(github.event.issue.labels.*.name, 'wait for update') && !contains(github.event.issue.labels.*.name, 'user responded') }}
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ["user responded"]
+            })
+            github.rest.issues.removeLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: "wait for update"
+            })
