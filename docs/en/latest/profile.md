@@ -43,11 +43,11 @@ To use environment variables, you can use the syntax `key_name: ${{ENVIRONMENT_V
 ```yaml title="config.yaml"
 apisix:
   node_listen:
-    - ${{APISIX_NODE_LISTEN:=}}                 
+    - ${{APISIX_NODE_LISTEN:=}}
 deployment:
   admin:
     admin_listen:
-      port: ${{DEPLOYMENT_ADMIN_ADMIN_LISTEN:=}} 
+      port: ${{DEPLOYMENT_ADMIN_ADMIN_LISTEN:=}}
 ```
 
 When you run APISIX, you can set these environment variables dynamically:
@@ -64,11 +64,11 @@ To use default values if no environment variables are set, you can add it to you
 ```yaml title="config.yaml"
 apisix:
   node_listen:
-    - ${{APISIX_NODE_LISTEN:=9080}}                 
+    - ${{APISIX_NODE_LISTEN:=9080}}  
 deployment:
   admin:
     admin_listen:
-      port: ${{DEPLOYMENT_ADMIN_ADMIN_LISTEN:=9180}} 
+      port: ${{DEPLOYMENT_ADMIN_ADMIN_LISTEN:=9180}}
 ```
 
 Now if you don't specify these environment variables when running APISIX, it will fall back to the default values.
