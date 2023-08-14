@@ -261,19 +261,19 @@ end
 
 
 local function run_watch(premature)
-    ::restart::
     local run_watch_th = ngx_thread_spawn(do_run_watch, premature)
+
+    ::restart::
     local check_worker_th = ngx_thread_spawn(function ()
         while not exiting() do
             ngx_sleep(0.1)
         end
     end)
 
-    local ok, err = ngx_thread_wait(check_worker_th, run_watch_th)
+    local ok, err = ngx_thread_wait(check_worker_th)
 
     if not ok then
-        log.error("child thread exit failed, retart checker, error: " .. err)
-        ngx_thread_kill(run_watch_th)
+        log.error("check_worker thread terminates failed, retart checker, error: " .. err)
         ngx_thread_kill(check_worker_th)
         goto restart
     end
