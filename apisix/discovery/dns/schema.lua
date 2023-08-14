@@ -24,7 +24,7 @@ return {
                 type = "string",
             },
         },
-        resolvconf = {
+        resolv_conf = {
             type = "string",
         },
         order = {
@@ -42,7 +42,7 @@ return {
             required = {"servers"},
         },
         {
-            required = {"resolvconf"},
+            required = {"resolv_conf"},
         }
     }
 }
