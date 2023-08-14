@@ -450,10 +450,9 @@ compress-tar:
 .PHONY: ci-env-up
 ci-env-up:
 	@$(call func_echo_status, "$@ -> [ Start ]")
-	#file to be used for assertions in opentelemetry tests
-	touch ./ci/pod/otelcol-contrib/data-otlp.json && chmod 777 ./ci/pod/otelcol-contrib/data-otlp.json 
 	$(ENV_DOCKER_COMPOSE) up -d
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
+
 
 ### ci-env-ps : CI env ps
 .PHONY: ci-env-ps
@@ -475,6 +474,5 @@ ci-env-rebuild:
 .PHONY: ci-env-down
 ci-env-down:
 	@$(call func_echo_status, "$@ -> [ Start ]")
-	rm ./ci/pod/otelcol-contrib/data-otlp.json
 	$(ENV_DOCKER_COMPOSE) down
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
