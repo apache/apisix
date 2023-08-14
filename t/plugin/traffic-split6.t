@@ -16,19 +16,18 @@
 #
 use t::APISIX 'no_plan';
 add_block_preprocessor(sub{
-	 my ($block) = @_;
-	if (!$block->extra_init_by_lua) {
-        my $extra_init_by_lua = <<_EOC_;
+    my ($block) = @_;
+    if (!$block->extra_init_by_lua) {
+    my $extra_init_by_lua = <<_EOC_;
 -- bypass schema validation
 local plugin = require("apisix.plugins.traffic-split")
 plugin.check_schema = function(schema)
-	return true
+    return true
 end
 _EOC_
-
         $block->set_value("extra_init_by_lua", $extra_init_by_lua);
     }
-	$block;
+    $block;
 });
 
 run_tests;
