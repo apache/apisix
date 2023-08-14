@@ -1,5 +1,11 @@
 ---
-title: Configuration file switching based on environment variables
+title: Configuration based on environments
+keywords:
+  - Apache APISIX
+  - API Gateway
+  - Configuration
+  - Environment
+description: This document describes how you can change APISIX configuration based on environments.
 ---
 
 <!--
@@ -21,28 +27,66 @@ title: Configuration file switching based on environment variables
 #
 -->
 
-The reason the configuration is extracted from the code is to better adapt to changes. Usually our applications have different
-operating environments such as development environment and production environment. Certain configurations of these applications
-will definitely be different, such as the address of the configuration center.
+Extracting configuration from the code makes APISIX adaptable to changes in the operating environments. For example, APISIX can be deployed in a development environment for testing and then moved to a production environment. The configuration for APISIX in these environments would be different.
 
-If the configuration of all environments is placed in the same file, it is very difficult to manage. After receiving new
-requirements, we need to change the parameters in the configuration file to the development environment when developing the
-development environment. You have to change it back. It's very easy to make mistakes.
+APISIX supports managing multiple configurations through environment variables in two different ways:
 
-The solution to the above problem is to distinguish the current running environment through environment variables, and switch
-between different configuration files through environment variables. The corresponding environment variable in APISIX is: `APISIX_PROFILE`
+1. Using environment variables in the configuration file
+2. Using an environment variable to switch between multiple configuration profiles
 
-When `APISIX_PROFILE` is not set, the following three configuration files are used by default:
+## Using environment variables in the configuration file
 
-* conf/config.yaml
-* conf/apisix.yaml
-* conf/debug.yaml
+This is useful when you want to change some configurations based on the environment.
 
-If the value of `APISIX_PROFILE` is set to `prod`, the following three configuration files are used:
+The example below shows how you can modify your configuration file to use environment variables to set the listening ports of APISIX:
+
+```yaml title="config.yaml"
+apisix:
+  node_listen:
+    - ${{APISIX_NODE_LISTEN:=9080}}                 
+deployment:
+  admin:
+    admin_listen:
+      port: ${{DEPLOYMENT_ADMIN_ADMIN_LISTEN:=9180}} 
+```
+
+Now when you run APISIX, you can set these environment variables dynamically:
+
+```shell
+export APISIX_NODE_LISTEN=8132
+export DEPLOYMENT_ADMIN_ADMIN_LISTEN=9232
+```
+
+If you don't set these environment variables, the configuration will use the default values provided.
+
+## Using the `APISIX_PROFILE` environment variable
+
+If you have multiple configuration changes for multiple environments, it might be better to have a different configuration file for each.
+
+Although this might increase the number of configuration files, you would be able to manage each independently and can even do version management.
+
+To achieve this, you can have multiple sets of configuration files. For example for the production environment, you can have:
 
 * conf/config-prod.yaml
 * conf/apisix-prod.yaml
 * conf/debug-prod.yaml
 
-Although this way will increase the number of configuration files, it can be managed independently, and then version management
-tools such as git can be configured, and version management can be better achieved.
+And for the development environment:
+
+* conf/config-dev.yaml
+* conf/apisix-dev.yaml
+* conf/debug-dev.yaml
+
+And if no environment is specified, APISIX can use the default configuration files:
+
+* conf/config.yaml
+* conf/apisix.yaml
+* conf/debug.yaml
+
+Now to specify the environment, i.e. which of these configuration files to use, you can set the environment variable `APISIX_PROFILE`. For example:
+
+```shell
+export APISIX_PROFILE=prod
+```
+
+APISIX will now use the `-prod.yaml` configuration files.
