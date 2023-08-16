@@ -115,6 +115,10 @@ http {
         }
     }
     {% end %}
+
+    {% if conf_server then %}
+    {* conf_server *}
+    {% end %}
 }
 {% end %}
 
@@ -570,6 +574,10 @@ http {
             }
         }
     }
+    {% end %}
+
+    {% if conf_server then %}
+    {* conf_server *}
     {% end %}
 
     {% if deployment_role ~= "control_plane" then %}

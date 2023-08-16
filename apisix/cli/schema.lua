@@ -388,8 +388,20 @@ local deployment_schema = {
                     config_provider = {
                         enum = {"etcd"}
                     },
+                    conf_server = {
+                        properties = {
+                            listen = {
+                                type = "string",
+                                default = "0.0.0.0:9280",
+                            },
+                            cert = { type = "string" },
+                            cert_key = { type = "string" },
+                            client_ca_cert = { type = "string" },
+                        },
+                        required = {"cert", "cert_key"}
+                    },
                 },
-                required = {"config_provider"}
+                required = {"config_provider", "conf_server"}
             },
             certs = {
                 properties = {

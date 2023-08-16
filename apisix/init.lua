@@ -105,18 +105,8 @@ function _M.http_init(args)
     conf_server.init()
 end
 
-local orig_report_failure
-
-local function new_report_failure(...)
-    ngx.log(ngx.WARN, debug.traceback("===report_failure===", 3))
-    return orig_report_failure(...)
-end
 
 function _M.http_init_worker()
-    local MM = require("resty.etcd.health_check")
-    orig_report_failure = MM.report_failure
-    MM.report_failure = new_report_failure
-
     local seed, err = core.utils.get_seed_from_urandom()
     if not seed then
         core.log.warn('failed to get seed from urandom: ', err)
