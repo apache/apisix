@@ -66,7 +66,7 @@ dependencies = {
     "luasocket = 3.1.0-1",
     "luasec = 0.9-1",
     "lua-resty-consul = 0.3-2",
-    "penlight = 1.9.2-1",
+    "penlight = 1.13.1",
     "ext-plugin-proto = 0.6.0",
     "casbin = 1.41.5",
     "inspect == 3.1.1",
@@ -78,7 +78,7 @@ dependencies = {
     "nanoid = 0.1-1",
     "lua-resty-mediador = 0.1.2-1",
     "lua-resty-ldap = 0.1.0-0",
-    "lua-resty-t1k = 1.0.3"
+    "lua-resty-t1k = 1.1.0"
 }
 
 build = {
