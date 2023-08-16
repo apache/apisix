@@ -451,6 +451,7 @@ plugins:                           # plugin list (sorted by priority)
   - csrf                           # priority: 2980
   - uri-blocker                    # priority: 2900
   - request-validation             # priority: 2800
+  - chaitin-waf                    # priority: 2700
   - openid-connect                 # priority: 2599
   - cas-auth                       # priority: 2597
   - authz-casbin                   # priority: 2560
@@ -612,9 +613,34 @@ plugin_attr:          # Plugin attributes
                                                               # write access to this file for security.
 
 deployment:                    # Deployment configurations
-  role: traditional            # Set deployment mode: traditional, control_plane, data_plane.
+  role: traditional            # Set deployment mode: traditional, control_plane, or data_plane.
   role_traditional:
     config_provider: etcd      # Set the configuration center.
+
+    # role_data_plane:         # Set data plane details if role is data_plane.
+    #   config_provider: control_plane          # Set the configuration center: control_plane, or yaml.
+    #   control_plane:                          # Set control plane details if config_provider is control_plane.
+    #     host:                                 # Set the address of control plane.
+    #       - https://${control_plane_IP}:9280
+    #     prefix: /apisix                       # Set etcd prefix.
+    #     timeout: 30                           # Set timeout in seconds.
+    #   certs:
+    #     cert: /path/to/client.crt           # Set path to the client certificate.
+    #     cert_key: /path/to/client.key       # Set path to the client key.
+    #     trusted_ca_cert: /path/to/ca.crt    # Set path to the trusted CA certificate.
+
+    # role_control_plane:         # Set control plane details if role is control_plane.
+    #   config_provider: etcd     # Set the configuration center.
+    #   conf_server:
+    #     listen: 0.0.0.0:9280                # Set the address of the conf server.
+    #     cert: /path/to/server.crt           # Set path to the server certificate.
+    #     cert_key: /path/to/server.key       # Set path to the server key.
+    #     client_ca_cert: /path/to/ca.crt     # Set path to the trusted CA certificate.
+    # certs:
+    #   cert: /path/to/client.crt             # Set path to the client certificate.
+    #   cert_key: /path/to/client.key         # Set path to the client key.
+    #   trusted_ca_cert: /path/to/ca.crt      # Set path to the trusted CA certificate.
+
   admin:                       # Admin API
     admin_key_required: true   # Enable Admin API authentication by default for security.
     admin_key:
@@ -647,7 +673,7 @@ deployment:                    # Deployment configurations
   etcd:
     host:                         # Set etcd address(es) in the same etcd cluster.
       - "http://127.0.0.1:2379"   # If TLS is enabled for etcd, use https://127.0.0.1:2379.
-    prefix: /apisix               # Set prefix in etcd.
+    prefix: /apisix               # Set etcd prefix.
     use_grpc: false               # Use gRPC (experimental) for etcd configuration sync.
     timeout: 30                   # Set timeout in seconds.
                                   # Set a higher timeout (e.g. an hour) if `use_grpc` is true.

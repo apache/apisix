@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.4.0](#340)
 - [3.3.0](#330)
 - [3.2.1](#321)
 - [3.2.0](#320)
@@ -69,6 +70,38 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.4.0
+
+### Core
+
+- :sunrise: Support route-level MTLS [#9322](https://github.com/apache/apisix/pull/9322)
+- :sunrise: Support id schema for global_rules [#9517](https://github.com/apache/apisix/pull/9517)
+- :sunrise: Support use a single long http connection to watch all resources for etcd [#9456](https://github.com/apache/apisix/pull/9456)
+- :sunrise: Support max len 256 for ssl label [#9301](https://github.com/apache/apisix/pull/9301)
+
+### Plugins
+
+- :sunrise: Support multiple regex pattern matching for proxy_rewrite plugin [#9194](https://github.com/apache/apisix/pull/9194)
+- :sunrise: Add loki-logger plugin [#9399](https://github.com/apache/apisix/pull/9399)
+- :sunrise: Allow user configure DEFAULT_BUCKETS for prometheus plugin [#9673](https://github.com/apache/apisix/pull/9673)
+
+### Bugfixes
+
+- Fix(body-transformer): xml2lua: replace empty table with empty string [#9669](https://github.com/apache/apisix/pull/9669)
+- Fix: opentelemetry and grpc-transcode plugins cannot work together [#9606](https://github.com/apache/apisix/pull/9606)
+- Fix(skywalking-logger, error-log-logger): support $hostname in skywalking service_instance_name [#9401](https://github.com/apache/apisix/pull/9401)
+- Fix(admin): fix secrets do not support to update attributes by PATCH [#9510](https://github.com/apache/apisix/pull/9510)
+- Fix(http-logger): default request path should be '/' [#9472](https://github.com/apache/apisix/pull/9472)
+- Fix: syslog plugin doesn't work [#9425](https://github.com/apache/apisix/pull/9425)
+- Fix: wrong log format for splunk-hec-logging [#9478](https://github.com/apache/apisix/pull/9478)
+- Fix(etcd): reuse cli and enable keepalive [#9420](https://github.com/apache/apisix/pull/9420)
+- Fix: upstream key config add mqtt_client_id support [#9450](https://github.com/apache/apisix/pull/9450)
+- Fix: body-transformer plugin return raw body anytime [#9446](https://github.com/apache/apisix/pull/9446)
+- Fix(wolf-rbac): other plugin in consumer not effective when consumer used wolf-rbac plugin [#9298](https://github.com/apache/apisix/pull/9298)
+- Fix: always parse domain when host is domain name [#9332](https://github.com/apache/apisix/pull/9332)
+- Fix: response-rewrite plugin can't add only one character [#9372](https://github.com/apache/apisix/pull/9372)
+- Fix(consul): support to fetch only health endpoint [#9204](https://github.com/apache/apisix/pull/9204)
 
 ## 3.3.0
 

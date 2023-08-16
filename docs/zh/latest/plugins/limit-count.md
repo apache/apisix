@@ -47,7 +47,7 @@ description: 本文介绍了 Apache APISIX limit-count 插件的相关操作，�
 | group               | string | 否         |               | 非空                                    | 配置相同 group 的路由将共享相同的限流计数器。 |
 | redis_host          | string  | 否        |               |                                         | 当使用 `redis` 限速策略时，Redis 服务节点的地址。**当 `policy` 属性设置为 `redis` 时必选。**|
 | redis_port          | integer | 否        | 6379          | [1,...]                                 | 当使用 `redis` 限速策略时，Redis 服务节点的端口。|
-| redis_username      | string  | 否        |               |                                         | Redis 服务器的用户名。当 `policy` 设置为 `redis` 时使用。|
+| redis_username      | string  | 否        |               |                                         | 若使用 Redis ACL 进行身份验证（适用于 Redis 版本 >=6.0），则需要提供 Redis 用户名。若使用 Redis legacy 方式 `requirepass` 进行身份验证，则只需将密码配置在 `redis_password`。当 `policy` 设置为 `redis` 时使用。|
 | redis_password      | string  | 否        |               |                                         | 当使用 `redis`  或者 `redis-cluster`  限速策略时，Redis 服务节点的密码。|
 | redis_ssl           | boolean | 否        | false         |                                         | 当使用 `redis` 限速策略时，如果设置为 true，则使用 SSL 连接到 `redis` |
 | redis_ssl_verify    | boolean | 否        | false         |                                         | 当使用 `redis` 限速策略时，如果设置为 true，则验证服务器 SSL 证书的有效性，具体请参考 [tcpsock:sslhandshake](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake). |
@@ -299,9 +299,9 @@ Server: APISIX web server
 {"error_msg":"Requests are too frequent, please try again later."}
 ```
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \

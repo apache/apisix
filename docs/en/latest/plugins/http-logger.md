@@ -88,7 +88,7 @@ With this configuration, your logs would be formatted as shown below:
 {"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can enable the Plugin on a specific Route:
 
@@ -121,7 +121,7 @@ Now, if you make a request to APISIX, it will be logged in your mockbin server:
 curl -i http://127.0.0.1:9080/hello
 ```
 
-## Disable Plugin
+## Delete Plugin
 
 To disable this Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 

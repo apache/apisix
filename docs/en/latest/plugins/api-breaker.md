@@ -53,7 +53,7 @@ In an unhealthy state, if the Upstream service responds with a status code from 
 | healthy.http_statuses   | array[integer] | False    | [200]   | [200, ..., 499] | Status codes of Upstream to be considered healthy.                                                                                                                                                                                           |
 | healthy.successes       | integer        | False    | 3       | >=1             | Number of consecutive healthy requests for the Upstream service to be considered healthy.                                                                                                                                                    |
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can configure the Plugin on a specific Route:
 
@@ -108,9 +108,9 @@ HTTP/1.1 502 Bad Gateway
 </html>
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `api-breaker` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `api-breaker` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \

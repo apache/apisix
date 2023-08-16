@@ -443,3 +443,81 @@ qr/readdir key: fake res: \{.*"nodes":\[\{.*"value":\["bar"\].*\}\].*\}/
 --- wait: 1
 --- no_error_log
 [error]
+
+
+
+=== TEST 13: test route with special character "-"
+--- yaml_config
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+  etcd:
+    prefix: "/apisix-test"
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.5)
+
+            local http = require "resty.http"
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.say(body)
+
+            -- hit
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET"
+            })
+
+            if not res then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.print(res.body)
+
+            -- delete route
+            code, body = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+
+            -- hit
+            res, err = httpc:request_uri(uri, {
+                method = "GET"
+            })
+
+            if not res then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.print(res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+hello world
+passed
+{"error_msg":"404 Route Not Found"}

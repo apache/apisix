@@ -85,7 +85,7 @@ The `info` is a hash table which contains below keys:
 | delay           | integer | False     | 3 | Time in seconds specifying how often to check the hooks file.                                       |
 | hooks_file           | string | False     | "/usr/local/apisix/plugin_inspect_hooks.lua"  | Lua file to define hooks, which could be a link file. Ensure only administrator could write this file, otherwise it may be a security risk. |
 
-## Enabling the Plugin
+## Enable Plugin
 
 Plugin is enabled by default (`conf/config-default.yaml`):
 
@@ -162,7 +162,7 @@ stack traceback:
 2022/09/01 00:55:52 [info] 2754534#2754534: *4070 [lua] resty_inspect_hooks.lua:6: conf_key=remote_addr, client: 127.0.0.1, server: _, request: "GET /get HTTP/1.1", host: "127.0.0.1:9080"
 ```
 
-## Disable plugin
+## Delete Plugin
 
 To remove the `inspect` Plugin, you can remove it from your configuration file (`conf/config.yaml`):
 

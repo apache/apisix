@@ -103,6 +103,19 @@ deployment:
 
 This will find the environment variable `ADMIN_KEY` first, and if it does not exist, it will use `edd1c9f034335f136f87ad84b625c8f1` as the default value.
 
+You can also specify environment variables in yaml keys. This is specifically useful in the `standalone` [mode](./deployment-modes.md#standalone) where you can specify the upstream nodes as follows:
+
+```yaml title="./conf/apisix.yaml"
+routes:
+  -
+    uri: "/test"
+    upstream:
+      nodes:
+        "${{HOST_IP}}:${{PORT}}": 1
+      type: roundrobin
+#END
+```
+
 ### Force Delete
 
 By default, the Admin API checks for references between resources and will refuse to delete resources in use.
@@ -1194,6 +1207,7 @@ SSL resource request address: /apisix/admin/ssls/{id}
 | update_time  | False    | Auxiliary                | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.         | 1602883670                                       |
 | type         | False    | Auxiliary            | Identifies the type of certificate, default  `server`.                                                                             | `client` Indicates that the certificate is a client certificate, which is used when APISIX accesses the upstream; `server` Indicates that the certificate is a server-side certificate, which is used by APISIX when verifying client requests.     |
 | status       | False    | Auxiliary                | Enables the current SSL. Set to `1` (enabled) by default.                                                      | `1` to enable, `0` to disable                    |
+| ssl_protocols | False    | An array of ssl protocols               | It is used to control the SSL/TLS protocol version used between servers and clients. See [SSL Protocol](./ssl-protocol.md) for more examples.                  |                `["TLSv1.2", "TLSv2.3"]`                                  |
 
 Example Configuration:
 
@@ -1345,6 +1359,14 @@ Plugin resource request address: /apisix/admin/plugins/{plugin_name}
 
 The Plugin ({plugin_name}) of the data structure.
 
+### Request Arguments
+
+| Name      | Description                   | Default |
+| --------- | ----------------------------- | ------- |
+| subsystem | The subsystem of the Plugins. | http    |
+
+The plugin can be filtered on subsystem so that the ({plugin_name}) is searched in the subsystem passed through query params.
+
 ### Example API usage:
 
 ```shell
@@ -1357,7 +1379,7 @@ curl "http://127.0.0.1:9180/apisix/admin/plugins/list" \
 ```
 
 ```shell
-curl "http://127.0.0.1:9180/apisix/admin/plugins/key-auth" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+curl "http://127.0.0.1:9180/apisix/admin/plugins/key-auth?subsystem=http" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```
 
 ```json
@@ -1366,25 +1388,9 @@ curl "http://127.0.0.1:9180/apisix/admin/plugins/key-auth" -H 'X-API-KEY: ed
 
 :::tip
 
-You can use the `/apisix/admin/plugins?all=true` API to get all properties of all plugins.
-
-Each Plugin has the attributes `name`, `priority`, `type`, `schema`, `consumer_schema` and `version`.
-
-Defaults to only L7 Plugins. If you need to get attributes of L4 / Stream Plugins, use `/apisix/admin/plugins?all=true&subsystem=stream`.
+You can use the `/apisix/admin/plugins?all=true` API to get all properties of all plugins. This API will be deprecated soon.
 
 :::
-
-### Request Methods
-
-| Method | Request URI                    | Request Body | Description                              |
-| ------ | ------------------------------ | ------------ | ---------------------------------------- |
-| GET    | /apisix/admin/plugins?all=true | NULL         | Fetches all attributes from all Plugins. |
-
-### Request Arguments
-
-| Name      | Description                   | Default |
-| --------- | ----------------------------- | ------- |
-| subsystem | The subsystem of the Plugins. | http    |
 
 ## Stream Route
 

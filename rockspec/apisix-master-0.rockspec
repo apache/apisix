@@ -40,7 +40,7 @@ dependencies = {
     "lua-resty-ngxvar = 0.5.2",
     "lua-resty-jit-uuid = 0.0.7",
     "lua-resty-healthcheck-api7 = 3.0.0",
-    "api7-lua-resty-jwt = 0.2.4",
+    "api7-lua-resty-jwt = 0.2.5",
     "lua-resty-hmac-ffi = 0.05",
     "lua-resty-cookie = 0.1.0",
     "lua-resty-session = 3.10",
@@ -66,7 +66,7 @@ dependencies = {
     "luasocket = 3.1.0-1",
     "luasec = 0.9-1",
     "lua-resty-consul = 0.3-2",
-    "penlight = 1.9.2-1",
+    "penlight = 1.13.1",
     "ext-plugin-proto = 0.6.0",
     "casbin = 1.41.5",
     "inspect == 3.1.1",
@@ -77,7 +77,8 @@ dependencies = {
     "xml2lua = 1.5-2",
     "nanoid = 0.1-1",
     "lua-resty-mediador = 0.1.2-1",
-    "lua-resty-ldap = 0.2.2-0"
+    "lua-resty-ldap = 0.2.2-0",
+    "lua-resty-t1k = 1.1.0"
 }
 
 build = {

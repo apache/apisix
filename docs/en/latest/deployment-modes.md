@@ -97,9 +97,9 @@ deployment:
            prefix: /apisix
            timeout: 30
     certs:
-        cert: /path/to/ca-cert
-        cert_key: /path/to/ca-cert
-        trusted_ca_cert: /path/to/ca-cert
+        cert: /path/to/client.crt
+        cert_key: /path/to/client.key
+        trusted_ca_cert: /path/to/ca.crt
 #END
 ```
 
@@ -117,18 +117,18 @@ deployment:
         config_provider: etcd
         conf_server:
             listen: 0.0.0.0:9280
-            cert: /path/to/ca-cert
-            cert_key: /path/to/ca-cert
-            client_ca_cert: /path/to/ca-cert
+            cert: /path/to/server.crt
+            cert_key: /path/to/server.key
+            client_ca_cert: /path/to/ca.crt
     etcd:
        host:
            - https://${etcd_IP}:${etcd_Port}
        prefix: /apisix
        timeout: 30
     certs:
-        cert: /path/to/ca-cert
-        cert_key: /path/to/ca-cert
-        trusted_ca_cert: /path/to/ca-cert
+        cert: /path/to/client.crt
+        cert_key: /path/to/client.key
+        trusted_ca_cert: /path/to/ca.crt
 #END
 ```
 
@@ -143,15 +143,15 @@ deployment:
         config_provider: etcd
         conf_server:
             listen: 0.0.0.0:9280
-            cert: /path/to/ca-cert
-            cert_key: /path/to/ca-cert
+            cert: /path/to/server.crt
+            cert_key: /path/to/server.key
     etcd:
        host:
            - https://${etcd_IP}:${etcd_Port}
        prefix: /apisix
        timeout: 30
     certs:
-        trusted_ca_cert: /path/to/ca-cert
+        trusted_ca_cert: /path/to/ca.crt
 #END
 ```
 
@@ -432,5 +432,27 @@ upstreams:
       "127.0.0.1:1995": 1
     type: roundrobin
     id: 1
+#END
+```
+
+### How to configure protos
+
+```yaml
+protos:
+  - id: helloworld
+    desc: hello world
+    content: >
+      syntax = "proto3";
+      package helloworld;
+
+      service Greeter {
+        rpc SayHello (HelloRequest) returns (HelloReply) {}
+      }
+      message HelloRequest {
+        string name = 1;
+      }
+      message HelloReply {
+        string message = 1;
+      }
 #END
 ```

@@ -1,5 +1,5 @@
 {
-  "version": "3.3.0",
+  "version": "3.4.0",
   "sidebar": [
     {
       "type": "doc",
@@ -104,7 +104,8 @@
             "plugins/consumer-restriction",
             "plugins/csrf",
             "plugins/public-api",
-            "plugins/gm"
+            "plugins/gm",
+            "plugins/chaitin-waf"
           ]
         },
         {
@@ -300,6 +301,10 @@
         {
           "type": "doc",
           "id": "profile"
+        },
+        {
+          "type": "doc",
+          "id": "ssl-protocol"
         }
       ]
     },

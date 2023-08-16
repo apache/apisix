@@ -37,6 +37,7 @@ This plugin also allows to push logs as a batch to your Google Cloud Logging Ser
 | Name                    | Required | Default                                                                                                                                                                                              | Description                                                                                                                                                        |
 |-------------------------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | auth_config             | True     |                                                                                                                                                                                                      | Either `auth_config` or `auth_file` must be provided.                                                                                                              |
+| auth_config.client_email | True     |                                                                                                                                                                                                    | Email address of the Google Cloud service account.                                                                                                                   |
 | auth_config.private_key | True     |                                                                                                                                                                                                      | Private key of the Google Cloud service account.                                                                                                                   |
 | auth_config.project_id  | True     |                                                                                                                                                                                                      | Project ID in the Google Cloud service account.                                                                                                                    |
 | auth_config.token_uri   | True    | https://oauth2.googleapis.com/token                                                                                                                                                                  | Token URI of the Google Cloud service account.                                                                                                                     |
@@ -85,7 +86,7 @@ With this configuration, your logs would be formatted as shown below:
 {"partialSuccess":false,"entries":[{"jsonPayload":{"client_ip":"127.0.0.1","host":"localhost","@timestamp":"2023-01-09T14:47:25+08:00","route_id":"1"},"resource":{"type":"global"},"insertId":"942e81f60b9157f0d46bc9f5a8f0cc40","logName":"projects/apisix/logs/apisix.apache.org%2Flogs","timestamp":"2023-01-09T14:47:25+08:00","labels":{"source":"apache-apisix-google-cloud-logging"}}]}
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 ### Full configuration
 
@@ -98,6 +99,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         "google-cloud-logging": {
             "auth_config":{
                 "project_id":"apisix",
+                "client_email":"your service account email@apisix.iam.gserviceaccount.com",
                 "private_key":"-----BEGIN RSA PRIVATE KEY-----your private key-----END RSA PRIVATE KEY-----",
                 "token_uri":"https://oauth2.googleapis.com/token",
                 "scopes":[
@@ -137,6 +139,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         "google-cloud-logging": {
             "auth_config":{
                 "project_id":"apisix",
+                "client_email":"your service account email@apisix.iam.gserviceaccount.com",
                 "private_key":"-----BEGIN RSA PRIVATE KEY-----your private key-----END RSA PRIVATE KEY-----"
             }
         }
@@ -161,9 +164,9 @@ curl -i http://127.0.0.1:9080/hello
 
 You can then login and view the logs in [Google Cloud Logging Service](https://console.cloud.google.com/logs/viewer).
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `google-cloud-logging` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `google-cloud-logging` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

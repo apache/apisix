@@ -22,11 +22,8 @@ local type = type
 local str_strip = stringx.strip
 local re_find = ngx.re.find
 
-local MATCH_NONE = 0
-local MATCH_ALLOW = 1
-local MATCH_DENY = 2
-
-local lrucache_useragent = core.lrucache.new({ ttl = 300, count = 4096 })
+local lrucache_allow = core.lrucache.new({ ttl = 300, count = 4096 })
+local lrucache_deny = core.lrucache.new({ ttl = 300, count = 4096 })
 
 local schema = {
     type = "object",
@@ -58,6 +55,10 @@ local schema = {
             default = "Not allowed"
         },
     },
+    oneOf = {
+        {required = {"allowlist"}},
+        {required = {"denylist"}}
+    }
 }
 
 local plugin_name = "ua-restriction"
@@ -69,26 +70,55 @@ local _M = {
     schema = schema,
 }
 
-local function match_user_agent(user_agent, conf)
-    user_agent = str_strip(user_agent)
-    if conf.allowlist then
-        for _, rule in ipairs(conf.allowlist) do
+local function check_with_allow_list(user_agents, allowlist)
+    local check = function (user_agent)
+        user_agent = str_strip(user_agent)
+
+        for _, rule in ipairs(allowlist) do
             if re_find(user_agent, rule, "jo") then
-                return MATCH_ALLOW
+                return true
             end
         end
+        return false
     end
 
-    if conf.denylist then
-        for _, rule in ipairs(conf.denylist) do
-            if re_find(user_agent, rule, "jo") then
-                return MATCH_DENY
+    if type(user_agents) == "table" then
+        for _, v in ipairs(user_agents) do
+            if lrucache_allow(v, allowlist, check, v) then
+                return true
             end
         end
+        return false
+    else
+        return lrucache_allow(user_agents, allowlist, check, user_agents)
     end
-
-    return MATCH_NONE
 end
+
+
+local function check_with_deny_list(user_agents, denylist)
+    local check = function (user_agent)
+        user_agent = str_strip(user_agent)
+
+        for _, rule in ipairs(denylist) do
+            if re_find(user_agent, rule, "jo") then
+                return false
+            end
+        end
+        return true
+    end
+
+    if type(user_agents) == "table" then
+        for _, v in ipairs(user_agents) do
+            if lrucache_deny(v, denylist, check, v) then
+                return false
+            end
+        end
+        return true
+    else
+        return lrucache_deny(user_agents, denylist, check, user_agents)
+    end
+end
+
 
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
@@ -118,6 +148,7 @@ function _M.check_schema(conf)
     return true
 end
 
+
 function _M.access(conf, ctx)
     local user_agent = core.request.header(ctx, "User-Agent")
 
@@ -128,21 +159,16 @@ function _M.access(conf, ctx)
             return 403, { message = conf.message }
         end
     end
-    local match = MATCH_NONE
-    if type(user_agent) == "table" then
-        for _, v in ipairs(user_agent) do
-            if type(v) == "string" then
-                match = lrucache_useragent(v, conf, match_user_agent, v, conf)
-                if match > MATCH_ALLOW then
-                    break
-                end
-            end
-        end
+
+    local is_passed
+
+    if conf.allowlist then
+        is_passed = check_with_allow_list(user_agent, conf.allowlist)
     else
-        match = lrucache_useragent(user_agent, conf, match_user_agent, user_agent, conf)
+        is_passed = check_with_deny_list(user_agent, conf.denylist)
     end
 
-    if match > MATCH_ALLOW then
+    if not is_passed then
         return 403, { message = conf.message }
     end
 end
