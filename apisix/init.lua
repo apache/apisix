@@ -108,7 +108,7 @@ end
 local orig_report_failure
 
 local function new_report_failure(...)
-    debug.traceback("===report_failure===", 3)
+    ngx.log(ngx.WARN, debug.traceback("===report_failure===", 3))
     return orig_report_failure(...)
 end
 
