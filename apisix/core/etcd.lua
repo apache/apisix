@@ -32,17 +32,10 @@ local pcall             = pcall
 local setmetatable      = setmetatable
 local string            = string
 local tonumber          = tonumber
-local ngx_socket_tcp    = ngx.socket.tcp
 local ngx_get_phase     = ngx.get_phase
 
 
 local _M = {}
-
-
-local function has_mtls_support()
-    local s = ngx_socket_tcp()
-    return s.tlshandshake ~= nil
-end
 
 
 local function _new(etcd_conf)
@@ -91,6 +84,9 @@ end
 
 
 ---
+-- Create an etcd client which will connect to etcd without being proxyed by conf server.
+-- This method is used in init_worker phase when the conf server is not ready.
+--
 -- @function core.etcd.new_without_proxy
 -- @treturn table|nil the etcd client, or nil if failed.
 -- @treturn string|nil the configured prefix of etcd keys, or nil if failed.
@@ -124,33 +120,10 @@ local function new()
         etcd_conf.trusted_ca = local_conf.apisix.ssl.ssl_trusted_certificate
     end
 
-    if local_conf.deployment then
-        if local_conf.deployment.role == "control_plane" or
-            local_conf.deployment.role == "data_plane" then
-            if has_mtls_support() and local_conf.deployment.certs.cert then
-                local cert = local_conf.deployment.certs.cert
-                local cert_key = local_conf.deployment.certs.cert_key
-
-                if not etcd_conf.tls then
-                    etcd_conf.tls = {}
-                end
-
-                etcd_conf.tls.cert = cert
-                etcd_conf.tls.key = cert_key
-            end
-        end
-
-        if local_conf.deployment.certs and local_conf.deployment.certs.trusted_ca_cert then
-            etcd_conf.trusted_ca = local_conf.deployment.certs.trusted_ca_cert
-        end
-    end
-
-    if not health_check.conf then
         health_check.init({
             max_fails = 1,
             retry = true,
         })
-    end
 
     return _new(etcd_conf)
 end
