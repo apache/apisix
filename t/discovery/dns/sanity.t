@@ -448,7 +448,7 @@ deployment:
         config_provider: yaml
 discovery:                        # service discovery center
     dns:
-        resolv_conf: t/discovery/dns/resolv.conf
+        resolv_conf: build-cache/test_resolve.conf
 --- apisix_yaml
 upstreams:
     - service_name: "sd.test.local:1980"

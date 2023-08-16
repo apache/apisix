@@ -278,6 +278,7 @@ nginx_config:                     # Config for render the template to generate n
 #  dns:
 #    servers:
 #      - "127.0.0.1:8600"         # Replace with the address of your DNS server.
+#    resolv_conf: /etc/resolv.conf # Replace with the path to the local DNS resolv config. Configure either "servers" or "resolv_conf".
 #    order:                       # Resolve DNS records this order.
 #      - last                     # Try the latest successful type for a hostname.
 #      - SRV
