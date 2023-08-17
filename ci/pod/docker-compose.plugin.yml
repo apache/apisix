@@ -347,7 +347,7 @@ services:
     - ./ci/pod/otelcol-contrib:/etc/otelcol-contrib:rw
     ports:
       - '4318:4318'
-    
+
 
 networks:
   apisix_net:
