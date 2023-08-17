@@ -143,7 +143,7 @@ curl --location --request POST 'http://127.0.0.1:9080/api/token' \
 --data-urlencode 'password=<Password>'
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can enable the `authz-keycloak` Plugin on a specific Route. `${realm}` represents the realm name in Keycloak.
 
@@ -200,9 +200,9 @@ The image below shows how the policies are configured in the Keycloak server:
 
 ![Keycloak policy design](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/authz-keycloak.png)
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `authz-keycloak` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `authz-keycloak` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

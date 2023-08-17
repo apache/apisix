@@ -117,9 +117,9 @@ curl -i http://127.0.0.1:9080/index.html
 
 如果你在 `./logs/error.log` 中发现 `serverless pre function` 和 `match uri /index.html` 两个 error 级别的日志，表示指定的函数已经生效。
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \

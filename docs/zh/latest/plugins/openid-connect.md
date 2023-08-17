@@ -60,6 +60,13 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 | set_refresh_token_header             | boolean | 否     | false                 |               | 当设置为 `true` 并且刷新令牌可用时，则会将该属性设置在`X-Refresh-Token`请求头中。                      |
 | session                              | object  | 否     |                       |               | 当设置 bearer_only 为 false 时，openid-connect 插件将使用 Authorization Code 在 IDP 上进行认证，因此你必须设置 session 相关设置。 |
 | session.secret                       | string  | 是     | 自动生成               | 16 个以上字符  | 用于 session 加密和 HMAC 计算的密钥。 |
+| proxy_opts                           | object  | 否    |                     |               | 给 openid-connect 插件配置一个 proxy。 |
+| proxy_opts                           | object  | 否    |                       |                                  | 用来访问身份认证服务器的代理服务器。                                                                                             |
+| proxy_opts.proxy_opts.http_proxy     | string  | 否    |                       | http://proxy-server:port         | HTTP 代理服务器地址。                                                                                                   |
+| proxy_opts.proxy_opts.https_proxy    | string  | 否    |                       | http://proxy-server:port         | HTTPS 代理服务器地址。                                                                                                  |
+| proxy_opts.http_proxy_authorization  | string  | 否    |                       | Basic [base64 username:password] | `http_proxy` 默认的 `Proxy-Authorization` 请求头参数值。                                                                 |
+| proxy_opts.https_proxy_authorization | string  | 否    |                       | Basic [base64 username:password] | 与`http_proxy_authorization`相同，但与`https_proxy`一起使用（因为使用 HTTPS 时，授权是在连接时完成的，因此不能通过传递 Proxy-Authorization 请求头来覆盖此授权）。 |
+| proxy_opts.no_proxy                  | string  | 否    |                       |                                  | 不应被代理的主机的逗号分隔列表。                                                                                               |
 
 注意：schema 中还定义了 `encrypt_fields = {"client_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 

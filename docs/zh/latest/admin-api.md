@@ -105,6 +105,19 @@ deployment:
 
 首先查找环境变量 `ADMIN_KEY`，如果该环境变量不存在，它将使用 `edd1c9f034335f136f87ad84b625c8f1` 作为默认值。
 
+您还可以在 yaml 键中指定环境变量。这在 `standalone` 模式 中特别有用，您可以在其中指定上游节点，如下所示：
+
+```yaml title="./conf/apisix.yaml"
+routes:
+  -
+    uri: "/test"
+    upstream:
+      nodes:
+        "${{HOST_IP}}:${{PORT}}": 1
+      type: roundrobin
+#END
+```
+
 ### 强制删除 {#force-delete}
 
 默认情况下，Admin API 会检查资源间的引用关系，将会拒绝删除正在使用中的资源。
@@ -1202,6 +1215,7 @@ SSL 资源请求地址：/apisix/admin/ssls/{id}
 | update_time | 否   | 辅助           | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                          | 1602883670                                       |
 | type        | 否   | 辅助           | 标识证书的类型，默认值为 `server`。                                                                     | `client` 表示证书是客户端证书，APISIX 访问上游时使用；`server` 表示证书是服务端证书，APISIX 验证客户端请求时使用。     |
 | status      | 否   | 辅助           | 当设置为 `1` 时，启用此 SSL，默认值为 `1`。                                                               | `1` 表示启用，`0` 表示禁用                       |
+| ssl_protocols | 否    | tls 协议字符串数组               | 用于控制服务器与客户端之间使用的 SSL/TLS 协议版本。更多的配置示例，请参考[SSL 协议](./ssl-protocol.md)。                                  |                                                  |
 
 SSL 对象 JSON 配置示例：
 
@@ -1346,6 +1360,14 @@ Content-Type: text/plain
 
 Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 
+### 请求参数
+
+| 名称 | 描述 | 默认 |
+| --------- | -------------------------------------- | -------- |
+| subsystem | 插件子系统。 | http |
+
+可以在子系统上过滤插件，以便在通过查询参数传递的子系统中搜索 ({plugin_name})
+
 ### 请求方法 {#plugin-request-methods}
 
 | 名称        | 请求 URI                            | 请求 body | 描述          |
@@ -1373,7 +1395,7 @@ Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 - 获取指定插件的属性
 
     ```shell
-    curl "http://127.0.0.1:9180/apisix/admin/plugins/key-auth" \
+    curl "http://127.0.0.1:9180/apisix/admin/plugins/key-auth?subsystem=http" \
     -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
     ```
 
@@ -1385,7 +1407,7 @@ Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 
 你可以使用 `/apisix/admin/plugins?all=true` 接口获取所有插件的所有属性，每个插件包括 `name`，`priority`，`type`，`schema`，`consumer_schema` 和 `version`。
 
-默认情况下，该接口只返回 L7 插件。如果你需要获取 L4 / Stream 插件，需要使用 `/apisix/admin/plugins?all=true&subsystem=stream`。
+您可以使用“/apisix/admin/plugins?all=true”获取所有插件的所有属性。这个 API 将很快被弃用
 
 :::
 

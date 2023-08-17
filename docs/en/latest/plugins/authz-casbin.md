@@ -57,7 +57,7 @@ If you wish to use a global Casbin configuration, you can first specify `model` 
 | model  | string | True     | Casbin model configuration in text format. |
 | policy | string | True     | Casbin policy in text format.              |
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a Route by either using the model/policy file paths or using the model/policy text in Plugin configuration/metadata.
 
@@ -234,9 +234,9 @@ And only users with admin privileges can access the endpoints:
 curl -i http://127.0.0.1:9080/res -H 'user: alice' -X GET
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `authz-casbin` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `authz-casbin` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
