@@ -26,6 +26,9 @@ do_install() {
     ./ci/linux-install-openresty.sh
     ./utils/linux-install-luarocks.sh
     ./ci/linux-install-etcd-client.sh
+
+    # install vault cli capabilities
+    install_vault_cli
 }
 
 script() {
