@@ -341,12 +341,7 @@ services:
       - '8124:8123'
     networks:
       clickhouse_net:
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib
-    volumes:
-    - ./ci/pod/otelcol-contrib:/etc/otelcol-contrib:rw
-    ports:
-      - '4318:4318'
+
 
 
 networks:
