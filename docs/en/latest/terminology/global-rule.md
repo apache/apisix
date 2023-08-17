@@ -32,6 +32,12 @@ A [Plugin](./plugin.md) configuration can be bound directly to a [Route](./route
 
 Compared with the plugin configuration in Route, Service, Plugin Config, and Consumer, the plugin in the Global Rules is always executed first.
 
+::: note
+
+Global Rules do not apply for Stream Routes.
+
+:::
+
 ## Example
 
 The example below shows how you can use the `limit-count` Plugin on all requests:
