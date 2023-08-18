@@ -160,6 +160,8 @@ done
             ngx.status = res.status
         }
     }
+--- request
+GET /t
 --- wait: 1
 --- error_code: 200
 --- no_error_log
