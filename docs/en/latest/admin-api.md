@@ -1084,7 +1084,7 @@ Example Configuration:
     ...
     ```
 
-    After the executiis successful, nodes will not retain the original data, and the entire update is:
+    After the execution is successful, nodes will not retain the original data, and the entire update is:
 
     ```shell
     {
