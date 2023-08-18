@@ -147,15 +147,14 @@ local _M = {
 }
 
 local function hide_password_in_conf(conf)
-    local safeconf = core.table.deepcopy(conf)
-    if safeconf.brokers then
-        for _, broker in pairs(safeconf.brokers) do
+    if conf.brokers then
+        for _, broker in pairs(conf.brokers) do
             if broker.sasl_config and broker.sasl_config.password then
                 broker.sasl_config.password = "****" -- hide password
             end
         end
     end
-    return safeconf
+    return conf
 end
 
 
