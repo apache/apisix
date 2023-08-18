@@ -277,6 +277,10 @@ curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
 
 Route resource request address: /apisix/admin/routes/{id}?ttl=0
 
+### Quick Note on ID Syntax
+
+ID's as a text string must be of a length between 1 and 64 characters and they should only contain uppercase, lowercase, numbers and no special characters apart from dashes ( - ) and underscores ( _ ). For integer values they simply must have a minimum character count of 1.
+
 ### Request Methods
 
 | Method | Request URI                      | Request Body | Description                                                                                                                   |
@@ -871,6 +875,8 @@ An Upstream configuration can be directly bound to a Route or a Service, but the
 
 Upstream resource request address: /apisix/admin/upstreams/{id}
 
+For notes on ID syntax please refer to: [ID Syntax](#quick-note-on-id-syntax)
+
 ### Request Methods
 
 | Method | Request URI                         | Request Body | Description                                                                                                                      |
@@ -1078,7 +1084,7 @@ Example Configuration:
     ...
     ```
 
-    After the execution is successful, nodes will not retain the original data, and the entire update is:
+    After the executiis successful, nodes will not retain the original data, and the entire update is:
 
     ```shell
     {
@@ -1179,6 +1185,8 @@ Currently, the response is returned from etcd.
 ### SSL API
 
 SSL resource request address: /apisix/admin/ssls/{id}
+
+For notes on ID syntax please refer to: [ID Syntax](#quick-note-on-id-syntax)
 
 ### Request Methods
 
