@@ -157,6 +157,10 @@ local schema = {
                 }
             },
         }
+        authorization_params = {
+            description = "Extra authorization params to the authorize endpoint",
+            type = "object"
+        }
     },
     encrypt_fields = {"client_secret"},
     required = {"client_id", "client_secret", "discovery"}
