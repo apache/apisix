@@ -291,7 +291,7 @@ function _M.log(conf, ctx)
         return send_kafka_data(conf, data, prod)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(safeconf, entry, ctx, func)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
 end
 
 
