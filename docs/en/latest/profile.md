@@ -64,7 +64,7 @@ To use default values if no environment variables are set, you can add it to you
 ```yaml title="config.yaml"
 apisix:
   node_listen:
-    - ${{APISIX_NODE_LISTEN:=9080}}  
+    - ${{APISIX_NODE_LISTEN:=9080}}
 deployment:
   admin:
     admin_listen:
