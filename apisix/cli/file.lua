@@ -302,6 +302,7 @@ function _M.read_yaml_conf(apisix_home)
             default_conf.apisix.enable_admin = false
         end
 
+        --[[
         if default_conf.etcd and default_conf.deployment.certs then
             -- copy certs configuration to keep backward compatible
             local certs = default_conf.deployment.certs
@@ -312,6 +313,7 @@ function _M.read_yaml_conf(apisix_home)
             etcd.tls.cert = certs.cert
             etcd.tls.key = certs.cert_key
         end
+        --]]
     end
 
     if default_conf.deployment.config_provider == "yaml" then

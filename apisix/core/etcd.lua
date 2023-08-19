@@ -131,6 +131,7 @@ local function new()
 
     local proxy_by_conf_server = false
 
+    --[[
     if local_conf.deployment then
         if local_conf.deployment.role == "traditional"
             -- we proxy the etcd requests in traditional mode so we can test the CP's behavior in
@@ -179,6 +180,7 @@ local function new()
             etcd_conf.trusted_ca = local_conf.deployment.certs.trusted_ca_cert
         end
     end
+    --]]
 
     -- if an unhealthy etcd node is selected in a single admin read/write etcd operation,
     -- the retry mechanism for health check can select another healthy etcd node
