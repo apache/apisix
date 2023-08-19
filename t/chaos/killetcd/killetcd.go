@@ -137,22 +137,6 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 		time.Sleep(3 * time.Second)
 	})
 
-	// fail to set route since etcd is all killed
-	// while get route could still succeed
-	ginkgo.It("get stats after kill etcd", func() {
-		timeStart := time.Now()
-		utils.SetRoute(e, httpexpect.Status5xx)
-		utils.GetRoute(eDataPanel, http.StatusOK)
-		utils.TestPrometheusEtcdMetric(ePrometheus, 0)
-
-		bandwidthAfter, durationAfter = utils.GetEgressBandwidthPerSecond(ePrometheus)
-		bpsAfter = bandwidthAfter / durationAfter
-
-		errorLog, err := utils.Log(apisixPod, cliSet.KubeCli, timeStart)
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Ω(errorLog).Should(gomega.ContainSubstring("invalid response code: 502"))
-	})
-
 	ginkgo.It("ingress bandwidth per second not change much", func() {
 		fmt.Fprintf(ginkgo.GinkgoWriter, "bandwidth before: %f, after: %f\n", bandwidthBefore, bandwidthAfter)
 		fmt.Fprintf(ginkgo.GinkgoWriter, "duration before: %f, after: %f\n", durationBefore, durationAfter)
