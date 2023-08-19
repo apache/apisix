@@ -33,13 +33,6 @@ my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
 $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
 $ENV{TEST_NGINX_FAST_SHUTDOWN} ||= 1;
 
-Test::Nginx::Socket::set_http_config_filter(sub {
-    my $config = shift;
-    my $snippet = `$apisix_home/t/bin/gen_snippet.lua conf_server`;
-    $config .= $snippet;
-    return $config;
-});
-
 sub read_file($) {
     my $infile = shift;
     open my $in, "$apisix_home/$infile"

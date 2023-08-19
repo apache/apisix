@@ -21,7 +21,6 @@ local file = require("apisix.cli.file")
 local schema = require("apisix.cli.schema")
 local ngx_tpl = require("apisix.cli.ngx_tpl")
 local cli_ip = require("apisix.cli.ip")
-local snippet = require("apisix.cli.snippet")
 local profile = require("apisix.core.profile")
 local template = require("resty.template")
 local argparse = require("argparse")
@@ -533,11 +532,6 @@ Please modify "admin_key" in conf/config.yaml .
         proxy_mirror_timeouts = yaml_conf.plugin_attr["proxy-mirror"].timeout
     end
 
-    local conf_server, err = snippet.generate_conf_server(env, yaml_conf)
-    if err then
-        util.die(err, "\n")
-    end
-
     if yaml_conf.deployment and yaml_conf.deployment.role then
         local role = yaml_conf.deployment.role
         env.deployment_role = role
@@ -568,7 +562,6 @@ Please modify "admin_key" in conf/config.yaml .
         control_server_addr = control_server_addr,
         prometheus_server_addr = prometheus_server_addr,
         proxy_mirror_timeouts = proxy_mirror_timeouts,
-        conf_server = conf_server,
     }
 
     if not yaml_conf.apisix then
@@ -813,15 +806,6 @@ local function start(env, ...)
     end
 
     -- start a new APISIX instance
-
-    local conf_server_sock_path = env.apisix_home .. "/conf/config_listen.sock"
-    if pl_path.exists(conf_server_sock_path) then
-        -- remove stale sock (if exists) so that APISIX can start
-        local ok, err = os_remove(conf_server_sock_path)
-        if not ok then
-            util.die("failed to remove stale conf server sock file, error: ", err)
-        end
-    end
 
     local parser = argparse()
     parser:argument("_", "Placeholder")
