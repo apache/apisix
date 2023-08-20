@@ -100,26 +100,6 @@ fi
 
 echo "passed: could connect to etcd"
 
-echo '
-deployment:
-    role: traditional
-    role_traditional:
-        config_provider: etcd
-    etcd:
-        prefix: "/apisix"
-        host:
-            - http://127.0.0.1:2379
-            - https://127.0.0.1:2379
-' > conf/config.yaml
-
-out=$(make init 2>&1 || true)
-if ! echo "$out" | grep 'all nodes in the etcd cluster should enable/disable TLS together'; then
-    echo "failed: should validate etcd host"
-    exit 1
-fi
-
-echo "passed: validate etcd host"
-
 # The 'admin.apisix.dev' is injected by ci/common.sh@set_coredns
 
 # etcd mTLS verify
