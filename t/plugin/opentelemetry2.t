@@ -116,6 +116,3 @@ GET /hello
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
 qr/.*\/hello.*/
-
-
-
