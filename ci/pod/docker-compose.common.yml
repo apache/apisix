@@ -101,4 +101,6 @@ services:
     environment:
       VAULT_DEV_ROOT_TOKEN_ID: root
       VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    volumes:
+      - ./t/certs:/certs
     command: [ "vault", "server", "-dev" ]

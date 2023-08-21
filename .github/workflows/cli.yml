@@ -53,6 +53,7 @@ jobs:
       - name: Linux launch common services
         run: |
           project_compose_ci=ci/pod/docker-compose.common.yml make ci-env-up
+          sudo ./ci/init-common-test-service.sh
 
       - name: Linux Before install
         run: sudo ./ci/${{ matrix.job_name }}_runner.sh before_install
