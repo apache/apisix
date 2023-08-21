@@ -1521,7 +1521,7 @@ Check the validity of a configuration against its entity schema. This allows you
 
 Note that this only performs the schema validation checks, checking that the input configuration is well-formed. Requests to the entity endpoint using the given configuration may still fail due to other reasons, such as invalid foreign key relationships or uniqueness check failures against the contents of the data store.
 
-### Schema validate API
+### Schema validation
 
 Schema validate request address: /apisix/admin/schema/validate/{resource}
 
