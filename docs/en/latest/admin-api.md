@@ -279,7 +279,7 @@ Route resource request address: /apisix/admin/routes/{id}?ttl=0
 
 ### Quick Note on ID Syntax
 
-ID's as a text string must be of a length between 1 and 64 characters and they should only contain uppercase, lowercase, numbers and no special characters apart from dashes ( - ) and underscores ( _ ). For integer values they simply must have a minimum character count of 1.
+ID's as a text string must be of a length between 1 and 64 characters and they should only contain uppercase, lowercase, numbers and no special characters apart from dashes ( - ), periods ( . ) and underscores ( _ ). For integer values they simply must have a minimum character count of 1.
 
 ### Request Methods
 
