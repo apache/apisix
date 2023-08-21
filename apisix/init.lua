@@ -367,11 +367,25 @@ local function verify_https_client(ctx)
     end
 
     local matched_ssl = ctx.matched_ssl
+    if matched_ssl.value.client
+        and matched_ssl.value.client.skip_mtls_uri_regex
+        and apisix_ssl.support_client_verification()
+        and (not uri_matches_skip_mtls_route_patterns(matched_ssl, ngx.var.uri)) then
+        local res = ctx.var.ssl_client_verify
+        if res ~= "SUCCESS" then
+            if res == "NONE" then
+                core.log.error("client certificate was not present")
+            else
+                core.log.error("client certificate verification is not passed: ", res)
+            end
+
+            return false
+        end
+    end
+
     if matched_ssl.value.client and apisix_ssl.support_client_verification() then
         local verified = apisix_base_flags.client_cert_verified_in_handshake
-        local uri_in_whitelist = matched_ssl.value.client.skip_mtls_uri_regex
-            and uri_matches_skip_mtls_route_patterns(matched_ssl, ngx.var.uri)
-        if (not verified) or (not uri_in_whitelist) then
+        if not verified then
             -- vanilla OpenResty requires to check the verification result
             local res = ctx.var.ssl_client_verify
             if res ~= "SUCCESS" then
