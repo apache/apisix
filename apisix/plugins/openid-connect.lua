@@ -156,7 +156,7 @@ local schema = {
                     description = "Comma separated list of hosts that should not be proxied.",
                 }
             },
-        }
+        },
         authorization_params = {
             description = "Extra authorization params to the authorize endpoint",
             type = "object"
