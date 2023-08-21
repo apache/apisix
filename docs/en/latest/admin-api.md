@@ -1515,7 +1515,7 @@ Proto resource request address: /apisix/admin/protos/{id}
 | create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
 | update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
 
-## Schema validate
+## Schema validation
 
 Check the validity of a configuration against its entity schema. This allows you to test your input before submitting a request to the entity endpoints of the Admin API.
 
