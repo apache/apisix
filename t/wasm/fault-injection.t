@@ -180,3 +180,142 @@ GET /hello
 --- error_code: 401
 --- response_body_like eval
 qr/<title>401 Authorization Required<\/title>/
+
+
+
+=== TEST 7: check schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "wasm_fault_injection": {
+                            "conf": "{\"http_status\":401, \"body\":\"HIT\n\"}",
+                            "setting": {
+                                "http_status": 401,
+                                "body": "HIT\n"
+                            }
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- response_body eval
+qr/value should match only one schema/
+
+
+
+=== TEST 8: fault injection
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "wasm_fault_injection": {
+                            "setting": {
+                                "http_status": 401,
+                                "body": "HIT\n"
+                            }
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: hit
+--- request
+GET /hello
+--- error_code: 401
+--- response_body
+HIT
+
+
+
+=== TEST 10: fault injection, with 0 percentage
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "wasm_fault_injection": {
+                            "setting": {
+                                "http_status": 401,
+                                "percentage": 0
+                            }
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: hit
+--- request
+GET /hello
+--- response_body
+hello world

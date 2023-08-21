@@ -26,8 +26,14 @@ local schema = {
             type = "string",
             minLength = 1,
         },
+        setting = {
+            type = "object",
+        },
     },
-    required = {"conf"}
+    oneOf = {
+        {required = {"conf"}},
+        {required = {"setting"}},
+    },
 }
 local _M = {}
 
@@ -51,7 +57,11 @@ local function fetch_plugin_ctx(conf, ctx, plugin)
     local plugin_ctx = ctxs[key]
     local err
     if not plugin_ctx then
-        plugin_ctx, err = wasm.on_configure(plugin, conf.conf)
+        if conf.setting then
+            plugin_ctx, err = wasm.on_configure(plugin, core.json.encode(conf.setting))
+        else
+            plugin_ctx, err = wasm.on_configure(plugin, conf.conf)
+        end
         if not plugin_ctx then
             return nil, err
         end
