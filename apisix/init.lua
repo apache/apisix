@@ -359,6 +359,12 @@ local function verify_https_client(ctx)
     end
 
     local matched_ssl = ngx.ctx.matched_ssl
+
+    -- matched_ssl is only populated at the time of TLS handshake so for futher requests
+    -- when it is nil, verification can be skipped.
+    if not matched_ssl then
+        return true
+    end
     if matched_ssl.value.client
         and matched_ssl.value.client.skip_mtls_uri_regex
         and apisix_ssl.support_client_verification()
