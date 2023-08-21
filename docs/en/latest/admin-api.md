@@ -1561,5 +1561,5 @@ Access-Control-Allow-Credentials: true
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 3600
 
-{"err":"property \"uri\" validation failed: wrong type: expected string, got number"}
+{"error_msg":"property \"uri\" validation failed: wrong type: expected string, got number"}
 ```

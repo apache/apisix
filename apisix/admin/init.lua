@@ -407,7 +407,7 @@ local function schema_validate()
     if ok then
         core.response.exit(200)
     end
-    core.response.exit(400, {err = err})
+    core.response.exit(400, {error_msg = err})
 end
 
 

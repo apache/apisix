@@ -92,4 +92,4 @@ location /t {
 }
 --- error_code: 400
 --- response
-{"err": {"property \"uri\" validation failed: wrong type: expected string, got number"}}
+{"error_msg": {"property \"uri\" validation failed: wrong type: expected string, got number"}}
