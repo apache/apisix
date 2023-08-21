@@ -1313,7 +1313,8 @@ Plugin resource request address: /apisix/admin/plugins/{plugin_name}
 | GET    | /apisix/admin/plugins/list          | NULL         | Fetches a list of all Plugins.                 |
 | GET    | /apisix/admin/plugins/{plugin_name} | NULL         | Fetches the specified Plugin by `plugin_name`. |
 | GET         | /apisix/admin/plugins?all=true      | NULL         | Get all properties of all plugins. |
-| GET         | /apisix/admin/plugins?all=true&subsystem=stream| NULL | Get properties of all Stream plugins.|
+| GET         | /apisix/admin/plugins?all=true&subsystem=stream| NULL | Gets properties of all Stream plugins.|
+| GET    | /apisix/admin/plugins?all=true&subsystem=http | NULL | Gets properties of all HTTP plugins. |
 | PUT    | /apisix/admin/plugins/reload       | NULL         | Reloads the plugin according to the changes made in code |
 
 ### Request Body Parameters
