@@ -1523,7 +1523,7 @@ Note that this only performs the schema validation checks, checking that the inp
 
 ### Schema validation
 
-Schema validate request address: /apisix/admin/schema/validate/{resource}
+Schema validation request address: /apisix/admin/schema/validate/{resource}
 
 ### Request Methods
 
