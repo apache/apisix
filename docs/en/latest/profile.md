@@ -71,7 +71,7 @@ deployment:
       port: ${{DEPLOYMENT_ADMIN_ADMIN_LISTEN:=9180}}
 ```
 
-Now if you don't specify these environment variables when running APISIX, it will fall back to the default values.
+Now if you don't specify these environment variables when running APISIX, it will fall back to the default values and expose the Admin API on port `9180` and listen on port `9080`.
 
 ## Using the `APISIX_PROFILE` environment variable
 
