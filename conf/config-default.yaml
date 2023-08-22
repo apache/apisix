@@ -616,6 +616,12 @@ deployment:                    # Deployment configurations
   role_traditional:
     config_provider: etcd      # Set the configuration center.
 
+  #role_data_plane:            # Set data plane details if role is data_plane.
+  #  config_provider: etcd     # Set the configuration center: etcd, xds, or yaml.
+
+  #role_control_plane:         # Set control plane details if role is control_plane.
+  #  config_provider: etcd     # Set the configuration center.
+
   admin:                       # Admin API
     admin_key_required: true   # Enable Admin API authentication by default for security.
     admin_key:
