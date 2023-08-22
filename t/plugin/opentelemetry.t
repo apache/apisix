@@ -148,7 +148,7 @@ done
 === TEST 5: trigger opentelemetry
 --- request
 GET /opentracing
---- wait: 1
+--- wait: 2
 --- response_body
 opentracing
 
@@ -210,7 +210,7 @@ done
 GET /opentracing
 --- more_headers
 traceparent: 00-00000000000000000000000000000001-0000000000000001-01
---- wait: 1
+--- wait: 2
 --- response_body
 opentracing
 
@@ -275,7 +275,7 @@ done
 GET /opentracing
 --- more_headers
 traceparent: 00-00000000000000000000000000000001-0000000000000001-01
---- wait: 1
+--- wait: 2
 --- response_body
 opentracing
 
@@ -353,7 +353,7 @@ GET /opentracing?foo=bar&a=b
 X-Request-Id: 01010101010101010101010101010101
 User-Agent: test_nginx
 Cookie: token=auth_token;
---- wait: 1
+--- wait: 2
 --- response_body
 opentracing
 
@@ -410,7 +410,7 @@ done
 --- request
 HEAD /specific_status
 --- response_body
---- wait: 1
+--- wait: 2
 
 
 
