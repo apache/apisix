@@ -98,6 +98,9 @@ local function hook(_, arg)
         if #hooks == 0 then
             core.log.warn("inspect: all hooks removed")
             debug.sethook()
+            if jit then
+                jit.on()
+            end
         end
     end
 end
