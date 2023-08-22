@@ -21,7 +21,7 @@ title: SSL 协议
 #
 -->
 
-`APISIX` 支持，还支持动态的为每一个 SNI 指定不同的 TLS 协议版本。
+`APISIX` 支持 TLS 协议，还支持动态的为每一个 SNI 指定不同的 TLS 协议版本。
 
 **为了安全考虑，APISIX 默认使用的加密套件不支持 TLSv1.1 以及更低的版本。**
 **如果你需要启用 TLSv1.1 协议，请在 config.yaml 的配置项 apisix.ssl.ssl_ciphers 增加 TLSv1.1 协议所支持的加密套件。**
@@ -171,7 +171,7 @@ $ curl --tls-max 1.3 --tlsv1.3  https://test2.com:9443 -v -k -I
 * SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
 ```
 
-使用 TLSv1.3 访问 test2.com 失败：
+使用 TLSv1.1 访问 test2.com 失败：
 
 ```shell
 curl --tls-max 1.1 --tlsv1.1  https://test2.com:9443 -v -k -I
