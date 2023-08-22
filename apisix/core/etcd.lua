@@ -28,7 +28,6 @@ local clone_tab         = require("table.clone")
 local health_check      = require("resty.etcd.health_check")
 local pl_path           = require("pl.path")
 local ipairs            = ipairs
-local pcall             = pcall
 local setmetatable      = setmetatable
 local string            = string
 local tonumber          = tonumber
@@ -69,17 +68,6 @@ local function _new(etcd_conf)
 
         if etcd_conf.tls.sni then
             etcd_conf.sni = etcd_conf.tls.sni
-        end
-    end
-
-    if etcd_conf.use_grpc then
-        if ngx_get_phase() == "init" then
-            etcd_conf.use_grpc = false
-        else
-            local ok = pcall(require, "resty.grpc")
-            if not ok then
-                etcd_conf.use_grpc = false
-            end
         end
     end
 
@@ -347,10 +335,6 @@ do
                 tmp_etcd_cli, prefix, err = new_without_proxy()
                 if not tmp_etcd_cli then
                     return nil, nil, err
-                end
-
-                if tmp_etcd_cli.use_grpc then
-                    etcd_cli_init_phase = tmp_etcd_cli
                 end
 
                 return tmp_etcd_cli, prefix

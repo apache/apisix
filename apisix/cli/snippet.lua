@@ -113,12 +113,6 @@ server {
 ]]
 
 
-local function is_grpc_used(env, etcd)
-    local is_grpc_available = env.use_apisix_base
-    return is_grpc_available and etcd.use_grpc
-end
-
-
 function _M.generate_conf_server(env, conf)
     if not (conf.deployment and (
         conf.deployment.role == "traditional" or
@@ -171,7 +165,6 @@ function _M.generate_conf_server(env, conf)
     local client_cert_key
     local ssl_trusted_certificate
     local etcd_tls_verify
-    local use_grpc = is_grpc_used(env, etcd)
     if tls then
         if tls.cert then
             client_cert = pl_path.abspath(tls.cert)
@@ -197,8 +190,8 @@ function _M.generate_conf_server(env, conf)
         trusted_ca_cert = trusted_ca_cert,
         etcd_tls_verify = etcd_tls_verify,
         ssl_trusted_certificate = ssl_trusted_certificate,
-        scheme_name = use_grpc and "grpc" or "http",
-        directive_prefix = use_grpc and "grpc" or "proxy",
+        scheme_name = "http",
+        directive_prefix = "proxy",
     })
 end
 
