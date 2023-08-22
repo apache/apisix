@@ -344,3 +344,57 @@ location /t {
 --- error_code: 400
 --- response
 {"error_msg":"property \"plugin_config_id\" validation failed: object matches none of the required"}
+
+
+
+=== TEST 11: upstream ok
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/schema/validate/upstreams',
+            ngx.HTTP_POST,
+            [[{
+               "nodes":{
+                  "nghttp2.org":100
+               },
+               "type":"roundrobin"
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+    }
+}
+--- error_code: 200
+
+
+
+=== TEST 12: upstream failed, wrong nodes format
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/schema/validate/upstreams',
+            ngx.HTTP_POST,
+            [[{
+               "nodes":[
+                   "nghttp2.org"
+               ],
+               "type":"roundrobin"
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+    }
+}
+--- error_code: 400
+--- response
+{"error_msg":"allOf 1 failed: value should match only one schema, but matches none"}
