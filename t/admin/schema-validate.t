@@ -93,3 +93,254 @@ location /t {
 --- error_code: 400
 --- response
 {"error_msg": {"property \"uri\" validation failed: wrong type: expected string, got number"}}
+
+
+
+=== TEST 3: validate failed, length limit
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/schema/validate/routes',
+            ngx.HTTP_POST,
+            [[{
+                "uri": "",
+                "upstream": {
+                    "scheme": "https",
+                    "type": "roundrobin",
+                    "nodes": {
+                        "nghttp2.org": 1
+                    }
+                }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+    }
+}
+--- error_code: 400
+--- response
+{"error_msg":"property \"uri\" validation failed: string too short, expected at least 1, got 0"}
+
+
+
+=== TEST 4: validate failed, array type expected
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/schema/validate/routes',
+            ngx.HTTP_POST,
+            [[{
+                "uris": "foobar",
+                "upstream": {
+                    "scheme": "https",
+                    "type": "roundrobin",
+                    "nodes": {
+                        "nghttp2.org": 1
+                    }
+                }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+    }
+}
+--- error_code: 400
+--- response
+{"error_msg":"property \"uris\" validation failed: wrong type: expected array, got string"}
+
+
+
+=== TEST 5: validate failed, array size limit
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/schema/validate/routes',
+            ngx.HTTP_POST,
+            [[{
+                "uris": [],
+                "upstream": {
+                    "scheme": "https",
+                    "type": "roundrobin",
+                    "nodes": {
+                        "nghttp2.org": 1
+                    }
+                }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+    }
+}
+--- error_code: 400
+--- response
+{"error_msg":"property \"uris\" validation failed: expect array to have at least 1 items"}
+
+
+
+=== TEST 6: validate failed, array unique items
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/schema/validate/routes',
+            ngx.HTTP_POST,
+            [[{
+                "uris": ["/foo", "/foo"],
+                "upstream": {
+                    "scheme": "https",
+                    "type": "roundrobin",
+                    "nodes": {
+                        "nghttp2.org": 1
+                    }
+                }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+    }
+}
+--- error_code: 400
+--- response
+{"error_msg":"property \"uris\" validation failed: expected unique items but items 1 and 2 are equal"}
+
+
+
+=== TEST 7: validate failed, uri or uris is mandatory
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/schema/validate/routes',
+            ngx.HTTP_POST,
+            [[{
+                "upstream": {
+                    "scheme": "https",
+                    "type": "roundrobin",
+                    "nodes": {
+                        "nghttp2.org": 1
+                    }
+                }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+    }
+}
+--- error_code: 400
+--- response
+{"error_msg":"allOf 1 failed: value should match only one schema, but matches none"}
+
+
+
+=== TEST 8: validate failed, enum check
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/schema/validate/routes',
+            ngx.HTTP_POST,
+            [[{
+                "status": 3,
+                "uri": "/foo",
+                "upstream": {
+                    "scheme": "https",
+                    "type": "roundrobin",
+                    "nodes": {
+                        "nghttp2.org": 1
+                    }
+                }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+    }
+}
+--- error_code: 400
+--- response
+{"error_msg":"property \"status\" validation failed: matches none of the enum values"}
+
+
+
+=== TEST 9: validate failed, wrong combination
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/schema/validate/routes',
+            ngx.HTTP_POST,
+            [[{
+                "script": "xxxxxxxxxxxxxxxxxxxxx",
+                "plugin_config_id": "foo"
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+    }
+}
+--- error_code: 400
+--- response
+{"error_msg":"allOf 1 failed: value should match only one schema, but matches none"}
+
+
+
+=== TEST 10: validate failed, id_schema check
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local code, body = t('/apisix/admin/schema/validate/routes',
+            ngx.HTTP_POST,
+            [[{
+                "plugin_config_id": "@@@@@@@@@@@@@@@@",
+                "uri": "/foo",
+                "upstream": {
+                    "scheme": "https",
+                    "type": "roundrobin",
+                    "nodes": {
+                        "nghttp2.org": 1
+                    }
+                }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+    }
+}
+--- error_code: 400
+--- response
+{"error_msg":"property \"plugin_config_id\" validation failed: object matches none of the required"}
