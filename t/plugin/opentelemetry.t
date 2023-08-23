@@ -37,7 +37,9 @@ plugin_attr:
 _EOC_
         $block->set_value("extra_yaml_config", $extra_yaml_config);
     }
-
+    if (!defined $block->response_body) {
+        $block->set_value("response_body", "passed\n");
+    }
     $block;
 });
 repeat_each(1);
@@ -77,13 +79,11 @@ __DATA__
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.say("done")
+            ngx.say(body)
         }
     }
 --- request
 GET /t
---- response_body
-done
 
 
 
@@ -135,13 +135,11 @@ qr/.*opentelemetry-lua.*/
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.say("done")
+            ngx.say(body)
         }
     }
 --- request
 GET /t
---- response_body
-done
 
 
 
@@ -195,13 +193,11 @@ qr/.*opentelemetry-lua.*/
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.say("done")
+            ngx.say(body)
         }
     }
 --- request
 GET /t
---- response_body
-done
 
 
 
@@ -260,13 +256,11 @@ qr/.*"traceId":"00000000000000000000000000000001",.*/
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.say("done")
+            ngx.say(body)
         }
     }
 --- request
 GET /t
---- response_body
-done
 
 
 
@@ -336,13 +330,11 @@ qr/.*"traceId":"00000000000000000000000000000001",.*/
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.say("done")
+            ngx.say(body)
         }
     }
 --- request
 GET /t
---- response_body
-done
 
 
 
@@ -396,13 +388,11 @@ qr/.*\/opentracing\?foo=bar.*/
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.say("done")
+            ngx.say(body)
         }
     }
 --- request
 GET /t
---- response_body
-done
 
 
 
