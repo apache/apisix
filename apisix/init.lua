@@ -366,7 +366,7 @@ local function verify_https_client(ctx)
         end
     end
 
-    local matched_ssl = ctx.matched_ssl or ngx.ctx.matched_ssl
+    local matched_ssl = ngx.ctx.matched_ssl or ctx.matched_ssl
     if matched_ssl.value.client
         and matched_ssl.value.client.skip_mtls_uri_regex
         and apisix_ssl.support_client_verification()
