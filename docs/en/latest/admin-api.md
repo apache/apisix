@@ -277,6 +277,10 @@ curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
 
 Route resource request address: /apisix/admin/routes/{id}?ttl=0
 
+### Quick Note on ID Syntax
+
+ID's as a text string must be of a length between 1 and 64 characters and they should only contain uppercase, lowercase, numbers and no special characters apart from dashes ( - ), periods ( . ) and underscores ( _ ). For integer values they simply must have a minimum character count of 1.
+
 ### Request Methods
 
 | Method | Request URI                      | Request Body | Description                                                                                                                   |
@@ -871,6 +875,8 @@ An Upstream configuration can be directly bound to a Route or a Service, but the
 
 Upstream resource request address: /apisix/admin/upstreams/{id}
 
+For notes on ID syntax please refer to: [ID Syntax](#quick-note-on-id-syntax)
+
 ### Request Methods
 
 | Method | Request URI                         | Request Body | Description                                                                                                                      |
@@ -1179,6 +1185,8 @@ Currently, the response is returned from etcd.
 ### SSL API
 
 SSL resource request address: /apisix/admin/ssls/{id}
+
+For notes on ID syntax please refer to: [ID Syntax](#quick-note-on-id-syntax)
 
 ### Request Methods
 
@@ -1514,3 +1522,52 @@ Proto resource request address: /apisix/admin/protos/{id}
 | content   | True    | String | content of `.proto` or `.pb` files | See [here](./plugins/grpc-transcode.md#enabling-the-plugin)         |
 | create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
 | update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
+
+## Schema validation
+
+Check the validity of a configuration against its entity schema. This allows you to test your input before submitting a request to the entity endpoints of the Admin API.
+
+Note that this only performs the schema validation checks, checking that the input configuration is well-formed. Requests to the entity endpoint using the given configuration may still fail due to other reasons, such as invalid foreign key relationships or uniqueness check failures against the contents of the data store.
+
+### Schema validation
+
+Schema validation request address: /apisix/admin/schema/validate/{resource}
+
+### Request Methods
+
+| Method | Request URI                      | Request Body | Description                                     |
+| ------ | -------------------------------- | ------------ | ----------------------------------------------- |
+| POST   | /apisix/admin/schema/validate/{resource}      | {..resource conf..}        | Validate the resource configuration against corresponding schema.         |
+
+### Request Body Parameters
+
+* 200: validate ok.
+* 400: validate failed, with error as response body in JSON format.
+
+Example:
+
+```bash
+curl http://127.0.0.1:9180/apisix/admin/schema/validate/routes \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X POST -i -d '{
+    "uri": 1980,
+    "upstream": {
+        "scheme": "https",
+        "type": "roundrobin",
+        "nodes": {
+            "nghttp2.org": 1
+        }
+    }
+}'
+HTTP/1.1 400 Bad Request
+Date: Mon, 21 Aug 2023 07:37:13 GMT
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/3.4.0
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 3600
+
+{"error_msg":"property \"uri\" validation failed: wrong type: expected string, got number"}
+```

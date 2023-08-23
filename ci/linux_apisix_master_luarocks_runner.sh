@@ -52,6 +52,13 @@ script() {
     sudo PATH=$PATH apisix init
     sudo PATH=$PATH apisix start
     sudo PATH=$PATH apisix quit
+    for i in {1..10}
+    do
+        if [ ! -f /usr/local/apisix/logs/nginx.pid ];then
+            break
+        fi
+        sleep 0.3
+    done
     sudo PATH=$PATH apisix start
     sudo PATH=$PATH apisix stop
 
