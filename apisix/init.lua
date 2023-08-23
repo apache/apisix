@@ -359,7 +359,7 @@ local function verify_https_client(ctx)
     end
 
     local host = ctx.var.host
-    if not ctx.matched_ssl then
+    if not ngx.ctx.matched_ssl then
         local matched = router.router_ssl.match_and_set(ctx, true, host)
         if not matched then
             return true
