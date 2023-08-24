@@ -81,13 +81,13 @@ __DATA__
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.say("done")
+            ngx.say(body)
         }
     }
 --- request
 GET /t
 --- response_body
-done
+passed
 
 
 
