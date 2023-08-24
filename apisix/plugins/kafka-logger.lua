@@ -24,7 +24,7 @@ local pairs    = pairs
 local type     = type
 local plugin_name = "kafka-logger"
 local batch_processor_manager = bp_manager_mod.new("kafka logger")
-
+local ipairs = ipairs
 local lrucache = core.lrucache.new({
     type = "plugin",
 })
