@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local type = type
 local support_wasm, wasm = pcall(require, "resty.proxy-wasm")
 local ngx_var = ngx.var
 
