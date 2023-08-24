@@ -183,7 +183,7 @@ qr/<title>401 Authorization Required<\/title>/
 
 
 
-=== TEST 7: check schema
+=== TEST 7: fault injection
 --- config
     location /t {
         content_by_lua_block {
@@ -200,49 +200,7 @@ qr/<title>401 Authorization Required<\/title>/
                     },
                     "plugins": {
                         "wasm_fault_injection": {
-                            "conf": "{\"http_status\":401, \"body\":\"HIT\n\"}",
-                            "setting": {
-                                "http_status": 401,
-                                "body": "HIT\n"
-                            }
-                        }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            ngx.say(body)
-        }
-    }
---- error_code: 400
---- response_body eval
-qr/value should match only one schema/
-
-
-
-=== TEST 8: fault injection
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/hello",
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        }
-                    },
-                    "plugins": {
-                        "wasm_fault_injection": {
-                            "setting": {
+                            "conf": {
                                 "http_status": 401,
                                 "body": "HIT\n"
                             }
@@ -265,7 +223,7 @@ passed
 
 
 
-=== TEST 9: hit
+=== TEST 8: hit
 --- request
 GET /hello
 --- error_code: 401
@@ -274,7 +232,7 @@ HIT
 
 
 
-=== TEST 10: fault injection, with 0 percentage
+=== TEST 9: fault injection, with 0 percentage
 --- config
     location /t {
         content_by_lua_block {
@@ -291,7 +249,7 @@ HIT
                     },
                     "plugins": {
                         "wasm_fault_injection": {
-                            "setting": {
+                            "conf": {
                                 "http_status": 401,
                                 "percentage": 0
                             }
@@ -309,12 +267,13 @@ HIT
             ngx.say(body)
         }
     }
+--- ret_code: 401
 --- response_body
 passed
 
 
 
-=== TEST 11: hit
+=== TEST 10: hit
 --- request
 GET /hello
 --- response_body
