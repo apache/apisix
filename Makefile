@@ -451,7 +451,8 @@ compress-tar:
 .PHONY: ci-env-up
 ci-env-up:
 	@$(call func_echo_status, "$@ -> [ Start ]")
-	touch $(OTEL_CONFIG); chmod 777 $(OTEL_CONFIG)
+	touch $(OTEL_CONFIG)
+	chmod 777 $(OTEL_CONFIG)
 	$(ENV_DOCKER_COMPOSE) up -d
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
