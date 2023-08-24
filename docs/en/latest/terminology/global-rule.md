@@ -34,7 +34,7 @@ Compared with the plugin configuration in Route, Service, Plugin Config, and Con
 
 ::: note
 
-Global Rules do not apply for Stream Routes.
+For stream routes, only plugins that run on `before_proxy` phase get executed as Global Rules.
 
 :::
 
