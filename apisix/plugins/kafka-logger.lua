@@ -147,14 +147,15 @@ local _M = {
 }
 
 local function hide_password_in_conf(conf)
-    if conf.brokers then
-        for _, broker in pairs(conf.brokers) do
+    local safeconf = core.table.deepcopy(conf)
+    if safeconf.brokers then
+        for _, broker in ipairs(safeconf.brokers) do
             if broker.sasl_config and broker.sasl_config.password then
                 broker.sasl_config.password = "****" -- hide password
             end
         end
     end
-    return conf
+    return safeconf
 end
 
 
@@ -167,7 +168,7 @@ function _M.check_schema(conf, schema_type)
     if not ok then
         return nil, err
     end
-    return log_util.check_log_schema(hide_password_in_conf(conf))
+    return log_util.check_log_schema(conf)
 end
 
 
@@ -220,7 +221,7 @@ end
 
 
 function _M.body_filter(conf, ctx)
-    log_util.collect_body(hide_password_in_conf(conf), ctx)
+    log_util.collect_body(conf, ctx)
 end
 
 
