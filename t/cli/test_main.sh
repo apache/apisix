@@ -654,7 +654,7 @@ fi
 
 echo "passed: detect invalid extra_lua_path"
 
-# support hooking into APISIX methods
+# validate lua_module_hook
 echo '
 apisix:
     lua_module_hook: "example/my_hook"
@@ -668,6 +668,7 @@ fi
 
 echo "passed: bad lua_module_hook should be rejected"
 
+# support hooking into APISIX methods
 echo '
 apisix:
     proxy_mode: http&stream
@@ -696,6 +697,32 @@ if ! grep "my hook works in stream" logs/error.log > /dev/null; then
 fi
 
 echo "passed: hook can take effect"
+
+# register custom variable with the hook
+echo '
+apisix:
+    extra_lua_path: "\$prefix/example/?.lua"
+    lua_module_hook: "register_custom_var"
+' > conf/config.yaml
+
+rm logs/error.log
+make init
+make run
+
+sleep 0.5
+make stop
+
+if ! grep "my hook works in http" logs/error.log > /dev/null; then
+    echo "failed: hook can take effect"
+    exit 1
+fi
+
+if ! grep "my hook works in stream" logs/error.log > /dev/null; then
+    echo "failed: hook can take effect"
+    exit 1
+fi
+
+echo "passed: register custom variable with hook"
 
 # check the keepalive related parameter settings in the upstream
 git checkout conf/config.yaml
