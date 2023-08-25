@@ -203,7 +203,7 @@ request get body: ell
 
 
 
-=== TEST 8: sanity
+=== TEST 8: invalid conf type no set conf
 --- config
     location /t {
         content_by_lua_block {
@@ -235,8 +235,9 @@ request get body: ell
             ngx.say(body)
         }
     }
---- response_body
-passed
+--- error_code: 400
+--- response_body_like eval
+qr/invalid conf type/
 
 
 
