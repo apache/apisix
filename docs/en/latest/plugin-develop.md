@@ -1,5 +1,5 @@
 ---
-title: Plugin Develop
+title: Develop Plugin
 ---
 
 <!--
@@ -71,8 +71,7 @@ apisix:
     lua_module_hook: "my_hook"
 ```
 
-The `example/my_hook.lua` will be loaded when APISIX starts, and you can use this hook to replace a method in APISIX.
-The example of [my_hook.lua](https://github.com/apache/apisix/blob/master/example/my_hook.lua) can be found under the `example` directory of this project.
+The `example/my_hook.lua` will be loaded when APISIX starts, and you can use this hook to replace a method in APISIX. The example of [my_hook.lua](https://github.com/apache/apisix/blob/master/example/my_hook.lua) can be found under the `example` directory of this project.
 
 ## check dependencies
 
@@ -488,25 +487,33 @@ curl -i -X GET "http://127.0.0.1:9090/v1/plugin/example-plugin/hello"
 
 ## register custom variable
 
-We can use variables in many places of APISIX. For example, customizing log format in http-logger, using it as the key of `limit-*` plugins. In some situations, the builtin variables are not enough. Therefore, APISIX allows developers to register their variables globally, and use them as normal builtin variables.
+You can also register your own variables and use them as built-in variables, for use cases such as customizing log format in logging plugins, or using built-in variables as keys in rate limiting plugins.
 
-For instance, let's register a variable called `a6_labels_zone` to fetch the value of the `zone` label in a route:
+For example, you can register a variable called `a6_route_labels` to obtain `labels` from a route:
 
-```
+```lua
 local core = require "apisix.core"
 
-core.ctx.register_var("a6_labels_zone", function(ctx)
+core.ctx.register_var("a6_route_labels", function(ctx)
     local route = ctx.matched_route and ctx.matched_route.value
     if route and route.labels then
-        return route.labels.zone
+      return route.labels
     end
     return nil
 end)
 ```
 
-After that, any get operation to `$a6_labels_zone` will call the registered getter to fetch the value.
+If you are developing a new plugin, the snippet could be added directly to your plugin source file.
 
-Note that the custom variables can't be used in features that depend on the Nginx directive, like `access_log_format`.
+::: info
+
+If you are not doing development and would like to register a custom variable at runtime, you can run the snippet in serverless functions with the [`serverless`](plugins/serverless.md) plugins.
+
+:::
+
+Upon a successful registration, you can use the variable `$a6_route_labels` in configurations.
+
+Note that the custom variables cannot be used in static configuration files, for example, to configure `access_log_format`.
 
 ## write test case
 

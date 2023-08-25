@@ -701,8 +701,12 @@ echo "passed: hook can take effect"
 # register custom variable with the hook
 echo '
 apisix:
+    proxy_mode: http&stream
     extra_lua_path: "\$prefix/example/?.lua"
     lua_module_hook: "register_custom_var"
+    stream_proxy:
+        tcp:
+            - addr: 9100
 ' > conf/config.yaml
 
 rm logs/error.log
