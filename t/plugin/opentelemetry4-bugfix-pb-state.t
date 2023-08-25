@@ -16,55 +16,34 @@
 #
 
 use t::APISIX 'no_plan';
-
 add_block_preprocessor(sub {
     my ($block) = @_;
 
     if (!$block->extra_yaml_config) {
         my $extra_yaml_config = <<_EOC_;
 plugins:
-    - example-plugin
-    - key-auth
     - opentelemetry
 plugin_attr:
     opentelemetry:
+        trace_id_source: x-request-id
         batch_span_processor:
             max_export_batch_size: 1
             inactive_timeout: 0.5
+        collector:
+            address: 127.0.0.1:4318
+            request_timeout: 3
+            request_headers:
+                foo: bar
 _EOC_
         $block->set_value("extra_yaml_config", $extra_yaml_config);
     }
 
-
-    if (!$block->extra_init_by_lua) {
-        my $extra_init_by_lua = <<_EOC_;
--- mock exporter http client
-local client = require("opentelemetry.trace.exporter.http_client")
-client.do_request = function()
-    ngx.log(ngx.INFO, "opentelemetry export span")
-    return "ok"
-end
-local ctx_new = require("opentelemetry.context").new
-require("opentelemetry.context").new = function (...)
-    local ctx = ctx_new(...)
-    local current = ctx.current
-    ctx.current = function (...)
-        ngx.log(ngx.INFO, "opentelemetry context current")
-        return current(...)
-    end
-    return ctx
-end
-_EOC_
-
-        $block->set_value("extra_init_by_lua", $extra_init_by_lua);
-    }
-
-    if (!$block->request) {
-        $block->set_value("request", "GET /t");
-    }
-
     $block;
 });
+repeat_each(1);
+no_long_string();
+no_root_location();
+log_level("debug");
 
 run_tests;
 
@@ -105,6 +84,8 @@ __DATA__
             ngx.say(body)
         }
     }
+--- request
+GET /t
 --- response_body
 passed
 
@@ -179,6 +160,8 @@ passed
             ngx.status = res.status
         }
     }
+--- request
+GET /t
 --- wait: 1
 --- error_code: 200
 --- no_error_log
