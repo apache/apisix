@@ -36,7 +36,7 @@ local function check_schema(conf)
     end
 
     if conf.conf == "" or conf.conf == {} then
-        return false, "emtpy conf"
+        return false, "empty conf"
     end
 
     return true, ""
