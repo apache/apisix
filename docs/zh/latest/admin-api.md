@@ -1326,6 +1326,7 @@ Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 | GET         | /apisix/admin/plugins/{plugin_name} | 无         | 获取资源。      |
 | GET         | /apisix/admin/plugins?all=true      | 无         | 获取所有插件的所有属性。 |
 | GET         | /apisix/admin/plugins?all=true&subsystem=stream| 无 | 获取所有 Stream 插件的属性。|
+| GET         | /apisix/admin/plugins?all=true&subsystem=http| 无 | 获取所有 HTTP 插件的属性。|
 | PUT         | /apisix/admin/plugins/reload        | 无         | 根据代码中所做的更改重新加载插件 |
 
 ### 使用示例 {#plugin-example}
