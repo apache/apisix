@@ -1316,6 +1316,8 @@ Plugin resource request address: /apisix/admin/plugins/{plugin_name}
 | GET         | /apisix/admin/plugins?all=true&subsystem=stream| NULL | Gets properties of all Stream plugins.|
 | GET    | /apisix/admin/plugins?all=true&subsystem=http | NULL | Gets properties of all HTTP plugins. |
 | PUT    | /apisix/admin/plugins/reload       | NULL         | Reloads the plugin according to the changes made in code |
+| GET    | apisix/admin/plugins/{PLUGIN}?subsystem=stream | NULL | Checks if the `{PLUGIN}` is supported in Stream/L4 mode. |
+| GET    | apisix/admin/plugins/{PLUGIN}?subsystem=http   | NULL | Checks if the `{PLUGIN}` is supported in HTTP/L7 mode. |
 
 ### Request Body Parameters
 
