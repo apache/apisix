@@ -70,7 +70,9 @@ function resp_exit(code, ...)
                 error("failed to encode data: " .. err, -2)
             else
                 idx = idx + 1
-                t[idx] = body .. "\n"
+                t[idx] = body
+                idx = idx + 1
+                t[idx] = "\n"
             end
 
         elseif v ~= nil then
@@ -80,7 +82,7 @@ function resp_exit(code, ...)
     end
 
     if idx > 0 then
-        ngx_print(concat_tab(t, "", 1, idx))
+        ngx_print(t)
     end
 
     if code then
