@@ -152,7 +152,7 @@ qr/invalid request body/
     }
 --- error_code: 400
 --- response_body_like eval
-qr/empty conf/
+qr/value should match only one schema, but matches none/
 
 
 
@@ -187,7 +187,7 @@ qr/empty conf/
     }
 --- error_code: 400
 --- response_body_like eval
-qr/empty conf/
+qr/value should match only one schema, but matches none/
 
 
 
