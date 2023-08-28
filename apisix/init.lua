@@ -359,15 +359,12 @@ local function verify_https_client(ctx)
     end
 
     local host = ctx.var.host
-    local ngx_ctx = ngx.ctx
-    if not ngx_ctx.matched_ssl then
-        local matched = router.router_ssl.match_and_set(ngx_ctx, true, host)
-        if not matched then
-            return true
-        end
+    local matched = router.router_ssl.match_and_set(ctx, true, host)
+    if not matched then
+        return true
     end
 
-    local matched_ssl = ngx_ctx.matched_ssl
+    local matched_ssl = ctx.matched_ssl
     if matched_ssl.value.client
         and matched_ssl.value.client.skip_mtls_uri_regex
         and apisix_ssl.support_client_verification()
