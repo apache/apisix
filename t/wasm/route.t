@@ -150,13 +150,48 @@ qr/invalid request body/
             ngx.say(body)
         }
     }
---- error_code: 200
---- response_body
-passed
+--- error_code: 400
+--- response_body_like eval
+qr/empty conf/
 
 
 
-=== TEST 4: sanity
+=== TEST 4: scheme check with conf json type
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "wasm_log": {"conf": ""}}
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- response_body_like eval
+qr/empty conf/
+
+
+
+=== TEST 5: sanity
 --- config
     location /t {
         content_by_lua_block {
@@ -196,7 +231,7 @@ passed
 
 
 
-=== TEST 5: hit
+=== TEST 6: hit
 --- request
 GET /hello
 --- grep_error_log eval
@@ -207,7 +242,7 @@ run plugin ctx 1 with conf zzz in http ctx 2
 
 
 
-=== TEST 6: run wasm plugin in rewrite phase (prior to the one run in access phase)
+=== TEST 7: run wasm plugin in rewrite phase (prior to the one run in access phase)
 --- extra_yaml_config
 wasm:
     plugins:
@@ -228,7 +263,7 @@ run plugin ctx 1 with conf blahblah in http ctx 2
 
 
 
-=== TEST 7: plugin from service
+=== TEST 8: plugin from service
 --- config
     location /t {
         content_by_lua_block {
@@ -295,7 +330,7 @@ passed
 
 
 
-=== TEST 8: hit
+=== TEST 9: hit
 --- config
     location /t {
         content_by_lua_block {
@@ -326,7 +361,7 @@ run plugin ctx 3 with conf blahblah in http ctx 4
 
 
 
-=== TEST 9: plugin from plugin_config
+=== TEST 10: plugin from plugin_config
 --- config
     location /t {
         content_by_lua_block {
@@ -399,7 +434,7 @@ passed
 
 
 
-=== TEST 10: hit
+=== TEST 11: hit
 --- config
     location /t {
         content_by_lua_block {

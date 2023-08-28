@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local nkeys = require("table.nkeys")
 local type = type
 local support_wasm, wasm = pcall(require, "resty.proxy-wasm")
 local ngx_var = ngx.var
@@ -35,7 +36,11 @@ local function check_schema(conf)
         return false, "invalid conf type"
     end
 
-    if conf.conf == "" or conf.conf == {} then
+    if type(conf.conf) == "string" and conf.conf == "" then
+        return false, "empty conf"
+    end
+
+    if type(conf.conf) == "table" and nkeys(conf.conf) == 0 then
         return false, "empty conf"
     end
 
