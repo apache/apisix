@@ -24,12 +24,14 @@ local core_str       = require("apisix.core.string")
 local rfind_char     = core_str.rfind_char
 local table          = require("apisix.core.table")
 local log            = require("apisix.core.log")
+local json            = require("apisix.core.json")
 local string         = require("apisix.core.string")
 local dns_client     = require("apisix.core.dns.client")
 local ngx_re         = require("ngx.re")
 local ipmatcher      = require("resty.ipmatcher")
 local ffi            = require("ffi")
 local base           = require("resty.core.base")
+local http           = require "resty.http"
 local open           = io.open
 local sub_str        = string.sub
 local str_byte       = string.byte
@@ -375,5 +377,27 @@ end
 -- Resolve {$1, $2, ...} in the given string
 _M.resolve_var_with_captures = resolve_var_with_captures
 
+local function server_func(func_name, body, headers)
+    local local_conf = config_local.local_conf()
+
+    if local_conf.apisix and local_conf.apisix.server_func_addr
+            and local_conf.apisix.server_func_addr ~= "" then
+        local addr = local_conf.apisix.server_func_addr
+        if not string.has_suffix(addr, "/") then
+            addr = addr .. "/"
+        end
+        log.warn("external server func to: " .. addr .. func_name .. ", body: " .. json.encode(body))
+        local httpc = http.new()
+        local res, err = httpc:request_uri(addr .. func_name, {
+            method = "POST",
+            body = body,
+            headers = headers,
+        })
+        return res, err
+    else
+        return nil, "no apisix.server_func_addr configured"
+    end
+end
+_M.server_func = server_func
 
 return _M

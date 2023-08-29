@@ -461,7 +461,7 @@ curl -i -X GET "http://127.0.0.1:9090/v1/plugin/example-plugin/hello"
 
 例如，让我们注册一个叫做 `a6_labels_zone` 的变量来获取路由中 `zone` 标签的值。
 
-```
+```lua
 local core = require "apisix.core"
 
 core.ctx.register_var("a6_labels_zone", function(ctx)
@@ -476,6 +476,33 @@ end)
 此后，任何对 `$a6_labels_zone` 的获取操作都会调用注册的获取器来获取数值。
 
 注意，自定义变量不能用于依赖 Nginx 指令的功能，如 `access_log_format`。
+
+## 访问外部服务
+
+有时候，插件需要访问外部的服务来处理请求。这时候可以使用 `core.server_func` 来实现。
+
+要想使用 `core.server_func` 函数，首先需要在 `config.yaml` 中配置外部服务的地址：
+
+```yaml
+apisix:
+  server_func_addr: "http://external.service:1080"
+```
+
+然后，可以在插件中使用如下的方式进行请求：
+
+```lua
+local core = require("apisix.core")
+
+local res, err = core.server_func("some_uri", core.json.encode({
+    ["data"] = "body-content"
+}), {
+    ["Content-Type"] = "application/json",
+})
+```
+
+这段代码将使用 `POST` 方法请求 `http://external.service:1080/some_uri`。
+
+具体用例，可以参考在 __apisix/plugins/example-plugin.lua__ 文件中的实现。
 
 ## 编写测试用例
 

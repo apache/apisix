@@ -27,6 +27,7 @@ local schema = {
         t = {type = "array", minItems = 1},
         ip = {type = "string"},
         port = {type = "integer"},
+        server_func = {type = "string"},
     },
     required = {"i"},
 }
@@ -84,6 +85,27 @@ end
 function _M.access(conf, ctx)
     core.log.warn("plugin access phase, conf: ", core.json.encode(conf))
     -- return 200, {message = "hit example plugin"}
+
+    if conf.server_func then
+        -- Example plugin server function call
+        local res, err = core.server_func(conf.server_func, core.json.encode({
+            ["data"] = "body-content"
+        }), {
+            ["Content-Type"] = "application/json",
+        })
+        if not err then
+            core.log.warn("plugin server func result: ", res.body)
+            if res.status == 200 then
+                core.response.set_header("Server-Func-Response", res.body)
+            else
+                core.response.set_header("Server-Func-Response", res.status)
+            end
+        else
+            core.log.warn("plugin server func result failed: ", err)
+            core.response.set_header("Server-Func-Response",
+                    "failed to request server func: " .. err)
+        end
+    end
 
     if not conf.ip then
         return

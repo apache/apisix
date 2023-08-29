@@ -492,7 +492,7 @@ We can use variables in many places of APISIX. For example, customizing log form
 
 For instance, let's register a variable called `a6_labels_zone` to fetch the value of the `zone` label in a route:
 
-```
+```lua
 local core = require "apisix.core"
 
 core.ctx.register_var("a6_labels_zone", function(ctx)
@@ -507,6 +507,33 @@ end)
 After that, any get operation to `$a6_labels_zone` will call the registered getter to fetch the value.
 
 Note that the custom variables can't be used in features that depend on the Nginx directive, like `access_log_format`.
+
+## Access external service
+
+Sometimes the plugin needs an external service to work. The function `core.server_func` is built for this.
+
+To use this function, we need to configure the external service address in `config.yaml`:
+
+```yaml
+apisix:
+  server_func_addr: "http://external.service:1080"
+```
+
+Now we can use it in the plugin like this:
+
+```lua
+local core = require("apisix.core")
+
+local res, err = core.server_func("some_uri", core.json.encode({
+    ["data"] = "body-content"
+}), {
+    ["Content-Type"] = "application/json",
+})
+```
+
+This code snippet will make a `POST` request to `http://external.service:1080/some_uri`.
+
+You can refer to the implementation in __apisix/plugins/example-plugin.lua__ as an example.
 
 ## write test case
 
