@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.5.0](#350)
 - [3.4.0](#340)
 - [3.3.0](#330)
 - [3.2.1](#321)
@@ -70,6 +71,45 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.5.0
+
+### Change
+
+- :warning: remove snowflake algorithm in the request-id plugin: [#9715](https://github.com/apache/apisix/pull/9715)
+- :warning: No longer compatible with OpenResty 1.19, it needs to be upgraded to 1.21+: [#9913](https://github.com/apache/apisix/pull/9913)
+- :warning: Remove the configuration item `apisix.stream_proxy.only`, the L4/L7 proxy needs to be enabled through the configuration item `apisix.proxy_mode`: [#9607](https://github.com/apache/apisix/pull/9607)
+- :warning: The admin-api `/apisix/admin/plugins?all=true` marked as deprecated: [#9580](https://github.com/apache/apisix/pull/9580)
+- :warning: allowlist and denylist can't be enabled at the same time in ua-restriction plugin: [#9841](https://github.com/apache/apisix/pull/9841)
+
+### Core
+
+- :sunrise: Support host level dynamic setting of tls protocol version: [#9903](https://github.com/apache/apisix/pull/9903)
+- :sunrise: Support force delete resource: [#9810](https://github.com/apache/apisix/pull/9810)
+- :sunrise: Support pulling env vars from yaml keys: [#9855](https://github.com/apache/apisix/pull/9855)
+- :sunrise: Add schema validate API in admin-api [#10065](https://github.com/apache/apisix/pull/10065)
+
+### Plugins
+
+- :sunrise: Add chaitin-waf plugin [#9838](https://github.com/apache/apisix/pull/9838)
+- :sunrise: Support vars for file-logger plugin: [#9712](https://github.com/apache/apisix/pull/9712)
+- :sunrise: Support adding response headers for mock plugin: [#9720](https://github.com/apache/apisix/pull/9720)
+- :sunrise: Support regex_uri with unsafe_uri for proxy-rewrite plugin: [#9813](https://github.com/apache/apisix/pull/9813)
+- :sunrise: Support set client_email field for google-cloud-logging plugin: [#9813](https://github.com/apache/apisix/pull/9813)
+- :sunrise: Support sending headers upstream returned by OPA server for opa plugin: [#9710](https://github.com/apache/apisix/pull/9710)
+- :sunrise: Support configuring proxy server for openid-connect plugin: [#9948](https://github.com/apache/apisix/pull/9948)
+
+### Bugfixes
+
+- Fix(log-rotate): the max_kept configuration doesn't work when using custom name: [#9749](https://github.com/apache/apisix/pull/9749)
+- Fix(limit_conn): do not use the http variable in stream mode: [#9816](https://github.com/apache/apisix/pull/9816)
+- Fix(loki-logger): getting an error with log_labels: [#9850](https://github.com/apache/apisix/pull/9850)
+- Fix(limit-count): X-RateLimit-Reset shouldn't be set to 0 after request be rejected: [#9978](https://github.com/apache/apisix/pull/9978)
+- Fix(nacos): attempt to index upvalue 'applications' (a nil value): [#9960](https://github.com/apache/apisix/pull/9960)
+- Fix(etcd): can't sync etcd data if key has special character: [#9967](https://github.com/apache/apisix/pull/9967)
+- Fix(tencent-cloud-cls): dns parsing failure: [#9843](https://github.com/apache/apisix/pull/9843)
+- Fix(reload): worker not exited when executing quit or reload command [#9909](https://github.com/apache/apisix/pull/9909)
+- Fix(traffic-split): upstream_id validity verification [#10008](https://github.com/apache/apisix/pull/10008)
 
 ## 3.4.0
 
