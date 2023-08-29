@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [3.5.0](#350)
 - [3.4.0](#340)
 - [3.3.0](#330)
 - [3.2.1](#321)
@@ -70,6 +71,45 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.5.0
+
+### Change
+
+- :warning: request-id 插件移除雪花算法：[#9715](https://github.com/apache/apisix/pull/9715)
+- :warning: 不再兼容 OpenResty 1.19 版本，需要将其升级到 1.21+ 版本：[#9913](https://github.com/apache/apisix/pull/9913)
+- :warning: 删除配置项 `apisix.stream_proxy.only`，L4/L7 代理需要通过配置项 `apesix.proxy_mode` 来启用：[#9607](https://github.com/apache/apisix/pull/9607)
+- :warning: admin-api 的 `/apisix/admin/plugins?all=true` 接口标记为弃用：[#9580](https://github.com/apache/apisix/pull/9580)
+- :warning: ua-restriction 插件不允许同时启用黑名单和白名单：[#9841](https://github.com/apache/apisix/pull/9841)
+
+### Core
+
+- :sunrise: 支持根据 host 级别动态设置 TLS 协议版本：[#9903](https://github.com/apache/apisix/pull/9903)
+- :sunrise: 支持强制删除资源：[#9810](https://github.com/apache/apisix/pull/9810)
+- :sunrise: 支持从 yaml 中提取环境变量：[#9855](https://github.com/apache/apisix/pull/9855)
+- :sunrise: admin-api 新增 schema validate API 校验资源配置：[#10065](https://github.com/apache/apisix/pull/10065)
+
+### Plugins
+
+- :sunrise: 新增 chaitin-waf 插件：[#9838](https://github.com/apache/apisix/pull/9838)
+- :sunrise: file-logger 支持设置 var 变量：[#9712](https://github.com/apache/apisix/pull/9712)
+- :sunrise: mock 插件支持添加响应头：[#9720](https://github.com/apache/apisix/pull/9720)
+- :sunrise: proxy-rewrite 插件支持正则匹配 URL 编码：[#9813](https://github.com/apache/apisix/pull/9813)
+- :sunrise: google-cloud-logging 插件支持 client_email 配置：[#9813](https://github.com/apache/apisix/pull/9813)
+- :sunrise: opa 插件支持向上游发送 OPA server 返回的头：[#9710](https://github.com/apache/apisix/pull/9710)
+- :sunrise: openid-connect 插件支持配置代理服务器：[#9948](https://github.com/apache/apisix/pull/9948)
+
+### Bugfixes
+
+- 修复 log-rotate 插件使用自定义名称时，max_kept 配置不起作用：[#9749](https://github.com/apache/apisix/pull/9749)
+- 修复 limit_conn 在 stream 模式下非法使用 http 变量：[#9816](https://github.com/apache/apisix/pull/9816)
+- 修复 loki-logger 插件在获取 log_labels 时会索引空值：[#9850](https://github.com/apache/apisix/pull/9850)
+- 修复使用 limit-count 插件时，当请求被拒绝后，X-RateLimit-Reset不应设置为 0：[#9978](https://github.com/apache/apisix/pull/9978)
+- 修复 nacos 插件在运行时索引一个空值：[#9960](https://github.com/apache/apisix/pull/9960)
+- 修复 etcd 在同步数据时，如果密钥有特殊字符，则同步异常：[#9967](https://github.com/apache/apisix/pull/9967)
+- 修复 tencent-cloud-cls 插件 DNS 解析失败：[#9843](https://github.com/apache/apisix/pull/9843)
+- 修复执行 reload 或 quit 命令时 worker 未退出：[#9909](https://github.com/apache/apisix/pull/9909)
+- 修复在 traffic-split 插件中 upstream_id 有效性验证：[#10008](https://github.com/apache/apisix/pull/10008)
 
 ## 3.4.0
 
