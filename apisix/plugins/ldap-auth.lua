@@ -18,7 +18,7 @@ local core = require("apisix.core")
 local ngx = ngx
 local ngx_re = require("ngx.re")
 local consumer_mod = require("apisix.consumer")
-local ok, ldap_cli = pcall(require, "resty.ldap.client")
+local ldap = require("resty.ldap")
 
 local schema = {
     type = "object",
@@ -100,11 +100,6 @@ local function extract_auth_header(authorization)
 end
 
 function _M.rewrite(conf, ctx)
-    if not ok then -- ensure rasn library loaded
-        core.log.error("failed to load lua-resty-ldap lib: ", ldap_cli)
-        return 501
-    end
-
     core.log.info("plugin rewrite phase, conf: ", core.json.delay_encode(conf))
 
     -- 1. extract authorization from header
@@ -115,30 +110,35 @@ function _M.rewrite(conf, ctx)
     end
 
     local user, err = extract_auth_header(auth_header)
-    if err then
-        core.log.warn(err)
+    if err or not user then
+        if err then
+          core.log.warn(err)
+        else
+          core.log.warn("nil user")
+        end
         return 401, { message = "Invalid authorization in request" }
     end
 
     -- 2. try authenticate the user against the ldap server
     local ldap_host, ldap_port = core.utils.parse_addr(conf.ldap_uri)
-    local ldap_client = ldap_cli:new(ldap_host, ldap_port, {
+    local ldapconf = {
+        timeout = 10000,
         start_tls = false,
+        ldap_host = ldap_host,
+        ldap_port = ldap_port or 389,
         ldaps = conf.use_tls,
-        ssl_verify = conf.tls_verify,
-        socket_timeout = 10000,
-        keepalive_pool_name = ldap_host .. ":" .. ldap_port .. "_ldapauth"
-                                .. (conf.use_tls and "_tls" or ""),
-        keepalive_pool_size = 5,
-        keepalive_timeout = 60000,
-    })
-
-    local user_dn =  conf.uid .. "=" .. user.username .. "," .. conf.base_dn
-    local res, err = ldap_client:simple_bind(user_dn, user.password)
+        tls_verify = conf.tls_verify,
+        base_dn = conf.base_dn,
+        attribute = conf.uid,
+        keepalive = 60000,
+    }
+    local res, err = ldap.ldap_authenticate(user.username, user.password, ldapconf)
     if not res then
         core.log.warn("ldap-auth failed: ", err)
         return 401, { message = "Invalid user authorization" }
     end
+
+    local user_dn =  conf.uid .. "=" .. user.username .. "," .. conf.base_dn
 
     -- 3. Retrieve consumer for authorization plugin
     local consumer_conf = consumer_mod.plugin(plugin_name)

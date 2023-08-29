@@ -55,6 +55,9 @@ local constants    = require("apisix.constants")
 local health_check = require("resty.etcd.health_check")
 local semaphore    = require("ngx.semaphore")
 local tablex       = require("pl.tablex")
+local ngx_thread_spawn = ngx.thread.spawn
+local ngx_thread_kill = ngx.thread.kill
+local ngx_thread_wait = ngx.thread.wait
 
 
 local is_http = ngx.config.subsystem == "http"
@@ -124,7 +127,7 @@ local function produce_res(res, err)
 end
 
 
-local function run_watch(premature)
+local function do_run_watch(premature)
     if premature then
         return
     end
@@ -254,6 +257,30 @@ local function run_watch(premature)
             produce_res(res)
         end
     end
+end
+
+
+local function run_watch(premature)
+    local run_watch_th = ngx_thread_spawn(do_run_watch, premature)
+
+    ::restart::
+    local check_worker_th = ngx_thread_spawn(function ()
+        while not exiting() do
+            ngx_sleep(0.1)
+        end
+    end)
+
+    local ok, err = ngx_thread_wait(check_worker_th)
+
+    if not ok then
+        log.error("check_worker thread terminates failed, retart checker, error: " .. err)
+        ngx_thread_kill(check_worker_th)
+        goto restart
+    end
+
+    ngx_thread_kill(run_watch_th)
+    -- notify child watchers
+    produce_res(nil, "worker exited")
 end
 
 
@@ -392,7 +419,7 @@ local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
         if tonumber(res.result.header.revision) > self.prev_index then
             local res2
             for _, evt in ipairs(res.result.events) do
-                if evt.kv.key:find(key) == 1 then
+                if core_str.find(evt.kv.key, key) == 1 then
                     if not res2 then
                         res2 = tablex.deepcopy(res)
                         table.clear(res2.result.events)
@@ -851,6 +878,9 @@ local function _automatic_fetch(premature, self)
                                        .. backoff_duration .. "s")
                         end
                     end
+                elseif err == "worker exited" then
+                    log.info("worker exited.")
+                    return
                 elseif err ~= "timeout" and err ~= "Key not found"
                     and self.last_err ~= err then
                     log.error("failed to fetch data from etcd: ", err, ", ",

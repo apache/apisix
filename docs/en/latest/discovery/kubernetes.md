@@ -34,12 +34,6 @@ The [_Kubernetes_](https://kubernetes.io/) service discovery [_List-Watch_](http
 
 Discovery also provides a node query interface in accordance with the [_APISIX Discovery Specification_](../discovery.md).
 
-:::note
-
-use kubernetes discovery in L4 require OpenResty version >= 1.19.9.1
-
-:::
-
 ## How To Use
 
 Kubernetes service discovery both support single-cluster and multi-cluster modes, applicable to the case where the service is distributed in single or multiple Kubernetes clusters.

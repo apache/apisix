@@ -26,7 +26,7 @@ local error = error
 local pcall = pcall
 local setmetatable = setmetatable
 local is_http = ngx.config.subsystem == "http"
-local support_process, process = pcall(require, "ngx.process")
+local process = require("ngx.process")
 local core = require("apisix.core")
 local util = require("apisix.cli.util")
 local local_conf = require("apisix.core.config_local").local_conf()
@@ -520,11 +520,6 @@ end
 
 
 function _M.init_worker()
-    if not support_process then
-        core.log.error("kubernetes discovery not support in subsystem: ", ngx.config.subsystem,
-                       ", please check if your openresty version >= 1.19.9.1 or not")
-        return
-    end
     local discovery_conf = local_conf.discovery.kubernetes
     core.log.info("kubernetes discovery conf: ", core.json.delay_encode(discovery_conf))
     if #discovery_conf == 0 then

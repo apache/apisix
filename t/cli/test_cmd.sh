@@ -198,3 +198,41 @@ fi
 
 rm conf/customized_config.yaml
 echo "passed: test customized config successful"
+
+# test quit command
+bin/apisix start
+
+if ! ps -ef | grep "apisix" | grep "master process" | grep -v "grep"; then
+    echo "apisix not started"
+    exit 1
+fi
+
+bin/apisix quit
+
+sleep 0.5
+
+if ps -ef | grep "worker process is shutting down" | grep -v "grep"; then
+    echo "all workers should exited"
+    exit 1
+fi
+
+echo "passed: test quit command successful"
+
+# test reload command
+bin/apisix start
+
+if ! ps -ef | grep "apisix" | grep "master process" | grep -v "grep"; then
+    echo "apisix not started"
+    exit 1
+fi
+
+bin/apisix reload
+
+sleep 0.5
+
+if ps -ef | grep "worker process is shutting down" | grep -v "grep"; then
+    echo "old workers should exited"
+    exit 1
+fi
+
+echo "passed: test reload command successful"

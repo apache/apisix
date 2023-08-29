@@ -49,7 +49,8 @@ local schema = {
                     minLength = 6,
                     default = "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789"
                 }
-            }
+            },
+            default = {}
         }
     }
 }

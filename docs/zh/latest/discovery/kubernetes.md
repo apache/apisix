@@ -34,12 +34,6 @@ Kubernetes 服务发现以 [_List-Watch_](https://kubernetes.io/docs/reference/u
 
 同时遵循 [_APISIX Discovery 规范_](../discovery.md) 提供了节点查询接口。
 
-:::note
-
-在四层中使用 Kubernetes 服务发现要求 OpenResty 版本大于等于 1.19.9.1
-
-:::
-
 ## Kubernetes 服务发现的使用
 
 目前 Kubernetes 服务发现支持单集群和多集群模式，分别适用于待发现的服务分布在单个或多个 Kubernetes 的场景。
