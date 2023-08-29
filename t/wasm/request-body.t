@@ -237,7 +237,7 @@ request get body: ell
     }
 --- error_code: 400
 --- response_body_like eval
-qr/invalid conf type/
+qr/property.*conf.*is required/
 
 
 
