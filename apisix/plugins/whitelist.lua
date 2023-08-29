@@ -47,6 +47,7 @@ local networks = {
     "zksync-era-testnet",
     "linea-mainnet",
     "linea-testnet",
+    "zetachain-athens-3",
 
 
     -- staging
@@ -70,6 +71,7 @@ local networks = {
     "staging-zksync-era-testnet",
     "staging-linea-mainnet",
     "staging-linea-testnet",
+    "staging-zetachain-athens-3",
 }
 
 local web3_methods = {
@@ -438,7 +440,8 @@ function _M.init()
             network == "staging-scroll-alpha" or network == "scroll-alpha" or
             network == "staging-scroll-testnet" or network == "scroll-testnet" or
             network == "staging-linea-mainnet" or network == "linea-mainnet" or
-            network == "staging-linea-testnet" or network == "linea-testnet" then
+            network == "staging-linea-testnet" or network == "linea-testnet" or
+            network == "staging-zetachain-athens-3" or network == "zetachain-athens-3" then
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, debug_methods)
         elseif network == "polygon-mainnet" or network == "staging-polygon-mainnet" then
