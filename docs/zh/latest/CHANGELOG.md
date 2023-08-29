@@ -104,7 +104,7 @@ title: CHANGELOG
 - 修复 log-rotate 插件使用自定义名称时，max_kept 配置不起作用：[#9749](https://github.com/apache/apisix/pull/9749)
 - 修复 limit_conn 在 stream 模式下非法使用 http 变量：[#9816](https://github.com/apache/apisix/pull/9816)
 - 修复 loki-logger 插件在获取 log_labels 时会索引空值：[#9850](https://github.com/apache/apisix/pull/9850)
-- 修复使用 limit-count 插件时，当请求被拒绝后，X-RateLimit-Reset不应设置为 0：[#9978](https://github.com/apache/apisix/pull/9978)
+- 修复使用 limit-count 插件时，当请求被拒绝后，X-RateLimit-Reset 不应设置为 0：[#9978](https://github.com/apache/apisix/pull/9978)
 - 修复 nacos 插件在运行时索引一个空值：[#9960](https://github.com/apache/apisix/pull/9960)
 - 修复 etcd 在同步数据时，如果密钥有特殊字符，则同步异常：[#9967](https://github.com/apache/apisix/pull/9967)
 - 修复 tencent-cloud-cls 插件 DNS 解析失败：[#9843](https://github.com/apache/apisix/pull/9843)
