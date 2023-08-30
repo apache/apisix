@@ -36,6 +36,7 @@ COMPILE_OPENSSL3=${COMPILE_OPENSSL3-no}
 USE_OPENSSL3=${USE_OPENSSL3-no}
 OPENSSL3_PREFIX=${OPENSSL3_PREFIX-/home/runner}
 SSL_LIB_VERSION=${SSL_LIB_VERSION-openssl}
+TEST_HTTP3=${TEST_HTTP3:-no}
 
 if [ "$OPENRESTY_VERSION" == "source" ]; then
     export openssl_prefix=/usr/local/openresty/openssl111
