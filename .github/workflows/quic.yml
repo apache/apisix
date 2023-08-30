@@ -181,6 +181,7 @@ jobs:
       - name: Linux Install
         env:
           CACHE_QUICTLS_HIT: ${{ steps.cache-quictls.outputs.cache-hit }}
+          TEST_HTTP3: ${{ steps.test_env.outputs.type }}
         run: |
           sudo --preserve-env=OPENRESTY_VERSION \
           --preserve-env=CACHE_QUICTLS_HIT \
