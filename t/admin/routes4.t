@@ -811,7 +811,7 @@ passed
 
 
 
-=== TEST 22: create route without create_time and update_time(id : 2)
+=== TEST 24: create route without create_time and update_time(id : 2)
 --- config
     location /t {
         content_by_lua_block {
@@ -850,7 +850,7 @@ passed
 
 
 
-=== TEST 23: delete test route without create_time and update_time(id : 2)
+=== TEST 25: delete test route without create_time and update_time(id : 2)
 --- config
     location /t {
         content_by_lua_block {

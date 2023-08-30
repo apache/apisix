@@ -729,7 +729,7 @@ passed
 
 
 
-=== TEST 17: create ssl with manage fields without create_time and update_time(id: 2)
+=== TEST 22: create ssl with manage fields without create_time and update_time(id: 2)
 --- config
     location /t {
         content_by_lua_block {
@@ -770,7 +770,7 @@ passed
 
 
 
-=== TEST 18: delete test ssl without create_time and update_time(id: 2)
+=== TEST 23: delete test ssl without create_time and update_time(id: 2)
 --- config
     location /t {
         content_by_lua_block {
