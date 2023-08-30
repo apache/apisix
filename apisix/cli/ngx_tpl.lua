@@ -616,6 +616,8 @@ http {
         {% if proxy_protocol and proxy_protocol.listen_https_port then %}
         listen {* proxy_protocol.listen_https_port *} ssl default_server proxy_protocol;
         {% end %}
+        listen 0.0.0.0:9443 quic reuseport;
+        listen [::]:9443 quic reuseport;
 
         server_name _;
 
@@ -668,6 +670,8 @@ http {
         {% end %}
 
         location / {
+            add_header Alt-Svc 'h3=":9443"; ma=86400';
+
             set $upstream_mirror_host        '';
             set $upstream_mirror_uri         '';
             set $upstream_upgrade            '';
@@ -675,6 +679,9 @@ http {
 
             set $upstream_scheme             'http';
             set $upstream_host               $http_host;
+            if ($http_host ~ "^$") {
+                set $upstream_host           $host:$server_port;
+            }
             set $upstream_uri                '';
             set $ctx_ref                     '';
 

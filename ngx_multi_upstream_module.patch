@@ -1,0 +1,37 @@
+diff -aNur ngx_multi_upstream_module_2.3.2/ngx_http_multi_upstream.c ngx_multi_upstream_module_3.0.0/ngx_http_multi_upstream.c
+--- ngx_multi_upstream_module_2.3.2/ngx_http_multi_upstream.c	2023-07-26 20:47:05.846877526 +0800
++++ ngx_multi_upstream_module_3.0.0/ngx_http_multi_upstream.c	2023-07-26 21:16:21.658288156 +0800
+@@ -62,6 +62,7 @@
+                              ngx_http_upstream_process_non_buffered_downstream;
+ 
+         r->limit_rate = 0;
++        r->limit_rate_set = 1;
+ 
+         if (u->input_filter_init(u->input_filter_ctx) == NGX_ERROR) {
+             ngx_http_upstream_finalize_request(r, u, NGX_ERROR);
+diff -aNur ngx_multi_upstream_module_2.3.2/ngx_http_multi_upstream_module.c ngx_multi_upstream_module_3.0.0/ngx_http_multi_upstream_module.c
+--- ngx_multi_upstream_module_2.3.2/ngx_http_multi_upstream_module.c	2023-07-26 21:06:13.103797582 +0800
++++ ngx_multi_upstream_module_3.0.0/ngx_http_multi_upstream_module.c	2023-07-26 21:16:21.658288156 +0800
+@@ -452,9 +452,6 @@
+     fake_u->peer.connection = c;
+ #if (NGX_HAVE_FILE_AIO || NGX_COMPAT)
+     fake_u->output.aio_handler = u->output.aio_handler;
+-#if (NGX_HAVE_AIO_SENDFILE || NGX_COMPAT)
+-    fake_u->output.aio_preload = u->output.aio_preload;
+-#endif
+ #endif
+ 
+ #if (NGX_THREADS || NGX_COMPAT)
+@@ -494,12 +491,6 @@
+ 
+     c->data = fake_r;
+ 
+-    c->log = ngx_pcalloc(c->pool, sizeof(ngx_log_t));
+-    if (c->log == NULL) {
+-        return NGX_ERROR;
+-    }
+-    *c->log = *kp->request->connection->log;
+-
+     log_ctx = ngx_pcalloc(c->pool, sizeof(ngx_http_log_ctx_t));
+     if (log_ctx == NULL) {
+         return NGX_ERROR;

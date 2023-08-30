@@ -73,6 +73,22 @@ script() {
 
     make init
 
+    if [[ "$TEST_HTTP3" == "http3" ]]; then
+        apt -y install jq jo
+
+        # build http3 curl
+        ./t/http3/build_curl.sh
+        ldconfig
+
+        # run all http3 test files
+        for t in t/http3/test-*.sh; do
+            echo -- $t
+            $t
+        done
+
+        return
+    fi
+
     set_coredns
 
     ./t/grpc_server_example/grpc_server_example \

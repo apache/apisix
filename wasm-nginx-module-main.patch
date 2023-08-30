@@ -1,0 +1,13 @@
+diff --git a/src/http/ngx_http_wasm_api_wasmtime.h b/src/http/ngx_http_wasm_api_wasmtime.h
+index 3306e6a..a460022 100644
+--- a/src/http/ngx_http_wasm_api_wasmtime.h
++++ b/src/http/ngx_http_wasm_api_wasmtime.h
+@@ -19,6 +19,8 @@
+ #ifndef NGX_HTTP_WASM_API_WASMTIME_H
+ #define NGX_HTTP_WASM_API_WASMTIME_H
+ 
++#define __USE_GNU
++#include <ngx_config.h>
+ 
+ #include <wasm.h>
+ #include <wasmtime.h>

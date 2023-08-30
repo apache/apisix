@@ -202,7 +202,7 @@ GET /echo
 X-Forwarded-Proto: http
 X-Forwarded-Proto: grpc
 --- response_headers
-X-Forwarded-Proto: http
+X-Forwarded-Proto: http, grpc
 
 
 
