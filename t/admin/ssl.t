@@ -726,3 +726,60 @@ GET /t
 GET /t
 --- response_body chomp
 passed
+
+
+
+=== TEST 17: create ssl with manage fields without create_time and update_time(id: 2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local data = {
+                cert = ssl_cert,
+                key = ssl_key,
+                sni = "test.com"
+                validity_start = 1602873670,
+                validity_end = 1603893670
+            }
+
+            local code, body = t.test('/apisix/admin/ssls/2',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "value": {
+                        "sni": "test.com"
+                        "validity_start": 1602873670,
+                        "validity_end": 1603893670
+                    },
+                    "key": "/apisix/ssls/2"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 18: delete test ssl without create_time and update_time(id: 2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/ssls/2', ngx.HTTP_DELETE)
+            ngx.say("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[delete] code: 200 message: passed

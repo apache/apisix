@@ -66,11 +66,6 @@ _M.ip_def = ip_def
 
 _M.uri_def = {type = "string", pattern = [=[^[^\/]+:\/\/([\da-zA-Z.-]+|\[[\da-fA-F:]+\])(:\d+)?]=]}
 
-
-local timestamp_def = {
-    type = "integer",
-}
-
 local remote_addr_def = {
     description = "client IP",
     type = "string",
@@ -375,8 +370,6 @@ local private_key_schema = {
 local upstream_schema = {
     type = "object",
     properties = {
-        create_time = timestamp_def,
-        update_time = timestamp_def,
         nodes = nodes_schema,
         retries = {
             type = "integer",
@@ -539,8 +532,6 @@ _M.method_schema = method_schema
 _M.route = {
     type = "object",
     properties = {
-        create_time = timestamp_def,
-        update_time = timestamp_def,
         uri = {type = "string", minLength = 1, maxLength = 4096},
         uris = {
             type = "array",
@@ -583,10 +574,6 @@ _M.route = {
             minLength = 10,
             pattern = [[^function]],
         },
-
-        -- The 'script' fields below are used by dashboard for plugin orchestration
-        script = {type = "string", minLength = 10, maxLength = 102400},
-        script_id = id_schema,
 
         plugins = plugins_schema,
         plugin_config_id = id_schema,
@@ -675,9 +662,6 @@ _M.service = {
         name = rule_name_def,
         desc = desc_def,
         labels = labels_def,
-        script = {type = "string", minLength = 10, maxLength = 102400},
-        create_time = timestamp_def,
-        update_time = timestamp_def,
         enable_websocket = {
             description = "enable websocket for request",
             type        = "boolean",
@@ -702,8 +686,6 @@ _M.consumer = {
         group_id = id_schema,
         plugins = plugins_schema,
         labels = labels_def,
-        create_time = timestamp_def,
-        update_time = timestamp_def,
         desc = desc_def,
     },
     required = {"username"},
@@ -779,10 +761,6 @@ _M.ssl = {
             },
             required = {"ca"},
         },
-        exptime = {
-            type = "integer",
-            minimum = 1588262400,  -- 2020/5/1 0:0:0
-        },
         labels = labels_def,
         status = {
             description = "ssl status, 1 to enable, 0 to disable",
@@ -799,10 +777,6 @@ _M.ssl = {
                 enum = {"TLSv1.1", "TLSv1.2", "TLSv1.3"}
             },
         },
-        validity_end = timestamp_def,
-        validity_start = timestamp_def,
-        create_time = timestamp_def,
-        update_time = timestamp_def
     },
     ["if"] = {
         properties = {
@@ -827,8 +801,6 @@ _M.proto = {
     properties = {
         id = id_schema,
         desc = desc_def,
-        create_time = timestamp_def,
-        update_time = timestamp_def,
         content = {
             type = "string", minLength = 1, maxLength = 1024*1024
         }
@@ -841,9 +813,7 @@ _M.global_rule = {
     type = "object",
     properties = {
         id = id_schema,
-        plugins = plugins_schema,
-        create_time = timestamp_def,
-        update_time = timestamp_def
+        plugins = plugins_schema
     },
     required = {"id", "plugins"},
 }
@@ -892,8 +862,6 @@ _M.stream_route = {
     properties = {
         id = id_schema,
         desc = desc_def,
-        create_time = timestamp_def,
-        update_time = timestamp_def,
         remote_addr = remote_addr_def,
         server_addr = {
             description = "server IP",
@@ -912,7 +880,7 @@ _M.stream_route = {
         upstream = upstream_schema,
         upstream_id = id_schema,
         plugins = plugins_schema,
-        protocol = xrpc_protocol_schema,
+        protocol = xrpc_protocol_schema
     }
 }
 
@@ -941,9 +909,7 @@ _M.plugin_config = {
         id = id_schema,
         desc = desc_def,
         plugins = plugins_schema,
-        labels = labels_def,
-        create_time = timestamp_def,
-        update_time = timestamp_def
+        labels = labels_def
     },
     required = {"id", "plugins"},
 }
@@ -955,9 +921,7 @@ _M.consumer_group = {
         id = id_schema,
         desc = desc_def,
         plugins = plugins_schema,
-        labels = labels_def,
-        create_time = timestamp_def,
-        update_time = timestamp_def
+        labels = labels_def
     },
     required = {"id", "plugins"},
 }
