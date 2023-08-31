@@ -386,7 +386,8 @@ local function server_func(func_name, body, headers)
         if not string.has_suffix(addr, "/") then
             addr = addr .. "/"
         end
-        log.info("external server func to: " .. addr .. func_name .. ", body: " .. json.encode(body))
+        log.info("external server func to: " .. addr .. func_name ..
+            ", body: " .. json.encode(body))
         local httpc = http.new()
         local res, err = httpc:request_uri(addr .. func_name, {
             method = "POST",
