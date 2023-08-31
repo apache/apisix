@@ -24,14 +24,14 @@ local core_str       = require("apisix.core.string")
 local rfind_char     = core_str.rfind_char
 local table          = require("apisix.core.table")
 local log            = require("apisix.core.log")
-local json            = require("apisix.core.json")
+local json           = require("apisix.core.json")
 local string         = require("apisix.core.string")
 local dns_client     = require("apisix.core.dns.client")
 local ngx_re         = require("ngx.re")
 local ipmatcher      = require("resty.ipmatcher")
 local ffi            = require("ffi")
 local base           = require("resty.core.base")
-local http           = require "resty.http"
+local http           = require("resty.http")
 local open           = io.open
 local sub_str        = string.sub
 local str_byte       = string.byte
@@ -381,12 +381,12 @@ local function server_func(func_name, body, headers)
     local local_conf = config_local.local_conf()
 
     if local_conf.apisix and local_conf.apisix.server_func_addr
-            and local_conf.apisix.server_func_addr ~= "" then
+        and local_conf.apisix.server_func_addr ~= "" then
         local addr = local_conf.apisix.server_func_addr
         if not string.has_suffix(addr, "/") then
             addr = addr .. "/"
         end
-        log.warn("external server func to: " .. addr .. func_name .. ", body: " .. json.encode(body))
+        log.info("external server func to: " .. addr .. func_name .. ", body: " .. json.encode(body))
         local httpc = http.new()
         local res, err = httpc:request_uri(addr .. func_name, {
             method = "POST",

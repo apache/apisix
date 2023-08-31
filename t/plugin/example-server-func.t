@@ -92,7 +92,7 @@ Server-Func-Response: 1981
                                 "i": 1,
                                 "ip": "127.0.0.1",
                                 "port": 1981,
-                                "server_func": "invalid"
+                                "func_name": "invalid"
                             }
                         },
                         "uri": "/server_port"
