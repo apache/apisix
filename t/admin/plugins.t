@@ -272,7 +272,7 @@ plugins:
         }
     }
 --- response_body eval
-qr/\{"metadata_schema":\{"properties":\{"ikey":\{"minimum":0,"type":"number"\},"skey":\{"type":"string"\}\},"required":\["ikey","skey"\],"type":"object"\},"priority":0,"schema":\{"\$comment":"this is a mark for our injected plugin schema","properties":\{"_meta":\{"properties":\{"disable":\{"type":"boolean"\},"error_response":\{"oneOf":\[\{"type":"string"\},\{"type":"object"\}\]\},"filter":\{"description":"filter determines whether the plugin needs to be executed at runtime","type":"array"\},"priority":\{"description":"priority of plugins by customized order","type":"integer"\}\},"type":"object"\},"i":\{"minimum":0,"type":"number"\},"ip":\{"type":"string"\},"port":\{"type":"integer"\},"s":\{"type":"string"\},"t":\{"minItems":1,"type":"array"\}\},"required":\["i"\],"type":"object"\},"version":0.1\}/
+qr/\{"metadata_schema":\{"properties":\{"ikey":\{"minimum":0,"type":"number"\},"skey":\{"type":"string"\}\},"required":\["ikey","skey"\],"type":"object"\},"priority":0,"schema":\{"\$comment":"this is a mark for our injected plugin schema","properties":\{"_meta":\{"properties":\{"disable":\{"type":"boolean"\},"error_response":\{"oneOf":\[\{"type":"string"\},\{"type":"object"\}\]\},"filter":\{"description":"filter determines whether the plugin needs to be executed at runtime","type":"array"\},"priority":\{"description":"priority of plugins by customized order","type":"integer"\}\},"type":"object"\},"func_name":\{"type":"string"\},"i":\{"minimum":0,"type":"number"\},"ip":\{"type":"string"\},"port":\{"type":"integer"\},"s":\{"type":"string"\},"t":\{"minItems":1,"type":"array"\}\},"required":\["i"\],"type":"object"\},"version":0.1\}/
 
 
 
