@@ -1,13 +1,13 @@
 ---
 id: support-fips-in-apisix
-title: 在 APISIX 中支持 FIPS
+title: 通过 OpenSSL 3.0 使 APISIX 支持 FIPS 模式
 keywords:
   - API 网关
   - Apache APISIX
   - 贡献代码
   - 构建 APISIX
   - OpenSSL 3.0 FIPS
-description: 用 OpenSSL 3.0 编译 apisix-base，即可启用 FIPS。
+description: 本文将介绍如何在 Apache APISIX 中使用 OpenSSL 3.0 来编译 apisix-base，即可启用 FIPS 模式。
 ---
 
 <!--
@@ -29,11 +29,11 @@ description: 用 OpenSSL 3.0 编译 apisix-base，即可启用 FIPS。
 #
 -->
 
-OpenSSL 3.0 [支持](https://www.openssl.org/blog/blog/2022/08/24/FIPS-validation-certificate-issued/) [FIPS](https://en.wikipedia.org/wiki/FIPS_140-2) 模式. 为了在 APISIX 中支持 FIPS，你应该使用 OpenSSL 3.0 来编译 apisix-base。
+目前，OpenSSL 3.0 [支持了](https://www.openssl.org/blog/blog/2022/08/24/FIPS-validation-certificate-issued/) [FIPS](https://en.wikipedia.org/wiki/FIPS_140-2) 模式。为了在 APISIX 中支持 FIPS 模式，你应该使用 OpenSSL 3.0 来编译 apisix-base。
 
 ## 编译
 
-如果你要使用 OpenSSL 3.0 来编译 apisix-base，请以root用户执行以下命令：
+如果你需要使用 OpenSSL 3.0 来编译 apisix-base，请以 root 用户角色来执行以下命令：
 
 ```bash
 cd $(mktemp -d)
