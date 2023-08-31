@@ -1331,6 +1331,12 @@ Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 | GET         | apisix/admin/plugins/{plugin_name}?subsystem=stream         | 无         | 获取指定 Stream 插件的属性。 |
 | GET         | apisix/admin/plugins/{plugin_name}?subsystem=http         | 无         | 获取指定 HTTP 插件的属性。 |
 
+:::caution
+
+获取所有插件属性的接口 `/apisix/admin/plugins?all=true` 将很快被弃用。
+
+:::
+
 ### 使用示例 {#plugin-example}
 
 获取插件  (`{plugin_name}`)  数据结构的 JSON 对象。
