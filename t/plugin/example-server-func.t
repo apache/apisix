@@ -38,7 +38,7 @@ __DATA__
                                 "i": 1,
                                 "ip": "127.0.0.1",
                                 "port": 1981,
-                                "server_func": "server_port"
+                                "func_name": "server_port"
                             }
                         },
                         "uri": "/server_port"
