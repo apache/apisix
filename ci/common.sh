@@ -100,14 +100,6 @@ install_nodejs () {
     npm config set registry https://registry.npmjs.org/
 }
 
-install_rust () {
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sudo sh -s -- -y
-    source "$HOME/.cargo/env"
-    # 1.69.0 version required to compile lua-resty-ldap
-    rustup install 1.69.0
-    rustup default 1.69.0
-}
-
 set_coredns() {
     # test a domain name is configured as upstream
     echo "127.0.0.1 test.com" | sudo tee -a /etc/hosts

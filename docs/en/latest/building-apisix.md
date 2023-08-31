@@ -63,7 +63,7 @@ git clone --depth 1 --branch ${APISIX_VERSION} https://github.com/apache/apisix.
 
 Alternatively, you can also download the source package from the [Downloads](https://apisix.apache.org/downloads/) page. Note that source packages here are not distributed with test cases.
 
-Next, navigate to the directory, install dependencies, and build APISIX. You should have [Rust](https://www.rust-lang.org) installed in your environment first before running `make deps`:
+Next, navigate to the directory, install dependencies, and build APISIX.
 
 ```shell
 cd apisix-${APISIX_VERSION}
