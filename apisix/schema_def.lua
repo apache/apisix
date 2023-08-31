@@ -827,8 +827,6 @@ _M.proto = {
     properties = {
         id = id_schema,
         desc = desc_def,
-        create_time = timestamp_def,
-        update_time = timestamp_def,
         content = {
             type = "string", minLength = 1, maxLength = 1024*1024
         }
@@ -841,9 +839,7 @@ _M.global_rule = {
     type = "object",
     properties = {
         id = id_schema,
-        plugins = plugins_schema,
-        create_time = timestamp_def,
-        update_time = timestamp_def
+        plugins = plugins_schema
     },
     required = {"id", "plugins"},
 }
@@ -892,8 +888,6 @@ _M.stream_route = {
     properties = {
         id = id_schema,
         desc = desc_def,
-        create_time = timestamp_def,
-        update_time = timestamp_def,
         remote_addr = remote_addr_def,
         server_addr = {
             description = "server IP",
@@ -941,9 +935,7 @@ _M.plugin_config = {
         id = id_schema,
         desc = desc_def,
         plugins = plugins_schema,
-        labels = labels_def,
-        create_time = timestamp_def,
-        update_time = timestamp_def
+        labels = labels_def
     },
     required = {"id", "plugins"},
 }
@@ -955,9 +947,7 @@ _M.consumer_group = {
         id = id_schema,
         desc = desc_def,
         plugins = plugins_schema,
-        labels = labels_def,
-        create_time = timestamp_def,
-        update_time = timestamp_def
+        labels = labels_def
     },
     required = {"id", "plugins"},
 }
