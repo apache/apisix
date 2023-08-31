@@ -539,8 +539,6 @@ _M.method_schema = method_schema
 _M.route = {
     type = "object",
     properties = {
-        create_time = timestamp_def,
-        update_time = timestamp_def,
         uri = {type = "string", minLength = 1, maxLength = 4096},
         uris = {
             type = "array",

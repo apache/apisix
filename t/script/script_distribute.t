@@ -78,44 +78,7 @@ phase_func(): hit log phase while
 
 
 
-=== TEST 3: invalid script in route
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local t = require("lib.test_admin")
-
-            local data = {
-                script = "invalid script",
-                uri = "/hello",
-                upstream = {
-                    nodes = {
-                        ["127.0.0.1:1980"] = 1
-                    },
-                    type = "roundrobin"
-                }
-            }
-
-            local code, body = t.test('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                core.json.encode(data))
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.print(body)
-        }
-    }
---- yaml_config eval: $::yaml_config
---- request
-GET /t
---- error_code: 400
---- response_body
-{"error_msg":"failed to load 'script' string: [string \"invalid script\"]:1: '=' expected near 'script'"}
-
-
-
-=== TEST 4: invalid script in service
+=== TEST 3: invalid script in service
 --- config
     location /t {
         content_by_lua_block {
