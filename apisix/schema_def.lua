@@ -702,8 +702,6 @@ _M.consumer = {
         group_id = id_schema,
         plugins = plugins_schema,
         labels = labels_def,
-        create_time = timestamp_def,
-        update_time = timestamp_def,
         desc = desc_def,
     },
     required = {"username"},
