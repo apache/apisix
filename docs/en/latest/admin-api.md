@@ -133,7 +133,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "uri": "/*",
     "upstream_id": 1
 }'
-{"value":{"priority":0,"upstream_id":1,"uri":"/*","create_time":1689038794,"id":"1","status":1,"update_time":1689038916},"key":"/apisix/routes/1"}
+{"value":{"priority":0,"upstream_id":1,"uri":"/*","id":"1","status":1,"key":"/apisix/routes/1"}
 
 $ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 {"error_msg":"can not delete this upstream, route [1] is still using it now"}
@@ -325,8 +325,6 @@ ID's as a text string must be of a length between 1 and 64 characters and they s
 | timeout          | False                                    | Auxiliary   | Sets the timeout (in seconds) for connecting to, and sending and receiving messages between the Upstream and the Route. This will overwrite the `timeout` value configured in your [Upstream](#upstream).                                                                                                   | {"connect": 3, "send": 3, "read": 3}                 |
 | enable_websocket | False                                    | Auxiliary   | Enables a websocket. Set to `false` by default.                                                                                                                                                                                                                                                |                                                      |
 | status           | False                                    | Auxiliary   | Enables the current Route. Set to `1` (enabled) by default.                                                                                                                                                                                                                                    | `1` to enable, `0` to disable                        |
-| create_time      | False                                    | Auxiliary   | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.                                                                                                                                                                                         | 1602883670                                           |
-| update_time      | False                                    | Auxiliary   | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.                                                                                                                                                                                         | 1602883670                                           |
 
 Example configuration:
 
@@ -630,8 +628,6 @@ Service resource request address: /apisix/admin/services/{id}
 | labels           | False    | Match Rules | Attributes of the Service specified as key-value pairs.                                                            | {"version":"v2","build":"16","env":"production"} |
 | enable_websocket | False    | Auxiliary   | Enables a websocket. Set to `false` by default.                                                                    |                                                  |
 | hosts            | False    | Match Rules | Matches with any one of the multiple `host`s specified in the form of a non-empty list.                            | ["foo.com", "*.bar.com"]                         |
-| create_time      | False    | Auxiliary   | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
-| update_time      | False    | Auxiliary   | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
 
 Example configuration:
 
@@ -815,8 +811,6 @@ Consumer resource request address: /apisix/admin/consumers/{username}
 | plugins     | False    | Plugin      | Plugins that are executed during the request/response cycle. See [Plugin](terminology/plugin.md) for more. |                                                  |
 | desc        | False    | Auxiliary   | Description of usage scenarios.                                                                                    | customer xxxx                                    |
 | labels      | False    | Match Rules | Attributes of the Consumer specified as key-value pairs.                                                           | {"version":"v2","build":"16","env":"production"} |
-| create_time | False    | Auxiliary   | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
-| update_time | False    | Auxiliary   | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
 
 Example Configuration:
 
@@ -911,8 +905,6 @@ In addition to the equalization algorithm selections, Upstream also supports pas
 | upstream_host               | optional                                    | Specifies the host of the Upstream request. This is only valid if the `pass_host` is set to `rewrite`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |                                                                                                                                            |
 | scheme                      | optional                                    | The scheme used when communicating with the Upstream. For an L7 proxy, this value can be one of `http`, `https`, `grpc`, `grpcs`. For an L4 proxy, this value could be one of `tcp`, `udp`, `tls`. Defaults to `http`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |                                                                                                                                            |
 | labels                      | optional                                    | Attributes of the Upstream specified as `key-value` pairs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | {"version":"v2","build":"16","env":"production"}                                                                                           |
-| create_time                 | optional                                    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | 1602883670                                                                                                                                 |
-| update_time                 | optional                                    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | 1602883670                                                                                                                                 |
 | tls.client_cert             | optional, can't be used with `tls.client_cert_id`       | Sets the client certificate while connecting to a TLS Upstream.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
 | tls.client_key              | optional, can't be used with `tls.client_cert_id`       | Sets the client private key while connecting to a TLS Upstream.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
 | tls.client_cert_id          | optional, can't be used with `tls.client_cert` and `tls.client_key`       | Set the referenced [SSL](#ssl) id.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |                                                                                                                                            |
@@ -1211,8 +1203,6 @@ For notes on ID syntax please refer to: [ID Syntax](#quick-note-on-id-syntax)
 | client.skip_mtls_uri_regex | False    | An array of regular expressions, in PCRE format              | Used to match URI, if matched, this request bypasses the client certificate checking, i.e. skip the MTLS.             | ["/hello[0-9]+", "/foobar"]                                                |
 | snis         | True, only if `type` is `server`     | Match Rules              | A non-empty array of HTTPS SNI                                                                                 |                                                  |
 | labels       | False    | Match Rules              | Attributes of the resource specified as key-value pairs.                                                       | {"version":"v2","build":"16","env":"production"} |
-| create_time  | False    | Auxiliary                | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.         | 1602883670                                       |
-| update_time  | False    | Auxiliary                | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.         | 1602883670                                       |
 | type         | False    | Auxiliary            | Identifies the type of certificate, default  `server`.                                                                             | `client` Indicates that the certificate is a client certificate, which is used when APISIX accesses the upstream; `server` Indicates that the certificate is a server-side certificate, which is used by APISIX when verifying client requests.     |
 | status       | False    | Auxiliary                | Enables the current SSL. Set to `1` (enabled) by default.                                                      | `1` to enable, `0` to disable                    |
 | ssl_protocols | False    | An array of ssl protocols               | It is used to control the SSL/TLS protocol version used between servers and clients. See [SSL Protocol](./ssl-protocol.md) for more examples.                  |                `["TLSv1.2", "TLSv2.3"]`                                  |
@@ -1254,8 +1244,6 @@ Global Rule resource request address: /apisix/admin/global_rules/{id}
 | Parameter   | Required | Description                                                                                                        | Example    |
 | ----------- | -------- | ------------------------------------------------------------------------------------------------------------------ | ---------- |
 | plugins     | True     | Plugins that are executed during the request/response cycle. See [Plugin](terminology/plugin.md) for more. |            |
-| create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670 |
-| update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670 |
 
 ## Consumer group
 
@@ -1283,8 +1271,6 @@ Consumer group resource request address: /apisix/admin/consumer_groups/{id}
 | plugins     | True     | Plugins that are executed during the request/response cycle. See [Plugin](terminology/plugin.md) for more. |                                                  |
 | desc        | False    | Description of usage scenarios.                                                                                    | customer xxxx                                    |
 | labels      | False    | Attributes of the Consumer group specified as key-value pairs.                                                      | {"version":"v2","build":"16","env":"production"} |
-| create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
-| update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
 
 ## Plugin config
 
@@ -1312,8 +1298,6 @@ Plugin Config resource request address: /apisix/admin/plugin_configs/{id}
 | plugins     | True     | Plugins that are executed during the request/response cycle. See [Plugin](terminology/plugin.md) for more. |                                                  |
 | desc        | False    | Description of usage scenarios.                                                                                    | customer xxxx                                    |
 | labels      | False    | Attributes of the Plugin config specified as key-value pairs.                                                      | {"version":"v2","build":"16","env":"production"} |
-| create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
-| update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
 
 ## Plugin Metadata
 
@@ -1488,7 +1472,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/secrets/vault/test2 \
 HTTP/1.1 200 OK
 ...
 
-{"key":"\/apisix\/secrets\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
+{"key":"\/apisix\/secrets\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","uri":"http:\/\/xxx\/get"}}
 ```
 
 ### Response Parameters
@@ -1520,8 +1504,6 @@ Proto resource request address: /apisix/admin/protos/{id}
 | Parameter   | Required | Type     | Description                                                         | Example                       |
 | ----------- | -------- | -------- | ------------------------------------------------------------------- | ----------------------------- |
 | content   | True    | String | content of `.proto` or `.pb` files | See [here](./plugins/grpc-transcode.md#enabling-the-plugin)         |
-| create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
-| update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
 
 ## Schema validation
 
