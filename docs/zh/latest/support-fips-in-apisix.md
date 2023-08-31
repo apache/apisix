@@ -1,6 +1,6 @@
 ---
 id: support-fips-in-apisix
-title: 在 APISIX 中支持 FIPS
+title: 通过 OpenSSL 3.0 使 APISIX 支持 FIPS 模式
 keywords:
   - API 网关
   - Apache APISIX
