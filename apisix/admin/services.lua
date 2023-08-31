@@ -22,7 +22,6 @@ local schema_plugin = require("apisix.admin.plugins").check_schema
 local tostring = tostring
 local ipairs = ipairs
 local type = type
-local loadstring = loadstring
 
 
 local function check_conf(id, conf, need_id, schema)
@@ -64,18 +63,6 @@ local function check_conf(id, conf, need_id, schema)
         local ok, err = schema_plugin(conf.plugins)
         if not ok then
             return nil, {error_msg = err}
-        end
-    end
-
-    if conf.script then
-        local obj, err = loadstring(conf.script)
-        if not obj then
-            return nil, {error_msg = "failed to load 'script' string: "
-                                     .. err}
-        end
-
-        if type(obj()) ~= "table" then
-            return nil, {error_msg = "'script' should be a Lua object"}
         end
     end
 
