@@ -299,7 +299,9 @@ nginx_config:                     # Config for render the template to generate n
 #      - "http://${username}:${password}@${host1}:${port1}"
 #    prefix: "/nacos/v1/"
 #    fetch_interval: 30    # Default 30s
-#    weight: 100           # Default 100
+# `weight` is the `default_weight` that will be attached to each discovered node that
+# doesn't have a weight explicitly provided in nacos results
+#    weight: 100           # Default 100.
 #    timeout:
 #      connect: 2000       # Default 2000ms
 #      send: 2000          # Default 2000ms
@@ -655,9 +657,7 @@ deployment:                    # Deployment configurations
     host:                         # Set etcd address(es) in the same etcd cluster.
       - "http://127.0.0.1:2379"   # If TLS is enabled for etcd, use https://127.0.0.1:2379.
     prefix: /apisix               # Set etcd prefix.
-    use_grpc: false               # Use gRPC (experimental) for etcd configuration sync.
     timeout: 30                   # Set timeout in seconds.
-                                  # Set a higher timeout (e.g. an hour) if `use_grpc` is true.
     # resync_delay: 5             # Set resync time in seconds after a sync failure.
                                   # The actual resync time would be resync_delay plus 50% random jitter.
     # health_check_timeout: 10    # Set timeout in seconds for etcd health check.
