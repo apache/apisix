@@ -708,7 +708,6 @@ passed
 
 
 === TEST 37: hit route
---- LAST
 --- request
 GET /hello
 --- grep_error_log eval
