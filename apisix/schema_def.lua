@@ -675,7 +675,6 @@ _M.service = {
         name = rule_name_def,
         desc = desc_def,
         labels = labels_def,
-        script = {type = "string", minLength = 10, maxLength = 102400},
         enable_websocket = {
             description = "enable websocket for request",
             type        = "boolean",
