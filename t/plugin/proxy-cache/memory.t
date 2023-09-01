@@ -661,3 +661,58 @@ GET /hello
 --- more_headers
 Cache-Control: only-if-cached
 --- error_code: 504
+
+
+
+=== TEST 36: configure plugin without memory_cache zone
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-cache": {
+                               "cache_strategy": "memory",
+                               "cache_key":["$host","$uri"],
+                               "cache_bypass": ["$arg_bypass"],
+                               "cache_control": true,
+                               "cache_method": ["GET"],
+                               "cache_ttl": 10,
+                               "cache_http_status": [200]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1986": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- request
+GET /t
+--- error_code: 200
+--- response_body
+passed
+
+
+
+=== TEST 37: hit route
+--- LAST
+--- request
+GET /hello
+--- grep_error_log eval
+qr/no cache_zone provided/
+--- grep_error_log_out
+no cache_zone provided
+no cache_zone provided
