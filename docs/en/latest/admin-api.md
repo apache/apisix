@@ -133,7 +133,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "uri": "/*",
     "upstream_id": 1
 }'
-{"value":{"priority":0,"upstream_id":1,"uri":"/*","id":"1","status":1,"key":"/apisix/routes/1"}
+{"value":{"priority":0,"upstream_id":1,"uri":"/*","create_time":1689038794,"id":"1","status":1,"update_time":1689038916},"key":"/apisix/routes/1"}
 
 $ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 {"error_msg":"can not delete this upstream, route [1] is still using it now"}
@@ -1472,7 +1472,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/secrets/vault/test2 \
 HTTP/1.1 200 OK
 ...
 
-{"key":"\/apisix\/secrets\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","uri":"http:\/\/xxx\/get"}}
+{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
 ```
 
 ### Response Parameters

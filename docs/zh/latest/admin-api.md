@@ -135,7 +135,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     "uri": "/*",
     "upstream_id": 1
 }'
-{"value":{"priority":0,"upstream_id":1,"uri":"/*","id":"1","status":1},"key":"/apisix/routes/1"}
+{"value":{"priority":0,"upstream_id":1,"uri":"/*","create_time":1689038794,"id":"1","status":1,"update_time":1689038916},"key":"/apisix/routes/1"}
 
 $ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 {"error_msg":"can not delete this upstream, route [1] is still using it now"}
@@ -865,7 +865,7 @@ Consumer 对象 JSON 配置示例：
     Date: Thu, 26 Dec 2019 08:17:49 GMT
     ...
 
-    {"key":"\/apisix\/consumers\/jack","value":{"username":"jack","plugins":{"limit-count":{"key_type":"var","count":2,"rejected_code":503,"show_limit_quota_header":true,"time_window":60,"key":"remote_addr","allow_degradation":false,"policy":"local"},"key-auth":{"key":"auth-one"}}}
+       {"key":"\/apisix\/consumers\/jack","value":{"username":"jack","update_time":1666260780,"plugins":{"limit-count":{"key_type":"var","count":2,"rejected_code":503,"show_limit_quota_header":true,"time_window":60,"key":"remote_addr","allow_degradation":false,"policy":"local"},"key-auth":{"key":"auth-one"}},"create_time":1666260780}}
     ```
 
 ### 应答参数  {#consumer-response-parameters}
@@ -1484,7 +1484,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/secrets/vault/test2 \
 HTTP/1.1 200 OK
 ...
 
-{"key":"\/apisix\/secrets\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","uri":"http:\/\/xxx\/get"}}
+{"key":"\/apisix\/secrets\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
 ```
 
 ### 应答参数 {#secret-config-response-parameters}
