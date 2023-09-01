@@ -1472,7 +1472,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/secrets/vault/test2 \
 HTTP/1.1 200 OK
 ...
 
-{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
+{"key":"\/apisix\/secrets\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
 ```
 
 ### Response Parameters

@@ -865,7 +865,7 @@ Consumer 对象 JSON 配置示例：
     Date: Thu, 26 Dec 2019 08:17:49 GMT
     ...
 
-       {"key":"\/apisix\/consumers\/jack","value":{"username":"jack","update_time":1666260780,"plugins":{"limit-count":{"key_type":"var","count":2,"rejected_code":503,"show_limit_quota_header":true,"time_window":60,"key":"remote_addr","allow_degradation":false,"policy":"local"},"key-auth":{"key":"auth-one"}},"create_time":1666260780}}
+    {"key":"\/apisix\/consumers\/jack","value":{"username":"jack","update_time":1666260780,"plugins":{"limit-count":{"key_type":"var","count":2,"rejected_code":503,"show_limit_quota_header":true,"time_window":60,"key":"remote_addr","allow_degradation":false,"policy":"local"},"key-auth":{"key":"auth-one"}},"create_time":1666260780}}
     ```
 
 ### 应答参数  {#consumer-response-parameters}
