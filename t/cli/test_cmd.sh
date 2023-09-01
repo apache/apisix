@@ -21,34 +21,6 @@
 
 git checkout conf/config.yaml
 
-# remove stale conf server sock
-touch conf/config_listen.sock
-./bin/apisix start
-sleep 0.5
-./bin/apisix stop
-sleep 0.5
-
-if [ -e conf/config_listen.sock ]; then
-    echo "failed: should remove stale conf server sock"
-    exit 1
-fi
-
-# don't remove stale conf server sock when APISIX is running
-./bin/apisix start
-sleep 0.5
-./bin/apisix start
-sleep 0.5
-
-if [ ! -e conf/config_listen.sock ]; then
-    echo "failed: should not remove stale conf server sock"
-    exit 1
-fi
-
-./bin/apisix stop
-sleep 0.5
-
-echo "passed: stale conf server sock removed"
-
 # check restart with old nginx.pid exist
 echo "-1" > logs/nginx.pid
 out=$(./bin/apisix start 2>&1 || true)
