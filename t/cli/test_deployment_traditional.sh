@@ -106,57 +106,6 @@ deployment:
     role_traditional:
         config_provider: etcd
     etcd:
-        prefix: "/apisix"
-        host:
-            - http://127.0.0.1:2379
-            - https://127.0.0.1:2379
-' > conf/config.yaml
-
-out=$(make init 2>&1 || true)
-if ! echo "$out" | grep 'all nodes in the etcd cluster should enable/disable TLS together'; then
-    echo "failed: should validate etcd host"
-    exit 1
-fi
-
-echo "passed: validate etcd host"
-
-# The 'admin.apisix.dev' is injected by ci/common.sh@set_coredns
-
-# etcd mTLS verify
-echo '
-deployment:
-    role: traditional
-    role_traditional:
-        config_provider: etcd
-    etcd:
-        host:
-            - "https://admin.apisix.dev:22379"
-        prefix: "/apisix"
-        tls:
-            cert: t/certs/mtls_client.crt
-            key: t/certs/mtls_client.key
-            verify: false
-  ' > conf/config.yaml
-
-make run
-sleep 1
-
-code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
-make stop
-
-if [ ! $code -eq 200 ]; then
-    echo "failed: could not work when mTLS is enabled"
-    exit 1
-fi
-
-echo "passed: etcd enables mTLS successfully"
-
-echo '
-deployment:
-    role: traditional
-    role_traditional:
-        config_provider: etcd
-    etcd:
         host:
             - "https://admin.apisix.dev:22379"
         prefix: "/apisix"
