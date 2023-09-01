@@ -582,10 +582,6 @@ _M.route = {
             pattern = [[^function]],
         },
 
-        -- The 'script' fields below are used by dashboard for plugin orchestration
-        script = {type = "string", minLength = 10, maxLength = 102400},
-        script_id = id_schema,
-
         plugins = plugins_schema,
         plugin_config_id = id_schema,
 
