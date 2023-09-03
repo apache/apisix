@@ -2,8 +2,12 @@
   "version": "3.4.0",
   "sidebar": [
     {
-      "type": "doc",
-      "id": "getting-started"
+      "type": "category",
+      "label": "Getting Started",
+      "items": [
+        "getting-started/README",
+        "getting-started/configure-routes"
+      ]
     },
     {
       "type": "doc",
