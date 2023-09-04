@@ -48,14 +48,14 @@ local function check_conf(id, conf, need_id, schema)
         local res, err = core.etcd.get(key)
         if not res then
             return nil, {error_msg = "failed to fetch upstream info by "
-                    .. "upstream id [" .. upstream_id .. "]: "
-                    .. err}
+                                     .. "upstream id [" .. upstream_id .. "]: "
+                                     .. err}
         end
 
         if res.status ~= 200 then
             return nil, {error_msg = "failed to fetch upstream info by "
-                    .. "upstream id [" .. upstream_id .. "], "
-                    .. "response code: " .. res.status}
+                                     .. "upstream id [" .. upstream_id .. "], "
+                                     .. "response code: " .. res.status}
         end
     end
 
@@ -77,11 +77,11 @@ local function delete_checker(id)
     if routes_ver and routes then
         for _, route in ipairs(routes) do
             if type(route) == "table" and route.value
-                    and route.value.service_id
-                    and tostring(route.value.service_id) == id then
+               and route.value.service_id
+               and tostring(route.value.service_id) == id then
                 return 400, {error_msg = "can not delete this service directly,"
-                        .. " route [" .. route.value.id
-                        .. "] is still using it now"}
+                                         .. " route [" .. route.value.id
+                                         .. "] is still using it now"}
             end
         end
     end

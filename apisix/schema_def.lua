@@ -54,7 +54,7 @@ local ipv4_def = table_concat(ipv4_def_buf, [[\.]])
 -- There is false negative for ipv6/cidr. For instance, `:/8` will be valid.
 -- It is fine as the correct regex will be too complex.
 local ipv6_def = "([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}"
-        .. "([a-fA-F0-9]{0,4})?"
+                 .. "([a-fA-F0-9]{0,4})?"
 local ip_def = {
     {title = "IPv4", type = "string", format = "ipv4"},
     {title = "IPv4/CIDR", type = "string", pattern = "^" .. ipv4_def .. "/([12]?[0-9]|3[0-2])$"},
@@ -389,7 +389,7 @@ local upstream_schema = {
                 verify = {
                     type = "boolean",
                     description = "Turn on server certificate verification, "..
-                            "currently only kafka upstream is supported",
+                        "currently only kafka upstream is supported",
                     default = false,
                 },
             },
@@ -451,11 +451,11 @@ local upstream_schema = {
         scheme = {
             default = "http",
             enum = {"grpc", "grpcs", "http", "https", "tcp", "tls", "udp",
-                    "kafka"},
+                "kafka"},
             description = "The scheme of the upstream." ..
-                    " For L7 proxy, it can be one of grpc/grpcs/http/https." ..
-                    " For L4 proxy, it can be one of tcp/tls/udp." ..
-                    " For specific protocols, it can be kafka."
+                " For L7 proxy, it can be one of grpc/grpcs/http/https." ..
+                " For L4 proxy, it can be one of tcp/tls/udp." ..
+                " For specific protocols, it can be kafka."
         },
         labels = labels_def,
         discovery_type = {
@@ -501,8 +501,8 @@ local upstream_schema = {
 _M.upstream_hash_vars_schema = {
     type = "string",
     pattern = [[^((uri|server_name|server_addr|request_uri|remote_port]]
-            .. [[|remote_addr|query_string|host|hostname|mqtt_client_id)]]
-            .. [[|arg_[0-9a-zA-z_-]+)$]],
+               .. [[|remote_addr|query_string|host|hostname|mqtt_client_id)]]
+               .. [[|arg_[0-9a-zA-z_-]+)$]],
 }
 
 -- validates header name, cookie name.
@@ -524,7 +524,7 @@ local method_schema = {
     description = "HTTP method",
     type = "string",
     enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-            "OPTIONS", "CONNECT", "TRACE", "PURGE"},
+        "OPTIONS", "CONNECT", "TRACE", "PURGE"},
 }
 _M.method_schema = method_schema
 
@@ -701,8 +701,8 @@ _M.ssl = {
         id = id_schema,
         type = {
             description = "ssl certificate type, " ..
-                    "server to server certificate, " ..
-                    "client to client certificate for upstream",
+                            "server to server certificate, " ..
+                            "client to client certificate for upstream",
             type = "string",
             default = "server",
             enum = {"server", "client"}
@@ -950,7 +950,7 @@ _M.plugin_injected_schema = {
             },
             filter = {
                 description = "filter determines whether the plugin "..
-                        "needs to be executed at runtime",
+                                "needs to be executed at runtime",
                 type  = "array",
             }
         }

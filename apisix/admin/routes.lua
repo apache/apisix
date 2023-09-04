@@ -30,7 +30,7 @@ local function check_conf(id, conf, need_id, schema)
 
     if conf.remote_addr and conf.remote_addrs then
         return nil, {error_msg = "only one of remote_addr or remote_addrs is "
-                .. "allowed"}
+                                 .. "allowed"}
     end
 
     local ok, err = core.schema.check(schema, conf)
@@ -52,14 +52,14 @@ local function check_conf(id, conf, need_id, schema)
         local res, err = core.etcd.get(key)
         if not res then
             return nil, {error_msg = "failed to fetch upstream info by "
-                    .. "upstream id [" .. upstream_id .. "]: "
-                    .. err}
+                                     .. "upstream id [" .. upstream_id .. "]: "
+                                     .. err}
         end
 
         if res.status ~= 200 then
             return nil, {error_msg = "failed to fetch upstream info by "
-                    .. "upstream id [" .. upstream_id .. "], "
-                    .. "response code: " .. res.status}
+                                     .. "upstream id [" .. upstream_id .. "], "
+                                     .. "response code: " .. res.status}
         end
     end
 
@@ -69,14 +69,14 @@ local function check_conf(id, conf, need_id, schema)
         local res, err = core.etcd.get(key)
         if not res then
             return nil, {error_msg = "failed to fetch service info by "
-                    .. "service id [" .. service_id .. "]: "
-                    .. err}
+                                     .. "service id [" .. service_id .. "]: "
+                                     .. err}
         end
 
         if res.status ~= 200 then
             return nil, {error_msg = "failed to fetch service info by "
-                    .. "service id [" .. service_id .. "], "
-                    .. "response code: " .. res.status}
+                                     .. "service id [" .. service_id .. "], "
+                                     .. "response code: " .. res.status}
         end
     end
 
@@ -86,14 +86,14 @@ local function check_conf(id, conf, need_id, schema)
         local res, err = core.etcd.get(key)
         if not res then
             return nil, {error_msg = "failed to fetch plugin config info by "
-                    .. "plugin config id [" .. plugin_config_id .. "]: "
-                    .. err}
+                                     .. "plugin config id [" .. plugin_config_id .. "]: "
+                                     .. err}
         end
 
         if res.status ~= 200 then
             return nil, {error_msg = "failed to fetch plugin config info by "
-                    .. "plugin config id [" .. plugin_config_id .. "], "
-                    .. "response code: " .. res.status}
+                                     .. "plugin config id [" .. plugin_config_id .. "], "
+                                     .. "response code: " .. res.status}
         end
     end
 
@@ -115,7 +115,7 @@ local function check_conf(id, conf, need_id, schema)
         local func, err = loadstring("return " .. conf.filter_func)
         if not func then
             return nil, {error_msg = "failed to load 'filter_func' string: "
-                    .. err}
+                                     .. err}
         end
 
         if type(func()) ~= "function" then
