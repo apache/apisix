@@ -196,11 +196,11 @@ local health_checker = {
                     }
                 },
                 req_headers = {
-                    type = "array",
-                    minItems = 1,
-                    items = {
-                        type = "string",
-                        uniqueItems = true,
+                  type = "array",
+                  minItems = 1,
+                  items = {
+                      type = "string",
+                      uniqueItems = true,
                     },
                 }
             }
@@ -437,11 +437,11 @@ local upstream_schema = {
             type = "string",
             default = "vars",
             enum = {
-                "vars",
-                "header",
-                "cookie",
-                "consumer",
-                "vars_combinations",
+              "vars",
+              "header",
+              "cookie",
+              "consumer",
+              "vars_combinations",
             },
         },
         key = {
