@@ -38,9 +38,6 @@ script() {
     mkdir tmp && cd tmp
     cp -r ../utils ./
 
-    # install rust
-    install_rust
-
     # install APISIX by luarocks
     luarocks install $APISIX_MAIN > build.log 2>&1 || (cat build.log && exit 1)
     cp ../bin/apisix /usr/local/bin/apisix
