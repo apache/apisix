@@ -16,7 +16,6 @@ jobs:
     steps:
       - name: update labels when user responds
         uses: actions/github-script@v6
-
         with:
           script: |
             github.rest.issues.addLabels({
