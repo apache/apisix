@@ -1,5 +1,6 @@
 name: Update pr labels when user responds
 permissions:
+  issues: write
   pull-requests: write
 
 on:
