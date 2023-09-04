@@ -210,7 +210,7 @@ value
 --- request
 GET /t
 --- response_body_like
-failed to decode result, res: {\"errors\":\[\"permission denied\"\]}\n
+failed to decode result, res: \{\"errors\":\[\"permission denied\"\]}\n
 
 
 
@@ -235,4 +235,4 @@ failed to decode result, res: {\"errors\":\[\"permission denied\"\]}\n
 --- request
 GET /t
 --- response_body_like
-failed to decode result, res: {\"errors\":\[\"permission denied\"\]}\n
+failed to decode result, res: \{\"errors\":\[\"permission denied\"\]}\n
