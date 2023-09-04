@@ -1,6 +1,5 @@
 name: Update pr labels when user responds
 permissions:
-  issues: write
   pull-requests: write
 
 on:
@@ -10,7 +9,7 @@ on:
     types: [created]
 
 jobs:
-  issue_comment:
+  pr_commented:
     if: github.event.issue && github.event.issue.pull_request && github.event.comment.user.login == github.event.issue.user.login && github.event.issue.labels && !contains(github.event.issue.labels.*.name, 'user responded')
     runs-on: ubuntu-latest
     steps:
@@ -25,7 +24,7 @@ jobs:
               labels: ["user responded"]
             })
 
-  pull_request_review_comment:
+  pr_review_commented:
     if: github.event.pull_request && github.event.comment.user.login == github.event.pull_request.user.login && github.event.pull_request.labels && !contains(github.event.pull_request.labels.*.name, 'user responded')
     runs-on: ubuntu-latest
     steps:
