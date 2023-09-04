@@ -58,9 +58,6 @@ __DATA__
                 return
             end
 
-            res = json.decode(res)
-            res.value.create_time = nil
-            res.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
@@ -91,10 +88,6 @@ __DATA__
             res.createdIndex = nil
             assert(res.modifiedIndex ~= nil)
             res.modifiedIndex = nil
-            assert(res.value.create_time ~= nil)
-            res.value.create_time = nil
-            assert(res.value.update_time ~= nil)
-            res.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
