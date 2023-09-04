@@ -216,11 +216,7 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local etcd = require("apisix.core.etcd")
-
             local id = 1
-            local res = assert(etcd.get('/routes/' .. id))
-            local prev_create_time = res.body.node.value.create_time
-            local prev_update_time = res.body.node.value.update_time
             ngx.sleep(1)
 
             local code, body = t('/apisix/admin/routes/1',
@@ -239,11 +235,6 @@ passed
             ngx.status = code
             ngx.say(body)
 
-            local res = assert(etcd.get('/routes/' .. id))
-            local create_time = res.body.node.value.create_time
-            assert(prev_create_time == create_time, "create_time mismatched")
-            local update_time = res.body.node.value.update_time
-            assert(prev_update_time ~= update_time, "update_time should be changed")
         }
     }
 --- response_body

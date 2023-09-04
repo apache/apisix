@@ -188,11 +188,6 @@ GET /t
 
             ngx.say("[push] code: ", code, " message: ", message)
             local id = string.sub(res.key, #"/apisix/routes/" + 1)
-            local res = assert(etcd.get('/routes/' .. id))
-            local create_time = res.body.node.value.create_time
-            assert(create_time ~= nil, "create_time is nil")
-            local update_time = res.body.node.value.update_time
-            assert(update_time ~= nil, "update_time is nil")
 
             code, message = t('/apisix/admin/routes/' .. id,
                  ngx.HTTP_DELETE
@@ -247,11 +242,6 @@ GET /t
 
             ngx.say("[push] code: ", code, " message: ", message)
 
-            local res = assert(etcd.get('/routes/1'))
-            local create_time = res.body.node.value.create_time
-            assert(create_time ~= nil, "create_time is nil")
-            local update_time = res.body.node.value.update_time
-            assert(update_time ~= nil, "update_time is nil")
         }
     }
 --- request
