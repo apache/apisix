@@ -201,7 +201,7 @@ local health_checker = {
                   items = {
                       type = "string",
                       uniqueItems = true,
-                    },
+                  },
                 }
             }
         },

@@ -71,7 +71,7 @@ local function check_conf(id, conf, need_id, schema)
         local obj, err = loadstring(conf.script)
         if not obj then
             return nil, {error_msg = "failed to load 'script' string: "
-                    .. err}
+                                     .. err}
         end
 
         if type(obj()) ~= "table" then
