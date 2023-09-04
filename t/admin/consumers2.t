@@ -62,7 +62,7 @@ __DATA__
         }
     }
 --- response_body
-{"key":"/apisix/consumers/jack","value":{"username":"jack"}}
+{"key":"/apisix/consumers/jack","value":{"create_time":1693807649,"username":"jack","update_time":1693807649}}
 
 
 
@@ -92,7 +92,7 @@ __DATA__
         }
     }
 --- response_body
-{"key":"/apisix/consumers/jack","value":{"username":"jack"}}
+{"key":"/apisix/consumers/jack","value":{"create_time":1693807649,"update_time":1693807649,"username":"jack"}}
 
 
 
