@@ -73,9 +73,6 @@ install_dependencies() {
     # install nodejs
     install_nodejs
 
-    # install rust
-    install_rust
-
     # grpc-web server && client
     cd t/plugin/grpc-web
     ./setup.sh
