@@ -22,7 +22,6 @@ local schema_plugin = require("apisix.admin.plugins").check_schema
 local tostring = tostring
 local ipairs = ipairs
 local type = type
-local loadstring = loadstring
 
 
 local function check_conf(id, conf, need_id, schema)
