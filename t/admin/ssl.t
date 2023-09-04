@@ -48,12 +48,6 @@ __DATA__
             ngx.status = code
             ngx.say(body)
 
-            local res = assert(etcd.get('/ssls/1'))
-            local prev_create_time = res.body.node.value.create_time
-            assert(prev_create_time ~= nil, "create_time is nil")
-            local update_time = res.body.node.value.update_time
-            assert(update_time ~= nil, "update_time is nil")
-
         }
     }
 --- request
@@ -627,7 +621,6 @@ GET /t
 
             local code, body = t.test('/apisix/admin/ssls/' .. id,
                 ngx.HTTP_PATCH,
-                core.json.encode({create_time = 0, update_time = 1})
             )
 
             if code ~= 200 then
@@ -722,11 +715,7 @@ passed
             local data = {
                 cert = ssl_cert,
                 key = ssl_key,
-                sni = "test.com",
-                create_time = 1602883670,
-                update_time = 1602893670,
-                validity_start = 1602873670,
-                validity_end = 1603893670
+                sni = "test.com"
             }
 
             local code, body = t.test('/apisix/admin/ssls/1',
@@ -734,11 +723,7 @@ passed
                 core.json.encode(data),
                 [[{
                     "value": {
-                        "sni": "test.com",
-                        "create_time": 1602883670,
-                        "update_time": 1602893670,
-                        "validity_start": 1602873670,
-                        "validity_end": 1603893670
+                        "sni": "test.com"
                     },
                     "key": "/apisix/ssls/1"
                 }]]

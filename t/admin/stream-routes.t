@@ -64,12 +64,6 @@ __DATA__
             ngx.status = code
             ngx.say(body)
 
-            local res = assert(etcd.get('/stream_routes/1'))
-            local create_time = res.body.node.value.create_time
-            assert(create_time ~= nil, "create_time is nil")
-            local update_time = res.body.node.value.update_time
-            assert(update_time ~= nil, "update_time is nil")
-
         }
     }
 --- request
@@ -172,10 +166,6 @@ GET /t
             local id = string.sub(res.key, #"/apisix/stream_routes/" + 1)
 
             local ret = assert(etcd.get('/stream_routes/' .. id))
-            local create_time = ret.body.node.value.create_time
-            assert(create_time ~= nil, "create_time is nil")
-            local update_time = ret.body.node.value.update_time
-            assert(update_time ~= nil, "update_time is nil")
             id = ret.body.node.value.id
             assert(id ~= nil, "id is nil")
 

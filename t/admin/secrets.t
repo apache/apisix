@@ -60,11 +60,6 @@ __DATA__
             ngx.status = code
             ngx.say(body)
 
-            local res = assert(etcd.get('/secrets/vault/test1'))
-            local create_time = res.body.node.value.create_time
-            assert(create_time ~= nil, "create_time is nil")
-            local update_time = res.body.node.value.update_time
-            assert(update_time ~= nil, "update_time is nil")
         }
     }
 --- response_body
@@ -137,11 +132,6 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local etcd = require("apisix.core.etcd")
-            local res = assert(etcd.get('/secrets/vault/test1'))
-            local prev_create_time = res.body.node.value.create_time
-            assert(prev_create_time ~= nil, "create_time is nil")
-            local prev_update_time = res.body.node.value.update_time
-            assert(prev_update_time ~= nil, "update_time is nil")
             ngx.sleep(1)
 
             local code, body = t('/apisix/admin/secrets/vault/test1/token',
@@ -175,11 +165,6 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local etcd = require("apisix.core.etcd")
-            local res = assert(etcd.get('/secrets/vault/test1'))
-            local prev_create_time = res.body.node.value.create_time
-            assert(prev_create_time ~= nil, "create_time is nil")
-            local prev_update_time = res.body.node.value.update_time
-            assert(prev_update_time ~= nil, "update_time is nil")
             ngx.sleep(1)
 
             local code, body = t('/apisix/admin/secrets/vault/test1',

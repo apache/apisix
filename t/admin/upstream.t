@@ -57,11 +57,6 @@ so that we can delete it later)
             ngx.status = code
             ngx.say(body)
 
-            local res = assert(etcd.get('/upstreams/admin_up'))
-            local create_time = res.body.node.value.create_time
-            assert(create_time ~= nil, "create_time is nil")
-            local update_time = res.body.node.value.update_time
-            assert(update_time ~= nil, "update_time is nil")
         }
     }
 --- request
@@ -168,11 +163,6 @@ GET /t
             ngx.say("[push] code: ", code, " message: ", message)
 
             local id = string.sub(res.key, #"/apisix/upstreams/" + 1)
-            local res = assert(etcd.get('/upstreams/' .. id))
-            local create_time = res.body.node.value.create_time
-            assert(create_time ~= nil, "create_time is nil")
-            local update_time = res.body.node.value.update_time
-            assert(update_time ~= nil, "update_time is nil")
 
             code, message = t('/apisix/admin/upstreams/' .. id, ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)

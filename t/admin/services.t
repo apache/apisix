@@ -1258,62 +1258,7 @@ passed
 
 
 
-=== TEST 38: create service when there is no create_time and update_time(id: 2)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:8080": 2
-                        },
-                        "type": "roundrobin"
-                    }
-                }]],
-                [[{
-                    "value": {
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:8080": 2
-                            },
-                            "type": "roundrobin"
-                        }
-                    },
-                    "key": "/apisix/services/2"
-                }]]
-                )
-
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 39: delete test service created without create_time and update_time(id: 2)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/services/2', ngx.HTTP_DELETE)
-            ngx.say("[delete] code: ", code, " message: ", message)
-        }
-    }
---- request
-GET /t
---- response_body
-[delete] code: 200 message: passed
-
-
-
-=== TEST 40: create service with create_time and update_time(id: 1)
+=== TEST 38: create service with create_time and update_time(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -1356,7 +1301,7 @@ passed
 
 
 
-=== TEST 41: delete test service with create_time and update_time(id: 1)
+=== TEST 39: delete test service with create_time and update_time(id: 1)
 --- config
     location /t {
         content_by_lua_block {
