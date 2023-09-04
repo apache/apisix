@@ -171,7 +171,7 @@ GET /t
             end
 
             ngx.say("[push] code: ", code, " message: ", message)
-
+            local id = string.sub(res.key, #"/apisix/services/" + 1)
             code, message = t('/apisix/admin/services/' .. id, ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
