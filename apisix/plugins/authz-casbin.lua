@@ -31,7 +31,6 @@ local schema = {
         username = { type = "string"}
     },
     oneOf = {
-        {required = {"model_path", "policy_path", "username"}},
         {required = {"model", "policy", "username"}}
     },
 }
