@@ -74,6 +74,7 @@ passed
                     "uri": "/hello"
                 }]]
                 )
+
             if code >= 300 then
                 ngx.status = code
             end

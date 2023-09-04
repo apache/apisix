@@ -24,12 +24,14 @@ no_shuffle();
 run_tests;
 
 __DATA__
+
 === TEST 1: set route(host + uri)
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin")
+
             local script = t.read_file("t/script/script_test.lua")
             local data = {
                 script = script,
@@ -41,9 +43,11 @@ __DATA__
                     type = "roundrobin"
                 }
             }
+
             local code, body = t.test('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data))
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -80,6 +84,7 @@ phase_func(): hit log phase while
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin")
+
             local data = {
                 script = "invalid script",
                 uri = "/hello",
@@ -90,9 +95,11 @@ phase_func(): hit log phase while
                     type = "roundrobin"
                 }
             }
+
             local code, body = t.test('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data))
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -114,6 +121,7 @@ GET /t
         content_by_lua_block {
             local core = require("apisix.core")
             local t = require("lib.test_admin")
+
             local data = {
                 script = "invalid script",
                 upstream = {
@@ -123,9 +131,11 @@ GET /t
                     type = "roundrobin"
                 }
             }
+
             local code, body = t.test('/apisix/admin/services/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data))
+
             if code >= 300 then
                 ngx.status = code
             end
