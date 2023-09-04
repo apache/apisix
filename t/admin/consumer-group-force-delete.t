@@ -51,7 +51,7 @@ __DATA__
                             "count": 200,
                             "time_window": 60,
                             "rejected_code": 503,
-                            "group": "$consumer_group_id"
+                            "group": "consumer_group_1"
                         }
                     }
                 }]]
