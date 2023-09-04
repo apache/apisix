@@ -59,7 +59,7 @@ Server: APISIX/Version
 
 这里的 `Version` 是指你已经安装的 APISIX 版本，比如 `APISIX/3.3.0`。
 
-现在，你已经成功安装并运行了 APISIX ！
+现在，你已经成功安装并运行了 APISIX！
 
 ## 下一步
 
