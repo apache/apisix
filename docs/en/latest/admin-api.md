@@ -935,7 +935,6 @@ The following should be considered when setting the `hash_on` value:
 - When set to `cookie`, a `key` is required. This key is equal to "cookie\_`key`". The cookie name is case-sensitive.
 - When set to `consumer`, the `key` is optional and the key is set to the `consumer_name` captured from the authentication Plugin.
 - When set to `vars_combinations`, the `key` is required. The value of the key can be a combination of any of the [Nginx variables](http://nginx.org/en/docs/varindex.html) like `$request_uri$remote_addr`.
-- When no value is set for either `hash_on` or `key`, the key defaults to `remote_addr`.
 
 The features described below requires APISIX to be run on [APISIX-Base](./FAQ.md#how-do-i-build-the-apisix-base-environment):
 
