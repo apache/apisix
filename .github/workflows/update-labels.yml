@@ -47,7 +47,7 @@ jobs:
             })
 
   pr_review_commented:
-    if: github.event.pull_request && github.event.comment.user.login == github.event.pull_request.user.login && (contains(github.event.pull_request.labels.*.name, 'wait for update') && contains(github.event.pull_request.labels.*.name, 'discuss')) && !contains(github.event.pull_request.labels.*.name, 'user responded')
+    if: github.event.pull_request && github.event.comment.user.login == github.event.pull_request.user.login && (contains(github.event.pull_request.labels.*.name, 'wait for update') || contains(github.event.pull_request.labels.*.name, 'discuss')) && !contains(github.event.pull_request.labels.*.name, 'user responded')
     runs-on: ubuntu-latest
     steps:
       - name: update label when user responds
