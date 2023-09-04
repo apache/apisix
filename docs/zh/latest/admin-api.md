@@ -822,8 +822,6 @@ Consumer 资源请求地址：/apisix/admin/consumers/{username}
 | plugins     | 否   | Plugin   | 该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Plugin Config > Service。对于具体插件配置，请参考 [Plugins](#plugin)。     |                                                  |
 | desc        | 否   | 辅助     | consumer 描述。                                                                                                                  |                                                  |
 | labels      | 否   | 匹配规则  | 标识附加属性的键值对。                                                                                                             | {"version":"v2","build":"16","env":"production"} |
-| create_time | 否   | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                       | 1602883670                                       |
-| update_time | 否   | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                       | 1602883670                                       |
 
 Consumer 对象 JSON 配置示例：
 
