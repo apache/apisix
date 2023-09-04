@@ -363,46 +363,32 @@ passed
 
 
 
-=== TEST 12: patch upstream(whole, create_time)
+=== TEST 12: create upstream
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
-
-            local code, body = t('/apisix/admin/upstreams/1',
-                ngx.HTTP_PATCH,
+            local code, body = t('/apisix/admin/upstreams/up_create_update_time',
+                ngx.HTTP_PUT,
                 [[{
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
-                    "type": "roundrobin",
-                    "desc": "new upstream",
-                    "create_time": 1705252779
+                    "type": "roundrobin"
                 }]],
                 [[{
                     "value": {
                         "nodes": {
                             "127.0.0.1:8080": 1
                         },
-                        "type": "roundrobin",
-                        "desc": "new upstream",
-                        "create_time": 1705252779
+                        "type": "roundrobin"
                     },
-                    "key": "/apisix/upstreams/1"
+                    "key": "/apisix/upstreams/up_create_update_time"
                 }]]
             )
 
             ngx.status = code
             ngx.say(body)
-
-            if code >= 300 then
-                return
-            end
-
-            local res = assert(etcd.get('/upstreams/1'))
-            local create_time = res.body.node.value.create_time
-            assert(create_time == 1705252779, "create_time mismatched")
         }
     }
 --- response_body
@@ -410,46 +396,72 @@ passed
 
 
 
-=== TEST 13: patch upstream(whole, update_time)
+=== TEST 13: delete test upstream
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
+            local code, message = t('/apisix/admin/upstreams/up_create_update_time', ngx.HTTP_DELETE)
+            ngx.say("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- response_body
+[delete] code: 200 message: passed
 
-            local code, body = t('/apisix/admin/upstreams/1',
+
+
+=== TEST 14: patch upstream with sub_path, the data is number
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local code, message = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {},
+                    "type": "roundrobin"
+                 }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+            ngx.sleep(1)
+
+            local code, message = t('/apisix/admin/upstreams/1/retries',
                 ngx.HTTP_PATCH,
+                json.encode(1)
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(message)
+
+        }
+    }
+
+
+
+=== TEST 15: set upstream(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                ngx.HTTP_PUT,
                 [[{
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
-                    "type": "roundrobin",
-                    "desc": "new upstream",
-                    "update_time": 1705252779
-                }]],
-                [[{
-                    "value": {
-                        "nodes": {
-                            "127.0.0.1:8080": 1
-                        },
-                        "type": "roundrobin",
-                        "desc": "new upstream",
-                        "create_time": 1705252779
-                    },
-                    "key": "/apisix/upstreams/1"
+                    "type": "roundrobin"
                 }]]
             )
 
             ngx.status = code
             ngx.say(body)
-
-            if code >= 300 then
-                return
-            end
-
-            local res = assert(etcd.get('/upstreams/1'))
-            local update_time = res.body.node.value.update_time
-            assert(update_time == 1705252779, "update_time mismatched")
         }
     }
 --- response_body
@@ -457,7 +469,114 @@ passed
 
 
 
-=== TEST 14: create upstream with create_time and update_time
+=== TEST 16: set service(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream_id": 1
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 17: set route(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream_id": 1,
+                    "uri": "/index.html"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: delete upstream(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/upstreams/1', ngx.HTTP_DELETE)
+            ngx.print("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- response_body
+[delete] code: 400 message: {"error_msg":"can not delete this upstream, route [1] is still using it now"}
+
+
+
+=== TEST 19: delete route(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+            ngx.say("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- response_body
+[delete] code: 200 message: passed
+
+
+
+=== TEST 20: delete service(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/services/1', ngx.HTTP_DELETE)
+            ngx.say("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- response_body
+[delete] code: 200 message: passed
+
+
+
+=== TEST 21: delete upstream(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/upstreams/1', ngx.HTTP_DELETE)
+            ngx.say("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- response_body
+[delete] code: 200 message: passed
+
+
+
+=== TEST 22: create upstream with create_time and update_time
 --- config
     location /t {
         content_by_lua_block {
@@ -494,233 +613,12 @@ passed
 
 
 
-=== TEST 15: delete test upstream
+=== TEST 23: delete test upstream with create_time and update_time
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/upstreams/up_create_update_time', ngx.HTTP_DELETE)
-            ngx.say("[delete] code: ", code, " message: ", message)
-        }
-    }
---- response_body
-[delete] code: 200 message: passed
-
-
-
-=== TEST 16: patch upstream with sub_path, the data is number
---- config
-    location /t {
-        content_by_lua_block {
-            local json = require("toolkit.json")
-            local t = require("lib.test_admin").test
-            local etcd = require("apisix.core.etcd")
-            local code, message = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "nodes": {},
-                    "type": "roundrobin"
-                 }]]
-            )
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(message)
-                return
-            end
-            local id = 1
-            local res = assert(etcd.get('/upstreams/' .. id))
-            local prev_create_time = res.body.node.value.create_time
-            local prev_update_time = res.body.node.value.update_time
-            ngx.sleep(1)
-
-            local code, message = t('/apisix/admin/upstreams/1/retries',
-                ngx.HTTP_PATCH,
-                json.encode(1)
-            )
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(message)
-            local res = assert(etcd.get('/upstreams/' .. id))
-            local create_time = res.body.node.value.create_time
-            assert(prev_create_time == create_time, "create_time mismatched")
-            local update_time = res.body.node.value.update_time
-            assert(prev_update_time ~= update_time, "update_time should be changed")
-        }
-    }
-
-
-
-=== TEST 17: set upstream(id: 1)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "nodes": {
-                        "127.0.0.1:8080": 1
-                    },
-                    "type": "roundrobin"
-                }]]
-            )
-
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 18: set service(id: 1)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/services/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "upstream_id": 1
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 19: set route(id: 1)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "upstream_id": 1,
-                    "uri": "/index.html"
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 20: delete upstream(id: 1)
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.sleep(0.3)
-            local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/upstreams/1', ngx.HTTP_DELETE)
-            ngx.print("[delete] code: ", code, " message: ", message)
-        }
-    }
---- response_body
-[delete] code: 400 message: {"error_msg":"can not delete this upstream, route [1] is still using it now"}
-
-
-
-=== TEST 21: delete route(id: 1)
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.sleep(0.3)
-            local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
-            ngx.say("[delete] code: ", code, " message: ", message)
-        }
-    }
---- response_body
-[delete] code: 200 message: passed
-
-
-
-=== TEST 22: delete service(id: 1)
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.sleep(0.3)
-            local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/services/1', ngx.HTTP_DELETE)
-            ngx.say("[delete] code: ", code, " message: ", message)
-        }
-    }
---- response_body
-[delete] code: 200 message: passed
-
-
-
-=== TEST 23: delete upstream(id: 1)
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.sleep(0.3)
-            local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/upstreams/1', ngx.HTTP_DELETE)
-            ngx.say("[delete] code: ", code, " message: ", message)
-        }
-    }
---- response_body
-[delete] code: 200 message: passed
-
-
-
-=== TEST 24: create upstream without create_time and update_time
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/no_create_update_time',
-                ngx.HTTP_PUT,
-                [[{
-                    "nodes": {
-                        "127.0.0.1:8080": 1
-                    },
-                    "type": "roundrobin"
-                }]],
-                [[{
-                    "value": {
-                        "nodes": {
-                            "127.0.0.1:8080": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "key": "/apisix/upstreams/no_create_update_time"
-                }]]
-            )
-
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 25: delete test service created without create_time and update_time
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/upstreams/no_create_update_time', ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }

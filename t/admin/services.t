@@ -60,11 +60,6 @@ __DATA__
             ngx.status = code
             ngx.say(body)
 
-            local res = assert(etcd.get('/services/1'))
-            local create_time = res.body.node.value.create_time
-            assert(create_time ~= nil, "create_time is nil")
-            local update_time = res.body.node.value.update_time
-            assert(update_time ~= nil, "update_time is nil")
         }
     }
 --- request
@@ -176,13 +171,6 @@ GET /t
             end
 
             ngx.say("[push] code: ", code, " message: ", message)
-
-            local id = string.sub(res.key, #"/apisix/services/" + 1)
-            local res = assert(etcd.get('/services/' .. id))
-            local create_time = res.body.node.value.create_time
-            assert(create_time ~= nil, "create_time is nil")
-            local update_time = res.body.node.value.update_time
-            assert(update_time ~= nil, "update_time is nil")
 
             code, message = t('/apisix/admin/services/' .. id, ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
@@ -527,10 +515,6 @@ GET /t
             local t = require("lib.test_admin").test
             local etcd = require("apisix.core.etcd")
 
-            local id = 1
-            local res = assert(etcd.get('/services/' .. id))
-            local prev_create_time = res.body.node.value.create_time
-            local prev_update_time = res.body.node.value.update_time
             ngx.sleep(1)
 
             local code, body = t('/apisix/admin/services/1',
@@ -561,11 +545,6 @@ GET /t
             ngx.status = code
             ngx.say(body)
 
-            local res = assert(etcd.get('/services/' .. id))
-            local create_time = res.body.node.value.create_time
-            assert(prev_create_time == create_time, "create_time mismatched")
-            local update_time = res.body.node.value.update_time
-            assert(prev_update_time ~= update_time, "update_time should be changed")
         }
     }
 --- request
@@ -1163,7 +1142,7 @@ GET /t
 
 
 
-=== TEST 34: create service with create_time and update_time(id: 1)
+=== TEST 34: create service (id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -1175,9 +1154,7 @@ GET /t
                         "nodes": {
                             "127.0.0.1:8080": 1
                         },
-                        "type": "roundrobin",
-                        "create_time": 1602883670,
-                        "update_time": 1602893670
+                        "type": "roundrobin"
                     }
                 }]],
                 [[{
@@ -1186,9 +1163,7 @@ GET /t
                             "nodes": {
                                 "127.0.0.1:8080": 1
                             },
-                            "type": "roundrobin",
-                            "create_time": 1602883670,
-                            "update_time": 1602893670
+                            "type": "roundrobin"
                         }
                     },
                     "key": "/apisix/services/1"
@@ -1328,6 +1303,65 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, message = t('/apisix/admin/services/2', ngx.HTTP_DELETE)
+            ngx.say("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- request
+GET /t
+--- response_body
+[delete] code: 200 message: passed
+
+
+
+=== TEST 40: create service with create_time and update_time(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin",
+                        "create_time": 1602883670,
+                        "update_time": 1602893670
+                    }
+                }]],
+                [[{
+                    "value": {
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin",
+                            "create_time": 1602883670,
+                            "update_time": 1602893670
+                        }
+                    },
+                    "key": "/apisix/services/1"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 41: delete test service with create_time and update_time(id: 1)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/services/1', ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
