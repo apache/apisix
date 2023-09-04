@@ -54,7 +54,7 @@ local ipv4_def = table_concat(ipv4_def_buf, [[\.]])
 -- There is false negative for ipv6/cidr. For instance, `:/8` will be valid.
 -- It is fine as the correct regex will be too complex.
 local ipv6_def = "([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}"
-                 .. "([a-fA-F0-9]{0,4})?"
+        .. "([a-fA-F0-9]{0,4})?"
 local ip_def = {
     {title = "IPv4", type = "string", format = "ipv4"},
     {title = "IPv4/CIDR", type = "string", pattern = "^" .. ipv4_def .. "/([12]?[0-9]|3[0-2])$"},
@@ -65,11 +65,6 @@ _M.ip_def = ip_def
 
 
 _M.uri_def = {type = "string", pattern = [=[^[^\/]+:\/\/([\da-zA-Z.-]+|\[[\da-fA-F:]+\])(:\d+)?]=]}
-
-
-local timestamp_def = {
-    type = "integer",
-}
 
 local remote_addr_def = {
     description = "client IP",
@@ -201,12 +196,12 @@ local health_checker = {
                     }
                 },
                 req_headers = {
-                  type = "array",
-                  minItems = 1,
-                  items = {
-                      type = "string",
-                      uniqueItems = true,
-                  },
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        type = "string",
+                        uniqueItems = true,
+                    },
                 }
             }
         },
@@ -375,8 +370,6 @@ local private_key_schema = {
 local upstream_schema = {
     type = "object",
     properties = {
-        create_time = timestamp_def,
-        update_time = timestamp_def,
         nodes = nodes_schema,
         retries = {
             type = "integer",
@@ -396,7 +389,7 @@ local upstream_schema = {
                 verify = {
                     type = "boolean",
                     description = "Turn on server certificate verification, "..
-                        "currently only kafka upstream is supported",
+                            "currently only kafka upstream is supported",
                     default = false,
                 },
             },
@@ -444,11 +437,11 @@ local upstream_schema = {
             type = "string",
             default = "vars",
             enum = {
-              "vars",
-              "header",
-              "cookie",
-              "consumer",
-              "vars_combinations",
+                "vars",
+                "header",
+                "cookie",
+                "consumer",
+                "vars_combinations",
             },
         },
         key = {
@@ -458,11 +451,11 @@ local upstream_schema = {
         scheme = {
             default = "http",
             enum = {"grpc", "grpcs", "http", "https", "tcp", "tls", "udp",
-                "kafka"},
+                    "kafka"},
             description = "The scheme of the upstream." ..
-                " For L7 proxy, it can be one of grpc/grpcs/http/https." ..
-                " For L4 proxy, it can be one of tcp/tls/udp." ..
-                " For specific protocols, it can be kafka."
+                    " For L7 proxy, it can be one of grpc/grpcs/http/https." ..
+                    " For L4 proxy, it can be one of tcp/tls/udp." ..
+                    " For specific protocols, it can be kafka."
         },
         labels = labels_def,
         discovery_type = {
@@ -508,8 +501,8 @@ local upstream_schema = {
 _M.upstream_hash_vars_schema = {
     type = "string",
     pattern = [[^((uri|server_name|server_addr|request_uri|remote_port]]
-               .. [[|remote_addr|query_string|host|hostname|mqtt_client_id)]]
-               .. [[|arg_[0-9a-zA-z_-]+)$]],
+            .. [[|remote_addr|query_string|host|hostname|mqtt_client_id)]]
+            .. [[|arg_[0-9a-zA-z_-]+)$]],
 }
 
 -- validates header name, cookie name.
@@ -531,7 +524,7 @@ local method_schema = {
     description = "HTTP method",
     type = "string",
     enum = {"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD",
-        "OPTIONS", "CONNECT", "TRACE", "PURGE"},
+            "OPTIONS", "CONNECT", "TRACE", "PURGE"},
 }
 _M.method_schema = method_schema
 
@@ -539,8 +532,6 @@ _M.method_schema = method_schema
 _M.route = {
     type = "object",
     properties = {
-        create_time = timestamp_def,
-        update_time = timestamp_def,
         uri = {type = "string", minLength = 1, maxLength = 4096},
         uris = {
             type = "array",
@@ -583,10 +574,6 @@ _M.route = {
             minLength = 10,
             pattern = [[^function]],
         },
-
-        -- The 'script' fields below are used by dashboard for plugin orchestration
-        script = {type = "string", minLength = 10, maxLength = 102400},
-        script_id = id_schema,
 
         plugins = plugins_schema,
         plugin_config_id = id_schema,
@@ -675,9 +662,6 @@ _M.service = {
         name = rule_name_def,
         desc = desc_def,
         labels = labels_def,
-        script = {type = "string", minLength = 10, maxLength = 102400},
-        create_time = timestamp_def,
-        update_time = timestamp_def,
         enable_websocket = {
             description = "enable websocket for request",
             type        = "boolean",
@@ -702,8 +686,6 @@ _M.consumer = {
         group_id = id_schema,
         plugins = plugins_schema,
         labels = labels_def,
-        create_time = timestamp_def,
-        update_time = timestamp_def,
         desc = desc_def,
     },
     required = {"username"},
@@ -719,8 +701,8 @@ _M.ssl = {
         id = id_schema,
         type = {
             description = "ssl certificate type, " ..
-                            "server to server certificate, " ..
-                            "client to client certificate for upstream",
+                    "server to server certificate, " ..
+                    "client to client certificate for upstream",
             type = "string",
             default = "server",
             enum = {"server", "client"}
@@ -779,10 +761,6 @@ _M.ssl = {
             },
             required = {"ca"},
         },
-        exptime = {
-            type = "integer",
-            minimum = 1588262400,  -- 2020/5/1 0:0:0
-        },
         labels = labels_def,
         status = {
             description = "ssl status, 1 to enable, 0 to disable",
@@ -799,10 +777,6 @@ _M.ssl = {
                 enum = {"TLSv1.1", "TLSv1.2", "TLSv1.3"}
             },
         },
-        validity_end = timestamp_def,
-        validity_start = timestamp_def,
-        create_time = timestamp_def,
-        update_time = timestamp_def
     },
     ["if"] = {
         properties = {
@@ -827,8 +801,6 @@ _M.proto = {
     properties = {
         id = id_schema,
         desc = desc_def,
-        create_time = timestamp_def,
-        update_time = timestamp_def,
         content = {
             type = "string", minLength = 1, maxLength = 1024*1024
         }
@@ -841,9 +813,7 @@ _M.global_rule = {
     type = "object",
     properties = {
         id = id_schema,
-        plugins = plugins_schema,
-        create_time = timestamp_def,
-        update_time = timestamp_def
+        plugins = plugins_schema
     },
     required = {"id", "plugins"},
 }
@@ -892,8 +862,6 @@ _M.stream_route = {
     properties = {
         id = id_schema,
         desc = desc_def,
-        create_time = timestamp_def,
-        update_time = timestamp_def,
         remote_addr = remote_addr_def,
         server_addr = {
             description = "server IP",
@@ -912,7 +880,7 @@ _M.stream_route = {
         upstream = upstream_schema,
         upstream_id = id_schema,
         plugins = plugins_schema,
-        protocol = xrpc_protocol_schema,
+        protocol = xrpc_protocol_schema
     }
 }
 
@@ -941,9 +909,7 @@ _M.plugin_config = {
         id = id_schema,
         desc = desc_def,
         plugins = plugins_schema,
-        labels = labels_def,
-        create_time = timestamp_def,
-        update_time = timestamp_def
+        labels = labels_def
     },
     required = {"id", "plugins"},
 }
@@ -955,9 +921,7 @@ _M.consumer_group = {
         id = id_schema,
         desc = desc_def,
         plugins = plugins_schema,
-        labels = labels_def,
-        create_time = timestamp_def,
-        update_time = timestamp_def
+        labels = labels_def
     },
     required = {"id", "plugins"},
 }
@@ -986,7 +950,7 @@ _M.plugin_injected_schema = {
             },
             filter = {
                 description = "filter determines whether the plugin "..
-                                "needs to be executed at runtime",
+                        "needs to be executed at runtime",
                 type  = "array",
             }
         }

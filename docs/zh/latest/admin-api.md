@@ -53,16 +53,16 @@ APISIX 支持设置 Admin API 的 IP 访问白名单，防止 APISIX 被非法�
 
 ```yaml title="./conf/config.yaml"
 deployment:
-    admin:
-        admin_key:
-        - name: admin
-            key: edd1c9f034335f136f87ad84b625c8f1  # 使用默认的 Admin API Key 存在安全风险，部署到生产环境时请及时更新
-            role: admin
-        allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
-            - 127.0.0.0/24
-        admin_listen:
-            ip: 0.0.0.0                 # Admin API 监听的 IP，如果不设置，默认为“0.0.0.0”。
-            port: 9180                  # Admin API 监听的 端口，必须使用与 node_listen 不同的端口。
+  admin:
+    admin_key:
+      - name: admin
+          key: edd1c9f034335f136f87ad84b625c8f1  # 使用默认的 Admin API Key 存在安全风险，部署到生产环境时请及时更新
+          role: admin
+    allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
+      - 127.0.0.0/24
+    admin_listen:
+      ip: 0.0.0.0                 # Admin API 监听的 IP，如果不设置，默认为“0.0.0.0”。
+      port: 9180                  # Admin API 监听的 端口，必须使用与 node_listen 不同的端口。
 ```
 
 ### 使用环境变量 {#using-environment-variables}
@@ -73,11 +73,11 @@ deployment:
 deployment:
   admin:
     admin_key:
-    - name: admin
-      key: ${{ADMIN_KEY}}
-      role: admin
+      - name: admin
+        key: ${{ADMIN_KEY}}
+        role: admin
     allow_admin:
-    - 127.0.0.0/24
+      - 127.0.0.0/24
     admin_listen:
       ip: 0.0.0.0
       port: 9180
@@ -93,11 +93,11 @@ deployment:
 deployment:
   admin:
     admin_key:
-    - name: admin
-      key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}}
-      role: admin
+      - name: admin
+        key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}}
+        role: admin
     allow_admin:
-    - 127.0.0.0/24
+      - 127.0.0.0/24
     admin_listen:
       ip: 0.0.0.0
       port: 9180
@@ -326,8 +326,6 @@ Route 也称之为路由，可以通过定义一些规则来匹配客户端的�
 | timeout          | 否                               | 辅助     | 为 Route 设置 Upstream 连接、发送消息和接收消息的超时时间（单位为秒）。该配置将会覆盖在 Upstream 中配置的 [timeout](#upstream) 选项。                                                                                                                                                                                               | {"connect": 3, "send": 3, "read": 3}              |
 | enable_websocket | 否                               | 辅助     | 当设置为 `true` 时，启用 `websocket`(boolean), 默认值为 `false`。                                                                                                                                                                                                                                                |                                                      |
 | status           | 否                               | 辅助     | 当设置为 `1` 时，启用该路由，默认值为 `1`。                                                                                                                                                                                                                                                                       | `1` 表示启用，`0` 表示禁用。                           |
-| create_time      | 否                               | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                                                                                                                                                                                            | 1602883670                                           |
-| update_time      | 否                               | 辅助     |  epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                                                                                                                                                                                            | 1602883670                                           |
 
 :::note 注意
 
@@ -430,7 +428,7 @@ Route 对象 JSON 配置示例：
     ...
     ```
 
-    执行成功后，上游节点将更新为：
+  执行成功后，上游节点将更新为：
 
     ```
     {
@@ -458,7 +456,7 @@ Route 对象 JSON 配置示例：
     ...
     ```
 
-    执行成功后，上游节点将更新为：
+  执行成功后，上游节点将更新为：
 
     ```
     {
@@ -486,7 +484,7 @@ Route 对象 JSON 配置示例：
     ...
     ```
 
-    执行成功后，Upstream `nodes` 将更新为：
+  执行成功后，Upstream `nodes` 将更新为：
 
     ```shell
     {
@@ -508,7 +506,7 @@ Route 对象 JSON 配置示例：
     ...
     ```
 
-    执行成功后，`methods` 将不保留原来的数据，将更新为：
+  执行成功后，`methods` 将不保留原来的数据，将更新为：
 
     ```
     ["GET", "POST"]
@@ -529,7 +527,7 @@ Route 对象 JSON 配置示例：
     ...
     ```
 
-    执行成功后，`nodes` 将不保留原来的数据，整个更新为：
+  执行成功后，`nodes` 将不保留原来的数据，整个更新为：
 
     ```
     {
@@ -549,7 +547,7 @@ Route 对象 JSON 配置示例：
     ...
     ```
 
-    执行成功后，`methods` 将不保留原来的数据，更新为：
+  执行成功后，`methods` 将不保留原来的数据，更新为：
 
     ```
     ["POST", "DELETE", "PATCH"]
@@ -570,7 +568,7 @@ Route 对象 JSON 配置示例：
     ...
     ```
 
-    执行成功后，`status` 将更新为：
+  执行成功后，`status` 将更新为：
 
     ```
     {
@@ -593,7 +591,7 @@ Route 对象 JSON 配置示例：
     ...
     ```
 
-    执行成功后，`status` 将更新为：
+  执行成功后，`status` 将更新为：
 
     ```
     {
@@ -637,8 +635,6 @@ Service 是某类 API 的抽象（也可以理解为一组 Route 的抽象）。
 | labels           | 否                     | 匹配规则 | 标识附加属性的键值对。                                                 | {"version":"v2","build":"16","env":"production"} |
 | enable_websocket | 否                     | 辅助     | `websocket`(boolean) 配置，默认值为 `false`。                       |                                                  |
 | hosts            | 否                     | 匹配规则 | 非空列表形态的 `host`，表示允许有多个不同 `host`，匹配其中任意一个即可。| ["foo.com", "\*.bar.com"]                        |
-| create_time      | 否                     | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                         | 1602883670                                       |
-| update_time      | 否                     | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                           | 1602883670                                       |
 
 Service 对象 JSON 配置示例：
 
@@ -705,7 +701,7 @@ Service 对象 JSON 配置示例：
     ...
     ```
 
-    执行成功后，上游节点将更新为：
+  执行成功后，上游节点将更新为：
 
     ```json
     {
@@ -733,7 +729,7 @@ Service 对象 JSON 配置示例：
     ...
     ```
 
-    执行成功后，上游节点将更新为：
+  执行成功后，上游节点将更新为：
 
     ```
     {
@@ -761,7 +757,7 @@ Service 对象 JSON 配置示例：
     ...
     ```
 
-    执行成功后，上游节点将更新为：
+  执行成功后，上游节点将更新为：
 
     ```
     {
@@ -784,7 +780,7 @@ Service 对象 JSON 配置示例：
     ...
     ```
 
-    执行成功后，上游节点不再保留原来的数据，将更新为：
+  执行成功后，上游节点不再保留原来的数据，将更新为：
 
     ```
     {
@@ -822,8 +818,6 @@ Consumer 资源请求地址：/apisix/admin/consumers/{username}
 | plugins     | 否   | Plugin   | 该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Plugin Config > Service。对于具体插件配置，请参考 [Plugins](#plugin)。     |                                                  |
 | desc        | 否   | 辅助     | consumer 描述。                                                                                                                  |                                                  |
 | labels      | 否   | 匹配规则  | 标识附加属性的键值对。                                                                                                             | {"version":"v2","build":"16","env":"production"} |
-| create_time | 否   | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                       | 1602883670                                       |
-| update_time | 否   | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                       | 1602883670                                       |
 
 Consumer 对象 JSON 配置示例：
 
@@ -919,8 +913,6 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 | upstream_host  | 否                                             | 辅助           | 指定上游请求的 host，只在 `pass_host` 配置为 `rewrite` 时有效。                                                                                                                                                                                                                                                                                                                  |                                                  |
 | scheme         | 否                                             | 辅助           | 跟上游通信时使用的 scheme。对于 7 层代理，可选值为 [`http`, `https`, `grpc`, `grpcs`]。对于 4 层代理，可选值为 [`tcp`, `udp`, `tls`]。默认值为 `http`，详细信息请参考下文。                                                                                                                                                                                                                                                           |
 | labels         | 否                                             | 匹配规则       | 标识附加属性的键值对。                                                                                                                                                                                                                                                                                                                                        | {"version":"v2","build":"16","env":"production"} |
-| create_time    | 否                                             | 辅助           | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                                                                                                                                                                                                                                               | 1602883670                                       |
-| update_time    | 否                                             | 辅助           | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                                                                                                                                                                                                                                               | 1602883670                                       |
 | tls.client_cert    | 否，不能和 `tls.client_cert_id` 一起使用               | https 证书           | 设置跟上游通信时的客户端证书，详细信息请参考下文。                                                                        | |
 | tls.client_key	 | 否，不能和 `tls.client_cert_id` 一起使用               | https 证书私钥           | 设置跟上游通信时的客户端私钥，详细信息请参考下文。                                                                                                                                                                                                                                                                                                              | |
 | tls.client_cert_id | 否，不能和 `tls.client_cert`、`tls.client_key` 一起使用 | SSL           | 设置引用的 SSL id，详见 [SSL](#ssl)。                                                                                                                                                                                                                                                                                                              | |
@@ -1013,7 +1005,7 @@ Upstream 对象 JSON 配置示例：
     ...
     ```
 
-    执行成功后，`nodes` 将更新为：
+   执行成功后，`nodes` 将更新为：
 
     ```
     {
@@ -1039,7 +1031,7 @@ Upstream 对象 JSON 配置示例：
     ...
     ```
 
-    执行成功后，`nodes` 将更新为：
+   执行成功后，`nodes` 将更新为：
 
     ```
     {
@@ -1065,7 +1057,7 @@ Upstream 对象 JSON 配置示例：
     ...
     ```
 
-    执行成功后，`nodes` 将更新为：
+   执行成功后，`nodes` 将更新为：
 
     ```
     {
@@ -1088,7 +1080,7 @@ Upstream 对象 JSON 配置示例：
     ...
     ```
 
-    执行成功后，`nodes` 将不再保留原来的数据：
+   执行成功后，`nodes` 将不再保留原来的数据：
 
     ```
     {
@@ -1115,7 +1107,7 @@ Upstream 对象 JSON 配置示例：
     }'
     ```
 
-    执行成功后，请求与上游通信时的 Scheme 将为 `https`。
+   执行成功后，请求与上游通信时的 Scheme 将为 `https`。
 
 2. 发送请求进行测试：
 
@@ -1138,15 +1130,15 @@ Upstream 对象 JSON 配置示例：
     }
     ```
 
-    请求成功，表示代理上游 `https` 生效了。
+   请求成功，表示代理上游 `https` 生效了。
 
-    :::tip 提示
+   :::tip 提示
 
-    每个节点均可以配置优先级，只有在高优先级的节点不可用或者尝试过，才会访问一个低优先级的节点。
+   每个节点均可以配置优先级，只有在高优先级的节点不可用或者尝试过，才会访问一个低优先级的节点。
 
-    :::
+   :::
 
-    由于上游节点的默认优先级是 `0`，你可以将一些节点的优先级设置为负数，让其作为备份节点。例如：
+   由于上游节点的默认优先级是 `0`，你可以将一些节点的优先级设置为负数，让其作为备份节点。例如：
 
     ```JSON
     {
@@ -1174,7 +1166,7 @@ Upstream 对象 JSON 配置示例：
     }
     ```
 
-    节点 `127.0.0.2` 只有在 `127.0.0.1` 不可用或者尝试过之后才会被访问，因此它是 `127.0.0.1` 的备份。
+   节点 `127.0.0.2` 只有在 `127.0.0.1` 不可用或者尝试过之后才会被访问，因此它是 `127.0.0.1` 的备份。
 
 ### 应答参数  {#upstream-response-parameters}
 
@@ -1211,8 +1203,6 @@ SSL 资源请求地址：/apisix/admin/ssls/{id}
 | client.skip_mtls_uri_regex | 否   | PCRE 正则表达式数组 |  用来匹配请求的 URI，如果匹配，则该请求将绕过客户端证书的检查，也就是跳过 MTLS。 | ["/hello[0-9]+", "/foobar"]                                            |
 | snis        | 是   | 匹配规则       | 非空数组形式，可以匹配多个 SNI。                                                                         |                                                  |
 | labels      | 否   | 匹配规则       | 标识附加属性的键值对。                                                                                   | {"version":"v2","build":"16","env":"production"} |
-| create_time | 否   | 辅助           | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                          | 1602883670                                       |
-| update_time | 否   | 辅助           | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                          | 1602883670                                       |
 | type        | 否   | 辅助           | 标识证书的类型，默认值为 `server`。                                                                     | `client` 表示证书是客户端证书，APISIX 访问上游时使用；`server` 表示证书是服务端证书，APISIX 验证客户端请求时使用。     |
 | status      | 否   | 辅助           | 当设置为 `1` 时，启用此 SSL，默认值为 `1`。                                                               | `1` 表示启用，`0` 表示禁用                       |
 | ssl_protocols | 否    | tls 协议字符串数组               | 用于控制服务器与客户端之间使用的 SSL/TLS 协议版本。更多的配置示例，请参考[SSL 协议](./ssl-protocol.md)。                                  |                                                  |
@@ -1254,8 +1244,6 @@ Global Rule 资源请求地址：/apisix/admin/global_rules/{id}
 | 名称        | 必选项 | 类型   | 描述                                               | 示例值       |
 | ----------- | ------ | ------ | ------------------------------------------------- | ---------- |
 | plugins     | 是     | Plugin | 插件配置。详细信息请参考 [Plugin](terminology/plugin.md)。 |            |
-| create_time | 否     | 辅助   | epoch 时间戳，单位为秒，如果不指定则自动创建。     | 1602883670 |
-| update_time | 否     | 辅助   | epoch 时间戳，单位为秒，如果不指定则自动创建。     | 1602883670 |
 
 ## Consumer Group
 
@@ -1283,8 +1271,6 @@ Consumer Group 资源请求地址：/apisix/admin/consumer_groups/{id}
 |plugins  | 是        |Plugin| 插件配置。详细信息请参考 [Plugin](terminology/plugin.md)。 |      |
 |desc     | 否        | 辅助 | 标识描述、使用场景等。                          | Consumer 测试。|
 |labels   | 否        | 辅助 | 标识附加属性的键值对。                          |{"version":"v2","build":"16","env":"production"}|
-|create_time| 否      | 辅助 | epoch 时间戳，单位为秒，如果不指定则自动创建。 |1602883670|
-|update_time| 否      | 辅助 | epoch 时间戳，单位为秒，如果不指定则自动创建。 |1602883670|
 
 ## Plugin Config
 
@@ -1312,8 +1298,6 @@ Plugin Config 资源请求地址：/apisix/admin/plugin_configs/{id}
 |plugins    | 是      |Plugin| 更多信息请参考 [Plugin](terminology/plugin.md)。||
 |desc       | 否 | 辅助 | 标识描述、使用场景等。 |customer xxxx|
 |labels     | 否 | 辅助 | 标识附加属性的键值对。 |{"version":"v2","build":"16","env":"production"}|
-|create_time| 否 | 辅助 | epoch 时间戳，单位为秒，如果不指定则自动创建。 |1602883670|
-|update_time| 否 | 辅助 | epoch 时间戳，单位为秒，如果不指定则自动创建。 |1602883670|
 
 ## Plugin Metadata
 
@@ -1376,16 +1360,6 @@ Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 | GET         | /apisix/admin/plugins/{plugin_name} | 无         | 获取资源。      |
 | GET         | /apisix/admin/plugins?all=true      | 无         | 获取所有插件的所有属性。 |
 | GET         | /apisix/admin/plugins?all=true&subsystem=stream| 无 | 获取所有 Stream 插件的属性。|
-| GET         | /apisix/admin/plugins?all=true&subsystem=http| 无 | 获取所有 HTTP 插件的属性。|
-| PUT         | /apisix/admin/plugins/reload        | 无         | 根据代码中所做的更改重新加载插件。 |
-| GET         | apisix/admin/plugins/{plugin_name}?subsystem=stream         | 无         | 获取指定 Stream 插件的属性。 |
-| GET         | apisix/admin/plugins/{plugin_name}?subsystem=http         | 无         | 获取指定 HTTP 插件的属性。 |
-
-:::caution
-
-获取所有插件属性的接口 `/apisix/admin/plugins?all=true` 将很快被弃用。
-
-:::
 
 ### 使用示例 {#plugin-example}
 

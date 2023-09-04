@@ -679,3 +679,50 @@ passed
     }
 --- response_body
 [delete] code: 200 message: passed
+
+
+
+=== TEST 24: create upstream without create_time and update_time
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/no_create_update_time',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "type": "roundrobin"
+                }]],
+                [[{
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "key": "/apisix/upstreams/no_create_update_time"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 25: delete test service created without create_time and update_time
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/upstreams/no_create_update_time', ngx.HTTP_DELETE)
+            ngx.say("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- response_body
+[delete] code: 200 message: passed

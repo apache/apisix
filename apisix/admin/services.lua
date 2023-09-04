@@ -22,7 +22,6 @@ local schema_plugin = require("apisix.admin.plugins").check_schema
 local tostring = tostring
 local ipairs = ipairs
 local type = type
-local loadstring = loadstring
 
 
 local function check_conf(id, conf, need_id, schema)
@@ -49,14 +48,14 @@ local function check_conf(id, conf, need_id, schema)
         local res, err = core.etcd.get(key)
         if not res then
             return nil, {error_msg = "failed to fetch upstream info by "
-                                     .. "upstream id [" .. upstream_id .. "]: "
-                                     .. err}
+                    .. "upstream id [" .. upstream_id .. "]: "
+                    .. err}
         end
 
         if res.status ~= 200 then
             return nil, {error_msg = "failed to fetch upstream info by "
-                                     .. "upstream id [" .. upstream_id .. "], "
-                                     .. "response code: " .. res.status}
+                    .. "upstream id [" .. upstream_id .. "], "
+                    .. "response code: " .. res.status}
         end
     end
 
@@ -64,18 +63,6 @@ local function check_conf(id, conf, need_id, schema)
         local ok, err = schema_plugin(conf.plugins)
         if not ok then
             return nil, {error_msg = err}
-        end
-    end
-
-    if conf.script then
-        local obj, err = loadstring(conf.script)
-        if not obj then
-            return nil, {error_msg = "failed to load 'script' string: "
-                                     .. err}
-        end
-
-        if type(obj()) ~= "table" then
-            return nil, {error_msg = "'script' should be a Lua object"}
         end
     end
 
@@ -90,11 +77,11 @@ local function delete_checker(id)
     if routes_ver and routes then
         for _, route in ipairs(routes) do
             if type(route) == "table" and route.value
-               and route.value.service_id
-               and tostring(route.value.service_id) == id then
+                    and route.value.service_id
+                    and tostring(route.value.service_id) == id then
                 return 400, {error_msg = "can not delete this service directly,"
-                                         .. " route [" .. route.value.id
-                                         .. "] is still using it now"}
+                        .. " route [" .. route.value.id
+                        .. "] is still using it now"}
             end
         end
     end

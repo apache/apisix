@@ -808,3 +808,58 @@ passed
     }
 --- response_body
 [delete] code: 200 message: passed
+
+
+
+=== TEST 24: create route without create_time and update_time(id : 2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/index.html"
+                }]],
+                [[{
+                    "value": {
+                        "uri": "/index.html",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
+                            },
+                            "type": "roundrobin"
+                        }
+                    },
+                    "key": "/apisix/routes/2"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 25: delete test route without create_time and update_time(id : 2)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, message = t('/apisix/admin/routes/2',
+                 ngx.HTTP_DELETE
+            )
+            ngx.say("[delete] code: ", code, " message: ", message)
+        }
+    }
+--- response_body
+[delete] code: 200 message: passed

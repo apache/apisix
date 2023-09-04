@@ -51,16 +51,16 @@ For security reasons, please modify the default `admin_key`, and check the `allo
 
 ```yaml title="./conf/config.yaml"
 deployment:
-    admin:
-        admin_key:
-        - name: admin
-            key: edd1c9f034335f136f87ad84b625c8f1  # using fixed API token has security risk, please update it when you deploy to production environment
-            role: admin
-        allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
-            - 127.0.0.0/24
-        admin_listen:
-            ip: 0.0.0.0                 # Specific IP, if not set, the default value is `0.0.0.0`.
-            port: 9180                  # Specific port, which must be different from node_listen's port.
+  admin:
+    admin_key:
+      - name: admin
+          key: edd1c9f034335f136f87ad84b625c8f1  # using fixed API token has security risk, please update it when you deploy to production environment
+          role: admin
+    allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
+      - 127.0.0.0/24
+    admin_listen:
+      ip: 0.0.0.0                 # Specific IP, if not set, the default value is `0.0.0.0`.
+      port: 9180                  # Specific port, which must be different from node_listen's port.
 ```
 
 ### Using environment variables
@@ -71,11 +71,11 @@ To configure via environment variables, you can use the `${{VAR}}` syntax. For i
 deployment:
   admin:
     admin_key:
-    - name: admin
-      key: ${{ADMIN_KEY}}
-      role: admin
+      - name: admin
+        key: ${{ADMIN_KEY}}
+        role: admin
     allow_admin:
-    - 127.0.0.0/24
+      - 127.0.0.0/24
     admin_listen:
       ip: 0.0.0.0
       port: 9180
@@ -91,11 +91,11 @@ If you want to use a default value when the environment variable is not set, use
 deployment:
   admin:
     admin_key:
-    - name: admin
-      key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}}
-      role: admin
+      - name: admin
+        key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}}
+        role: admin
     allow_admin:
-    - 127.0.0.0/24
+      - 127.0.0.0/24
     admin_listen:
       ip: 0.0.0.0
       port: 9180
@@ -325,8 +325,6 @@ ID's as a text string must be of a length between 1 and 64 characters and they s
 | timeout          | False                                    | Auxiliary   | Sets the timeout (in seconds) for connecting to, and sending and receiving messages between the Upstream and the Route. This will overwrite the `timeout` value configured in your [Upstream](#upstream).                                                                                                   | {"connect": 3, "send": 3, "read": 3}                 |
 | enable_websocket | False                                    | Auxiliary   | Enables a websocket. Set to `false` by default.                                                                                                                                                                                                                                                |                                                      |
 | status           | False                                    | Auxiliary   | Enables the current Route. Set to `1` (enabled) by default.                                                                                                                                                                                                                                    | `1` to enable, `0` to disable                        |
-| create_time      | False                                    | Auxiliary   | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.                                                                                                                                                                                         | 1602883670                                           |
-| update_time      | False                                    | Auxiliary   | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.                                                                                                                                                                                         | 1602883670                                           |
 
 Example configuration:
 
@@ -421,7 +419,7 @@ Example configuration:
     ...
     ```
 
-    After successful execution, upstream nodes will be updated to:
+  After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -449,7 +447,7 @@ Example configuration:
     ...
     ```
 
-    After successful execution, upstream nodes will be updated to:
+  After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -477,7 +475,7 @@ Example configuration:
     ...
     ```
 
-    After successful execution, upstream nodes will be updated to:
+  After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -499,7 +497,7 @@ Example configuration:
     ...
     ```
 
-    After successful execution, methods will not retain the original data, and the entire update is:
+  After successful execution, methods will not retain the original data, and the entire update is:
 
     ```shell
     ["GET", "POST"]
@@ -520,7 +518,7 @@ Example configuration:
     ...
     ```
 
-    After successful execution, nodes will not retain the original data, and the entire update is:
+  After successful execution, nodes will not retain the original data, and the entire update is:
 
     ```shell
     {
@@ -540,7 +538,7 @@ Example configuration:
     ...
     ```
 
-    After successful execution, methods will not retain the original data, and the entire update is:
+  After successful execution, methods will not retain the original data, and the entire update is:
 
     ```shell
     ["POST", "DELETE", "PATCH"]
@@ -561,7 +559,7 @@ Example configuration:
     ...
     ```
 
-    After successful execution, status nodes will be updated to:
+  After successful execution, status nodes will be updated to:
 
     ```shell
     {
@@ -584,7 +582,7 @@ Example configuration:
     ...
     ```
 
-    After successful execution, status nodes will be updated to:
+  After successful execution, status nodes will be updated to:
 
     ```shell
     {
@@ -630,8 +628,6 @@ Service resource request address: /apisix/admin/services/{id}
 | labels           | False    | Match Rules | Attributes of the Service specified as key-value pairs.                                                            | {"version":"v2","build":"16","env":"production"} |
 | enable_websocket | False    | Auxiliary   | Enables a websocket. Set to `false` by default.                                                                    |                                                  |
 | hosts            | False    | Match Rules | Matches with any one of the multiple `host`s specified in the form of a non-empty list.                            | ["foo.com", "*.bar.com"]                         |
-| create_time      | False    | Auxiliary   | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
-| update_time      | False    | Auxiliary   | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
 
 Example configuration:
 
@@ -698,7 +694,7 @@ Example configuration:
     ...
     ```
 
-    After successful execution, upstream nodes will be updated to:
+  After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -726,7 +722,7 @@ Example configuration:
     ...
     ```
 
-    After successful execution, upstream nodes will be updated to:
+  After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -754,7 +750,7 @@ Example configuration:
     ...
     ```
 
-    After successful execution, upstream nodes will be updated to:
+  After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -777,7 +773,7 @@ Example configuration:
     ...
     ```
 
-    After successful execution, upstream nodes will not retain the original data, and the entire update is:
+  After successful execution, upstream nodes will not retain the original data, and the entire update is:
 
     ```shell
     {
@@ -815,8 +811,6 @@ Consumer resource request address: /apisix/admin/consumers/{username}
 | plugins     | False    | Plugin      | Plugins that are executed during the request/response cycle. See [Plugin](terminology/plugin.md) for more. |                                                  |
 | desc        | False    | Auxiliary   | Description of usage scenarios.                                                                                    | customer xxxx                                    |
 | labels      | False    | Match Rules | Attributes of the Consumer specified as key-value pairs.                                                           | {"version":"v2","build":"16","env":"production"} |
-| create_time | False    | Auxiliary   | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
-| update_time | False    | Auxiliary   | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
 
 Example Configuration:
 
@@ -911,8 +905,6 @@ In addition to the equalization algorithm selections, Upstream also supports pas
 | upstream_host               | optional                                    | Specifies the host of the Upstream request. This is only valid if the `pass_host` is set to `rewrite`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |                                                                                                                                            |
 | scheme                      | optional                                    | The scheme used when communicating with the Upstream. For an L7 proxy, this value can be one of `http`, `https`, `grpc`, `grpcs`. For an L4 proxy, this value could be one of `tcp`, `udp`, `tls`. Defaults to `http`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |                                                                                                                                            |
 | labels                      | optional                                    | Attributes of the Upstream specified as `key-value` pairs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | {"version":"v2","build":"16","env":"production"}                                                                                           |
-| create_time                 | optional                                    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | 1602883670                                                                                                                                 |
-| update_time                 | optional                                    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | 1602883670                                                                                                                                 |
 | tls.client_cert             | optional, can't be used with `tls.client_cert_id`       | Sets the client certificate while connecting to a TLS Upstream.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
 | tls.client_key              | optional, can't be used with `tls.client_cert_id`       | Sets the client private key while connecting to a TLS Upstream.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
 | tls.client_cert_id          | optional, can't be used with `tls.client_cert` and `tls.client_key`       | Set the referenced [SSL](#ssl) id.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |                                                                                                                                            |
@@ -1009,7 +1001,7 @@ Example Configuration:
     ...
     ```
 
-    After successful execution, nodes will be updated to:
+   After successful execution, nodes will be updated to:
 
     ```shell
     {
@@ -1035,7 +1027,7 @@ Example Configuration:
     ...
     ```
 
-    After successful execution, nodes will be updated to:
+   After successful execution, nodes will be updated to:
 
     ```shell
     {
@@ -1061,7 +1053,7 @@ Example Configuration:
     ...
     ```
 
-    After successful execution, nodes will be updated to:
+   After successful execution, nodes will be updated to:
 
     ```shell
     {
@@ -1084,7 +1076,7 @@ Example Configuration:
     ...
     ```
 
-    After the execution is successful, nodes will not retain the original data, and the entire update is:
+   After the execution is successful, nodes will not retain the original data, and the entire update is:
 
     ```shell
     {
@@ -1111,7 +1103,7 @@ Example Configuration:
     }'
     ```
 
-    After successful execution, the scheme when requesting to communicate with the upstream will be `https`.
+   After successful execution, the scheme when requesting to communicate with the upstream will be `https`.
 
 2. Send a request to test.
 
@@ -1211,8 +1203,6 @@ For notes on ID syntax please refer to: [ID Syntax](#quick-note-on-id-syntax)
 | client.skip_mtls_uri_regex | False    | An array of regular expressions, in PCRE format              | Used to match URI, if matched, this request bypasses the client certificate checking, i.e. skip the MTLS.             | ["/hello[0-9]+", "/foobar"]                                                |
 | snis         | True, only if `type` is `server`     | Match Rules              | A non-empty array of HTTPS SNI                                                                                 |                                                  |
 | labels       | False    | Match Rules              | Attributes of the resource specified as key-value pairs.                                                       | {"version":"v2","build":"16","env":"production"} |
-| create_time  | False    | Auxiliary                | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.         | 1602883670                                       |
-| update_time  | False    | Auxiliary                | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.         | 1602883670                                       |
 | type         | False    | Auxiliary            | Identifies the type of certificate, default  `server`.                                                                             | `client` Indicates that the certificate is a client certificate, which is used when APISIX accesses the upstream; `server` Indicates that the certificate is a server-side certificate, which is used by APISIX when verifying client requests.     |
 | status       | False    | Auxiliary                | Enables the current SSL. Set to `1` (enabled) by default.                                                      | `1` to enable, `0` to disable                    |
 | ssl_protocols | False    | An array of ssl protocols               | It is used to control the SSL/TLS protocol version used between servers and clients. See [SSL Protocol](./ssl-protocol.md) for more examples.                  |                `["TLSv1.2", "TLSv2.3"]`                                  |
@@ -1254,8 +1244,6 @@ Global Rule resource request address: /apisix/admin/global_rules/{id}
 | Parameter   | Required | Description                                                                                                        | Example    |
 | ----------- | -------- | ------------------------------------------------------------------------------------------------------------------ | ---------- |
 | plugins     | True     | Plugins that are executed during the request/response cycle. See [Plugin](terminology/plugin.md) for more. |            |
-| create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670 |
-| update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670 |
 
 ## Consumer group
 
@@ -1283,8 +1271,6 @@ Consumer group resource request address: /apisix/admin/consumer_groups/{id}
 | plugins     | True     | Plugins that are executed during the request/response cycle. See [Plugin](terminology/plugin.md) for more. |                                                  |
 | desc        | False    | Description of usage scenarios.                                                                                    | customer xxxx                                    |
 | labels      | False    | Attributes of the Consumer group specified as key-value pairs.                                                      | {"version":"v2","build":"16","env":"production"} |
-| create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
-| update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
 
 ## Plugin config
 
@@ -1312,8 +1298,6 @@ Plugin Config resource request address: /apisix/admin/plugin_configs/{id}
 | plugins     | True     | Plugins that are executed during the request/response cycle. See [Plugin](terminology/plugin.md) for more. |                                                  |
 | desc        | False    | Description of usage scenarios.                                                                                    | customer xxxx                                    |
 | labels      | False    | Attributes of the Plugin config specified as key-value pairs.                                                      | {"version":"v2","build":"16","env":"production"} |
-| create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
-| update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
 
 ## Plugin Metadata
 
@@ -1362,18 +1346,6 @@ Plugin resource request address: /apisix/admin/plugins/{plugin_name}
 | ------ | ----------------------------------- | ------------ | ---------------------------------------------- |
 | GET    | /apisix/admin/plugins/list          | NULL         | Fetches a list of all Plugins.                 |
 | GET    | /apisix/admin/plugins/{plugin_name} | NULL         | Fetches the specified Plugin by `plugin_name`. |
-| GET         | /apisix/admin/plugins?all=true      | NULL         | Get all properties of all plugins. |
-| GET         | /apisix/admin/plugins?all=true&subsystem=stream| NULL | Gets properties of all Stream plugins.|
-| GET    | /apisix/admin/plugins?all=true&subsystem=http | NULL | Gets properties of all HTTP plugins. |
-| PUT    | /apisix/admin/plugins/reload       | NULL         | Reloads the plugin according to the changes made in code |
-| GET    | apisix/admin/plugins/{plugin_name}?subsystem=stream | NULL | Gets properties of a specified plugin if it is supported in Stream/L4 subsystem. |
-| GET    | apisix/admin/plugins/{plugin_name}?subsystem=http   | NULL | Gets properties of a specified plugin if it is supported in HTTP/L7 subsystem. |
-
-:::caution
-
-The interface of getting properties of all plugins via `/apisix/admin/plugins?all=true` will be deprecated soon.
-
-:::
 
 ### Request Body Parameters
 
@@ -1532,8 +1504,6 @@ Proto resource request address: /apisix/admin/protos/{id}
 | Parameter   | Required | Type     | Description                                                         | Example                       |
 | ----------- | -------- | -------- | ------------------------------------------------------------------- | ----------------------------- |
 | content   | True    | String | content of `.proto` or `.pb` files | See [here](./plugins/grpc-transcode.md#enabling-the-plugin)         |
-| create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
-| update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
 
 ## Schema validation
 
