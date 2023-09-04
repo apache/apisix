@@ -1,0 +1,41 @@
+name: Update pr labels when user responds
+permissions:
+  pull-requests: write
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_thread:
+
+jobs:
+  issue_comment:
+    if: github.event.issue && github.event.issue.pull_request  # execute for PR comments
+    runs-on: ubuntu-latest
+    steps:
+      - name: update label when user responds
+        uses: actions/github-script@v6
+        if: github.event.issue.labels && !contains(github.event.issue.labels.*.name, 'user responded')
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ["user responded"]
+            })
+
+  pull_request_review_thread:
+    if: github.event.pull_request
+    runs-on: ubuntu-latest
+    steps:
+      - name: update label when user responds
+        uses: actions/github-script@v6
+        if: github.event.pull_request.labels && !contains(github.event.pull_request.labels.*.name, 'user responded')
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ["user responded"]
+            })

@@ -1,4 +1,4 @@
-name: Update label when user responds
+name: Update issue labels when user responds
 permissions:
   issues: write
 
