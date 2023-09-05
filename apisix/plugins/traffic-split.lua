@@ -56,7 +56,7 @@ local upstreams_schema = {
             upstream = schema_def.upstream,
             weight = {
                 description = "used to split traffic between different" ..
-                              "upstreams for plugin configuration",
+                        "upstreams for plugin configuration",
                 type = "integer",
                 default = 1,
                 minimum = 0
@@ -127,7 +127,7 @@ end
 local function parse_domain_for_node(node)
     local host = node.domain or node.host
     if not ipmatcher.parse_ipv4(host)
-       and not ipmatcher.parse_ipv6(host)
+            and not ipmatcher.parse_ipv6(host)
     then
         node.domain = host
 
@@ -185,7 +185,7 @@ local function set_upstream(upstream_info, ctx)
     local matched_route = ctx.matched_route
     up_conf.parent = matched_route
     local upstream_key = up_conf.type .. "#route_" ..
-                         matched_route.value.id .. "_" .. upstream_info.vid
+            matched_route.value.id .. "_" .. upstream_info.vid
     if upstream_info.node_tid then
         upstream_key = upstream_key .. "_" .. upstream_info.node_tid
     end
