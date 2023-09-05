@@ -58,8 +58,7 @@ __DATA__
                                     upstream = {
                                         name = "upstream_A",
                                         type = "roundrobin",
-                                        nodes = {["127.0.0.1:1981"] = 1},
-                                        scheme = "http"
+                                        nodes = {["127.0.0.1:1981"] = 1}
                                     },
                                     weight = 1,
                                 }
@@ -69,8 +68,7 @@ __DATA__
                 },
                 upstream = {
                     type = "roundrobin",
-                    nodes = {["127.0.0.1:1980"] = 1},
-                    scheme = "http"
+                    nodes = {["127.0.0.1:1980"] = 1}
                 }
             }
             local code, body = t('/apisix/admin/routes/1',
@@ -280,7 +278,7 @@ GET /uri?name=jack
 host: 127.0.0.1
 --- response_body
 uri: /uri
-host: localhost:1981
+host: localhost
 x-real-ip: 127.0.0.1
 
 
