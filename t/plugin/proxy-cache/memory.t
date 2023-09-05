@@ -704,4 +704,3 @@ GET /t
 --- response_body_like
 .*err: invalid or empty cache_zone for cache_strategy: memory.*
 --- error_code: 400
-
