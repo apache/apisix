@@ -361,7 +361,9 @@ function _M.nodes(service_name, discovery_args)
         waiting_time = waiting_time - step
     end
 
-    if not applications[namespace_id] or not applications[namespace_id][group_name] then
+    if not applications or not applications[namespace_id]
+        or not applications[namespace_id][group_name]
+    then
         return nil
     end
     return applications[namespace_id][group_name][service_name]

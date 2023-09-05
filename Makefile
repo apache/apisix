@@ -26,6 +26,7 @@ VERSION                ?= master
 project_name           ?= apache-apisix
 project_release_name   ?= $(project_name)-$(VERSION)-src
 
+OTEL_CONFIG ?= ./ci/pod/otelcol-contrib/data-otlp.json
 
 # Hyperconverged Infrastructure
 ENV_OS_NAME            ?= $(shell uname -s | tr '[:upper:]' '[:lower:]')
@@ -79,6 +80,9 @@ ifeq ($(ENV_OS_NAME), darwin)
 	endif
 	ifeq ($(shell test -d $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl111 && echo -n yes), yes)
 		ENV_OPENSSL_PREFIX := $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl111
+	endif
+	ifeq ($(shell test -d $(ENV_HOMEBREW_PREFIX)/opt/pcre && echo -n yes), yes)
+		ENV_PCRE_PREFIX := $(ENV_HOMEBREW_PREFIX)/opt/pcre
 	endif
 endif
 
@@ -145,7 +149,7 @@ help:
 	@echo
 
 
-### deps : Installation dependencies
+### deps : Installing dependencies
 .PHONY: deps
 deps: runtime
 	$(eval ENV_LUAROCKS_VER := $(shell $(ENV_LUAROCKS) --version | grep -E -o "luarocks [0-9]+."))
@@ -153,14 +157,15 @@ deps: runtime
 		mkdir -p ~/.luarocks; \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include); \
-		$(ENV_LUAROCKS) install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local $(ENV_LUAROCKS_SERVER_OPT); \
+		[ '$(ENV_OS_NAME)' == 'darwin' ] && $(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.PCRE_INCDIR $(addprefix $(ENV_PCRE_PREFIX), /include); \
+		$(ENV_LUAROCKS) install rockspec/apisix-master-0.rockspec --tree deps --only-deps $(ENV_LUAROCKS_SERVER_OPT); \
 	else \
 		$(call func_echo_warn_status, "WARNING: You're not using LuaRocks 3.x; please remove the luarocks and reinstall it via https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh"); \
 		exit 1; \
 	fi
 
 
-### undeps : Uninstallation dependencies
+### undeps : Uninstalling dependencies
 .PHONY: undeps
 undeps:
 	@$(call func_echo_status, "$@ -> [ Start ]")
@@ -337,9 +342,6 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/serverless
 	$(ENV_INSTALL) apisix/plugins/serverless/*.lua $(ENV_INST_LUADIR)/apisix/plugins/serverless/
 
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/slslog
-	$(ENV_INSTALL) apisix/plugins/slslog/*.lua $(ENV_INST_LUADIR)/apisix/plugins/slslog/
-
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/syslog
 	$(ENV_INSTALL) apisix/plugins/syslog/*.lua $(ENV_INST_LUADIR)/apisix/plugins/syslog/
 
@@ -441,6 +443,8 @@ compress-tar:
 .PHONY: ci-env-up
 ci-env-up:
 	@$(call func_echo_status, "$@ -> [ Start ]")
+	touch $(OTEL_CONFIG)
+	chmod 777 $(OTEL_CONFIG)
 	$(ENV_DOCKER_COMPOSE) up -d
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
@@ -465,5 +469,6 @@ ci-env-rebuild:
 .PHONY: ci-env-down
 ci-env-down:
 	@$(call func_echo_status, "$@ -> [ Start ]")
+	rm $(OTEL_CONFIG)
 	$(ENV_DOCKER_COMPOSE) down
 	@$(call func_echo_success_status, "$@ -> [ Done ]")

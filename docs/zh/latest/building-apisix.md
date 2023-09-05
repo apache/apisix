@@ -53,7 +53,7 @@ curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-depend
 然后，创建一个目录并设置环境变量 `APISIX_VERSION`：
 
 ```shell
-APISIX_VERSION='3.2.0'
+APISIX_VERSION='3.5.0'
 mkdir apisix-${APISIX_VERSION}
 ```
 
@@ -273,4 +273,4 @@ APISIX 的一些特性需要在 OpenResty 中引入额外的 NGINX 模块。
 prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 ```
 
-如果你想要了解更多信息，请参考 [testing framework](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)。
+如果你想要了解更多信息，请参考 [testing framework](../../en/latest/internal/testing-framework.md)。

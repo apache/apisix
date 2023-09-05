@@ -9,7 +9,7 @@ description: This tutorial uses a script to quickly install Apache APISIX in you
 
 > The Getting Started tutorials are contributed by [API7.ai](https://api7.ai/).
 
-Apache APISIX is a dynamic, real-time, and high-performance API Gateway. It is a [top-level project](https://projects.apache.org/project.html?apisix) of the Apache Software Foundation.
+Developed and donated by API7.ai, Apache APISIX is an open source, dynamic, scalable, and high-performance cloud native API gateway for all your APIs and microservices. It is a [top-level project](https://projects.apache.org/project.html?apisix) of the Apache Software Foundation.
 
 You can use APISIX API Gateway as a traffic entrance to process all business data. It offers features including dynamic routing, dynamic upstream, dynamic certificates, A/B testing, canary release, blue-green deployment, limit rate, defense against malicious attacks, metrics, monitoring alarms, service observability, service governance, and more.
 
@@ -43,7 +43,6 @@ You will see the following message once APISIX is ready:
 ✔ APISIX is ready!
 ```
 
-
 ## Validate
 
 Once APISIX is running, you can use curl to interact with it. Send a simple HTTP request to validate if APISIX is working properly:
@@ -55,8 +54,10 @@ curl "http://127.0.0.1:9080" --head | grep Server
 If everything is ok, you will get the following response:
 
 ```text
-Server: APISIX/3.1.0
+Server: APISIX/Version
 ```
+
+`Version` refers to the version of APISIX that you have installed. For example, `APISIX/3.3.0`.
 
 You now have APISIX installed and running successfully!​
 
@@ -68,4 +69,3 @@ The following tutorial is based on the working APISIX, please keep everything ru
 * [Load Balancing](load-balancing.md)
 * [Rate Limiting](rate-limiting.md)
 * [Key Authentication](key-authentication.md)
-

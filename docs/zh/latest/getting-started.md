@@ -42,14 +42,14 @@ import TabItem from '@theme/TabItem';
 
 ## Apache APISIX 是什么？
 
-Apache APISIX 是 Apache 软件基金会下的云原生 API 网关，它兼具动态、实时、高性能等特点，提供了负载均衡、动态上游、灰度发布（金丝雀发布）、服务熔断、身份认证、可观测性等丰富的流量管理功能。我们可以使用 Apache APISIX 来处理传统的南北向流量，也可以处理服务间的东西向流量。同时，它也支持作为 [K8s Ingress Controller](https://github.com/apache/apisix-ingress-controller) 来使用。
+Apache APISIX 是由 API7.ai（支流科技）捐赠给 Apache 软件基金会的云原生 API 网关，它兼具动态、实时、高性能等特点，提供了负载均衡、动态上游、灰度发布（金丝雀发布）、服务熔断、身份认证、可观测性等丰富的流量管理功能。我们可以使用 Apache APISIX 来处理传统的南北向流量，也可以处理服务间的东西向流量。同时，它也支持作为 [K8s Ingress Controller](https://github.com/apache/apisix-ingress-controller) 来使用。
 
 ### 主要特性
 
 - 多平台支持：APISIX 提供了多平台解决方案，它不但支持裸机运行，也支持在 Kubernetes 中使用，还支持与 AWS Lambda、Azure Function、Lua 函数和 Apache OpenWhisk 等云服务集成。
 - 全动态能力：APISIX 支持热加载，这意味着你不需要重启服务就可以更新 APISIX 的配置。请访问[为什么 Apache APISIX 选择 Nginx + Lua 这个技术栈？](https://apisix.apache.org/zh/blog/2021/08/25/why-apache-apisix-chose-nginx-and-lua/)以了解实现原理。
 - 精细化路由：APISIX 支持使用 [NGINX 内置变量](https://nginx.org/en/docs/varindex.html)做为路由的匹配条件，你可以自定义匹配函数来过滤请求，匹配路由。
-- 运维友好：APISIX 支持与以下工具和平台集成：[HashiCorp Vault](./terminology/secret.md#使用-vault-管理密钥)、[Zipkin](./plugins/zipkin.md)、[Apache SkyWalking](./plugins/skywalking.md)、[Consul](./discovery/consul_kv.md)、[Nacos](./discovery/nacos.md)、[Eureka](./discovery.md)。通过 [APISIX Dashboard](/docs/dashboard/USER_GUIDE)，运维人员可以通过友好且直观的 UI 配置 APISIX。
+- 运维友好：APISIX 支持与以下工具和平台集成：[HashiCorp Vault](./terminology/secret.md#使用-vault-管理密钥)、[Zipkin](./plugins/zipkin.md)、[Apache SkyWalking](./plugins/skywalking.md)、[Consul](../../en/latest/discovery/consul_kv.md)、[Nacos](./discovery/nacos.md)、[Eureka](./discovery.md)。通过 [APISIX Dashboard](/docs/dashboard/USER_GUIDE)，运维人员可以通过友好且直观的 UI 配置 APISIX。
 - 多语言插件支持：APISIX 支持多种开发语言进行插件开发，开发人员可以选择擅长语言的 SDK 开发自定义插件。
 
 ## 主要概念
@@ -143,13 +143,15 @@ curl -sL https://run.api7.ai/apisix/quickstart | sh
 curl "http://127.0.0.1:9080" --head | grep Server
 ```
 
-I如果一切顺利，将输出如下信息。
+如果一切顺利，将输出如下信息。
 
 ```text
-Server: APISIX/3.1.0
+Server: APISIX/Version
 ```
 
-现在，你已经成功安装并运行了 APISIX ！
+`Version` 是指您已经安装的 APISIX 的版本。例如，`APISIX/3.3.0`。
+
+现在，你已经成功安装并运行了 APISIX！
 
 ## 创建路由
 
@@ -207,8 +209,9 @@ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1" -X PUT -d '
 ```bash
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT -d '
 {
-  "uri": "/get",
-  "host": "httpbin.org",
+  "methods": ["GET"],
+  "host": "example.com",
+  "uri": "/anything/*",
   "upstream_id": "1"
 }'
 ```
@@ -216,7 +219,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT -d '
 我们已经创建了路由与上游服务，现在可以通过以下命令访问上游服务：
 
 ```bash
-curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: httpbin.org"
+curl -i -X GET "http://127.0.0.1:9080/anything/foo?arg=10" -H "Host: example.com"
 ```
 
 该请求将被 APISIX 转发到 `http://httpbin.org:80/anything/foo?arg=10`。

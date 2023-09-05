@@ -53,7 +53,7 @@ The `redirect` Plugin can be used to configure redirects.
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can enable the `redirect` Plugin on a specific Route:
 
@@ -144,9 +144,9 @@ Location: https://127.0.0.1:9443/hello
 ...
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `redirect` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `redirect` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

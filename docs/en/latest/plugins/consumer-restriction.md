@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API Gateway
   - Consumer restriction
-description: The Consumer Restriction Plugin allows users to set access restrictions based on Consumer, Route, or Service.
+description: The Consumer Restriction Plugin allows users to configure access restrictions on Consumer, Route, Service, or Global Rule.
 ---
 
 <!--
@@ -28,18 +28,20 @@ description: The Consumer Restriction Plugin allows users to set access restrict
 
 ## Description
 
-The `consumer-restriction` Plugin allows users to set access restrictions based on Consumer, Route, or Service.
+The `consumer-restriction` Plugin allows users to configure access restrictions on Consumer, Route, Service, or Global Rule.
 
 ## Attributes
 
-| Name               | Type          | Required | Default       | Valid values  | Description |
-|--------------------|---------------|----------|---------------|---------------|-------------|
-| type               | string        | False    | consumer_name | ["consumer_name", "consumer_group_id", "service_id", "route_id"]  | Type of object to base the restriction on.  |
-| whitelist          | array[string] | True     |               |                                              | List of objects to whitelist. Has a higher priority than `allowed_by_methods`. |
-| blacklist          | array[string] | True     |               |                                              | List of objects to blacklist. Has a higher priority than `whitelist`.          |
-| rejected_code      | integer       | False    | 403           | [200,...]                                    | HTTP status code returned when the request is rejected.                        |
-| rejected_msg       | string        | False    |               |                                              | Message returned when the request is rejected.                                 |
-| allowed_by_methods | array[object] | False    |               | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE", "PURGE"] | List of allowed HTTP methods for a Consumer. |
+| Name                       | Type          | Required | Default       | Valid values                                                 | Description                                                  |
+| -------------------------- | ------------- | -------- | ------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| type                       | string        | False    | consumer_name | ["consumer_name", "consumer_group_id", "service_id", "route_id"] | Type of object to base the restriction on.                   |
+| whitelist                  | array[string] | True     |               |                                                              | List of objects to whitelist. Has a higher priority than `allowed_by_methods`. |
+| blacklist                  | array[string] | True     |               |                                                              | List of objects to blacklist. Has a higher priority than `whitelist`. |
+| rejected_code              | integer       | False    | 403           | [200,...]                                                    | HTTP status code returned when the request is rejected.      |
+| rejected_msg               | string        | False    |               |                                                              | Message returned when the request is rejected.               |
+| allowed_by_methods         | array[object] | False    |               |                                                              | List of allowed configurations for Consumer settings, including a username of the Consumer and a list of allowed HTTP methods. |
+| allowed_by_methods.user    | string        | False    |               |                                                              | A username for a Consumer.                                   |
+| allowed_by_methods.methods | array[string] | False    |               | ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "CONNECT", "TRACE", "PURGE"] | List of allowed HTTP methods for a Consumer.                 |
 
 :::note
 
@@ -315,9 +317,9 @@ HTTP/1.1 403 Forbidden
 {"message":"The service_id is forbidden."}
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `consumer-restriction` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `consumer-restriction` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

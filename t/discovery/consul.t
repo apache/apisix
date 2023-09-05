@@ -582,3 +582,78 @@ GET /thc
 [{"ip":"127.0.0.1","port":30513,"status":"healthy"},{"ip":"127.0.0.1","port":30514,"status":"healthy"}]
 [{"ip":"127.0.0.1","port":30513,"status":"healthy"},{"ip":"127.0.0.1","port":30514,"status":"healthy"}]
 --- ignore_error_log
+
+
+
+=== TEST 13: test consul catalog service change
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  consul:
+    servers:
+      - "http://127.0.0.1:8500"
+    keepalive: false
+    fetch_interval: 3
+    default_service:
+      host: "127.0.0.1"
+      port: 20999
+#END
+--- apisix_yaml
+routes:
+  -
+    uri: /*
+    upstream:
+      service_name: service_a
+      discovery_type: consul
+      type: roundrobin
+#END
+--- config
+location /v1/agent {
+    proxy_pass http://127.0.0.1:8500;
+}
+
+location /sleep {
+    content_by_lua_block {
+        local args = ngx.req.get_uri_args()
+        local sec = args.sec or "2"
+        ngx.sleep(tonumber(sec))
+        ngx.say("ok")
+    }
+}
+--- timeout: 6
+--- request eval
+[
+    "PUT /v1/agent/service/deregister/service_a1",
+    "GET /sleep?sec=3",
+    "GET /hello",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "GET /sleep?sec=5",
+    "GET /hello",
+    "PUT /v1/agent/service/deregister/service_a1",
+    "GET /sleep?sec=5",
+    "GET /hello",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "GET /sleep?sec=5",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr//,
+    qr/ok\n/,
+    qr/missing consul services\n/,
+    qr//,
+    qr/ok\n/,
+    qr/server 1\n/,
+    qr//,
+    qr/ok\n/,
+    qr/missing consul services\n/,
+    qr//,
+    qr/ok\n/,
+    qr/server 1\n/,
+]
+--- ignore_error_log

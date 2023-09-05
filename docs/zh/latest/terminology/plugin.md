@@ -29,63 +29,83 @@ description: 本文介绍了 APISIX Plugin 对象的相关信息及其使用方�
 
 ## 描述
 
-Plugin 表示将在 HTTP 请求/响应生命周期期间执行的插件配置。Plugin 的配置信息可以直接绑定在 [Route](./route.md) 上，也可以被绑定在 [Service](./service.md)、[Consumer](./consumer.md) 或 [Plugin Config](./plugin-config.md) 上。
+APISIX 插件可以扩展 APISIX 的功能，以满足组织或用户特定的流量管理、可观测性、安全、请求/响应转换、无服务器计算等需求。
 
-你也可以参考 [Admin API](../admin-api.md#plugin) 了解如何使用该资源。
+APISIX 提供了许多现有的插件，可以定制和编排以满足你的需求。这些插件可以全局启用，以在每个传入请求上触发，也可以局部绑定到其他对象，例如在 [Route](./route.md)、[Service](./service.md)、[Consumer](./consumer.md) 或 [Plugin Config](./plugin-config.md) 上。你可以参考 [Admin API](../admin-api.md#plugin) 了解如何使用该资源。
 
-:::note 注意
+如果现有的 APISIX 插件不满足需求，你还可以使用 Lua 或其他语言（如 Java、Python、Go 和 Wasm）编写自定义插件。
 
-对于同一个插件的配置，只能有一个是有效的，其插件配置优先级为 Consumer > Route > Plugin Config > Service。
+## 插件安装
 
-:::
+APISIX 附带一个`config-default.yaml`的默认配置文件和一个 `config.yaml` 的用户自定义配置文件。这些文件位于`conf`目录中。如果两个文件中都存在相同的键 (例如`plugins`)，则`config.yaml`文件中该键的配置值将覆盖`config-default.yaml`文件中的配置值。
 
-## 配置简介
+例如：
 
-如果你想在现有插件的基础上新增插件，请复制 `./conf/config-default.yaml` 中的 `plugins` 参数下的插件列表到 `./conf/config.yaml` 的 `plugins` 参数中。
-
-:::tip 提示
-
-在 `./conf/config.yaml` 中的 `plugins` 参数中，可以声明本地 APISIX 节点支持了哪些插件。这是个白名单机制，不在该白名单的插件配置将被自动忽略。该特性可用于临时关闭或打开特定插件，应对突发情况非常有效。
-
-:::
-
-一个插件在一次请求中只会执行一次，即使被同时绑定到多个不同对象中（比如 Route 或 Service）。插件运行先后顺序是根据插件自身的优先级来决定的，例如：
-
-```lua
-local _M = {
-    version = 0.1,
-    priority = 0, -- 这个插件的优先级为 0
-    name = plugin_name,
-    schema = schema,
-    metadata_schema = metadata_schema,
-}
+```yaml
+plugins:
+  - real-ip         # 安装
+  - ai
+  - client-control
+  - proxy-control
+  - request-id
+  - zipkin
+  # - skywalking    # 未安装
+...
 ```
 
-插件的配置信息，可以存放 Route、Service、Plugin Config 等对象中的 `plugins` 参数下。如下所示的配置中，包含 `limit-count` 和 `prometheus` 两个插件的配置信息：
+## 插件执行生命周期
+
+安装的插件首先会被初始化。然后会检查插件的配置，以确保插件配置遵循定义的[JSON Schema](https://json-schema.org)。
+
+当一个请求通过 APISIX 时，插件的相应方法会在以下一个或多个阶段中执行： `rewrite`, `access`, `before_proxy`, `header_filter`, `body_filter`, and `log`。这些阶段在很大程度上受到[OpenResty 指令](https://openresty-reference.readthedocs.io/en/latest/Directives/)的影响。
+
+<br />
+<div style={{textAlign: 'center'}}>
+<img src="https://static.apiseven.com/uploads/2023/03/09/ZsH5C8Og_plugins-phases.png" alt="Routes Diagram" width="50%"/>
+</div>
+<br />
+
+## 插件执行顺序
+
+通常情况下，插件按照以下顺序执行：
+
+1. [全局规则](./global-rule.md) 插件
+   1. rewrite 阶段的插件
+   2. access 阶段的插件
+
+2. 绑定到其他对象的插件
+   1. rewrite 阶段的插件
+   2. access 阶段的插件
+
+在每个阶段内，你可以在插件的 `_meta.priority` 字段中可选地定义一个新的优先级数，该优先级数优先于默认插件优先级在执行期间。具有更高优先级数的插件首先执行。
+
+例如，如果你想在请求到达路由时，让 `limit-count`（优先级 1002）先于 `ip-restriction`（优先级 3000）运行，可以通过将更高的优先级数传递给 `limit-count` 的 `_meta.priority` 字段来实现：
 
 ```json
 {
-    "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr"
-        },
-        "prometheus": {}
+  ...,
+  "plugins": {
+    "limit-count": {
+      ...,
+      "_meta": {
+        "priority": 3010
+      }
     }
+  }
 }
 ```
 
-并不是所有插件都有具体配置项，比如 [prometheus](../plugins/prometheus.md) 下是没有任何具体配置项，此时可以使用一个空对象启用该插件。
+若要将此插件实例的优先级重置为默认值，只需从插件配置中删除`_meta.priority`字段即可。
 
-如果一个请求因为某个插件而被拒绝，会有类似如下 `warn` 级别的日志：
+## 插件合并优先顺序
 
-```shell
+当同一个插件在全局规则中和局部规则（例如路由）中同时配置时，两个插件将顺序执行。
 
-ip-restriction exits with http status code 403
+然而，如果相同的插件在多个对象上本地配置，例如在[`Route`](route.md), [`Service`](service.md), [`Consumer`](consumer.md) 或[`Plugin Config`](plugin-config.md) 上，每个非全局插件只会执行一次，因为在执行期间，针对特定的优先顺序，这些对象中配置的插件会被合并：
 
-```
+`Consumer`  > `Consumer Group` > `Route` > `Plugin Config` > `Service`
+
+因此，如果相同的插件在不同的对象中具有不同的配置，则合并期间具有最高优先顺序的插件配置将被使用。
 
 ## 通用配置
 
@@ -284,6 +304,6 @@ curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034
 
 :::
 
-## stand-alone 模式下的热加载
+## Standalone 模式下的热加载
 
-关于 Stand Alone 模式下的热加载的信息，请参考 [stand alone 模式](../stand-alone.md)。
+关于 Stand Alone 模式下的热加载的信息，请参考 [stand alone 模式](../../../en/latest/deployment-modes.md#standalone)。

@@ -51,48 +51,147 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: check schema
+=== TEST 1: scheme check with empty json body
 --- config
     location /t {
         content_by_lua_block {
-            local json = require("toolkit.json")
             local t = require("lib.test_admin").test
-            for _, case in ipairs({
-                {input = {
-                }},
-                {input = {
-                    conf = {}
-                }},
-                {input = {
-                    conf = ""
-                }},
-            }) do
-                local code, body = t('/apisix/admin/routes/1',
-                    ngx.HTTP_PUT,
-                    {
-                        id = "1",
-                        uri = "/echo",
-                        upstream = {
-                            type = "roundrobin",
-                            nodes = {}
-                        },
-                        plugins = {
-                            wasm_log = case.input
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
                         }
-                    }
-                )
-                ngx.say(json.decode(body).error_msg)
+                    },
+                    "plugins": {
+                        "wasm_log": {}
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
             end
+
+            ngx.say(body)
         }
     }
---- response_body
-failed to check the configuration of plugin wasm_log err: property "conf" is required
-failed to check the configuration of plugin wasm_log err: property "conf" validation failed: wrong type: expected string, got table
-failed to check the configuration of plugin wasm_log err: property "conf" validation failed: string too short, expected at least 1, got 0
+--- error_code: 400
+--- error_log eval
+qr/invalid request body/
 
 
 
-=== TEST 2: sanity
+=== TEST 2: scheme check with conf type number
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "wasm_log": {"conf": 123}
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- error_log eval
+qr/invalid request body/
+
+
+
+=== TEST 3: scheme check with conf json type
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "wasm_log": {"conf": {}}}
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- response_body_like eval
+qr/value should match only one schema, but matches none/
+
+
+
+=== TEST 4: scheme check with conf json type
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "wasm_log": {"conf": ""}}
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- response_body_like eval
+qr/value should match only one schema, but matches none/
+
+
+
+=== TEST 5: sanity
 --- config
     location /t {
         content_by_lua_block {
@@ -132,7 +231,7 @@ passed
 
 
 
-=== TEST 3: hit
+=== TEST 6: hit
 --- request
 GET /hello
 --- grep_error_log eval
@@ -143,7 +242,7 @@ run plugin ctx 1 with conf zzz in http ctx 2
 
 
 
-=== TEST 4: run wasm plugin in rewrite phase (prior to the one run in access phase)
+=== TEST 7: run wasm plugin in rewrite phase (prior to the one run in access phase)
 --- extra_yaml_config
 wasm:
     plugins:
@@ -164,7 +263,7 @@ run plugin ctx 1 with conf blahblah in http ctx 2
 
 
 
-=== TEST 5: plugin from service
+=== TEST 8: plugin from service
 --- config
     location /t {
         content_by_lua_block {
@@ -231,7 +330,7 @@ passed
 
 
 
-=== TEST 6: hit
+=== TEST 9: hit
 --- config
     location /t {
         content_by_lua_block {
@@ -262,7 +361,7 @@ run plugin ctx 3 with conf blahblah in http ctx 4
 
 
 
-=== TEST 7: plugin from plugin_config
+=== TEST 10: plugin from plugin_config
 --- config
     location /t {
         content_by_lua_block {
@@ -335,7 +434,7 @@ passed
 
 
 
-=== TEST 8: hit
+=== TEST 11: hit
 --- config
     location /t {
         content_by_lua_block {

@@ -45,7 +45,7 @@ description: 本篇文档介绍了 Apache APISIX auth-casdoor 插件的相关信
 
 :::info IMPORTANT
 
-指定 `endpoint_addr` 和 `callback_url` 属性时不要以 “/” 来结尾。
+指定 `endpoint_addr` 和 `callback_url` 属性时不要以“/”来结尾。
 
 `callback_url` 必须是路由的 URI。具体细节可查看下方示例内容，了解相关配置。
 
@@ -85,7 +85,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
 
 上述操作完成后，用户就会被重定向到目标 URL。
 
-## 禁用插件
+## 删除插件
 
 当需要禁用 `authz-casdoor` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 

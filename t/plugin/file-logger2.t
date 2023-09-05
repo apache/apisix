@@ -274,3 +274,95 @@ passed
     }
 --- response_body
 write file log success
+
+
+
+=== TEST 8: Add new configuration with match
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                        "plugins": {
+                            "file-logger": {
+                                "path": "file-with-match.log",
+                                "match": [
+                                    [
+                                        [ "arg_name","==","jack" ]
+                                    ]
+                                ],
+                                "log_format": {
+                                    "request": "$request"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: Request match
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code = t("/hello?name=jack", ngx.HTTP_GET)
+            local fd, err = io.open("file-with-match.log", 'r')
+            if not fd then
+                core.log.error("failed to open file: file-with-match.log, error info: ", err)
+                return
+            end
+            local msg = fd:read()
+
+            local new_msg = core.json.decode(msg)
+            if new_msg.request == 'GET /hello?name=jack HTTP/1.1'
+                and new_msg.route_id == '1'
+            then
+                msg = "write file log success"
+                ngx.status = code
+                ngx.say(msg)
+            end
+
+            os.remove("file-with-match.log")
+        }
+    }
+--- response_body
+write file log success
+
+
+
+=== TEST 10: Request not match
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code = t("/hello?name=tony", ngx.HTTP_GET)
+            local fd, err = io.open("file-with-match.log", 'r')
+            if not fd then
+                local msg = "not write file log"
+                ngx.say(msg)
+                return
+            end
+        }
+    }
+--- response_body
+not write file log

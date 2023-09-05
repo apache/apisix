@@ -115,16 +115,12 @@ http {
         }
     }
     {% end %}
-
-    {% if conf_server then %}
-    {* conf_server *}
-    {% end %}
 }
 {% end %}
 
 {% end %}
 
-{% if stream_proxy then %}
+{% if enable_stream then %}
 stream {
     lua_package_path  "{*extra_lua_path*}$prefix/deps/share/lua/5.1/?.lua;$prefix/deps/share/lua/5.1/?/init.lua;]=]
                       .. [=[{*apisix_lua_home*}/?.lua;{*apisix_lua_home*}/?/init.lua;;{*lua_path*};";
@@ -576,10 +572,6 @@ http {
     }
     {% end %}
 
-    {% if conf_server then %}
-    {* conf_server *}
-    {% end %}
-
     {% if deployment_role ~= "control_plane" then %}
 
     {% if enabled_plugins["proxy-cache"] then %}
@@ -653,6 +645,10 @@ http {
         }
 
         {% if ssl.enable then %}
+        ssl_client_hello_by_lua_block {
+            apisix.http_ssl_client_hello_phase()
+        }
+
         ssl_certificate_by_lua_block {
             apisix.http_ssl_phase()
         }
@@ -664,6 +660,7 @@ http {
         {% end %}
 
         location / {
+            set $upstream_mirror_host        '';
             set $upstream_mirror_uri         '';
             set $upstream_upgrade            '';
             set $upstream_connection         '';
@@ -703,16 +700,11 @@ http {
 
             ### the following x-forwarded-* headers is to send to upstream server
 
-            set $var_x_forwarded_for        $remote_addr;
             set $var_x_forwarded_proto      $scheme;
             set $var_x_forwarded_host       $host;
             set $var_x_forwarded_port       $server_port;
 
-            if ($http_x_forwarded_for != "") {
-                set $var_x_forwarded_for "${http_x_forwarded_for}, ${realip_remote_addr}";
-            }
-
-            proxy_set_header   X-Forwarded-For      $var_x_forwarded_for;
+            proxy_set_header   X-Forwarded-For      $proxy_add_x_forwarded_for;
             proxy_set_header   X-Forwarded-Proto    $var_x_forwarded_proto;
             proxy_set_header   X-Forwarded-Host     $var_x_forwarded_host;
             proxy_set_header   X-Forwarded-Port     $var_x_forwarded_port;
@@ -771,8 +763,13 @@ http {
             grpc_set_header   "Host" $upstream_host;
             {% end %}
             grpc_set_header   Content-Type application/grpc;
+            grpc_set_header   TE trailers;
             grpc_socket_keepalive on;
             grpc_pass         $upstream_scheme://apisix_backend;
+
+            {% if enabled_plugins["proxy-mirror"] then %}
+            mirror           /proxy_mirror_grpc;
+            {% end %}
 
             header_filter_by_lua_block {
                 apisix.http_header_filter_phase()
@@ -836,6 +833,32 @@ http {
             proxy_http_version 1.1;
             proxy_set_header Host $upstream_host;
             proxy_pass $upstream_mirror_uri;
+        }
+        {% end %}
+
+        {% if enabled_plugins["proxy-mirror"] then %}
+        location = /proxy_mirror_grpc {
+            internal;
+
+            {% if not use_apisix_base then %}
+            if ($upstream_mirror_uri = "") {
+                return 200;
+            }
+            {% end %}
+
+
+            {% if proxy_mirror_timeouts then %}
+                {% if proxy_mirror_timeouts.connect then %}
+            grpc_connect_timeout {* proxy_mirror_timeouts.connect *};
+                {% end %}
+                {% if proxy_mirror_timeouts.read then %}
+            grpc_read_timeout {* proxy_mirror_timeouts.read *};
+                {% end %}
+                {% if proxy_mirror_timeouts.send then %}
+            grpc_send_timeout {* proxy_mirror_timeouts.send *};
+                {% end %}
+            {% end %}
+            grpc_pass $upstream_mirror_host;
         }
         {% end %}
     }

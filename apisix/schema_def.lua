@@ -82,7 +82,7 @@ local label_value_def = {
     description = "value of label",
     type = "string",
     pattern = [[^\S+$]],
-    maxLength = 64,
+    maxLength = 256,
     minLength = 1
 }
 _M.label_value_def = label_value_def
@@ -508,7 +508,7 @@ local upstream_schema = {
 _M.upstream_hash_vars_schema = {
     type = "string",
     pattern = [[^((uri|server_name|server_addr|request_uri|remote_port]]
-               .. [[|remote_addr|query_string|host|hostname)]]
+               .. [[|remote_addr|query_string|host|hostname|mqtt_client_id)]]
                .. [[|arg_[0-9a-zA-z_-]+)$]],
 }
 
@@ -725,8 +725,19 @@ _M.ssl = {
             default = "server",
             enum = {"server", "client"}
         },
-        cert = certificate_scheme,
-        key = private_key_schema,
+        cert = {
+            oneOf = {
+                certificate_scheme,
+                -- TODO: uniformly define the schema of secret_uri
+                { type = "string", pattern = "^\\$(secret|env)://"}
+            }
+        },
+        key = {
+            oneOf = {
+                private_key_schema,
+                { type = "string", pattern = "^\\$(secret|env)://"}
+            }
+        },
         sni = {
             type = "string",
             pattern = host_def_pat,
@@ -756,6 +767,15 @@ _M.ssl = {
                     minimum = 0,
                     default = 1,
                 },
+                skip_mtls_uri_regex = {
+                    type = "array",
+                    minItems = 1,
+                    uniqueItems = true,
+                    items = {
+                        description = "uri regular expression to skip mtls",
+                        type = "string",
+                    }
+                },
             },
             required = {"ca"},
         },
@@ -769,6 +789,15 @@ _M.ssl = {
             type = "integer",
             enum = {1, 0},
             default = 1
+        },
+        ssl_protocols = {
+            description = "set ssl protocols",
+            type = "array",
+            maxItems = 3,
+            uniqueItems = true,
+            items = {
+                enum = {"TLSv1.1", "TLSv1.2", "TLSv1.3"}
+            },
         },
         validity_end = timestamp_def,
         validity_start = timestamp_def,
@@ -816,7 +845,7 @@ _M.global_rule = {
         create_time = timestamp_def,
         update_time = timestamp_def
     },
-    required = {"plugins"},
+    required = {"id", "plugins"},
 }
 
 

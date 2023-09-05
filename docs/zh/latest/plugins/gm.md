@@ -78,7 +78,7 @@ apisix:
   ...
   ssl:
     ...
-    # 可按实际情况调整。错误的 cipher 会导致 “no shared cipher” 或 “no ciphers available” 报错。
+    # 可按实际情况调整。错误的 cipher 会导致“no shared cipher”或“no ciphers available”报错。
     ssl_ciphers: HIGH:!aNULL:!MD5
 
 ```
@@ -186,6 +186,6 @@ New, NTLSv1.1, Cipher is ECDHE-SM2-SM4-CBC-SM3
 ...
 ```
 
-## 禁用插件
+## 删除插件
 
 如果不再使用此插件，可将 `gm` 插件从 `./conf/config.yaml` 配置文件中移除，然后重启 APISIX 或者通过插件热加载的接口触发插件的卸载。

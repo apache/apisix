@@ -49,7 +49,7 @@ You can also use the [redirect](./redirect.md) Plugin to setup redirects.
 |-----------------|---------|----------|---------|---------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | status_code     | integer | False    |         | [200, 598]                                                                                                    | New HTTP status code in the response. If unset, falls back to the original status code.                                                                                                                                                                                             |
 | body            | string  | False    |         |                                                                                                               | New body of the response. The content-length would also be reset.                                                                                                                                                                                                                   |
-| body_base64     | boolean | False    | false   |                                                                                                               | When set, the body of the request will be decoded before writing to the client.                                                                                                                                                                                                     |
+| body_base64     | boolean | False    | false   |                                                                                                               | When set, the body passed in `body` will be decoded before writing to the client which is used in some image and Protobuffer scenarios. Note that this field only allows decoding the body passed in plugin configuration and does not decode upstream response.                                                                                                                                                                                                       |
 | headers         | object  | False    |         |                                                                                                               |                                                                                                                                                                                                                                                                                     |
 | headers.add     | array   | False    |         |                                                                                                               | Append the new headers to the response. The format is `["name: value", ...]`. The values in the header can contain Nginx variables like `$remote_addr` and `$balancer_ip`.                                                                                                          |
 | headers.set     | object  | False    |         |                                                                                                               | Rewriting the headers. The format is `{"name": "value", ...}`. The values in the header can contain Nginx variables like `$remote_addr` and `$balancer_ip`. |
@@ -67,7 +67,7 @@ Only one of `body` or `filters` can be configured.
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the `response-rewrite` Plugin on a specific Route:
 
@@ -226,9 +226,9 @@ X-Server-id: 3
 
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `response-rewrite` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `response-rewrite` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

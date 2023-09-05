@@ -17,8 +17,8 @@ In this tutorial, you will create a route with two upstream services and enable 
 
 ## Prerequisite(s)
 
-1. Complete [Get APISIX](./) to install APISIX.
-2. Understand APISIX [Route and Upstream](./configure-routes#whats-a-route).
+1. Complete [Get APISIX](./README.md) to install APISIX.
+2. Understand APISIX [Route and Upstream](./configure-routes.md#what-is-a-route).
 
 ## Enable Load Balancing
 
@@ -44,8 +44,10 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
 You will receive an `HTTP/1.1 201 OK` response if the route was created successfully.
 
 :::info
+
 1. The `pass_host` field is set to `node` to pass the host header to the upstream.
 2. The `scheme` field is set to `https` to enable TLS when sending requests to the upstream.
+
 :::
 
 ## Validate

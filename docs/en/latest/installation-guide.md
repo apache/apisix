@@ -30,7 +30,7 @@ import TabItem from '@theme/TabItem';
 
 This guide walks you through how you can install and run Apache APISIX in your environment.
 
-Refer to the [Getting Started](./getting-started.md) guide for a quick walk-through on running Apache APISIX.
+Refer to the [Getting Started](./getting-started/README.md) guide for a quick walk-through on running Apache APISIX.
 
 ## Installing APISIX
 
@@ -43,6 +43,7 @@ APISIX can be installed by the different methods listed below:
     {label: 'Docker', value: 'docker'},
     {label: 'Helm', value: 'helm'},
     {label: 'RPM', value: 'rpm'},
+    {label: 'DEB', value: 'deb'},
     {label: 'Source Code', value: 'source code'},
   ]}>
 <TabItem value="docker">
@@ -130,29 +131,6 @@ sudo yum install apisix-2.13.1
 
 :::
 
-### Installation via DEB repository
-
-Currently the only DEB repository supported by APISIX is Debian 11 (Bullseye) and supports both amd64 and arm64 architectures.
-
-```shell
-# amd64
-sudo echo "deb http://openresty.org/package/debian bullseye openresty" | tee /etc/apt/sources.list.d/openresty.list
-wget -O - http://repos.apiseven.com/pubkey.gpg | apt-key add -
-echo "deb http://repos.apiseven.com/packages/debian bullseye main" | tee /etc/apt/sources.list.d/apisix.list
-
-# arm64
-sudo echo "deb http://openresty.org/package/debian bullseye openresty" | tee /etc/apt/sources.list.d/openresty.list
-wget -O - http://repos.apiseven.com/pubkey.gpg | apt-key add -
-echo "deb http://repos.apiseven.com/packages/arm64/debian bullseye main" | tee /etc/apt/sources.list.d/apisix.list
-```
-
-Then, to install APISIX, run:
-
-```shell
-sudo apt update
-sudo apt install -y apisix=3.0.0-0
-```
-
 ### Installation via RPM offline package
 
 First, download APISIX RPM offline package to an `apisix` folder:
@@ -182,6 +160,55 @@ To start APISIX server, run:
 
 ```shell
 apisix start
+```
+
+:::tip
+
+Run `apisix help` to get a list of all available operations.
+
+:::
+
+</TabItem>
+
+<TabItem value="deb">
+
+### Installation via DEB repository
+
+Currently the only DEB repository supported by APISIX is Debian 11 (Bullseye) and supports both amd64 and arm64 architectures.
+
+```shell
+# amd64
+echo "deb http://openresty.org/package/debian bullseye openresty" | sudo tee /etc/apt/sources.list.d/openresty.list
+wget -O - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
+echo "deb http://repos.apiseven.com/packages/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
+
+# arm64
+echo "deb http://openresty.org/package/arm64/debian bullseye openresty" | sudo tee /etc/apt/sources.list.d/openresty.list
+wget -O - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
+echo "deb http://repos.apiseven.com/packages/arm64/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
+```
+
+Then, to install APISIX, run:
+
+```shell
+sudo apt update
+sudo apt install -y apisix=3.0.0-0
+```
+
+### Managing APISIX server
+
+Once APISIX is installed, you can initialize the configuration file and etcd by running:
+
+```shell
+sudo apisix init
+```
+
+To start APISIX server, run:
+
+```shell
+sudo apisix start
 ```
 
 :::tip
@@ -321,4 +348,4 @@ systemctl stop apisix
 
 If you installed APISIX through other methods, you can create `/usr/lib/systemd/system/apisix.service` and add the [configuration from the template](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service).
 
-See the [Getting Started](./getting-started.md) guide for a quick walk-through of using APISIX.
+See the [Getting Started](./getting-started/README.md) guide for a quick walk-through of using APISIX.
