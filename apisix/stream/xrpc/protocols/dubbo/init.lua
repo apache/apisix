@@ -81,8 +81,7 @@ end
 local function read_data(sk, is_req)
     local header_data, err = sk:read(header_len)
     if not header_data then
-        core.log.error("failed to read dubbo request header: ", err)
-        return
+        return nil, err, false
     end
 
     local header_str = ffi_str(header_data, header_len)
@@ -212,7 +211,11 @@ end
 
 
 function _M.from_upstream(session, downstream, upstream)
-    local ctx = handle_reply(session, upstream)
+    local ctx,err = handle_reply(session, upstream)
+    if err then
+        core.log.error("failed to handle upstream: ", err)
+        return DECLINED
+    end
 
     local ok, err = downstream:move(upstream)
     if not ok then
