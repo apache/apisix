@@ -292,25 +292,13 @@ function _M.read_yaml_conf(apisix_home)
             default_conf.apisix.enable_admin = true
 
         elseif default_conf.deployment.role == "data_plane" then
+            default_conf.etcd = default_conf.deployment.etcd
             if default_conf.deployment.role_data_plane.config_provider == "yaml" then
                 default_conf.deployment.config_provider = "yaml"
             elseif default_conf.deployment.role_data_plane.config_provider == "xds" then
                 default_conf.deployment.config_provider = "xds"
-            else
-                default_conf.etcd = default_conf.deployment.role_data_plane.control_plane
             end
             default_conf.apisix.enable_admin = false
-        end
-
-        if default_conf.etcd and default_conf.deployment.certs then
-            -- copy certs configuration to keep backward compatible
-            local certs = default_conf.deployment.certs
-            local etcd = default_conf.etcd
-            if not etcd.tls then
-                etcd.tls = {}
-            end
-            etcd.tls.cert = certs.cert
-            etcd.tls.key = certs.cert_key
         end
     end
 

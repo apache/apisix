@@ -45,7 +45,7 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 | brokers.sasl_config.password   | string  | 是     |                  |             | Kafka broker 中 sasl 配置中的 password，如果 sasl_config 存在，则必须填写             |
 | kafka_topic            | string  | 是     |                |                       | 需要推送的 topic。                                 |
 | producer_type          | string  | 否     | async          | ["async", "sync"]     | 生产者发送消息的模式。          |
-| required_acks          | integer | 否     | 1              | [0, 1, -1]            | 生产者在确认一个请求发送完成之前需要收到的反馈信息的数量。该参数是为了保证发送请求的可靠性。该属性的配置与 Kafka `acks` 属性相同，具体配置请参考 [Apache Kafka 文档](https://kafka.apache.org/documentation/#producerconfigs_acks)。  |
+| required_acks          | integer | 否     | 1              | [1, -1]            | 生产者在确认一个请求发送完成之前需要收到的反馈信息的数量。该参数是为了保证发送请求的可靠性。该属性的配置与 Kafka `acks` 属性相同，具体配置请参考 [Apache Kafka 文档](https://kafka.apache.org/documentation/#producerconfigs_acks)。required_acks 还不支持为 0。  |
 | key                    | string  | 否     |                |                       | 用于消息分区而分配的密钥。                             |
 | timeout                | integer | 否     | 3              | [1,...]               | 发送数据的超时时间。                             |
 | name                   | string  | 否     | "kafka logger" |                       | batch processor 的唯一标识。                     |

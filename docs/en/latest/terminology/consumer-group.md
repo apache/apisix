@@ -35,7 +35,9 @@ instead of managing each consumer individually.
 
 ## Example
 
-The example below illustrates how to create a Consumer Group and bind it to a Consumer:
+The example below illustrates how to create a Consumer Group and bind it to a Consumer.
+
+Create a Consumer Group which shares the same rate limiting quota:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumer_groups/company_a \
@@ -46,11 +48,13 @@ curl http://127.0.0.1:9180/apisix/admin/consumer_groups/company_a \
             "count": 200,
             "time_window": 60,
             "rejected_code": 503,
-            "group": "$consumer_group_id"
+            "group": "grp_company_a"
         }
     }
 }'
 ```
+
+Create a Consumer within the Consumer Group:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers \

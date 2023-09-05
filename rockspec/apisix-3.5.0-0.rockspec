@@ -16,12 +16,12 @@
 --
 
 package = "apisix"
-version = "master-0"
+version = "3.5.0-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/apache/apisix",
-    branch = "master",
+    branch = "3.5.0",
 }
 
 description = {
@@ -34,8 +34,8 @@ dependencies = {
     "lua-resty-ctxdump = 0.1-0",
     "api7-lua-resty-dns-client = 7.0.1",
     "lua-resty-template = 2.0",
-    "lua-resty-etcd = 1.10.5",
-    "api7-lua-resty-http = 0.2.2-0",
+    "lua-resty-etcd = 1.10.4",
+    "api7-lua-resty-http = 0.2.0",
     "lua-resty-balancer = 0.04",
     "lua-resty-ngxvar = 0.5.2",
     "lua-resty-jit-uuid = 0.0.7",
