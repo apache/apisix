@@ -200,9 +200,8 @@ end
 
 
 function _M.to_upstream(session, ctx, downstream, upstream)
-    local ok, err = upstream:move(downstream)
+    local ok, _ = upstream:move(downstream)
     if not ok then
-        core.log.error("failed to send to upstream: ", err)
         return DECLINED
     end
 
@@ -213,13 +212,11 @@ end
 function _M.from_upstream(session, downstream, upstream)
     local ctx,err = handle_reply(session, upstream)
     if err then
-        core.log.error("failed to handle upstream: ", err)
         return DECLINED
     end
 
-    local ok, err = downstream:move(upstream)
+    local ok, _ = downstream:move(upstream)
     if not ok then
-        core.log.error("failed to handle upstream: ", err)
         return DECLINED
     end
 
