@@ -141,7 +141,7 @@ function _M.check_schema(conf)
         end
     end
 
-    -- For memory based cache, the default cache_zone cannot be used. 
+    -- For memory based cache, the default cache_zone cannot be used.
     -- cache_zone will also be set as default value in case when passed empty.
     if conf.cache_strategy == STRATEGY_MEMORY and conf.cache_zone == DEFAULT_CACHE_ZONE then
         return false, "invalid or empty cache_zone for cache_strategy: "..conf.cache_strategy
