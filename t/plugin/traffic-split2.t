@@ -801,3 +801,78 @@ GET /t
 --- error_code: 500
 --- error_log
 failed to find upstream by id: invalid-id
+
+
+
+=== TEST 21: use upstream with https scheme
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+
+            local code, body = t.test('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": {
+                        "127.0.0.1:1983": 1
+                    },
+                    "type": "roundrobin",
+                    "desc": "port 1983 is served under https",
+                    "scheme": "https",
+                    "tls": {
+                        "client_cert_id": 1
+                    }
+                 }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+            end
+
+            local data = {
+                uri = "/hello",
+                plugins = {
+                    ["traffic-split"] = {
+                        rules = {
+                            {
+                                weighted_upstreams = {
+                                    {
+                                        upstream_id = 1,
+                                        weight = 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                }
+            }
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 22: hit route
+--- request
+GET /hello
+--- error_code: 200
+--- response_body
+hello world
