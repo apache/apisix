@@ -20,11 +20,14 @@ local disk_handler = require("apisix.plugins.proxy-cache.disk_handler")
 local util = require("apisix.plugins.proxy-cache.util")
 local core = require("apisix.core")
 local ipairs = ipairs
+local ngx = ngx
+local ngx_shared = ngx.shared
 
 local plugin_name = "proxy-cache"
 
 local STRATEGY_DISK = "disk"
 local STRATEGY_MEMORY = "memory"
+local DEFAULT_CACHE_ZONE = "disk_cache_one"
 
 local schema = {
     type = "object",
@@ -33,7 +36,7 @@ local schema = {
             type = "string",
             minLength = 1,
             maxLength = 100,
-            default = "disk_cache_one",
+            default = DEFAULT_CACHE_ZONE,
         },
         cache_strategy = {
             type = "string",
@@ -138,6 +141,11 @@ function _M.check_schema(conf)
         if found == false then
             return false, "cache_zone " .. conf.cache_zone .. " not found"
         end
+    end
+
+    -- For memory based cache, the default cache_zone cannot be used. cache_zone will also be set as default value in case when passed empty.
+    if conf.cache_strategy == STRATEGY_MEMORY and conf.cache_zone == DEFAULT_CACHE_ZONE then
+        return false, "invalid or empty cache_zone for cache_strategy: "..conf.cache_strategy
     end
 
     return true

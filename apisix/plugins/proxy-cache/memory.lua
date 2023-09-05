@@ -33,7 +33,7 @@ end
 
 function _M:set(key, obj, ttl)
     if self.dict == nil then
-        return nil, "no cache_zone provided"
+        return nil, "invalid cache_zone provided"
     end
 
     local obj_json = core.json.encode(obj)
@@ -48,8 +48,9 @@ end
 
 function _M:get(key)
     if self.dict == nil then
-        return nil, "no cache_zone provided"
+        return nil, "invalid cache_zone provided"
     end
+
     -- If the key does not exist or has expired, then res_json will be nil.
     local res_json, err = self.dict:get(key)
     if not res_json then
@@ -71,7 +72,7 @@ end
 
 function _M:purge(key)
     if self.dict == nil then
-        return nil, "no cache_zone provided"
+        return nil, "invalid cache_zone provided"
     end
     self.dict:delete(key)
 end

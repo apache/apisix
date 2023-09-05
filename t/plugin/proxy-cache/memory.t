@@ -701,17 +701,7 @@ Cache-Control: only-if-cached
        }
 --- request
 GET /t
---- error_code: 200
---- response_body
-passed
+--- response_body_like
+.*err: invalid or empty cache_zone for cache_strategy: memory.*
+--- error_code: 400
 
-
-
-=== TEST 37: hit route
---- request
-GET /hello
---- grep_error_log eval
-qr/no cache_zone provided/
---- grep_error_log_out
-no cache_zone provided
-no cache_zone provided
