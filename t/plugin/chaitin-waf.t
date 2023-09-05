@@ -136,6 +136,10 @@ __DATA__
                         {
                             "host": "127.0.0.1",
                             "port": 8089
+                        },
+                        {
+                            "host": "unix:/path/to/safeline/resources/detector/snserver.sock",
+                            "port": 8000
                         }
                     ]
                  }]]
