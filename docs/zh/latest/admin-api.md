@@ -56,13 +56,13 @@ deployment:
     admin:
         admin_key:
         - name: admin
-            key: edd1c9f034335f136f87ad84b625c8f1  # 使用默认的 Admin API Key 存在安全风险，部署到生产环境时请及时更新
-            role: admin
-       allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
-           - 127.0.0.0/24
-       admin_listen:
-           ip: 0.0.0.0                 # Admin API 监听的 IP，如果不设置，默认为“0.0.0.0”。
-           port: 9180                  # Admin API 监听的 端口，必须使用与 node_listen 不同的端口。
+          key: edd1c9f034335f136f87ad84b625c8f1  # 使用默认的 Admin API Key 存在安全风险，部署到生产环境时请及时更新
+          role: admin
+      allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
+          - 127.0.0.0/24
+      admin_listen:
+          ip: 0.0.0.0                 # Admin API 监听的 IP，如果不设置，默认为“0.0.0.0”。
+          port: 9180                  # Admin API 监听的 端口，必须使用与 node_listen 不同的端口。
 ```
 
 ### 使用环境变量 {#using-environment-variables}
@@ -429,6 +429,7 @@ Route 对象 JSON 配置示例：
     ```
 
     执行成功后，上游节点将更新为：
+-
     ```
     {
         "127.0.0.1:1980": 1,
@@ -567,7 +568,7 @@ Route 对象 JSON 配置示例：
     ...
     ```
 
-  执行成功后，`status` 将更新为：
+    执行成功后，`status` 将更新为：
 
     ```
     {
