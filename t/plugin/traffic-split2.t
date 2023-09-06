@@ -817,10 +817,7 @@ failed to find upstream by id: invalid-id
                     },
                     "type": "roundrobin",
                     "desc": "port 1983 is served under https",
-                    "scheme": "https",
-                    "tls": {
-                        "client_cert_id": 1
-                    }
+                    "scheme": "https"
                  }]]
                 )
 
