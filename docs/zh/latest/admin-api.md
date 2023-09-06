@@ -53,16 +53,16 @@ APISIX 支持设置 Admin API 的 IP 访问白名单，防止 APISIX 被非法�
 
 ```yaml title="./conf/config.yaml"
 deployment:
-  admin:
-    admin_key:
-      - name: admin
-          key: edd1c9f034335f136f87ad84b625c8f1  # 使用默认的 Admin API Key 存在安全风险，部署到生产环境时请及时更新
-          role: admin
-    allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
-      - 127.0.0.0/24
-    admin_listen:
-      ip: 0.0.0.0                 # Admin API 监听的 IP，如果不设置，默认为“0.0.0.0”。
-      port: 9180                  # Admin API 监听的 端口，必须使用与 node_listen 不同的端口。
+    admin:
+        admin_key:
+        - name: admin
+            key: edd1c9f034335f136f87ad84b625c8f1  # 使用默认的 Admin API Key 存在安全风险，部署到生产环境时请及时更新
+            role: admin
+       allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
+           - 127.0.0.0/24
+       admin_listen:
+           ip: 0.0.0.0                 # Admin API 监听的 IP，如果不设置，默认为“0.0.0.0”。
+           port: 9180                  # Admin API 监听的 端口，必须使用与 node_listen 不同的端口。
 ```
 
 ### 使用环境变量 {#using-environment-variables}
@@ -73,11 +73,11 @@ deployment:
 deployment:
   admin:
     admin_key:
-      - name: admin
-        key: ${{ADMIN_KEY}}
-        role: admin
+    - name: admin
+      key: ${{ADMIN_KEY}}
+      role: admin
     allow_admin:
-      - 127.0.0.0/24
+    - 127.0.0.0/24
     admin_listen:
       ip: 0.0.0.0
       port: 9180
@@ -93,11 +93,11 @@ deployment:
 deployment:
   admin:
     admin_key:
-      - name: admin
-        key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}}
-        role: admin
+    - name: admin
+      key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}}
+      role: admin
     allow_admin:
-      - 127.0.0.0/24
+    - 127.0.0.0/24
     admin_listen:
       ip: 0.0.0.0
       port: 9180
@@ -428,8 +428,7 @@ Route 对象 JSON 配置示例：
     ...
     ```
 
-  执行成功后，上游节点将更新为：
-
+    执行成功后，上游节点将更新为：
     ```
     {
         "127.0.0.1:1980": 1,
@@ -456,7 +455,7 @@ Route 对象 JSON 配置示例：
     ...
     ```
 
-  执行成功后，上游节点将更新为：
+    执行成功后，上游节点将更新为：
 
     ```
     {
@@ -484,7 +483,7 @@ Route 对象 JSON 配置示例：
     ...
     ```
 
-  执行成功后，Upstream `nodes` 将更新为：
+    执行成功后，Upstream `nodes` 将更新为：
 
     ```shell
     {
@@ -506,7 +505,7 @@ Route 对象 JSON 配置示例：
     ...
     ```
 
-  执行成功后，`methods` 将不保留原来的数据，将更新为：
+    执行成功后，`methods` 将不保留原来的数据，将更新为：
 
     ```
     ["GET", "POST"]
@@ -527,7 +526,7 @@ Route 对象 JSON 配置示例：
     ...
     ```
 
-  执行成功后，`nodes` 将不保留原来的数据，整个更新为：
+    执行成功后，`nodes` 将不保留原来的数据，整个更新为：
 
     ```
     {
@@ -547,7 +546,7 @@ Route 对象 JSON 配置示例：
     ...
     ```
 
-  执行成功后，`methods` 将不保留原来的数据，更新为：
+    执行成功后，`methods` 将不保留原来的数据，更新为：
 
     ```
     ["POST", "DELETE", "PATCH"]
@@ -591,7 +590,7 @@ Route 对象 JSON 配置示例：
     ...
     ```
 
-  执行成功后，`status` 将更新为：
+    执行成功后，`status` 将更新为：
 
     ```
     {
@@ -701,7 +700,7 @@ Service 对象 JSON 配置示例：
     ...
     ```
 
-  执行成功后，上游节点将更新为：
+    执行成功后，上游节点将更新为：
 
     ```json
     {
@@ -729,7 +728,7 @@ Service 对象 JSON 配置示例：
     ...
     ```
 
-  执行成功后，上游节点将更新为：
+    执行成功后，上游节点将更新为：
 
     ```
     {
@@ -757,7 +756,7 @@ Service 对象 JSON 配置示例：
     ...
     ```
 
-  执行成功后，上游节点将更新为：
+    执行成功后，上游节点将更新为：
 
     ```
     {
@@ -780,7 +779,7 @@ Service 对象 JSON 配置示例：
     ...
     ```
 
-  执行成功后，上游节点不再保留原来的数据，将更新为：
+    执行成功后，上游节点不再保留原来的数据，将更新为：
 
     ```
     {
@@ -1005,7 +1004,7 @@ Upstream 对象 JSON 配置示例：
     ...
     ```
 
-   执行成功后，`nodes` 将更新为：
+    执行成功后，`nodes` 将更新为：
 
     ```
     {
@@ -1031,7 +1030,7 @@ Upstream 对象 JSON 配置示例：
     ...
     ```
 
-   执行成功后，`nodes` 将更新为：
+    执行成功后，`nodes` 将更新为：
 
     ```
     {
@@ -1057,7 +1056,7 @@ Upstream 对象 JSON 配置示例：
     ...
     ```
 
-   执行成功后，`nodes` 将更新为：
+    执行成功后，`nodes` 将更新为：
 
     ```
     {
@@ -1080,7 +1079,7 @@ Upstream 对象 JSON 配置示例：
     ...
     ```
 
-   执行成功后，`nodes` 将不再保留原来的数据：
+    执行成功后，`nodes` 将不再保留原来的数据：
 
     ```
     {
@@ -1107,7 +1106,7 @@ Upstream 对象 JSON 配置示例：
     }'
     ```
 
-   执行成功后，请求与上游通信时的 Scheme 将为 `https`。
+    执行成功后，请求与上游通信时的 Scheme 将为 `https`。
 
 2. 发送请求进行测试：
 
@@ -1130,15 +1129,15 @@ Upstream 对象 JSON 配置示例：
     }
     ```
 
-   请求成功，表示代理上游 `https` 生效了。
+    请求成功，表示代理上游 `https` 生效了。
 
-   :::tip 提示
+    :::tip 提示
 
-   每个节点均可以配置优先级，只有在高优先级的节点不可用或者尝试过，才会访问一个低优先级的节点。
+    每个节点均可以配置优先级，只有在高优先级的节点不可用或者尝试过，才会访问一个低优先级的节点。
 
-   :::
+    :::
 
-   由于上游节点的默认优先级是 `0`，你可以将一些节点的优先级设置为负数，让其作为备份节点。例如：
+    由于上游节点的默认优先级是 `0`，你可以将一些节点的优先级设置为负数，让其作为备份节点。例如：
 
     ```JSON
     {
@@ -1166,7 +1165,7 @@ Upstream 对象 JSON 配置示例：
     }
     ```
 
-   节点 `127.0.0.2` 只有在 `127.0.0.1` 不可用或者尝试过之后才会被访问，因此它是 `127.0.0.1` 的备份。
+    节点 `127.0.0.2` 只有在 `127.0.0.1` 不可用或者尝试过之后才会被访问，因此它是 `127.0.0.1` 的备份。
 
 ### 应答参数  {#upstream-response-parameters}
 
@@ -1360,6 +1359,16 @@ Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 | GET         | /apisix/admin/plugins/{plugin_name} | 无         | 获取资源。      |
 | GET         | /apisix/admin/plugins?all=true      | 无         | 获取所有插件的所有属性。 |
 | GET         | /apisix/admin/plugins?all=true&subsystem=stream| 无 | 获取所有 Stream 插件的属性。|
+| GET         | /apisix/admin/plugins?all=true&subsystem=http| 无 | 获取所有 HTTP 插件的属性。|
+| PUT         | /apisix/admin/plugins/reload        | 无         | 根据代码中所做的更改重新加载插件。 |
+| GET         | apisix/admin/plugins/{plugin_name}?subsystem=stream         | 无         | 获取指定 Stream 插件的属性。 |
+| GET         | apisix/admin/plugins/{plugin_name}?subsystem=http         | 无         | 获取指定 HTTP 插件的属性。 |
+
+:::caution
+
+获取所有插件属性的接口 `/apisix/admin/plugins?all=true` 将很快被弃用。
+
+:::
 
 ### 使用示例 {#plugin-example}
 

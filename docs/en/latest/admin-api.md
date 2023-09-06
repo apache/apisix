@@ -51,17 +51,17 @@ For security reasons, please modify the default `admin_key`, and check the `allo
 
 ```yaml title="./conf/config.yaml"
 deployment:
-  admin:
-    admin_key:
-      - name: admin
-          key: edd1c9f034335f136f87ad84b625c8f1  # using fixed API token has security risk, please update it when you deploy to production environment
-          role: admin
-    allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
-      - 127.0.0.0/24
-    admin_listen:
-      ip: 0.0.0.0                 # Specific IP, if not set, the default value is `0.0.0.0`.
-      port: 9180                  # Specific port, which must be different from node_listen's port.```
-
+    admin:
+        admin_key:
+        - name: admin
+            key: edd1c9f034335f136f87ad84b625c8f1  # using fixed API token has security risk, please update it when you deploy to production environment
+            role: admin
+        allow_admin:                    # http://nginx.org/en/docs/http/ngx_http_access_module.html#allow
+            - 127.0.0.0/24
+        admin_listen:
+            ip: 0.0.0.0                 # Specific IP, if not set, the default value is `0.0.0.0`.
+            port: 9180                  # Specific port, which must be different from node_listen's port.
+```
 ### Using environment variables
 
 To configure via environment variables, you can use the `${{VAR}}` syntax. For instance:
@@ -418,7 +418,7 @@ Example configuration:
     ...
     ```
 
-After successful execution, upstream nodes will be updated to:
+  After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -446,7 +446,7 @@ After successful execution, upstream nodes will be updated to:
     ...
     ```
 
-After successful execution, upstream nodes will be updated to:
+  After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -474,7 +474,7 @@ After successful execution, upstream nodes will be updated to:
     ...
     ```
 
-After successful execution, upstream nodes will be updated to:
+  After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -496,7 +496,7 @@ After successful execution, upstream nodes will be updated to:
     ...
     ```
 
-After successful execution, methods will not retain the original data, and the entire update is:
+  After successful execution, methods will not retain the original data, and the entire update is:
 
     ```shell
     ["GET", "POST"]
@@ -517,7 +517,7 @@ After successful execution, methods will not retain the original data, and the e
     ...
     ```
 
-After successful execution, nodes will not retain the original data, and the entire update is:
+  After successful execution, nodes will not retain the original data, and the entire update is:
 
     ```shell
     {
@@ -537,7 +537,7 @@ After successful execution, nodes will not retain the original data, and the ent
     ...
     ```
 
-After successful execution, methods will not retain the original data, and the entire update is:
+  After successful execution, methods will not retain the original data, and the entire update is:
 
     ```shell
     ["POST", "DELETE", "PATCH"]
@@ -558,7 +558,7 @@ After successful execution, methods will not retain the original data, and the e
     ...
     ```
 
-After successful execution, status nodes will be updated to:
+  After successful execution, status nodes will be updated to:
 
     ```shell
     {
@@ -581,7 +581,7 @@ After successful execution, status nodes will be updated to:
     ...
     ```
 
-After successful execution, status nodes will be updated to:
+  After successful execution, status nodes will be updated to:
 
     ```shell
     {
@@ -693,7 +693,7 @@ Example configuration:
     ...
     ```
 
-After successful execution, upstream nodes will be updated to:
+  After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -721,7 +721,7 @@ After successful execution, upstream nodes will be updated to:
     ...
     ```
 
-After successful execution, upstream nodes will be updated to:
+  After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -749,7 +749,7 @@ After successful execution, upstream nodes will be updated to:
     ...
     ```
 
-After successful execution, upstream nodes will be updated to:
+  After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -772,7 +772,7 @@ After successful execution, upstream nodes will be updated to:
     ...
     ```
 
-After successful execution, upstream nodes will not retain the original data, and the entire update is:
+  After successful execution, upstream nodes will not retain the original data, and the entire update is:
 
     ```shell
     {
@@ -1000,7 +1000,7 @@ Example Configuration:
     ...
     ```
 
-After successful execution, nodes will be updated to:
+  After successful execution, nodes will be updated to:
 
     ```shell
     {
