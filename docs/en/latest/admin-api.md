@@ -60,8 +60,7 @@ deployment:
       - 127.0.0.0/24
     admin_listen:
       ip: 0.0.0.0                 # Specific IP, if not set, the default value is `0.0.0.0`.
-      port: 9180                  # Specific port, which must be different from node_listen's port.
-```
+      port: 9180                  # Specific port, which must be different from node_listen's port.```
 
 ### Using environment variables
 
@@ -71,11 +70,11 @@ To configure via environment variables, you can use the `${{VAR}}` syntax. For i
 deployment:
   admin:
     admin_key:
-      - name: admin
-        key: ${{ADMIN_KEY}}
-        role: admin
+    - name: admin
+      key: ${{ADMIN_KEY}}
+      role: admin
     allow_admin:
-      - 127.0.0.0/24
+    - 127.0.0.0/24
     admin_listen:
       ip: 0.0.0.0
       port: 9180
@@ -91,11 +90,11 @@ If you want to use a default value when the environment variable is not set, use
 deployment:
   admin:
     admin_key:
-      - name: admin
-        key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}}
-        role: admin
+    - name: admin
+      key: ${{ADMIN_KEY:=edd1c9f034335f136f87ad84b625c8f1}}
+      role: admin
     allow_admin:
-      - 127.0.0.0/24
+    - 127.0.0.0/24
     admin_listen:
       ip: 0.0.0.0
       port: 9180
@@ -419,7 +418,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, upstream nodes will be updated to:
+After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -447,7 +446,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, upstream nodes will be updated to:
+After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -475,7 +474,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, upstream nodes will be updated to:
+After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -497,7 +496,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, methods will not retain the original data, and the entire update is:
+After successful execution, methods will not retain the original data, and the entire update is:
 
     ```shell
     ["GET", "POST"]
@@ -518,7 +517,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, nodes will not retain the original data, and the entire update is:
+After successful execution, nodes will not retain the original data, and the entire update is:
 
     ```shell
     {
@@ -538,7 +537,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, methods will not retain the original data, and the entire update is:
+After successful execution, methods will not retain the original data, and the entire update is:
 
     ```shell
     ["POST", "DELETE", "PATCH"]
@@ -559,7 +558,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, status nodes will be updated to:
+After successful execution, status nodes will be updated to:
 
     ```shell
     {
@@ -582,7 +581,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, status nodes will be updated to:
+After successful execution, status nodes will be updated to:
 
     ```shell
     {
@@ -694,7 +693,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, upstream nodes will be updated to:
+After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -722,7 +721,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, upstream nodes will be updated to:
+After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -750,7 +749,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, upstream nodes will be updated to:
+After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -773,7 +772,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, upstream nodes will not retain the original data, and the entire update is:
+After successful execution, upstream nodes will not retain the original data, and the entire update is:
 
     ```shell
     {
@@ -1001,7 +1000,7 @@ Example Configuration:
     ...
     ```
 
-   After successful execution, nodes will be updated to:
+After successful execution, nodes will be updated to:
 
     ```shell
     {
@@ -1027,7 +1026,7 @@ Example Configuration:
     ...
     ```
 
-   After successful execution, nodes will be updated to:
+    After successful execution, nodes will be updated to:
 
     ```shell
     {
@@ -1053,7 +1052,7 @@ Example Configuration:
     ...
     ```
 
-   After successful execution, nodes will be updated to:
+    After successful execution, nodes will be updated to:
 
     ```shell
     {
@@ -1076,7 +1075,7 @@ Example Configuration:
     ...
     ```
 
-   After the execution is successful, nodes will not retain the original data, and the entire update is:
+    After the execution is successful, nodes will not retain the original data, and the entire update is:
 
     ```shell
     {
@@ -1103,7 +1102,7 @@ Example Configuration:
     }'
     ```
 
-   After successful execution, the scheme when requesting to communicate with the upstream will be `https`.
+    After successful execution, the scheme when requesting to communicate with the upstream will be `https`.
 
 2. Send a request to test.
 
@@ -1346,6 +1345,18 @@ Plugin resource request address: /apisix/admin/plugins/{plugin_name}
 | ------ | ----------------------------------- | ------------ | ---------------------------------------------- |
 | GET    | /apisix/admin/plugins/list          | NULL         | Fetches a list of all Plugins.                 |
 | GET    | /apisix/admin/plugins/{plugin_name} | NULL         | Fetches the specified Plugin by `plugin_name`. |
+| GET         | /apisix/admin/plugins?all=true      | NULL         | Get all properties of all plugins. |
+| GET         | /apisix/admin/plugins?all=true&subsystem=stream| NULL | Gets properties of all Stream plugins.|
+| GET    | /apisix/admin/plugins?all=true&subsystem=http | NULL | Gets properties of all HTTP plugins. |
+| PUT    | /apisix/admin/plugins/reload       | NULL         | Reloads the plugin according to the changes made in code |
+| GET    | apisix/admin/plugins/{plugin_name}?subsystem=stream | NULL | Gets properties of a specified plugin if it is supported in Stream/L4 subsystem. |
+| GET    | apisix/admin/plugins/{plugin_name}?subsystem=http   | NULL | Gets properties of a specified plugin if it is supported in HTTP/L7 subsystem. |
+
+:::caution
+
+The interface of getting properties of all plugins via `/apisix/admin/plugins?all=true` will be deprecated soon.
+
+:::
 
 ### Request Body Parameters
 
