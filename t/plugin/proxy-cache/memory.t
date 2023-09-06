@@ -664,7 +664,7 @@ Cache-Control: only-if-cached
 
 
 
-=== TEST 36: configure plugin without memory_cache zone
+=== TEST 36: configure plugin without memory_cache zone for cache_strategy = memory
 --- config
        location /t {
            content_by_lua_block {
