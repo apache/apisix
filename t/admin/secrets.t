@@ -262,3 +262,53 @@ passed
 --- error_code: 400
 --- response_body eval
 qr/validation failed: failed to match pattern/
+
+
+
+
+=== TEST 9: create resource with create_time and update_time
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local code, body = t('/apisix/admin/secrets/vault/test1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://127.0.0.1:12800/get",
+                    "prefix" : "apisix",
+                    "token" : "apisix"
+                }]],
+                [[{
+                    "value": {
+                        "uri": "http://127.0.0.1:12800/get",
+                        "prefix" : "apisix",
+                        "token" : "apisix"
+                    },
+                    "key": "/apisix/secrets/vault/test1"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: delete resource with create_time and update_time
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/secrets/vault/test1',
+                 ngx.HTTP_DELETE
+            )
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed

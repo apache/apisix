@@ -559,7 +559,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, status nodes will be updated to:
+    After successful execution, status nodes will be updated to:
 
     ```shell
     {
