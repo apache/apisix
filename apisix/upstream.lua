@@ -77,6 +77,7 @@ local function set_directly(ctx, key, ver, conf)
     ctx.upstream_key = key
     return
 end
+_M.set = set_directly
 
 
 local function release_checker(healthcheck_parent)
@@ -136,7 +137,6 @@ local function create_checker(upstream)
     local up_hdr = upstream.pass_host == "rewrite" and upstream.upstream_host
     local use_node_hdr = upstream.pass_host == "node" or nil
     for _, node in ipairs(upstream.nodes) do
-        core.log.warn("dibag node is: ", core.json.delay_encode(node, true))
         local host_hdr = up_hdr or (use_node_hdr and node.domain)
         local ok, err = checker:add_target(node.host, port or node.port, host,
                                            true, host_hdr)
