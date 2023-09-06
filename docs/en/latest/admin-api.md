@@ -62,6 +62,7 @@ deployment:
             ip: 0.0.0.0                 # Specific IP, if not set, the default value is `0.0.0.0`.
             port: 9180                  # Specific port, which must be different from node_listen's port.
 ```
+
 ### Using environment variables
 
 To configure via environment variables, you can use the `${{VAR}}` syntax. For instance:
@@ -418,7 +419,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, upstream nodes will be updated to:
+    After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -446,7 +447,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, upstream nodes will be updated to:
+    After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -474,7 +475,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, upstream nodes will be updated to:
+    After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -496,7 +497,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, methods will not retain the original data, and the entire update is:
+    After successful execution, methods will not retain the original data, and the entire update is:
 
     ```shell
     ["GET", "POST"]
@@ -517,7 +518,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, nodes will not retain the original data, and the entire update is:
+    After successful execution, nodes will not retain the original data, and the entire update is:
 
     ```shell
     {
@@ -537,7 +538,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, methods will not retain the original data, and the entire update is:
+    After successful execution, methods will not retain the original data, and the entire update is:
 
     ```shell
     ["POST", "DELETE", "PATCH"]
@@ -581,7 +582,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, status nodes will be updated to:
+    After successful execution, status nodes will be updated to:
 
     ```shell
     {
@@ -693,7 +694,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, upstream nodes will be updated to:
+    After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -721,7 +722,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, upstream nodes will be updated to:
+    After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -749,7 +750,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, upstream nodes will be updated to:
+    After successful execution, upstream nodes will be updated to:
 
     ```shell
     {
@@ -772,7 +773,7 @@ Example configuration:
     ...
     ```
 
-  After successful execution, upstream nodes will not retain the original data, and the entire update is:
+    After successful execution, upstream nodes will not retain the original data, and the entire update is:
 
     ```shell
     {
@@ -1000,7 +1001,7 @@ Example Configuration:
     ...
     ```
 
-  After successful execution, nodes will be updated to:
+    After successful execution, nodes will be updated to:
 
     ```shell
     {
