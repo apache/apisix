@@ -148,7 +148,9 @@ local function set_upstream(upstream_info, ctx)
     local new_nodes = {}
     if core.table.isarray(nodes) then
         for _, node in ipairs(nodes) do
+            core.log.warn("dibag node is: ", core.json.delay_encode(node, true))
             parse_domain_for_node(node)
+            core.log.warn("dibag parsed node is: ", core.json.delay_encode(node, true))
             table_insert(new_nodes, node)
         end
     else
@@ -157,9 +159,11 @@ local function set_upstream(upstream_info, ctx)
             local port, host
             host, port = core.utils.parse_addr(addr)
             node.host = host
+            core.log.warn("dibag node is: ", core.json.delay_encode(node, true))
             parse_domain_for_node(node)
             node.port = port
             node.weight = weight
+            core.log.warn("dibag parsed node is: ", core.json.delay_encode(node, true))
             table_insert(new_nodes, node)
         end
     end
@@ -191,7 +195,6 @@ local function set_upstream(upstream_info, ctx)
     end
     core.log.info("upstream_key: ", upstream_key)
     upstream.set(ctx, upstream_key, ctx.conf_version, up_conf)
-    upstream.set_scheme(ctx, up_conf)
 
     return
 end
@@ -288,7 +291,7 @@ function _M.access(conf, ctx)
 
     local upstream = rr_up:find()
     if upstream and type(upstream) == "table" then
-        core.log.info("upstream: ", core.json.encode(upstream))
+        core.log.warn("upstream: ", core.json.encode(upstream))
         return set_upstream(upstream, ctx)
     elseif upstream and upstream ~= "plugin#upstream#is#empty" then
         ctx.upstream_id = upstream
