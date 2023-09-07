@@ -27,6 +27,7 @@ add_block_preprocessor(sub {
     server {
         listen 8088;
         listen 8089;
+        listen unix:/tmp/safeline-snserver.sock;
         content_by_lua_block {
             require("lib.chaitin_waf_server").pass()
         }
@@ -136,6 +137,10 @@ __DATA__
                         {
                             "host": "127.0.0.1",
                             "port": 8089
+                        },
+                        {
+                            "host": "unix:/tmp/safeline-snserver.sock",
+                            "port": 8000
                         }
                     ]
                  }]]
