@@ -942,7 +942,6 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 - 设为 `header` 时，`key` 为必传参数，其值为自定义的 Header name，即 "http\_`key`"。
 - 设为 `cookie` 时，`key` 为必传参数，其值为自定义的 cookie name，即 "cookie\_`key`"。请注意 cookie name 是**区分大小写字母**的。例如：`cookie_x_foo` 与 `cookie_X_Foo` 表示不同的 `cookie`。
 - 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_name`。
-- 如果指定的 `hash_on` 和 `key` 获取不到值时，使用默认值：`remote_addr`。
 
 以下特性需要 APISIX 运行于 [APISIX-Base](./FAQ.md#如何构建-APISIX-Base-环境？)：
 
