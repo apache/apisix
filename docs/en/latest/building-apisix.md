@@ -37,7 +37,8 @@ If you are looking to quickly get started with APISIX, check out the other [inst
 
 :::note
 
-If you want to build and package APISIX for a specific platform, see [apisix-build-tools](https://github.com/api7/apisix-build-tools).
+- If you want to build APISIX docker image from source code, see [build image from source code](https://apisix.apache.org/docs/docker/build/#build-an-image-from-customizedpatched-source-code)
+- If you want to build and package APISIX for a specific platform, see [apisix-build-tools](https://github.com/api7/apisix-build-tools).
 
 :::
 
