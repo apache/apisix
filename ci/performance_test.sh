@@ -22,7 +22,7 @@ set -ex
 
 install_dependencies() {
     apt-get -y update --fix-missing
-    apt-get -y install lua5.1 liblua5.1-0-dev libldap2-dev
+    apt-get -y install lua5.1 liblua5.1-0-dev
     export_or_prefix
     export OPENRESTY_VERSION=source
     ./ci/linux-install-openresty.sh

@@ -23,7 +23,7 @@ install_dependencies() {
 
     # install build & runtime deps
     yum install -y wget tar gcc automake autoconf libtool make unzip \
-        git sudo openldap-devel which ca-certificates openssl-devel \
+        git sudo which ca-certificates openssl-devel \
         epel-release
 
     # install newer curl
