@@ -218,6 +218,10 @@
         },
         {
           "type": "doc",
+          "id": "support-fips-in-apisix"
+        },
+        {
+          "type": "doc",
           "id": "external-plugin"
         },
         {
