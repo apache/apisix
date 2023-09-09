@@ -1,5 +1,5 @@
 ---
-title: 快速入门指南
+title: 入门指南
 description: 本教程使用脚本在本地环境快速安装 Apache APISIX，并且通过管理 API 来验证是否安装成功。
 ---
 
@@ -68,4 +68,4 @@ Server: APISIX/Version
 * [配置路由](configure-routes.md)
 * [负载均衡](load-balancing.md)
 * [限速](rate-limiting.md)
-* [身份认证](key-authentication.md)
+* [密钥验证](key-authentication.md)
