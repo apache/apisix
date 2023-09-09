@@ -1,5 +1,5 @@
 {
-  "version": "3.4.0",
+  "version": "3.5.0",
   "sidebar": [
     {
       "type": "category",
@@ -222,6 +222,10 @@
         },
         {
           "type": "doc",
+          "id": "support-fips-in-apisix"
+        },
+        {
+          "type": "doc",
           "id": "external-plugin"
         },
         {
@@ -305,6 +309,10 @@
         {
           "type": "doc",
           "id": "profile"
+        },
+        {
+          "type": "doc",
+          "id": "ssl-protocol"
         }
       ]
     },

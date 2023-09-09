@@ -33,9 +33,6 @@ do_install() {
 
     ./ci/linux-install-etcd-client.sh
 
-    # install rust
-    install_rust
-
     create_lua_deps
 
     # sudo apt-get install tree -y

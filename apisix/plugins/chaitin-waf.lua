@@ -95,7 +95,7 @@ local metadata_schema = {
                 properties = {
                     host = {
                         type = "string",
-                        pattern = "^\\*?[0-9a-zA-Z-._\\[\\]:]+$"
+                        pattern = "^\\*?[0-9a-zA-Z-._\\[\\]:/]+$"
                     },
                     port = {
                         type = "integer",

@@ -115,10 +115,6 @@ http {
         }
     }
     {% end %}
-
-    {% if conf_server then %}
-    {* conf_server *}
-    {% end %}
 }
 {% end %}
 
@@ -576,10 +572,6 @@ http {
     }
     {% end %}
 
-    {% if conf_server then %}
-    {* conf_server *}
-    {% end %}
-
     {% if deployment_role ~= "control_plane" then %}
 
     {% if enabled_plugins["proxy-cache"] then %}
@@ -653,6 +645,10 @@ http {
         }
 
         {% if ssl.enable then %}
+        ssl_client_hello_by_lua_block {
+            apisix.http_ssl_client_hello_phase()
+        }
+
         ssl_certificate_by_lua_block {
             apisix.http_ssl_phase()
         }

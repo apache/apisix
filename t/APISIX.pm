@@ -33,13 +33,6 @@ my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
 $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
 $ENV{TEST_NGINX_FAST_SHUTDOWN} ||= 1;
 
-Test::Nginx::Socket::set_http_config_filter(sub {
-    my $config = shift;
-    my $snippet = `$apisix_home/t/bin/gen_snippet.lua conf_server`;
-    $config .= $snippet;
-    return $config;
-});
-
 sub read_file($) {
     my $infile = shift;
     open my $in, "$apisix_home/$infile"
@@ -267,6 +260,7 @@ env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
 env PATH; # for searching external plugin runner's binary
 env TEST_NGINX_HTML_DIR;
+env OPENSSL111_BIN;
 _EOC_
 
 
@@ -712,6 +706,12 @@ _EOC_
         ssl_certificate_key         cert/apisix.key;
         lua_ssl_trusted_certificate cert/apisix.crt;
 
+        ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
+
+        ssl_client_hello_by_lua_block {
+            apisix.http_ssl_client_hello_phase()
+        }
+
         ssl_certificate_by_lua_block {
             apisix.http_ssl_phase()
         }
@@ -871,17 +871,6 @@ deployment:
 _EOC_
 
     if ($yaml_config !~ m/deployment:/) {
-        # TODO: remove this temporary option once we have using gRPC by default
-        if ($ENV{TEST_CI_USE_GRPC}) {
-            $default_deployment .= <<_EOC_;
-  etcd:
-    host:
-      - "http://127.0.0.1:2379"
-    prefix: /apisix
-    use_grpc: true
-_EOC_
-        }
-
         $yaml_config = $default_deployment . $yaml_config;
     }
 

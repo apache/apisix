@@ -233,6 +233,20 @@ function _M.access(conf, ctx)
     local match_passed = true
 
     for _, rule in ipairs(conf.rules) do
+        -- check if all upstream_ids are valid
+        if rule.weighted_upstreams then
+            for _, wupstream in ipairs(rule.weighted_upstreams) do
+                local ups_id = wupstream.upstream_id
+                if ups_id then
+                    local ups = upstream.get_by_id(ups_id)
+                    if not ups then
+                        return 500, "failed to fetch upstream info by "
+                                    .. "upstream id: " .. ups_id
+                    end
+                end
+            end
+        end
+
         if not rule.match then
             match_passed = true
             weighted_upstreams = rule.weighted_upstreams

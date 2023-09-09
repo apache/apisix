@@ -280,103 +280,7 @@ local function prepare_dirs_via_http(yaml_conf, args, index, host, host_count)
 end
 
 
-local function grpc_request(url, yaml_conf, key)
-    local cmd
-
-    local auth = ""
-    if yaml_conf.etcd.user then
-        local user = yaml_conf.etcd.user
-        local password = yaml_conf.etcd.password
-        auth = str_format("--user=%s:%s", user, password)
-    end
-
-    if str_sub(url, 1, 8) == "https://" then
-        local host = url:sub(9)
-
-        local verify = true
-        local certificate, pkey, cafile
-        if yaml_conf.etcd.tls then
-            local cfg = yaml_conf.etcd.tls
-
-            if cfg.verify == false then
-                verify = false
-            end
-
-            certificate = cfg.cert
-            pkey = cfg.key
-
-            local apisix_ssl = yaml_conf.apisix.ssl
-            if apisix_ssl and apisix_ssl.ssl_trusted_certificate then
-                cafile = apisix_ssl.ssl_trusted_certificate
-            end
-        end
-
-        cmd = str_format(
-            "etcdctl --insecure-transport=false %s %s %s %s " ..
-                "%s --endpoints=%s put %s init_dir",
-            verify and "" or "--insecure-skip-tls-verify",
-            certificate and "--cert " .. certificate or "",
-            pkey and "--key " .. pkey or "",
-            cafile and "--cacert " .. cafile or "",
-            auth, host, key)
-    else
-        local host = url:sub(#("http://") + 1)
-
-        cmd = str_format(
-            "etcdctl %s --endpoints=%s put %s init_dir",
-            auth, host, key)
-    end
-
-    local res, err = util.execute_cmd(cmd)
-    return res, err
-end
-
-
-local function prepare_dirs_via_grpc(yaml_conf, args, index, host)
-    local is_success = true
-
-    local errmsg
-    local dirs = {}
-    for name in pairs(constants.HTTP_ETCD_DIRECTORY) do
-        dirs[name] = true
-    end
-    for name in pairs(constants.STREAM_ETCD_DIRECTORY) do
-        dirs[name] = true
-    end
-
-    for dir_name in pairs(dirs) do
-        local key =  (yaml_conf.etcd.prefix or "") .. dir_name .. "/"
-        local res, err
-        local retry_time = 0
-        while retry_time < 2 do
-            res, err = grpc_request(host, yaml_conf, key)
-            retry_time = retry_time + 1
-            if res then
-                break
-            end
-            print(str_format("Warning! Request etcd endpoint \'%s\' error, %s, retry time=%s",
-                             host, err, retry_time))
-        end
-
-        if not res then
-            errmsg = str_format("request etcd endpoint \"%s\" error, %s\n", host, err)
-            util.die(errmsg)
-        end
-
-        if args and args["verbose"] then
-            print(res)
-        end
-    end
-
-    return is_success
-end
-
-
-local function prepare_dirs(use_grpc, yaml_conf, args, index, host, host_count)
-    if use_grpc then
-        return prepare_dirs_via_grpc(yaml_conf, args, index, host)
-    end
-
+local function prepare_dirs(yaml_conf, args, index, host, host_count)
     return prepare_dirs_via_http(yaml_conf, args, index, host, host_count)
 end
 
@@ -399,8 +303,6 @@ function _M.init(env, args)
     if not yaml_conf.etcd then
         util.die("failed to read `etcd` field from yaml file when init etcd")
     end
-
-    local etcd_conf = yaml_conf.etcd
 
     -- convert old single etcd config to multiple etcd config
     if type(yaml_conf.etcd.host) == "string" then
@@ -477,22 +379,9 @@ function _M.init(env, args)
         util.die("the etcd cluster needs at least 50% and above healthy nodes\n")
     end
 
-    if etcd_conf.use_grpc and not env.use_apisix_base then
-        io_stderr:write("'use_grpc: true' in the etcd configuration " ..
-                        "is not supported by vanilla OpenResty\n")
-    end
-
-    local use_grpc = etcd_conf.use_grpc and env.use_apisix_base
-    if use_grpc then
-        local ok, err = util.execute_cmd("command -v etcdctl")
-        if not ok then
-            util.die("can't find etcdctl: ", err, "\n")
-        end
-    end
-
     local etcd_ok = false
     for index, host in ipairs(etcd_healthy_hosts) do
-        if prepare_dirs(use_grpc, yaml_conf, args, index, host, host_count) then
+        if prepare_dirs(yaml_conf, args, index, host, host_count) then
             etcd_ok = true
             break
         end

@@ -376,6 +376,41 @@ local function reload_plugins(data, event, source, pid)
 end
 
 
+local function schema_validate()
+    local uri_segs = core.utils.split_uri(ngx.var.uri)
+    core.log.info("uri: ", core.json.delay_encode(uri_segs))
+
+    local seg_res = uri_segs[6]
+    local resource = resources[seg_res]
+    if not resource then
+        core.response.exit(404, {error_msg = "Unsupported resource type: ".. seg_res})
+    end
+
+    local req_body, err = core.request.get_body(MAX_REQ_BODY)
+    if err then
+        core.log.error("failed to read request body: ", err)
+        core.response.exit(400, {error_msg = "invalid request body: " .. err})
+    end
+
+    if req_body then
+        local data, err = core.json.decode(req_body)
+        if err then
+            core.log.error("invalid request body: ", req_body, " err: ", err)
+            core.response.exit(400, {error_msg = "invalid request body: " .. err,
+                                     req_body = req_body})
+        end
+
+        req_body = data
+    end
+
+    local ok, err = core.schema.check(resource.schema, req_body)
+    if ok then
+        core.response.exit(200)
+    end
+    core.response.exit(400, {error_msg = err})
+end
+
+
 local uri_route = {
     {
         paths = [[/apisix/admin]],
@@ -391,6 +426,11 @@ local uri_route = {
         paths = [[/apisix/admin/plugins/list]],
         methods = {"GET"},
         handler = get_plugins_list,
+    },
+    {
+        paths = [[/apisix/admin/schema/validate/*]],
+        methods = {"POST"},
+        handler = schema_validate,
     },
     {
         paths = reload_event,

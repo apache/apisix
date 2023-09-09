@@ -105,6 +105,19 @@ deployment:
 
 首先查找环境变量 `ADMIN_KEY`，如果该环境变量不存在，它将使用 `edd1c9f034335f136f87ad84b625c8f1` 作为默认值。
 
+您还可以在 yaml 键中指定环境变量。这在 `standalone` 模式 中特别有用，您可以在其中指定上游节点，如下所示：
+
+```yaml title="./conf/apisix.yaml"
+routes:
+  -
+    uri: "/test"
+    upstream:
+      nodes:
+        "${{HOST_IP}}:${{PORT}}": 1
+      type: roundrobin
+#END
+```
+
 ### 强制删除 {#force-delete}
 
 默认情况下，Admin API 会检查资源间的引用关系，将会拒绝删除正在使用中的资源。
@@ -929,7 +942,6 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 - 设为 `header` 时，`key` 为必传参数，其值为自定义的 Header name，即 "http\_`key`"。
 - 设为 `cookie` 时，`key` 为必传参数，其值为自定义的 cookie name，即 "cookie\_`key`"。请注意 cookie name 是**区分大小写字母**的。例如：`cookie_x_foo` 与 `cookie_X_Foo` 表示不同的 `cookie`。
 - 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_name`。
-- 如果指定的 `hash_on` 和 `key` 获取不到值时，使用默认值：`remote_addr`。
 
 以下特性需要 APISIX 运行于 [APISIX-Base](./FAQ.md#如何构建-APISIX-Base-环境？)：
 
@@ -1202,6 +1214,7 @@ SSL 资源请求地址：/apisix/admin/ssls/{id}
 | update_time | 否   | 辅助           | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                          | 1602883670                                       |
 | type        | 否   | 辅助           | 标识证书的类型，默认值为 `server`。                                                                     | `client` 表示证书是客户端证书，APISIX 访问上游时使用；`server` 表示证书是服务端证书，APISIX 验证客户端请求时使用。     |
 | status      | 否   | 辅助           | 当设置为 `1` 时，启用此 SSL，默认值为 `1`。                                                               | `1` 表示启用，`0` 表示禁用                       |
+| ssl_protocols | 否    | tls 协议字符串数组               | 用于控制服务器与客户端之间使用的 SSL/TLS 协议版本。更多的配置示例，请参考[SSL 协议](./ssl-protocol.md)。                                  |                                                  |
 
 SSL 对象 JSON 配置示例：
 
@@ -1362,6 +1375,16 @@ Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 | GET         | /apisix/admin/plugins/{plugin_name} | 无         | 获取资源。      |
 | GET         | /apisix/admin/plugins?all=true      | 无         | 获取所有插件的所有属性。 |
 | GET         | /apisix/admin/plugins?all=true&subsystem=stream| 无 | 获取所有 Stream 插件的属性。|
+| GET         | /apisix/admin/plugins?all=true&subsystem=http| 无 | 获取所有 HTTP 插件的属性。|
+| PUT         | /apisix/admin/plugins/reload        | 无         | 根据代码中所做的更改重新加载插件。 |
+| GET         | apisix/admin/plugins/{plugin_name}?subsystem=stream         | 无         | 获取指定 Stream 插件的属性。 |
+| GET         | apisix/admin/plugins/{plugin_name}?subsystem=http         | 无         | 获取指定 HTTP 插件的属性。 |
+
+:::caution
+
+获取所有插件属性的接口 `/apisix/admin/plugins?all=true` 将很快被弃用。
+
+:::
 
 ### 使用示例 {#plugin-example}
 

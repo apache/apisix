@@ -38,9 +38,6 @@ script() {
     mkdir tmp && cd tmp
     cp -r ../utils ./
 
-    # install rust
-    install_rust
-
     # install APISIX by luarocks
     luarocks install $APISIX_MAIN > build.log 2>&1 || (cat build.log && exit 1)
     cp ../bin/apisix /usr/local/bin/apisix
@@ -52,6 +49,13 @@ script() {
     sudo PATH=$PATH apisix init
     sudo PATH=$PATH apisix start
     sudo PATH=$PATH apisix quit
+    for i in {1..10}
+    do
+        if [ ! -f /usr/local/apisix/logs/nginx.pid ];then
+            break
+        fi
+        sleep 0.3
+    done
     sudo PATH=$PATH apisix start
     sudo PATH=$PATH apisix stop
 
