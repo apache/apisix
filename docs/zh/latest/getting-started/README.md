@@ -24,7 +24,7 @@ Apache APISIX 是 Apache 软件基金会下的[顶级项目](https://projects.ap
 
 ## 安装 APISIX
 
-:::注意
+:::caution 警告
 
 为了提供更好的体验，管理 API 默认无需授权，请在生产环境中打开授权开关。
 

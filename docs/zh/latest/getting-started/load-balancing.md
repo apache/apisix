@@ -83,7 +83,7 @@ The two services respond with different data.
 }
 ```
 
-我们生成100个请求来测试负载均衡的效果：
+我们生成 100 个请求来测试负载均衡的效果：
 
 ```shell
 hc=$(seq 100 | xargs -i curl "http://127.0.0.1:9080/headers" -sL | grep "httpbin" | wc -l); echo httpbin.org: $hc, mock.api7.ai: $((100 - $hc))
