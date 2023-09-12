@@ -362,40 +362,6 @@ local function readdir(etcd_cli, key, formatter)
 end
 
 
-local function grpc_waitdir(self, etcd_cli, key, modified_index, timeout)
-    local watching_stream = self.watching_stream
-    if not watching_stream then
-        local attr = {}
-        attr.start_revision = modified_index
-        local opts = {}
-        opts.timeout = timeout
-
-        local st, err = etcd_cli:create_grpc_watch_stream(key, attr, opts)
-        if not st then
-            log.error("create watch stream failed: ", err)
-            return nil, err
-        end
-
-        log.info("create watch stream for key: ", key, ", modified_index: ", modified_index)
-
-        self.watching_stream = st
-        watching_stream = st
-    end
-
-    return etcd_cli:read_grpc_watch_stream(watching_stream)
-end
-
-
-local function flush_watching_streams(self)
-    local etcd_cli = self.etcd_cli
-    if not etcd_cli.use_grpc then
-        return
-    end
-
-    self.watching_stream = nil
-end
-
-
 local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
     if not watch_ctx.idx[key] then
         watch_ctx.idx[key] = 1
@@ -470,12 +436,7 @@ local function waitdir(self)
         return nil, "not inited"
     end
 
-    local res, err
-    if etcd_cli.use_grpc then
-        res, err = grpc_waitdir(self, etcd_cli, key, modified_index, timeout)
-    else
-        res, err = http_waitdir(self, etcd_cli, key, modified_index, timeout)
-    end
+    local res, err = http_waitdir(self, etcd_cli, key, modified_index, timeout)
 
     if not res then
         -- log.error("failed to get key from etcd: ", err)
@@ -620,13 +581,9 @@ local function sync_data(self)
         return nil, "missing 'key' arguments"
     end
 
-    if not self.etcd_cli.use_grpc then
-        init_watch_ctx(self.key)
-    end
+    init_watch_ctx(self.key)
 
     if self.need_reload then
-        flush_watching_streams(self)
-
         local res, err = readdir(self.etcd_cli, self.key)
         if not res then
             return false, err
@@ -916,7 +873,6 @@ local function _automatic_fetch(premature, self)
     end
 
     if not exiting() and self.running then
-        flush_watching_streams(self)
         ngx_timer_at(0, _automatic_fetch, self)
     end
 end
@@ -1118,10 +1074,6 @@ function _M.init()
         return true
     end
 
-    if local_conf.etcd.use_grpc then
-        return true
-    end
-
     -- don't go through proxy during start because the proxy is not available
     local etcd_cli, prefix, err = etcd_apisix.new_without_proxy()
     if not etcd_cli then
@@ -1145,21 +1097,6 @@ function _M.init_worker()
 
     if table.try_read_attr(local_conf, "apisix", "disable_sync_configuration_during_start") then
         return true
-    end
-
-    if not local_conf.etcd.use_grpc then
-        return true
-    end
-
-    -- don't go through proxy during start because the proxy is not available
-    local etcd_cli, prefix, err = etcd_apisix.new_without_proxy()
-    if not etcd_cli then
-        return nil, "failed to start a etcd instance: " .. err
-    end
-
-    local res, err = readdir(etcd_cli, prefix, create_formatter(prefix))
-    if not res then
-        return nil, err
     end
 
     return true

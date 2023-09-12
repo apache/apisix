@@ -1,5 +1,5 @@
 {
-  "version": "3.4.0",
+  "version": "3.5.0",
   "sidebar": [
     {
       "type": "doc",
@@ -215,6 +215,10 @@
         {
           "type": "doc",
           "id": "building-apisix"
+        },
+        {
+          "type": "doc",
+          "id": "support-fips-in-apisix"
         },
         {
           "type": "doc",

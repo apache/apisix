@@ -148,14 +148,6 @@ help:
 	fi
 	@echo
 
-### check-rust : check if Rust is installed in the environment
-.PHONY: check-rust
-check-rust:
-	@if ! [ $(shell command -v rustc) ]; then \
-		echo "ERROR: Rust is not installed. Please install Rust before continuing." >&2; \
-		exit 1; \
-	fi;
-
 
 ### deps : Installing dependencies
 .PHONY: deps
