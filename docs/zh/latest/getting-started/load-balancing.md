@@ -53,7 +53,6 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
 ## 验证
 
 这两个服务返回不同的数据。
-The two services respond with different data.
 
 `httpbin.org` 返回：
 
