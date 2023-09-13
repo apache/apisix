@@ -84,7 +84,7 @@ function _M.create_radixtree_uri_router(routes, uri_routes, with_parameter)
                 handler = function (api_ctx, match_opts)
                     api_ctx.matched_params = nil
                     api_ctx.matched_route = route
-                    api_ctx.curr_req_matched = match_opts.matched
+                    api_ctx.curr_req_matched = core.table.deepcopy(match_opts.matched)
                 end
             })
 
@@ -103,15 +103,15 @@ function _M.create_radixtree_uri_router(routes, uri_routes, with_parameter)
 end
 
 
-function _M.match_uri(uri_router, match_opts, api_ctx)
-    core.table.clear(match_opts)
+function _M.match_uri(uri_router, api_ctx)
+    local match_opts = core.tablepool.fetch("route_match_opts", 0, 16)
     match_opts.method = api_ctx.var.request_method
     match_opts.host = api_ctx.var.host
     match_opts.remote_addr = api_ctx.var.remote_addr
     match_opts.vars = api_ctx.var
-    match_opts.matched = core.tablepool.fetch("matched_route_record", 0, 4)
 
     local ok = uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx, match_opts)
+    core.tablepool.release("route_match_opts", match_opts)
     return ok
 end
 

@@ -78,10 +78,11 @@ local function push_host_router(route, host_routes, only_uri_routes)
         vars = route.value.vars,
         filter_fun = filter_fun,
         handler = function (api_ctx, match_opts)
+            local matched = core.table.deepcopy(match_opts.matched)
             api_ctx.matched_params = nil
             api_ctx.matched_route = route
-            api_ctx.curr_req_matched = match_opts.matched
-            api_ctx.real_curr_req_matched_path = match_opts.matched._path
+            api_ctx.curr_req_matched = matched
+            api_ctx.real_curr_req_matched_path = matched._path
         end
     }
 
@@ -142,8 +143,6 @@ local function create_radixtree_router(routes)
     return true
 end
 
-
-    local match_opts = {}
 function _M.match(api_ctx)
     local user_routes = _M.user_routes
     local _, service_version = get_services()
@@ -162,12 +161,11 @@ end
 function _M.matching(api_ctx)
     core.log.info("route match mode: radixtree_host_uri")
 
-    core.table.clear(match_opts)
+    local match_opts = core.tablepool.fetch("route_match_opts", 0, 16)
     match_opts.method = api_ctx.var.request_method
     match_opts.remote_addr = api_ctx.var.remote_addr
     match_opts.vars = api_ctx.var
     match_opts.host = api_ctx.var.host
-    match_opts.matched = core.tablepool.fetch("matched_route_record", 0, 4)
 
     if host_router then
         local host_uri = api_ctx.var.host
@@ -181,11 +179,13 @@ function _M.matching(api_ctx)
                 api_ctx.curr_req_matched._host = api_ctx.real_curr_req_matched_host:reverse()
                 api_ctx.real_curr_req_matched_host = nil
             end
+            core.tablepool.release("route_match_opts", match_opts)
             return true
         end
     end
 
     local ok = only_uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx, match_opts)
+    core.tablepool.release("route_match_opts", match_opts)
     return ok
 end
 
