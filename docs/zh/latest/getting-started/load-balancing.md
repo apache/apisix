@@ -43,7 +43,7 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
 
 如果路由创建成功，你将会收到返回 `HTTP/1.1 201 OK`。
 
-:::描述
+:::info
 
 1. 将 `pass_host` 字段设置为 `node`，将传递请求头给上游。
 2. 将 `scheme` 字段设置为 `https`，向上游发送请求时将启用 TLS。

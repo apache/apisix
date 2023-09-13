@@ -15,19 +15,19 @@ API 网关主要作用是连接 API 消费者和提供者。出于安全考虑�
 
 APISIX 拥有灵活的插件扩展系统，目前有很多可用于用户身份验证和授权的插件。例如：
 
-- [Key Authentication](https://apisix.apache.org/docs/apisix/plugins/key-auth/)
-- [Basic Authentication](https://apisix.apache.org/docs/apisix/plugins/basic-auth/)
-- [JSON Web Token (JWT) Authentication](https://apisix.apache.org/docs/apisix/plugins/jwt-auth/)
-- [Keycloak](https://apisix.apache.org/docs/apisix/plugins/authz-keycloak/)
-- [Casdoor](https://apisix.apache.org/docs/apisix/plugins/authz-casdoor/)
-- [Wolf RBAC](https://apisix.apache.org/docs/apisix/plugins/wolf-rbac/)
-- [OpenID Connect](https://apisix.apache.org/docs/apisix/plugins/openid-connect/)
-- [Central Authentication Service (CAS)](https://apisix.apache.org/docs/apisix/plugins/cas-auth/)
-- [HMAC](https://apisix.apache.org/docs/apisix/plugins/hmac-auth/)
-- [Casbin](https://apisix.apache.org/docs/apisix/plugins/authz-casbin/)
-- [LDAP](https://apisix.apache.org/docs/apisix/plugins/ldap-auth/)
-- [Open Policy Agent (OPA)](https://apisix.apache.org/docs/apisix/plugins/opa/)
-- [Forward Authentication](https://apisix.apache.org/docs/apisix/plugins/forward-auth/)
+- [Key Authentication](https://apisix.apache.org/zh/docs/apisix/plugins/key-auth/)
+- [Basic Authentication](https://apisix.apache.org/zh/docs/apisix/plugins/basic-auth/)
+- [JSON Web Token (JWT) Authentication](https://apisix.apache.org/zh/docs/apisix/plugins/jwt-auth/)
+- [Keycloak](https://apisix.apache.org/zh/docs/apisix/plugins/authz-keycloak/)
+- [Casdoor](https://apisix.apache.org/zh/docs/apisix/plugins/authz-casdoor/)
+- [Wolf RBAC](https://apisix.apache.org/zh/docs/apisix/plugins/wolf-rbac/)
+- [OpenID Connect](https://apisix.apache.org/zh/docs/apisix/plugins/openid-connect/)
+- [Central Authentication Service (CAS)](https://apisix.apache.org/zh/docs/apisix/plugins/cas-auth/)
+- [HMAC](https://apisix.apache.org/zh/docs/apisix/plugins/hmac-auth/)
+- [Casbin](https://apisix.apache.org/zh/docs/apisix/plugins/authz-casbin/)
+- [LDAP](https://apisix.apache.org/zh/docs/apisix/plugins/ldap-auth/)
+- [Open Policy Agent (OPA)](https://apisix.apache.org/zh/docs/apisix/plugins/opa/)
+- [Forward Authentication](https://apisix.apache.org/zh/docs/apisix/plugins/forward-auth/)
 
 本教程中，你将创建一个带有 _密钥验证_ 插件的 _消费者_，并学习如何启用和停用身份验证插件。
 
