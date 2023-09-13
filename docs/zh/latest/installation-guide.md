@@ -31,7 +31,7 @@ import TabItem from '@theme/TabItem';
 
 本文将介绍如何在你的环境中安装并运行 APISIX。
 
-关于如何快速运行 Apache APISIX，请参考[入门指南](./getting-started.md)。
+关于如何快速运行 Apache APISIX，请参考[入门指南](./getting-started/README.md)。
 
 ## 安装 APISIX
 
@@ -337,4 +337,4 @@ systemctl stop apisix
 
 如果你是通过其他方法安装的 APISIX，可以参考[配置文件模板](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service)进行修改，并将其添加在 `/usr/lib/systemd/system/apisix.service` 路径下。
 
-如需了解 APISIX 后续使用，请参考[入门指南](./getting-started.md)获取更多信息。
+如需了解 APISIX 后续使用，请参考[入门指南](./getting-started/README.md)获取更多信息。
