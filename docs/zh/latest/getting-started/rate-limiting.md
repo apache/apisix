@@ -92,9 +92,6 @@ count=$(seq 100 | xargs -i curl "http://127.0.0.1:9080/ip" -I -sL | grep "503" |
 
 ## 更多
 
-[//]: <TODO: Add the link to matching rules configuration>
-[//]: <TODO: Add the link to cluster-level rate limiting>
-[//]: <TODO: Add the link to APISIX variables>
 你可以使用 APISIX 的变量来配置限速插件的规则，比如 `$host` 和 `$uri`。此外，APISIX 也支持使用 Redis 集群进行限速配置，即通过 Redis 来进行计数。
 
 ## 下一步

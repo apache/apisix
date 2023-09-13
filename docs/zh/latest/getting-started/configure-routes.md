@@ -36,8 +36,6 @@ Upstream（也称之为上游）是一组具备相同功能的节点集合，它
 
 通过下面的命令，你将创建一个路由，把请求`http://127.0.0.1:9080/ip` 转发至 [httpbin.org/ip](http://httpbin.org/ip)：
 
-[//]: <TODO: Add the link to the authorization of Admin API>
-
 ```shell
 curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
 {

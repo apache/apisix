@@ -55,7 +55,7 @@ Key Authentication（也称之为密钥验证）是一个相对比较简单但�
 
 创建一个名为 `tom` 的消费者，并启用 `key-auth` 插件，密钥设置为 `secret-key`。所有携带密钥 `secret-key` 的请求都会被识别为消费者 `tom`。
 
-:::caution 警告
+:::caution
 
 生产环境请使用复杂的密钥。
 
