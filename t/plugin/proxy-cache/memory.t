@@ -664,7 +664,7 @@ Cache-Control: only-if-cached
 
 
 
-=== TEST 36: configure plugin without memory_cache zone
+=== TEST 36: configure plugin without memory_cache zone for cache_strategy = memory
 --- config
        location /t {
            content_by_lua_block {
@@ -704,4 +704,3 @@ GET /t
 --- response_body_like
 .*err: invalid or empty cache_zone for cache_strategy: memory.*
 --- error_code: 400
-
