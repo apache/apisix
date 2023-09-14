@@ -52,7 +52,7 @@ routes:
       - test.com
     plugins:
       echo:
-        body: "test server\n"
+        body: "test server"
     priority: 20
     id: "graphql2"
     upstream_id: "invalid"
@@ -62,7 +62,7 @@ routes:
       - test2.com
     plugins:
       echo:
-        body: "test2\n"
+        body: "test2"
     priority: 20
     id: "graphql3"
     upstream_id: "invalid"
