@@ -56,7 +56,7 @@ routes:
     priority: 20
     id: "graphql2"
     upstream_id: "invalid"
-  
+
   - uri: "/hello"
     hosts:
       - test2.com
