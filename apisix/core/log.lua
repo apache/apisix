@@ -63,7 +63,7 @@ end
 
 local function get_trace_id()
     if ngx_get_phase() ~= "init" and ngx.config.subsystem == "http"  then
-        return ngx.ctx.trace_id
+        return ngx.ctx.trace_id or ''
     end
     return ''
 end
