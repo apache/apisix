@@ -61,6 +61,12 @@ local function update_log_level()
     end
 end
 
+local function get_trace_id()
+    if ngx_get_phase() ~= "init" and ngx.config.subsystem == "http"  then
+        return ngx.ctx.trace_id
+    end
+    return ''
+end
 
 function _M.new(prefix)
     local m = {version = _M.version}
@@ -91,6 +97,7 @@ function _M.new(prefix)
 end
 
 
+
 setmetatable(_M, {__index = function(self, cmd)
     local log_level = log_levels[cmd]
     local method
@@ -101,7 +108,7 @@ setmetatable(_M, {__index = function(self, cmd)
         method = do_nothing
     else
         method = function(...)
-            return ngx_log(log_level, ...)
+            return ngx_log(log_level, get_trace_id(), " ", ...)
         end
     end
 

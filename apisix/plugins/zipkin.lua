@@ -23,6 +23,7 @@ local ngx = ngx
 local ngx_re = require("ngx.re")
 local pairs = pairs
 local tonumber = tonumber
+local to_hex = require "resty.string".to_hex
 
 local plugin_name = "zipkin"
 local ZIPKIN_SPAN_VER_1 = 1
@@ -219,6 +220,10 @@ function _M.rewrite(plugin_conf, ctx)
         ctx.opentracing.proxy_span = request_span:start_child_span("apisix.proxy",
                                                                    start_timestamp)
     end
+    -- To set the traceId for the purpose of conveniently retrieving it when logging with core.log,
+    -- it will be automatically injected into the text.
+    local trace_id = request_span:context().trace_id
+    ngx.ctx.trace_id = to_hex(trace_id)
 end
 
 function _M.access(conf, ctx)
