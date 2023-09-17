@@ -191,7 +191,7 @@ local function set_upstream(upstream_info, ctx)
     end
     core.log.info("upstream_key: ", upstream_key)
     upstream.set(ctx, upstream_key, ctx.conf_version, up_conf)
-
+    upstream.set_scheme(ctx, up_conf)
     return
 end
 
