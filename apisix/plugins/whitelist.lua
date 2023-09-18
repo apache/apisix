@@ -468,6 +468,10 @@ function _M.init()
             network == "starknet-testnet" or network == "staging-starknet-testnet" then
             _M.free_list[network] = merge_methods(starknet_methods)
             _M.paid_list[network] = _M.free_list[network]
+        elseif string.find(network, "zetachain") then
+            -- TODO: passed now, but need to limit access to some methods
+            -- ! dont' access free_list and paid_list in this case
+            -- passed
         else
             error("unknown network: " .. network)
         end
