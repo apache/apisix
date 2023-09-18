@@ -63,7 +63,10 @@ end
 
 local function get_trace_id()
     if ngx_get_phase() ~= "init" and ngx.config.subsystem == "http"  then
-        return ngx.ctx.trace_id or ''
+        local trace_id = ngx.ctx.trace_id
+        if trace_id then
+            return trace_id .. " "
+        end
     end
     return ''
 end
@@ -108,7 +111,7 @@ setmetatable(_M, {__index = function(self, cmd)
         method = do_nothing
     else
         method = function(...)
-            return ngx_log(log_level, get_trace_id(), " ", ...)
+            return ngx_log(log_level, get_trace_id(), ...)
         end
     end
 
