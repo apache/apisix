@@ -109,8 +109,9 @@ apisix:
                                 # Disabled by default because it renders Perfect Forward Secrecy (FPS)
                                 # useless. See https://github.com/mozilla/server-side-tls/issues/135.
 
-    key_encrypt_salt:           # Set the encryption key for AES-128-CBC. It should be a
-      - edd1c9f0985e76a2        # hexadecimal string of length 16.
+    key_encrypt_salt:           # This field is only used to encrypt the private key of SSL.
+      - edd1c9f0985e76a2        # Set the encryption key for AES-128-CBC. It should be a
+                                # hexadecimal string of length 16.
                                 # If not set, APISIX saves the original data into etcd.
                                 # CAUTION: If you would like to update the key, add the new key as the
                                 # first item in the array and keep the older keys below the newly added
@@ -299,7 +300,9 @@ nginx_config:                     # Config for render the template to generate n
 #      - "http://${username}:${password}@${host1}:${port1}"
 #    prefix: "/nacos/v1/"
 #    fetch_interval: 30    # Default 30s
-#    weight: 100           # Default 100
+# `weight` is the `default_weight` that will be attached to each discovered node that
+# doesn't have a weight explicitly provided in nacos results
+#    weight: 100           # Default 100.
 #    timeout:
 #      connect: 2000       # Default 2000ms
 #      send: 2000          # Default 2000ms
@@ -616,29 +619,11 @@ deployment:                    # Deployment configurations
   role_traditional:
     config_provider: etcd      # Set the configuration center.
 
-    # role_data_plane:         # Set data plane details if role is data_plane.
-    #   config_provider: control_plane          # Set the configuration center: control_plane, or yaml.
-    #   control_plane:                          # Set control plane details if config_provider is control_plane.
-    #     host:                                 # Set the address of control plane.
-    #       - https://${control_plane_IP}:9280
-    #     prefix: /apisix                       # Set etcd prefix.
-    #     timeout: 30                           # Set timeout in seconds.
-    #   certs:
-    #     cert: /path/to/client.crt           # Set path to the client certificate.
-    #     cert_key: /path/to/client.key       # Set path to the client key.
-    #     trusted_ca_cert: /path/to/ca.crt    # Set path to the trusted CA certificate.
+  #role_data_plane:            # Set data plane details if role is data_plane.
+  #  config_provider: etcd     # Set the configuration center: etcd, xds, or yaml.
 
-    # role_control_plane:         # Set control plane details if role is control_plane.
-    #   config_provider: etcd     # Set the configuration center.
-    #   conf_server:
-    #     listen: 0.0.0.0:9280                # Set the address of the conf server.
-    #     cert: /path/to/server.crt           # Set path to the server certificate.
-    #     cert_key: /path/to/server.key       # Set path to the server key.
-    #     client_ca_cert: /path/to/ca.crt     # Set path to the trusted CA certificate.
-    # certs:
-    #   cert: /path/to/client.crt             # Set path to the client certificate.
-    #   cert_key: /path/to/client.key         # Set path to the client key.
-    #   trusted_ca_cert: /path/to/ca.crt      # Set path to the trusted CA certificate.
+  #role_control_plane:         # Set control plane details if role is control_plane.
+  #  config_provider: etcd     # Set the configuration center.
 
   admin:                       # Admin API
     admin_key_required: true   # Enable Admin API authentication by default for security.
@@ -673,9 +658,7 @@ deployment:                    # Deployment configurations
     host:                         # Set etcd address(es) in the same etcd cluster.
       - "http://127.0.0.1:2379"   # If TLS is enabled for etcd, use https://127.0.0.1:2379.
     prefix: /apisix               # Set etcd prefix.
-    use_grpc: false               # Use gRPC (experimental) for etcd configuration sync.
     timeout: 30                   # Set timeout in seconds.
-                                  # Set a higher timeout (e.g. an hour) if `use_grpc` is true.
     # resync_delay: 5             # Set resync time in seconds after a sync failure.
                                   # The actual resync time would be resync_delay plus 50% random jitter.
     # health_check_timeout: 10    # Set timeout in seconds for etcd health check.

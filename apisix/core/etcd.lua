@@ -28,23 +28,13 @@ local clone_tab         = require("table.clone")
 local health_check      = require("resty.etcd.health_check")
 local pl_path           = require("pl.path")
 local ipairs            = ipairs
-local pcall             = pcall
 local setmetatable      = setmetatable
 local string            = string
 local tonumber          = tonumber
-local ngx_config_prefix = ngx.config.prefix()
-local ngx_socket_tcp    = ngx.socket.tcp
 local ngx_get_phase     = ngx.get_phase
 
 
-local is_http = ngx.config.subsystem == "http"
 local _M = {}
-
-
-local function has_mtls_support()
-    local s = ngx_socket_tcp()
-    return s.tlshandshake ~= nil
-end
 
 
 local function _new(etcd_conf)
@@ -69,17 +59,6 @@ local function _new(etcd_conf)
 
         if etcd_conf.tls.sni then
             etcd_conf.sni = etcd_conf.tls.sni
-        end
-    end
-
-    if etcd_conf.use_grpc then
-        if ngx_get_phase() == "init" then
-            etcd_conf.use_grpc = false
-        else
-            local ok = pcall(require, "resty.grpc")
-            if not ok then
-                etcd_conf.use_grpc = false
-            end
         end
     end
 
@@ -129,64 +108,7 @@ local function new()
         etcd_conf.trusted_ca = local_conf.apisix.ssl.ssl_trusted_certificate
     end
 
-    local proxy_by_conf_server = false
-
-    if local_conf.deployment then
-        if local_conf.deployment.role == "traditional"
-            -- we proxy the etcd requests in traditional mode so we can test the CP's behavior in
-            -- daily development. However, a stream proxy can't be the CP.
-            -- Hence, generate a HTTP conf server to proxy etcd requests in stream proxy is
-            -- unnecessary and inefficient.
-            and is_http
-        then
-            local sock_prefix = ngx_config_prefix
-            etcd_conf.unix_socket_proxy =
-                "unix:" .. sock_prefix .. "/conf/config_listen.sock"
-            etcd_conf.host = {"http://127.0.0.1:2379"}
-            proxy_by_conf_server = true
-
-        elseif local_conf.deployment.role == "control_plane" then
-            local addr = local_conf.deployment.role_control_plane.conf_server.listen
-            etcd_conf.host = {"https://" .. addr}
-            etcd_conf.tls = {
-                verify = false,
-            }
-
-            if has_mtls_support() and local_conf.deployment.certs.cert then
-                local cert = local_conf.deployment.certs.cert
-                local cert_key = local_conf.deployment.certs.cert_key
-                etcd_conf.tls.cert = cert
-                etcd_conf.tls.key = cert_key
-            end
-
-            proxy_by_conf_server = true
-
-        elseif local_conf.deployment.role == "data_plane" then
-            if has_mtls_support() and local_conf.deployment.certs.cert then
-                local cert = local_conf.deployment.certs.cert
-                local cert_key = local_conf.deployment.certs.cert_key
-
-                if not etcd_conf.tls then
-                    etcd_conf.tls = {}
-                end
-
-                etcd_conf.tls.cert = cert
-                etcd_conf.tls.key = cert_key
-            end
-        end
-
-        if local_conf.deployment.certs and local_conf.deployment.certs.trusted_ca_cert then
-            etcd_conf.trusted_ca = local_conf.deployment.certs.trusted_ca_cert
-        end
-    end
-
-    -- if an unhealthy etcd node is selected in a single admin read/write etcd operation,
-    -- the retry mechanism for health check can select another healthy etcd node
-    -- to complete the read/write etcd operation.
-    if proxy_by_conf_server then
-        -- health check is done in conf server
-        health_check.disable()
-    elseif not health_check.conf then
+    if not health_check.conf then
         health_check.init({
             max_fails = 1,
             retry = true,
@@ -347,10 +269,6 @@ do
                 tmp_etcd_cli, prefix, err = new_without_proxy()
                 if not tmp_etcd_cli then
                     return nil, nil, err
-                end
-
-                if tmp_etcd_cli.use_grpc then
-                    etcd_cli_init_phase = tmp_etcd_cli
                 end
 
                 return tmp_etcd_cli, prefix

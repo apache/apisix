@@ -1,9 +1,16 @@
 {
-  "version": "3.4.0",
+  "version": "3.5.0",
   "sidebar": [
     {
-      "type": "doc",
-      "id": "getting-started"
+      "type": "category",
+      "label": "Getting Started",
+      "items": [
+        "getting-started/README",
+        "getting-started/configure-routes",
+        "getting-started/load-balancing",
+        "getting-started/key-authentication",
+        "getting-started/rate-limiting"
+      ]
     },
     {
       "type": "doc",
@@ -215,6 +222,10 @@
         {
           "type": "doc",
           "id": "building-apisix"
+        },
+        {
+          "type": "doc",
+          "id": "support-fips-in-apisix"
         },
         {
           "type": "doc",
