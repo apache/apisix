@@ -330,7 +330,7 @@ GET /t
 
 
 
-=== TEST 11: additional properties is valid
+=== TEST 11: additional properties is invalid
 --- config
     location /t {
         content_by_lua_block {
@@ -354,8 +354,9 @@ GET /t
     }
 --- request
 GET /t
---- response_body
-passed
+--- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"invalid configuration: additional properties forbidden, found .*"\}/
 
 
 
