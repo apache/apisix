@@ -105,7 +105,7 @@ Mainland China users can use `luarocks.cn` as the LuaRocks server. You can use t
 make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 ```
 
-If this does not solve your problem, you can try getting a detailed log by using the `--verbose` flag to diagnose the problem.
+If this does not solve your problem, you can try getting a detailed log by using the `--verbose` or `-v` flag to diagnose the problem.
 
 ## How do I build the APISIX-Base environment?
 
@@ -732,6 +732,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
         }
     }
 }'
+```
 
 ## How does APISIX configure ETCD with authentication?
 

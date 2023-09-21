@@ -18,6 +18,7 @@ local require         = require
 local apisix          = require("apisix")
 local core            = require("apisix.core")
 local router          = require("apisix.router")
+local get_global_rules = require("apisix.global_rules").global_rules
 local event           = require("apisix.core.event")
 local balancer        = require("ngx.balancer")
 local ngx             = ngx
@@ -229,8 +230,8 @@ local function routes_analyze(routes)
         end
     end
 
-    local global_rules_flag = router.global_rules and router.global_rules.values
-                              and #router.global_rules.values ~= 0
+    local global_rules, _ = get_global_rules()
+    local global_rules_flag = global_rules and #global_rules ~= 0
 
     if route_flags["vars"] or route_flags["filter_func"]
          or route_flags["remote_addr"]

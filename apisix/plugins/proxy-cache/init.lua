@@ -25,6 +25,7 @@ local plugin_name = "proxy-cache"
 
 local STRATEGY_DISK = "disk"
 local STRATEGY_MEMORY = "memory"
+local DEFAULT_CACHE_ZONE = "disk_cache_one"
 
 local schema = {
     type = "object",
@@ -33,7 +34,7 @@ local schema = {
             type = "string",
             minLength = 1,
             maxLength = 100,
-            default = "disk_cache_one",
+            default = DEFAULT_CACHE_ZONE,
         },
         cache_strategy = {
             type = "string",
@@ -108,7 +109,7 @@ local schema = {
 
 local _M = {
     version = 0.2,
-    priority = 1009,
+    priority = 1085,
     name = plugin_name,
     schema = schema,
 }
@@ -129,14 +130,23 @@ function _M.check_schema(conf)
     local found = false
     local local_conf = core.config.local_conf()
     if local_conf.apisix.proxy_cache then
+        local err = "cache_zone " .. conf.cache_zone .. " not found"
         for _, cache in ipairs(local_conf.apisix.proxy_cache.zones) do
+            -- cache_zone passed in plugin config matched one of the proxy_cache zones
             if cache.name == conf.cache_zone then
-                found = true
+                -- check for the mismatch between cache_strategy and corresponding cache zone
+                if (conf.cache_strategy == STRATEGY_MEMORY and cache.disk_path) or
+                (conf.cache_strategy == STRATEGY_DISK and not cache.disk_path) then
+                    err =  "invalid or empty cache_zone for cache_strategy: "..conf.cache_strategy
+                else
+                    found = true
+                end
+                break
             end
         end
 
         if found == false then
-            return false, "cache_zone " .. conf.cache_zone .. " not found"
+            return false, err
         end
     end
 

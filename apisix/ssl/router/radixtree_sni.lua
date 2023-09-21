@@ -18,8 +18,10 @@ local get_request      = require("resty.core.base").get_request
 local router_new       = require("apisix.utils.router").new
 local core             = require("apisix.core")
 local apisix_ssl       = require("apisix.ssl")
+local secret           = require("apisix.secret")
 local ngx_ssl          = require("ngx.ssl")
 local config_util      = require("apisix.core.config_util")
+local ngx              = ngx
 local ipairs           = ipairs
 local type             = type
 local error            = error
@@ -183,6 +185,7 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
         for _, msni in ipairs(api_ctx.matched_sni) do
             if sni_rev == msni or not str_find(sni_rev, ".", #msni) then
                 matched = true
+                break
             end
         end
         if not matched then
@@ -203,16 +206,40 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
         end
     end
 
-    local matched_ssl = api_ctx.matched_ssl
-    core.log.info("debug - matched: ", core.json.delay_encode(matched_ssl, true))
+    core.log.info("debug - matched: ", core.json.delay_encode(api_ctx.matched_ssl, true))
 
     if match_only then
         return true
     end
 
+    ok, err = _M.set(api_ctx.matched_ssl, sni)
+    if not ok then
+        return false, err
+    end
+
+    return true
+end
+
+
+function _M.set(matched_ssl, sni)
+    if not matched_ssl then
+        return false, "failed to match ssl certificate"
+    end
+    local ok, err
+    if not sni then
+        sni, err = apisix_ssl.server_name()
+        if type(sni) ~= "string" then
+            local advise = "please check if the client requests via IP or uses an outdated " ..
+                           "protocol. If you need to report an issue, " ..
+                           "provide a packet capture file of the TLS handshake."
+            return false, "failed to find SNI: " .. (err or advise)
+        end
+    end
     ngx_ssl.clear_certs()
 
-    ok, err = _M.set_cert_and_key(sni, matched_ssl.value)
+    local new_ssl_value = secret.fetch_secrets(matched_ssl.value) or matched_ssl.value
+
+    ok, err = _M.set_cert_and_key(sni, new_ssl_value)
     if not ok then
         return false, err
     end
@@ -226,7 +253,11 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
                 return false, "failed to parse client cert: " .. err
             end
 
-            local ok, err = ngx_ssl.verify_client(parsed_cert, depth)
+            local reject_in_handshake =
+                (ngx.config.subsystem == "stream") or
+                (matched_ssl.value.client.skip_mtls_uri_regex == nil)
+            local ok, err = ngx_ssl.verify_client(parsed_cert, depth,
+                reject_in_handshake)
             if not ok then
                 return false, err
             end

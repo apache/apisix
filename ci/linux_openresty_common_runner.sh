@@ -33,9 +33,6 @@ do_install() {
 
     ./ci/linux-install-etcd-client.sh
 
-    # install rust
-    install_rust
-
     create_lua_deps
 
     # sudo apt-get install tree -y
@@ -70,6 +67,8 @@ do_install() {
 script() {
     export_or_prefix
     openresty -V
+
+    make init
 
     set_coredns
 

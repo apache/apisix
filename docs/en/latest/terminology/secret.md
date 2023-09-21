@@ -42,9 +42,9 @@ APISIX currently supports storing secrets in the following ways:
 
 You can use APISIX Secret functions by specifying format variables in the consumer configuration of the following plugins, such as `key-auth`.
 
-::: note
+:::note
 
-If a configuration item is: `key: "$ENV://ABC"`, when the actual value corresponding to $ENV://ABC is not retrieved in APISIX Secret, the value of the key will be "$ENV://ABC" instead of `nil`.
+If a key-value pair `key: "$ENV://ABC"` is configured in APISIX and the value of `$ENV://ABC` is unassigned in the environment variable, `$ENV://ABC` will be interpreted as a string literal, instead of `nil`.
 
 :::
 

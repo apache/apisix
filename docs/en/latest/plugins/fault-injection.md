@@ -34,7 +34,7 @@ The `fault-injection` Plugin can be used to test the resiliency of your applicat
 
 The `abort` attribute will directly return the specified HTTP code to the client and skips executing the subsequent Plugins.
 
-The `delay` attribute delays a request and executes of the subsequent Plugins.
+The `delay` attribute delays a request and executes the subsequent Plugins.
 
 ## Attributes
 
@@ -42,6 +42,7 @@ The `delay` attribute delays a request and executes of the subsequent Plugins.
 |-------------------|---------|-------------|---------|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | abort.http_status | integer | required    |         | [200, ...] | HTTP status code of the response to return to the client.                                                                                                   |
 | abort.body        | string  | optional    |         |            | Body of the response returned to the client. Nginx variables like `client addr: $remote_addr\n` can be used in the body.                                    |
+| abort.headers     | object  | optional    |         |            | Headers of the response returned to the client. The values in the header can contain Nginx variables like `$remote_addr`. |
 | abort.percentage  | integer | optional    |         | [0, 100]   | Percentage of requests to be aborted.                                                                                                                       |
 | abort.vars        | array[] | optional    |         |            | Rules which are matched before executing fault injection. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for a list of available expressions. |
 | delay.duration    | number  | required    |         |            | Duration of the delay. Can be decimal.                                                                                                                      |
@@ -74,7 +75,7 @@ This means that the relationship between the first two expressions is AND, and t
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the `fault-injection` Plugin on a specific Route as shown below:
 
@@ -264,9 +265,9 @@ Server: APISIX/2.2
 Fault Injection!
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `fault-injection` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `fault-injection` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

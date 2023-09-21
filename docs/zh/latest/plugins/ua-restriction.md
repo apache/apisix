@@ -43,7 +43,7 @@ description: 本文介绍了 Apache APISIX ua-restriction 插件的使用方法�
 
 :::note
 
-`allowlist` 和 `denylist` 可以同时启用。同时启用时，插件会根据 `User-Agent` 先检查 `allowlist`，再检查 `denylist`。
+`allowlist` 和 `denylist` 不可以同时启用。
 
 :::
 
@@ -120,7 +120,7 @@ HTTP/1.1 403 Forbidden
 {"message":"Not allowed"}
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `ua-restriction` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 

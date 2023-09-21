@@ -80,7 +80,7 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/ssls/1' \
 --header 'Content-Type: application/json' \
 --data-raw '{
     "sni": "test.com",
-    "cert": "<服务器证书公钥>",
+    "cert": "<服务器证书>",
     "key": "<服务器证书私钥>",
     "client": {
         "ca": "<客户端证书公钥>"
@@ -89,9 +89,9 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/ssls/1' \
 ```
 
 - `sni`：指定证书的域名（CN），当客户端尝试通过 TLS 与 APISIX 握手时，APISIX 会将 `ClientHello` 中的 SNI 数据与该字段进行匹配，找到对应的服务器证书进行握手。
-- `cert`：服务器证书的公钥。
+- `cert`：服务器证书。
 - `key`：服务器证书的私钥。
-- `client.ca`：客户端证书的公钥。为了演示方便，这里使用了同一个 `CA`。
+- `client.ca`：用来验证客户端证书的 CA 文件。为了演示方便，这里使用了同一个 `CA`。
 
 ### 配置测试路由
 
@@ -192,6 +192,126 @@ curl --resolve "test.com:9443:127.0.0.1" https://test.com:9443/anything -k --cer
   ```
 
 由于我们在示例中配置了 `proxy-rewrite` 插件，我们可以看到响应体中包含上游收到的请求体，包含了正确数据。
+
+## 基于对 URI 正则表达式匹配，绕过 MTLS
+
+APISIX 允许配置 URI 白名单以便绕过 MTLS。如果请求的 URI 在白名单内，客户端证书将不被检查。注意，如果针对白名单外的 URI 发请求，而该请求缺乏客户端证书或者提供了非法客户端证书，会得到 HTTP 400 响应，而不是在 SSL 握手阶段被拒绝。
+
+### 时序图
+
+![skip mtls](../../../assets/images/skip-mtls.png)
+
+### 例子
+
+1. 配置路由和证书
+
+```bash
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/*",
+    "upstream": {
+        "nodes": {
+            "httpbin.org": 1
+        }
+    }
+}'
+
+curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "cert": "'"$(<t/certs/mtls_server.crt)"'",
+    "key": "'"$(<t/certs/mtls_server.key)"'",
+    "snis": [
+        "*.apisix.dev"
+    ],
+    "client": {
+        "ca": "'"$(<t/certs/mtls_ca.crt)"'",
+        "depth": 10,
+        "skip_mtls_uri_regex": [
+            "/anything.*"
+        ]
+    }
+}'
+
+
+2. 如果没提供客户端证书，而 URI 又不在白名单内，会得到 HTTP 400 响应。
+
+```bash
+curl https://admin.apisix.dev:9443/uuid -v \
+--resolve 'admin.apisix.dev:9443:127.0.0.1' --cacert t/certs/mtls_ca.crt
+* Added admin.apisix.dev:9443:127.0.0.1 to DNS cache
+* Hostname admin.apisix.dev was found in DNS cache
+*   Trying 127.0.0.1:9443...
+* TCP_NODELAY set
+* Connected to admin.apisix.dev (127.0.0.1) port 9443 (#0)
+* ALPN, offering h2
+* ALPN, offering http/1.1
+* successfully set certificate verify locations:
+*   CAfile: t/certs/mtls_ca.crt
+  CApath: /etc/ssl/certs
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+* TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+* TLSv1.3 (IN), TLS handshake, Request CERT (13):
+* TLSv1.3 (IN), TLS handshake, Certificate (11):
+* TLSv1.3 (IN), TLS handshake, CERT verify (15):
+* TLSv1.3 (IN), TLS handshake, Finished (20):
+* TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+* TLSv1.3 (OUT), TLS handshake, Certificate (11):
+* TLSv1.3 (OUT), TLS handshake, Finished (20):
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN, server accepted to use h2
+* Server certificate:
+*  subject: C=cn; ST=GuangDong; L=ZhuHai; CN=admin.apisix.dev; OU=ops
+*  start date: Dec  1 10:17:24 2022 GMT
+*  expire date: Aug 18 10:17:24 2042 GMT
+*  subjectAltName: host "admin.apisix.dev" matched cert's "admin.apisix.dev"
+*  issuer: C=cn; ST=GuangDong; L=ZhuHai; CN=ca.apisix.dev; OU=ops
+*  SSL certificate verify ok.
+* Using HTTP2, server supports multi-use
+* Connection state changed (HTTP/2 confirmed)
+* Copying HTTP/2 data in stream buffer to connection buffer after upgrade: len=0
+* Using Stream ID: 1 (easy handle 0x56246de24e30)
+> GET /uuid HTTP/2
+> Host: admin.apisix.dev:9443
+> user-agent: curl/7.68.0
+> accept: */*
+>
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+* TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+* old SSL session ID is stale, removing
+* Connection state changed (MAX_CONCURRENT_STREAMS == 128)!
+< HTTP/2 400
+< date: Fri, 21 Apr 2023 07:53:23 GMT
+< content-type: text/html; charset=utf-8
+< content-length: 229
+< server: APISIX/3.2.0
+<
+<html>
+<head><title>400 Bad Request</title></head>
+<body>
+<center><h1>400 Bad Request</h1></center>
+<hr><center>openresty</center>
+<p><em>Powered by <a href="https://apisix.apache.org/">APISIX</a>.</em></p></body>
+</html>
+* Connection #0 to host admin.apisix.dev left intact
+
+
+3. 虽然没提供客户端证书，但是 URI 在白名单内，请求会被成功处理和响应。
+
+```bash
+curl https://admin.apisix.dev:9443/anything/foobar -i \
+--resolve 'admin.apisix.dev:9443:127.0.0.1' --cacert t/certs/mtls_ca.crt
+HTTP/2 200
+content-type: application/json
+content-length: 416
+date: Fri, 21 Apr 2023 07:58:28 GMT
+access-control-allow-origin: *
+access-control-allow-credentials: true
+server: APISIX/3.2.0
+...
+```
 
 ## 总结
 
