@@ -49,7 +49,41 @@ local function split_typ_and_id(id, sub_path)
 end
 
 
-function _M:check_conf(id, conf, need_id, typ)
+local function check_create_update_time(conf)
+    local not_allow_create_time = "forbidden create_time in request body"
+    local not_allow_update_time = "forbidden update_time in request body"
+
+    if conf.create_time then
+        return not_allow_create_time
+    end
+
+    if conf.update_time then
+        return not_allow_update_time
+    end
+
+    if conf.upstream then
+        if conf.upstream.create_time then
+            return not_allow_create_time
+        end
+        if conf.upstream.update_time then
+            return not_allow_update_time
+        end
+    end
+
+    if conf.plugins then
+        if conf.plugins.create_time then
+            return not_allow_create_time
+        end
+        if conf.plugins.update_time then
+            return not_allow_update_time
+        end
+    end
+
+    return nil
+end
+
+
+function _M:check_conf(id, conf, need_id, need_time, typ)
     if self.name == "secrets" then
         id = typ .. "/" .. id
     end
@@ -74,6 +108,14 @@ function _M:check_conf(id, conf, need_id, typ)
         end
 
         conf.id = id
+    end
+
+    -- check create time and update time
+    if not need_time then
+        local err = check_create_update_time(conf)
+        if err then
+            return nil, {error_msg = err}
+        end
     end
 
     core.log.info("conf  : ", core.json.delay_encode(conf))
@@ -139,7 +181,7 @@ function _M:post(id, conf, sub_path, args)
         return 405, {error_msg = "not supported `POST` method for " .. self.kind}
     end
 
-    local id, err = self:check_conf(id, conf, false)
+    local id, err = self:check_conf(id, conf, false, false)
     if not id then
         return 400, err
     end
@@ -186,7 +228,7 @@ function _M:put(id, conf, sub_path, args)
     end
 
     local need_id = not no_id_res[self.name]
-    local ok, err = self:check_conf(id, conf, need_id, typ)
+    local ok, err = self:check_conf(id, conf, need_id, false, typ)
     if not ok then
         return 400, err
     end
@@ -355,7 +397,7 @@ function _M:patch(id, conf, sub_path, args)
 
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 
-    local ok, err = self:check_conf(id, node_value, true, typ)
+    local ok, err = self:check_conf(id, node_value, true, true, typ)
     if not ok then
         return 400, err
     end
