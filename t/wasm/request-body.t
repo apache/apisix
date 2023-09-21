@@ -200,3 +200,52 @@ hello
 qr/request get body: \w+/
 --- grep_error_log_out
 request get body: ell
+
+
+
+=== TEST 8: invalid conf type no set conf
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "wasm-request-body": {
+                            "setting": {"processReqBody":true, "start":1, "size":3}
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- response_body_like eval
+qr/property.*conf.*is required/
+
+
+
+=== TEST 9: hit
+--- request
+POST /hello
+hello
+--- grep_error_log eval
+qr/request get body: \w+/
+--- grep_error_log_out
+request get body: ell

@@ -26,6 +26,7 @@ VERSION                ?= master
 project_name           ?= apache-apisix
 project_release_name   ?= $(project_name)-$(VERSION)-src
 
+OTEL_CONFIG ?= ./ci/pod/otelcol-contrib/data-otlp.json
 
 # Hyperconverged Infrastructure
 ENV_OS_NAME            ?= $(shell uname -s | tr '[:upper:]' '[:lower:]')
@@ -147,18 +148,10 @@ help:
 	fi
 	@echo
 
-### check-rust : check if Rust is installed in the environment
-.PHONY: check-rust
-check-rust:
-	@if ! [ $(shell command -v rustc) ]; then \
-		echo "ERROR: Rust is not installed. Please install Rust before continuing." >&2; \
-		exit 1; \
-	fi;
-
 
 ### deps : Installing dependencies
 .PHONY: deps
-deps: check-rust runtime
+deps: runtime
 	$(eval ENV_LUAROCKS_VER := $(shell $(ENV_LUAROCKS) --version | grep -E -o "luarocks [0-9]+."))
 	@if [ '$(ENV_LUAROCKS_VER)' = 'luarocks 3.' ]; then \
 		mkdir -p ~/.luarocks; \
@@ -382,6 +375,9 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/stream/xrpc/protocols/redis
 	$(ENV_INSTALL) apisix/stream/xrpc/protocols/redis/*.lua $(ENV_INST_LUADIR)/apisix/stream/xrpc/protocols/redis/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/stream/xrpc/protocols/dubbo
+	$(ENV_INSTALL) apisix/stream/xrpc/protocols/dubbo/*.lua $(ENV_INST_LUADIR)/apisix/stream/xrpc/protocols/dubbo/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/utils
 	$(ENV_INSTALL) apisix/utils/*.lua $(ENV_INST_LUADIR)/apisix/utils/
 
@@ -450,6 +446,8 @@ compress-tar:
 .PHONY: ci-env-up
 ci-env-up:
 	@$(call func_echo_status, "$@ -> [ Start ]")
+	touch $(OTEL_CONFIG)
+	chmod 777 $(OTEL_CONFIG)
 	$(ENV_DOCKER_COMPOSE) up -d
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
@@ -474,5 +472,6 @@ ci-env-rebuild:
 .PHONY: ci-env-down
 ci-env-down:
 	@$(call func_echo_status, "$@ -> [ Start ]")
+	rm $(OTEL_CONFIG)
 	$(ENV_DOCKER_COMPOSE) down
 	@$(call func_echo_success_status, "$@ -> [ Done ]")

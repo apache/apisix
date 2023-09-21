@@ -27,7 +27,6 @@ local _M = {version = 0.2}
 
     local uri_routes = {}
     local uri_router
-    local match_opts = {}
 function _M.match(api_ctx)
     local user_routes = _M.user_routes
     local _, service_version = get_services()
@@ -51,8 +50,7 @@ end
 
 function _M.matching(api_ctx)
     core.log.info("route match mode: radixtree_uri")
-
-    return base_router.match_uri(uri_router, match_opts, api_ctx)
+    return base_router.match_uri(uri_router, api_ctx)
 end
 
 

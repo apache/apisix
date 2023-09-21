@@ -37,7 +37,9 @@ If you are looking to quickly get started with APISIX, check out the other [inst
 
 :::note
 
-If you want to build and package APISIX for a specific platform, see [apisix-build-tools](https://github.com/api7/apisix-build-tools).
+To build an APISIX docker image from source code, see [build image from source code](https://apisix.apache.org/docs/docker/build/#build-an-image-from-customizedpatched-source-code).
+
+To build and package APISIX for a specific platform, see [apisix-build-tools](https://github.com/api7/apisix-build-tools) instead.
 
 :::
 
@@ -52,7 +54,7 @@ curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-depend
 Save the APISIX version to an environment variable to be used next:
 
 ```shell
-APISIX_VERSION='3.4.0'
+APISIX_VERSION='3.5.0'
 ```
 
 Clone the APISIX source code of this version into a new directory `apisix-APISIX_VERSION`:
@@ -63,7 +65,7 @@ git clone --depth 1 --branch ${APISIX_VERSION} https://github.com/apache/apisix.
 
 Alternatively, you can also download the source package from the [Downloads](https://apisix.apache.org/downloads/) page. Note that source packages here are not distributed with test cases.
 
-Next, navigate to the directory, install dependencies, and build APISIX. You should have [Rust](https://www.rust-lang.org) installed in your environment first before running `make deps`:
+Next, navigate to the directory, install dependencies, and build APISIX.
 
 ```shell
 cd apisix-${APISIX_VERSION}

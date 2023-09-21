@@ -115,10 +115,6 @@ http {
         }
     }
     {% end %}
-
-    {% if conf_server then %}
-    {* conf_server *}
-    {% end %}
 }
 {% end %}
 
@@ -369,7 +365,11 @@ http {
     log_format main escape={* http.access_log_format_escape *} '{* http.access_log_format *}';
     uninitialized_variable_warn off;
 
+    {% if http.access_log_buffer then %}
+    access_log {* http.access_log *} main buffer={* http.access_log_buffer *} flush=3;
+    {% else %}
     access_log {* http.access_log *} main buffer=16384 flush=3;
+    {% end %}
     {% end %}
     open_file_cache  max=1000 inactive=60;
     client_max_body_size {* http.client_max_body_size *};
@@ -574,10 +574,6 @@ http {
             }
         }
     }
-    {% end %}
-
-    {% if conf_server then %}
-    {* conf_server *}
     {% end %}
 
     {% if deployment_role ~= "control_plane" then %}
