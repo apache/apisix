@@ -65,6 +65,7 @@ local ipairs = ipairs
 local pairs = pairs
 local tostring = tostring
 local type = type
+local ngx = ngx
 
 
 local events_list
@@ -655,11 +656,12 @@ local rpc_handlers = {
                 end
             end
 
-            local len = rewrite:BodyLength()
-            if len > 0 then
-                let body = rewrite:BodyAsString()
+            local body_len = rewrite:BodyLength()
+            if body_len > 0 then
+                local body = rewrite:BodyAsString()
                 ngx.req.read_body()
                 ngx.req.set_body_data(body)
+            end
 
             local len = rewrite:RespHeadersLength()
             if len > 0 then

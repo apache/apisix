@@ -67,7 +67,7 @@ dependencies = {
     "luasec = 0.9-1",
     "lua-resty-consul = 0.3-2",
     "penlight = 1.13.1",
-    "ext-plugin-proto = 0.6.0",
+    "ext-plugin-proto = 0.6.1",
     "casbin = 1.41.5",
     "inspect == 3.1.1",
     "lualdap = 1.2.6-1",
