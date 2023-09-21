@@ -28,7 +28,7 @@ description: This document contains information about the Apache APISIX limit-co
 
 ## Description
 
-The `limit-con` Plugin limits the number of concurrent requests to your services.
+The `limit-conn` Plugin limits the number of concurrent requests to your services.
 
 ## Attributes
 
