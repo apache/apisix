@@ -88,6 +88,29 @@ plugin_attr:
       max_export_batch_size: 2
 ```
 
+## 如何使用变量
+
+以下`nginx`变量是由`opentelemetry` 设置的。
+
+- `opentelemetry_context_traceparent` -  [W3C trace context](https://www.w3.org/TR/trace-context/#trace-context-http-headers-format), 例如：`00-0af7651916cd43dd8448eb211c80319c-b9c7c989f97918e1-01`
+- `opentelemetry_trace_id` - 当前 span 的 trace_id
+- `opentelemetry_span_id` - 当前 span 的 span_id
+
+如何使用？你需要在配置文件（`./conf/config.yaml`）设置如下：
+
+```yaml title="./conf/config.yaml"
+http:
+    enable_access_log: true
+    access_log: "/dev/stdout"
+    access_log_format: '{"time": "$time_iso8601","opentelemetry_context_traceparent": "$opentelemetry_context_traceparent","opentelemetry_trace_id": "$opentelemetry_trace_id","opentelemetry_span_id": "$opentelemetry_span_id","remote_addr": "$remote_addr","uri": "$uri"}'
+    access_log_format_escape: json
+plugins:
+  - opentelemetry
+plugin_attr:
+  opentelemetry:
+    set_ngx_var: true
+```
+
 ## 如何启用
 
 `opentelemetry` 插件默认为禁用状态，你需要在配置文件（`./conf/config.yaml`）中开启该插件：
