@@ -222,7 +222,7 @@ function _M.init()
 
     if plugin_info.trace_id_source == "x-request-id" then
         id_generator.new_ids = function()
-            local trace_id = string.gsub( (core.request.headers()["x-request-id"] or ngx_var.request_id), "-","")
+            local trace_id = (core.request.headers()["x-request-id"] or ngx_var.request_id)：gsub("-","")
             return trace_id, id_generator.new_span_id()
         end
     end
