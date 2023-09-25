@@ -141,7 +141,6 @@ set_coredns() {
     ../../build-cache/coredns -dns.port=1053 &
     popd || exit 1
 
-
     touch build-cache/test_resolve.conf
     echo "nameserver 127.0.0.1:1053" > build-cache/test_resolve.conf
 }
