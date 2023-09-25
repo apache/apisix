@@ -33,13 +33,6 @@ my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
 $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
 $ENV{TEST_NGINX_FAST_SHUTDOWN} ||= 1;
 
-Test::Nginx::Socket::set_http_config_filter(sub {
-    my $config = shift;
-    my $snippet = `$apisix_home/t/bin/gen_snippet.lua conf_server`;
-    $config .= $snippet;
-    return $config;
-});
-
 sub read_file($) {
     my $infile = shift;
     open my $in, "$apisix_home/$infile"
@@ -878,17 +871,6 @@ deployment:
 _EOC_
 
     if ($yaml_config !~ m/deployment:/) {
-        # TODO: remove this temporary option once we have using gRPC by default
-        if ($ENV{TEST_CI_USE_GRPC}) {
-            $default_deployment .= <<_EOC_;
-  etcd:
-    host:
-      - "http://127.0.0.1:2379"
-    prefix: /apisix
-    use_grpc: true
-_EOC_
-        }
-
         $yaml_config = $default_deployment . $yaml_config;
     }
 

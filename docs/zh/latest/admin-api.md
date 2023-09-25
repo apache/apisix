@@ -942,7 +942,6 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 - 设为 `header` 时，`key` 为必传参数，其值为自定义的 Header name，即 "http\_`key`"。
 - 设为 `cookie` 时，`key` 为必传参数，其值为自定义的 cookie name，即 "cookie\_`key`"。请注意 cookie name 是**区分大小写字母**的。例如：`cookie_x_foo` 与 `cookie_X_Foo` 表示不同的 `cookie`。
 - 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_name`。
-- 如果指定的 `hash_on` 和 `key` 获取不到值时，使用默认值：`remote_addr`。
 
 以下特性需要 APISIX 运行于 [APISIX-Base](./FAQ.md#如何构建-APISIX-Base-环境？)：
 
@@ -1376,6 +1375,16 @@ Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 | GET         | /apisix/admin/plugins/{plugin_name} | 无         | 获取资源。      |
 | GET         | /apisix/admin/plugins?all=true      | 无         | 获取所有插件的所有属性。 |
 | GET         | /apisix/admin/plugins?all=true&subsystem=stream| 无 | 获取所有 Stream 插件的属性。|
+| GET         | /apisix/admin/plugins?all=true&subsystem=http| 无 | 获取所有 HTTP 插件的属性。|
+| PUT         | /apisix/admin/plugins/reload        | 无         | 根据代码中所做的更改重新加载插件。 |
+| GET         | apisix/admin/plugins/{plugin_name}?subsystem=stream         | 无         | 获取指定 Stream 插件的属性。 |
+| GET         | apisix/admin/plugins/{plugin_name}?subsystem=http         | 无         | 获取指定 HTTP 插件的属性。 |
+
+:::caution
+
+获取所有插件属性的接口 `/apisix/admin/plugins?all=true` 将很快被弃用。
+
+:::
 
 ### 使用示例 {#plugin-example}
 

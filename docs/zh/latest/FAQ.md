@@ -109,7 +109,7 @@ luarocks config rocks_servers
 make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 ```
 
-如果通过上述操作仍然无法解决问题，可以尝试使用 `--verbose` 参数获取详细的日志来诊断问题。
+如果通过上述操作仍然无法解决问题，可以尝试使用 `--verbose` 或 `-v` 参数获取详细的日志来诊断问题。
 
 ## 如何构建 APISIX-Base 环境？
 

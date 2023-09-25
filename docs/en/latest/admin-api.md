@@ -277,6 +277,10 @@ curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
 
 Route resource request address: /apisix/admin/routes/{id}?ttl=0
 
+### Quick Note on ID Syntax
+
+ID's as a text string must be of a length between 1 and 64 characters and they should only contain uppercase, lowercase, numbers and no special characters apart from dashes ( - ), periods ( . ) and underscores ( _ ). For integer values they simply must have a minimum character count of 1.
+
 ### Request Methods
 
 | Method | Request URI                      | Request Body | Description                                                                                                                   |
@@ -871,6 +875,8 @@ An Upstream configuration can be directly bound to a Route or a Service, but the
 
 Upstream resource request address: /apisix/admin/upstreams/{id}
 
+For notes on ID syntax please refer to: [ID Syntax](#quick-note-on-id-syntax)
+
 ### Request Methods
 
 | Method | Request URI                         | Request Body | Description                                                                                                                      |
@@ -894,7 +900,7 @@ In addition to the equalization algorithm selections, Upstream also supports pas
 | service_name                | required, can't be used with `nodes`        | Service name used for [service discovery](discovery.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `a-bootiful-client`                                                                                                                        |
 | discovery_type              | required, if `service_name` is used         | The type of service [discovery](discovery.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `eureka`                                                                                                                                   |
 | hash_on                     | optional                                    | Only valid if the `type` is `chash`. Supports Nginx variables (`vars`), custom headers (`header`), `cookie` and `consumer`. Defaults to `vars`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |                                                                                                                                            |
-| key                         | optional                                    | Only valid if the `type` is `chash`. Finds the corresponding node `id` according to `hash_on` and `key` values. When `hash_on` is set to `vars`, `key` is a required parameter and it supports [Nginx variables](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is a required parameter, and `header name` can be customized. When `hash_on` is set to `cookie`, `key` is also a required parameter, and `cookie name` can be customized. When `hash_on` is set to `consumer`, `key` need not be set and the `key` used by the hash algorithm would be the authenticated `consumer_name`. If the specified `hash_on` and `key` fail to fetch the values, it will default to `remote_addr`. | `uri`, `server_name`, `server_addr`, `request_uri`, `remote_port`, `remote_addr`, `query_string`, `host`, `hostname`, `arg_***`, `arg_***` |
+| key                         | optional                                    | Only valid if the `type` is `chash`. Finds the corresponding node `id` according to `hash_on` and `key` values. When `hash_on` is set to `vars`, `key` is a required parameter and it supports [Nginx variables](http://nginx.org/en/docs/varindex.html). When `hash_on` is set as `header`, `key` is a required parameter, and `header name` can be customized. When `hash_on` is set to `cookie`, `key` is also a required parameter, and `cookie name` can be customized. When `hash_on` is set to `consumer`, `key` need not be set and the `key` used by the hash algorithm would be the authenticated `consumer_name`. | `uri`, `server_name`, `server_addr`, `request_uri`, `remote_port`, `remote_addr`, `query_string`, `host`, `hostname`, `arg_***`, `arg_***` |
 | checks                      | optional                                    | Configures the parameters for the [health check](./tutorials/health-check.md).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |                                                                                                                                            |
 | retries                     | optional                                    | Sets the number of retries while passing the request to Upstream using the underlying Nginx mechanism. Set according to the number of available backend nodes by default. Setting this to `0` disables retry.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |                                                                                                                                            |
 | retry_timeout               | optional                                    | Timeout to continue with retries. Setting this to `0` disables the retry timeout.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |                                                                                                                                            |
@@ -929,7 +935,6 @@ The following should be considered when setting the `hash_on` value:
 - When set to `cookie`, a `key` is required. This key is equal to "cookie\_`key`". The cookie name is case-sensitive.
 - When set to `consumer`, the `key` is optional and the key is set to the `consumer_name` captured from the authentication Plugin.
 - When set to `vars_combinations`, the `key` is required. The value of the key can be a combination of any of the [Nginx variables](http://nginx.org/en/docs/varindex.html) like `$request_uri$remote_addr`.
-- When no value is set for either `hash_on` or `key`, the key defaults to `remote_addr`.
 
 The features described below requires APISIX to be run on [APISIX-Base](./FAQ.md#how-do-i-build-the-apisix-base-environment):
 
@@ -1180,6 +1185,8 @@ Currently, the response is returned from etcd.
 
 SSL resource request address: /apisix/admin/ssls/{id}
 
+For notes on ID syntax please refer to: [ID Syntax](#quick-note-on-id-syntax)
+
 ### Request Methods
 
 | Method | Request URI            | Request Body | Description                                     |
@@ -1354,6 +1361,18 @@ Plugin resource request address: /apisix/admin/plugins/{plugin_name}
 | ------ | ----------------------------------- | ------------ | ---------------------------------------------- |
 | GET    | /apisix/admin/plugins/list          | NULL         | Fetches a list of all Plugins.                 |
 | GET    | /apisix/admin/plugins/{plugin_name} | NULL         | Fetches the specified Plugin by `plugin_name`. |
+| GET         | /apisix/admin/plugins?all=true      | NULL         | Get all properties of all plugins. |
+| GET         | /apisix/admin/plugins?all=true&subsystem=stream| NULL | Gets properties of all Stream plugins.|
+| GET    | /apisix/admin/plugins?all=true&subsystem=http | NULL | Gets properties of all HTTP plugins. |
+| PUT    | /apisix/admin/plugins/reload       | NULL         | Reloads the plugin according to the changes made in code |
+| GET    | apisix/admin/plugins/{plugin_name}?subsystem=stream | NULL | Gets properties of a specified plugin if it is supported in Stream/L4 subsystem. |
+| GET    | apisix/admin/plugins/{plugin_name}?subsystem=http   | NULL | Gets properties of a specified plugin if it is supported in HTTP/L7 subsystem. |
+
+:::caution
+
+The interface of getting properties of all plugins via `/apisix/admin/plugins?all=true` will be deprecated soon.
+
+:::
 
 ### Request Body Parameters
 
@@ -1514,3 +1533,52 @@ Proto resource request address: /apisix/admin/protos/{id}
 | content   | True    | String | content of `.proto` or `.pb` files | See [here](./plugins/grpc-transcode.md#enabling-the-plugin)         |
 | create_time | False    | Epoch timestamp (in seconds) of the created time. If missing, this field will be populated automatically.             | 1602883670                                       |
 | update_time | False    | Epoch timestamp (in seconds) of the updated time. If missing, this field will be populated automatically.             | 1602883670                                       |
+
+## Schema validation
+
+Check the validity of a configuration against its entity schema. This allows you to test your input before submitting a request to the entity endpoints of the Admin API.
+
+Note that this only performs the schema validation checks, checking that the input configuration is well-formed. Requests to the entity endpoint using the given configuration may still fail due to other reasons, such as invalid foreign key relationships or uniqueness check failures against the contents of the data store.
+
+### Schema validation
+
+Schema validation request address: /apisix/admin/schema/validate/{resource}
+
+### Request Methods
+
+| Method | Request URI                      | Request Body | Description                                     |
+| ------ | -------------------------------- | ------------ | ----------------------------------------------- |
+| POST   | /apisix/admin/schema/validate/{resource}      | {..resource conf..}        | Validate the resource configuration against corresponding schema.         |
+
+### Request Body Parameters
+
+* 200: validate ok.
+* 400: validate failed, with error as response body in JSON format.
+
+Example:
+
+```bash
+curl http://127.0.0.1:9180/apisix/admin/schema/validate/routes \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X POST -i -d '{
+    "uri": 1980,
+    "upstream": {
+        "scheme": "https",
+        "type": "roundrobin",
+        "nodes": {
+            "nghttp2.org": 1
+        }
+    }
+}'
+HTTP/1.1 400 Bad Request
+Date: Mon, 21 Aug 2023 07:37:13 GMT
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/3.4.0
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 3600
+
+{"error_msg":"property \"uri\" validation failed: wrong type: expected string, got number"}
+```

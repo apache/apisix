@@ -38,6 +38,8 @@ discovery:
       - "http://${username}:${password}@${host1}:${port1}"
     prefix: "/nacos/v1/"
     fetch_interval: 30    # default 30 sec
+    # `weight` is the `default_weight` that will be attached to each discovered node that
+    # doesn't have a weight explicitly provided in nacos results
     weight: 100           # default 100
     timeout:
       connect: 2000       # default 2000 ms
