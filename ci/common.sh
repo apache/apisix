@@ -140,6 +140,9 @@ set_coredns() {
     pushd t/coredns || exit 1
     ../../build-cache/coredns -dns.port=1053 &
     popd || exit 1
+
+    touch build-cache/test_resolve.conf
+    echo "nameserver 127.0.0.1:1053" > build-cache/test_resolve.conf
 }
 
 GRPC_SERVER_EXAMPLE_VER=20210819

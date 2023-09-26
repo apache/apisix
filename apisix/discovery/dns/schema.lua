@@ -24,6 +24,9 @@ return {
                 type = "string",
             },
         },
+        resolv_conf = {
+            type = "string",
+        },
         order = {
             type = "array",
             minItems = 1,
@@ -34,5 +37,12 @@ return {
             },
         },
     },
-    required = {"servers"}
+    oneOf = {
+        {
+            required = {"servers"},
+        },
+        {
+            required = {"resolv_conf"},
+        }
+    }
 }
