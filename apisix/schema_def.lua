@@ -402,16 +402,10 @@ local upstream_schema = {
                 },
             },
             dependencies = {
-                client_cert = {
-                    required = {"client_key"},
-                    ["not"] = {required = {"client_cert_id"}}
-                },
-                client_key = {
-                    required = {"client_cert"},
-                    ["not"] = {required = {"client_cert_id"}}
-                },
+                client_cert = {required = {"client_key"}},
+                client_key = {required = {"client_cert"}},
                 client_cert_id = {
-                    ["not"] = {required = {"client_client", "client_key"}}
+                    ["not"] = {required = {"client_cert", "client_key"}}
                 }
             }
         },
