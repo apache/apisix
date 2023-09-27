@@ -809,32 +809,25 @@ failed to find upstream by id: invalid-id
             local json = require("toolkit.json")
             local t = require("lib.test_admin")
 
-            local code, body = t.test('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "nodes": {
-                        "127.0.0.1:1983": 1
-                    },
-                    "type": "roundrobin",
-                    "desc": "port 1983 is served under https",
-                    "scheme": "https"
-                 }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-            end
-
             local data = {
                 uri = "/hello",
                 plugins = {
                     ["traffic-split"] = {
                         rules = {
                             {
+                                match = { {
+                                    vars = { { "arg_scheme", "==", "https" } }
+                                } },
                                 weighted_upstreams = {
                                     {
-                                        upstream_id = 1,
+                                        upstream = {
+                                            type = "roundrobin",
+                                            pass_host = "node",
+                                            nodes = {
+                                                ["127.0.0.1:1983"] = 1,
+                                            },
+                                            scheme = "https"
+                                        },
                                         weight = 1
                                     }
                                 }
@@ -867,7 +860,5 @@ passed
 
 === TEST 22: hit route
 --- request
-GET /hello
+GET /hello?scheme=https
 --- error_code: 200
---- response_body
-hello world
