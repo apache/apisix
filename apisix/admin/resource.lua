@@ -19,6 +19,7 @@ local utils = require("apisix.admin.utils")
 local apisix_ssl = require("apisix.ssl")
 local setmetatable = setmetatable
 local tostring = tostring
+local ipairs = ipairs
 local type = type
 
 
@@ -49,33 +50,30 @@ local function split_typ_and_id(id, sub_path)
 end
 
 
-local function check_create_update_time(conf)
-    local not_allow_create_time = "forbidden create_time in request body"
-    local not_allow_update_time = "forbidden update_time in request body"
+local function check_forbidden_properties(conf, forbidden_properties)
+    local not_allow_properties = "the property is forbidden: "
 
-    if conf.create_time then
-        return not_allow_create_time
-    end
-
-    if conf.update_time then
-        return not_allow_update_time
-    end
-
-    if conf.upstream then
-        if conf.upstream.create_time then
-            return not_allow_create_time
+    if conf then
+        for _, v in ipairs(forbidden_properties) do
+            if conf[v] then
+                return not_allow_properties .. " " .. v
+            end
         end
-        if conf.upstream.update_time then
-            return not_allow_update_time
-        end
-    end
 
-    if conf.plugins then
-        if conf.plugins.create_time then
-            return not_allow_create_time
+        if conf.upstream then
+            for _, v in ipairs(forbidden_properties) do
+                if conf.upstream[v] then
+                    return not_allow_properties .. " upstream." .. v
+                end
+            end
         end
-        if conf.plugins.update_time then
-            return not_allow_update_time
+
+        if conf.plugins then
+            for _, v in ipairs(forbidden_properties) do
+                if conf.plugins[v] then
+                    return not_allow_properties .. " plugins." .. v
+                end
+            end
         end
     end
 
@@ -83,7 +81,7 @@ local function check_create_update_time(conf)
 end
 
 
-function _M:check_conf(id, conf, need_id, need_time, typ)
+function _M:check_conf(id, conf, need_id, typ, allow_time)
     if self.name == "secrets" then
         id = typ .. "/" .. id
     end
@@ -111,8 +109,9 @@ function _M:check_conf(id, conf, need_id, need_time, typ)
     end
 
     -- check create time and update time
-    if not need_time then
-        local err = check_create_update_time(conf)
+    if not allow_time then
+        local forbidden_properties = {"create_time", "update_time"}
+        local err = check_forbidden_properties(conf, forbidden_properties)
         if err then
             return nil, {error_msg = err}
         end
@@ -181,7 +180,7 @@ function _M:post(id, conf, sub_path, args)
         return 405, {error_msg = "not supported `POST` method for " .. self.kind}
     end
 
-    local id, err = self:check_conf(id, conf, false, false)
+    local id, err = self:check_conf(id, conf, false)
     if not id then
         return 400, err
     end
@@ -228,7 +227,7 @@ function _M:put(id, conf, sub_path, args)
     end
 
     local need_id = not no_id_res[self.name]
-    local ok, err = self:check_conf(id, conf, need_id, false, typ)
+    local ok, err = self:check_conf(id, conf, need_id, typ)
     if not ok then
         return 400, err
     end
@@ -397,7 +396,7 @@ function _M:patch(id, conf, sub_path, args)
 
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 
-    local ok, err = self:check_conf(id, node_value, true, true, typ)
+    local ok, err = self:check_conf(id, node_value, true, typ, true)
     if not ok then
         return 400, err
     end
