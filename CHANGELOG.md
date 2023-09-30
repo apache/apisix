@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.6.0](#360)
 - [3.5.0](#350)
 - [3.4.0](#340)
 - [3.3.0](#330)
@@ -71,6 +72,35 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.6.0
+
+### Change
+
+- :warning: Remove the `etcd.use_grpc` and no longer support communication with ETCD using protocols with gRPC: [#10015](https://github.com/apache/apisix/pull/10015)
+- :warning: Removing conf server, the data plane no longer supports communication with the data plane, and needs to be adjusted from `config_provider: control_plane` to `config_provider: etcd`: [#10012](https://github.com/apache/apisix/pull/10012)
+
+### Core
+
+- :sunrise: support configuring the buffer size of the access log: [#10225](https://github.com/apache/apisix/pull/10225)
+- :sunrise: Support for passing resolv.conf in dns discovery: [#9770](https://github.com/apache/apisix/pull/9770)
+- :sunrise: No longer relying on trust: [#10121](https://github.com/apache/apisix/pull/10065)
+- :sunrise: Strictly validate the input of core resources: [#10233](https://github.com/apache/apisix/pull/10233)
+- :sunrise: Add dubbo protocols Support in the xrpc [#9660](https://github.com/apache/apisix/pull/9660)
+
+### Plugins
+
+- :sunrise: Support https in traffic-split plugin: [#9115](https://github.com/apache/apisix/pull/9115)
+- :sunrise: Support for passing resolv.conf in dns discovery: [#9770](https://github.com/apache/apisix/pull/9770)
+- :sunrise: Support rewrite request body in external plugin:[#9990](https://github.com/apache/apisix/pull/9990)
+- :sunrise: Support set nginx variables in opentelemetry plugin: [#8871](https://github.com/apache/apisix/pull/8871)
+- :sunrise: Support unix sock host pattern in the chaitin-waf plugin: [#10161](https://github.com/apache/apisix/pull/10161)
+
+### Bugfixes
+
+- Fix graphql post request route matching exception: [#10198](https://github.com/apache/apisix/pull/10198)
+- Fix error on array of multiline string in `apisix.yaml`: [#10193](https://github.com/apache/apisix/pull/10193)
+- Fix provide error instead of nil panic when cache_zone is missing in proxy-cache plugin: [#10138](https://github.com/apache/apisix/pull/10138)
 
 ## 3.5.0
 
