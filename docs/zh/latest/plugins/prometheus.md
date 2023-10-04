@@ -280,7 +280,7 @@ apisix_http_status{code="200",route="1",matched_uri="/hello",matched_host="",ser
 apisix_http_status{code="200",route="2",matched_uri="/world",matched_host="",service="",consumer="",node="127.0.0.1"} 4
 apisix_http_status{code="404",route="",matched_uri="",matched_host="",service="",consumer="",node=""} 1
 # HELP apisix_http_requests_total The total number of client requests
-# TYPE apisix_http_requests_total gauge
+# TYPE apisix_http_requests_total counter
 apisix_http_requests_total 1191780
 # HELP apisix_nginx_http_current_connections Number of HTTP connections
 # TYPE apisix_nginx_http_current_connections gauge

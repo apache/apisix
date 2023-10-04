@@ -138,7 +138,7 @@ function _M.http_init(prometheus_enabled_in_stream)
             "Number of HTTP connections",
             {"state"})
 
-    metrics.requests = prometheus:gauge("http_requests_total",
+    metrics.requests = prometheus:counter("http_requests_total",
             "The total number of client requests since APISIX started")
 
     metrics.etcd_reachable = prometheus:gauge("etcd_reachable",

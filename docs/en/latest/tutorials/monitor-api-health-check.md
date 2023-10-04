@@ -156,7 +156,7 @@ Example Output:
 
 ```bash
 # HELP apisix_http_requests_total The total number of client requests since APISIX started
-# TYPE apisix_http_requests_total gauge
+# TYPE apisix_http_requests_total counter
 apisix_http_requests_total 119740
 # HELP apisix_http_status HTTP status codes per service in APISIX
 # TYPE apisix_http_status counter
