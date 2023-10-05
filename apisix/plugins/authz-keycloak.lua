@@ -20,6 +20,7 @@ local sub_str   = string.sub
 local type      = type
 local ngx       = ngx
 local plugin_name = "authz-keycloak"
+local secret         = require("apisix.secret")
 
 local log = core.log
 local pairs = pairs
@@ -756,6 +757,7 @@ local function generate_token_using_password_grant(conf,ctx)
     return res.status, res.body
 end
 
+
 function _M.access(conf, ctx)
     local headers = core.request.headers(ctx)
     local need_grant_token = conf.password_grant_token_generation_incoming_uri and
@@ -770,6 +772,12 @@ function _M.access(conf, ctx)
     if not jwt_token then
         log.error("failed to fetch JWT token: ", err)
         return 401, {message = "Missing JWT token in request"}
+    end
+
+    -- resolve secrets
+    local conf_cache = secret.fetch_secrets(conf)
+    if not conf_cache then
+        conf = conf_cache["client_secret"]
     end
 
     local status, body = evaluate_permissions(conf, ctx, jwt_token)
