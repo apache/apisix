@@ -326,8 +326,6 @@ Route 也称之为路由，可以通过定义一些规则来匹配客户端的�
 | timeout          | 否                               | 辅助     | 为 Route 设置 Upstream 连接、发送消息和接收消息的超时时间（单位为秒）。该配置将会覆盖在 Upstream 中配置的 [timeout](#upstream) 选项。                                                                                                                                                                                               | {"connect": 3, "send": 3, "read": 3}              |
 | enable_websocket | 否                               | 辅助     | 当设置为 `true` 时，启用 `websocket`(boolean), 默认值为 `false`。                                                                                                                                                                                                                                                |                                                      |
 | status           | 否                               | 辅助     | 当设置为 `1` 时，启用该路由，默认值为 `1`。                                                                                                                                                                                                                                                                       | `1` 表示启用，`0` 表示禁用。                           |
-| create_time      | 否                               | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                                                                                                                                                                                            | 1602883670                                           |
-| update_time      | 否                               | 辅助     |  epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                                                                                                                                                                                            | 1602883670                                           |
 
 :::note 注意
 
@@ -637,8 +635,6 @@ Service 是某类 API 的抽象（也可以理解为一组 Route 的抽象）。
 | labels           | 否                     | 匹配规则 | 标识附加属性的键值对。                                                 | {"version":"v2","build":"16","env":"production"} |
 | enable_websocket | 否                     | 辅助     | `websocket`(boolean) 配置，默认值为 `false`。                       |                                                  |
 | hosts            | 否                     | 匹配规则 | 非空列表形态的 `host`，表示允许有多个不同 `host`，匹配其中任意一个即可。| ["foo.com", "\*.bar.com"]                        |
-| create_time      | 否                     | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                         | 1602883670                                       |
-| update_time      | 否                     | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                           | 1602883670                                       |
 
 Service 对象 JSON 配置示例：
 
@@ -822,8 +818,6 @@ Consumer 资源请求地址：/apisix/admin/consumers/{username}
 | plugins     | 否   | Plugin   | 该 Consumer 对应的插件配置，它的优先级是最高的：Consumer > Route > Plugin Config > Service。对于具体插件配置，请参考 [Plugins](#plugin)。     |                                                  |
 | desc        | 否   | 辅助     | consumer 描述。                                                                                                                  |                                                  |
 | labels      | 否   | 匹配规则  | 标识附加属性的键值对。                                                                                                             | {"version":"v2","build":"16","env":"production"} |
-| create_time | 否   | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                       | 1602883670                                       |
-| update_time | 否   | 辅助     | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                       | 1602883670                                       |
 
 Consumer 对象 JSON 配置示例：
 
@@ -919,8 +913,6 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 | upstream_host  | 否                                             | 辅助           | 指定上游请求的 host，只在 `pass_host` 配置为 `rewrite` 时有效。                                                                                                                                                                                                                                                                                                                  |                                                  |
 | scheme         | 否                                             | 辅助           | 跟上游通信时使用的 scheme。对于 7 层代理，可选值为 [`http`, `https`, `grpc`, `grpcs`]。对于 4 层代理，可选值为 [`tcp`, `udp`, `tls`]。默认值为 `http`，详细信息请参考下文。                                                                                                                                                                                                                                                           |
 | labels         | 否                                             | 匹配规则       | 标识附加属性的键值对。                                                                                                                                                                                                                                                                                                                                        | {"version":"v2","build":"16","env":"production"} |
-| create_time    | 否                                             | 辅助           | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                                                                                                                                                                                                                                               | 1602883670                                       |
-| update_time    | 否                                             | 辅助           | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                                                                                                                                                                                                                                                                               | 1602883670                                       |
 | tls.client_cert    | 否，不能和 `tls.client_cert_id` 一起使用               | https 证书           | 设置跟上游通信时的客户端证书，详细信息请参考下文。                                                                        | |
 | tls.client_key	 | 否，不能和 `tls.client_cert_id` 一起使用               | https 证书私钥           | 设置跟上游通信时的客户端私钥，详细信息请参考下文。                                                                                                                                                                                                                                                                                                              | |
 | tls.client_cert_id | 否，不能和 `tls.client_cert`、`tls.client_key` 一起使用 | SSL           | 设置引用的 SSL id，详见 [SSL](#ssl)。                                                                                                                                                                                                                                                                                                              | |
@@ -1210,8 +1202,6 @@ SSL 资源请求地址：/apisix/admin/ssls/{id}
 | client.skip_mtls_uri_regex | 否   | PCRE 正则表达式数组 |  用来匹配请求的 URI，如果匹配，则该请求将绕过客户端证书的检查，也就是跳过 MTLS。 | ["/hello[0-9]+", "/foobar"]                                            |
 | snis        | 是   | 匹配规则       | 非空数组形式，可以匹配多个 SNI。                                                                         |                                                  |
 | labels      | 否   | 匹配规则       | 标识附加属性的键值对。                                                                                   | {"version":"v2","build":"16","env":"production"} |
-| create_time | 否   | 辅助           | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                          | 1602883670                                       |
-| update_time | 否   | 辅助           | epoch 时间戳，单位为秒。如果不指定则自动创建。                                                          | 1602883670                                       |
 | type        | 否   | 辅助           | 标识证书的类型，默认值为 `server`。                                                                     | `client` 表示证书是客户端证书，APISIX 访问上游时使用；`server` 表示证书是服务端证书，APISIX 验证客户端请求时使用。     |
 | status      | 否   | 辅助           | 当设置为 `1` 时，启用此 SSL，默认值为 `1`。                                                               | `1` 表示启用，`0` 表示禁用                       |
 | ssl_protocols | 否    | tls 协议字符串数组               | 用于控制服务器与客户端之间使用的 SSL/TLS 协议版本。更多的配置示例，请参考[SSL 协议](./ssl-protocol.md)。                                  |                                                  |
@@ -1253,8 +1243,6 @@ Global Rule 资源请求地址：/apisix/admin/global_rules/{id}
 | 名称        | 必选项 | 类型   | 描述                                               | 示例值       |
 | ----------- | ------ | ------ | ------------------------------------------------- | ---------- |
 | plugins     | 是     | Plugin | 插件配置。详细信息请参考 [Plugin](terminology/plugin.md)。 |            |
-| create_time | 否     | 辅助   | epoch 时间戳，单位为秒，如果不指定则自动创建。     | 1602883670 |
-| update_time | 否     | 辅助   | epoch 时间戳，单位为秒，如果不指定则自动创建。     | 1602883670 |
 
 ## Consumer Group
 
@@ -1282,8 +1270,6 @@ Consumer Group 资源请求地址：/apisix/admin/consumer_groups/{id}
 |plugins  | 是        |Plugin| 插件配置。详细信息请参考 [Plugin](terminology/plugin.md)。 |      |
 |desc     | 否        | 辅助 | 标识描述、使用场景等。                          | Consumer 测试。|
 |labels   | 否        | 辅助 | 标识附加属性的键值对。                          |{"version":"v2","build":"16","env":"production"}|
-|create_time| 否      | 辅助 | epoch 时间戳，单位为秒，如果不指定则自动创建。 |1602883670|
-|update_time| 否      | 辅助 | epoch 时间戳，单位为秒，如果不指定则自动创建。 |1602883670|
 
 ## Plugin Config
 
@@ -1311,8 +1297,6 @@ Plugin Config 资源请求地址：/apisix/admin/plugin_configs/{id}
 |plugins    | 是      |Plugin| 更多信息请参考 [Plugin](terminology/plugin.md)。||
 |desc       | 否 | 辅助 | 标识描述、使用场景等。 |customer xxxx|
 |labels     | 否 | 辅助 | 标识附加属性的键值对。 |{"version":"v2","build":"16","env":"production"}|
-|create_time| 否 | 辅助 | epoch 时间戳，单位为秒，如果不指定则自动创建。 |1602883670|
-|update_time| 否 | 辅助 | epoch 时间戳，单位为秒，如果不指定则自动创建。 |1602883670|
 
 ## Plugin Metadata
 
