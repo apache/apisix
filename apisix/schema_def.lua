@@ -911,6 +911,7 @@ _M.stream_route = {
         },
         upstream = upstream_schema,
         upstream_id = id_schema,
+        service_id = id_schema,
         plugins = plugins_schema,
         protocol = xrpc_protocol_schema,
     }
