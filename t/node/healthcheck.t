@@ -86,9 +86,11 @@ qr/^.*?\[error\](?!.*process exiting).*/
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/server_port"
 
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+
             local ports_count = {}
             for i = 1, 12 do
-                local httpc = http.new()
                 local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
                 if not res then
                     ngx.say(err)
@@ -117,7 +119,8 @@ GET /t
 [{"count":6,"port":"1981"},{"count":6,"port":"1980"}]
 --- grep_error_log eval
 qr/^.*?\[error\](?!.*process exiting).*/
---- grep_error_log_out
+--- grep_error_log_out eval
+qr/target not found/
 --- timeout: 6
 
 
@@ -316,7 +319,8 @@ GET /t
 [{"count":12,"port":"1980"}]
 --- grep_error_log eval
 qr/^.*?\[error\](?!.*process exiting).*/
---- grep_error_log_out
+--- grep_error_log_out eval
+qr/target not found/
 --- timeout: 6
 
 
@@ -486,6 +490,7 @@ qr{\[error\].*while connecting to upstream.*}
 qr{.*http://127.0.0.1:1960/server_port.*
 .*http://127.0.0.1:1961/server_port.*
 .*http://127.0.0.1:1961/server_port.*
+.*http://127.0.0.1:1960/server_port.*
 .*http://127.0.0.1:1961/server_port.*
 .*http://127.0.0.1:1961/server_port.*}
 --- timeout: 10
