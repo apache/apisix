@@ -225,7 +225,8 @@ mmm
 hello world
 
 
-=== TEST 11: set stream route (id: 1) which uses upstream_id and remote address with IP CIDR
+
+=== TEST 10: set stream route (id: 1) which uses upstream_id and remote address with IP CIDR
 --- config
     location /t {
         content_by_lua_block {
@@ -250,7 +251,7 @@ passed
 
 
 
-=== TEST 12: hit route
+=== TEST 11: hit route
 --- stream_request eval
 mmm
 --- stream_response
@@ -258,7 +259,7 @@ hello world
 
 
 
-=== TEST 13: reject bad CIDR
+=== TEST 12: reject bad CIDR
 --- config
     location /t {
         content_by_lua_block {
@@ -284,7 +285,7 @@ GET /t
 
 
 
-=== TEST 14: skip upstream http host check in stream subsystem
+=== TEST 13: skip upstream http host check in stream subsystem
 --- config
     location /t {
         content_by_lua_block {
@@ -313,7 +314,7 @@ passed
 
 
 
-=== TEST 15: hit route
+=== TEST 14: hit route
 --- stream_request eval
 mmm
 --- stream_response
@@ -321,7 +322,7 @@ hello world
 
 
 
-=== TEST 16: reuse ctx and more
+=== TEST 15: reuse ctx and more
 --- stream_extra_init_by_lua
     local ctx = require("apisix.core.ctx")
     local tablepool = require("apisix.core").tablepool
