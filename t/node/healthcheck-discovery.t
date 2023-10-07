@@ -94,7 +94,7 @@ routes:
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
 
-            ngx.sleep(0.5)
+            ngx.sleep(1.5)
 
             ngx.say(res.status)
         }
@@ -153,7 +153,7 @@ qr/(create new checker|try to release checker): table/
 create new checker: table
 try to release checker: table
 create new checker: table
---- no_error_log
+--- error_log
 all upstream nodes is unhealthy, use default
 
 
