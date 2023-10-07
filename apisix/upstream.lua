@@ -286,12 +286,12 @@ function _M.set_by_route(route, api_ctx)
             if not is_http then
                 local ok, err = fill_node_info(up_conf, nil, true)
                 if not ok then
-                    return 503, err
+                    return 502, err
                 end
             else
                 local ok, err = fill_node_info(up_conf, api_ctx.upstream_scheme, false)
                 if not ok then
-                    return 503, err
+                    return 502, err
                 end
             end
 
