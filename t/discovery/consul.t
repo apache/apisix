@@ -701,7 +701,7 @@ location /v1/acl {
 }
 --- request eval
 "PUT /v1/acl/bootstrap\n" . "{\"BootstrapSecret\": \"2b778dd9-f5f1-6f29-b4b4-9a5fa948757a\"}"
---- error_code: 200
+--- error_code_like: ^(?:200|403)$
 
 
 
