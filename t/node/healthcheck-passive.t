@@ -95,9 +95,11 @@ passed
             local http = require("resty.http")
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/server_port"
 
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+
             local ports_count = {}
             for i = 1, 6 do
-                local httpc = http.new()
                 local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
                 if not res then
                     ngx.say(err)
@@ -115,7 +117,7 @@ passed
 --- request
 GET /t
 --- response_body
-{"200":4,"502":2}
+{"200":5,"502":1}
 --- error_log
 (upstream#/apisix/routes/1) unhealthy HTTP increment (1/1)
 
