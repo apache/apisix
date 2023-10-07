@@ -555,8 +555,6 @@ GET /t
                 cert = ssl_cert,
                 key = ssl_key,
                 sni = "test.com",
-                create_time = 1602883670,
-                update_time = 1602893670,
                 validity_start = 1602873670,
                 validity_end = 1603893670
             }
@@ -567,8 +565,6 @@ GET /t
                 [[{
                     "value": {
                         "sni": "test.com",
-                        "create_time": 1602883670,
-                        "update_time": 1602893670,
                         "validity_start": 1602873670,
                         "validity_end": 1603893670
                     },

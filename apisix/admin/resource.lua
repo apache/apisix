@@ -19,6 +19,7 @@ local utils = require("apisix.admin.utils")
 local apisix_ssl = require("apisix.ssl")
 local setmetatable = setmetatable
 local tostring = tostring
+local ipairs = ipairs
 local type = type
 
 
@@ -49,7 +50,38 @@ local function split_typ_and_id(id, sub_path)
 end
 
 
-function _M:check_conf(id, conf, need_id, typ)
+local function check_forbidden_properties(conf, forbidden_properties)
+    local not_allow_properties = "the property is forbidden: "
+
+    if conf then
+        for _, v in ipairs(forbidden_properties) do
+            if conf[v] then
+                return not_allow_properties .. " " .. v
+            end
+        end
+
+        if conf.upstream then
+            for _, v in ipairs(forbidden_properties) do
+                if conf.upstream[v] then
+                    return not_allow_properties .. " upstream." .. v
+                end
+            end
+        end
+
+        if conf.plugins then
+            for _, v in ipairs(forbidden_properties) do
+                if conf.plugins[v] then
+                    return not_allow_properties .. " plugins." .. v
+                end
+            end
+        end
+    end
+
+    return nil
+end
+
+
+function _M:check_conf(id, conf, need_id, typ, allow_time)
     if self.name == "secrets" then
         id = typ .. "/" .. id
     end
@@ -74,6 +106,15 @@ function _M:check_conf(id, conf, need_id, typ)
         end
 
         conf.id = id
+    end
+
+    -- check create time and update time
+    if not allow_time then
+        local forbidden_properties = {"create_time", "update_time"}
+        local err = check_forbidden_properties(conf, forbidden_properties)
+        if err then
+            return nil, {error_msg = err}
+        end
     end
 
     core.log.info("conf  : ", core.json.delay_encode(conf))
@@ -355,7 +396,7 @@ function _M:patch(id, conf, sub_path, args)
 
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 
-    local ok, err = self:check_conf(id, node_value, true, typ)
+    local ok, err = self:check_conf(id, node_value, true, typ, true)
     if not ok then
         return 400, err
     end
