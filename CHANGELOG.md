@@ -78,7 +78,7 @@ title: Changelog
 ### Change
 
 - :warning: Remove the `etcd.use_grpc` and no longer support communication with ETCD using protocols with gRPC: [#10015](https://github.com/apache/apisix/pull/10015)
-- :warning: Removing conf server, the data plane no longer supports communication with the control plane, and needs to be adjusted from `config_provider: control_plane` to `config_provider: etcd`: [#10012](https://github.com/apache/apisix/pull/10012)
+- :warning: Remove conf server. The data plane no longer supports direct communication with the control plane, and the configuration should be adjusted from `config_provider: control_plane` to `config_provider: etcd`: [#10012](https://github.com/apache/apisix/pull/10012)
 
 ### Core
 
