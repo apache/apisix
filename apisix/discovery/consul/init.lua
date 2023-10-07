@@ -205,14 +205,12 @@ local function get_opts(consul_server, is_catalog)
         return opts
     end
 
+    opts.default_args.wait = consul_server.wait_timeout --blocked wait!=0; unblocked by wait=0
+
     if is_catalog then
-        opts.default_args.wait = consul_server.wait_timeout --blocked wait!=0; unblocked by wait=0
         opts.default_args.index = consul_server.catalog_index
-        opts.default_args.token = consul_server.token
     else
-        opts.default_args.wait = consul_server.wait_timeout --blocked wait!=0; unblocked by wait=0
         opts.default_args.index = consul_server.health_index
-        opts.default_args.token = consul_server.token
     end
 
     return opts
