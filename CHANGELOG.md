@@ -78,13 +78,13 @@ title: Changelog
 ### Change
 
 - :warning: Remove the `etcd.use_grpc` and no longer support communication with ETCD using protocols with gRPC: [#10015](https://github.com/apache/apisix/pull/10015)
-- :warning: Removing conf server, the data plane no longer supports communication with the data plane, and needs to be adjusted from `config_provider: control_plane` to `config_provider: etcd`: [#10012](https://github.com/apache/apisix/pull/10012)
+- :warning: Removing conf server, the data plane no longer supports communication with the control plane, and needs to be adjusted from `config_provider: control_plane` to `config_provider: etcd`: [#10012](https://github.com/apache/apisix/pull/10012)
 
 ### Core
 
-- :sunrise: support configuring the buffer size of the access log: [#10225](https://github.com/apache/apisix/pull/10225)
-- :sunrise: Support for passing resolv.conf in dns discovery: [#9770](https://github.com/apache/apisix/pull/9770)
-- :sunrise: No longer relying on trust: [#10121](https://github.com/apache/apisix/pull/10065)
+- :sunrise: Support configuring the buffer size of the access log: [#10225](https://github.com/apache/apisix/pull/10225)
+- :sunrise: Support the use of local DNS resolvers in service discovery by configuring `resolv_conf`: [#9770](https://github.com/apache/apisix/pull/9770)
+- :sunrise: No longer relying on trust: [#10121](https://github.com/apache/apisix/pull/10121)
 - :sunrise: Strictly validate the input of core resources: [#10233](https://github.com/apache/apisix/pull/10233)
 - :sunrise: Add dubbo protocols Support in the xrpc [#9660](https://github.com/apache/apisix/pull/9660)
 
