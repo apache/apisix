@@ -115,7 +115,7 @@ passed
 --- request
 GET /t
 --- response_body
-{"200":5,"502":1}
+{"200":4,"502":2}
 --- error_log
 (upstream#/apisix/routes/1) unhealthy HTTP increment (1/1)
 
@@ -332,6 +332,6 @@ GET /t
 502
 502
 --- grep_error_log eval
-qr/\[healthcheck\] \([^)]+\) unhealthy HTTP increment/
+qr/\[healthcheck\] \([^)]+\) trying to increment a target that is not in the list/
 --- grep_error_log_out
-[healthcheck] (upstream#/apisix/routes/2) unhealthy HTTP increment
+[healthcheck] (upstream#/apisix/routes/2) trying to increment a target that is not in the list
