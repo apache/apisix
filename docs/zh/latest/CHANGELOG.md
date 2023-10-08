@@ -85,7 +85,7 @@ title: CHANGELOG
 
 - :sunrise: 支持配置访问日志的缓冲区大小：[#10225](https://github.com/apache/apisix/pull/10225)
 - :sunrise: 支持在 DNS 发现服务中允许配置 `resolv_conf` 来使用本地 DNS 解析器：[#9770](https://github.com/apache/apisix/pull/9770)
-- :sunrise: 安装不再依赖 Rust：[#10121](https://github.com/apache/apisix/pull/10065)
+- :sunrise: 安装不再依赖 Rust：[#10121](https://github.com/apache/apisix/pull/10121)
 - :sunrise: 在 xRPC 中添加 Dubbo 协议支持：[#9660](https://github.com/apache/apisix/pull/9660)
 
 ### Plugins
