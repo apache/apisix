@@ -91,7 +91,6 @@ title: Changelog
 ### Plugins
 
 - :sunrise: Support https in traffic-split plugin: [#9115](https://github.com/apache/apisix/pull/9115)
-- :sunrise: Support for passing resolv.conf in dns discovery: [#9770](https://github.com/apache/apisix/pull/9770)
 - :sunrise: Support rewrite request body in external plugin:[#9990](https://github.com/apache/apisix/pull/9990)
 - :sunrise: Support set nginx variables in opentelemetry plugin: [#8871](https://github.com/apache/apisix/pull/8871)
 - :sunrise: Support unix sock host pattern in the chaitin-waf plugin: [#10161](https://github.com/apache/apisix/pull/10161)
