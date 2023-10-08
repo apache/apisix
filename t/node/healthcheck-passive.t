@@ -95,6 +95,8 @@ passed
             local http = require("resty.http")
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/server_port"
 
+            -- The first request cannot not update the target status in healthcheck because
+            -- add_target won't update the self.targets immediately
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
 
