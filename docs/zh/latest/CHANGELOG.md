@@ -79,22 +79,21 @@ title: CHANGELOG
 
 - :warning: 移除 `etcd.use_grpc`，不再支持使用 gRPC 协议与 etcd 进行通信：[#10015](https://github.com/apache/apisix/pull/10015)
 - :warning: 移除 conf server，数据平面不再支持与控制平面进行通信，需要从 `config_provider: control_plane` 调整为 `config_provider: etcd`：[#10012](https://github.com/apache/apisix/pull/10012)
+- :warning: 严格验证核心资源的输入：[#10233](https://github.com/apache/apisix/pull/10233)
 
 ### Core
 
 - :sunrise: 支持配置访问日志的缓冲区大小：[#10225](https://github.com/apache/apisix/pull/10225)
-- :sunrise: 支持在 DNS 发现中传递 resolv.conf：[#9770](https://github.com/apache/apisix/pull/9770)
-- :sunrise: 不再依赖 Rust：[#10121](https://github.com/apache/apisix/pull/10065)
-- :sunrise: 严格验证核心资源的输入：[#10233](https://github.com/apache/apisix/pull/10233)
-- :sunrise: 在 xrpc 中添加 dubbo 协议支持：[#9660](https://github.com/apache/apisix/pull/9660)
+- :sunrise: 支持在 DNS 发现服务中允许配置 `resolv_conf` 来使用本地 DNS 解析器：[#9770](https://github.com/apache/apisix/pull/9770)
+- :sunrise: 安装不再依赖 Rust：[#10121](https://github.com/apache/apisix/pull/10065)
+- :sunrise: 在 xRPC 中添加 Dubbo 协议支持：[#9660](https://github.com/apache/apisix/pull/9660)
 
 ### Plugins
 
-- :sunrise: 在 traffic-split 插件中支持 https：[#9115](https://github.com/apache/apisix/pull/9115)
-- :sunrise: 支持在 DNS 发现中传递 resolv.conf：[#9770](https://github.com/apache/apisix/pull/9770)
-- :sunrise: 在 ext-plugin 插件中支持重写请求体：[#9990](https://github.com/apache/apisix/pull/9990)
-- :sunrise: 在 opentelemetry 插件中支持设置 nginx 变量：[#8871](https://github.com/apache/apisix/pull/8871)
-- :sunrise: 在 chaitin-waf 插件中支持 unix sock 主机模式：[#10161](https://github.com/apache/apisix/pull/10161)
+- :sunrise: 在 `traffic-split` 插件中支持 HTTPS：[#9115](https://github.com/apache/apisix/pull/9115)
+- :sunrise: 在 `ext-plugin` 插件中支持重写请求体：[#9990](https://github.com/apache/apisix/pull/9990)
+- :sunrise: 在 `opentelemetry` 插件中支持设置 NGINX 变量：[#8871](https://github.com/apache/apisix/pull/8871)
+- :sunrise: 在 `chaitin-waf` 插件中支持 UNIX sock 主机模式：[#10161](https://github.com/apache/apisix/pull/10161)
 
 ### Bugfixes
 
