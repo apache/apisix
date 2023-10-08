@@ -85,8 +85,8 @@ title: Changelog
 - :sunrise: Support configuring the buffer size of the access log: [#10225](https://github.com/apache/apisix/pull/10225)
 - :sunrise: Support the use of local DNS resolvers in service discovery by configuring `resolv_conf`: [#9770](https://github.com/apache/apisix/pull/9770)
 - :sunrise: Remove Rust dependency for installation: [#10121](https://github.com/apache/apisix/pull/10121)
-- :sunrise: Strictly validate the input of core resources: [#10233](https://github.com/apache/apisix/pull/10233)
-- :sunrise: Add dubbo protocols Support in the xrpc [#9660](https://github.com/apache/apisix/pull/9660)
+- :sunrise: Enforce strict schema validation on the properties of the core APISIX resources: [#10233](https://github.com/apache/apisix/pull/10233)
+- :sunrise: Support Dubbo protocol in xRPC [#9660](https://github.com/apache/apisix/pull/9660)
 
 ### Plugins
 
