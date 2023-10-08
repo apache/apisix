@@ -270,7 +270,6 @@ unhealthy TCP increment (2/2) for '127.0.0.1(127.0.0.1:1988)'
 --- response_body
 [{"name":"/services/1","nodes":[{"counter":{"http_failure":0,"success":0,"tcp_failure":2,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1988,"status":"unhealthy"}],"type":"http"}]
 {"name":"/services/1","nodes":[{"counter":{"http_failure":0,"success":0,"tcp_failure":2,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1988,"status":"unhealthy"}],"type":"http"}
---- LAST
 
 
 
