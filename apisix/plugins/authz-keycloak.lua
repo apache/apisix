@@ -775,11 +775,8 @@ function _M.access(conf, ctx)
     end
 
     -- resolve secrets
-    local conf_cache = secret.fetch_secrets(conf)
-    if conf_cache then
-        conf = conf_cache["client_secret"]
-    end
-    
+    conf = secret.fetch_secrets(conf)
+
     local status, body = evaluate_permissions(conf, ctx, jwt_token)
     if status then
         return status, body
