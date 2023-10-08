@@ -20,7 +20,7 @@ local base64          = require("ngx.base64")
 local ngx             = ngx
 local sub_str         = string.sub
 local plugin_name     = "jwe-decrypt"
-local cipher          = assert(require("resty.openssl.cipher").new("aes-256-gcm"))
+local cipher          = require("resty.openssl.cipher").new("aes-256-gcm")
 
 local schema          = {
   type = "object",
@@ -54,7 +54,7 @@ local consumer_schema = {
 
 local _M = {
   version = 0.1,
-  priority = 2510,
+  priority = 2509,
   type = 'auth',
   name = plugin_name,
   schema = schema,

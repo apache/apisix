@@ -80,7 +80,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-:::
+:::note
 
 Once you have created a Consumer object, you can configure a Route to decrypt the header:
 
@@ -100,6 +100,8 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
+
+:::
 
 ## Example usage
 
@@ -140,6 +142,7 @@ curl http://127.0.0.1:9080/anything/hello -H 'Authorization: eyJhbGciOiJkaXIiLCJ
 ```
 
 You can see header "Authorization" change to plaintext.
+
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json

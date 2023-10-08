@@ -72,6 +72,8 @@ qr/{"key":"123","secret":"[a-zA-Z0-9+\\\/]+={0,2}"}/
 property "key" validation failed: wrong type: expected string, got number
 done
 
+
+
 === TEST 3: wrong type of string
 --- config
     location /t {
@@ -89,6 +91,8 @@ done
 --- response_body
 property "secret" validation failed: string too short, expected at least 32, got 6
 done
+
+
 
 === TEST 4: add consumer with username and plugins
 --- config
