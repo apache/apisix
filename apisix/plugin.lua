@@ -665,7 +665,6 @@ local function merge_service_stream_route(service_conf, route_conf)
         new_conf.value.upstream_id = service_conf.value.upstream_id
     end
 
-    --core.log.info("merged stream_route conf : ", require("inspect")(new_conf))
     return new_conf
 end
 
