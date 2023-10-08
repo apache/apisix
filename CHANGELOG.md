@@ -97,9 +97,9 @@ title: Changelog
 
 ### Bugfixes
 
-- Fix graphql post request route matching exception: [#10198](https://github.com/apache/apisix/pull/10198)
+- Fix GraphQL POST request route matching exception: [#10198](https://github.com/apache/apisix/pull/10198)
 - Fix error on array of multiline string in `apisix.yaml`: [#10193](https://github.com/apache/apisix/pull/10193)
-- Fix provide error instead of nil panic when cache_zone is missing in proxy-cache plugin: [#10138](https://github.com/apache/apisix/pull/10138)
+- Add error handlers for invalid `cache_zone` configuration in the `proxy-cache` plugin: [#10138](https://github.com/apache/apisix/pull/10138)
 
 ## 3.5.0
 
