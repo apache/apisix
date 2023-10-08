@@ -37,7 +37,7 @@ This represents the configuration of the plugins that are executed during the HT
 
 :::note
 
-If [Route](../terminology/route.md), [Service](../terminology/service.md), [Plugin Config](../terminology/plugin-config.md) or Consumer are all bound to the same for plugins, only one plugin configuration will take effect. The priority of plugin configurations is given here: [plugin execution order](../terminology/plugin.md#plugins-execution-order). At the same time, there are various stages involved in the plugin execution process described here: [plugin execution lifecycle](../terminology/plugin.md#plugins-execution-order)
+If [Route](../terminology/route.md), [Service](../terminology/service.md), [Plugin Config](../terminology/plugin-config.md) or [Consumer](../terminology/consumer.md) are all bound to the same for plugins, only one plugin configuration will take effect. The priority of plugin configurations is described in [plugin execution order](../terminology/plugin.md#plugins-execution-order). At the same time, there are various stages involved in the plugin execution process. See [plugin execution lifecycle](../terminology/plugin.md#plugins-execution-order).
 
 :::
 
