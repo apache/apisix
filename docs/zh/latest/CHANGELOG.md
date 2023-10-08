@@ -78,7 +78,7 @@ title: CHANGELOG
 ### Change
 
 - :warning: 移除 `etcd.use_grpc`，不再支持使用 gRPC 协议与 etcd 进行通信：[#10015](https://github.com/apache/apisix/pull/10015)
-- :warning: 移除 conf server，数据平面不再支持与数据平面进行通信，需要从 `config_provider: control_plane` 调整为 `config_provider: etcd`：[#10012](https://github.com/apache/apisix/pull/10012)
+- :warning: 移除 conf server，数据平面不再支持与控制平面进行通信，需要从 `config_provider: control_plane` 调整为 `config_provider: etcd`：[#10012](https://github.com/apache/apisix/pull/10012)
 
 ### Core
 
