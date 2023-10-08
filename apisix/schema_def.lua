@@ -283,6 +283,7 @@ local health_checker = {
         {required = {"active"}},
         {required = {"active", "passive"}},
     },
+    additionalProperties = false,
 }
 
 
@@ -501,7 +502,8 @@ local upstream_schema = {
     oneOf = {
         {required = {"nodes"}},
         {required = {"service_name", "discovery_type"}},
-    }
+    },
+    additionalProperties = false
 }
 
 -- TODO: add more nginx variable support
@@ -662,6 +664,7 @@ _M.route = {
             {required = {"script", "plugin_config_id"}},
         }
     },
+    additionalProperties = false,
 }
 
 
@@ -689,6 +692,7 @@ _M.service = {
             uniqueItems = true,
         },
     },
+    additionalProperties = false,
 }
 
 
@@ -707,6 +711,7 @@ _M.consumer = {
         desc = desc_def,
     },
     required = {"username"},
+    additionalProperties = false,
 }
 
 
@@ -817,7 +822,8 @@ _M.ssl = {
             {required = {"snis", "key", "cert"}}
         }
     },
-    ["else"] = {required = {"key", "cert"}}
+    ["else"] = {required = {"key", "cert"}},
+    additionalProperties = false,
 }
 
 
@@ -834,6 +840,7 @@ _M.proto = {
         }
     },
     required = {"content"},
+    additionalProperties = false,
 }
 
 
@@ -846,6 +853,7 @@ _M.global_rule = {
         update_time = timestamp_def
     },
     required = {"id", "plugins"},
+    additionalProperties = false,
 }
 
 
@@ -879,6 +887,7 @@ local xrpc_protocol_schema = {
                 dependencies = {
                     name = {"conf"},
                 },
+                additionalProperties = false,
             },
         },
 
@@ -914,7 +923,8 @@ _M.stream_route = {
         service_id = id_schema,
         plugins = plugins_schema,
         protocol = xrpc_protocol_schema,
-    }
+    },
+    additionalProperties = false,
 }
 
 
@@ -930,6 +940,7 @@ _M.plugins = {
             stream = {
                 type = "boolean"
             },
+            additionalProperties = false,
         },
         required = {"name"}
     }
@@ -947,6 +958,7 @@ _M.plugin_config = {
         update_time = timestamp_def
     },
     required = {"id", "plugins"},
+    additionalProperties = false,
 }
 
 
@@ -961,6 +973,7 @@ _M.consumer_group = {
         update_time = timestamp_def
     },
     required = {"id", "plugins"},
+    additionalProperties = false,
 }
 
 

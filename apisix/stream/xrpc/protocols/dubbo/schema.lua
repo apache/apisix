@@ -14,35 +14,19 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-return {
+local core = require("apisix.core")
+
+
+local schema = {
     type = "object",
-    properties = {
-        servers = {
-            type = "array",
-            minItems = 1,
-            items = {
-                type = "string",
-            },
-        },
-        resolv_conf = {
-            type = "string",
-        },
-        order = {
-            type = "array",
-            minItems = 1,
-            maxItems = 5,
-            uniqueItems = true,
-            items = {
-                enum = {"last", "SRV", "A", "AAAA", "CNAME"}
-            },
-        },
-    },
-    oneOf = {
-        {
-            required = {"servers"},
-        },
-        {
-            required = {"resolv_conf"},
-        }
-    }
 }
+
+local _M = {}
+
+
+function _M.check_schema(conf)
+    return core.schema.check(schema, conf)
+end
+
+
+return _M

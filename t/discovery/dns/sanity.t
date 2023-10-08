@@ -434,3 +434,30 @@ upstreams:
 --- must_die
 --- error_log
 matches none of the enum values
+
+
+
+=== TEST 20: use resolv.conf
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+discovery:                        # service discovery center
+    dns:
+        resolv_conf: build-cache/test_resolve.conf
+--- apisix_yaml
+upstreams:
+    - service_name: "sd.test.local:1980"
+      discovery_type: dns
+      type: roundrobin
+      id: 1
+--- grep_error_log eval
+qr/upstream nodes: \{[^}]+\}/
+--- grep_error_log_out eval
+qr/upstream nodes: \{("127.0.0.1:1980":1,"127.0.0.2:1980":1|"127.0.0.2:1980":1,"127.0.0.1:1980":1)\}/
+--- response_body
+hello world
