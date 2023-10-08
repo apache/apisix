@@ -77,7 +77,7 @@ title: Changelog
 
 ### Change
 
-- :warning: Remove the `etcd.use_grpc` and no longer support communication with ETCD using protocols with gRPC: [#10015](https://github.com/apache/apisix/pull/10015)
+- :warning: Remove gRPC support between APISIX and etcd and remove `etcd.use_grpc` configuration option: [#10015](https://github.com/apache/apisix/pull/10015)
 - :warning: Remove conf server. The data plane no longer supports direct communication with the control plane, and the configuration should be adjusted from `config_provider: control_plane` to `config_provider: etcd`: [#10012](https://github.com/apache/apisix/pull/10012)
 - :warning: Enforce strict schema validation on the properties of the core APISIX resources: [#10233](https://github.com/apache/apisix/pull/10233)
 
