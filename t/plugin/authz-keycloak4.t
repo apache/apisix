@@ -102,7 +102,7 @@ Success! Data written to: kv/apisix/foo
                 }),
             })
             if res.status == 200 then
-                ngx.print("success")
+                ngx.print("success\n")
             end
         }
     }
