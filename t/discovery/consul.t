@@ -579,8 +579,8 @@ upstreams:
 --- request
 GET /thc
 --- response_body
-[{"ip":"127.0.0.1","port":30513,"status":"healthy"},{"ip":"127.0.0.1","port":30514,"status":"healthy"}]
-[{"ip":"127.0.0.1","port":30513,"status":"healthy"},{"ip":"127.0.0.1","port":30514,"status":"healthy"}]
+[{"hostname":"127.0.0.1","ip":"127.0.0.1","port":30513,"status":"healthy"},{"hostname":"127.0.0.1","ip":"127.0.0.1","port":30514,"status":"healthy"}]
+[{"hostname":"127.0.0.1","ip":"127.0.0.1","port":30513,"status":"healthy"},{"hostname":"127.0.0.1","ip":"127.0.0.1","port":30514,"status":"healthy"}]
 --- ignore_error_log
 
 
