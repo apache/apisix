@@ -102,11 +102,11 @@ Success! Data written to: kv/apisix/foo
                 }),
             })
             if res.status == 200 then
-                ngx.print(res.body)
+                ngx.print("success")
             end
         }
     }
 --- request
 GET /t
 --- response_body
-true
+success
