@@ -16,11 +16,12 @@
 --
 local core      = require("apisix.core")
 local http      = require "resty.http"
+local secret    = require("apisix.secret")
 local sub_str   = string.sub
 local type      = type
 local ngx       = ngx
 local plugin_name = "authz-keycloak"
-local secret         = require("apisix.secret")
+
 
 local log = core.log
 local pairs = pairs
