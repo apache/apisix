@@ -24,6 +24,7 @@ return {
                 type = "string",
             }
         },
+        token = {type = "string", default = ""},
         fetch_interval = {type = "integer", minimum = 1, default = 3},
         keepalive = {
             type = "boolean",
