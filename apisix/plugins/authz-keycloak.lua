@@ -759,6 +759,8 @@ end
 
 
 function _M.access(conf, ctx)
+    -- resolve secrets
+    conf = secret.fetch_secrets(conf)
     local headers = core.request.headers(ctx)
     local need_grant_token = conf.password_grant_token_generation_incoming_uri and
         ctx.var.request_uri == conf.password_grant_token_generation_incoming_uri and
@@ -774,8 +776,6 @@ function _M.access(conf, ctx)
         return 401, {message = "Missing JWT token in request"}
     end
 
-    -- resolve secrets
-    conf = secret.fetch_secrets(conf)
 
     local status, body = evaluate_permissions(conf, ctx, jwt_token)
     if status then
