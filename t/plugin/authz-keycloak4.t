@@ -82,6 +82,7 @@ Success! Data written to: kv/apisix/foo
 
             if code >= 300 then
                 ngx.status = code
+                return ngx.say(body)
             end
 
             local json_decode = require("toolkit.json").decode
