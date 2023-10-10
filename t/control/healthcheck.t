@@ -51,7 +51,7 @@ routes:
 upstreams:
     - nodes:
         "127.0.0.1:1980": 1
-        "127.0.0.2:1988": 1
+        "127.0.0.2:1988": 0
       type: roundrobin
       id: 1
       checks:
@@ -120,11 +120,11 @@ upstreams:
 --- grep_error_log eval
 qr/unhealthy TCP increment \(.+\) for '[^']+'/
 --- grep_error_log_out
-unhealthy TCP increment (1/2) for '(127.0.0.2:1988)'
-unhealthy TCP increment (2/2) for '(127.0.0.2:1988)'
+unhealthy TCP increment (1/2) for '127.0.0.2(127.0.0.2:1988)'
+unhealthy TCP increment (2/2) for '127.0.0.2(127.0.0.2:1988)'
 --- response_body
-[{"counter":{"http_failure":0,"success":0,"tcp_failure":0,"timeout_failure":0},"ip":"127.0.0.1","port":1980,"status":"healthy"},{"counter":{"http_failure":0,"success":0,"tcp_failure":2,"timeout_failure":0},"ip":"127.0.0.2","port":1988,"status":"unhealthy"}]
-[{"counter":{"http_failure":0,"success":0,"tcp_failure":0,"timeout_failure":0},"ip":"127.0.0.1","port":1980,"status":"healthy"},{"counter":{"http_failure":0,"success":0,"tcp_failure":2,"timeout_failure":0},"ip":"127.0.0.2","port":1988,"status":"unhealthy"}]
+[{"counter":{"http_failure":0,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1980,"status":"healthy"},{"counter":{"http_failure":0,"success":0,"tcp_failure":2,"timeout_failure":0},"hostname":"127.0.0.2","ip":"127.0.0.2","port":1988,"status":"unhealthy"}]
+[{"counter":{"http_failure":0,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1980,"status":"healthy"},{"counter":{"http_failure":0,"success":0,"tcp_failure":2,"timeout_failure":0},"hostname":"127.0.0.2","ip":"127.0.0.2","port":1988,"status":"unhealthy"}]
 
 
 
