@@ -145,7 +145,7 @@ nginx_config:                     # Config for render the template to generate n
                                   # effective if the master process runs with super-user privileges.
   error_log: logs/error.log       # Location of the error log.
   error_log_level:  warn          # Logging level: info, debug, notice, warn, error, crit, alert, or emerg.
-  worker_processes: auto          # Automatically determine the optimal number of worker processes based
+  worker_processes: 4          # Automatically determine the optimal number of worker processes based
                                   # on the available system resources.
                                   # If you want use multiple cores in container, you can inject the number of
                                   # CPU cores as environment variable "APISIX_WORKER_PROCESSES".
