@@ -94,7 +94,7 @@ routes:
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
 
-            ngx.sleep(0.5)
+            ngx.sleep(1.5)
 
             ngx.say(res.status)
         }
