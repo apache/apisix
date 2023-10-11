@@ -142,7 +142,7 @@ passed
 
 
 
-=== TEST 1: upstream_schema
+=== TEST 4: upstream_schema
 --- yaml_config eval: $::yaml_config
 --- config
     location /t {
