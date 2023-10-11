@@ -142,8 +142,7 @@ passed
 
 
 
-=== TEST 4: upstream_schema
---- yaml_config eval: $::yaml_config
+=== TEST 4: sanity check upstream_schema
 --- config
     location /t {
         content_by_lua_block {
