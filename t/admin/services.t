@@ -1171,54 +1171,53 @@ GET /t
             local code, body = t('/apisix/admin/services/1',
                  ngx.HTTP_PUT,
                  [[{
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:8080": 1
-                        },
-                        "type": "roundrobin",
-                        "create_time": 1602883670,
-                        "update_time": 1602893670
-                    }
-                }]],
-                [[{
-                    "value": {
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin",
-                            "create_time": 1602883670,
-                            "update_time": 1602893670
-                        }
+                  "upstream": {
+                    "nodes": {
+                      "127.0.0.1:8080": 1
                     },
-                    "key": "/apisix/services/1"
-                }]]
-                )
-
+                    "type": "roundrobin"
+                  },
+                  "create_time": 1602883670,
+                  "update_time": 1602893670
+                }]])
             ngx.status = code
             ngx.say(body)
         }
     }
 --- request
 GET /t
---- response_body
-passed
+--- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"the property is forbidden:.*"\}/
 
 
 
-=== TEST 35: delete test service(id: 1)
+=== TEST 35: create service and the built-in resource with create_time and update_time(id: 1)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/services/1', ngx.HTTP_DELETE)
-            ngx.say("[delete] code: ", code, " message: ", message)
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                  "upstream": {
+                    "type": "roundrobin",
+                    "nodes": {
+                      "127.0.0.1:8080": 1
+                    },
+                    "create_time": 1602883670,
+                    "update_time": 1602893670
+                  }
+                }]])
+            ngx.status = code
+            ngx.say(body)
         }
     }
 --- request
 GET /t
---- response_body
-[delete] code: 200 message: passed
+--- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"the property is forbidden:.*"\}/
 
 
 

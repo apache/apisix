@@ -16,12 +16,12 @@
 --
 
 package = "apisix"
-version = "master-0"
+version = "3.6.0-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/apache/apisix",
-    branch = "master",
+    branch = "3.6.0",
 }
 
 description = {
@@ -39,8 +39,7 @@ dependencies = {
     "lua-resty-balancer = 0.04",
     "lua-resty-ngxvar = 0.5.2",
     "lua-resty-jit-uuid = 0.0.7",
-    "lua-resty-worker-events = 1.0.0",
-    "lua-resty-healthcheck-api7 = 3.2.0",
+    "lua-resty-healthcheck-api7 = 3.0.0",
     "api7-lua-resty-jwt = 0.2.5",
     "lua-resty-hmac-ffi = 0.06-1",
     "lua-resty-cookie = 0.2.0-1",

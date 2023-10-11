@@ -175,7 +175,7 @@ local function set_upstream_scheme(ctx, upstream)
 
     ctx.var["upstream_scheme"] = ctx.upstream_scheme
 end
-
+_M.set_scheme = set_upstream_scheme
 
 local scheme_to_port = {
     http = 80,
