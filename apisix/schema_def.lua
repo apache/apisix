@@ -784,10 +784,6 @@ _M.ssl = {
             },
             required = {"ca"},
         },
-        exptime = {
-            type = "integer",
-            minimum = 1588262400,  -- 2020/5/1 0:0:0
-        },
         labels = labels_def,
         status = {
             description = "ssl status, 1 to enable, 0 to disable",
@@ -804,8 +800,6 @@ _M.ssl = {
                 enum = {"TLSv1.1", "TLSv1.2", "TLSv1.3"}
             },
         },
-        validity_end = timestamp_def,
-        validity_start = timestamp_def,
         create_time = timestamp_def,
         update_time = timestamp_def
     },
