@@ -139,3 +139,101 @@ qr/ok: false err: property "(id|plugins)" is required/
 GET /t
 --- response_body
 passed
+
+
+
+=== TEST 4: sanity check upstream_schema
+--- config
+    location /t {
+        content_by_lua_block {
+            local schema_def = require("apisix.schema_def")
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+            local ssl_cert = t.read_file("t/certs/apisix.crt")
+            local ssl_key =  t.read_file("t/certs/apisix.key")
+            local upstream = {
+                nodes = {
+                    ["127.0.0.1:8080"] = 1
+                },
+                type = "roundrobin",
+                tls = {
+                    client_cert_id = 1,
+                    client_cert = ssl_cert,
+                    client_key = ssl_key
+                }
+            }
+            local ok, err = core.schema.check(schema_def.upstream, upstream)
+            assert(not ok)
+            assert(err ~= nil)
+
+            upstream = {
+                nodes = {
+                    ["127.0.0.1:8080"] = 1
+                },
+                type = "roundrobin",
+                tls = {
+                    client_cert_id = 1
+                }
+            }
+            local ok, err = core.schema.check(schema_def.upstream, upstream)
+            assert(ok)
+            assert(err == nil, err)
+
+            upstream = {
+                nodes = {
+                    ["127.0.0.1:8080"] = 1
+                },
+                type = "roundrobin",
+                tls = {
+                    client_cert = ssl_cert,
+                    client_key = ssl_key
+                }
+            }
+            local ok, err = core.schema.check(schema_def.upstream, upstream)
+            assert(ok)
+            assert(err == nil, err)
+
+            upstream = {
+                nodes = {
+                    ["127.0.0.1:8080"] = 1
+                },
+                type = "roundrobin",
+                tls = {
+                }
+            }
+            local ok, err = core.schema.check(schema_def.upstream, upstream)
+            assert(ok)
+            assert(err == nil, err)
+
+            upstream = {
+                nodes = {
+                    ["127.0.0.1:8080"] = 1
+                },
+                type = "roundrobin",
+                tls = {
+                    client_cert = ssl_cert
+                }
+            }
+            local ok, err = core.schema.check(schema_def.upstream, upstream)
+            assert(not ok)
+            assert(err ~= nil)
+
+            upstream = {
+                nodes = {
+                    ["127.0.0.1:8080"] = 1
+                },
+                type = "roundrobin",
+                tls = {
+                    client_cert_id = 1,
+                    client_key = ssl_key
+                }
+            }
+            local ok, err = core.schema.check(schema_def.upstream, upstream)
+            assert(not ok)
+            assert(err ~= nil)
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
