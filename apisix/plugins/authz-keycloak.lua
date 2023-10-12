@@ -16,7 +16,7 @@
 --
 local core      = require("apisix.core")
 local http      = require "resty.http"
-local secret    = require("apisix.secret")
+local fetch_secrets    = require("apisix.secret").fetch_secrets
 local sub_str   = string.sub
 local type      = type
 local ngx       = ngx
@@ -761,7 +761,7 @@ end
 
 function _M.access(conf, ctx)
     -- resolve secrets
-    conf = secret.fetch_secrets(conf)
+    conf = fetch_secrets(conf)
     local headers = core.request.headers(ctx)
     local need_grant_token = conf.password_grant_token_generation_incoming_uri and
         ctx.var.request_uri == conf.password_grant_token_generation_incoming_uri and
