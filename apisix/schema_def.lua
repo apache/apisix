@@ -949,6 +949,9 @@ _M.plugins = {
 _M.plugin_config = {
     type = "object",
     properties = {
+        name = {
+            type = "string",
+        },
         id = id_schema,
         desc = desc_def,
         plugins = plugins_schema,
