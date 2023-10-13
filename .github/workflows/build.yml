@@ -46,11 +46,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: "1.17"
-
       - name: Cache deps
         uses: actions/cache@v3
         env:
@@ -170,6 +165,10 @@ jobs:
         env:
           TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
         run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
+
+      - name: Setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
 
       - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
         name: Save docker images
