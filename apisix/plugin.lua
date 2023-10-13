@@ -639,6 +639,7 @@ function _M.merge_service_route(service_conf, route_conf)
                         service_conf, route_conf)
 end
 
+
 local function merge_service_stream_route(service_conf, route_conf)
     -- because many fields in Service are not supported by stream route,
     -- so we copy the stream route as base object
@@ -668,6 +669,7 @@ local function merge_service_stream_route(service_conf, route_conf)
     return new_conf
 end
 
+
 function _M.merge_service_stream_route(service_conf, route_conf)
     core.log.info("service conf: ", core.json.delay_encode(service_conf, true))
     core.log.info("  stream route conf: ", core.json.delay_encode(route_conf, true))
@@ -679,6 +681,7 @@ function _M.merge_service_stream_route(service_conf, route_conf)
             merge_service_stream_route,
             service_conf, route_conf)
 end
+
 
 local function merge_consumer_route(route_conf, consumer_conf, consumer_group_conf)
     if not consumer_conf.plugins or

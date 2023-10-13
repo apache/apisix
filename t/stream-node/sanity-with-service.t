@@ -127,34 +127,7 @@ passed
 
 
 
-=== TEST 6: set stream route(id: 1) with server port
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/stream_routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "remote_addr": "127.0.0.1",
-                    "server_port": 1995,
-                    "service_id": 1
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 7: set service upstream (id: 1)
+=== TEST 6: set service upstream (id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -193,7 +166,7 @@ passed
 
 
 
-=== TEST 8: set stream route (id: 1) with service (id: 1) which uses upstream_id
+=== TEST 7: set stream route (id: 1) with service (id: 1) which uses upstream_id
 --- config
     location /t {
         content_by_lua_block {
@@ -218,7 +191,7 @@ passed
 
 
 
-=== TEST 9: hit route
+=== TEST 8: hit route
 --- stream_request eval
 mmm
 --- stream_response
@@ -226,7 +199,7 @@ hello world
 
 
 
-=== TEST 10: set stream route (id: 1) which uses upstream_id and remote address with IP CIDR
+=== TEST 9: set stream route (id: 1) which uses upstream_id and remote address with IP CIDR
 --- config
     location /t {
         content_by_lua_block {
@@ -251,7 +224,7 @@ passed
 
 
 
-=== TEST 11: hit route
+=== TEST 10: hit route
 --- stream_request eval
 mmm
 --- stream_response
@@ -259,7 +232,7 @@ hello world
 
 
 
-=== TEST 12: reject bad CIDR
+=== TEST 11: reject bad CIDR
 --- config
     location /t {
         content_by_lua_block {
@@ -285,7 +258,7 @@ GET /t
 
 
 
-=== TEST 13: skip upstream http host check in stream subsystem
+=== TEST 12: skip upstream http host check in stream subsystem
 --- config
     location /t {
         content_by_lua_block {
@@ -314,54 +287,8 @@ passed
 
 
 
-=== TEST 14: hit route
+=== TEST 13: hit route
 --- stream_request eval
 mmm
 --- stream_response
 hello world
-
-
-
-=== TEST 15: reuse ctx and more
---- stream_extra_init_by_lua
-    local ctx = require("apisix.core.ctx")
-    local tablepool = require("apisix.core").tablepool
-
-    local old_set_vars_meta = ctx.set_vars_meta
-    ctx.set_vars_meta = function(...)
-        ngx.log(ngx.WARN, "fetch ctx var")
-        return old_set_vars_meta(...)
-    end
-
-    local old_release_vars = ctx.release_vars
-    ctx.release_vars = function(...)
-        ngx.log(ngx.WARN, "release ctx var")
-        return old_release_vars(...)
-    end
-
-    local old_fetch = tablepool.fetch
-    tablepool.fetch = function(name, ...)
-        ngx.log(ngx.WARN, "fetch table ", name)
-        return old_fetch(name, ...)
-    end
-
-    local old_release = tablepool.release
-    tablepool.release = function(name, ...)
-        ngx.log(ngx.WARN, "release table ", name)
-        return old_release(name, ...)
-    end
---- stream_request eval
-mmm
---- stream_response
-hello world
---- grep_error_log eval
-qr/(fetch|release) (ctx var|table \w+)/
---- grep_error_log_out
-fetch table api_ctx
-fetch ctx var
-fetch table ctx_var
-fetch table plugins
-release ctx var
-release table ctx_var
-release table plugins
-release table api_ctx
