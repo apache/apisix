@@ -76,20 +76,12 @@ title: Changelog
 
 ## 3.6.1
 
-### Change
-
-- change: creating core resources does not allow passing in `create_time` and `update_time`：[#10232](https://github.com/apache/apisix/pull/10232)
-
-### Core
-
-- :sunrise: 壮举：将 lua-resty-healthcheck 升级到 3.2.0：[#10307](https://github.com/apache/apisix/pull/10307)
-
 ### Bugfix
 
-- 修复：修复并优化upstream_schema中的tls：[#10269](https://github.com/apache/apisix/pull/10269)
-- 修复：在plugin_config架构中添加名称字段以保持一致性：[#10315](https://github.com/apache/apisix/pull/10315)
-- 修复：更新 cors.lua 中的模式描述：[#10314](https://github.com/apache/apisix/pull/10314)
-- 修复：使用警告日志获取 get_target_status 失败：[#10156](https://github.com/apache/apisix/pull/10156)
+- fix: fix and optimize tls in upstream_schema：[#10269](https://github.com/apache/apisix/pull/10269)
+- fix: add name field in plugin_config schema for consistency：[#10315](https://github.com/apache/apisix/pull/10315)
+- fix: update schema description in cors.lua：[#10314](https://github.com/apache/apisix/pull/10314)
+- fix: use warn log for get_target_status failure：[#10156](https://github.com/apache/apisix/pull/10156)
 
 ## 3.6.0
 
