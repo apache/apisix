@@ -114,7 +114,7 @@ function _M.fire_all_clean_handlers(item)
         clean_handler.f(item)
     end
 
-    item.clean_handlers = nil
+    item.clean_handlers = {}
 end
 
 
