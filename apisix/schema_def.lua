@@ -402,16 +402,10 @@ local upstream_schema = {
                 },
             },
             dependencies = {
-                client_cert = {
-                    required = {"client_key"},
-                    ["not"] = {required = {"client_cert_id"}}
-                },
-                client_key = {
-                    required = {"client_cert"},
-                    ["not"] = {required = {"client_cert_id"}}
-                },
+                client_cert = {required = {"client_key"}},
+                client_key = {required = {"client_cert"}},
                 client_cert_id = {
-                    ["not"] = {required = {"client_client", "client_key"}}
+                    ["not"] = {required = {"client_cert", "client_key"}}
                 }
             }
         },
@@ -949,6 +943,9 @@ _M.plugins = {
 _M.plugin_config = {
     type = "object",
     properties = {
+        name = {
+            type = "string",
+        },
         id = id_schema,
         desc = desc_def,
         plugins = plugins_schema,
