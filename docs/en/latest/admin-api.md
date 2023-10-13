@@ -1419,6 +1419,7 @@ Stream Route resource request address:  /apisix/admin/stream_routes/{id}
 | ----------- | -------- | -------- | ------------------------------------------------------------------- | ----------------------------- |
 | upstream    | False    | Upstream | Configuration of the [Upstream](./terminology/upstream.md). |                               |
 | upstream_id | False    | Upstream | Id of the [Upstream](terminology/upstream.md) service.      |                               |
+| service_id  | False    | String   | Id of the [Service](terminology/service.md) service.        |                               |
 | remote_addr | False    | IPv4, IPv4 CIDR, IPv6  | Filters Upstream forwards by matching with client IP.               | "127.0.0.1" or "127.0.0.1/32" or "::1" |
 | server_addr | False    | IPv4, IPv4 CIDR, IPv6  | Filters Upstream forwards by matching with APISIX Server IP.        | "127.0.0.1" or "127.0.0.1/32" or "::1" |
 | server_port | False    | Integer  | Filters Upstream forwards by matching with APISIX Server port.      | 9090                          |
