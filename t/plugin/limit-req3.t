@@ -27,9 +27,6 @@ add_block_preprocessor(sub {
     my $port = $ENV{TEST_NGINX_SERVER_PORT};
 
     my $TEST_NGINX_HTML_DIR ||= html_dir();
-    my $config = $block->config // <<_EOC_;
-    listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
-_EOC_
 
     $block->set_value("config", $config);
 
