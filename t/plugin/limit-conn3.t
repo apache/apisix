@@ -37,11 +37,6 @@ add_block_preprocessor(sub {
     my $port = $ENV{TEST_NGINX_SERVER_PORT};
 
     my $TEST_NGINX_HTML_DIR ||= html_dir();
-    my $config = $block->config // <<_EOC_;
-    listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
-_EOC_
-
-    $block->set_value("config", $config);
 
     if (!$block->request) {
         $block->set_value("request", "GET /t");
@@ -55,6 +50,7 @@ _EOC_
 run_tests;
 
 __DATA__
+
 === TEST 1: create route with limit-conn plugin
 --- config
     location /t {
@@ -134,7 +130,7 @@ passed
 apisix:
   ssl:
     enable: true
-    listen:                                       # APISIX listening port for HTTPS traffic.
+    listen:
       - port: 9443
         enable_http2: true
 --- exec
