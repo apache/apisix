@@ -123,7 +123,7 @@ passed
 apisix:
   ssl:
     enable: true
-    listen:                                       # APISIX listening port for HTTPS traffic.
+    listen:
       - port: 9443
         enable_http2: true
 --- exec
