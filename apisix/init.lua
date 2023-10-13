@@ -170,7 +170,7 @@ end
 
 
 function _M.http_exit_worker()
-    -- TODO: we can support stream plugin later - currently there is not `destory` method
+    -- TODO: we can support stream plugin later - currently there is not `destroy` method
     -- in stream plugins
     plugin.exit_worker()
     require("apisix.plugins.ext-plugin.init").exit_worker()
