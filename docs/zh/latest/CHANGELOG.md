@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [3.6.1](#361)
 - [3.6.0](#360)
 - [3.5.0](#350)
 - [3.4.0](#340)
@@ -72,6 +73,16 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.6.1
+
+### Bugfix
+
+- 修复：修复并优化 upstream_schema 中的 tls：[#10269](https://github.com/apache/apisix/pull/10269)
+- 修复：在 plugin_config 架构中添加名称字段以保持一致性：[#10315](https://github.com/apache/apisix/pull/10315)
+- 修复：更新 cors.lua 中的模式描述：[#10314](https://github.com/apache/apisix/pull/10314)
+- 修复：使用警告日志获取 get_target_status 失败：[#10156](https://github.com/apache/apisix/pull/10156)
+- 修复：当上游发生变化时保持健康检查目标状态: [#10312](https://github.com/apache/apisix/pull/10312)
 
 ## 3.6.0
 

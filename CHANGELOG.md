@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.6.1](#361)
 - [3.6.0](#360)
 - [3.5.0](#350)
 - [3.4.0](#340)
@@ -72,6 +73,16 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.6.1
+
+### Bugfix
+
+- fix: fix and optimize tls in upstream_schema：[#10269](https://github.com/apache/apisix/pull/10269)
+- fix: add name field in plugin_config schema for consistency：[#10315](https://github.com/apache/apisix/pull/10315)
+- fix: update schema description in cors.lua：[#10314](https://github.com/apache/apisix/pull/10314)
+- fix: use warn log for get_target_status failure：[#10156](https://github.com/apache/apisix/pull/10156)
+- fix: keep healthcheck target state when upstream changes: [#10312](https://github.com/apache/apisix/pull/10312)
 
 ## 3.6.0
 
