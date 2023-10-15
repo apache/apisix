@@ -78,7 +78,7 @@ title: CHANGELOG
 
 ### Core
 
-- :sunrise: 特征: 升级 lua-resty-healthcheck 至 3.2.0: [#10307](https://github.com/apache/apisix/pull/10307)
+- :sunrise: 特征：升级 lua-resty-healthcheck 至 3.2.0: [#10307](https://github.com/apache/apisix/pull/10307)
 
 ### Bugfix
 
