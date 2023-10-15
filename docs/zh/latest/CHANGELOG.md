@@ -76,6 +76,10 @@ title: CHANGELOG
 
 ## 3.6.1
 
+### Core
+
+- :sunrise: 特征: 升级 lua-resty-healthcheck 至 3.2.0: [#10307](https://github.com/apache/apisix/pull/10307)
+
 ### Bugfix
 
 - 修复：修复并优化 upstream_schema 中的 tls：[#10269](https://github.com/apache/apisix/pull/10269)
