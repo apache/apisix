@@ -29,6 +29,7 @@ local tonumber           = tonumber
 local pairs              = pairs
 local ngx_timer_at       = ngx.timer.at
 local ngx_timer_every    = ngx.timer.every
+local exiting            = ngx.worker.exiting
 local log                = core.log
 local json_delay_encode  = core.json.delay_encode
 local ngx_worker_id      = ngx.worker.id
@@ -530,7 +531,9 @@ function _M.connect(premature, consul_server, retry_delay)
                 health_res.headers['X-Consul-Index'])
     end
 
-    check_keepalive(consul_server, retry_delay)
+    if not exiting() then
+        check_keepalive(consul_server, retry_delay)
+    end
 end
 
 
