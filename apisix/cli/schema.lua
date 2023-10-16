@@ -74,6 +74,11 @@ local config_schema = {
                 node_listen = {
                     anyOf = {
                         {
+                            type = "integer",
+                            minimum = 1,
+                            maximum = 65535
+                        },
+                        {
                             type = "array",
                             items = {
                                 type = "integer",
