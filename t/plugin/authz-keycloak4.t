@@ -60,6 +60,7 @@ apisix:
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local json = require("toolkit.json")
             -- put secret vault config
             local code, body = t('/apisix/admin/secrets/vault/test1',
                 ngx.HTTP_PUT,
@@ -142,6 +143,7 @@ apisix:
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local json = require("toolkit.json")
             -- put secret vault config
             local code, body = t('/apisix/admin/secrets/vault/test1',
                 ngx.HTTP_PUT,
