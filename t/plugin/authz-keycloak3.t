@@ -14,123 +14,56 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+BEGIN {
+    $ENV{VAULT_TOKEN} = "root";
+    $ENV{CLIENT_SECRET} = "d1ec69e9-55d2-4109-a3ea-befa071579d5";
+}
+
 use t::APISIX 'no_plan';
 
-add_block_preprocessor(sub {
-    my ($block) = @_;
-
-    if (!$block->request) {
-        $block->set_value("request", "GET /t");
-    }
-
-    if (!$block->error_log && !$block->no_error_log) {
-        $block->set_value("no_error_log", "[error]\n[alert]");
-    }
-});
-
+log_level('debug');
+repeat_each(1);
+no_long_string();
+no_root_location();
 run_tests;
 
 __DATA__
 
-=== TEST 1: access_denied_redirect_uri works with request denied in token_endpoint
+=== TEST 1: store secret into vault
+--- exec
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/foo client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5
+--- response_body
+Success! Data written to: kv/apisix/foo
+
+
+
+=== TEST 2: set client_secret as a reference to secret
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "authz-keycloak": {
-                                "token_endpoint": "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token",
-                                "access_denied_redirect_uri": "http://127.0.0.1/test",
-                                "permissions": ["course_resource#delete"],
-                                "client_id": "course_management",
-                                "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
-                                "timeout": 3000
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1982": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello1"
+            -- put secret vault config
+            local code, body = t('/apisix/admin/secrets/vault/test1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://127.0.0.1:8200",
+                    "prefix" : "kv/apisix",
+                    "token" : "root"
                 }]]
                 )
-
             if code >= 300 then
                 ngx.status = code
+                return ngx.say(body)
             end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 2: hit
---- config
-    location /t {
-        content_by_lua_block {
-            local json_decode = require("toolkit.json").decode
-            local http = require "resty.http"
-            local httpc = http.new()
-            local uri = "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token"
-            local res, err = httpc:request_uri(uri, {
-                    method = "POST",
-                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=student@gmail.com&password=123456",
-                    headers = {
-                        ["Content-Type"] = "application/x-www-form-urlencoded"
-                    }
-                })
-
-            if res.status == 200 then
-                local body = json_decode(res.body)
-                local accessToken = body["access_token"]
-                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello1"
-                local res, err = httpc:request_uri(uri, {
-                    method = "GET",
-                    headers = {
-                        ["Authorization"] = "Bearer " .. accessToken,
-                    }
-                 })
-
-                 ngx.status = res.status
-                 ngx.header["Location"] = res.headers["Location"]
-            end
-        }
-    }
---- error_code: 307
---- response_headers
-Location: http://127.0.0.1/test
-
-
-
-=== TEST 3: data encryption for client_secret
---- yaml_config
-apisix:
-    data_encryption:
-        enable: true
-        keyring:
-            - edd1c9f0985e76a2
---- config
-    location /t {
-        content_by_lua_block {
-            local json = require("toolkit.json")
-            local t = require("lib.test_admin").test
-
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
                         "plugins": {
                             "authz-keycloak": {
                                 "token_endpoint": "https://127.0.0.1:8443/realms/University/protocol/openid-connect/token",
-                                "permissions": ["course_resource#view"],
+                                "permissions": ["course_resource"],
                                 "client_id": "course_management",
-                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "client_secret": "$secret://vault/test1/foo/client_secret",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                 "timeout": 3000,
                                 "ssl_verify": false,
@@ -146,33 +79,104 @@ apisix:
                         "uri": "/api/token"
                 }]]
             )
-
             if code >= 300 then
                 ngx.status = code
-                ngx.say(body)
-                return
             end
-            ngx.sleep(0.1)
-
-            -- get plugin conf from admin api, password is decrypted
-            local code, message, res = t('/apisix/admin/routes/1',
-                ngx.HTTP_GET
-            )
-            res = json.decode(res)
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(message)
-                return
+            local json_decode = require("toolkit.json").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/api/token"
+            local headers = {
+                ["Content-Type"] = "application/x-www-form-urlencoded",
+            }
+            -- no username
+            local res, err = httpc:request_uri(uri, {
+                method = "POST",
+                headers = headers,
+                body =  ngx.encode_args({
+                    username = "teacher@gmail.com",
+                    password = "123456",
+                }),
+            })
+            if res.status == 200 then
+                ngx.print(res.body)
             end
-
-            ngx.say(res.value.plugins["authz-keycloak"].client_secret)
-
-            -- get plugin conf from etcd, password is encrypted
-            local etcd = require("apisix.core.etcd")
-            local res = assert(etcd.get('/routes/1'))
-            ngx.say(res.body.node.value.plugins["authz-keycloak"].client_secret)
         }
     }
+--- request
+GET /t
 --- response_body
-d1ec69e9-55d2-4109-a3ea-befa071579d5
-Fz1juZEEvh9PPXOmWFdMMJkREt3ZSzEVWcUZPxNP6achk3fosEvn37oN0qH4YgKB
+true
+
+
+
+=== TEST 3: set client_secret as a reference to environment variable
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- put secret vault config
+            local code, body = t('/apisix/admin/secrets/vault/test1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://127.0.0.1:8200",
+                    "prefix" : "kv/apisix",
+                    "token" : "root"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "authz-keycloak": {
+                                "token_endpoint": "https://127.0.0.1:8443/realms/University/protocol/openid-connect/token",
+                                "permissions": ["course_resource"],
+                                "client_id": "course_management",
+                                "client_secret": "$env://CLIENT_SECRET",
+                                "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
+                                "timeout": 3000,
+                                "ssl_verify": false,
+                                "password_grant_token_generation_incoming_uri": "/api/token"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/api/token"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            local json_decode = require("toolkit.json").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/api/token"
+            local headers = {
+                ["Content-Type"] = "application/x-www-form-urlencoded",
+            }
+            -- no username
+            local res, err = httpc:request_uri(uri, {
+                method = "POST",
+                headers = headers,
+                body =  ngx.encode_args({
+                    username = "teacher@gmail.com",
+                    password = "123456",
+                }),
+            })
+            if res.status == 200 then
+                ngx.print(res.body)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+true
