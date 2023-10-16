@@ -154,6 +154,10 @@ jobs:
       run: |
         docker exec centos7Instance bash -c "cd apisix && ./ci/centos7-ci.sh run_case"
 
+    - name: Setup tmate session
+      if: ${{ failure() }}
+      uses: mxschmitt/action-tmate@v3
+
     - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
       name: Save docker images
       run: |
