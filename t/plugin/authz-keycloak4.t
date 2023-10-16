@@ -16,6 +16,7 @@
 #
 BEGIN {
     $ENV{VAULT_TOKEN} = "root";
+    $ENV{CLIENT_SECRET} = "d1ec69e9-55d2-4109-a3ea-befa071579d5";
 }
 
 use t::APISIX 'no_plan';
@@ -37,6 +38,12 @@ Success! Data written to: kv/apisix/foo
 
 
 === TEST 2: set client_secret as a reference to secret
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
 --- config
     location /t {
         content_by_lua_block {
@@ -85,29 +92,109 @@ Success! Data written to: kv/apisix/foo
                 return ngx.say(body)
             end
 
-            local json_decode = require("toolkit.json").decode
-            local http = require "resty.http"
-            local httpc = http.new()
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/api/token"
-            local headers = {
-                ["Content-Type"] = "application/x-www-form-urlencoded",
-            }
+            ngx.sleep(0.1)
 
-            -- no username
-            local res, err = httpc:request_uri(uri, {
-                method = "POST",
-                headers = headers,
-                body =  ngx.encode_args({
-                    username = "teacher@gmail.com",
-                    password = "123456",
-                }),
-            })
-            if res.status == 200 then
-                ngx.print("success\n")
+            -- get plugin conf from admin api, password is decrypted
+            local code, message, res = t('/apisix/admin/routes/1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
             end
+
+            ngx.say(res.value.plugins["authz-keycloak"].client_secret)
+
+            -- get plugin conf from etcd, password is encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/routes/1'))
+            ngx.say(res.body.node.value.plugins["authz-keycloak"].client_secret)
         }
     }
---- request
-GET /t
 --- response_body
-success
+d1ec69e9-55d2-4109-a3ea-befa071579d5
+Fz1juZEEvh9PPXOmWFdMMJkREt3ZSzEVWcUZPxNP6achk3fosEvn37oN0qH4YgKB
+
+
+
+=== TEST 3: set client_secret as a reference to environment variable
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- put secret vault config
+            local code, body = t('/apisix/admin/secrets/vault/test1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://127.0.0.1:8200",
+                    "prefix" : "kv/apisix",
+                    "token" : "root"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "authz-keycloak": {
+                                "token_endpoint": "https://127.0.0.1:8443/realms/University/protocol/openid-connect/token",
+                                "permissions": ["course_resource"],
+                                "client_id": "course_management",
+                                "client_secret": "$env://CLIENT_SECRET",
+                                "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
+                                "timeout": 3000,
+                                "ssl_verify": false,
+                                "password_grant_token_generation_incoming_uri": "/api/token"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/api/token"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, password is decrypted
+            local code, message, res = t('/apisix/admin/routes/1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say(res.value.plugins["authz-keycloak"].client_secret)
+
+            -- get plugin conf from etcd, password is encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/routes/1'))
+            ngx.say(res.body.node.value.plugins["authz-keycloak"].client_secret)
+        }
+    }
+--- response_body
+d1ec69e9-55d2-4109-a3ea-befa071579d5
+Fz1juZEEvh9PPXOmWFdMMJkREt3ZSzEVWcUZPxNP6achk3fosEvn37oN0qH4YgKB
