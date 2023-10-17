@@ -25,6 +25,12 @@ local _M = {}
 local etcd_schema = {
     type = "object",
     properties = {
+        health_check_timeout = {
+            type = "integer"
+        },
+        startup_retry = {
+            type = "integer"
+        },
         resync_delay = {
             type = "integer",
         },
@@ -43,6 +49,9 @@ local etcd_schema = {
                 key = {
                     type = "string",
                 },
+                verify = {
+                    type = "boolean"
+                }
             },
         },
         prefix = {
@@ -63,7 +72,7 @@ local etcd_schema = {
             description = "etcd connection timeout in seconds",
         },
     },
-    required = {"prefix", "host"}
+    required = { "prefix", "host" }
 }
 
 local admin_schema = {
@@ -74,9 +83,9 @@ local admin_schema = {
             properties = {
                 items = {
                     properties = {
-                        name = {type = "string"},
-                        key = {type = "string"},
-                        role = {type = "string"},
+                        name = { type = "string" },
+                        key = { type = "string" },
+                        role = { type = "string" },
                     }
                 }
             }
@@ -97,6 +106,32 @@ local admin_schema = {
         admin_key_required = {
             type = "boolean",
         },
+        enable_admin_cors = {
+            type = "boolean"
+        },
+        allow_admin = {
+            type = "array",
+            items = {
+                type = "string"
+            }
+        },
+        admin_api_mtls = {
+            type = "object",
+            properties = {
+                admin_ssl_cert = {
+                    type = "string"
+                },
+                admin_ssl_cert_key = {
+                    type = "string"
+                },
+                admin_ssl_ca_cert = {
+                    type = "string"
+                }
+            }
+        },
+        admin_api_version = {
+            type = "string"
+        }
     }
 }
 
@@ -140,6 +175,30 @@ local config_schema = {
                             },
                         }
                     },
+                },
+                enable_admin = {
+                    type = "boolean",
+                },
+                enable_dev_mode = {
+                    type = "boolean",
+                },
+                enable_reuseport = {
+                    type = "boolean",
+                },
+                show_upstream_status_in_response_header = {
+                    type = "boolean",
+                },
+                enable_ipv6 = {
+                    type = "boolean",
+                },
+                enable_server_tokens = {
+                    type = "boolean",
+                },
+                extra_lua_path = {
+                    type = "string"
+                },
+                extra_lua_cpath = {
+                    type = "string"
                 },
                 lua_module_hook = {
                     pattern = "^[a-zA-Z._-]+$",
@@ -188,12 +247,12 @@ local config_schema = {
                                 },
                                 oneOf = {
                                     {
-                                        required = {"name", "memory_size"},
+                                        required = { "name", "memory_size" },
                                         maxProperties = 2,
                                     },
                                     {
-                                        required = {"name", "memory_size", "disk_size",
-                                            "disk_path", "cache_levels"},
+                                        required = { "name", "memory_size", "disk_size",
+                                            "disk_path", "cache_levels" },
                                     }
                                 },
                             },
@@ -201,9 +260,29 @@ local config_schema = {
                         }
                     }
                 },
+                delete_uri_tail_slash = {
+                    type = "boolean",
+                },
+                normalize_uri_like_servlet = {
+                    type = "boolean",
+                },
+                router = {
+                    type = "object",
+                    properties = {
+                        http = {
+                            type = "string",
+                            enum = { "radixtree_host_uri", "radixtree_uri", "radixtree_uri_with_parameter" },
+                        },
+                        ssl = {
+                            type = "string",
+                            enum = { "radixtree_host_uri", "radixtree_uri", "radixtree_uri_with_parameter",
+                                "radixtree_sni" },
+                        },
+                    }
+                },
                 proxy_mode = {
                     type = "string",
-                    enum = {"http", "stream", "http&stream"},
+                    enum = { "http", "stream", "http&stream" },
                 },
                 stream_proxy = {
                     type = "object",
@@ -236,7 +315,7 @@ local config_schema = {
                                                 type = "boolean",
                                             }
                                         },
-                                        required = {"addr"}
+                                        required = { "addr" }
                                     },
                                 },
                             },
@@ -268,6 +347,12 @@ local config_schema = {
                 },
                 dns_resolver_valid = {
                     type = "integer",
+                },
+                resolver_timeout = {
+                    type = "integer",
+                },
+                enable_resolv_search_opt = {
+                    type = "boolean",
                 },
                 ssl = {
                     type = "object",
@@ -316,23 +401,238 @@ local config_schema = {
                 },
             }
         },
+        enable_control = {
+            type = "boolean",
+        },
+        control = {
+            type = "object",
+            properties = {
+                ip = {
+                    type = "string",
+                },
+                port = {
+                    type = "integer",
+                    minimum = 1,
+                    maximum = 65535
+                },
+            }
+        },
+        data_encryption = {
+            type = "object",
+            properties = {
+                enable = {
+                    type = "boolean",
+                },
+                keyring = {
+                    type = "array",
+                    items = {
+                        type = "string",
+                    }
+                },
+            }
+        },
         nginx_config = {
             type = "object",
             properties = {
+                user = {
+                    type = "string",
+                },
+                error_log = {
+                    type = "string",
+                },
+                error_log_level = {
+                    type = "string",
+                    enum = { "info", "debug", "notice", "warn", "error", "crit", "alert", "emerg" }
+                },
+                worker_processes = {
+                    anyOf = {
+                        {
+                            type = "integer",
+                            minimum = 1,
+                        },
+                        {
+                            type = "string"
+                        },
+                        {
+                            type = "string",
+                            enum = { "auto" }
+                        }
+                    }
+                },
+                enable_cpu_affinity = {
+                    type = "boolean",
+                },
+                worker_rlimit_nofile = {
+                    type = "integer",
+                },
+                worker_shutdown_timeout = {
+                    type = "string",
+                },
+                max_pending_timers = {
+                    type = "integer",
+                },
+                max_running_timers = {
+                    type = "integer",
+                },
+                event = {
+                    type = "object",
+                    properties = {
+                        worker_connections = {
+                            type = "integer"
+                        },
+                    }
+                },
                 envs = {
                     type = "array",
                     minItems = 1,
                     items = {
                         type = "string",
                     }
+                },
+                meta = {
+                    type = "object",
+                    properties = {
+                        lua_shared_dict = {
+                            type = "object",
+                        },
+                    }
+                },
+                stream = {
+                    type = "object",
+                    properties = {
+                        enable_access_log = {
+                            type = "boolean",
+                        },
+                        access_log = {
+                            type = "string",
+                        },
+                        access_log_format = {
+                            type = "string",
+                        },
+                        access_log_format_escape = {
+                            type = "string",
+                        },
+                        lua_shared_dict = {
+                            type = "object",
+                        },
+                    }
+                },
+                main_configuration_snippet = {
+                    type = "string"
+                },
+                http_configuration_snippet = {
+                    type = "string"
+                },
+                http_server_configuration_snippet = {
+                    type = "string"
+                },
+                http_server_location_configuration_snippet = {
+                    type = "string"
+                },
+                http_admin_configuration_snippet = {
+                    type = "string"
+                },
+                http_end_configuration_snippet = {
+                    type = "string"
+                },
+                stream_configuration_snippet = {
+                    type = "string"
+                },
+                http = {
+                    type = "object",
+                    properties = {
+                        enable_access_log = {
+                            type = "string"
+                        },
+                        access_log = {
+                            type = "string"
+                        },
+                        access_log_buffer = {
+                            type = "integer"
+                        },
+                        access_log_format = {
+                            type = "string"
+                        },
+                        access_log_format_escape = {
+                            type = "string"
+                        },
+                        keepalive_timeout = {
+                            type = "string"
+                        },
+                        client_header_timeout = {
+                            type = "string"
+                        },
+                        client_body_timeout = {
+                            type = "string"
+                        },
+                        client_max_body_size = {
+                            type = "string"
+                        },
+                        send_timeout = {
+                            type = "string"
+                        },
+                        underscores_in_headers = {
+                            type = "string"
+                        },
+                        real_ip_header = {
+                            type = "string"
+                        },
+                        real_ip_recursive = {
+                            type = "string"
+                        },
+                        real_ip_from = {
+                            type = "array",
+                            items = {
+                                type = "string"
+                            }
+                        },
+                        custom_lua_shared_dict = {
+                            type = "object"
+                        },
+                        proxy_ssl_server_name = {
+                            type = "boolean"
+                        },
+                        upstream = {
+                            type = "object",
+                            properties = {
+                                keepalive = {
+                                    type = "integer"
+                                },
+                                keepalive_requests = {
+                                    type = "integer"
+                                },
+                                keepalive_timeout = {
+                                    type = "string"
+                                }
+                            }
+                        },
+                        charset = {
+                            type = "string"
+                        },
+                        variables_hash_max_size = {
+                            type = "integer"
+                        },
+                        lua_shared_dict = {
+                            type = "object"
+                        }
+                    }
                 }
             },
         },
+        -- TODO: Add schema for discovery
         http = {
             type = "object",
             properties = {
                 custom_lua_shared_dict = {
                     type = "object",
+                }
+            }
+        },
+        graphql = {
+            type = "object",
+            properties = {
+                max_size = {
+                    type = "integer"
                 }
             }
         },
@@ -372,20 +672,23 @@ local config_schema = {
                                 type = "integer"
                             },
                             http_request_phase = {
-                                enum = {"access", "rewrite"},
+                                enum = { "access", "rewrite" },
                                 default = "access",
                             },
                         },
-                        required = {"name", "file", "priority"}
+                        required = { "name", "file", "priority" }
                     }
                 }
             }
+        },
+        plugin_attr = {
+            type = "object"
         },
         deployment = {
             type = "object",
             properties = {
                 role = {
-                    enum = {"traditional", "control_plane", "data_plane", "standalone"},
+                    enum = { "traditional", "control_plane", "data_plane", "standalone" },
                     default = "traditional"
                 },
             },
@@ -447,56 +750,8 @@ local config_schema = {
             }
         },
     },
-    required = {"apisix", "deployment"},
+    required = { "apisix", "deployment" },
 }
-
--- local deployment_schema = {
---     traditional = {
---         properties = {
---             etcd = etcd_schema,
---             admin = admin_schema,
---             role_traditional = {
---                 properties = {
---                     config_provider = {
---                         enum = {"etcd"}
---                     },
---                 },
---                 required = {"config_provider"}
---             }
---         },
---         required = {"etcd"}
---     },
---     control_plane = {
---         properties = {
---             etcd = etcd_schema,
---             admin = admin_schema,
---             role_control_plane = {
---                 properties = {
---                     config_provider = {
---                         enum = {"etcd"}
---                     },
---                 },
---                 required = {"config_provider"}
---             },
---         },
---         required = {"etcd", "role_control_plane"}
---     },
---     data_plane = {
---         properties = {
---             etcd = etcd_schema,
---             role_data_plane = {
---                 properties = {
---                     config_provider = {
---                         enum = {"etcd", "yaml", "xds"}
---                     },
---                 },
---                 required = {"config_provider"}
---             },
---         },
---         required = {"role_data_plane"}
---     }
--- }
-
 
 function _M.validate(yaml_conf)
     local validator = jsonschema.generate_validator(config_schema)
@@ -518,15 +773,7 @@ function _M.validate(yaml_conf)
         end
     end
 
-    -- local role = yaml_conf.deployment.role
-    -- local validator = jsonschema.generate_validator(deployment_schema[role])
-    -- local ok, err = validator(yaml_conf.deployment)
-    -- if not ok then
-    --     return false, "invalid deployment " .. role .. " configuration: " .. err
-    -- end
-
     return true
 end
-
 
 return _M
