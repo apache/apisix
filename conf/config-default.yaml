@@ -48,7 +48,7 @@ apisix:
   # lua_module_hook: "my_project.my_hook"  # Hook module used to inject third-party code into APISIX.
 
   proxy_cache:      # Proxy Caching configuration
-    cache_ttl: 10s  # The default caching time on disk if the upstream does not specify a caching time.
+    cache_ttl: 300s  # The default caching time on disk if the upstream does not specify a caching time.
     zones:
       - name: disk_cache_one    # Name of the cache.
         memory_size: 50m        # Size of the memory to store the cache index.

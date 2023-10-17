@@ -60,7 +60,7 @@ description: 本文介绍了 Apache APISIX proxy-cache 插件的相关操作，�
 ```yaml title="conf/config.yaml"
 apisix:
   proxy_cache:
-    cache_ttl: 10s  # 如果上游未指定缓存时间，则为默认磁盘缓存时间
+    cache_ttl: 300s  # 如果上游未指定缓存时间，则为默认磁盘缓存时间
     zones:
       - name: disk_cache_one
         memory_size: 50m

@@ -89,7 +89,7 @@ You can add your cache configuration in the same file if you need to specify val
 
 ``` yaml
 proxy_cache:
- cache_ttl: 10s # default caching time if the upstream doesn't specify the caching time
+ cache_ttl: 300s # The default caching time on disk if the upstream does not specify a caching time.
  zones:
  - name: disk_cache_one # name of the cache. Admin can specify which cache to use in the Admin API by name
  memory_size: 50m # size of shared memory, used to store the cache index

@@ -62,7 +62,7 @@ You can add your cache configuration in you APISIX configuration file (`conf/con
 ```yaml title="conf/config.yaml"
 apisix:
   proxy_cache:
-    cache_ttl: 10s  # default cache TTL for caching on disk
+    cache_ttl: 300s  # The default caching time on disk if the upstream does not specify a caching time.
     zones:
       - name: disk_cache_one
         memory_size: 50m
