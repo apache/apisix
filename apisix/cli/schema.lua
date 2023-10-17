@@ -570,7 +570,14 @@ local config_schema = {
                             type = "string"
                         },
                         client_max_body_size = {
-                            type = "string"
+                            anyOf = {
+                                {
+                                    type = "number"
+                                },
+                                {
+                                    type = "string"
+                                }
+                            }
                         },
                         send_timeout = {
                             type = "string"
