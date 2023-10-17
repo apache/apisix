@@ -271,11 +271,15 @@ local config_schema = {
                     properties = {
                         http = {
                             type = "string",
-                            enum = { "radixtree_host_uri", "radixtree_uri", "radixtree_uri_with_parameter" },
+                            enum = { "radixtree_host_uri",
+                                "radixtree_uri",
+                                "radixtree_uri_with_parameter" },
                         },
                         ssl = {
                             type = "string",
-                            enum = { "radixtree_host_uri", "radixtree_uri", "radixtree_uri_with_parameter",
+                            enum = { "radixtree_host_uri",
+                                "radixtree_uri",
+                                "radixtree_uri_with_parameter",
                                 "radixtree_sni" },
                         },
                     }
@@ -542,7 +546,7 @@ local config_schema = {
                     type = "object",
                     properties = {
                         enable_access_log = {
-                            type = "string"
+                            type = "boolean"
                         },
                         access_log = {
                             type = "string"
