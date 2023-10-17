@@ -78,10 +78,10 @@ title: Changelog
 
 ### Bugfix
 
-- fix: fix and optimize tls in upstream_schema：[#10269](https://github.com/apache/apisix/pull/10269)
-- fix: add name field in plugin_config schema for consistency：[#10315](https://github.com/apache/apisix/pull/10315)
+- fix: fix and optimize TLS in upstream_schema：[#10269](https://github.com/apache/apisix/pull/10269)
+- fix: add name field in `plugin_config` schema for consistency：[#10315](https://github.com/apache/apisix/pull/10315)
 - fix: update schema description for `cors` plugin：[#10314](https://github.com/apache/apisix/pull/10314)
-- fix: use warn log for get_target_status failure：[#10156](https://github.com/apache/apisix/pull/10156)
+- fix: use warn logging level for `get_target_status` failure：[#10156](https://github.com/apache/apisix/pull/10156)
 - fix: keep healthcheck target state when upstream changes: [#10312](https://github.com/apache/apisix/pull/10312)
 
 ## 3.6.0

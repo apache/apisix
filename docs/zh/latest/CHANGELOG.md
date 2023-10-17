@@ -78,10 +78,10 @@ title: CHANGELOG
 
 ### Bugfix
 
-- 修复：修复并优化 upstream_schema 中的 tls：[#10269](https://github.com/apache/apisix/pull/10269)
-- 修复：在 plugin_config 架构中添加名称字段以保持一致性：[#10315](https://github.com/apache/apisix/pull/10315)
+- 修复：修复并优化 `upstream_schema` 中的 TLS：[#10269](https://github.com/apache/apisix/pull/10269)
+- 修复：在 `plugin_config` 架构中添加名称字段以保持一致性：[#10315](https://github.com/apache/apisix/pull/10315)
 - 修复：更新 `cors` 插件中的模式描述：[#10314](https://github.com/apache/apisix/pull/10314)
-- 修复：使用警告日志获取 get_target_status 失败：[#10156](https://github.com/apache/apisix/pull/10156)
+- 修复：使用警告级别日志当获取 `get_target_status` 失败：[#10156](https://github.com/apache/apisix/pull/10156)
 - 修复：当上游发生变化时保持健康检查目标状态： [#10312](https://github.com/apache/apisix/pull/10312)
 
 ## 3.6.0
