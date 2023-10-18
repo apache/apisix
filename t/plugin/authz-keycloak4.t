@@ -120,20 +120,6 @@ success
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            -- put secret vault config
-            local code, body = t('/apisix/admin/secrets/vault/test1',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "http://127.0.0.1:8200",
-                    "prefix" : "kv/apisix",
-                    "token" : "root"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-                return ngx.say(body)
-            end
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
