@@ -24,9 +24,6 @@ no_root_location();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
-    my $port = $ENV{TEST_NGINX_SERVER_PORT};
-
-    my $TEST_NGINX_HTML_DIR ||= html_dir();
 
     if (!$block->request) {
         $block->set_value("request", "GET /t");
